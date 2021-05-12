@@ -11,3 +11,4 @@ tests/testthat/test.notforCRAN.R
 man-roxygen
 README.md
 .github
+^LICENSE\.md$
