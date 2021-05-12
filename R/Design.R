@@ -64,8 +64,18 @@ New_Design <- function(form, data, type, subset = NULL) {
     colnames(m)[forcings] <- strsplit(fvars, ",")[[1]]
   }
 
+  m_collapse <- unique(m)
+
+  differing <- duplicated(m_collapse[, index == "c"])
+  if (any(differing)) {
+    stop("Each of treatment assignment, block and forcing must be constant within cluster.")
+    # TODO: Can we make this error more informative since we're doing the work?
+    # At a minimum identify clusters where the issue arises; or even on what particular
+    # variables?
+  }
+
   new("Design",
-      structure = m,
+      structure = m_collapse,
       columnIndex = index,
       type = type)
 }

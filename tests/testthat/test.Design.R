@@ -42,56 +42,73 @@ test_that("Design validity", {
 
 test_that("Design creation", {
   data(mtcars)
+  mtcars <- mtcars[-c(5, 11),]
 
-  d_rct <- New_Design(vs ~ cluster(mpg), data = mtcars, type = "RCT")
+  d_rct <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")
   expect_type(d_rct@columnIndex, "character")
   expect_type(d_rct@type, "character")
 
-  expect_equal(dim(d_rct@structure), c(32, 2))
+  expect_equal(dim(d_rct@structure), c(30, 2))
   expect_length(d_rct@columnIndex, 2)
   expect_length(d_rct@type, 1)
 
-  expect_equal(d_rct@structure, subset(mtcars, select = c("vs", "mpg")))
+  expect_equal(d_rct@structure, subset(mtcars, select = c("vs", "qsec")))
   expect_equal(d_rct@columnIndex, c("t", "c"))
   expect_equal(d_rct@type, "RCT")
 
   # subset
 
-  d_obs <- New_Design(vs ~ cluster(mpg), data = mtcars, type = "Obs",
-                  subset = mtcars$qsec > 15)
+  d_obs <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "Obs",
+                  subset = mtcars$mpg > 17)
 
-  expect_equal(dim(d_obs@structure), c(sum(mtcars$qsec >  15), 2))
+  expect_equal(dim(d_obs@structure), c(sum(mtcars$mpg >  17), 2))
   expect_length(d_obs@columnIndex, 2)
   expect_length(d_obs@type, 1)
 
-  expect_equal(d_obs@structure, subset(mtcars, select = c("vs", "mpg"),
-                                       subset = mtcars$qsec > 15))
+  expect_equal(d_obs@structure, subset(mtcars, select = c("vs", "qsec"),
+                                       subset = mtcars$mpg > 17))
   expect_equal(d_obs@columnIndex, c("t", "c"))
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
-  d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, hp),
+  d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
                   data = mtcars, type = "RD")
 
   expect_equal(d_rd@structure, subset(mtcars, select = c("vs", "disp", "gear",
-                                                      "wt", "cyl", "mpg", "hp")))
+                                                      "wt", "cyl", "mpg", "qsec")))
   expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
   expect_equal(d_rd@type, "RD")
 
   ### Specific designs
-  rct_des <- RCT_Design(vs ~ cluster(mpg), data = mtcars)
+  rct_des <- RCT_Design(vs ~ cluster(qsec), data = mtcars)
   expect_identical(d_rct, rct_des)
 
-  obs_des <- Obs_Design(vs ~ cluster(mpg), data = mtcars,
-                       subset = mtcars$qsec > 15)
+  obs_des <- Obs_Design(vs ~ cluster(qsec), data = mtcars,
+                       subset = mtcars$mpg > 17)
   expect_identical(d_obs, obs_des)
 
-  rd_des <- RD_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, hp),
+  rd_des <- RD_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
                   data = mtcars)
   expect_identical(d_rd, rd_des)
+})
+
+test_that("unit of assignment differs from unit of analysis", {
+
+  df <- data.frame(cid1 = rep(1:5, each = 10),
+                   cid2 = rep(rep(1:2, times = c(4, 6)), times = 5),
+                   bid = rep(1:3, times = c(20, 14, 16)),
+                   fid = rep(1:10, times = rep(c(4, 6), times = 5)),
+                   z = rep(sample(0:1, 10, TRUE), times = rep(c(4, 6), times = 5)))
+
+  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = df)
+  expect_s4_class(desrct, "Design")
+  expect_equal(nrow(desrct@structure), 10)
+
+  expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = df),
+               "must be constant")
 
 
 })
