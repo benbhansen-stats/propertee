@@ -23,7 +23,7 @@ test_that("ate and ett with data argument", {
   data(simdata)
   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
-  wdes <- ate(des, data = simdata)
+  wdes <- ett(des, data = simdata)
 
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -31,9 +31,23 @@ test_that("ate and ett with data argument", {
   expect_identical(des, wdes@Design)
   expect_type(wdes@estimand, "character")
 
-  expect_equal(wdes@estimand, "ate")
+  expect_equal(wdes@estimand, "ett")
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+
+})
+
+test_that("ate and ett in lm call", {
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lm(y ~ x, data = simdata, weights = ate(des))
+
+  expect_equal(mod$weights, ate(des, simdata)@.Data)
+
+  mod <- lm(y ~ x, data = simdata, weights = ett(des))
+
+  expect_equal(mod$weights, ett(des, simdata)@.Data)
 
 })

@@ -33,7 +33,9 @@ ate <- function(design, data = NULL) {
 
 joinDesignWeights <- function(weights, design, estimand, data = NULL) {
 
-  # If data is NULL, extract from environment
+  if (is.null(data)) {
+    data <- get("data", env = sys.frame(-4))
+  }
 
   if (nrow(data) != nrow(design@structure)) {
     # Merge cluster data with weights at cluster level
