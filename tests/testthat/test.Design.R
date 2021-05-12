@@ -1,5 +1,3 @@
-context("Design object creation")
-
 test_that("Design creation", {
   d <- new("Design",
            structure = data.frame(a = 1, b = 2),
@@ -39,5 +37,61 @@ test_that("Design validity", {
                    columnIndex = c("q", "k"),
                    type = "RCT"),
                "unknown elements")
+
+})
+
+test_that("Design creation", {
+  data(mtcars)
+
+  d_rct <- New_Design(vs ~ cluster(mpg), data = mtcars, type = "RCT")
+
+  expect_s4_class(d_rct, "Design")
+  expect_s3_class(d_rct@structure, "data.frame")
+  expect_type(d_rct@columnIndex, "character")
+  expect_type(d_rct@type, "character")
+
+  expect_equal(dim(d_rct@structure), c(32, 2))
+  expect_length(d_rct@columnIndex, 2)
+  expect_length(d_rct@type, 1)
+
+  expect_equal(d_rct@structure, subset(mtcars, select = c("vs", "mpg")))
+  expect_equal(d_rct@columnIndex, c("t", "c"))
+  expect_equal(d_rct@type, "RCT")
+
+  # subset
+
+  d_obs <- New_Design(vs ~ cluster(mpg), data = mtcars, type = "Obs",
+                  subset = mtcars$qsec > 15)
+
+  expect_equal(dim(d_obs@structure), c(sum(mtcars$qsec >  15), 2))
+  expect_length(d_obs@columnIndex, 2)
+  expect_length(d_obs@type, 1)
+
+  expect_equal(d_obs@structure, subset(mtcars, select = c("vs", "mpg"),
+                                       subset = mtcars$qsec > 15))
+  expect_equal(d_obs@columnIndex, c("t", "c"))
+  expect_equal(d_obs@type, "Obs")
+
+  ### Complex design
+  d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, hp),
+                  data = mtcars, type = "RD")
+
+  expect_equal(d_rd@structure, subset(mtcars, select = c("vs", "disp", "gear",
+                                                      "wt", "cyl", "mpg", "hp")))
+  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
+  expect_equal(d_rd@type, "RD")
+
+  ### Specific designs
+  rct_des <- RCT_Design(vs ~ cluster(mpg), data = mtcars)
+  expect_identical(d_rct, rct_des)
+
+  obs_des <- Obs_Design(vs ~ cluster(mpg), data = mtcars,
+                       subset = mtcars$qsec > 15)
+  expect_identical(d_obs, obs_des)
+
+  rd_des <- RD_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, hp),
+                  data = mtcars)
+  expect_identical(d_rd, rd_des)
+
 
 })
