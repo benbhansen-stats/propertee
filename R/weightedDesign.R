@@ -34,7 +34,7 @@ ate <- function(design, data = NULL) {
 joinDesignWeights <- function(weights, design, estimand, data = NULL) {
 
   if (is.null(data)) {
-    data <- get("data", env = sys.frame(-4))
+    data <- get("data", envir = sys.frame(-4))
   }
 
   if (nrow(data) != nrow(design@structure)) {
