@@ -35,9 +35,17 @@ joinDesignWeights <- function(weights, design, estimand, data = NULL) {
 
   # If data is NULL, extract from environment
 
-  # Join weights & design@structure, then join with data.
+  if (nrow(data) != nrow(design@structure)) {
+    # Merge cluster data with weights at cluster level
+    clusterdata <- design@structure[, design@columnIndex == "c", drop = FALSE]
+    clusterdata$Design_weights = weights
 
-  # extract weights separately.
+    # Merge with data to expand weights to unit of analysis level
+    merged <- merge(data, clusterdata, by = colnames(clusterdata)[-ncol(clusterdata)])
+
+    # Extract weights from merged data
+    weights <- merged$Design_weights
+  }
 
   WeightedDesign(weights, Design = design, estimand = estimand)
 }
