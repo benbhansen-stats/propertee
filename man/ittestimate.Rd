@@ -8,7 +8,7 @@ ittestimate(
   design,
   data,
   outcome,
-  type = ate,
+  target = ate,
   covAdjModel = NULL,
   clusterIds = NULL,
   ...
@@ -21,7 +21,8 @@ ittestimate(
 
 \item{outcome}{string containing name of outcome variable in \code{data}}
 
-\item{type}{type of estimand; \code{ate} (default) or \code{ett}}
+\item{target}{a function returning a WeightedDesign object, or either "ate"
+(default) or "ett"}
 
 \item{covAdjModel}{optional; covariable adjustment model}
 

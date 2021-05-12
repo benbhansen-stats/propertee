@@ -2,7 +2,8 @@
 ##' @param design study Design
 ##' @param data Data for analysis
 ##' @param outcome string containing name of outcome variable in `data`
-##' @param type type of estimand; `ate` (default) or `ett`
+##' @param target a function returning a WeightedDesign object, or either "ate"
+##'   (default) or "ett"
 ##' @param covAdjModel optional; covariable adjustment model
 ##' @param clusterIds optional; list connecting names of cluster variables in
 ##'   `design` to cluster variables in `data`
@@ -13,11 +14,31 @@
 ittestimate <- function(design,
                         data,
                         outcome,
-                        type = ate,
+                        target = ate,
                         covAdjModel = NULL,
                         clusterIds = NULL,
                         ...) {
-  weights <- type(design, data)
+  if (!outcome %in% colnames(data)) {
+    stop("outcome must be a column in data")
+  }
+
+  if (is.function(target)) {
+    wtfn <- target
+  } else if (is.character(target)) {
+    wtfn <- switch(target,
+                   "ate" = ate,
+                   "ett" = ett,
+                   stop(paste('invalid target; must be function returning',
+                              'a WeightedDesign object, or either "ett" or "ate"')))
+  } else {
+    stop(paste('invalid target; must be function returning a WeightedDesign',
+               'object, or either "ett" or "ate"'))
+  }
+  weights <- wtfn(design, data)
+
+
+
+
 
   # Expand treatment status
   ctdata <- design@structure[, design@columnIndex %in% c("t", "c")]
