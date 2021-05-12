@@ -16,7 +16,7 @@ WeightedDesign <- setClass("WeightedDesign",
 ##' @rdname WeightCreators
 ett <- function(design, data = NULL) {
   #### generate weights
-  weights <- rep(1, nrow(design@structure))
+  weights <- sample(seq_len(nrow(design@structure)), nrow(design@structure))
 
   joinDesignWeights(weights, design, estimand = "ett", data = data)
 }
@@ -25,7 +25,7 @@ ett <- function(design, data = NULL) {
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL) {
   #### generate weights
-  weights <- rep(1, nrow(design@structure))
+  weights <- sample(seq_len(nrow(design@structure)), nrow(design@structure))
 
   joinDesignWeights(weights, design, estimand = "ate", data = data)
 }
