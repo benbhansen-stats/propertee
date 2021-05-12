@@ -19,3 +19,5 @@ Config/testthat/edition: 3
 Imports:
     stats,
     methods
+Depends: 
+    R (>= 2.10)

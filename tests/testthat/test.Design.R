@@ -97,17 +97,13 @@ test_that("Design creation", {
 
 test_that("unit of assignment differs from unit of analysis", {
 
-  df <- data.frame(cid1 = rep(1:5, each = 10),
-                   cid2 = rep(rep(1:2, times = c(4, 6)), times = 5),
-                   bid = rep(1:3, times = c(20, 14, 16)),
-                   fid = rep(1:10, times = rep(c(4, 6), times = 5)),
-                   z = rep(sample(0:1, 10, TRUE), times = rep(c(4, 6), times = 5)))
+  data(simdata)
 
-  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = df)
+  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
   expect_s4_class(desrct, "Design")
   expect_equal(nrow(desrct@structure), 10)
 
-  expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = df),
+  expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = simdata),
                "must be constant")
 
 
