@@ -1,0 +1,13 @@
+^Meta$
+^doc$
+Makefile
+load.R
+check.R
+^data-raw$
+.pkgexclude
+^.*\.Rproj$
+^\.Rproj\.user$
+tests/testthat/test.notforCRAN.R
+man-roxygen
+README.md
+.github
