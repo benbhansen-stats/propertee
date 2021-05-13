@@ -6,7 +6,7 @@
 ##' @return the variables with appropriate labels
 ##' @export
 ##' @rdname DesignSpecials
-forcing <- block <- cluster <- function (...)
+cluster <- function (...)
 {
   #browser()
   allf <- list(...)
@@ -15,11 +15,11 @@ forcing <- block <- cluster <- function (...)
 
 ##' @rdname DesignSpecials
 ##' @export
-cluster <- block
+block <- cluster
 
 ##' @rdname DesignSpecials
 ##' @export
-forcing <- block
+forcing <- cluster
 
 # Perform checks on formula for creation of Design.
 # Checks performed:

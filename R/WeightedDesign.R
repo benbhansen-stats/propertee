@@ -30,7 +30,7 @@ ate <- function(design, data = NULL) {
   joinDesignWeights(weights, design, target = "ate", data = data)
 }
 
-
+# Internal function to expand cluster-level weights to the level of the data
 joinDesignWeights <- function(weights, design, target, data = NULL) {
 
   if (is.null(data)) {
