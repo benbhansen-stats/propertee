@@ -7,6 +7,14 @@ setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
     return("@structure must have positive dimensions")
   }
+  tr <- object@structure[object@columnIndex == "t"]
+  if (ncol(tr) == 0) {
+    return("Missing treatment index")
+  }
+  tr <- tr[,1]
+  if (is.null(tr) || is.na(sd(tr)) || sd(tr) == 0 || any(!(tr %in% 0:1))) {
+    return("Invalid treatment; must be binary and non-constant")
+  }
   if (ncol(object@structure) != length(object@columnIndex)) {
     return("@columnIndex does not agree with number of columns in @structure")
   }

@@ -1,7 +1,7 @@
 test_that("Design creation", {
   d <- new("Design",
-           structure = data.frame(a = 1, b = 2),
-           columnIndex = c("t", "f"),
+           structure = data.frame(a = c(1, 0), b = c(2, 4)),
+           columnIndex = c("t", "c"),
            type = "RCT")
 
   expect_s4_class(d, "Design")
@@ -15,26 +15,26 @@ test_that("Design creation", {
 
 test_that("Design validity", {
   expect_error(new("Design",
-                   structure = data.frame(a = 1, b = 2),
-                   columnIndex = "a",
+                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
+                   columnIndex = "t",
                    type = "RCT"),
                "number of columns")
 
   expect_error(new("Design",
                    structure = data.frame(),
-                   columnIndex = "a",
+                   columnIndex = "t",
                    type = "RCT"),
                "positive dimensions")
 
   expect_error(new("Design",
-                   structure = data.frame(a = 1, b = 2),
+                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
                    columnIndex = c("t", "f"),
                    type = "abc"),
                "unknown @type")
 
   expect_error(new("Design",
-                   structure = data.frame(a = 1, b = 2),
-                   columnIndex = c("q", "k"),
+                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
+                   columnIndex = c("t", "k"),
                    type = "RCT"),
                "unknown elements")
 
@@ -55,7 +55,7 @@ test_that("Design creation", {
   expect_length(d_rct@columnIndex, 2)
   expect_length(d_rct@type, 1)
 
-  expect_equal(d_rct@structure, subset(mtcars, select = c("vs", "qsec")))
+  expect_true(all(d_rct@structure == subset(mtcars, select = c("vs", "qsec"))))
   expect_equal(d_rct@columnIndex, c("t", "c"))
   expect_equal(d_rct@type, "RCT")
 
@@ -68,8 +68,8 @@ test_that("Design creation", {
   expect_length(d_obs@columnIndex, 2)
   expect_length(d_obs@type, 1)
 
-  expect_equal(d_obs@structure, subset(mtcars, select = c("vs", "qsec"),
-                                       subset = mtcars$mpg > 17))
+  expect_true(all(d_obs@structure == subset(mtcars, select = c("vs", "qsec"),
+                                       subset = mtcars$mpg > 17)))
   expect_equal(d_obs@columnIndex, c("t", "c"))
   expect_equal(d_obs@type, "Obs")
 
@@ -77,8 +77,8 @@ test_that("Design creation", {
   d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
                   data = mtcars, type = "RD")
 
-  expect_equal(d_rd@structure, subset(mtcars, select = c("vs", "disp", "gear",
-                                                      "wt", "cyl", "mpg", "qsec")))
+  expect_true(all(d_rd@structure == subset(mtcars, select = c("vs", "disp", "gear",
+                                                      "wt", "cyl", "mpg", "qsec"))))
   expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
   expect_equal(d_rd@type, "RD")
 
