@@ -26,6 +26,9 @@ setValidity("Design", function(object) {
   if (!object@type %in% c("RCT", "RD", "Obs")) {
     return(paste("@type must be one of [RCT,RD,Obs]. unknown @type:", object@type))
   }
+  if (object@type != "RD" && any(object@columnIndex == "f")) {
+    return("Forcing variables only valid in RD")
+  }
   TRUE
 })
 
