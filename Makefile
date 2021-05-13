@@ -33,6 +33,10 @@ document: FUNC=document
 coverage:
 	@$(RCMD) "covr::report(file = 'coverage.html', browse = TRUE)"
 
+.PHONY:goodpractice
+goodpractice:
+	@$(RCMD) "goodpractice::gp('.')"
+
 .PHONY:vignette
 vignette: FUNC=build_vignettes
 

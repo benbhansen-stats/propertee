@@ -53,13 +53,13 @@ ittestimate <- function(design,
     clusterIds <- clusterIds[!missingnames & !missingdata]
 
 
-    newnames <- sapply(colnames(design@structure), function(x) {
+    newnames <- vapply(colnames(design@structure), function(x) {
       pos <- names(clusterIds) == x
       if (any(pos)) {
         return(clusterIds[[which(pos)]])
       }
       return(x)
-    })
+    }, "character")
 
     colnames(design@structure) <- newnames
   }

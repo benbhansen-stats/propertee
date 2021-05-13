@@ -16,7 +16,7 @@ WeightedDesign <- setClass("WeightedDesign",
 ##' @rdname WeightCreators
 ett <- function(design, data = NULL) {
   #### generate weights
-  weights <- nrow(design@structure):1
+  weights <- rev(seq_len(nrow(design@structure)))
 
   joinDesignWeights(weights, design, target = "ett", data = data)
 }
@@ -25,7 +25,7 @@ ett <- function(design, data = NULL) {
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL) {
   #### generate weights
-  weights <- 1:nrow(design@structure)
+  weights <- seq_len(nrow(design@structure))
 
   joinDesignWeights(weights, design, target = "ate", data = data)
 }
@@ -40,7 +40,7 @@ joinDesignWeights <- function(weights, design, target, data = NULL) {
   if (nrow(data) != nrow(design@structure)) {
     # Merge cluster data with weights at cluster level
     clusterdata <- design@structure[, design@columnIndex == "c", drop = FALSE]
-    clusterdata$Design_weights = weights
+    clusterdata$Design_weights <- weights
 
     # Merge with data to expand weights to unit of analysis level
     merged <- merge(data, clusterdata, by = colnames(clusterdata)[-ncol(clusterdata)])
