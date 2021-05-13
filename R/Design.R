@@ -74,6 +74,8 @@ New_Design <- function(form, data, type, subset = NULL) {
     # variables?
   }
 
+  rownames(m_collapse) <- NULL
+
   new("Design",
       structure = m_collapse,
       columnIndex = index,
