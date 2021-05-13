@@ -10,7 +10,7 @@
 ##' @param ... Additional arguments to the model.
 ##' @return Estimated treatment effect
 ##' @export
-##' @importFrom stats lm
+##' @importFrom stats lm predict
 ittestimate <- function(design,
                         data,
                         outcome,
@@ -20,6 +20,14 @@ ittestimate <- function(design,
                         ...) {
   if (!outcome %in% colnames(data)) {
     stop("outcome must be a column in data")
+  }
+
+  if (!is.null(covAdjModel)) {
+    # TODO: support predict(..., type = "response"/"link"/other?)
+    covAdj <- tryCatch(stats::predict(covAdjModel, type = "response"),
+                       error = function(e) {
+                         stop("covAdjModel must support predict function")
+                       })
   }
 
   if ( !is.null(clusterIds)) {
@@ -74,7 +82,13 @@ ittestimate <- function(design,
   colnames(ctdata)[1] <- "Design_Treatment"
   merged <- merge(data, ctdata, by = colnames(ctdata)[-1])
 
-  model <- lm(merged[, outcome] ~ Design_Treatment, data = merged, weights = weights, ...)
+  if (!is.null(covAdjModel)) {
+    model <- lm(merged[, outcome] ~ Design_Treatment + offset(covAdj),
+                data = merged, weights = weights, ...)
+  } else {
+    model <- lm(merged[, outcome] ~ Design_Treatment,
+                data = merged, weights = weights, ...)
+  }
 
   return(DirectAdjusted(model, Design = design, target = target))
 }

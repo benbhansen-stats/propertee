@@ -58,3 +58,19 @@ test_that("clusterIds in ittestimate", {
   expect_identical(it3$coef, it5$coef)
 
 })
+
+test_that("covariate adjustment", {
+  data(simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+
+  camod <- lm(y ~ x, data = simdata)
+
+  it <- ittestimate(des, simdata, "y", covAdjModel = camod)
+  expect_true(!is.null(it$model$"offset(covAdj)"))
+
+  camod2 <- glm(y ~ x, data = simdata)
+
+  it <- ittestimate(des, simdata, "y", covAdjModel = camod2)
+  expect_true(!is.null(it$model$"offset(covAdj)"))
+
+})
