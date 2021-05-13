@@ -19,3 +19,22 @@ setMethod("show", "DirectAdjusted", function(object) {
   print(as(object, "lm"))
   invisible(object)
 })
+
+##' @title Convert lm object into DirectAdjusted
+##' @param x lm object with weights containing a WeightedDesign
+##' @param ... Add'l arguments
+##' @return DirectAdjusted
+##' @export
+as.DirectAdjusted <- function(x, ...) {
+  if (!is(x, "lm")) {
+    stop("input must be lm object")
+  }
+
+  if (!is(x$model$"(weights)", "WeightedDesign")) {
+    stop("input model must contain WeightedDesign weights")
+  }
+
+  DirectAdjusted(x,
+                 Design = x$model$"(weights)"@Design,
+                 target = x$model$"(weights)"@target)
+}

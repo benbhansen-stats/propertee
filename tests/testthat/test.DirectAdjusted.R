@@ -33,3 +33,25 @@ test_that("DirectAdjusted print/show", {
   expect_output(print(dalm), "Coeff")
   expect_output(show(dalm), "Coeff")
 })
+
+test_that("Conversion from lm to DirectAdjusted", {
+
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2), data = simdata)
+
+  mod <- lm(y~z, data = simdata, weights = ate(des))
+
+  modDA <- as.DirectAdjusted(mod)
+
+  expect_s4_class(modDA, "DirectAdjusted")
+
+  modIT <- ittestimate(des, simdata, "y")
+
+  expect_true(all(modDA$coef == modIT$coef))
+  expect_identical(modDA@Design, modIT@Design)
+
+  expect_error(as.DirectAdjusted(1),
+               "lm object")
+  expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
+               "WeightedDesign weights")
+})
