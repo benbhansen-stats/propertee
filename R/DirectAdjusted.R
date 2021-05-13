@@ -13,10 +13,15 @@ setValidity("DirectAdjusted", function(object) {
 
 #' @export
 print.DirectAdjusted <- function(x, digits = max(3L, getOption("digits") - 3L), ...)  {
-  stats:::print.lm(x, digits = digits, ...)
+  print(as(x, "lm"), digits = digits, ...)
+  invisible(x)
 }
 
-#' @export
+##' @title Show an DirectAdjusted
+##' @param object DirectAdjusted object
+##' @return an invisible copy of `object`
+##' @export
 setMethod("show", "DirectAdjusted", function(object) {
-  stats:::print.lm(object)
+  print(as(object, "lm"))
+  invisible(object)
 })
