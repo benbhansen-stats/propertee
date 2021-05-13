@@ -39,5 +39,5 @@ ittestimate <- function(design,
 
   model <- lm(merged[, outcome] ~ Design_Treatment, data = merged, weights = weights, ...)
 
-  return(model)
+  return(DirectAdjusted(model, Design = design, target = target))
 }
