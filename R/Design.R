@@ -131,3 +131,44 @@ Obs_Design <- function(formula, data, subset = NULL) {
   design <- New_Design(formula, data, type = "Obs", subset = subset)
   return(design)
 }
+
+##' @title Show a Design
+##' @param object Design object
+##' @return an invisible copy of `object`
+##' @export
+setMethod("show", "Design", function(object) {
+  destype <- switch(object@type,
+                    "RCT" = "Randomized Control Trial",
+                    "RD" = "Regression Discontinuity Design",
+                    "Obs" = "Observational Study")
+  cat(destype)
+  cat("\n\n")
+  cat(paste("Treatment:", varNames(object, "t")))
+  cat("\n")
+  cat(paste("Cluster  :", paste(varNames(object, "c"), collapse = ", ")))
+  cat("\n")
+  if (length(varNames(object, "b")) > 0) {
+    cat(paste("Block    :", paste(varNames(object, "b"), collapse = ", ")))
+    cat("\n")
+  }
+  if (length(varNames(object, "f")) > 0) {
+    cat(paste("Forcing  :", paste(varNames(object, "f"), collapse = ", ")))
+    cat("\n")
+  }
+  invisible(object)
+})
+
+
+##' @title Extract names of Design variables
+##' @param x Design object
+##' @param type one of "t", "c", "b", "f"; for "treatment", "cluster", "block",
+##'   and "forcing"
+##' @param object Design object
+##' @return character vector of variable names of the given type
+##' @export
+varNames <- function(x, type) {
+  stopifnot(class(x) == "Design")
+  stopifnot(length(type) == 1)
+  stopifnot(type %in% c("t", "c", "b", "f"))
+  names(x@structure)[x@columnIndex == type]
+}

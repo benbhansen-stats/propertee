@@ -108,3 +108,36 @@ test_that("unit of assignment differs from unit of analysis", {
 
 
 })
+
+test_that("Design printing", {
+  data(simdata)
+
+  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desrd  <-  RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  desobs <- Obs_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  expect_output(print(desrct), "Randomized")
+  expect_output(show(desrct),  "Randomized")
+
+  expect_silent(invisible(capture.output(expect_identical(desrct, show(desrct)))))
+  expect_silent(invisible(capture.output(expect_identical(desrct, print(desrct)))))
+
+  expect_output(print(desrd), "Discontinuity")
+  expect_output(show(desrd),  "Discontinuity")
+  expect_output(print(desobs), "Observational")
+  expect_output(show(desobs),  "Observational")
+
+  expect_output(show(desrct), "z")
+  expect_output(show(desrct), "cid1")
+  expect_output(show(desrct), "bid")
+
+  expect_output(show(desobs), "z")
+  expect_output(show(desobs), "cid1")
+  expect_output(show(desobs), "bid")
+
+  expect_output(show(desrd), "z")
+  expect_output(show(desrd), "cid1")
+  expect_output(show(desrd), "bid")
+  expect_output(show(desrd), "force")
+
+})
