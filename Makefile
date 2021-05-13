@@ -29,6 +29,10 @@ check: FUNC=check
 .PHONY:document
 document: FUNC=document
 
+.PHONY:coverage
+coverage:
+	@$(RCMD) "covr::report(file = 'coverage.html', browse = TRUE)"
+
 .PHONY:vignette
 vignette: FUNC=build_vignettes
 

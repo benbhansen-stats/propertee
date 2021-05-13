@@ -12,3 +12,6 @@ man-roxygen
 README.md
 .github
 ^LICENSE\.md$
+.DS_Store
+coverage.html
+lib/*
