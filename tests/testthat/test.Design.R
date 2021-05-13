@@ -141,3 +141,215 @@ test_that("Design printing", {
   expect_output(show(desrd), "force")
 
 })
+
+test_that("Accessing and replacing elements", {
+  data(simdata)
+
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+
+  ##### Treatment
+
+  expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
+
+  treatment(des) <- rep(0:1, each = 5)
+  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
+
+  mat <- matrix(rep(1:0, each = 5))
+  treatment(des) <- mat
+  expect_equal(treatment(des), data.frame(z = rep(1:0, each = 5)))
+
+  mat <- matrix(rep(0:1, each = 5))
+  colnames(mat) <- "z"
+  treatment(des) <- mat
+  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
+
+  mat <- matrix(rep(1:0, each = 5))
+  colnames(mat) <- "a"
+  treatment(des) <- mat
+  expect_equal(treatment(des), data.frame(a = rep(1:0, each = 5)))
+
+  df <- data.frame(z = rep(0:1, each = 5))
+  treatment(des) <- df
+  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
+
+  treatment(des)[1:2,1] <- 1
+  expect_equal(treatment(des), data.frame(z = rep(c(1,0,1), times = c(2,3,5))))
+
+  expect_error(treatment(des) <- data.frame(a = c(1,0,1,0,1)),
+               "disagree")
+
+
+  ##### Clusters
+
+  expect_identical(clusters(des), des@structure[, 2:3])
+
+  clusters(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
+  expect_identical(varNames(des, "c"), c("cid1", "cid2"))
+  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == clusters(des)))
+
+  clusters(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
+  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == clusters(des)))
+
+  m <- matrix(1:20, ncol = 2)
+  clusters(des) <- m
+  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == clusters(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  clusters(des) <- m
+  expect_identical(varNames(des, "c"), c("qwe", "asd"))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == clusters(des)))
+
+  expect_error(clusters(des) <- m[,1],
+               "disagree")
+
+  clusters(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == clusters(des)))
+
+
+  ########## Clusters, reduce duplicates
+
+  treatment(des) <- rep(0:1, each = 5)
+
+  expect_warning(clusters(des) <- data.frame(c1 = 1, c2 = c(1,1:9)),
+                 "collapsing")
+  expect_equal(nrow(des@structure), 9)
+
+  expect_error(clusters(des) <- data.frame(c1 = 1, c2 = c(1:8, 1)),
+               "non-constant")
+
+  ##### Blocks
+
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+
+  expect_identical(blocks(des), des@structure[, 4, drop = FALSE])
+
+  blocks(des) <- 1:10
+  expect_equal(blocks(des), data.frame(bid = 1:10))
+
+  mat <- matrix(10:1)
+  blocks(des) <- mat
+  expect_equal(blocks(des), data.frame(bid = 10:1))
+
+  mat <- matrix(1:10)
+  colnames(mat) <- "bid"
+  blocks(des) <- mat
+  expect_equal(blocks(des), data.frame(bid = 1:10))
+
+  mat <- matrix(10:1)
+  colnames(mat) <- "abc"
+  blocks(des) <- mat
+  expect_equal(blocks(des), data.frame(abc = 10:1))
+
+  df <- data.frame(bid = 1:10)
+  blocks(des) <- df
+  expect_equal(blocks(des), data.frame(bid = 1:10))
+
+  blocks(des)[1:2,1] <- 1
+  expect_equal(blocks(des), data.frame(bid = c(1,1,3:10)))
+
+  expect_error(blocks(des) <- data.frame(a = 1:5),
+               "disagree")
+
+
+  ### multi-dimensional blocks
+
+  simdata2 <- simdata
+  simdata2$cid1 <- 1:50
+  simdata2$cid2 <- 1
+  names(simdata2)[1:2] <- c("cid", "bida")
+  des <- RD_Design(z ~ cluster(cid) + block(bid, bida) + forcing(force), data = simdata2)
+
+  expect_identical(blocks(des), des@structure[, 3:4])
+
+  blocks(des) <- data.frame(bid = 50:1, bida = 1:50)
+  expect_identical(varNames(des, "b"), c("bid", "bida"))
+  expect_true(all(data.frame(bid = 50:1, bida = 1:50) == blocks(des)))
+
+  blocks(des) <- data.frame(abc1 = 50:1, abc2 = 1:50)
+  expect_identical(varNames(des, "b"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 50:1, abc2 = 1:50) == blocks(des)))
+
+  m <- matrix(1:100, ncol = 2)
+  blocks(des) <- m
+  expect_identical(varNames(des, "b"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:50, abc2 = 51:100) == blocks(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  blocks(des) <- m
+  expect_identical(varNames(des, "b"), c("qwe", "asd"))
+  expect_true(all(data.frame(qwe = 1:50, asd = 51:100) == blocks(des)))
+
+  expect_error(blocks(des) <- m[,1],
+               "disagree")
+
+  blocks(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:50), asd = c(100, 52:100)) == blocks(des)))
+
+  #### Forcing
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+
+  expect_identical(forcings(des), des@structure[, 5, drop = FALSE])
+
+  forcings(des) <- 1:10
+  expect_equal(forcings(des), data.frame(force = 1:10))
+
+  mat <- matrix(10:1)
+  forcings(des) <- mat
+  expect_equal(forcings(des), data.frame(force = 10:1))
+
+  mat <- matrix(1:10)
+  colnames(mat) <- "fvar"
+  forcings(des) <- mat
+  expect_equal(forcings(des), data.frame(fvar = 1:10))
+
+  mat <- matrix(10:1)
+  colnames(mat) <- "abc"
+  forcings(des) <- mat
+  expect_equal(forcings(des), data.frame(abc = 10:1))
+
+  df <- data.frame(fvar = 1:10)
+  forcings(des) <- df
+  expect_equal(forcings(des), data.frame(fvar = 1:10))
+
+  forcings(des)[1:2,1] <- 1
+  expect_equal(forcings(des), data.frame(fvar = c(1,1,3:10)))
+
+  expect_error(forcings(des) <- data.frame(a = 1:5),
+               "disagree")
+
+
+  ### multi-dimensional forcings
+
+  simdata2 <- simdata
+  simdata2$force2 <- rep(rnorm(10, mean = 5), times = rep(c(4, 6), times = 5))
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2), data = simdata2)
+
+  expect_identical(forcings(des), des@structure[, 5:6])
+
+  forcings(des) <- data.frame(force = 10:1, force2 = 1:10)
+  expect_identical(varNames(des, "f"), c("force", "force2"))
+  expect_true(all(data.frame(force = 10:1, force2 = 1:10) == forcings(des)))
+
+  forcings(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
+  expect_identical(varNames(des, "f"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == forcings(des)))
+
+  m <- matrix(1:20, ncol = 2)
+  forcings(des) <- m
+  expect_identical(varNames(des, "f"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == forcings(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  forcings(des) <- m
+  expect_identical(varNames(des, "f"), c("qwe", "asd"))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == forcings(des)))
+
+  expect_error(forcings(des) <- m[,1],
+               "disagree")
+
+  forcings(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == forcings(des)))
+
+})
