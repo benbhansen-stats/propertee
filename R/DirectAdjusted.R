@@ -38,3 +38,26 @@ as.DirectAdjusted <- function(x, ...) {
                  Design = x$model$"(weights)"@Design,
                  target = x$model$"(weights)"@target)
 }
+
+setGeneric("vcov")
+
+##' @title Variance-Covariance matrix
+##' @param object DirectAdjusted
+##' @param ... Add'l arguments
+##' @return Variance-Covariance matrix
+##' @export
+setMethod("vcov", "DirectAdjusted", function(object, ...) {
+  vcov(as(object, "lm"), ...)
+})
+
+
+setGeneric("confint")
+
+##' @title Variance-Covariance matrix
+##' @param object DirectAdjusted
+##' @param ... Add'l arguments
+##' @return Variance-Covariance matrix
+##' @export
+setMethod("confint", "DirectAdjusted", function(object, ...) {
+  confint(as(object, "lm"), ...)
+})

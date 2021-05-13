@@ -55,3 +55,19 @@ test_that("Conversion from lm to DirectAdjusted", {
   expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
                "WeightedDesign weights")
 })
+
+test_that("vcov, confint, etc", {
+  data(simdata)
+  des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+
+  dalm <- DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des)),
+                         Design = des, target = "ett")
+
+  expect_true(is.matrix(vcov(dalm)))
+  expect_equal(dim(vcov(dalm)), c(2,2))
+
+  expect_true(is.matrix(confint(dalm)))
+  expect_equal(dim(confint(dalm)), c(2,2))
+
+
+})
