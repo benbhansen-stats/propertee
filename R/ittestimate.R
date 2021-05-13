@@ -33,7 +33,7 @@ ittestimate <- function(design,
     }
 
     # Ensure all names and replacements are valid
-    missingnames <- !(names(clusterIds) %in% colnames(des@structure))
+    missingnames <- !(names(clusterIds) %in% colnames(design@structure))
     if (any(missingnames)) {
       warning(paste("clusterIds labels not found in Design. unknown elements:",
                  paste(names(clusterIds)[missingnames], collapse = ", ")))
@@ -49,7 +49,7 @@ ittestimate <- function(design,
     clusterIds <- clusterIds[!missingnames & !missingdata]
 
 
-    newnames <- sapply(colnames(des@structure), function(x) {
+    newnames <- sapply(colnames(design@structure), function(x) {
       pos <- names(clusterIds) == x
       if (any(pos)) {
         return(clusterIds[[which(pos)]])
