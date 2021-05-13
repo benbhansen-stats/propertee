@@ -1,7 +1,7 @@
 WeightedDesign <- setClass("WeightedDesign",
                            contains = "numeric",
                            slots = c(Design = "Design",
-                                     estimand = "character"))
+                                     target = "character"))
 
 
 
@@ -18,7 +18,7 @@ ett <- function(design, data = NULL) {
   #### generate weights
   weights <- nrow(design@structure):1
 
-  joinDesignWeights(weights, design, estimand = "ett", data = data)
+  joinDesignWeights(weights, design, target = "ett", data = data)
 }
 
 ##' @export
@@ -27,11 +27,11 @@ ate <- function(design, data = NULL) {
   #### generate weights
   weights <- 1:nrow(design@structure)
 
-  joinDesignWeights(weights, design, estimand = "ate", data = data)
+  joinDesignWeights(weights, design, target = "ate", data = data)
 }
 
 
-joinDesignWeights <- function(weights, design, estimand, data = NULL) {
+joinDesignWeights <- function(weights, design, target, data = NULL) {
 
   if (is.null(data)) {
     data <- get("data", envir = sys.frame(-4))
@@ -49,5 +49,5 @@ joinDesignWeights <- function(weights, design, estimand, data = NULL) {
     weights <- merged$Design_weights
   }
 
-  WeightedDesign(weights, Design = design, estimand = estimand)
+  WeightedDesign(weights, Design = design, target = target)
 }

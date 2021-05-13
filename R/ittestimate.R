@@ -14,7 +14,7 @@
 ittestimate <- function(design,
                         data,
                         outcome,
-                        target = ate,
+                        target = "ate",
                         covAdjModel = NULL,
                         clusterIds = NULL,
                         ...) {
@@ -22,18 +22,10 @@ ittestimate <- function(design,
     stop("outcome must be a column in data")
   }
 
-  if (is.function(target)) {
-    wtfn <- target
-  } else if (is.character(target)) {
-    wtfn <- switch(target,
-                   "ate" = ate,
-                   "ett" = ett,
-                   stop(paste('invalid target; must be function returning',
-                              'a WeightedDesign object, or either "ett" or "ate"')))
-  } else {
-    stop(paste('invalid target; must be function returning a WeightedDesign',
-               'object, or either "ett" or "ate"'))
-  }
+  wtfn <- switch(target,
+                 "ate" = ate,
+                 "ett" = ett,
+                 stop('invalid target'))
   weights <- wtfn(design, data)
 
 

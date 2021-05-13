@@ -8,7 +8,7 @@ ittestimate(
   design,
   data,
   outcome,
-  target = ate,
+  target = "ate",
   covAdjModel = NULL,
   clusterIds = NULL,
   ...
