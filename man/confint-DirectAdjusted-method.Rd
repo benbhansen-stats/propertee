@@ -9,6 +9,12 @@
 \arguments{
 \item{object}{DirectAdjusted}
 
+\item{parm}{a specification of which parameters are to be given confidence
+intervals, either a vector of numbers or a vector of names. If missing,
+all parameters are considered.}
+
+\item{level}{the confidence level required.}
+
 \item{...}{Add'l arguments}
 }
 \value{

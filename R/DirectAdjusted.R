@@ -55,9 +55,13 @@ setGeneric("confint")
 
 ##' @title Variance-Covariance matrix
 ##' @param object DirectAdjusted
+##' @param parm a specification of which parameters are to be given confidence
+##'   intervals, either a vector of numbers or a vector of names. If missing,
+##'   all parameters are considered.
+##' @param level the confidence level required.
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("confint", "DirectAdjusted", function(object, ...) {
-  confint(as(object, "lm"), ...)
+setMethod("confint", "DirectAdjusted", function(object, parm, level = 0.95, ...) {
+  confint(as(object, "lm"), parm, level = level, ...)
 })
