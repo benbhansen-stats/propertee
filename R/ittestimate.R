@@ -23,11 +23,7 @@ ittestimate <- function(design,
   }
 
   if (!is.null(covAdjModel)) {
-    # TODO: support predict(..., type = "response"/"link"/other?)
-    covAdj <- tryCatch(stats::predict(covAdjModel, type = "response"),
-                       error = function(e) {
-                         stop("covAdjModel must support predict function")
-                       })
+    covAdj <- cov_adj(covAdjModel)
   }
 
   if ( !is.null(clusterIds)) {
