@@ -7,12 +7,10 @@
 varNames(x, type)
 }
 \arguments{
-\item{x}{Design object}
+\item{x}{Design x}
 
 \item{type}{one of "t", "c", "b", "f"; for "treatment", "cluster", "block",
 and "forcing"}
-
-\item{object}{Design object}
 }
 \value{
 character vector of variable names of the given type

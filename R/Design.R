@@ -160,10 +160,9 @@ setMethod("show", "Design", function(object) {
 
 
 ##' @title Extract names of Design variables
-##' @param x Design object
+##' @param x Design x
 ##' @param type one of "t", "c", "b", "f"; for "treatment", "cluster", "block",
 ##'   and "forcing"
-##' @param object Design object
 ##' @return character vector of variable names of the given type
 ##' @export
 varNames <- function(x, type) {
