@@ -40,8 +40,9 @@ summary.Design <- function(object, ...) {
   cat("\n")
 
   if (length(varNames(object, "f")) > 0) {
-    cat(paste("Forcing variable is `",
-              varNames(object, "f"), "`",
+    cat(paste("Forcing variable(s): `",
+              paste(varNames(object, "f"), collapse = "`, `"),
+              "`",
               sep = ""))
     cat("\n")
   }
