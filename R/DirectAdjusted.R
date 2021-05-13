@@ -11,12 +11,6 @@ setValidity("DirectAdjusted", function(object) {
   TRUE
 })
 
-#' @export
-print.DirectAdjusted <- function(x, digits = max(3L, getOption("digits") - 3L), ...)  {
-  print(as(x, "lm"), digits = digits, ...)
-  invisible(x)
-}
-
 ##' @title Show an DirectAdjusted
 ##' @param object DirectAdjusted object
 ##' @return an invisible copy of `object`
