@@ -352,4 +352,14 @@ test_that("Accessing and replacing elements", {
   forcings(des)[1,1:2] <- 100
   expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == forcings(des)))
 
+  # Forcing for non-RD
+
+  des <- RCT_Design(z ~ cluster(cid1, cid2), data = simdata)
+  expect_error(forcings(des),
+               "only used")
+  expect_error(forcings(des) <- rnorm(1:10),
+               "only used")
+
+
+
 })
