@@ -45,38 +45,28 @@ New_Design <- function(form, data, type, subset = NULL) {
 
   index <- rep("t", ncol(m))
 
-  # Handle clusters
-  clusters <- grepl("^cluster", colnames(m))
-  if (any(clusters)) {
-    index[which(clusters)] <- "c"
-    cvars <- colnames(m)[clusters][1]
-    cvars <- sub("^cluster\\(", "", cvars)
-    cvars <- sub("\\)[\\.0-9]*$", "", cvars)
-    cvars <- strsplit(gsub(" ", "", cvars), ",")[[1]]
-    colnames(m)[clusters] <- cvars
+  rename_vars <- function(modelframe, index, type) {
+    pos <- grepl(paste0("^", type), colnames(modelframe))
+    if (any(pos)) {
+      index[pos] <- substr(type, 1, 1)
+      vars <- colnames(modelframe)[pos][1]
+      vars <- sub(paste0("^", type, "\\("), "", vars)
+      vars <- sub("\\)[\\.0-9]*$", "", vars)
+      vars <- strsplit(gsub(" ", "", vars), ",")[[1]]
+      colnames(modelframe)[pos] <- vars
+    }
+    return(list(modelframe, index))
   }
 
-  # Handle blocks
-  blocks <- grepl("^block", colnames(m))
-  if (any(blocks)) {
-    index[which(blocks)] <- "b"
-    bvars <- colnames(m)[blocks][1]
-    bvars <- sub("^block\\(", "", bvars)
-    bvars <- sub("\\)[\\.0-9]*$", "", bvars)
-    bvars <- strsplit(gsub(" ", "", bvars), ",")[[1]]
-    colnames(m)[blocks] <- bvars
-  }
-
-  # Handle forcing
-  forcings <- grepl("^forcing", colnames(m))
-  if (any(forcings)) {
-    index[which(forcings)] <- "f"
-    fvars <- colnames(m)[forcings][1]
-    fvars <- sub("^forcing\\(", "", fvars)
-    fvars <- sub("\\)[\\.0-9]*$", "", fvars)
-    fvars <- strsplit(gsub(" ", "", fvars), ",")[[1]]
-    colnames(m)[forcings] <- fvars
-  }
+  o <- rename_vars(m, index, "cluster")
+  m <- o[[1]]
+  index <- o[[2]]
+  o <- rename_vars(m, index, "block")
+  m <- o[[1]]
+  index <- o[[2]]
+  o <- rename_vars(m, index, "forcing")
+  m <- o[[1]]
+  index <- o[[2]]
 
   m_collapse <- unique(m)
 
