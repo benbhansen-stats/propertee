@@ -24,10 +24,21 @@ setValidity("WeightedDesign", function(object) {
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
+##' @param clusterIds optional; list connecting names of cluster variables in
+##'   `design` to cluster variables in `data`
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL) {
+ett <- function(design, data = NULL, clusterIds = NULL) {
+  if (is.null(data)) {
+    data <- get_data_from_model()
+  }
+
+  if (!is.null(clusterIds)) {
+    design <- update_clusterIds(design, data, clusterIds)
+  }
+
+
   #### generate weights
   weights <- rev(seq_len(nrow(design@structure)))
 
@@ -36,19 +47,71 @@ ett <- function(design, data = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL) {
+ate <- function(design, data = NULL, clusterIds = NULL) {
+  if (is.null(data)) {
+    data <- get_data_from_model()
+  }
+
+  if (!is.null(clusterIds)) {
+    design <- update_clusterIds(design, data, clusterIds)
+  }
+
   #### generate weights
   weights <- seq_len(nrow(design@structure))
 
   joinDesignWeights(weights, design, target = "ate", data = data)
 }
 
+# Internal function to use clusterIds to update the design with new variable
+# names
+update_clusterIds <- function(design, data, clusterIds) {
+  if (!is.list(clusterIds) ||
+        is.null(names(clusterIds)) ||
+        any(names(clusterIds) == "")) {
+    stop("clusterIds must be named list")
+  }
+  if (any(duplicated(names(clusterIds))) || any(duplicated(clusterIds))) {
+    stop("clusterIds must be unique")
+  }
+
+  # Ensure all names and replacements are valid
+  missingnames <- !(names(clusterIds) %in% colnames(design@structure))
+  if (any(missingnames)) {
+    warning(paste("clusterIds labels not found in Design. unknown elements:",
+                  paste(names(clusterIds)[missingnames], collapse = ", ")))
+  }
+  missingdata <-  !(clusterIds %in% colnames(data))
+  if (any(missingdata)) {
+    warning(paste("clusterIds replacement values not found in data. unknown elements:",
+                  paste(clusterIds[missingnames], collapse = ", ")))
+  }
+
+  # if we have any names or replacements missing in the design or data,
+  # there's a warning, and then don't try to replace that element
+  clusterIds <- clusterIds[!missingnames & !missingdata]
+
+
+  newnames <- vapply(colnames(design@structure), function(x) {
+    pos <- names(clusterIds) == x
+    if (any(pos)) {
+      return(clusterIds[[which(pos)]])
+    }
+    return(x)
+  }, "character")
+
+  colnames(design@structure) <- newnames
+  return(design)
+}
+
+# Internal functoin to try and retrieve the data from the model when `ate` or
+# `ett` are called without a data argument
+get_data_from_model <- function() {
+  data <- get("data", envir = sys.frame(-4))
+  return(data)
+}
+
 # Internal function to expand cluster-level weights to the level of the data
 joinDesignWeights <- function(weights, design, target, data = NULL) {
-
-  if (is.null(data)) {
-    data <- get("data", envir = sys.frame(-4))
-  }
 
   if (nrow(data) != nrow(design@structure)) {
     # Merge cluster data with weights at cluster level

@@ -26,44 +26,9 @@ ittestimate <- function(design,
     covAdj <- cov_adj(covAdjModel)
   }
 
-  if ( !is.null(clusterIds)) {
-    if (!is.list(clusterIds) ||
-          is.null(names(clusterIds)) ||
-          any(names(clusterIds) == "")) {
-      stop("clusterIds must be named list")
-    }
-    if (any(duplicated(names(clusterIds))) || any(duplicated(clusterIds))) {
-      stop("clusterIds must be unique")
-    }
-
-    # Ensure all names and replacements are valid
-    missingnames <- !(names(clusterIds) %in% colnames(design@structure))
-    if (any(missingnames)) {
-      warning(paste("clusterIds labels not found in Design. unknown elements:",
-                 paste(names(clusterIds)[missingnames], collapse = ", ")))
-    }
-    missingdata <-  !(clusterIds %in% colnames(data))
-    if (any(missingdata)) {
-      warning(paste("clusterIds replacement values not found in data. unknown elements:",
-                   paste(clusterIds[missingnames], collapse = ", ")))
-    }
-
-    # if we have any names or replacements missing in the design or data,
-    # there's a warning, and then don't try to replace that element
-    clusterIds <- clusterIds[!missingnames & !missingdata]
-
-
-    newnames <- vapply(colnames(design@structure), function(x) {
-      pos <- names(clusterIds) == x
-      if (any(pos)) {
-        return(clusterIds[[which(pos)]])
-      }
-      return(x)
-    }, "character")
-
-    colnames(design@structure) <- newnames
+  if (!is.null(clusterIds)) {
+    design <- update_clusterIds(design, data, clusterIds)
   }
-
 
   wtfn <- switch(target,
                  "ate" = ate,
