@@ -14,6 +14,39 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Summary
+
+The `flexida` package consists of three primary S4 classes:
+
+- `Design`: Stores design-level information including a cluster information table
+    - Created via `RCT_Design`, `RD_Design`, or `Obs_Design`.
+    - Has extractors and replacers, e.g. `cluster(des)` or `cluster(des) <- ...`
+- `WeightedDesign`: Contains a vector of weights, and has the original `Design`
+  in a slot. Weights are at the level of the data, not necessarily at cluster
+  level.
+    - Three ways to create:
+        1. Directly e.g. `ate(des, mydata)`.
+        2. Using the `ittestimate` function which takes in a `Design` and data
+           and runs a `lm` to estimate difference in means of outcome by
+           treatment status.
+        3. Passing as the `weights` argument to `lm`; `lm(..., weights =
+           ate(des))`. (This method is fragile at the moment.)
+    - Supports appropriate arithmetic (e.g. disallows `ate(des)*-2`).
+    - Current weight calculations are placeholders.
+- `DirectAdjusted`: Created by either `ittestimate` or by converting an `lm`
+  with `WeightedDesign` weights via `as.DirectAdjusted`. Contains the `lm` and
+  the `Design` in a slot.
+    - Basic framework for `vcov.DirectAdjusted`, etc, but needs expansion.
+
+The `ittestimate` function also supports a covariance adjustment model (which is
+passed to the `cov_adj` function) and a list passed as `clusterIds` to allow
+renaming of cluster ID variables in a different data.
+
+See [flexida#1](https://github.com/benbhansen-stats/flexida/issues/1) for
+details on outstanding issues.
+
+## Detail
+
 ```{r setup}
 library(flexida)
 ```
@@ -24,7 +57,7 @@ head(simdata)
 ```
 
 `simdata` is some fake data with 50 observations in 10 clusters spread over two
-variables (`cid1`, `cid2`), nexted within three blocks (`bid`), an optional
+variables (`cid1`, `cid2`), nested within three blocks (`bid`), an optional
 forcing variable (`force`), with treatment (`z`), outcome (`y`) and predictor
 (`x`). `force` and `z` are constant within cluster.
 
@@ -36,7 +69,7 @@ summary(des)
 
 The `cluster`, `block`, and `forcing` functions are currently very simple (and
 functionally identical). I considered moving `survival`'s `strata` over in its
-entirety but a lot of its code seemed unneccessary for our work. There can be
+entirety but a lot of its code seemed unnecessary for our work. There can be
 only a single treatment variable, but each of `cluster`, `block`, and `forcing`
 support any number of variables.
 
@@ -137,4 +170,4 @@ ittest
 ```
 
 Note that the `Design` object that `DirectAdjusted` carries around has the
-*updated* cluster IDs, so `identical(des, ittestimate@Design` will be false.
+*updated* cluster IDs, so `identical(des, ittestimate@Design)` will be false.

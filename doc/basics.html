@@ -141,6 +141,36 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>The <code>flexida</code> package consists of three primary S4 classes:</p>
+<ul>
+<li><code>Design</code>: Stores design-level information including a cluster information table
+<ul>
+<li>Created via <code>RCT_Design</code>, <code>RD_Design</code>, or <code>Obs_Design</code>.</li>
+<li>Has extractors and replacers, e.g. <code>cluster(des)</code> or <code>cluster(des) &lt;- ...</code></li>
+</ul></li>
+<li><code>WeightedDesign</code>: Contains a vector of weights, and has the original <code>Design</code> in a slot. Weights are at the level of the data, not necessarily at cluster level.
+<ul>
+<li>Three ways to create:
+<ol style="list-style-type: decimal">
+<li>Directly e.g. <code>ate(des, mydata)</code>.</li>
+<li>Using the <code>ittestimate</code> function which takes in a <code>Design</code> and data and runs a <code>lm</code> to estimate difference in means of outcome by treatment status.</li>
+<li>Passing as the <code>weights</code> argument to <code>lm</code>; <code>lm(..., weights =      ate(des))</code>. (This method is fragile at the moment.)</li>
+</ol></li>
+<li>Supports appropriate arithmetic (e.g. disallows <code>ate(des)*-2</code>).</li>
+<li>Current weight calculations are placeholders.</li>
+</ul></li>
+<li><code>DirectAdjusted</code>: Created by either <code>ittestimate</code> or by converting an <code>lm</code> with <code>WeightedDesign</code> weights via <code>as.DirectAdjusted</code>. Contains the <code>lm</code> and the <code>Design</code> in a slot.
+<ul>
+<li>Basic framework for <code>vcov.DirectAdjusted</code>, etc, but needs expansion.</li>
+</ul></li>
+</ul>
+<p>The <code>ittestimate</code> function also supports a covariance adjustment model (which is passed to the <code>cov_adj</code> function) and a list passed as <code>clusterIds</code> to allow renaming of cluster ID variables in a different data.</p>
+<p>See <a href="https://github.com/benbhansen-stats/flexida/issues/1">flexida#1</a> for details on outstanding issues.</p>
+</div>
+<div id="detail" class="section level2">
+<h2>Detail</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(flexida)</span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(simdata)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(simdata)</span>
@@ -151,7 +181,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    1    1   1 4.103085 0  1.01282869  0.0841799</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5    1    2   1 5.184849 0  0.43226515 -0.8954866</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6    1    2   1 5.184849 0  2.09081921 -0.9212757</span></span></code></pre></div>
-<p><code>simdata</code> is some fake data with 50 observations in 10 clusters spread over two variables (<code>cid1</code>, <code>cid2</code>), nexted within three blocks (<code>bid</code>), an optional forcing variable (<code>force</code>), with treatment (<code>z</code>), outcome (<code>y</code>) and predictor (<code>x</code>). <code>force</code> and <code>z</code> are constant within cluster.</p>
+<p><code>simdata</code> is some fake data with 50 observations in 10 clusters spread over two variables (<code>cid1</code>, <code>cid2</code>), nested within three blocks (<code>bid</code>), an optional forcing variable (<code>force</code>), with treatment (<code>z</code>), outcome (<code>y</code>) and predictor (<code>x</code>). <code>force</code> and <code>z</code> are constant within cluster.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>des <span class="ot">&lt;-</span> <span class="fu">RD_Design</span>(z <span class="sc">~</span> <span class="fu">cluster</span>(cid1, cid2) <span class="sc">+</span> <span class="fu">block</span>(bid) <span class="sc">+</span> <span class="fu">forcing</span>(force), <span class="at">data =</span> simdata)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>des</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Regression Discontinuity Design</span></span>
@@ -167,7 +197,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Contains 10 clusters (`cid1`, `cid2`) nested within 3 blocks (`bid`)</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 clusters assigned to treatment, 6 clusters assigned to control (`z`)</span></span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Forcing variable(s): `force`</span></span></code></pre></div>
-<p>The <code>cluster</code>, <code>block</code>, and <code>forcing</code> functions are currently very simple (and functionally identical). I considered moving <code>survival</code>’s <code>strata</code> over in its entirety but a lot of its code seemed unneccessary for our work. There can be only a single treatment variable, but each of <code>cluster</code>, <code>block</code>, and <code>forcing</code> support any number of variables.</p>
+<p>The <code>cluster</code>, <code>block</code>, and <code>forcing</code> functions are currently very simple (and functionally identical). I considered moving <code>survival</code>’s <code>strata</code> over in its entirety but a lot of its code seemed unnecessary for our work. There can be only a single treatment variable, but each of <code>cluster</code>, <code>block</code>, and <code>forcing</code> support any number of variables.</p>
 <p>The <code>*_Design</code> functions (<code>RD_Design</code>, <code>RCT_Design</code>, <code>Obs_Design</code>) create an object of class <code>Design</code>. Since <code>Design</code> is S4, I built a validity checker (<code>setValidity</code>) that gets run automatically whenever a new <code>Design</code> object is created, and can be manually run by calling <code>validObject(des)</code>. It checks for things such as non-binary or constant treatment, disagreement on row numbers, and invalid types. Most of these errors should never hit, but its protection if we muck around in the internals.</p>
 <p><code>Design</code> objects contain three slots:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>des<span class="sc">@</span>structure</span>
@@ -332,7 +362,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      (Intercept)  Design_Treatment  </span></span>
 <span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          -0.2799            0.3080</span></span></code></pre></div>
-<p>Note that the <code>Design</code> object that <code>DirectAdjusted</code> carries around has the <em>updated</em> cluster IDs, so <code>identical(des, ittestimate@Design</code> will be false.</p>
+<p>Note that the <code>Design</code> object that <code>DirectAdjusted</code> carries around has the <em>updated</em> cluster IDs, so <code>identical(des, ittestimate@Design)</code> will be false.</p>
+</div>
 
 
 

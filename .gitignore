@@ -18,3 +18,4 @@ coverage.html
 lib/*
 /Meta/
 /Doc/*.R*
+/doc/
