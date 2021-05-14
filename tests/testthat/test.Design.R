@@ -103,9 +103,19 @@ test_that("unit of assignment differs from unit of analysis", {
   expect_s4_class(desrct, "Design")
   expect_equal(nrow(desrct@structure), 10)
 
-  expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = simdata),
-               "must be constant")
+  expect_output(expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = simdata),
+                             "must be constant"),
+                "cid1")
 
+  data(mtcars)
+  mtcars$prop <- rep(1:8, 4)
+
+  expect_output(expect_error(RCT_Design(vs ~ cluster(prop), data = mtcars),
+                             "must be constant"),
+                "prop")
+  expect_output(expect_error(RCT_Design(vs ~ cluster(prop), data = mtcars),
+                             "must be constant"),
+                "...")
 
 })
 
