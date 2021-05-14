@@ -79,3 +79,13 @@ test_that("Ops", {
 
 
 })
+
+test_that("show WeightedDesign", {
+
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  wdes <- ett(des, data = simdata)
+
+  expect_silent(invisible(capture.output(expect_identical(wdes, show(wdes)))))
+})

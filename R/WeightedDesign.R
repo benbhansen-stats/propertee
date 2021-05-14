@@ -65,6 +65,17 @@ joinDesignWeights <- function(weights, design, target, data = NULL) {
   WeightedDesign(weights, Design = design, target = target)
 }
 
+
+##' @title Show a WeightedDesign
+##' @param object WeightedDesignDesign object
+##' @return an invisible copy of `object`
+##' @export
+setMethod("show", "WeightedDesign", function(object) {
+  print(object@.Data)
+  invisible(object)
+})
+
+
 ##' WeightedDesigns do not support addition or subtraction, but do support all
 ##' other reasonable operations.
 ##'
