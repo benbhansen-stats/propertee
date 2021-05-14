@@ -64,3 +64,69 @@ joinDesignWeights <- function(weights, design, target, data = NULL) {
 
   WeightedDesign(weights, Design = design, target = target)
 }
+
+##' WeightedDesigns do not support addition or subtraction, but do support all
+##' other reasonable operations.
+##'
+##' @title WeightedDesign Ops
+##' @param e1 WeightedDesign or numeric
+##' @param e2 numeric or WeightedDesign
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),
+          function(e1, e2) addsubtracterror() )
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("+", signature(e1 = "numeric", e2 = "WeightedDesign"),
+          function(e1, e2) addsubtracterror() )
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("-", signature(e1 = "WeightedDesign", e2 = "numeric"),
+          function(e1, e2) addsubtracterror() )
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("-", signature(e1 = "numeric", e2 = "WeightedDesign"),
+          function(e1, e2) addsubtracterror() )
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("*", signature(e1 = "WeightedDesign", e2 = "numeric"),
+          function(e1, e2) {
+            e1@.Data <- e1@.Data*e2
+            validObject(e1)
+            e1
+          })
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("*", signature(e1 = "numeric", e2 = "WeightedDesign"),
+          function(e1, e2) {
+            e2@.Data <- e1*e2@.Data
+            validObject(e2)
+            e2
+          })
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("/", signature(e1 = "WeightedDesign", e2 = "numeric"),
+          function(e1, e2) {
+            e1@.Data <- e1@.Data/e2
+            validObject(e1)
+            e1
+          })
+
+##' @rdname WeightedDesignOps
+##' @export
+setMethod("/", signature(e1 = "numeric", e2 = "WeightedDesign"),
+          function(e1, e2) {
+            e2@.Data <- e1/e2@.Data
+            validObject(e2)
+            e2
+          })
+
+addsubtracterror <- function() {
+  stop("Cannot perform addition or subtraction on WeightedDesigns")
+}

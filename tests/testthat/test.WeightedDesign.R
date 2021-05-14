@@ -51,3 +51,31 @@ test_that("ate and ett in lm call", {
   expect_equal(mod$weights, ett(des, simdata)@.Data)
 
 })
+
+test_that("Ops", {
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  wdes <- ett(des, data = simdata)
+
+  expect_s4_class(wdes * 2, "WeightedDesign")
+  expect_s4_class(2 * wdes, "WeightedDesign")
+  expect_identical(wdes * 3, 3 * wdes)
+  expect_equal((wdes * 3)@.Data, wdes@.Data * 3)
+  expect_error(wdes * -1, "non-negative")
+
+  expect_s4_class(wdes / 2, "WeightedDesign")
+  expect_s4_class(2 / wdes, "WeightedDesign")
+  expect_equal((wdes / 3)@.Data, wdes@.Data / 3)
+
+  expect_error(1 + wdes)
+  expect_error(wdes + 1)
+
+  expect_error(1 - wdes)
+  expect_error(wdes - 1)
+
+  expect_s4_class(wdes ^ 3, "WeightedDesign")
+  expect_equal((wdes ^ 3)@.Data, wdes@.Data ^ 3)
+
+
+})
