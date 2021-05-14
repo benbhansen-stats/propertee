@@ -370,6 +370,10 @@ test_that("Accessing and replacing elements", {
   expect_error(forcings(des) <- rnorm(1:10),
                "only used")
 
-
+  # duplicate variable names
+  expect_error(RCT_Design(z ~ cluster(cid1, cid2) + block(cid1), data = simdata),
+               "more than once")
+  expect_error(RCT_Design(z ~ cluster(cid1, cid1, cid2), data = simdata),
+               "more than once")
 
 })

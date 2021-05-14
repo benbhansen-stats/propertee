@@ -3,7 +3,7 @@ test_that("ate and ett with data argument", {
   # n_clusters = n
   data(mtcars)
   mtcars <- mtcars[-c(5, 11),]
-  des <- RD_Design(am ~ cluster(qsec) + forcing(am), data = mtcars)
+  des <- RD_Design(am ~ cluster(qsec) + forcing(vs), data = mtcars)
 
   wdes <- ate(des, data = mtcars)
 

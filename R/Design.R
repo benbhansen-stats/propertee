@@ -7,6 +7,9 @@ setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
     return("@structure must have positive dimensions")
   }
+  if (any(duplicated(colnames(object@structure)))) {
+    return("variables cannot be used more than once")
+  }
   tr <- object@structure[object@columnIndex == "t"]
   if (ncol(tr) == 0) {
     return("Missing treatment index")
@@ -49,8 +52,8 @@ New_Design <- function(form, data, type, subset = NULL) {
     cvars <- colnames(m)[clusters][1]
     cvars <- sub("^cluster\\(", "", cvars)
     cvars <- sub("\\)[\\.0-9]*$", "", cvars)
-    cvars <- gsub(" ", "", cvars)
-    colnames(m)[clusters] <- strsplit(cvars, ",")[[1]]
+    cvars <- strsplit(gsub(" ", "", cvars), ",")[[1]]
+    colnames(m)[clusters] <- cvars
   }
 
   # Handle blocks
@@ -60,8 +63,8 @@ New_Design <- function(form, data, type, subset = NULL) {
     bvars <- colnames(m)[blocks][1]
     bvars <- sub("^block\\(", "", bvars)
     bvars <- sub("\\)[\\.0-9]*$", "", bvars)
-    bvars <- gsub(" ", "", bvars)
-    colnames(m)[blocks] <- strsplit(bvars, ",")[[1]]
+    bvars <- strsplit(gsub(" ", "", bvars), ",")[[1]]
+    colnames(m)[blocks] <- bvars
   }
 
   # Handle forcing
@@ -71,8 +74,8 @@ New_Design <- function(form, data, type, subset = NULL) {
     fvars <- colnames(m)[forcings][1]
     fvars <- sub("^forcing\\(", "", fvars)
     fvars <- sub("\\)[\\.0-9]*$", "", fvars)
-    fvars <- gsub(" ", "", fvars)
-    colnames(m)[forcings] <- strsplit(fvars, ",")[[1]]
+    fvars <- strsplit(gsub(" ", "", fvars), ",")[[1]]
+    colnames(m)[forcings] <- fvars
   }
 
   m_collapse <- unique(m)
