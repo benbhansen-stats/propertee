@@ -3,6 +3,19 @@ WeightedDesign <- setClass("WeightedDesign",
                            slots = c(Design = "Design",
                                      target = "character"))
 
+setValidity("WeightedDesign", function(object) {
+  if (any(object < 0)) {
+    return("Weights must be non-negative")
+  }
+  if (all(object == 0)) {
+    return("At least one weight must be positive")
+  }
+  if (!object@target %in% c("ate", "ett")) {
+    return(paste("@target must be one of [ate,ett]. unknown @target:", object@target))
+  }
+  TRUE
+})
+
 
 
 ##' @title Generate Direct Adjusted Weights
