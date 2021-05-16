@@ -90,13 +90,14 @@ test_that("manually passing weights", {
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
 
   myweights <- rep(10.1, nrow(simdata))
-  it <- ittestimate(des, simdata, "y", weights = myweights)
-
-  expect_identical(it$weights, myweights)
 
   it <- ittestimate(des, simdata, "y", weights = myweights*ate(des))
 
   expect_true(all(it$weights == myweights*ate(des, data = simdata)))
+
+  expect_error(ittestimate(des, simdata, "y", weights = myweights),
+               "must be")
+
 
   expect_error(ittestimate(des, simdata, "y", weights = 3),
                "same length")

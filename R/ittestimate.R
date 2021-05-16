@@ -35,7 +35,7 @@ ittestimate <- function(design,
   }
 
   if (is(design, "WeightedDesign")) {
-    weights <- weights(design)
+    weights <- design
     design <- design@Design
   }
 

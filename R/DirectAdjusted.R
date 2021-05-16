@@ -8,6 +8,21 @@ setValidity("DirectAdjusted", function(object) {
     return(paste("@target must be one of [ett, ate]. unknown @target:",
                  paste(object@target, collapse = " ")))
   }
+  if (!is(object$model$"(weights)", "WeightedDesign")) {
+    return("weight must be WeightedDesign created by `ate()` or `ett()`")
+  }
+  if (ncol(object$model) < 3) {
+    return("model must contain a binary treatment predictor")
+  }
+  if (!all(object$model[,2] %in% 0:1)) {
+    return("first predictor must be binary treatment indicator")
+  }
+  if (sd(object$model[,2]) == 0) {
+    return("treatment indicator is constant")
+  }
+  if (is.na(object$coef[2])) {
+    return("treatment effect failed to estimate")
+  }
   TRUE
 })
 

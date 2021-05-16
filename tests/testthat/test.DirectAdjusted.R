@@ -3,7 +3,7 @@ test_that("DirectAdjusted object", {
   data(simdata)
   des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des)),
+  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
 
   expect_s4_class(dalm, "DirectAdjusted")
@@ -12,7 +12,7 @@ test_that("DirectAdjusted object", {
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 
-  expect_error(DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des)),
+  expect_error(DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                               Design = des, target = "abc"),
                "must be one of")
 })
@@ -22,7 +22,7 @@ test_that("DirectAdjusted print/show", {
   data(simdata)
   des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des)),
+  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
 
   aslm <- as(dalm, "lm")
@@ -54,13 +54,22 @@ test_that("Conversion from lm to DirectAdjusted", {
                "lm object")
   expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
                "WeightedDesign weights")
+
+  expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
+               "binary treatment")
+
+  expect_error(as.DirectAdjusted(lm(y ~ 1, data = simdata, weights = ate(des))),
+               "binary treatment")
+
+  expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)), data = simdata, weights = ate(des))),
+               "constant")
 })
 
 test_that("vcov, confint, etc", {
   data(simdata)
   des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des)),
+  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
 
   expect_true(is.matrix(vcov(dalm)))
