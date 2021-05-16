@@ -30,7 +30,7 @@ ittestimate <- function(design,
   if (!is.data.frame(data)) {
     stop("data must be data.frame")
   }
-  if (!is.character("outcome")) {
+  if (!is.character(outcome)) {
     stop("outcome must be quoted name of outcome variable in `data`")
   }
 

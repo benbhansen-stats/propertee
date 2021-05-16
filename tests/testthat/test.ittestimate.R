@@ -21,6 +21,13 @@ test_that("ittestimate", {
                "must be a column")
   expect_error(ittestimate(des, simdata, "y", "abc"),
                "invalid target")
+
+  expect_error(ittestimate(1, simdata, "abc"),
+               "must be Design")
+  expect_error(ittestimate(des, 1, "abc"),
+               "must be data")
+  expect_error(ittestimate(des, simdata, 1),
+               "must be quoted")
 })
 
 test_that("clusterIds in ittestimate", {
