@@ -24,6 +24,16 @@ ittestimate <- function(design,
                         ...,
                         weights = NULL) {
 
+  if (!class(design) %in% c("Design", "WeightedDesign")) {
+    stop("design must be Design or WeightedDesign")
+  }
+  if (!is.data.frame(data)) {
+    stop("data must be data.frame")
+  }
+  if (!is.character("outcome")) {
+    stop("outcome must be quoted name of outcome variable in `data`")
+  }
+
   if (is(design, "WeightedDesign")) {
     weights <- weights(design)
     design <- design@Design
