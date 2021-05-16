@@ -217,3 +217,15 @@ setMethod("/", signature(e1 = "numeric", e2 = "WeightedDesign"),
 addsubtracterror <- function() {
   stop("Cannot perform addition or subtraction on WeightedDesigns")
 }
+
+
+setGeneric("weights")
+
+##' @title Extract Weights from WeightedDesign
+##' @param object WeightedDesign object
+##' @param ... Ignored
+##' @return Weights
+##' @export
+setMethod("weights", "WeightedDesign", function(object, ...) {
+  as.numeric(object)
+})

@@ -82,7 +82,7 @@ test_that("manually passing weights", {
   data(simdata)
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
 
-  myweights <- rep(10, nrow(simdata))
+  myweights <- rep(10.1, nrow(simdata))
   it <- ittestimate(des, simdata, "y", weights = myweights)
 
   expect_identical(it$weights, myweights)
@@ -97,4 +97,20 @@ test_that("manually passing weights", {
   expect_error(ittestimate(des, simdata, "y", weights = rep("a", nrow(simdata))),
                "numeric")
 
+})
+
+
+test_that("WeightedDesign argument instead of Design", {
+
+  data(simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+
+  wdes <- ate(des, simdata)
+
+  withdes <- ittestimate(des,  simdata, "y")
+  withwdes <- ittestimate(wdes, simdata, "y")
+
+  expect_equal(withdes$coef, withwdes$coef)
+  expect_identical(withdes@Design, withwdes@Design)
+  expect_equal(weights(withdes), weights(withwdes))
 })

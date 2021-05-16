@@ -14,7 +14,7 @@
 ##' @param ... Additional arguments to the model.
 ##' @return Estimated treatment effect
 ##' @export
-##' @importFrom stats lm predict
+##' @importFrom stats lm predict weights
 ittestimate <- function(design,
                         data,
                         outcome,
@@ -23,6 +23,12 @@ ittestimate <- function(design,
                         clusterIds = NULL,
                         ...,
                         weights = NULL) {
+
+  if (is(design, "WeightedDesign")) {
+    weights <- weights(design)
+    design <- design@Design
+  }
+
   if (!outcome %in% colnames(data)) {
     stop("outcome must be a column in data")
   }

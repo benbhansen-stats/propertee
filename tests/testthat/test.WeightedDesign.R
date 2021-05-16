@@ -119,3 +119,14 @@ test_that("show WeightedDesign", {
 
   expect_silent(invisible(capture.output(expect_identical(wdes, show(wdes)))))
 })
+
+test_that("weight function", {
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  wdes <- ett(des, data = simdata)
+
+  expect_s4_class(wdes, "WeightedDesign")
+  expect_false(is(weights(wdes), "WeightedDesign"))
+
+  })

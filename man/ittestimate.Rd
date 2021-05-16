@@ -11,7 +11,8 @@ ittestimate(
   target = "ate",
   covAdjModel = NULL,
   clusterIds = NULL,
-  ...
+  ...,
+  weights = NULL
 )
 }
 \arguments{
@@ -30,6 +31,11 @@ ittestimate(
 \code{design} to cluster variables in \code{data}}
 
 \item{...}{Additional arguments to the model.}
+
+\item{weights}{optional; manually include weights. If included, weights will
+\strong{not} be automatically generated. Instead, the \code{weights} argument should
+include the product of any externally created weights and the result of
+\code{ate()} or \code{ett()}. For example, \code{weights = myweights*ate(des)}.}
 }
 \value{
 Estimated treatment effect
