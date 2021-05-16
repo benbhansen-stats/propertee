@@ -106,7 +106,6 @@ update_clusterIds <- function(design, data, clusterIds) {
 # Internal functoin to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
 get_data_from_model <- function() {
-#  browser()
   data <- NULL
   # loop through previous frames until we find data. If we find data, break out of loop
   #
