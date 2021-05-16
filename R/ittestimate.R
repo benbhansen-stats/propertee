@@ -7,6 +7,10 @@
 ##' @param covAdjModel optional; covariable adjustment model
 ##' @param clusterIds optional; list connecting names of cluster variables in
 ##'   `design` to cluster variables in `data`
+##' @param weights optional; manually include weights. If included, weights will
+##'   **not** be automatically generated. Instead, the `weights` argument should
+##'   include the product of any externally created weights and the result of
+##'   `ate()` or `ett()`. For example, `weights = myweights*ate(des)`.
 ##' @param ... Additional arguments to the model.
 ##' @return Estimated treatment effect
 ##' @export
@@ -17,7 +21,8 @@ ittestimate <- function(design,
                         target = "ate",
                         covAdjModel = NULL,
                         clusterIds = NULL,
-                        ...) {
+                        ...,
+                        weights = NULL) {
   if (!outcome %in% colnames(data)) {
     stop("outcome must be a column in data")
   }
@@ -30,12 +35,20 @@ ittestimate <- function(design,
     design <- update_clusterIds(design, data, clusterIds)
   }
 
-  wtfn <- switch(target,
-                 "ate" = ate,
-                 "ett" = ett,
-                 stop('invalid target'))
-  weights <- wtfn(design, data)
-
+  if (is.null(weights)) {
+    wtfn <- switch(target,
+                   "ate" = ate,
+                   "ett" = ett,
+                   stop('invalid target'))
+    weights <- wtfn(design, data)
+  } else {
+    if (length(weights) != nrow(data)) {
+      stop("weights must be same length as rows of `data`")
+    }
+    if (!is.numeric(weights)) {
+      stop("weights must be numeric")
+    }
+  }
 
 
   # Expand treatment status
