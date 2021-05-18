@@ -14,11 +14,6 @@ test_that("Design creation", {
 })
 
 test_that("Design validity", {
-  expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
-                   columnIndex = "t",
-                   type = "RCT"),
-               "number of columns")
 
   expect_error(new("Design",
                    structure = data.frame(),
@@ -27,10 +22,28 @@ test_that("Design validity", {
                "positive dimensions")
 
   expect_error(new("Design",
+                   structure = data.frame(a = c(1, 0), a = c(1, 0)),
+                   columnIndex = c("t", "t"),
+                   type = "RCT"),
+               "one treatment")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = c(1, 0), a = c(1, 0)),
+                   columnIndex = c("c", "c"),
+                   type = "RCT"),
+               "Missing treatment")
+
+  expect_error(new("Design",
                    structure = data.frame(a = c(1, 0), b = c(2, 4)),
                    columnIndex = c("t", "f"),
                    type = "abc"),
                "unknown @type")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = c(1, 2), b = c(1, 0), c = c(2, 0)),
+                   columnIndex = c("c", "t"),
+                   type = "RCT"),
+               "number of columns")
 
   expect_error(new("Design",
                    structure = data.frame(a = c(1, 0), b = c(2, 4)),
@@ -186,7 +199,7 @@ test_that("Accessing and replacing elements", {
   expect_equal(treatment(des), data.frame(z = rep(c(1,0,1), times = c(2,3,5))))
 
   expect_error(treatment(des) <- data.frame(a = c(1,0,1,0,1)),
-               "disagree")
+               "same number")
 
 
   ##### Clusters
@@ -208,15 +221,28 @@ test_that("Accessing and replacing elements", {
 
   colnames(m) <- c("qwe", "asd")
   clusters(des) <- m
-  expect_identical(varNames(des, "c"), c("qwe", "asd"))
+  expect_identical(varNames(des, "c"), colnames(m))
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == clusters(des)))
-
-  expect_error(clusters(des) <- m[,1],
-               "disagree")
 
   clusters(des)[1,1:2] <- 100
   expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == clusters(des)))
 
+  # less clusters
+  des2 <- des
+  clusters(des2) <- m[,1]
+  expect_identical(varNames(des2, "c"), "qwe")
+  expect_true(all(data.frame(qwe = 1:10) == clusters(des2)))
+
+  des2 <- des
+  clusters(des2) <- 10:1
+  expect_identical(varNames(des2, "c"), "qwe")
+  expect_true(all(data.frame(qwe = 10:1) == clusters(des2)))
+
+  df <- data.frame(abc = 3:12)
+  des2 <- des
+  clusters(des2) <- df
+  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_true(all(df == clusters(des2)))
 
   ########## Clusters, reduce duplicates
 
@@ -228,6 +254,23 @@ test_that("Accessing and replacing elements", {
 
   expect_error(clusters(des) <- data.frame(c1 = 1, c2 = c(1:8, 1)),
                "non-constant")
+
+  # more clusters
+  df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  des2 <- des
+  clusters(des2) <- df
+  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_true(all(df == clusters(des2)))
+
+  m <- matrix(1:40, ncol = 4)
+  des2 <- des
+  expect_error(clusters(des2) <- m,
+               "be named")
+  colnames(m) <- letters[1:4]
+  clusters(des2) <- m
+  expect_identical(varNames(des2, "c"), colnames(m))
+  expect_true(all(m == clusters(des2)))
 
   ##### Blocks
 
@@ -254,20 +297,25 @@ test_that("Accessing and replacing elements", {
 
   df <- data.frame(bid = 1:10)
   blocks(des) <- df
-  expect_equal(blocks(des), data.frame(bid = 1:10))
+  expect_equal(blocks(des), df)
 
   blocks(des)[1:2,1] <- 1
   expect_equal(blocks(des), data.frame(bid = c(1,1,3:10)))
 
+  # More blocks
+  df <- data.frame(bid1 = 1:10,
+                   bid2 = 10:1)
+  blocks(des) <- df
+  expect_equal(blocks(des), df)
+
   expect_error(blocks(des) <- data.frame(a = 1:5),
-               "disagree")
+               "same number")
 
 
   ### multi-dimensional blocks
 
   simdata2 <- simdata
   simdata2$cid1 <- 1:50
-  simdata2$cid2 <- 1
   names(simdata2)[1:2] <- c("cid", "bida")
   des <- RD_Design(z ~ cluster(cid) + block(bid, bida) + forcing(force), data = simdata2)
 
@@ -291,11 +339,34 @@ test_that("Accessing and replacing elements", {
   expect_identical(varNames(des, "b"), c("qwe", "asd"))
   expect_true(all(data.frame(qwe = 1:50, asd = 51:100) == blocks(des)))
 
-  expect_error(blocks(des) <- m[,1],
-               "disagree")
-
   blocks(des)[1,1:2] <- 100
   expect_true(all(data.frame(qwe = c(100, 2:50), asd = c(100, 52:100)) == blocks(des)))
+
+  # less blocks
+  des2 <- des
+  blocks(des2) <- 1:50
+  expect_identical(varNames(des2, "b"), "qwe")
+  expect_true(all(blocks(des2) == 1:50))
+
+  des2 <- des
+  blocks(des2) <- matrix(50:1, ncol = 1)
+  expect_identical(varNames(des2, "b"), "qwe")
+  expect_true(all(blocks(des2) == 50:1))
+
+  des2 <- des
+  df <- data.frame(bbb = 1:50)
+  blocks(des2) <- df
+  expect_identical(varNames(des2, "b"), "bbb")
+  expect_true(all(blocks(des2) == df))
+
+  # more blocks
+
+  des2 <- des
+  df <- data.frame(bbb = 1:50, ccc = 50:1, ddd = 1:50)
+  blocks(des2) <- df
+  expect_identical(varNames(des2, "b"), colnames(df))
+  expect_true(all(blocks(des2) == df))
+
 
   #### Forcing
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
@@ -327,8 +398,14 @@ test_that("Accessing and replacing elements", {
   expect_equal(forcings(des), data.frame(fvar = c(1,1,3:10)))
 
   expect_error(forcings(des) <- data.frame(a = 1:5),
-               "disagree")
+               "same number")
 
+  # more forcing
+
+  df <- data.frame(fvar = 1:10, fvar2 = 10:1)
+  forcings(des) <- df
+  expect_equal(varNames(des, "f"), colnames(df))
+  expect_equal(forcings(des), df)
 
   ### multi-dimensional forcings
 
@@ -356,11 +433,34 @@ test_that("Accessing and replacing elements", {
   expect_identical(varNames(des, "f"), c("qwe", "asd"))
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == forcings(des)))
 
-  expect_error(forcings(des) <- m[,1],
-               "disagree")
-
   forcings(des)[1,1:2] <- 100
   expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == forcings(des)))
+
+  # less forcings
+  des2 <- des
+  forcings(des2) <- 1:10
+  expect_identical(varNames(des2, "f"), "qwe")
+  expect_true(all(forcings(des2) == 1:10))
+
+  des2 <- des
+  forcings(des2) <- matrix(10:1, ncol = 1)
+  expect_identical(varNames(des2, "f"), "qwe")
+  expect_true(all(forcings(des2) == 10:1))
+
+  des2 <- des
+  df <- data.frame(fff = 1:10)
+  forcings(des2) <- df
+  expect_identical(varNames(des2, "f"), "fff")
+  expect_true(all(forcings(des2) == df))
+
+  # more forcings
+
+  des2 <- des
+  df <- data.frame(fff = 1:10, ggg = 10:1, hhh = 1:10)
+  forcings(des2) <- df
+  expect_identical(varNames(des2, "f"), colnames(df))
+  expect_true(all(forcings(des2) == df))
+
 
   # Forcing for non-RD
 

@@ -14,12 +14,18 @@ setValidity("Design", function(object) {
   if (ncol(tr) == 0) {
     return("Missing treatment index")
   }
+  if (ncol(tr) > 1) {
+    return("Only one treatment variable allowd")
+  }
   tr <- tr[,1]
   if (is.null(tr) || is.na(sd(tr)) || sd(tr) == 0 || any(!(tr %in% 0:1))) {
     return("Invalid treatment; must be binary and non-constant")
   }
   if (ncol(object@structure) != length(object@columnIndex)) {
     return("@columnIndex does not agree with number of columns in @structure")
+  }
+  if (any(colnames(object@structure) != names(object@columnIndex))) {
+    return("name disagree between @structure and @columnIndex")
   }
   if (!all(object@columnIndex %in% c("t", "c", "b", "f"))) {
     wrong <- object@columnIndex[!object@columnIndex %in% c("t", "c", "b", "f")]
@@ -245,8 +251,7 @@ setMethod("clusters<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "c")
 
-  x@structure[x@columnIndex == "c"] <- value
-  names(x@structure)[x@columnIndex == "c"] <- colnames(value)
+  x <- .updateStructure(x, value, "c")
 
   dupclust <- duplicated(clusters(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
@@ -284,11 +289,10 @@ setGeneric("blocks<-", function(x, value) standardGeneric("blocks<-"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("blocks<-", "Design", function(x, value) {
-
   value <- .convert_to_data.frame(value, x, "b")
 
-  x@structure[x@columnIndex == "b"] <- value
-  names(x@structure)[x@columnIndex == "b"] <- colnames(value)
+  x <- .updateStructure(x, value, "b")
+
   validObject(x)
   x
 })
@@ -321,8 +325,8 @@ setMethod("forcings<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "f")
 
-  x@structure[x@columnIndex == "f"] <- value
-  names(x@structure)[x@columnIndex == "f"] <- colnames(value)
+  x <- .updateStructure(x, value, "f")
+
   validObject(x)
   x
 })
@@ -341,16 +345,34 @@ setMethod("forcings<-", "Design", function(x, value) {
       nullName <- FALSE
     }
     value <- as.data.frame(value)
-    if (any(dim(design@structure[design@columnIndex == type]) != dim(value))) {
-      stop("dimensions of current entires and replacement disagree")
+    if (nrow(design@structure) != nrow(value)) {
+      stop("replacement entries do not have same number of rows as current")
     }
-
     if (nullName) {
-      colnames(value) <- varNames(design, type)
+      oldNames <- varNames(design, type)
+      if (length(oldNames) > ncol(value)) {
+        oldNames <- oldNames[seq_len(ncol(value))]
+      } else if (length(oldNames) < ncol(value)) {
+        stop("additional variables must be named")
+      }
+      colnames(value) <- oldNames
     }
   }
-  if (any(dim(design@structure[design@columnIndex == type]) != dim(value))) {
-    stop("dimensions of current entires and replacement disagree")
+  if (nrow(design@structure) != nrow(value)) {
+    stop("replacement entries do not have same number of rows as current")
   }
   value
 }
+
+# Internal helper function
+# Replaces `type` columns in `design` with `new`. Assumes
+# `.convert_to_data.frame` has already been called on `new`
+.updateStructure <- function(design, new, type) {
+  design@structure <-
+    cbind.data.frame(design@structure[design@columnIndex != type], new)
+
+  design@columnIndex <- c(design@columnIndex[design@columnIndex != type],
+                          rep(type, ncol(new)))
+  names(design@columnIndex) <- colnames(design@structure)
+  return(design)
+  }
