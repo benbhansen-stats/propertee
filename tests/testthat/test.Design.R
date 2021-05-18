@@ -198,6 +198,9 @@ test_that("Accessing and replacing elements", {
   treatment(des)[1:2,1] <- 1
   expect_equal(treatment(des), data.frame(z = rep(c(1,0,1), times = c(2,3,5))))
 
+  expect_error(treatment(des) <- 1:5,
+               "same number")
+
   expect_error(treatment(des) <- data.frame(a = c(1,0,1,0,1)),
                "same number")
 
@@ -309,6 +312,9 @@ test_that("Accessing and replacing elements", {
   expect_equal(blocks(des), df)
 
   expect_error(blocks(des) <- data.frame(a = 1:5),
+               "same number")
+
+  expect_error(blocks(des) <- 1:5,
                "same number")
 
 
