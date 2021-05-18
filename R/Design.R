@@ -291,10 +291,7 @@ setGeneric("blocks<-", function(x, value) standardGeneric("blocks<-"))
 setMethod("blocks<-", "Design", function(x, value) {
   value <- .convert_to_data.frame(value, x, "b")
 
-  x <- .updateStructure(x, value, "b")
-
-  validObject(x)
-  x
+  .updateStructure(x, value, "b")
 })
 
 ############### Forcing
@@ -325,10 +322,7 @@ setMethod("forcings<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "f")
 
-  x <- .updateStructure(x, value, "f")
-
-  validObject(x)
-  x
+  .updateStructure(x, value, "f")
 })
 
 
@@ -374,5 +368,6 @@ setMethod("forcings<-", "Design", function(x, value) {
   design@columnIndex <- c(design@columnIndex[design@columnIndex != type],
                           rep(type, ncol(new)))
   names(design@columnIndex) <- colnames(design@structure)
+  validObject(design)
   return(design)
   }
