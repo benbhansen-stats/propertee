@@ -1,0 +1,176 @@
+---
+title: "Covariance Adjustment for Randomized Trials"
+author: "Mark Fredrickson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(tidyverse)
+```
+
+```{r}
+library(flexida)
+```
+
+## Data and Design
+
+The data come from the state of Tennessee's Student-Teacher Achievement Ratio (STAR) experiment. Students were randomly assigned to three possible classroom conditions: small (13 to 17 students per teacher), regular class (22 to 25 students per teacher), and regular-with-aide class (22 to 25 students with a full-time teacher's aide). The `AER` package for R provides the data set, also available elsewhere on the internet.
+
+```{r, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
+library(AER)
+data(STAR)
+```
+
+Student compliance was not constant over years:
+```{r}
+with(STAR, table(stark, star1), useNA = "always")
+with(STAR, table(star2, star3), useNA = "always")
+```
+Taking that kindergarten treatment as the intended treatment, we proceed with an intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3. Additionally, we collapse the `regular` and `regular+aide` categories into a single category to compare the effect of small classrooms against regular classrooms, including those with teacher's aides. 
+```{r}
+STAR$treatment <- STAR$stark == "small"
+STAR$treatment[is.na(STAR$treatment)] <- FALSE
+table(STAR$treatment)
+```
+
+To illustrate the workflow of a researcher in the midst of a trial, we split the data into two data sets, one representing student information that might have been known prior or during assignment and a second representing outcome information only available after the intervention had been administered.
+
+```{r}
+STAR$studentid <- as.character(1:nrow(STAR))
+STAR_pre <- STAR[, c("studentid", "treatment",
+                     "gender", "ethnicity", "birth", "lunchk",  # individual demographics
+                     "schoolk", "degreek", "ladderk", "experiencek", "tethnicityk", # school and teacher demographics
+                     "systemk", "schoolidk" # school ID information
+                     )]
+
+STAR_post <- rbind(
+  data.frame(studentid = STAR$studentid, year = "k", read = STAR$readk, math = STAR$mathk, strings.as.factors = FALSE),
+  data.frame(studentid = STAR$studentid, year = "1", read = STAR$read1, math = STAR$math1, strings.as.factors = FALSE),
+  data.frame(studentid = STAR$studentid, year = "2", read = STAR$read2, math = STAR$math2, strings.as.factors = FALSE),
+  data.frame(studentid = STAR$studentid, year = "3", read = STAR$read3, math = STAR$math3, strings.as.factors = FALSE))
+
+STAR_pre_post <- inner_join(STAR_pre, STAR_post, by = "studentid")
+```
+
+While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level. With several post treatment measurements, however, clustering at the student level will make Consequently, we do not require "clusters" is detailing the design of the randomized controlled trial.
+
+```{r}
+# TODO: update RCT_Design to take logical treatments/import the toZ function
+STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid), data = STAR_pre)
+STAR_ate    <- ate(STAR_design, STAR_post, clusterIds = list("studentid" = "studentid"))
+STAR_ett    <- ett(STAR_design, STAR_post, clusterIds = list("studentid" = "studentid"))
+```
+We are interested in the treatment effects for the the different ethnicities composing the study population.
+
+```{r}
+ggplot(STAR_pre_post, aes(x = read, group = treatment)) + geom_boxplot() + facet_wrap(~ ethnicity)
+```
+
+## Covariance Model
+
+```{r}
+
+rhs <- ~ gender + ethnicity + birth + lunchk + 
+  ladderk + experiencek + tethnicityk + year
+
+covariance_y0_read <- lm(update(rhs, read ~ .), data = STAR_pre_post, subset = !treatment)
+covariance_y0_math <- lm(update(rhs, math ~ .), data = STAR_pre_post, subset = !treatment)
+
+## of !! is to turn numeric into logical
+covariance_y1_read <- lm(update(rhs, read ~ .), data = STAR_pre_post, subset = !!treatment)
+covariance_y1_math <- lm(update(rhs, math ~ .), data = STAR_pre_post, subset = !!treatment)
+```
+
+## Outcome Analysis
+
+(Note: I originally intended to add student level fixed effects for the multiple outcomes, but those models took a very long time to fit -- no surprise -- so I dropped that approach and focused an K outcomes only.)
+
+We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
+
+```{r} 
+STAR_pre_post_k <- filter(STAR_pre_post, year == "k") 
+  
+pred <- function(mod) {
+  predict(mod, newdata = STAR_pre_post_k, type = "response")
+}
+
+STAR_pre_post_k <- 
+    mutate(STAR_pre_post_k,
+         read_y0_pred = pred(covariance_y0_read),
+         read_y1_pred = pred(covariance_y1_read),
+         math_y0_pred = pred(covariance_y0_math),
+         math_y1_pred = pred(covariance_y1_math),
+         read_y0_hat  = treatment * read_y0_pred + (1 - treatment) * read,
+         read_y1_hat  = treatment * read + (1 - treatment) * read_y1_pred,
+         math_y0_hat  = treatment * math_y0_pred + (1 - treatment) * math,
+         math_y1_hat  = treatment * math + (1 - treatment) * math_y1_pred,
+         read_tau_hat = read_y1_hat - read_y0_hat,
+         math_tau_hat = read_y1_hat - read_y0_hat)
+```
+
+### Effect of Treatment on the Treated
+
+#### Reading Scores
+
+For each of the treatment effects, we compute the point estimates using both the `lm` function and direct calculation.
+```{r}
+ett_read_lm <- lm(read ~ treatment,
+                  data = STAR_pre_post_k,
+                   offset = read_y0_pred)
+coef(ett_read_lm)[2]
+
+(ett_read_manual <- filter(STAR_pre_post_k, treatment) %>% 
+    summarize(mean(read_tau_hat, na.rm = TRUE)))
+
+ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
+                               data = STAR_pre_post_k,
+                               offset = read_y0_pred)
+
+tmp <- predict(ett_read_ethnicity_lm, newdata = data.frame(treatment = TRUE, 
+                                                    ethnicity = levels(STAR_pre_post_k$ethnicity),
+                                                    read_y0_pred = 0))
+data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
+
+(ett_read_afam_manual <- filter(STAR_pre_post_k, treatment) %>% 
+    group_by(ethnicity) %>%
+    summarize(mean(read_tau_hat, na.rm = TRUE)))
+```
+
+#### Math Scores
+
+Now that we have established the equivalency of direct calculations and the `lm` calculations, we use just the `lm` formulation.
+
+```{r}
+ett_math_lm <- lm(math ~ treatment,
+                  data = STAR_pre_post_k,
+                  offset = math_y0_pred)
+coef(ett_math_lm)[2]
+
+ett_math_ethnicity_lm <- lm(math ~ treatment * ethnicity,
+                               data = STAR_pre_post_k,
+                               offset = math_y0_pred)
+
+tmp <- predict(ett_math_ethnicity_lm, newdata = data.frame(treatment = TRUE, 
+                                                    ethnicity = levels(STAR_pre_post_k$ethnicity),
+                                                    math_y0_pred = 0))
+data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
+```
+
+### Average Treatment Effects
+
+#### Reading Scores
+
+```{r}
+# benchmark
+summarize(STAR_pre_post_k, mean(read_tau_hat, na.rm = TRUE))
+```
+
