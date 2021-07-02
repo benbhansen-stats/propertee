@@ -92,6 +92,34 @@ covariance_y1_math <- lm(update(rhs, math ~ .), data = STAR_pre_post, subset = !
 
 ## Outcome Analysis
 
+Let $y_1$ and $y_0$ be the potential outcomes, let $Z$ be a binary treatment indicator, and posit that the Stable Unit Treatment Value assumption holds such that $Y = Z y_1 - (1 - Z) y_0$. For a finite population of $n$ units, define the *average treament effect* as
+$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0}$$
+Suppose we have models of one or both of the potential outcomes themselves, $y_{i1} = f(x_i; \beta_1)$ and $y_{i0} = g(x_i ; \beta_0)$. After fitting parameters $\hat \beta_1$ and $\hat \beta_0$, let $\hat y_{i1} = f(x_i ; \hat \beta_1)$and $\hat y_{i0} = g(x_i ; \hat \beta_0)$. For each model, we can add and subtract the estimated potential outcomes without changing the average treatment effect:
+
+$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0} + \hat y_{i1} - \hat y_{i1} + \hat y_{i0} - \hat y_{i0} = \frac{1}{n} \sum_{i=1}^n (y_{i1} - \hat y_{i1} - \hat y_{i0})  - \frac{1}{n} \sum_{i=1}^n (y_{i0} - \hat y_{i1} - \hat y_{i0})$$
+
+To estimate $\Delta$ we introduce a difference of Hajek estimators,
+
+\[
+\hat \Delta(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i1} - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} - 
+\frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i1} - \hat y_{i0})}{\sum_{i=1}^n w_i (1 - Z_i)},
+\]
+where $w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)$ in the most general case, but can also include case weight information in the case of super population models and subgroup indicators for subgroup specific ATEs.
+
+Additionally, for any binary treatment vector $Z$, we can decompose the average treatment effect as the effect on the treated group (i.e., $Z = 1$) and the effect on the control group (i.e., $Z = 0$):
+\[
+\begin{aligned}
+\Delta &= \frac{1}{n} \sum_{i=1}^n Z_i\left[(y_{i1} - \hat y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i1} - \hat y_{i0})\right] + \\
+ & \quad  \frac{1}{n} \sum_{i=1}^n (1 - Z_i) \left[(y_{i1} - \hat y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i1} - \hat y_{i0})\right]  \\
+ &= \frac{n_1}{n} \delta(Z) + \frac{n_0}{n} \delta(1 - Z),
+\end{aligned}
+\]
+where $n_1 = \sum_{i=1}^n Z_i$ and $n_0 = \sum{i=1}^n 1 - Z_i$. To estimate $\delta(Z)$, we must estimate $y_{i0}$ for the treated group, typically by substituting $\hat y_{i0}$. Consequently, the estimator reduces so
+$$\hat \delta(Z, w) = \frac{\sum_{i=1}^n w_i Z_i\left[(Y - \hat y_{i1} - \hat y_{i0}) - (\hat y_{i0} - \hat y_{i1} - \hat y_{i0})\right]}{\sum_{i=1}^n w_i Z_i} = \frac{\sum_{i=1}^n w_i Z_i(Y - \hat y_{i0}) }{\sum_{i=1}^n w_i Z_i}$$
+Likewise for $\hat \delta(1 - Z)$.
+
+
+
 (Note: I originally intended to add student level fixed effects for the multiple outcomes, but those models took a very long time to fit -- no surprise -- so I dropped that approach and focused an K outcomes only.)
 
 We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
@@ -105,16 +133,10 @@ pred <- function(mod) {
 
 STAR_pre_post_k <- 
     mutate(STAR_pre_post_k,
-         read_y0_pred = pred(covariance_y0_read),
-         read_y1_pred = pred(covariance_y1_read),
-         math_y0_pred = pred(covariance_y0_math),
-         math_y1_pred = pred(covariance_y1_math),
-         read_y0_hat  = treatment * read_y0_pred + (1 - treatment) * read,
-         read_y1_hat  = treatment * read + (1 - treatment) * read_y1_pred,
-         math_y0_hat  = treatment * math_y0_pred + (1 - treatment) * math,
-         math_y1_hat  = treatment * math + (1 - treatment) * math_y1_pred,
-         read_tau_hat = read_y1_hat - read_y0_hat,
-         math_tau_hat = read_y1_hat - read_y0_hat)
+         read_y0_hat = pred(covariance_y0_read),
+         read_y1_hat = pred(covariance_y1_read),
+         math_y0_hat = pred(covariance_y0_math),
+         math_y1_hat = pred(covariance_y1_math))
 ```
 
 ### Effect of Treatment on the Treated
@@ -125,45 +147,29 @@ For each of the treatment effects, we compute the point estimates using both the
 ```{r}
 ett_read_lm <- lm(read ~ treatment,
                   data = STAR_pre_post_k,
-                   offset = read_y0_pred)
+                  offset = read_y0_hat)
 coef(ett_read_lm)[2]
 
 (ett_read_manual <- filter(STAR_pre_post_k, treatment) %>% 
-    summarize(mean(read_tau_hat, na.rm = TRUE)))
+    summarize(mean(read - read_y0_hat, na.rm = TRUE)))
 
 ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
                                data = STAR_pre_post_k,
-                               offset = read_y0_pred)
+                               offset = read_y0_hat)
+
+data.frame(eth = levels(STAR_pre_post_k$ethnicity),
+           ett = coef(ett_read_ethnicity_lm)[2] + c(cauc = 0, coef(ett_read_ethnicity_lm)[8:12]))
 
 tmp <- predict(ett_read_ethnicity_lm, newdata = data.frame(treatment = TRUE, 
                                                     ethnicity = levels(STAR_pre_post_k$ethnicity),
-                                                    read_y0_pred = 0))
+                                                    read_y0_hat = 0))
 data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
 
 (ett_read_afam_manual <- filter(STAR_pre_post_k, treatment) %>% 
     group_by(ethnicity) %>%
-    summarize(mean(read_tau_hat, na.rm = TRUE)))
+    summarize(mean(read - read_y0_hat, na.rm = TRUE)))
 ```
-
-#### Math Scores
-
-Now that we have established the equivalency of direct calculations and the `lm` calculations, we use just the `lm` formulation.
-
-```{r}
-ett_math_lm <- lm(math ~ treatment,
-                  data = STAR_pre_post_k,
-                  offset = math_y0_pred)
-coef(ett_math_lm)[2]
-
-ett_math_ethnicity_lm <- lm(math ~ treatment * ethnicity,
-                               data = STAR_pre_post_k,
-                               offset = math_y0_pred)
-
-tmp <- predict(ett_math_ethnicity_lm, newdata = data.frame(treatment = TRUE, 
-                                                    ethnicity = levels(STAR_pre_post_k$ethnicity),
-                                                    math_y0_pred = 0))
-data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
-```
+I am somewhat confused by these results. The benchmark calculations for the subgroup ETTs are very different than the overall ATEs estimated elsewhere, but they do match what we would estimate for the conditional mean of $y_1 \mid x, Z = 1$. Whereas the model coefficients seems very plausible.
 
 ### Average Treatment Effects
 
@@ -171,6 +177,23 @@ data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
 
 ```{r}
 # benchmark
-summarize(STAR_pre_post_k, mean(read_tau_hat, na.rm = TRUE))
-```
+tmp <- group_by(STAR_pre_post_k, treatment) %>%
+  summarize(mean(read - read_y1_hat - read_y0_hat, na.rm = TRUE)) 
+diff(tmp[, 2, drop = TRUE])
 
+ate_read_lm <- lm(read ~ treatment, data = STAR_pre_post_k, offset = read_y1_hat + read_y0_hat)
+coef(ate_read_lm)[2]
+
+group_by(STAR_pre_post_k, treatment, ethnicity) %>%
+  summarize(v = mean(read - read_y1_hat - read_y0_hat, na.rm = TRUE)) %>%
+  pivot_wider(id_cols = ethnicity, values_from = v, names_from = treatment) %>%
+  mutate(ate = `TRUE` - `FALSE`)
+    
+ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity, 
+                            data = STAR_pre_post_k,
+                            offset = read_y1_hat + read_y0_hat)
+
+data.frame(eth = levels(STAR_pre_post_k$ethnicity),
+           ate = coef(ate_read_ethnicity_lm)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]))
+
+```
