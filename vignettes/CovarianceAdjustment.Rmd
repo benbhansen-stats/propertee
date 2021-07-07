@@ -93,34 +93,41 @@ covariance_y1_math <- lm(update(rhs, math ~ .), data = STAR_pre_post, subset = !
 ## Outcome Analysis
 
 Let $y_1$ and $y_0$ be the potential outcomes, let $Z$ be a binary treatment indicator, and posit that the Stable Unit Treatment Value assumption holds such that $Y = Z y_1 - (1 - Z) y_0$. For a finite population of $n$ units, define the *average treament effect* as
-$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0}$$
-Suppose we have models of one or both of the potential outcomes themselves, $y_{i1} = f(x_i; \beta_1)$ and $y_{i0} = g(x_i ; \beta_0)$. After fitting parameters $\hat \beta_1$ and $\hat \beta_0$, let $\hat y_{i1} = f(x_i ; \hat \beta_1)$and $\hat y_{i0} = g(x_i ; \hat \beta_0)$. For each model, we can add and subtract the estimated potential outcomes without changing the average treatment effect:
+$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0}.$$
 
-$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0} + \hat y_{i1} - \hat y_{i1} + \hat y_{i0} - \hat y_{i0} = \frac{1}{n} \sum_{i=1}^n (y_{i1} - \hat y_{i1} - \hat y_{i0})  - \frac{1}{n} \sum_{i=1}^n (y_{i0} - \hat y_{i1} - \hat y_{i0})$$
+Suppose we have a model $y_{i0} = g(x_i ; \beta_0)$. After fitting parameters $\hat \beta_0$, let $\hat y_{i0} = g(x_i ; \hat \beta_0)$. Adding and subtracting the estimated potential outcomes does not changing the average treatment effect:
 
-To estimate $\Delta$ we introduce a difference of Hajek estimators,
-
-\[
-\hat \Delta(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i1} - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} - 
-\frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i1} - \hat y_{i0})}{\sum_{i=1}^n w_i (1 - Z_i)},
-\]
-where $w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)$ in the most general case, but can also include case weight information in the case of super population models and subgroup indicators for subgroup specific ATEs.
+$$\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0} + \hat y_{i0} - \hat y_{i0} = \frac{1}{n} \sum_{i=1}^n (y_{i1} - \hat y_{i0})  - \frac{1}{n} \sum_{i=1}^n (y_{i0} - \hat y_{i0}).$$
 
 Additionally, for any binary treatment vector $Z$, we can decompose the average treatment effect as the effect on the treated group (i.e., $Z = 1$) and the effect on the control group (i.e., $Z = 0$):
 \[
 \begin{aligned}
-\Delta &= \frac{1}{n} \sum_{i=1}^n Z_i\left[(y_{i1} - \hat y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i1} - \hat y_{i0})\right] + \\
- & \quad  \frac{1}{n} \sum_{i=1}^n (1 - Z_i) \left[(y_{i1} - \hat y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i1} - \hat y_{i0})\right]  \\
+\Delta &= \frac{1}{n} \sum_{i=1}^n Z_i\left[(y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i0})\right] + \\
+ & \quad  \frac{1}{n} \sum_{i=1}^n (1 - Z_i) \left[(y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i0})\right]  \\
  &= \frac{n_1}{n} \delta(Z) + \frac{n_0}{n} \delta(1 - Z),
 \end{aligned}
 \]
-where $n_1 = \sum_{i=1}^n Z_i$ and $n_0 = \sum{i=1}^n 1 - Z_i$. To estimate $\delta(Z)$, we must estimate $y_{i0}$ for the treated group, typically by substituting $\hat y_{i0}$. Consequently, the estimator reduces so
-$$\hat \delta(Z, w) = \frac{\sum_{i=1}^n w_i Z_i\left[(Y - \hat y_{i1} - \hat y_{i0}) - (\hat y_{i0} - \hat y_{i1} - \hat y_{i0})\right]}{\sum_{i=1}^n w_i Z_i} = \frac{\sum_{i=1}^n w_i Z_i(Y - \hat y_{i0}) }{\sum_{i=1}^n w_i Z_i}$$
-Likewise for $\hat \delta(1 - Z)$.
+where $n_1 = \sum_{i=1}^n Z_i$ and $n_0 = \sum_{i=1}^n 1 - Z_i$. As $Z$ represents a random vector, taking expectation yields the expected treatment effect for the treated units 
+\[
+\begin{aligned}
+\delta_1 &= E(\delta(Z)) =  \frac{1}{n_1} \sum_{i=1}^n E(Z_i) \left[(y_{i1} - \hat y_{i0}) - (y_{i0} - \hat y_{i0})\right]\\
+&= \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1} E(Z_i)\right] (y_{i1} - \hat y_{i0}) - \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1} E(Z_i)\right] (y_{i10} - \hat y_{i0}) ,
+\end{aligned}
+\]
+and the expected treatment effect for the control units $\delta_0 = E(\delta(1 - Z))$, analogously.
 
 
+To estimate $\Delta$, $\delta_1$, and $\delta_0$,  we introduce a difference of Hajek estimators,
+\[
+d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} - 
+\frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i (1 - Z_i)}.
+\]
 
-(Note: I originally intended to add student level fixed effects for the multiple outcomes, but those models took a very long time to fit -- no surprise -- so I dropped that approach and focused an K outcomes only.)
+- For $\Delta$: $w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)$. In the case of completely randomized designs, $E(Z_i) = n_1/n$, $E(1 - Z_i) = n_0/n$, and the estimator reduces to the well known difference of means estimator.
+- For $\delta_1$: $w_i = Z_i + (1 - Z_i) E(Z_i) / E(1 - Z_i)$. 
+- For $\delta_0$: $w_i = Z_i E(1 - Z_i) / E(Z_i) + (1 - Z_i)$.
+
+The weights may also include case weights or be multiplied by subgroup indicators to estimate subgroup specific effects.
 
 We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
 
