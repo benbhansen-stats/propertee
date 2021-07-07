@@ -185,6 +185,7 @@ For each of the treatment effects, we compute the point estimates using both the
 ## overall treatment effects on the treated
 ett_read_lm <- lm(read ~ treatment + schoolidk, 
                   data = STAR_pre_post_k,
+                  weights = weight_ett,
                   offset = read_y0_hat)
 coef(ett_read_lm)[2]
 
