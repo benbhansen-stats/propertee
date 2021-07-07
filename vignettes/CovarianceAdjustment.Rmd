@@ -42,6 +42,7 @@ STAR$treatment[is.na(STAR$treatment)] <- FALSE
 table(STAR$treatment)
 ```
 
+
 To illustrate the workflow of a researcher in the midst of a trial, we split the data into two data sets, one representing student information that might have been known prior or during assignment and a second representing outcome information only available after the intervention had been administered.
 
 ```{r}
@@ -51,6 +52,16 @@ STAR_pre <- STAR[, c("studentid", "treatment",
                      "schoolk", "degreek", "ladderk", "experiencek", "tethnicityk", # school and teacher demographics
                      "systemk", "schoolidk" # school ID information
                      )]
+```
+
+As students were blocked into schools, and then randomized within school, we establish the design based on those stratifications.
+```{r}
+STAR_school <- group_by(STAR_pre, schoolidk) %>% summarize(school_n = n(), school_n1 = sum(treatment), school_n0 = school_n - school_n1)
+STAR_pre <- left_join(STAR_pre, STAR_school, by = "schoolidk")
+```
+
+Post-treatment outcomes include normalized reading and math scores over several years. Missing values are imputed to the within group (treatment/control) mean
+```{r}
 
 STAR_post <- rbind(
   data.frame(studentid = STAR$studentid, year = "k", read = STAR$readk, math = STAR$mathk, strings.as.factors = FALSE),
@@ -58,10 +69,13 @@ STAR_post <- rbind(
   data.frame(studentid = STAR$studentid, year = "2", read = STAR$read2, math = STAR$math2, strings.as.factors = FALSE),
   data.frame(studentid = STAR$studentid, year = "3", read = STAR$read3, math = STAR$math3, strings.as.factors = FALSE))
 
+## imputation to within group means
 STAR_pre_post <- inner_join(STAR_pre, STAR_post, by = "studentid")
+
 ```
 
-While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level. With several post treatment measurements, however, clustering at the student level will make Consequently, we do not require "clusters" is detailing the design of the randomized controlled trial.
+While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level within schools. 
+
 
 ```{r}
 # TODO: update RCT_Design to take logical treatments/import the toZ function
@@ -129,6 +143,18 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 
 The weights may also include case weights or be multiplied by subgroup indicators to estimate subgroup specific effects.
 
+To demonstrate this function, we implement the estimator directly and also show how it can be estimated using our suite of tools.
+
+```{r}
+dw <- function(w, z, y, y0_hat) {
+  tmp <- data.frame(w, z, y, y0_hat) %>% na.omit
+  with(tmp, 
+    sum(w * z * (y - y0_hat)) / sum(w * z) - 
+      sum(w * (1 - z) * (y - y0_hat)) / sum(w * (1 - z))
+  )
+}
+```
+
 We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
 
 ```{r} 
@@ -143,7 +169,11 @@ STAR_pre_post_k <-
          read_y0_hat = pred(covariance_y0_read),
          read_y1_hat = pred(covariance_y1_read),
          math_y0_hat = pred(covariance_y0_math),
-         math_y1_hat = pred(covariance_y1_math))
+         math_y1_hat = pred(covariance_y1_math),
+         E_Z         = school_n1 / school_n,
+         weight_ate  = treatment / E_Z + (1 - treatment) / (1 - E_Z),
+         weight_ett  = 1 + (1 - treatment) * E_Z / (1 - E_Z),
+         weight_etc  = treatment * (1 - E_Z) / E_Z + (1 - treatment))
 ```
 
 ### Effect of Treatment on the Treated
@@ -152,55 +182,49 @@ STAR_pre_post_k <-
 
 For each of the treatment effects, we compute the point estimates using both the `lm` function and direct calculation.
 ```{r}
-ett_read_lm <- lm(read ~ treatment,
+## overall treatment effects on the treated
+ett_read_lm <- lm(read ~ treatment + schoolidk, 
                   data = STAR_pre_post_k,
+                  weights = weight_ett,
                   offset = read_y0_hat)
 coef(ett_read_lm)[2]
 
-(ett_read_manual <- filter(STAR_pre_post_k, treatment) %>% 
-    summarize(mean(read - read_y0_hat, na.rm = TRUE)))
+with(STAR_pre_post_k, dw(weight_ett, treatment, read, read_y0_hat))
 
-ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
+## ETT within subgroups
+ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity + schoolidk,
                                data = STAR_pre_post_k,
                                offset = read_y0_hat)
 
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ett = coef(ett_read_ethnicity_lm)[2] + c(cauc = 0, coef(ett_read_ethnicity_lm)[8:12]))
 
-tmp <- predict(ett_read_ethnicity_lm, newdata = data.frame(treatment = TRUE, 
-                                                    ethnicity = levels(STAR_pre_post_k$ethnicity),
-                                                    read_y0_hat = 0))
-data.frame(ethnicity = levels(STAR_pre_post_k$ethnicity), ett = tmp)
-
-(ett_read_afam_manual <- filter(STAR_pre_post_k, treatment) %>% 
+STAR_pre_post_k %>% 
     group_by(ethnicity) %>%
-    summarize(mean(read - read_y0_hat, na.rm = TRUE)))
+    summarize(dw(weight_ett, treatment, read, read_y0_hat))
 ```
-I am somewhat confused by these results. The benchmark calculations for the subgroup ETTs are very different than the overall ATEs estimated elsewhere, but they do match what we would estimate for the conditional mean of $y_1 \mid x, Z = 1$. Whereas the model coefficients seems very plausible.
 
 ### Average Treatment Effects
 
 #### Reading Scores
 
 ```{r}
-# benchmark
-tmp <- group_by(STAR_pre_post_k, treatment) %>%
-  summarize(mean(read - read_y1_hat - read_y0_hat, na.rm = TRUE)) 
-diff(tmp[, 2, drop = TRUE])
-
-ate_read_lm <- lm(read ~ treatment, data = STAR_pre_post_k, offset = read_y1_hat + read_y0_hat)
+## overall ATE
+ate_read_lm <- lm(read ~ treatment + schoolidk, 
+                  data = STAR_pre_post_k, 
+                  offset = read_y0_hat)
 coef(ate_read_lm)[2]
 
-group_by(STAR_pre_post_k, treatment, ethnicity) %>%
-  summarize(v = mean(read - read_y1_hat - read_y0_hat, na.rm = TRUE)) %>%
-  pivot_wider(id_cols = ethnicity, values_from = v, names_from = treatment) %>%
-  mutate(ate = `TRUE` - `FALSE`)
+with(STAR_pre_post_k, dw(weight_ate, treatment, read, read_y0_hat))
     
-ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity, 
+ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity + schoolidk, 
                             data = STAR_pre_post_k,
                             offset = read_y1_hat + read_y0_hat)
 
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ate = coef(ate_read_ethnicity_lm)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]))
 
+STAR_pre_post_k %>% 
+    group_by(ethnicity) %>%
+    summarize(dw(weight_ate, treatment, read, read_y0_hat))
 ```
