@@ -103,7 +103,7 @@ update_clusterIds <- function(design, data, clusterIds) {
   return(design)
 }
 
-# Internal functoin to try and retrieve the data from the model when `ate` or
+# Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
 get_data_from_model <- function() {
   data <- NULL
