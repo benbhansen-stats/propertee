@@ -183,7 +183,7 @@ STAR_pre_post_k <-
 For each of the treatment effects, we compute the point estimates using both the `lm` function and direct calculation.
 ```{r}
 ## overall treatment effects on the treated
-ett_read_lm <- lm(read ~ treatment + schoolidk, 
+ett_read_lm <- lm(read ~ treatment, 
                   data = STAR_pre_post_k,
                   weights = weight_ett,
                   offset = read_y0_hat)
@@ -192,8 +192,9 @@ coef(ett_read_lm)[2]
 with(STAR_pre_post_k, dw(weight_ett, treatment, read, read_y0_hat))
 
 ## ETT within subgroups
-ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity + schoolidk,
+ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
                                data = STAR_pre_post_k,
+                               weights = weight_ett,
                                offset = read_y0_hat)
 
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
@@ -216,15 +217,17 @@ ett_read_lm <- lm(read ~ treatment, weights = cov_adj(STAR_ett, covariance_y0_re
 
 ```{r}
 ## overall ATE
-ate_read_lm <- lm(read ~ treatment + schoolidk, 
+ate_read_lm <- lm(read ~ treatment, 
                   data = STAR_pre_post_k, 
+                  weights = weight_ate,
                   offset = read_y0_hat)
 coef(ate_read_lm)[2]
 
 with(STAR_pre_post_k, dw(weight_ate, treatment, read, read_y0_hat))
     
-ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity + schoolidk, 
+ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity, 
                             data = STAR_pre_post_k,
+                            weights = weight_ate,
                             offset = read_y0_hat)
 
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
