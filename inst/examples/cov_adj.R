@@ -5,7 +5,7 @@ STAR$treatment[is.na(STAR$treatment)] <- FALSE
 STAR$studentid <- as.character(1:nrow(STAR))
 
 covariance_y0_read <- lm(readk ~ gender + ethnicity + birth + lunchk +
-                                 ladderk + experiencek + tethnicityk + year,
+                                 ladderk + experiencek + tethnicityk,
                          data = STAR, subset = !treatment)
 
 STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid), data = STAR) 
