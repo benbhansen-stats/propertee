@@ -25,7 +25,7 @@ load_data <- function() {
   STAR_pre <- left_join(STAR_pre, STAR_school, by = "schoolidk") %>%
    mutate(E_Z         = school_n1 / school_n,
           weight_ate  = treatment / E_Z + (1 - treatment) / (1 - E_Z),
-          weight_ett  = 1 + (1 - treatment) * E_Z / (1 - E_Z),
+          weight_ett  = treatment + (1 - treatment) * E_Z / (1 - E_Z),
           weight_etc  = treatment * (1 - E_Z) / E_Z + (1 - treatment))
   
   STAR_post <- rbind(
