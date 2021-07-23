@@ -208,8 +208,8 @@ STAR_pre_post_k %>%
 The following is not currently implemented, but represents expected interface.
 ```{r, eval = FALSE}
 STAR_ett    <- ett(STAR_design)
-## notice the formula does not mention the blocking factor and no need for the offset
-ett_read_lm <- lm(read ~ treatment, weights = cov_adj(STAR_ett, covariance_y0_read))
+## notice the formula does not mention the blocking factor
+ett_read_lm <- lm(read ~ treatment, offset = cov_adj(covariance_y0_read), weights = STAR_ett)
 ```
 
 ### Average Treatment Effects
@@ -243,6 +243,7 @@ STAR_pre_post_k %>%
 The following is not currently implemented, but represents expected interface.
 ```{r, eval = FALSE}
 STAR_ate    <- ate(STAR_design)
-## notice the formula does not mention the blocking factor and no need for the offset
-ate_read_lm <- lm(read ~ treatment, data = filter(STAR_post, year = "k"), weights = cov_adj(STAR_ate, covariance_y0_read))
+## notice the formula does not mention the blocking factor
+ate_read_lm <- lm(read ~ treatment, offset=cov_adj(covariance_y0_read),
+                  data = filter(STAR_post, year = "k"), weights = STAR_ate)
 ```

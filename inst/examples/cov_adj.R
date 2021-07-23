@@ -12,17 +12,20 @@ STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid), data = STAR)
 STAR_ate    <- ate(STAR_design)
 STAR_ett    <- ett(STAR_design)
 
-ett_read <- lm(readk ~ treatment, 
+ett_read <- lm(readk ~ treatment,
+               offset = cov_adj(covariance_y0_read),
                data = STAR,
-               weights = cov_adj(STAR_ett, covariance_y0_read))
+               weights = STAR_ett)
 coef(ett_read)
 
-ate_read <- lm(readk ~ treatment, 
+ate_read <- lm(readk ~ treatment,
+               offset = cov_adj(covariance_y0_read),
                data = STAR,
-               weights = cov_adj(STAR_ate, covariance_y0_read))
+               weights = STAR_ate)
 coef(ate_read)
 
 ate_read_eth <- lm(readk ~ treatment*ethnicity,
+                   offset = cov_adj(covariance_y0_read), 
                    data = STAR,
-                   weights = cov_adj(STAR_ate, covariance_y0_read))
+                   weights = STAR_ate)
 coef(ate_read_eth)

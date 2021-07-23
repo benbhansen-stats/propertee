@@ -133,19 +133,22 @@ test_that("Effect point estimates", {
   STAR_ate    <- ate(STAR_design)
   STAR_ett    <- ett(STAR_design)
   
-  ett_read_flex <- lm(read ~ treatment, 
+  ett_read_flex <- lm(read ~ treatment,
+                      offset = cov_adj(covariance_y0_read),
                       data = STAR_pre_post_k,
-                      weights = cov_adj(STAR_ett, covariance_y0_read))
+                      weights = STAR_ett)
   expect_equal(coef(ate_read_lm)[2], ate_read_dw, ignore_attr = TRUE)
   
-  ## notice the formula does not mention the blocking factor and no need for the offset
-  ate_read_flex <- lm(read ~ treatment, 
+  ## notice the formula does not mention the blocking factor
+  ate_read_flex <- lm(read ~ treatment,
+                      offset = cov_adj(covariance_y0_read),
                       data = STAR_pre_post_k,
-                      weights = cov_adj(STAR_ate, covariance_y0_read))
+                      weights = STAR_ate)
   
   ate_read_eth_flex <- lm(read ~ treatment*ethnicity,
+                          offset = cov_adj(covariance_y0_read),
                           data = STAR_pre_post_k,
-                          weights = cov_adj(STAR_ate, covariance_y0_read))
+                          weights = STAR_ate)
   
   ate_3 <- c(coef(ate_read_eth_flex)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]), NaN)
   expect_equal(ate_3, ate_1, ignore_attr = TRUE)
