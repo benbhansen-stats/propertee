@@ -21,16 +21,6 @@ library(tidyverse)
 library(flexida)
 ```
 
-## Background
-
-### Regression Discontinuity Designs
-
-### Analyzing RDDs with ANCOVA
-
-### The `flexida` Approach to RDDs
-
-### RDD Specification Tests
-
 
 ## Data and Design
 
@@ -42,8 +32,40 @@ At the onset of the Head Start preschool program in 1965, the Office of Economic
 devtools::install_github('kolesarm/RDHonest')
 ```
 
-```{r, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
+```{r, eval=FALSE, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
 library(RDHonest)
 data(headst)
 ```
+
+```{r, include=FALSE}
+download.file("https://github.com/kolesarm/RDHonest/raw/master/data/headst.rda","../data/headst.rda")
+load("../data/headst.rda")
+```
+
+The variable `povrate60` encodes county-level poverty rates, as of 1960, relative to the 300th poorest county (Campbell County, TN).
+`mortHS` records 1973-1983 county-level child mortality rates for causes targeted by Head Start, and `highSchool` records 1990 high school graduation rates for adults ages 18-24, LM's two main outcomes.
+
+```{r rddPlots,fig.width=7}
+headst%>%
+    filter(abs(povrate60)<36)%>% ## LM's biggest bandwidth
+    filter(mortHS<15)%>% ## remove outliers
+    mutate(Z=ifelse(povrate60>=0,"Assistance","No Assistance"))%>% ## the "treatment"--assistance in applying for funding
+    pivot_longer(cols=c(mortHS,highSchool),names_to="Outcome")%>%
+    ggplot(aes(povrate60,value,color=Z))+
+    stat_summary_bin(geom="point",fun="mean",bins=50)+
+    geom_point(alpha=0.05)+
+    facet_wrap(~Outcome,scales="free_y")+
+    geom_smooth()+
+    geom_vline(xintercept=-0.005,linetype="dotted")+
+    theme(legend.title=element_blank(),legend.pos='top')
+```
+## Background
+
+### Regression Discontinuity Designs
+
+### Analyzing RDDs with ANCOVA
+
+### The `flexida` Approach to RDDs
+
+### RDD Specification Tests
 
