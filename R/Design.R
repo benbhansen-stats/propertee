@@ -74,6 +74,19 @@ New_Design <- function(form, data, type, subset = NULL) {
   m <- o[[1]]
   index <- o[[2]]
 
+  if(any(index=='f')&!any(index=='t')){
+      if(sum(index=='f')==2){
+          cpInd <- which(apply(m,2,var)==0&index=='f')
+          if(length(cpInd)){
+              cutpoint <- m[1,cpInd]
+              m[[cpInd]] <- NULL
+              index <- index[-cpInd]
+          } else stop("something is weird with forcing variable--varying cuptoint?")
+      } else cutpoint <- 0
+      m$treat <- ifelse(m[,index=='f']>cutpoint,1,0)
+      index <- c(index,'t')
+  }
+
   m_collapse <- unique(m)
 
   rownames(m_collapse) <- NULL
@@ -117,9 +130,9 @@ RCT_Design <- function(formula, data, subset = NULL) {
 
 ##' Generates an RD Design object with the given specifications.
 ##'
-##' The `formula` must include `cluster()` to identify the units of assignment
+##' The `formula` must include `forcing()` to identify the forcing variable
 ##' (one or more variables), it may optionally contain `strata()` and/or
-##' `forcing()` as well.
+##' `cluster()` as well.
 ##' @title Specify Regression Discontinuity Design
 ##' @param formula defines the design components
 ##' @param data the data set.
@@ -325,6 +338,23 @@ setMethod("forcings<-", "Design", function(x, value) {
   .updateStructure(x, value, "f")
 })
 
+.centerForcing <- function(mf,pos){
+    vars <- colnames(mf)[pos]
+    vars <- strsplit(vars,"[,=()]")
+    cutpoints <- vapply(vars,
+                        function(x)
+                            if(length(x)==2){
+                                0
+                            } else
+                                as.numeric(x[length(x)]),
+                        1.1)
+    vars <- vapply(vars,
+                   function(x) paste0(x[1],'(',x[2],')'),
+                   'a')
+    mf[,pos] <- sweep(mf[,pos],2,cutpoints,'-')
+
+    mf
+}
 
 # Internal helper function
 # Takes in a replacement item and a design,
@@ -371,3 +401,4 @@ setMethod("forcings<-", "Design", function(x, value) {
   validObject(design)
   return(design)
   }
+
