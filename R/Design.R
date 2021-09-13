@@ -74,6 +74,8 @@ New_Design <- function(form, data, type, subset = NULL) {
   m <- o[[1]]
   index <- o[[2]]
 
+  ## this is adam's attempt at putting "cutpoint" into forcing()
+  ## I would like to also put in something about whether Z=I(R>c) or I(R<c) or I(R<=c) or I(R>=c)
   if(any(index=='f')&!any(index=='t')){
       if(sum(index=='f')==2){
           cpInd <- which(apply(m,2,var)==0&index=='f')
