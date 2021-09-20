@@ -19,11 +19,7 @@ block <- cluster
 
 ##' @rdname DesignSpecials
 ##' @export
-forcing <- cluster ## function(x,cutpoint=0){
-##     x <- x-cutpoint
-##     attr(x,"centeredAt") <- cutpoint
-##     x
-## }
+forcing <- cluster
 
 # Perform checks on formula for creation of Design.
 # Checks performed:
