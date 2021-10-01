@@ -1,0 +1,401 @@
+We've promised to provide sandwich-type SEs for estimates of treatment
+effect, with stacking of estimated equations as appropriate to address
+possible use of separate regression fits to estimate covariance
+adjustment terms and then to estimate marginal treatment effects.
+Often ``sandwich standard error'' conjures an expectation of standard
+errors that are model-based in the sense of assuming i.i.d.  data
+\((A_i,  W_{i}, X_i, Y_{0i}, \ldots Y_{Ki})\) and making inference conditional
+on the values of treatment assignments \(A \in
+\{0, \ldots, K\}\), weights \(W\) and covariates \(X\), if
+not the values of potential responses \(\{Y_k: k \leq K\}\).  (To
+simplify discussion we assume $i$ ranges over intact clusters, units
+assigned together to one or another of the treatment conditions; in
+the M-estimation context this assumption is
+non-restrictive. Particularly since we will allow case weights
+which may reflect differences in cluster
+size.)  With the i.i.d assumption, these model-based SEs are valid
+even if the design specification isn't, provided that the outcome
+model is well-specified. The role of the study design is to provide
+analysis weights which, if respected, ensure desired interpretations
+of marginal effect estimators if the \(Y\)-model happens to be
+misspecified.
+
+An alternative would be to offer sandwich standard errors under a design-based
+interpretation, differing from the above principally in terms of
+conditioning on
+
+\[\mathcal{Z} = \sigma(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i\}, \{\sum_{i \in S} A_i : S  \in \mathcal{P}\} )\]
+
+where \(\mathcal{P}\) is a given partition of \{1,\ldots{}, n\} encoding
+a stratification. Of particular interest are standard errors for Hajek
+estimators, i.e.~estimators of form
+\[\hat{\mu}_k[\mathbf{v}] = \frac{\sum_i w_{ki} [\![A_i=k]\!] v_i}{\sum_i w_{ki}  [\![A_i=k]\!]}\]
+and their differences 
+\begin{equation}\label{eq:hajekdiff}
+\hat{\mu}_k[\mathbf{u}] - \hat{\mu}_0[\mathbf{v}].
+\end{equation}
+Note that the case weights $\{w_{ki}:i\leq n, k\leq K\}$ are permitted
+to differ by assigned condition. 
+With $w_{ji} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
+$j=0, \ldots, K$,
+$\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ is the
+natural estimate of the effect of treatment $k$ within the
+experimental or quasiexperimental study sample,
+$n^{-1}\sum_{i=1}^{n}(y_{ki}-y_{k0})$.  This is also known as the
+sample average treatment effect. If the experimental observations are
+samples from a broader super-population, with sample inclusion
+probabilities $\pi_{1}, \ldots, \pi_{n}$, then setting
+$w_{ji} =\pi_{i}^{-1}[\mathbb{P}(A_{i}=j)]^{-1}$ for $j=0, \ldots, K$
+makes $\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ into
+the corresponding natural\footnote{Neither of these estimators is unbiased, except in special
+cases where the conditioning and weighting structures are such that
+$\mathrm{Var}(\sum_i w_{ki} [\![A_i=k]\!] \mid \mathcal{Z}) = \mathrm{Var}(\sum_i
+w_{0i} [\![A_i=0]\!] \mid \mathcal{Z}) = 0$, but the biases are
+in various senses controlled. Under the i.i.d. sampling model that
+stands behind model-based variance estimates, for instance, they are
+consistent; taking the design perspective, BH and MF have preliminary
+findings about how to eliminate or control the biases through further
+conditioning.} estimate of the population average treatment
+effect.
+
+\section*{Design-based SEs for differences of Hajek estimators}
+\subsection*{A one-stratum special case: Neyman's insight}
+
+In one special case a design-based SE for \eqref{eq:hajekdiff} has been available for some time, with an optional interpretation in terms of M-estimation emerging more recently.  Suppose:
+\begin{itemize}
+\item  simple or complete random assignment within a single
+stratum, \(\mathcal{P} = \{\{1,\ldots,n\}\}\); with
+\item constant weights, i.e. there exist $w_0$ and $w_k$ s.t. $w_{ki}= w_k$ and $w_{0i}= w_0$ for each $i$; and
+\item  \(\sum_i [\![A_i = k]\!]\geq 2\) and \(\sum_i [\![A_i = 0]\!] \geq 2\).
+\end{itemize}
+In this case the variance estimate used
+in the 2 sample \(t\) test without pooling of variances validly
+estimates the variance of \eqref{eq:hajekdiff}, in the following sense. If \(v\) is observed
+only when \(A=k\) while \(b\) is observed only when \(A=0\), then
+\(s_{vu} = (n-1)^{-1} \sum_{i=1}^n (v_i - \bar v)(u_i - \bar v)\) is
+not identified; as far as the data are concerned, it could lie anywhere
+between \(\pm s_{v} s_{u}\), where
+\(s_{v}^2 = s_{vv} = (n-1)^{-1} \sum_{i=1}^n (v_i - \bar v)^2\). Assuming
+\(s_{vu} = s_{v}s_{u}\), then the ordinary unpooled variance is unbiased for
+the design-based variance (conditional variance given \(\mathcal{Z}\))
+of \eqref{eq:hajekdiff}. If on the other hand \(s_{uv} \leq s_{v}s_{u}\), then the expected value of this ordinary
+unpooled variance exceeds \eqref{eq:hajekdiff}'s design-based variance
+\citep[][A32--34]{neyman:1990,freedman:purv:pisa:1998}. The
+possibilities \(s_{vu} = s_{v}s_{u}\) and \(s_{vu} \leq s_{v}s_{u}\) being
+exhaustive, by Cauchy-Schwartz, the expected value of the unpooled
+variance can be no less than $\mathrm{Var}(\hat{\mu}_k[\mathbf{u}] -
+\hat{\mu}_0[\mathbf{v}] \mid \mathcal{Z})$; it is valid as a possibly
+conservative estimate in that it cannot be negatively biased.
+
+As shown by \citet{samiiAronow2012HC2equivNeyman}, in
+this case the same variance estimate coincides with the HC2 flavor of
+the Huber-White estimate.  As a result, it's sometimes said that
+ordinary sandwich or cluster-robust variance estimates admit of
+design-based interpretations provided that one uses the HC2
+form. I suspect this works only in special cases, however, perhaps not going far
+beyond the one delimited above. 
+
+\subsection*{Impediments to application of the Neyman insight to
+  experiment designs beyond the 1-stratum special case}
+
+The use of the Neyman insight for design-based SEs
+has several important limitations.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item \label{it:prob-noweights}
+  The unequal variances two-sample \(t\) statistic doesn't in itself accommodate
+  clustering.  In particular, it doesn't allow weights figuring in \eqref{eq:hajekdiff}, 
+$\{w_{0i} :i\}$ or  $\{w_{ki} :i\}$, to vary, as is necessary
+to address clustered treatment assignment by letting $v_{i}$, $u_{i}$,
+$y_{ki}$ and so on
+represent means over all observations clustered within unit of
+assignment $i$. 
+\item \label{it:moderators-multiple-outcomes}  It remains to be
+  articulated how the Neyman insight can be made to furnish design-based SEs
+  for effect estimates specific to a subgroup or domain. (E.g., ``What was
+  the benefit for girls?'') How such
+  effect estimates covary with main effect
+  estimates and with one another also remains to be articulated, as
+  does the covariance between main effects on distinct outcomes. Both
+  of these are important for multiplicity adjustments.   
+\item \label{it:prob-multreps}
+  The unequal variances two-sample \(t\) statistic requires that the two
+  conditions being contrasted each have multiple representatives within
+  each stratum. When this doesn't hold, as in matched designs, it's
+  unclear what it can be replaced with.
+\item \label{it:prob-covars}
+  Samii and Aronow's result does not allow for covariates other than the
+  treatment assignment variable. In a two-group setting with covariates
+  as well as a treatment indicator, does HC2 continue to be valid as a
+  design-based SE? Under what conditions? I suspect the answer is either
+  no, or yes but only under restrictive conditions.\footnote{Samii and
+    Aronow didn't discuss this and I couldn't immediately find it in
+    later papers citing theirs. There is a Abadie et al 2021 paper that
+    may indirectly address this, but I suspect that if they'd found a
+    standard model-based Huber-White estimator to have a valid
+    design-based interpretation, they would have said just that.}
+  If this is correct,  there's still a need for a general-purpose SE
+  estimator for effect estimates calculated with
+covariate adjustments; HC2 does not fill this role.  
+\item \label{it:prob-differentstatuses}
+  In the general setting of chained estimation ---  one or more
+  preliminary regressions are fit, to the experimental sample, to a
+  separate and disjoint sample or to some combination of the two,
+  followed by a difference-of-Hajek estimates step involving residuals
+  of these preliminary regressions' residuals --- off-the-shelf 
+  sandwich-type variance estimates such as HC2 can't admit a design-based interpretation as well as
+  a  model-based one. The calculation would have to recognize differing statuses of observations within and outside of the experimental or quasiexperimental sample, something the conventional estimates don't do. 
+\item \label{it:prob-nonexperimentals-as-nonrandom}
+  When the covariance adjustment model has been fit to an extraneous or
+  broader sample, the natural extension of \(\mathcal{Z}\) regards
+  observations external to the experimental sample as nonrandom, meaning
+  that they shouldn't contribute to sampling variability.\footnote{Just as in
+  RDD analysis, data points $(X_{i}, A_{i}, Y_{0i}, \ldots, Y_{Ki})$
+  falling outside of the analysis window are
+  conditioned upon and then regarded as nonrandom \citep[][display A1 on p.22]{salesHansen2019lrd}.} This should decrease standard
+  errors relative to model-based SEs, to which the extraneous observations should make a 
+contribution. 
+\end{enumerate}
+
+\section*{The promise of M-estimation}
+The M-estimation framework promises solutions to many or all of
+these impediments.  
+\paragraph*{An immediate solution to
+  Impediment~\ref{it:prob-noweights} and a part of Impediment~\ref{it:moderators-multiple-outcomes}}
+
+The Hajek estimators $\hat{\mu}_{0}[\mathbf{y}_{0}]$, \ldots,
+$\hat{\mu}_{k}[\mathbf{y}_{k}]$ admit of being defined as the unique
+multivariate root of the estimating function
+\begin{equation} \label{eq:ee-hajekdiff}
+(\mu_{0}, \ldots, \mu_{K}) \mapsto
+  \left[
+\begin{array}{c}
+\sum_i [\![A_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
+\vdots \\
+\sum_i [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\end{array}
+\right]
+.
+\end{equation}
+
+The information matrices $A(\mu_0, \ldots, \mu_K)$ corresponding to
+\eqref{eq:ee-hajekdiff} are diagonal.  For a sandwich estimate of
+variance, then, we only need estimates of the covariance
+of~\eqref{eq:ee-hajekdiff}.  In the one-stratum case with multiple
+representatives of conditions $k$ and $0$, we can simply apply
+Neyman's two-sample unpooled variances SE to observations $\{ w_{ki}
+(y_{ki} - \mu_k) : A_i = k\}$ and $\{ w_{0i} (y_{0i} - \mu_0) : A_i =
+0\}$.  Impediment~\ref{it:prob-noweights} is solved. 
+
+For standard errors of the difference of Hajek estimators within a
+subgroup $g$,
+\begin{equation*}
+ \frac{\sum_i w_{ki} [\![A_i=k, G_{i} =g]\!] y_{ki}}{\sum_i w_{ki}
+     [\![A_i=k, G_{i}=g]\!]}
+ -
+  \frac{\sum_i w_{0i} [\![A_i=0, G_{i} =g]\!] y_{0i}}{\sum_i w_{0i}
+     [\![A_i=0, G_{i}=g]\!]},
+\end{equation*}
+we can simply fold the subgroup indicator into the weights,
+weighting by $\{\tilde{w}_{ji}:j; i\} = \{w_{ji}[\![G_{i}=g]\!]: j; i\}$ as opposed to $\{w_{ji}:j;
+i\}$. This solves the first part of
+Impediment~\ref{it:moderators-multiple-outcomes}.
+
+(The remaining piece of Impediment~\ref{it:moderators-multiple-outcomes}
+is the need for estimates of
+\begin{equation*}
+  \mathrm{Cov}\left(
+    \frac{\sum_i w_{ki} [\![A_i=k]\!] v_{ki}}{\sum_i w_{ki}
+      [\![A_i=k]\!]} -
+    \frac{\sum_i w_{ki} [\![A_i=k]\!] v_{0i}}{\sum_i w_{ki}  [\![A_i=k]\!]},
+  \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{ki}}{\sum_i {w}_{ki}
+      [\![A_i=k]\!]} -
+    \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{0i}}{\sum_i {w}_{ki}  [\![A_i=k]\!]}
+  \right)
+\end{equation*}
+where $v_{ji}$ and $u_{ji}$ are observed only
+when $A_{i}=j$, all $i$ and $j$.   I haven't had the opportunity to
+sit down and try to work this out, but I'm optimistic that this
+can be handled with straightforward extensions of the Neyman insight.)
+
+\paragraph*{Sketch of a solution to Impediment~\ref{it:prob-multreps}}
+Now consider Impediment~\ref{it:prob-multreps},  strata $S$ in which one
+or both of the conditions $j$ being contrasted have only one 
+representative, $\sum_{i\in S} [\![A_{i}=j]\!] =1$. Consider the situation without covariates. 
+
+As there is independence across if not within strata, the
+B matrices corresponding to~\eqref{eq:ee-hajekdiff} are sums of
+stratum-wise contributions 
+\begin{equation} \label{eq:Bform}
+B_S((\mu_0, \ldots, \mu_K)) =  
+\mathrm{Cov}\left(\left[
+\begin{array}{c}
+\sum_{i\in S} [\![A_i=K]\!] w_{ki} (y_{Ki} - \mu_K) \\
+\vdots \\
+\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\end{array}
+\right] \mid \mathcal{Z}\right), \quad S \in \mathcal{P}. 
+\end{equation}
+For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, $\mathrm{Var}\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}$ is not estimable, just as the variance $[(\# S)-1]^{-1}\sum_{i \in S} (y_{ki} - \bar{y}_k)^2$ is not estimable. On the other hand, the second moment 
+\[ \mathbb{E}\left[\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\right]
+\]
+\textit{is} estimable, by it sample realization \(\left\{ \sum_{i\in
+    S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\): in
+M-estimation, we're entitled to treat $\mu_k$ is a fixed constant, not
+a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.  
+
+M-estimation doesn't help us to estimate 
+\[
+\mathrm{Cov}\left\{
+\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k), 
+\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\right\}
+\]
+but these terms aren't identified even for large strata with multiple
+representatives of either condition. When interest is in the
+difference $\hat{\mu}_k - \hat{\mu}_0$, conservatism leads us to
+``impute'' the covariance value that maximizes the variance of that difference, that
+corresponding to a correlation of 1 between $\sum_{i\in S} [\![A_i=k]\!] w_{ki}
+(y_{ki} - \mu_k)$ and $\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} -
+\mu_0)$. We can follow the same principle when approaching the problem
+from the perspective of $M$-estimation, whatever the representation of
+conditions $k$ and 0 within stratum $S$.
+
+In separate hand-written
+notes I begin fleshing this out into methods of estimating design-based second
+moments of first differences of the estimating functions
+\eqref{eq:ee-hajekdiff} that define the Hajek estimators, which
+can in turn be used to approximate the corresponding B-matrix terms;
+extending this work might be a suitable problem for a PhD student. 
+
+\begin{quote}
+\textit{Code design notes:}\\
+1. Because we don't really estimate
+\begin{equation*}
+  \mathrm{Cov}\left\{
+\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k), 
+\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
+\right\},
+\end{equation*}
+but only impute this covariance based on
+$\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)$'s and 
+$\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)$'s estimated
+variances and presumed correlation of 1, we should consider software design that doesn't tempt the user into
+treating our stand-in for it as a real estimate, perhaps in some
+unanticipated situation.  This could be accomplished through a
+function returning differences of Hajek
+estimators~(\ref{eq:hajekdiff}), i.e. estimates of $\mu[\mathbf{y}_{k}] -
+\mu[\mathbf{y}_{0}]$ for each $k$, but not the separate Hajek estimators
+$\hat{\mu}_{k}[\mathbf{y}_{k}]$ or $\hat{\mu}_{0}[\mathbf{y}_{0}]$, nor an
+intercept. The user then expects variances and covariances of these
+differences of Hajek estimators, which we can legitimately provide,
+but not the covariances of the Hajek estimators themselves, which we
+formally compute but aren't really what they would appear to be.  This
+would in turn call for using our own direct adjustment/Hajek
+difference function to furnish estimates, not \texttt{lm()}, which
+would also report material we don't wish to be responsible for
+providing standard errors for.  (If $A$ is encoded as a factor with 0
+as its reference level, then perhaps this is a wrapper to
+\texttt{lm()} that strips out the intercept and intercept-related rows
+and columns of the information matrix prior to returning.)\\
+2. The upshot of this will be a novel method of B-matrix estimation,
+applicable to estimating equations arising from both the ultimate
+Hajek estimation and earlier-stage covariance estimation, i.e. early as well as final
+steps of the estimator chain.\\
+3. Current literature \citet[e.g.,][\ldots]{mukerjeeDasguptaRubin18,pashleymiratrix18varestimationblockeddesigns} may well present other design-based covariance
+estimators worth implementing as alternative B-matrix estimators.
+It'd be best to design in such a way as to facilitate alternating
+among B-matrix estimation routines.  
+\end{quote}
+%For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0 and $k$ are represented.  
+
+\paragraph{Addressing Impediment~\ref{it:prob-covars}}
+If covariate \(X\)  are included in a linear regression specification
+\verb|y ~ a + x| with
+unit weights $\sum_{j=1}^{K}w_{ji}[\![A_{i}=j]\!]$ --- that is, the
+specification that without \(X\) would have engendered estimation
+of Hajek estimator differences as in \eqref{eq:ee-hajekdiff} ---
+then B-matrix estimation can still be done just
+as it is without the covariates.  The A matrices are no longer
+diagonal, but are otherwise straightforward.  Combining estimates of
+these A and B matrices would give legitimate standard errors for
+differences of Hajek estimators as before, but now with adjustment for
+covariates\footnote{Formally it would also seem to furnish SEs for the
+covariate effects themselves; I haven't thought through whether these
+would indeed be interpretable as design-based SEs.%
+}.
+
+Another approach to covariates is to have fit their coefficients in a separate and
+prior regression fit --- perhaps a robust linear fit; or perhaps a binary
+regression fit --- and then to contrast Hajek aggregates of residuals
+from these fits \citep{gelmanPardoe07,bowers:hans:2008}.  This approach calls for
+stacked estimating equations, with accompanying complications to both
+the A and the B matrix. We might as well consider it in tandem with
+challenges \ref{it:prob-differentstatuses} and
+\ref{it:prob-nonexperimentals-as-nonrandom}. 
+
+\paragraph{Toward solutions to Impediments (\ref{it:prob-differentstatuses}) and
+(\ref{it:prob-nonexperimentals-as-nonrandom})}
+
+
+To draw a distinction between experimental versus non-experimental
+observations, let $\mathcal{P}$ be a partition of a nonempty subset of
+$\{1, \ldots, n\}$, so that some but not necessarily all clusters
+1,\ldots, $n$ fall into some stratum $S \in
+\mathcal{P}$; these clusters are then the experimental or
+quasi-experimental sample. Re-define $\mathcal{Z}$ to contain similar information
+as above but also full information on clusters falling outside of
+$\mathcal{E} = \bigcap_{S \in \mathcal{P}}S$: 
+\begin{equation} \label{eq:Zdefextended}
+  \mathcal{Z} = \sigma\left(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i \in \mathcal{E}\}, \{\sum_{i
+    \in S} A_i : S  \in \mathcal{P}\} , \{(A_{i}, X_i, Y_{0i}, \ldots
+  Y_{Ki}): i \not\in\mathcal{E}\}\right).
+\end{equation}
+One now needs A and B matrices for estimating functions of the Hajek
+estimator and the regression estimator simultaneously.  Given that
+we're ultimately interested only to estimate covariances for the Hajek
+differences, simplified expressions in terms of A- and B-submatrices
+are available \citep[e.g.][p.373 of \S~A.6.6.]{carroll2006measurement}.  Further
+simplification of B matrices is possible given our conditioning on
+$\mathcal{Z}$ in \eqref{eq:Zdefextended}; the B matrix continues to be
+a sum of form~\eqref{eq:Bform}, with clusters $i\not\in \mathcal{E}$
+making no contribution. (The design-based interpretation has no bearing on
+calculation of \(A\) matrices.)
+
+\begin{quote}
+  \textit{Code design note:}
+  When the final comparison of Hajek estimates builds upon a chain of
+  earlier estimates, design-based standard errors require information
+  from the earlier-stage fit just as model-based covariance estimates
+  would, but there's an important different in the information that's
+  required. From either perspective  information or A matrices from
+  earlier steps of the chain have to be passed forward, or at least
+  certain submatrices of inverted information matrices.  But the
+  model-based perspective calls for much more about the B matrices.
+  Fro example, if earlier estimators in the chain were fit to an
+  external sample, then conditional on $\mathcal{Z}$ these estimates
+  are nonrandom, and the corresponding $B$ matrices are 0, and can be
+  ignored.  If the sample used for the earlier stage fit overlaps with
+  the experimental sample, then from the design-based perspective it
+  does have a B-matrix, but only the experimental observations
+  contribute to it.
+
+  Accordingly, rather than passing forward B matrices from earlier
+  stage fits, we might instead pass forward:
+  \begin{itemize}
+  \item Sufficient information about the observations used in the
+    fitting to precisely identify regions of overlap between the
+    sample used for the prior-stage fit and the experimental sample.  
+  \item Sufficient information about the prior-stage fitting routine
+    to reconstruct specific observations' contributions to its estimating functions.
+  \end{itemize}
+The latter is also necessary to address estimator chains model-based
+covariance estimation, in order to estimate $B_{12}$ submatrices
+\citep[p.373]{carroll2006measurement}.
+\end{quote}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "design_based_SEs_"
+%%% End:
