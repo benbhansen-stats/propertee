@@ -156,7 +156,19 @@ covariate adjustments; HC2 does not fill this role.
   falling outside of the analysis window are
   conditioned upon and then regarded as nonrandom \citep[][display A1 on p.22]{salesHansen2019lrd}.} This should decrease standard
   errors relative to model-based SEs, to which the extraneous observations should make a 
-contribution. 
+  contribution.
+\item \label{it:quantile-regr-SEs}  We proposed to explore the use of
+  quantile regression in RDDs, as an alterative to robust estimation
+  of the forcing variable's slope via bounded influence robust
+  regression. (Quantile regression lacks the bounded influence
+  property in general, but with forcing variables limited to a bounded
+  range it may not.) Under the ordinary model-based interpretation
+  with $Y$ random while covariate and treatment variables are
+  considered fixed, Huber-White estimation is not generally used,
+  because it calls for estimation of the reciprocal of a conditional density of $Y
+  \mid X$, the ``sparsity function,'' and depends sensitively on the estimated
+  value \citep[][\S3.4]{koenker2005quantileregr}. Estimates of a quantile regression's B matrix would be
+  difficult to find in off-the-shelf software \citep[][\S2.5]{he18resampling}.
 \end{enumerate}
 
 \section*{The promise of M-estimation}
@@ -219,6 +231,24 @@ where $v_{ji}$ and $u_{ji}$ are observed only
 when $A_{i}=j$, all $i$ and $j$.   I haven't had the opportunity to
 sit down and try to work this out, but I'm optimistic that this
 can be handled with straightforward extensions of the Neyman insight.)
+
+\paragraph*{A near-immediate solution to
+  Impediment~\ref{it:quantile-regr-SEs}}
+Under the design-based interpretation, variances and covariances of
+quantile regression estimating functions --- for a quantile regression
+with covariates $X$ and $c_{i}$ observations per cluster $i$,
+\begin{equation*}
+\beta \mapsto  \sum_{i=1}^{n}\sum_{j=1}^{c_{i}}\sum_{k=0}^{K} x_{ij}([\![y_{kij} -
+  X_{ij}'\beta, A_{i}= k)]\!] - \tau)
+\end{equation*}
+\citep[][\S2.7]{he18resampling} --- are likely to be estimable in
+much the same way as variances and covariances of estimating functions
+for other forms of regression.  In any case, there will be no need for
+estimation of a sparsity parameter.  The impediment is removed.
+
+(Quantile regression doesn't bear any of its usual interpretations
+under conditioning on $\mathcal{Z}$, but that doesn't matter for
+purposes of using it to estimate slopes in an RDD.)
 
 \paragraph*{Sketch of a solution to Impediment~\ref{it:prob-multreps}}
 Now consider Impediment~\ref{it:prob-multreps},  strata $S$ in which one
