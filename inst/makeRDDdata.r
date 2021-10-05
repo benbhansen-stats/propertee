@@ -127,15 +127,15 @@ par(mfrow=c(1,1))
 ## ## that's more like it
 
 ## ### Now add the treatment effect back in:
-## fdat <- mutate(fdat,nextGPA=ifelse(probation_year1==1,nextGPA+0.24,nextGPA))
+fdat <- mutate(fdat,nextGPA=ifelse(probation_year1==1,nextGPA+0.24,nextGPA))
 
-## ## and plot
-## fdat%>%
-##     group_by(R)%>%
-##     summarize(nextGPA=mean(nextGPA),n=n())%>%
-##     mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
-##     ggplot(aes(R,nextGPA,size=n,color=A))+
-##     geom_point()+geom_smooth()
+## and plot
+fdat%>%
+    group_by(R)%>%
+    summarize(nextGPA=mean(nextGPA),n=n())%>%
+    mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
+    ggplot(aes(R,nextGPA,size=n,color=A))+
+    geom_point()+geom_smooth()
 
 
 save(fdat,file='../data/fakeRDD.RData')
