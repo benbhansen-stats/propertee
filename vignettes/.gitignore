@@ -1,2 +1,12 @@
 *.html
 *.R
+# BH local setup:
+design_based_SEs*.tex
+auto
+*.rel
+*.aux
+*.bbl
+*.blg
+*.log
+*.rel
+*.synctex.gz
