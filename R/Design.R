@@ -47,7 +47,7 @@ New_Design <- function(form, data, type, subset = NULL) {
     data <- subset(data, subset = subset)
   }
 
-  m <- as.data.frame(as.matrix(model.frame(form, data)))
+  m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
 
   index <- rep("t", ncol(m))
 
