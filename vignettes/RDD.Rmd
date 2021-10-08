@@ -14,7 +14,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(tidyverse)
 ```
 
 ```{r}
@@ -28,41 +27,24 @@ The data were compiled by Ludwig & Miller (2007; henceforth LM), largely from th
 
 At the onset of the Head Start preschool program in 1965, the Office of Economic Opportunity provided technical support in applying for funding to the 300 US counties with the highest 1960 poverty rates. LM show that this assistance paid off, in that couties with poverty rates just above the cutoff received substantially more Head Start funding than those with poverty rates just below the cutoff. LM then sought to estimate the impact of this additional funding on two county-level outcomes that may plausibly affected by Head Start: child mortality due to health risks addressed by the Head Start program, and high school completion rates. 
 
-```{r, eval=FALSE}
-### hopfully by time we're ready to go live this will be on CRAN?
-### right now the code actually just downloads the file direclty from
-### github, and this (or the following) isn't evaluated
-devtools::install_github('kolesarm/RDHonest')
-```
-
-```{r, eval=FALSE, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
-library(RDHonest)
-data(headst)
-```
-
-```{r, include=FALSE}
-if(!file.exists("../data/headst.rda"))
- download.file("https://github.com/kolesarm/RDHonest/raw/master/data/headst.rda","../data/headst.rda")
-load("../data/headst.rda")
-```
 
 The variable `povrate60` encodes county-level poverty rates, as of 1960, relative to the 300th poorest county (Campbell County, TN).
 `mortHS` records 1973-1983 county-level child mortality rates for causes targeted by Head Start, and `highSchool` records 1990 high school graduation rates for adults ages 18-24, LM's two main outcomes.
 
 This figure plots each outcome as a function of county-level 1960 poverty rates. The cutoff for assistance, between the 300th and 301st poorest counties, is denoted with a dotted line. Darker points are binned means and lighter points are the raw data.
 ```{r rddPlots,fig.width=7}
-headst%>%
-    filter(abs(povrate60)<36)%>% ## LM's biggest bandwidth
-    filter(mortHS<15)%>% ## remove outliers
-    mutate(Z=ifelse(povrate60>=0,"Assistance","No Assistance"))%>% ## the "treatment"--assistance in applying for funding
-    pivot_longer(cols=c(mortHS,highSchool),names_to="Outcome")%>%
-    ggplot(aes(povrate60,value,color=Z))+
-    stat_summary_bin(geom="point",fun="mean",bins=50)+
-    geom_point(alpha=0.05)+
-    facet_wrap(~Outcome,scales="free_y")+
-    geom_smooth()+
-    geom_vline(xintercept=-0.005,linetype="dotted")+
-    theme(legend.title=element_blank(),legend.pos='top')
+## headst%>%
+##     filter(abs(povrate60)<36)%>% ## LM's biggest bandwidth
+##     filter(mortHS<15)%>% ## remove outliers
+##     mutate(Z=ifelse(povrate60>=0,"Assistance","No Assistance"))%>% ## the "treatment"--assistance in applying for funding
+##     pivot_longer(cols=c(mortHS,highSchool),names_to="Outcome")%>%
+##     ggplot(aes(povrate60,value,color=Z))+
+##     stat_summary_bin(geom="point",fun="mean",bins=50)+
+##     geom_point(alpha=0.05)+
+##     facet_wrap(~Outcome,scales="free_y")+
+##     geom_smooth()+
+##     geom_vline(xintercept=-0.005,linetype="dotted")+
+##     theme(legend.title=element_blank(),legend.pos='top')
 ```
 
 ## Background
