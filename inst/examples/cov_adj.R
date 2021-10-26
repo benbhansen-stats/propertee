@@ -9,23 +9,23 @@ covariance_y0_read <- lm(readk ~ gender + ethnicity + birth + lunchk +
                          data = STAR, subset = !treatment)
 
 STAR_design <- RCT_Design(treatment ~ cluster(studentid), data = STAR)
-STAR_ate    <- ate(STAR_design)
-STAR_ett    <- ett(STAR_design)
+STAR_ate    <- ate(STAR_design, data = STAR)
+STAR_ett    <- ett(STAR_design, data = STAR)
 
 ett_read <- lm(readk ~ treatment,
-               offset = cov_adj(covariance_y0_read),
+               offset = cov_adj(covariance_y0_read, newdata = STAR),
                data = STAR,
                weights = STAR_ett)
 coef(ett_read)
 
 ate_read <- lm(readk ~ treatment,
-               offset = cov_adj(covariance_y0_read),
+               offset = cov_adj(covariance_y0_read, newdata = STAR),
                data = STAR,
                weights = STAR_ate)
 coef(ate_read)
 
 ate_read_eth <- lm(readk ~ treatment*ethnicity,
-                   offset = cov_adj(covariance_y0_read),
+                   offset = cov_adj(covariance_y0_read, newdata = STAR),
                    data = STAR,
                    weights = STAR_ate)
 coef(ate_read_eth)
