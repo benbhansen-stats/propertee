@@ -12,13 +12,14 @@ setValidity("DirectAdjusted", function(object) {
     return("weight must be WeightedDesign created by `ate()` or `ett()`")
   }
   if (ncol(object$model) < 3) {
-    return("model must contain a binary treatment predictor")
+    return("model must contain a treatment predictor")
   }
-  if (!all(object$model[,2] %in% 0:1)) {
-    return("first predictor must be binary treatment indicator")
+  object$model[,2] <- .convert_treatment_to_factor(object$model[, 2, drop = FALSE])
+  if (!is.factor(object$model[,2])) {
+    return("treatment variable must be factor")
   }
-  if (sd(object$model[,2]) == 0) {
-    return("treatment indicator is constant")
+  if (all(object$model[1,2] == object$model[,2])) {
+    return("treatment variable must not be constant")
   }
   if (is.na(object$coef[2])) {
     return("treatment effect failed to estimate")
@@ -44,6 +45,8 @@ as.DirectAdjusted <- function(x, ...) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
+
+  #browser()
 
   if (!is(x$model$"(weights)", "WeightedDesign")) {
     stop("input model must contain WeightedDesign weights")

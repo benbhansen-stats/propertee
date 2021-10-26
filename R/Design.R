@@ -15,11 +15,11 @@ setValidity("Design", function(object) {
     return("Missing treatment index")
   }
   if (ncol(tr) > 1) {
-    return("Only one treatment variable allowd")
+    return("Only one treatment variable allowed")
   }
   tr <- tr[,1]
-  if (is.null(tr) || is.na(sd(tr)) || sd(tr) == 0 || any(!(tr %in% 0:1))) {
-    return("Invalid treatment; must be binary and non-constant")
+  if (is.null(tr) || !is.factor(tr)) {
+    return("Invalid treatment; must be factor")
   }
   if (ncol(object@structure) != length(object@columnIndex)) {
     return("@columnIndex does not agree with number of columns in @structure")
@@ -77,6 +77,9 @@ New_Design <- function(form, data, type, subset = NULL) {
   m_collapse <- unique(m)
 
   rownames(m_collapse) <- NULL
+
+  treatment <- m_collapse[, index == "t", drop = FALSE]
+  m_collapse[, index == "t"] <- .convert_treatment_to_factor(treatment)
 
   differing <- duplicated(m_collapse[, index == "c"])
   if (any(differing)) {
@@ -220,6 +223,8 @@ setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
+
+  value <- .convert_treatment_to_factor(value)
 
   value <- .convert_to_data.frame(value, x, "t")
 
@@ -371,3 +376,25 @@ setMethod("forcings<-", "Design", function(x, value) {
   validObject(design)
   return(design)
   }
+
+# Internal helper function
+# Converts treatment to factor
+.convert_treatment_to_factor <- function(treatment) {
+  if (!is.null(dim(treatment))) {
+    if (ncol(treatment) != 1) {
+      stop("Only one treatment variable allowed")
+    }
+    treatment <- treatment[,,drop = TRUE]
+  }
+  if (is.numeric(treatment)) {
+    if (any(!treatment %in% 0:1)) {
+      stop("Numerical treatments must only contain values 0 and 1.")
+    }
+    treatment <- as.factor(treatment)
+  } else if (is.logical(treatment)) {
+    treatment <- as.factor(treatment)
+  } else if (!is.factor(treatment)) {
+    stop("Treatment must be binary (0/1), logical, factor or ordered")
+  }
+  return(treatment)
+}

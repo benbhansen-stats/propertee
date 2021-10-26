@@ -29,14 +29,15 @@ summary.Design <- function(object, ...) {
               sep = ""))
   }
 
-  cat("\n")
-  ntreat <- sum(object@structure[object@columnIndex == "t"])
-  nctrl <- sum(1 - object@structure[object@columnIndex == "t"])
+  # Without a binary treatment variable, what do we want to print here? #11
+  #cat("\n")
+  #ntreat <- sum(object@structure[object@columnIndex == "t"])
+  #nctrl <- sum(1 - object@structure[object@columnIndex == "t"])
 
-  cat(paste(ntreat, " clusters assigned to treatment, ",
-            nctrl, " clusters assigned to control (`",
-            varNames(object, "t"), "`)",
-            sep = ""))
+  #cat(paste(ntreat, " clusters assigned to treatment, ",
+  #          nctrl, " clusters assigned to control (`",
+  #          varNames(object, "t"), "`)",
+  #          sep = ""))
   cat("\n")
 
   if (length(varNames(object, "f")) > 0) {

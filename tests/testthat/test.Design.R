@@ -1,6 +1,6 @@
 test_that("Design creation", {
   d <- new("Design",
-           structure = data.frame(a = c(1, 0), b = c(2, 4)),
+           structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
            columnIndex = c("t", "c"),
            type = "RCT")
 
@@ -22,7 +22,7 @@ test_that("Design validity", {
                "positive dimensions")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0), a = c(1, 0)),
+                   structure = data.frame(a = as.factor(c(1, 0)), a = as.factor(c(1, 0))),
                    columnIndex = c("t", "t"),
                    type = "RCT"),
                "one treatment")
@@ -34,22 +34,28 @@ test_that("Design validity", {
                "Missing treatment")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
+                   structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
                    columnIndex = c("t", "f"),
                    type = "abc"),
                "unknown @type")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 2), b = c(1, 0), c = c(2, 0)),
+                   structure = data.frame(a = c(1, 2), b = as.factor(c(1, 0)), c = c(2, 0)),
                    columnIndex = c("c", "t"),
                    type = "RCT"),
                "number of columns")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0), b = c(2, 4)),
+                   structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
                    columnIndex = c("t", "k"),
                    type = "RCT"),
                "unknown elements")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = c(1, 0), a = c(1, 0)),
+                   columnIndex = c("t", "c"),
+                   type = "RCT"),
+               "must be factor")
 
 })
 
@@ -68,7 +74,9 @@ test_that("Design creation", {
   expect_length(d_rct@columnIndex, 2)
   expect_length(d_rct@type, 1)
 
-  expect_true(all(d_rct@structure == subset(mtcars, select = c("vs", "qsec"))))
+  mtcars_subset <- subset(mtcars, select = c("vs", "qsec"))
+  mtcars_subset$vs <- as.factor(mtcars_subset$vs)
+  expect_true(all(d_rct@structure == mtcars_subset))
   expect_equal(d_rct@columnIndex, c("t", "c"))
   expect_equal(d_rct@type, "RCT")
 
@@ -81,8 +89,9 @@ test_that("Design creation", {
   expect_length(d_obs@columnIndex, 2)
   expect_length(d_obs@type, 1)
 
-  expect_true(all(d_obs@structure == subset(mtcars, select = c("vs", "qsec"),
-                                       subset = mtcars$mpg > 17)))
+  mtcars_subset <- subset(mtcars, select = c("vs", "qsec"), subset = mtcars$mpg > 17)
+  mtcars_subset$vs <- as.factor(mtcars_subset$vs)
+  expect_true(all(d_obs@structure == mtcars_subset))
   expect_equal(d_obs@columnIndex, c("t", "c"))
   expect_equal(d_obs@type, "Obs")
 
@@ -90,8 +99,10 @@ test_that("Design creation", {
   d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
                   data = mtcars, type = "RD")
 
-  expect_true(all(d_rd@structure == subset(mtcars, select = c("vs", "disp", "gear",
-                                                      "wt", "cyl", "mpg", "qsec"))))
+  mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
+                                             "wt", "cyl", "mpg", "qsec"))
+  mtcars_subset$vs <- as.factor(mtcars_subset$vs)
+  expect_true(all(d_rd@structure == mtcars_subset))
   expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
   expect_equal(d_rd@type, "RD")
 
@@ -174,34 +185,20 @@ test_that("Accessing and replacing elements", {
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
 
-  treatment(des) <- rep(0:1, each = 5)
-  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
+  treatment(des) <- as.factor(rep(0:1, each = 5))
+  expect_equal(treatment(des), data.frame(z = as.factor(rep(0:1, each = 5))))
 
-  mat <- matrix(rep(1:0, each = 5))
-  treatment(des) <- mat
-  expect_equal(treatment(des), data.frame(z = rep(1:0, each = 5)))
-
-  mat <- matrix(rep(0:1, each = 5))
-  colnames(mat) <- "z"
-  treatment(des) <- mat
-  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
-
-  mat <- matrix(rep(1:0, each = 5))
-  colnames(mat) <- "a"
-  treatment(des) <- mat
-  expect_equal(treatment(des), data.frame(a = rep(1:0, each = 5)))
-
-  df <- data.frame(z = rep(0:1, each = 5))
+  df <- data.frame(z = as.factor(rep(0:1, each = 5)))
   treatment(des) <- df
-  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
+  expect_equal(treatment(des), data.frame(z = as.factor(rep(0:1, each = 5))))
 
   treatment(des)[1:2,1] <- 1
-  expect_equal(treatment(des), data.frame(z = rep(c(1,0,1), times = c(2,3,5))))
+  expect_equal(treatment(des), data.frame(z = as.factor(rep(c(1,0,1), times = c(2,3,5)))))
 
-  expect_error(treatment(des) <- 1:5,
+  expect_error(treatment(des) <- as.factor(1:5),
                "same number")
 
-  expect_error(treatment(des) <- data.frame(a = c(1,0,1,0,1)),
+  expect_error(treatment(des) <- data.frame(a = as.factor(c(1,0,1,0,1))),
                "same number")
 
 
@@ -249,7 +246,7 @@ test_that("Accessing and replacing elements", {
 
   ########## Clusters, reduce duplicates
 
-  treatment(des) <- rep(0:1, each = 5)
+  treatment(des) <- as.factor(rep(0:1, each = 5))
 
   expect_warning(clusters(des) <- data.frame(c1 = 1, c2 = c(1,1:9)),
                  "collapsing")
@@ -482,4 +479,24 @@ test_that("Accessing and replacing elements", {
   expect_error(RCT_Design(z ~ cluster(cid1, cid1, cid2), data = simdata),
                "more than once")
 
+})
+
+
+test_that("support for different types of treatment variables", {
+  data(mtcars)
+  mtcars <- mtcars[-c(5, 11),]
+
+  treat_binary <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
+  mtcars$vs <- as.logical(mtcars$vs)
+  treat_logical <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
+  expect_identical(as.numeric(treat_binary@structure$vs),
+                   as.numeric(treat_logical@structure$vs))
+
+  mtcars$carb <- as.factor(mtcars$carb)
+  treat_factor <- New_Design(carb ~ cluster(qsec), data = mtcars, type = "RCT")
+  expect_identical(unique(treat_factor@structure$carb), unique(mtcars$carb))
+
+  mtcars$gear <- as.ordered(mtcars$gear)
+  treat_ordered <- New_Design(gear ~ cluster(qsec), data = mtcars, type = "RCT")
+  expect_identical(unique(treat_ordered@structure$gear), unique(mtcars$gear))
 })
