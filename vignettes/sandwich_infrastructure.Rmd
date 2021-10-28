@@ -1,6 +1,11 @@
 ---
 title: 'Enumeration of data objects required for standard errors of prior covariance model-assisted effect estimation'
 author: 'Ben Hansen'
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{sandwich_infrastructure}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 date: 'October 2021'
 ---
 
@@ -39,20 +44,20 @@ The leading $n^{-1}$ factor should be struck from the expression for $\mathrm{va
 
 To estimate variances and covariances of $\tau$, we'll need:
 
-1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$; 
+1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$;
 2. Vectors of estimating
 functions $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$
-and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$; 
+and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$;
 3. For the quasiexperimental sample $\mathcal{Q}$, matrices
-$$\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}): i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to $A_{21}$; 
-4. Estimates of the direct adjustment model's A matrix $n A_{22} = \nabla_\tau \sum_{i \in \mathcal{Q}} \mathbb{E}[\psi(\tilde{\mathbf{Y}}_i, \tau, \hat{\alpha})] \vert_{\tau=\hat\tau}$, i.e. its unscaled Fisher information w.r.t. $\tau$ only, and unscaled B matrix $n B_{22} = \mathrm{Cov}[\sum_{i \in \mathcal{Q}} \psi(\tilde{\mathbf{Y}}_i, {\tau}, {\alpha})]_{({\tau}, {\alpha})=(\hat{\tau}, \hat{\alpha})}$; 
+$$\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}): i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to $A_{21}$;
+4. Estimates of the direct adjustment model's A matrix $n A_{22} = \nabla_\tau \sum_{i \in \mathcal{Q}} \mathbb{E}[\psi(\tilde{\mathbf{Y}}_i, \tau, \hat{\alpha})] \vert_{\tau=\hat\tau}$, i.e. its unscaled Fisher information w.r.t. $\tau$ only, and unscaled B matrix $n B_{22} = \mathrm{Cov}[\sum_{i \in \mathcal{Q}} \psi(\tilde{\mathbf{Y}}_i, {\tau}, {\alpha})]_{({\tau}, {\alpha})=(\hat{\tau}, \hat{\alpha})}$;
 5. The covariance model's observed information matrix/empirical A matrix estimate $n \hat{A}_{11} = \sum_{i \in \mathcal{C}} \nabla_\alpha  [\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$; and
-6. for covariance estimation in the conventional "model-based" setup only, estimates of the covariance model's B matrix $nB_{11} = \mathrm{Cov}[\sum_{i \in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$ (a "clustered" covariance estimate). 
+6. for covariance estimation in the conventional "model-based" setup only, estimates of the covariance model's B matrix $nB_{11} = \mathrm{Cov}[\sum_{i \in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$ (a "clustered" covariance estimate).
 
 In (5), observed information is preferred to "observed expected" information,
-$\sum_{i \in \mathcal{C}} \nabla_\alpha \mathbb{E} [\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$, because observed information is agnostic as to whether expectation is calculated with conditioning on potential outcomes, ie the finite population perspective, or with conditioning on treatment assignment, the model based perspective. 
+$\sum_{i \in \mathcal{C}} \nabla_\alpha \mathbb{E} [\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$, because observed information is agnostic as to whether expectation is calculated with conditioning on potential outcomes, ie the finite population perspective, or with conditioning on treatment assignment, the model based perspective.
 
-Regarding (6), $B_{11}$ is not needed for design-based standard errors, as in this setting observations outside of the quasiexperimental sample do not contribute to the covariance model's B matrix.  Only quasiexperimental sample observations do, and we'll have access to these when the direct adjustment model is fit. As we also have $\{\phi(\tilde{\mathbf{Y}}_i; 
+Regarding (6), $B_{11}$ is not needed for design-based standard errors, as in this setting observations outside of the quasiexperimental sample do not contribute to the covariance model's B matrix.  Only quasiexperimental sample observations do, and we'll have access to these when the direct adjustment model is fit. As we also have $\{\phi(\tilde{\mathbf{Y}}_i;
 \hat{\alpha}): i \in \mathcal{Q}\}$ and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{Q}\}$, we can use these materials to estimate $B_{12}$ and $B_{22}$.
 
 
@@ -67,11 +72,10 @@ Regarding (6), $B_{11}$ is not needed for design-based standard errors, as in th
 a. Expand the role of `scores()` to include furnishing first derivatives w.r.t. variables figuring in the prediction.  (Perhaps when given additional argument `deriv=TRUE`; `predict.smooth.spline()` does something like this.)
 b.  Expect a fast predict method, and use it to figure numerical derivatives ofthe prediction.
 
-I understand that `geex` does (b).  I'm attracted to (a).  The two approaches aren't necessarily incompatible, in that one could have dedicated `scores()` methods for specific model classes plus a generic method that figures the derivatives numerically. 
+I understand that `geex` does (b).  I'm attracted to (a).  The two approaches aren't necessarily incompatible, in that one could have dedicated `scores()` methods for specific model classes plus a generic method that figures the derivatives numerically.
 
 4\. We can take extant calculations of a direct adjustment model's information matrix, with the proviso that we keep track of whatever scaling those calcuations may have applied. For design-based SEs we'll need our own B matrix calculation.  For model-based SEs we can plug in to extant software, again with attention to how they're scaling things. (I have yet to consider whether use of HC0--3 etc for $B_{22}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{11}$, nor whether heuristics animating these adjustments make sense in this context.)
 
 5\. We can take extant calculations of a covariance model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied.
 
 6\. We can take extant calculations of a covariance model's B matrix, with the provisos that we keep track of whatever scaling those calculations may have applied and we look to the study design for clustering.  (I have yet to consider whether use of HC0--3 etc for $B_{11}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{22}$, nor whether heuristics animating these adjustments make sense in this context.)
-
