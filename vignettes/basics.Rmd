@@ -101,9 +101,9 @@ treatment(des)
 clusters(des)
 blocks(des)
 forcings(des)
-treatment(des) <- rep(0:1, times = 5)
+treatment(des) <- as.factor(rep(0:1, times = 5))
 treatment(des)
-treatment(des) <- data.frame(q = rep(1:0, times = 5))
+treatment(des) <- data.frame(q = as.factor(rep(1:0, times = 5)))
 treatment(des)
 ```
 

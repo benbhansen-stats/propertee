@@ -56,10 +56,10 @@ test_that("Conversion from lm to DirectAdjusted", {
                "WeightedDesign weights")
 
   expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
-               "binary treatment")
+               "treatment")
 
   expect_error(as.DirectAdjusted(lm(y ~ 1, data = simdata, weights = ate(des))),
-               "binary treatment")
+               "treatment")
 
   expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)), data = simdata, weights = ate(des))),
                "constant")

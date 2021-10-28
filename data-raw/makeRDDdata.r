@@ -138,4 +138,4 @@ fdat%>%
     geom_point()+geom_smooth()
 
 
-save(fdat,file='../data/fakeRDD.RData')
+usethis::use_data(fdat, overwrite = TRUE)

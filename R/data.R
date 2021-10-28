@@ -11,3 +11,11 @@
 #' }
 #' @keywords dataset
 "simdata"
+
+#' @title Fake data
+#' @format A data.frame with ?? rows and ?? columns.
+#' \itemize{
+#'   \item ???
+#' }
+#' @keywords dataset
+"fdat"
