@@ -517,3 +517,27 @@ test_that("support for different types of treatment variables", {
   treat_ordered <- New_Design(gear ~ cluster(qsec), data = mtcars, type = "RCT")
   expect_identical(unique(treat_ordered@structure$gear), unique(mtcars$gear))
 })
+
+test_that("Design type conversions", {
+  data(simdata)
+
+  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desrd  <-  RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  desobs <- Obs_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  expect_identical(desrct, as_RCT_Design(desobs))
+  convrd <- suppressWarnings(as_RD_Design(desobs))
+  expect_true(all(convrd@columnIndex == c("t", "c", "c", "b")))
+  expect_equal(convrd@type, "RD")
+
+  expect_identical(desobs, as_Obs_Design(desrct))
+  convrd <- suppressWarnings(as_RD_Design(desrct))
+  expect_true(all(convrd@columnIndex == c("t", "c", "c", "b")))
+  expect_equal(convrd@type, "RD")
+
+  expect_identical(desobs, as_Obs_Design(desrd, force = TRUE))
+  expect_identical(desrct, as_RCT_Design(desrd, force = TRUE))
+
+  expect_error(as_Obs_Design(desrd), "force")
+
+})

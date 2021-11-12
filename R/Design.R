@@ -206,3 +206,63 @@ varNames <- function(x, type) {
   stopifnot(type %in% c("t", "c", "b", "f"))
   names(x@structure)[x@columnIndex == type]
 }
+
+##############################
+##### Design Conversions #####
+##############################
+
+##' Converst between Design types
+##' @title Design conversion
+##' @param Design Design to convert
+##' @param ... No addiitonal options at present
+##' @param force Converting from RD to another design will error to avoid losing
+##'   the forcing variable. Setting `force = TRUE` allows the conversion to
+##'   automatically drop the forcing variable.
+##' @return The design of the updated type
+##' @export
+##' @rdname designconversion
+as_RCT_Design <- function(Design, ..., force = FALSE) {
+  if ( Design@type == "RD") {
+    if (!force) {
+      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
+    }
+    Design <- .remove_forcing(Design)
+  }
+  Design@type <- "RCT"
+  validObject(Design)
+  return(Design)
+}
+
+##' @export
+##' @rdname designconversion
+as_Obs_Design <- function(Design, ..., force = FALSE) {
+  if ( Design@type == "RD") {
+    if (!force) {
+      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
+    }
+    Design <- .remove_forcing(Design)
+  }
+  Design@type <- "Obs"
+  validObject(Design)
+  return(Design)
+}
+
+##' @export
+##' @rdname designconversion
+as_RD_Design <- function(Design, ...) {
+  Design@type <- "RD"
+  validObject(Design)
+  warning("Converted RD Design will not have forcing variable, use `forcing(Design) <- ...` to add it.")
+  return(Design)
+}
+
+# Internal function
+# Removes the forcing column to prepare conversion from RD to another type.
+.remove_forcing <- function(d) {
+  d@structure <- d@structure[, d@columnIndex != "f"]
+  tmp <- d@columnIndex[d@columnIndex != "f"]
+  attr(tmp, "clusterinput") <- attr(d@columnIndex, "clusterinput")
+  d@columnIndex <- tmp
+  validObject(d)
+  return(d)
+}
