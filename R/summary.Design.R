@@ -8,13 +8,14 @@ summary.Design <- function(object, ...) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
+
   cat("\n")
   cat(destype)
   cat("\n\n")
 
   cat(paste("Contains ", nrow(object@structure) -
                            sum(duplicated(object@structure[object@columnIndex == "c"])),
-            " clusters (`",
+            paste0(" ", attr(object@columnIndex, "clusterinput"), "s ") ,"(`",
             paste(varNames(object, "c"), collapse = "`, `"),
             "`)",
             sep = ""))

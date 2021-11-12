@@ -67,12 +67,22 @@ New_Design <- function(form, data, type, subset = NULL) {
   o <- rename_vars(m, index, "cluster")
   m <- o[[1]]
   index <- o[[2]]
+  o <- rename_vars(m, index, "unitid")
+  m <- o[[1]]
+  index <- o[[2]]
   o <- rename_vars(m, index, "block")
   m <- o[[1]]
   index <- o[[2]]
   o <- rename_vars(m, index, "forcing")
   m <- o[[1]]
   index <- o[[2]]
+
+  if (any(index == "u")) {
+    attr(index, "clusterinput") <- "unitid"
+    index[index == "u"] <- "c"
+  } else {
+    attr(index, "clusterinput") <- "cluster"
+  }
 
   m_collapse <- unique(m)
 
@@ -162,11 +172,15 @@ setMethod("show", "Design", function(object) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
+  clusttype <- switch(attr(object@columnIndex, "clusterinput"),
+                      "cluster" = "Cluster  :",
+                      "unitid"  = "Unitid   :")
+
   cat(destype)
   cat("\n\n")
   cat(paste("Treatment:", varNames(object, "t")))
   cat("\n")
-  cat(paste("Cluster  :", paste(varNames(object, "c"), collapse = ", ")))
+  cat(paste(clusttype, paste(varNames(object, "c"), collapse = ", ")))
   cat("\n")
   if (length(varNames(object, "b")) > 0) {
     cat(paste("Block    :", paste(varNames(object, "b"), collapse = ", ")))
@@ -243,6 +257,9 @@ setGeneric("clusters", function(x) standardGeneric("clusters"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("clusters", "Design", function(x) {
+  if (attr(x@columnIndex, "clusterinput") != "cluster") {
+    stop("Design specified with `unitid()`, not `cluster()`")
+  }
   x@structure[x@columnIndex == "c"]
 })
 
@@ -270,6 +287,50 @@ setMethod("clusters<-", "Design", function(x, value) {
     warning("Fewer new clusters then original, collapsing")
 
     x@structure <- x@structure[-dupclust,]
+  }
+  validObject(x)
+  x
+})
+
+############### Unitid
+
+##' @export
+##' @rdname Design_extractreplace
+setGeneric("unitids", function(x) standardGeneric("unitids"))
+
+##' @export
+##' @rdname Design_extractreplace
+setMethod("unitids", "Design", function(x) {
+  if (attr(x@columnIndex, "clusterinput") != "unitid") {
+    stop("Design specified with `cluster()`, not `unitid()`")
+  }
+  x@structure[x@columnIndex == "c"]
+})
+
+##' @export
+##' @rdname Design_extractreplace
+setGeneric("unitids<-", function(x, value) standardGeneric("unitids<-"))
+
+##' @export
+##' @rdname Design_extractreplace
+setMethod("unitids<-", "Design", function(x, value) {
+
+  value <- .convert_to_data.frame(value, x, "c")
+
+  x <- .updateStructure(x, value, "c")
+
+  dupids <- duplicated(unitids(x))
+  dupall <- duplicated(x@structure[x@columnIndex != "f"])
+  if (any(dupids)) {
+
+    if (sum(dupids) != sum(dupall)) {
+      stop(paste("Fewer new unitids then original, but new collapsed",
+                 "clusters would have non-constant treatment and/or",
+                 "block structure"))
+    }
+    warning("Fewer new clusters then original, collapsing")
+
+    x@structure <- x@structure[-dupids,]
   }
   validObject(x)
   x
@@ -370,8 +431,10 @@ setMethod("forcings<-", "Design", function(x, value) {
   design@structure <-
     cbind.data.frame(design@structure[design@columnIndex != type], new)
 
-  design@columnIndex <- c(design@columnIndex[design@columnIndex != type],
-                          rep(type, ncol(new)))
+  tmp <- c(design@columnIndex[design@columnIndex != type],
+           rep(type, ncol(new)))
+  attr(tmp, "clusterinput") <- attr(design@columnIndex, "clusterinput")
+  design@columnIndex <- tmp
   names(design@columnIndex) <- colnames(design@structure)
   validObject(design)
   return(design)

@@ -29,7 +29,7 @@ test_that("Design validity", {
 
   expect_error(new("Design",
                    structure = data.frame(a = c(1, 0), a = c(1, 0)),
-                   columnIndex = c("c", "c"),
+                   columnIndex = c("c", "f"),
                    type = "RCT"),
                "Missing treatment")
 
@@ -77,7 +77,8 @@ test_that("Design creation", {
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rct@structure == mtcars_subset))
-  expect_equal(d_rct@columnIndex, c("t", "c"))
+  expect_equal(d_rct@columnIndex, c("t", "c"), ignore_attr = TRUE)
+  expect_equal(attr(d_rct@columnIndex, "clusterinput"), "cluster")
   expect_equal(d_rct@type, "RCT")
 
   # subset
@@ -92,7 +93,8 @@ test_that("Design creation", {
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"), subset = mtcars$mpg > 17)
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_obs@structure == mtcars_subset))
-  expect_equal(d_obs@columnIndex, c("t", "c"))
+  expect_equal(d_obs@columnIndex, c("t", "c"), ignore_attr = TRUE)
+  expect_equal(attr(d_obs@columnIndex, "clusterinput"), "cluster")
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
@@ -103,8 +105,23 @@ test_that("Design creation", {
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rd@structure == mtcars_subset))
-  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
+  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+               ignore_attr = TRUE)
+  expect_equal(attr(d_rd@columnIndex, "clusterinput"), "cluster")
   expect_equal(d_rd@type, "RD")
+
+  ### Complex design with unitid
+  d_rd2 <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + unitid(mpg, qsec),
+                  data = mtcars, type = "RD")
+
+  mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
+                                             "wt", "cyl", "mpg", "qsec"))
+  mtcars_subset$vs <- as.factor(mtcars_subset$vs)
+  expect_true(all(d_rd2@structure == mtcars_subset))
+  expect_equal(d_rd2@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+               ignore_attr = TRUE)
+  expect_equal(attr(d_rd2@columnIndex, "clusterinput"), "unitid")
+  expect_equal(d_rd2@type, "RD")
 
   ### Specific designs
   rct_des <- RCT_Design(vs ~ cluster(qsec), data = mtcars)
