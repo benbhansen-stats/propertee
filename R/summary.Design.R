@@ -15,7 +15,7 @@ summary.Design <- function(object, ...) {
 
   cat(paste("Contains ", nrow(object@structure) -
                            sum(duplicated(object@structure[object@columnIndex == "c"])),
-            paste0(" ", attr(object@columnIndex, "clusterinput"), "s ") ,"(`",
+            paste0(" ", object@clustertype, "s ") ,"(`",
             paste(varNames(object, "c"), collapse = "`, `"),
             "`)",
             sep = ""))

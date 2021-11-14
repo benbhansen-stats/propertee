@@ -2,12 +2,14 @@ test_that("Design creation", {
   d <- new("Design",
            structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
            columnIndex = c("t", "c"),
-           type = "RCT")
+           type = "RCT",
+           clustertype = "cluster")
 
   expect_s4_class(d, "Design")
   expect_s3_class(d@structure, "data.frame")
   expect_type(d@columnIndex, "character")
   expect_type(d@type, "character")
+  expect_type(d@clustertype, "character")
 
   expect_equal(ncol(d@structure), length(d@columnIndex))
   expect_length(d@type, 1)
@@ -78,7 +80,7 @@ test_that("Design creation", {
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rct@structure == mtcars_subset))
   expect_equal(d_rct@columnIndex, c("t", "c"), ignore_attr = TRUE)
-  expect_equal(attr(d_rct@columnIndex, "clusterinput"), "cluster")
+  expect_equal(d_rct@clustertype, "cluster")
   expect_equal(d_rct@type, "RCT")
 
   # subset
@@ -94,7 +96,7 @@ test_that("Design creation", {
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_obs@structure == mtcars_subset))
   expect_equal(d_obs@columnIndex, c("t", "c"), ignore_attr = TRUE)
-  expect_equal(attr(d_obs@columnIndex, "clusterinput"), "cluster")
+  expect_equal(d_obs@clustertype, "cluster")
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
@@ -107,7 +109,7 @@ test_that("Design creation", {
   expect_true(all(d_rd@structure == mtcars_subset))
   expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
                ignore_attr = TRUE)
-  expect_equal(attr(d_rd@columnIndex, "clusterinput"), "cluster")
+  expect_equal(d_rd@clustertype, "cluster")
   expect_equal(d_rd@type, "RD")
 
   ### Complex design with unitid
@@ -120,7 +122,7 @@ test_that("Design creation", {
   expect_true(all(d_rd2@structure == mtcars_subset))
   expect_equal(d_rd2@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
                ignore_attr = TRUE)
-  expect_equal(attr(d_rd2@columnIndex, "clusterinput"), "unitid")
+  expect_equal(d_rd2@clustertype, "unitid")
   expect_equal(d_rd2@type, "RD")
 
   ### Specific designs

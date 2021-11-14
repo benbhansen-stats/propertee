@@ -1,7 +1,8 @@
 setClass("Design",
          slots = c(structure = "data.frame",
                    columnIndex = "character",
-                   type = "character"))
+                   type = "character",
+                   clustertype = "character"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -37,6 +38,9 @@ setValidity("Design", function(object) {
   }
   if (object@type != "RD" && any(object@columnIndex == "f")) {
     return("Forcing variables only valid in RD")
+  }
+  if (!object@clustertype %in% c("cluster", "unitid")) {
+    return('valid `clustertype`s are "cluster" or "unitid"')
   }
   TRUE
 })
@@ -78,10 +82,10 @@ New_Design <- function(form, data, type, subset = NULL) {
   index <- o[[2]]
 
   if (any(index == "u")) {
-    attr(index, "clusterinput") <- "unitid"
+    ct <- "unitid"
     index[index == "u"] <- "c"
   } else {
-    attr(index, "clusterinput") <- "cluster"
+    ct <- "cluster"
   }
 
   m_collapse <- unique(m)
@@ -108,7 +112,8 @@ New_Design <- function(form, data, type, subset = NULL) {
   new("Design",
       structure = m_collapse,
       columnIndex = index,
-      type = type)
+      type = type,
+      clustertype = ct)
 }
 
 ##' Generates an RCT Design object with the given specifications.
@@ -172,7 +177,7 @@ setMethod("show", "Design", function(object) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
-  clusttype <- switch(attr(object@columnIndex, "clusterinput"),
+  clusttype <- switch(object@clustertype,
                       "cluster" = "Cluster  :",
                       "unitid"  = "Unitid   :")
 
@@ -260,9 +265,7 @@ as_RD_Design <- function(Design, ...) {
 # Removes the forcing column to prepare conversion from RD to another type.
 .remove_forcing <- function(d) {
   d@structure <- d@structure[, d@columnIndex != "f"]
-  tmp <- d@columnIndex[d@columnIndex != "f"]
-  attr(tmp, "clusterinput") <- attr(d@columnIndex, "clusterinput")
-  d@columnIndex <- tmp
+  d@columnIndex <- d@columnIndex[d@columnIndex != "f"]
   validObject(d)
   return(d)
 }

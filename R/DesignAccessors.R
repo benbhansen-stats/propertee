@@ -43,7 +43,7 @@ setGeneric("clusters", function(x) standardGeneric("clusters"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("clusters", "Design", function(x) {
-  if (attr(x@columnIndex, "clusterinput") != "cluster") {
+  if (x@clustertype != "cluster") {
     stop("Design specified with `unitid()`, not `cluster()`")
   }
   x@structure[x@columnIndex == "c"]
@@ -87,7 +87,7 @@ setGeneric("unitids", function(x) standardGeneric("unitids"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("unitids", "Design", function(x) {
-  if (attr(x@columnIndex, "clusterinput") != "unitid") {
+  if (x@clustertype != "unitid") {
     stop("Design specified with `cluster()`, not `unitid()`")
   }
   x@structure[x@columnIndex == "c"]
@@ -217,10 +217,8 @@ setMethod("forcings<-", "Design", function(x, value) {
   design@structure <-
     cbind.data.frame(design@structure[design@columnIndex != type], new)
 
-  tmp <- c(design@columnIndex[design@columnIndex != type],
-           rep(type, ncol(new)))
-  attr(tmp, "clusterinput") <- attr(design@columnIndex, "clusterinput")
-  design@columnIndex <- tmp
+  design@columnIndex<- c(design@columnIndex[design@columnIndex != type],
+                         rep(type, ncol(new)))
   names(design@columnIndex) <- colnames(design@structure)
   validObject(design)
   return(design)
