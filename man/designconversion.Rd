@@ -6,20 +6,27 @@
 \alias{as_RD_Design}
 \title{Design conversion}
 \usage{
-as_RCT_Design(Design, ..., force = FALSE)
+as_RCT_Design(Design, ..., loseforcing = FALSE)
 
-as_Obs_Design(Design, ..., force = FALSE)
+as_Obs_Design(Design, ..., loseforcing = FALSE)
 
-as_RD_Design(Design, ...)
+as_RD_Design(Design, data, ..., forcing)
 }
 \arguments{
 \item{Design}{Design to convert}
 
 \item{...}{No addiitonal options at present}
 
-\item{force}{Converting from RD to another design will error to avoid losing
-the forcing variable. Setting \code{force = TRUE} allows the conversion to
-automatically drop the forcing variable.}
+\item{loseforcing}{Converting from RD to another design will error to avoid
+losing the forcing variable. Setting \code{loseforcing = TRUE} allows the
+conversion to automatically drop the forcing variable.}
+
+\item{data}{Converting to an RD requires adding a \code{forcing} variable, which
+requires access to the original data.}
+
+\item{forcing}{Converting to an RD requires adding a \code{forcing} variable.
+This should be entered as the update to a formula, e.g.
+"~ . + forcing(forcevar)".}
 }
 \value{
 The design of the updated type

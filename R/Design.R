@@ -2,7 +2,8 @@ setClass("Design",
          slots = c(structure = "data.frame",
                    columnIndex = "character",
                    type = "character",
-                   clustertype = "character"))
+                   clustertype = "character",
+                   call = "call"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -39,6 +40,9 @@ setValidity("Design", function(object) {
   if (object@type != "RD" && any(object@columnIndex == "f")) {
     return("Forcing variables only valid in RD")
   }
+  if (object@type == "RD" && !any(object@columnIndex == "f")) {
+    return("RD designs must include at least one forcing variables")
+  }
   if (!object@clustertype %in% c("cluster", "unitid")) {
     return('valid `clustertype`s are "cluster" or "unitid"')
   }
@@ -46,7 +50,13 @@ setValidity("Design", function(object) {
 })
 
 
-New_Design <- function(form, data, type, subset = NULL) {
+New_Design <- function(form, data, type, subset = NULL, call = NULL) {
+
+  if (is.null(call) | !is.call(call)) {
+    call <- match.call()
+    warning("Invalid call passed to `New_Design`, using default. Please use RD_Design, RCT_Design, or Obs_Design instead of `New_Design` directly.")
+  }
+
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
@@ -113,7 +123,8 @@ New_Design <- function(form, data, type, subset = NULL) {
       structure = m_collapse,
       columnIndex = index,
       type = type,
-      clustertype = ct)
+      clustertype = ct,
+      call = call)
 }
 
 ##' Generates an RCT Design object with the given specifications.
@@ -129,7 +140,11 @@ New_Design <- function(form, data, type, subset = NULL) {
 RCT_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula)
 
-  design <- New_Design(formula, data, type = "RCT", subset = subset)
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "RCT",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -147,7 +162,12 @@ RCT_Design <- function(formula, data, subset = NULL) {
 RD_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula, allowForcing = TRUE)
 
-  design <- New_Design(formula, data, type = "RD", subset = subset)
+
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "RD",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -164,7 +184,12 @@ RD_Design <- function(formula, data, subset = NULL) {
 Obs_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula)
 
-  design <- New_Design(formula, data, type = "Obs", subset = subset)
+
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "Obs",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -219,45 +244,65 @@ varNames <- function(x, type) {
 ##' Converst between Design types
 ##' @title Design conversion
 ##' @param Design Design to convert
+##' @param data Converting to an RD requires adding a `forcing` variable, which
+##'   requires access to the original data.
 ##' @param ... No addiitonal options at present
-##' @param force Converting from RD to another design will error to avoid losing
-##'   the forcing variable. Setting `force = TRUE` allows the conversion to
-##'   automatically drop the forcing variable.
+##' @param loseforcing Converting from RD to another design will error to avoid
+##'   losing the forcing variable. Setting `loseforcing = TRUE` allows the
+##'   conversion to automatically drop the forcing variable.
+##' @param forcing Converting to an RD requires adding a `forcing` variable.
+##'   This should be entered as the update to a formula, e.g.
+##'   "~ . + forcing(forcevar)".
 ##' @return The design of the updated type
 ##' @export
+##' @importFrom stats as.formula update
 ##' @rdname designconversion
-as_RCT_Design <- function(Design, ..., force = FALSE) {
+as_RCT_Design <- function(Design, ..., loseforcing = FALSE) {
   if ( Design@type == "RD") {
-    if (!force) {
-      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
+    if (!loseforcing) {
+      stop("Any `forcing` variables will be dropped. Pass option `loseforcing = TRUE` to proceed.")
     }
     Design <- .remove_forcing(Design)
   }
   Design@type <- "RCT"
+  Design@call[[1]] <- as.name("RCT_Design")
   validObject(Design)
   return(Design)
 }
 
 ##' @export
 ##' @rdname designconversion
-as_Obs_Design <- function(Design, ..., force = FALSE) {
+as_Obs_Design <- function(Design, ..., loseforcing = FALSE) {
   if ( Design@type == "RD") {
-    if (!force) {
+    if (!loseforcing) {
       stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
     }
     Design <- .remove_forcing(Design)
   }
   Design@type <- "Obs"
+  Design@call[[1]] <- as.name("Obs_Design")
   validObject(Design)
   return(Design)
 }
 
 ##' @export
 ##' @rdname designconversion
-as_RD_Design <- function(Design, ...) {
-  Design@type <- "RD"
+as_RD_Design <- function(Design, data, ..., forcing) {
+  if (!is(forcing, "formula")) {
+    stop('`forcing` must be entered as a formula such as "~ . + forcing(a, b)"')
+  }
+
+  origcall <- Design@call
+
+  Design <- RD_Design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
+                      data = data,
+                      subset = eval(Design@call[["subset"]]))
+
+  Design@call <- origcall
+  Design@call[[1]] <- as.name("RD_Design")
+  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing) )
+
   validObject(Design)
-  warning("Converted RD Design will not have forcing variable, use `forcing(Design) <- ...` to add it.")
   return(Design)
 }
 
@@ -266,6 +311,8 @@ as_RD_Design <- function(Design, ...) {
 .remove_forcing <- function(d) {
   d@structure <- d@structure[, d@columnIndex != "f"]
   d@columnIndex <- d@columnIndex[d@columnIndex != "f"]
-  validObject(d)
+
+  # Remove the "forcing" element from the formula
+  d@call[[2]][[3]] <- d@call[[2]][[3]][!grepl("forcing", d@call[[2]][[3]])]
   return(d)
 }
