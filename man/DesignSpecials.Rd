@@ -2,11 +2,14 @@
 % Please edit documentation in R/DesignUtilities.R
 \name{cluster}
 \alias{cluster}
+\alias{unitid}
 \alias{block}
 \alias{forcing}
 \title{Special terms in Design}
 \usage{
 cluster(...)
+
+unitid(...)
 
 block(...)
 

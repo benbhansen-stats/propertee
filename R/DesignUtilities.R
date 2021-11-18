@@ -15,6 +15,10 @@ cluster <- function (...)
 
 ##' @rdname DesignSpecials
 ##' @export
+unitid <- cluster
+
+##' @rdname DesignSpecials
+##' @export
 block <- cluster
 
 ##' @rdname DesignSpecials
@@ -23,24 +27,43 @@ forcing <- cluster
 
 # Perform checks on formula for creation of Design.
 # Checks performed:
-# - Ensure presence of cluster()
-# - Disallow multiple cluster(), block(), or forcing() terms
+# - Ensure presence of exactly one of cluster() or unitid()
+# - Disallow multiple cluster(), unitid(), block(), or forcing() terms
 # - Disallow forcing() unless in RDD
 checkDesignFormula <- function(form, allowForcing = FALSE) {
-  tt <- terms(form, c("cluster", "block", "forcing"))
+  tt <- terms(form, c("cluster", "unitid", "block", "forcing"))
   specials <- attr(tt, "specials")
 
   if (attr(tt, "response") == 0) {
     stop("Must specify a treatment variable as the left side of the formula.")
   }
 
-  if (is.null(specials$cluster)) {
-    stop("Must specify at least one clustering variable.")
-  } else if (length(specials$cluster) > 1) {
-    stop("Specify only one cluster() (cluster() can take multiple variables).")
+  if (is.null(specials$cluster) & is.null(specials$unitid)) {
+    stop("Must specify a clustering or unitid variable.")
+  } else if (length(specials$cluster) + length(specials$unitid) > 1) {
+    # there's 2+ entered; need to figure out what combination
+
+    # at least one of each
+    if (length(specials$cluster) >= 1 & length(specials$unitid) >= 1) {
+      stop(paste("Only one of cluster() or unitid() can be entered.",
+                 "(`cluster()` and `unitid()` can take multiple variables)"))
+    }
+
+    # multiple `cluster()`, no `unitid()`
+    if (length(specials$cluster) >= 1 & length(specials$unitid) == 0) {
+      stop(paste("Only one cluster can be entered.",
+                 "(`cluster()` can take multiple variables)"))
+      }
+
+    # multiple `unitid()`, no `cluster()`
+    if (length(specials$cluster) == 0 & length(specials$unitid) >= 1) {
+      stop(paste("Only one unitid can be entered.",
+                 "(`unitid()` can take multiple variables)"))
+    }
+    stop("This error should never be seen, but something went wrong!")
   }
 
-  if (!is.null(specials$block) && length(specials$block) > 1) {
+      if (!is.null(specials$block) && length(specials$block) > 1) {
     stop("Specify only one block() (block() can take multiple variables).")
   }
 

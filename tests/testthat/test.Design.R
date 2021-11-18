@@ -1,13 +1,20 @@
+fc <- call("ls")
+
 test_that("Design creation", {
   d <- new("Design",
            structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
            columnIndex = c("t", "c"),
-           type = "RCT")
+           type = "RCT",
+           clustertype = "cluster",
+           call = fc)
 
   expect_s4_class(d, "Design")
   expect_s3_class(d@structure, "data.frame")
   expect_type(d@columnIndex, "character")
   expect_type(d@type, "character")
+  expect_type(d@clustertype, "character")
+  expect_type(d@call, "language")
+  expect_true(is(d@call, "call"))
 
   expect_equal(ncol(d@structure), length(d@columnIndex))
   expect_length(d@type, 1)
@@ -18,57 +25,96 @@ test_that("Design validity", {
   expect_error(new("Design",
                    structure = data.frame(),
                    columnIndex = "t",
-                   type = "RCT"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "positive dimensions")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)), a = as.factor(c(1, 0))),
+                   structure = data.frame(a = as.factor(c(1, 0)),
+                                          a = as.factor(c(1, 0))),
                    columnIndex = c("t", "t"),
-                   type = "RCT"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "one treatment")
 
   expect_error(new("Design",
                    structure = data.frame(a = c(1, 0), a = c(1, 0)),
-                   columnIndex = c("c", "c"),
-                   type = "RCT"),
+                   columnIndex = c("c", "b"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "Missing treatment")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
-                   columnIndex = c("t", "f"),
-                   type = "abc"),
+                   structure = data.frame(a = as.factor(c(1, 0)),
+                                          b = c(2, 4)),
+                   columnIndex = c("t", "b"),
+                   type = "abc",
+                   clustertype = "cluster",
+                   call = fc),
                "unknown @type")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 2), b = as.factor(c(1, 0)), c = c(2, 0)),
+                   structure = data.frame(a = c(1, 2),
+                                          b = as.factor(c(1, 0)),
+                                          c = c(2, 0)),
                    columnIndex = c("c", "t"),
-                   type = "RCT"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "number of columns")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
+                   structure = data.frame(a = as.factor(c(1, 0)),
+                                          b = c(2, 4)),
                    columnIndex = c("t", "k"),
-                   type = "RCT"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "unknown elements")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0), a = c(1, 0)),
+                   structure = data.frame(a = c(1, 0),
+                                          b = c(1, 0)),
                    columnIndex = c("t", "c"),
-                   type = "RCT"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
                "must be factor")
 
-})
+  expect_error(new("Design",
+                   structure = data.frame(a = as.factor(c(1, 0)),
+                                          b = c(1, 0)),
+                   columnIndex = c("t", "f"),
+                   type = "RCT",
+                   clustertype = "cluster",
+                   call = fc),
+               "Forcing variables only valid")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = as.factor(c(1, 0)),
+                                          b = c(1, 0)),
+                   columnIndex = c("t", "c"),
+                   type = "RD",
+                   clustertype = "cluster",
+                   call = fc),
+               "at least one forcing")})
 
 test_that("Design creation", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11),]
 
-  d_rct <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
+  d_rct <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = fc)
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")
   expect_type(d_rct@columnIndex, "character")
   expect_type(d_rct@type, "character")
+  expect_type(d_rct@clustertype, "character")
+  expect_type(d_rct@call, "language")
+  expect_true(is(d_rct@call, "call"))
 
   expect_equal(dim(d_rct@structure), c(30, 2))
   expect_length(d_rct@columnIndex, 2)
@@ -77,45 +123,69 @@ test_that("Design creation", {
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rct@structure == mtcars_subset))
-  expect_equal(d_rct@columnIndex, c("t", "c"))
+  expect_equal(d_rct@columnIndex, c("t", "c"), ignore_attr = TRUE)
+  expect_equal(d_rct@clustertype, "cluster")
   expect_equal(d_rct@type, "RCT")
 
   # subset
 
   d_obs <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "Obs",
-                  subset = mtcars$mpg > 17)
+                  subset = mtcars$mpg > 17, call = fc)
 
   expect_equal(dim(d_obs@structure), c(sum(mtcars$mpg >  17), 2))
   expect_length(d_obs@columnIndex, 2)
   expect_length(d_obs@type, 1)
 
-  mtcars_subset <- subset(mtcars, select = c("vs", "qsec"), subset = mtcars$mpg > 17)
+  mtcars_subset <- subset(mtcars, select = c("vs", "qsec"),
+                          subset = mtcars$mpg > 17)
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_obs@structure == mtcars_subset))
-  expect_equal(d_obs@columnIndex, c("t", "c"))
+  expect_equal(d_obs@columnIndex, c("t", "c"), ignore_attr = TRUE)
+  expect_equal(d_obs@clustertype, "cluster")
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
-  d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
-                  data = mtcars, type = "RD")
+  d_rd <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+                       cluster(mpg, qsec),
+                  data = mtcars, type = "RD", call = fc)
 
   mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rd@structure == mtcars_subset))
-  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"))
+  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+               ignore_attr = TRUE)
+  expect_equal(d_rd@clustertype, "cluster")
   expect_equal(d_rd@type, "RD")
+
+  ### Complex design with unitid
+  d_rd2 <- New_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+                        unitid(mpg, qsec),
+                  data = mtcars, type = "RD", call = fc)
+
+  mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
+                                             "wt", "cyl", "mpg", "qsec"))
+  mtcars_subset$vs <- as.factor(mtcars_subset$vs)
+  expect_true(all(d_rd2@structure == mtcars_subset))
+  expect_equal(d_rd2@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+               ignore_attr = TRUE)
+  expect_equal(d_rd2@clustertype, "unitid")
+  expect_equal(d_rd2@type, "RD")
 
   ### Specific designs
   rct_des <- RCT_Design(vs ~ cluster(qsec), data = mtcars)
+  rct_des@call <- fc
   expect_identical(d_rct, rct_des)
 
   obs_des <- Obs_Design(vs ~ cluster(qsec), data = mtcars,
-                       subset = mtcars$mpg > 17)
+                        subset = mtcars$mpg > 17)
+  obs_des@call <- fc
   expect_identical(d_obs, obs_des)
 
-  rd_des <- RD_Design(vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
-                  data = mtcars)
+  rd_des <- RD_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+                        cluster(mpg, qsec),
+                      data = mtcars)
+  rd_des@call <- fc
   expect_identical(d_rd, rd_des)
 })
 
@@ -127,7 +197,8 @@ test_that("unit of assignment differs from unit of analysis", {
   expect_s4_class(desrct, "Design")
   expect_equal(nrow(desrct@structure), 10)
 
-  expect_output(expect_error(RCT_Design(z ~ cluster(cid1) + block(bid), data = simdata),
+  expect_output(expect_error(RCT_Design(z ~ cluster(cid1) + block(bid),
+                                        data = simdata),
                              "must be constant"),
                 "cid1")
 
@@ -147,7 +218,8 @@ test_that("Design printing", {
   data(simdata)
 
   desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  desrd  <-  RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  desrd  <-  RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                       data = simdata)
   desobs <- Obs_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   expect_output(print(desrct), "Randomized")
@@ -179,7 +251,8 @@ test_that("Design printing", {
 test_that("Accessing and replacing elements", {
   data(simdata)
 
-  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   ##### Treatment
 
@@ -193,7 +266,9 @@ test_that("Accessing and replacing elements", {
   expect_equal(treatment(des), data.frame(z = as.factor(rep(0:1, each = 5))))
 
   treatment(des)[1:2,1] <- 1
-  expect_equal(treatment(des), data.frame(z = as.factor(rep(c(1,0,1), times = c(2,3,5)))))
+  expect_equal(treatment(des),
+               data.frame(z = as.factor(rep(c(1,0,1),
+                                            times = c(2,3,5)))))
 
   expect_error(treatment(des) <- as.factor(1:5),
                "same number")
@@ -225,7 +300,8 @@ test_that("Accessing and replacing elements", {
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == clusters(des)))
 
   clusters(des)[1,1:2] <- 100
-  expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == clusters(des)))
+  expect_true(all(data.frame(qwe = c(100, 2:10),
+                             asd = c(100, 12:20)) == clusters(des)))
 
   # less clusters
   des2 <- des
@@ -257,7 +333,8 @@ test_that("Accessing and replacing elements", {
 
   # more clusters
   df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
-  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
   des2 <- des
   clusters(des2) <- df
   expect_identical(varNames(des2, "c"), colnames(df))
@@ -274,7 +351,8 @@ test_that("Accessing and replacing elements", {
 
   ##### Blocks
 
-  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   expect_identical(blocks(des), des@structure[, 4, drop = FALSE])
 
@@ -320,7 +398,8 @@ test_that("Accessing and replacing elements", {
   simdata2 <- simdata
   simdata2$cid1 <- 1:50
   names(simdata2)[1:2] <- c("cid", "bida")
-  des <- RD_Design(z ~ cluster(cid) + block(bid, bida) + forcing(force), data = simdata2)
+  des <- RD_Design(z ~ cluster(cid) + block(bid, bida) + forcing(force),
+                   data = simdata2)
 
   expect_identical(blocks(des), des@structure[, 3:4])
 
@@ -343,7 +422,8 @@ test_that("Accessing and replacing elements", {
   expect_true(all(data.frame(qwe = 1:50, asd = 51:100) == blocks(des)))
 
   blocks(des)[1,1:2] <- 100
-  expect_true(all(data.frame(qwe = c(100, 2:50), asd = c(100, 52:100)) == blocks(des)))
+  expect_true(all(data.frame(qwe = c(100, 2:50),
+                             asd = c(100, 52:100)) == blocks(des)))
 
   # less blocks
   des2 <- des
@@ -372,7 +452,8 @@ test_that("Accessing and replacing elements", {
 
 
   #### Forcing
-  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   expect_identical(forcings(des), des@structure[, 5, drop = FALSE])
 
@@ -414,7 +495,8 @@ test_that("Accessing and replacing elements", {
 
   simdata2 <- simdata
   simdata2$force2 <- rep(rnorm(10, mean = 5), times = rep(c(4, 6), times = 5))
-  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2), data = simdata2)
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2),
+                   data = simdata2)
 
   expect_identical(forcings(des), des@structure[, 5:6])
 
@@ -437,7 +519,8 @@ test_that("Accessing and replacing elements", {
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == forcings(des)))
 
   forcings(des)[1,1:2] <- 100
-  expect_true(all(data.frame(qwe = c(100, 2:10), asd = c(100, 12:20)) == forcings(des)))
+  expect_true(all(data.frame(qwe = c(100, 2:10),
+                             asd = c(100, 12:20)) == forcings(des)))
 
   # less forcings
   des2 <- des
@@ -486,17 +569,72 @@ test_that("support for different types of treatment variables", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11),]
 
-  treat_binary <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
+  treat_binary <- New_Design(vs ~ cluster(qsec), data = mtcars,
+                             type = "RCT", call = fc)
   mtcars$vs <- as.logical(mtcars$vs)
-  treat_logical <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT")
+  treat_logical <- New_Design(vs ~ cluster(qsec), data = mtcars,
+                              type = "RCT", call = fc)
   expect_identical(as.numeric(treat_binary@structure$vs),
                    as.numeric(treat_logical@structure$vs))
 
   mtcars$carb <- as.factor(mtcars$carb)
-  treat_factor <- New_Design(carb ~ cluster(qsec), data = mtcars, type = "RCT")
+  treat_factor <- New_Design(carb ~ cluster(qsec), data = mtcars,
+                             type = "RCT", call = fc)
   expect_identical(unique(treat_factor@structure$carb), unique(mtcars$carb))
 
   mtcars$gear <- as.ordered(mtcars$gear)
-  treat_ordered <- New_Design(gear ~ cluster(qsec), data = mtcars, type = "RCT")
+  treat_ordered <- New_Design(gear ~ cluster(qsec), data = mtcars,
+                              type = "RCT", call = fc)
   expect_identical(unique(treat_ordered@structure$gear), unique(mtcars$gear))
+})
+
+test_that("Design type conversions", {
+
+  # Helper function to check equivalnce of Designs without worrying about some
+  # oddities in @call
+  checkequivDesign <- function(d1, d2) {
+    expect_identical(d1@type, d2@type)
+    expect_identical(d1@structure, d2@structure)
+    expect_identical(d1@columnIndex, d2@columnIndex)
+    expect_identical(d1@clustertype, d2@clustertype)
+
+    # Due to formula hacking in the @call, the calls can be non-identical.
+    # However, they should both produce the same Design if `eval`'d.
+    d1redux <- eval(d1@call)
+    d2redux <- eval(d2@call)
+    expect_identical(d1redux@type, d2redux@type)
+    expect_identical(d1redux@structure, d2redux@structure)
+    expect_identical(d1redux@columnIndex, d2redux@columnIndex)
+    expect_identical(d1redux@clustertype, d2redux@clustertype)
+
+    invisible(TRUE)
+  }
+  data(simdata)
+
+  desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desrd  <-  RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                       data = simdata)
+  desobs <- Obs_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  # Obs <-> RCT
+  expect_identical(desrct, as_RCT_Design(desobs))
+  expect_identical(desobs, as_Obs_Design(desrct))
+
+  # RD -> Obs/RCT
+  expect_error(as_RCT_Design(desrd), "will be dropped")
+  expect_error(as_Obs_Design(desrd), "will be dropped")
+  checkequivDesign(desrct, as_RCT_Design(desrd, loseforcing = TRUE))
+  checkequivDesign(desobs, as_Obs_Design(desrd, loseforcing = TRUE))
+
+  # RCT/RD -> Obs
+  expect_error(as_RD_Design(desrct))
+  checkequivDesign(desrd, as_RD_Design(desrct, data = simdata,
+                                      forcing = ~ . + forcing(force)))
+  checkequivDesign(desrd, as_RD_Design(desrct, data = simdata,
+                                      forcing = . ~ . + forcing(force)))
+  checkequivDesign(desrd, as_RD_Design(desobs, data = simdata,
+                                      forcing = ~ . + forcing(force)))
+  checkequivDesign(desrd, as_RD_Design(desobs, data = simdata,
+                                      forcing = . ~ . + forcing(force)))
+
 })

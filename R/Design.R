@@ -1,7 +1,9 @@
 setClass("Design",
          slots = c(structure = "data.frame",
                    columnIndex = "character",
-                   type = "character"))
+                   type = "character",
+                   clustertype = "character",
+                   call = "call"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -38,11 +40,23 @@ setValidity("Design", function(object) {
   if (object@type != "RD" && any(object@columnIndex == "f")) {
     return("Forcing variables only valid in RD")
   }
+  if (object@type == "RD" && !any(object@columnIndex == "f")) {
+    return("RD designs must include at least one forcing variables")
+  }
+  if (!object@clustertype %in% c("cluster", "unitid")) {
+    return('valid `clustertype`s are "cluster" or "unitid"')
+  }
   TRUE
 })
 
 
-New_Design <- function(form, data, type, subset = NULL) {
+New_Design <- function(form, data, type, subset = NULL, call = NULL) {
+
+  if (is.null(call) | !is.call(call)) {
+    call <- match.call()
+    warning("Invalid call passed to `New_Design`, using default. Please use RD_Design, RCT_Design, or Obs_Design instead of `New_Design` directly.")
+  }
+
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
@@ -67,12 +81,22 @@ New_Design <- function(form, data, type, subset = NULL) {
   o <- rename_vars(m, index, "cluster")
   m <- o[[1]]
   index <- o[[2]]
+  o <- rename_vars(m, index, "unitid")
+  m <- o[[1]]
+  index <- o[[2]]
   o <- rename_vars(m, index, "block")
   m <- o[[1]]
   index <- o[[2]]
   o <- rename_vars(m, index, "forcing")
   m <- o[[1]]
   index <- o[[2]]
+
+  if (any(index == "u")) {
+    ct <- "unitid"
+    index[index == "u"] <- "c"
+  } else {
+    ct <- "cluster"
+  }
 
   m_collapse <- unique(m)
 
@@ -98,7 +122,9 @@ New_Design <- function(form, data, type, subset = NULL) {
   new("Design",
       structure = m_collapse,
       columnIndex = index,
-      type = type)
+      type = type,
+      clustertype = ct,
+      call = call)
 }
 
 ##' Generates an RCT Design object with the given specifications.
@@ -114,7 +140,11 @@ New_Design <- function(form, data, type, subset = NULL) {
 RCT_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula)
 
-  design <- New_Design(formula, data, type = "RCT", subset = subset)
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "RCT",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -132,7 +162,12 @@ RCT_Design <- function(formula, data, subset = NULL) {
 RD_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula, allowForcing = TRUE)
 
-  design <- New_Design(formula, data, type = "RD", subset = subset)
+
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "RD",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -149,7 +184,12 @@ RD_Design <- function(formula, data, subset = NULL) {
 Obs_Design <- function(formula, data, subset = NULL) {
   checkDesignFormula(formula)
 
-  design <- New_Design(formula, data, type = "Obs", subset = subset)
+
+  design <- New_Design(form = formula,
+                       data = data,
+                       type = "Obs",
+                       subset = subset,
+                       call = match.call())
   return(design)
 }
 
@@ -162,11 +202,15 @@ setMethod("show", "Design", function(object) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
+  clusttype <- switch(object@clustertype,
+                      "cluster" = "Cluster  :",
+                      "unitid"  = "Unitid   :")
+
   cat(destype)
   cat("\n\n")
   cat(paste("Treatment:", varNames(object, "t")))
   cat("\n")
-  cat(paste("Cluster  :", paste(varNames(object, "c"), collapse = ", ")))
+  cat(paste(clusttype, paste(varNames(object, "c"), collapse = ", ")))
   cat("\n")
   if (length(varNames(object, "b")) > 0) {
     cat(paste("Block    :", paste(varNames(object, "b"), collapse = ", ")))
@@ -193,208 +237,82 @@ varNames <- function(x, type) {
   names(x@structure)[x@columnIndex == type]
 }
 
+##############################
+##### Design Conversions #####
+##############################
 
-###########################################
-##### Accessor and modifier functions #####
-###########################################
-
-
-############### Treatment
-
+##' Converst between Design types
+##' @title Design conversion
+##' @param Design Design to convert
+##' @param data Converting to an RD requires adding a `forcing` variable, which
+##'   requires access to the original data.
+##' @param ... No addiitonal options at present
+##' @param loseforcing Converting from RD to another design will error to avoid
+##'   losing the forcing variable. Setting `loseforcing = TRUE` allows the
+##'   conversion to automatically drop the forcing variable.
+##' @param forcing Converting to an RD requires adding a `forcing` variable.
+##'   This should be entered as the update to a formula, e.g.
+##'   "~ . + forcing(forcevar)".
+##' @return The design of the updated type
 ##' @export
-##' @rdname Design_extractreplace
-setGeneric("treatment", function(x) standardGeneric("treatment"))
-
-##' @title Extract and Replace elements of Design
-##' @param x Design object
-##' @return data.frame containing cluster-level information
-##' @export
-##' @rdname Design_extractreplace
-setMethod("treatment", "Design", function(x) {
-  x@structure[x@columnIndex == "t"]
-})
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
-
-##' @param value Replacement. Either a vector/matrix of appropriate dimension,
-##'   or a named data.frame if renaming variable as well.
-##' @export
-##' @rdname Design_extractreplace
-setMethod("treatment<-", "Design", function(x, value) {
-
-  value <- .convert_treatment_to_factor(value)
-
-  value <- .convert_to_data.frame(value, x, "t")
-
-  x@structure[x@columnIndex == "t"] <- value
-  names(x@structure)[x@columnIndex == "t"] <- colnames(value)
-  validObject(x)
-  x
-})
-
-############### Cluster
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("clusters", function(x) standardGeneric("clusters"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("clusters", "Design", function(x) {
-  x@structure[x@columnIndex == "c"]
-})
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("clusters<-", function(x, value) standardGeneric("clusters<-"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("clusters<-", "Design", function(x, value) {
-
-  value <- .convert_to_data.frame(value, x, "c")
-
-  x <- .updateStructure(x, value, "c")
-
-  dupclust <- duplicated(clusters(x))
-  dupall <- duplicated(x@structure[x@columnIndex != "f"])
-  if (any(dupclust)) {
-
-    if (sum(dupclust) != sum(dupall)) {
-      stop(paste("Fewer new clusters then original, but new collapsed",
-                 "clusters would have non-constant treatment and/or",
-                 "block structure"))
+##' @importFrom stats as.formula update
+##' @rdname designconversion
+as_RCT_Design <- function(Design, ..., loseforcing = FALSE) {
+  if ( Design@type == "RD") {
+    if (!loseforcing) {
+      stop("Any `forcing` variables will be dropped. Pass option `loseforcing = TRUE` to proceed.")
     }
-    warning("Fewer new clusters then original, collapsing")
-
-    x@structure <- x@structure[-dupclust,]
+    Design <- .remove_forcing(Design)
   }
-  validObject(x)
-  x
-})
-
-############### Blocks
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("blocks", function(x) standardGeneric("blocks"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("blocks", "Design", function(x) {
-  x@structure[x@columnIndex == "b"]
-})
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("blocks<-", function(x, value) standardGeneric("blocks<-"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("blocks<-", "Design", function(x, value) {
-  value <- .convert_to_data.frame(value, x, "b")
-
-  .updateStructure(x, value, "b")
-})
-
-############### Forcing
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("forcings", function(x) standardGeneric("forcings"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("forcings", "Design", function(x) {
-  if (x@type != "RD") {
-    stop("Forcing variable only used in RD designs")
-  }
-  x@structure[x@columnIndex == "f"]
-})
-
-##' @export
-##' @rdname Design_extractreplace
-setGeneric("forcings<-", function(x, value) standardGeneric("forcings<-"))
-
-##' @export
-##' @rdname Design_extractreplace
-setMethod("forcings<-", "Design", function(x, value) {
-  if (x@type != "RD") {
-    stop("Forcing variable only used in RD designs")
-  }
-
-  value <- .convert_to_data.frame(value, x, "f")
-
-  .updateStructure(x, value, "f")
-})
-
-
-# Internal helper function
-# Takes in a replacement item and a design,
-# and if replacement isn't a data.frame already,
-# converts it to a data.frame, extracting names from
-# the design if original value isn't already named
-.convert_to_data.frame <- function(value, design, type) {
-  if (!is(value, "data.frame")) {
-    if (is.null(colnames(value))) {
-      nullName <- TRUE
-    } else {
-      nullName <- FALSE
-    }
-    value <- as.data.frame(value)
-    if (nrow(design@structure) != nrow(value)) {
-      stop("replacement entries do not have same number of rows as current")
-    }
-    if (nullName) {
-      oldNames <- varNames(design, type)
-      if (length(oldNames) > ncol(value)) {
-        oldNames <- oldNames[seq_len(ncol(value))]
-      } else if (length(oldNames) < ncol(value)) {
-        stop("additional variables must be named")
-      }
-      colnames(value) <- oldNames
-    }
-  }
-  if (nrow(design@structure) != nrow(value)) {
-    stop("replacement entries do not have same number of rows as current")
-  }
-  value
+  Design@type <- "RCT"
+  Design@call[[1]] <- as.name("RCT_Design")
+  validObject(Design)
+  return(Design)
 }
 
-# Internal helper function
-# Replaces `type` columns in `design` with `new`. Assumes
-# `.convert_to_data.frame` has already been called on `new`
-.updateStructure <- function(design, new, type) {
-  design@structure <-
-    cbind.data.frame(design@structure[design@columnIndex != type], new)
-
-  design@columnIndex <- c(design@columnIndex[design@columnIndex != type],
-                          rep(type, ncol(new)))
-  names(design@columnIndex) <- colnames(design@structure)
-  validObject(design)
-  return(design)
-  }
-
-# Internal helper function
-# Converts treatment to factor
-.convert_treatment_to_factor <- function(treatment) {
-  if (!is.null(dim(treatment))) {
-    if (ncol(treatment) != 1) {
-      stop("Only one treatment variable allowed")
+##' @export
+##' @rdname designconversion
+as_Obs_Design <- function(Design, ..., loseforcing = FALSE) {
+  if ( Design@type == "RD") {
+    if (!loseforcing) {
+      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
     }
-    treatment <- treatment[,,drop = TRUE]
+    Design <- .remove_forcing(Design)
   }
-  if (is.numeric(treatment)) {
-    if (any(!treatment %in% 0:1)) {
-      stop("Numerical treatments must only contain values 0 and 1.")
-    }
-    treatment <- as.factor(treatment)
-  } else if (is.logical(treatment)) {
-    treatment <- as.factor(treatment)
-  } else if (!is.factor(treatment)) {
-    stop("Treatment must be binary (0/1), logical, factor or ordered")
+  Design@type <- "Obs"
+  Design@call[[1]] <- as.name("Obs_Design")
+  validObject(Design)
+  return(Design)
+}
+
+##' @export
+##' @rdname designconversion
+as_RD_Design <- function(Design, data, ..., forcing) {
+  if (!is(forcing, "formula")) {
+    stop('`forcing` must be entered as a formula such as "~ . + forcing(a, b)"')
   }
-  return(treatment)
+
+  origcall <- Design@call
+
+  Design <- RD_Design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
+                      data = data,
+                      subset = eval(Design@call[["subset"]]))
+
+  Design@call <- origcall
+  Design@call[[1]] <- as.name("RD_Design")
+  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing) )
+
+  validObject(Design)
+  return(Design)
+}
+
+# Internal function
+# Removes the forcing column to prepare conversion from RD to another type.
+.remove_forcing <- function(d) {
+  d@structure <- d@structure[, d@columnIndex != "f"]
+  d@columnIndex <- d@columnIndex[d@columnIndex != "f"]
+
+  # Remove the "forcing" element from the formula
+  d@call[[2]][[3]] <- d@call[[2]][[3]][!grepl("forcing", d@call[[2]][[3]])]
+  return(d)
 }
