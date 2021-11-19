@@ -5,7 +5,9 @@
 #'   \item cid2 Second level clustering ID
 #'   \item bid Block ID
 #'   \item force Forcing variable
-#'   \item z Treatment indicator
+#'   \item z Binary treatment indicator
+#'   \item o 4-level ordered treatment variable
+#'   \item dose Dose treatment variable
 #'   \item x Some predictor
 #'   \item y Some outcome
 #' }
