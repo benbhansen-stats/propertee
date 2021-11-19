@@ -46,8 +46,6 @@ as.DirectAdjusted <- function(x, ...) {
     stop("input must be lm object")
   }
 
-  #browser()
-
   if (!is(x$model$"(weights)", "WeightedDesign")) {
     stop("input model must contain WeightedDesign weights")
   }

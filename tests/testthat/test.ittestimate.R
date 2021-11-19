@@ -1,7 +1,8 @@
 test_that("ittestimate", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   it <- ittestimate(des, simdata, "y")
 
@@ -32,7 +33,8 @@ test_that("ittestimate", {
 
 test_that("clusterIds in ittestimate", {
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   it1 <- ittestimate(des, simdata, "y")
 
@@ -68,7 +70,8 @@ test_that("clusterIds in ittestimate", {
 
 test_that("covariate adjustment", {
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   camod <- lm(y ~ x, data = simdata)
 
@@ -111,7 +114,8 @@ test_that("manually passing weights", {
 test_that("WeightedDesign argument instead of Design", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   wdes <- ate(des, simdata)
 
@@ -121,4 +125,24 @@ test_that("WeightedDesign argument instead of Design", {
   expect_equal(withdes$coef, withwdes$coef)
   expect_identical(withdes@Design, withwdes@Design)
   expect_equal(weights(withdes), weights(withwdes))
+})
+
+test_that("treatment types", {
+  data(simdata)
+  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
+  it <- ittestimate(des, simdata, "y")
+  expect_length(it$coef, 2)
+
+  des <- RD_Design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
+  it <- ittestimate(des, simdata, "y")
+  expect_length(it$coef, 4)
+
+  des <- RD_Design(as.ordered(dose) ~ cluster(cid2, cid1) +
+                     block(bid) + forcing(force),
+                   data = simdata)
+  it <- ittestimate(des, simdata, "y")
+  expect_length(it$coef, 5)
+
 })

@@ -569,23 +569,34 @@ test_that("support for different types of treatment variables", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11),]
 
+  # 0/1 binary
   treat_binary <- New_Design(vs ~ cluster(qsec), data = mtcars,
                              type = "RCT", call = fc)
+
+  # logical
   mtcars$vs <- as.logical(mtcars$vs)
   treat_logical <- New_Design(vs ~ cluster(qsec), data = mtcars,
                               type = "RCT", call = fc)
   expect_identical(as.numeric(treat_binary@structure$vs),
                    as.numeric(treat_logical@structure$vs))
 
+
+  # Factor
   mtcars$carb <- as.factor(mtcars$carb)
   treat_factor <- New_Design(carb ~ cluster(qsec), data = mtcars,
                              type = "RCT", call = fc)
   expect_identical(unique(treat_factor@structure$carb), unique(mtcars$carb))
 
+  # Ordinal
   mtcars$gear <- as.ordered(mtcars$gear)
   treat_ordered <- New_Design(gear ~ cluster(qsec), data = mtcars,
                               type = "RCT", call = fc)
   expect_identical(unique(treat_ordered@structure$gear), unique(mtcars$gear))
+
+  # non-binary numerical
+  expect_error(New_Design(mpg ~ cluster(qsec), data = mtcars,
+                          type = "RCT", call = fc),
+               "only contain values 0 and 1")
 })
 
 test_that("Design type conversions", {
