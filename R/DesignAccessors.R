@@ -177,6 +177,7 @@ setMethod("forcings<-", "Design", function(x, value) {
   .updateStructure(x, value, "f")
 })
 
+############### Helper Functions
 
 # Internal helper function
 # Takes in a replacement item and a design,
