@@ -143,10 +143,10 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 ##' must also include a `forcing()` entry. The formula may optionally include a
 ##' `block()` entry as well.
 ##'
-##' It is strongly recommended NOT to transform variables inside the `*_Design`
-##' calls, as that can lead to mismatches between the Design objects and future
-##' data. In other words, avoid calls such as `RCT_Design(as.factor(z) ~ ...`,
-##' and instead transform the variable in all relevant data sets a prior.
+##' Vvariable transformation inside the `*_Design` calls are not allowed, as
+##' that can lead to mismatches between the Design objects and future data. In
+##' other words, avoid calls such as `RCT_Design(as.factor(z) ~ ...`, and
+##' instead transform the variable in ALL relevant data sets a prior.
 ##' @title Specify Design
 ##' @param formula defines the design components
 ##' @param data the data set.

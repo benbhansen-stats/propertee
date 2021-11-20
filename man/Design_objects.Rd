@@ -35,8 +35,8 @@ assignment (one or more variables). If defining an RD_Design, the formula
 must also include a \code{forcing()} entry. The formula may optionally include a
 \code{block()} entry as well.
 
-It is strongly recommended NOT to transform variables inside the \verb{*_Design}
-calls, as that can lead to mismatches between the Design objects and future
-data. In other words, avoid calls such as \verb{RCT_Design(as.factor(z) ~ ...},
-and instead transform the variable in all relevant data sets a prior.
+Vvariable transformation inside the \verb{*_Design} calls are not allowed, as
+that can lead to mismatches between the Design objects and future data. In
+other words, avoid calls such as \verb{RCT_Design(as.factor(z) ~ ...}, and
+instead transform the variable in ALL relevant data sets a prior.
 }
