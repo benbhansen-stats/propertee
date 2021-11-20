@@ -138,7 +138,7 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 ##' @return a Design object of type "RCT" for use in further analysis
 ##' @export
 RCT_Design <- function(formula, data, subset = NULL) {
-  checkDesignFormula(formula)
+  .check_design_formula(formula)
 
   design <- New_Design(form = formula,
                        data = data,
@@ -160,7 +160,7 @@ RCT_Design <- function(formula, data, subset = NULL) {
 ##' @return a Design object of type "RD" for use in further analysis
 ##' @export
 RD_Design <- function(formula, data, subset = NULL) {
-  checkDesignFormula(formula, allowForcing = TRUE)
+  .check_design_formula(formula, allowForcing = TRUE)
 
 
   design <- New_Design(form = formula,
@@ -182,7 +182,7 @@ RD_Design <- function(formula, data, subset = NULL) {
 ##' @return a Design object of type "Obs" for use in further analysis
 ##' @export
 Obs_Design <- function(formula, data, subset = NULL) {
-  checkDesignFormula(formula)
+  .check_design_formula(formula)
 
 
   design <- New_Design(form = formula,

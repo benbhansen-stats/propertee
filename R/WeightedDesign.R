@@ -31,40 +31,40 @@ setValidity("WeightedDesign", function(object) {
 ##' @rdname WeightCreators
 ett <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- get_data_from_model()
+    data <- .get_data_from_model()
   }
 
   if (!is.null(clusterIds)) {
-    design <- update_clusterIds(design, data, clusterIds)
+    design <- .update_clusterids(design, data, clusterIds)
   }
 
 
   #### generate weights
   weights <- rev(seq_len(nrow(design@structure)))
 
-  joinDesignWeights(weights, design, target = "ett", data = data)
+  .join_design_weights(weights, design, target = "ett", data = data)
 }
 
 ##' @export
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- get_data_from_model()
+    data <- .get_data_from_model()
   }
 
   if (!is.null(clusterIds)) {
-    design <- update_clusterIds(design, data, clusterIds)
+    design <- .update_clusterids(design, data, clusterIds)
   }
 
   #### generate weights
   weights <- seq_len(nrow(design@structure))
 
-  joinDesignWeights(weights, design, target = "ate", data = data)
+  .join_design_weights(weights, design, target = "ate", data = data)
 }
 
 # Internal function to use clusterIds to update the design with new variable
 # names
-update_clusterIds <- function(design, data, clusterIds) {
+.update_clusterids <- function(design, data, clusterIds) {
   if (!is.list(clusterIds) ||
         is.null(names(clusterIds)) ||
         any(names(clusterIds) == "")) {
@@ -105,7 +105,7 @@ update_clusterIds <- function(design, data, clusterIds) {
 
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-get_data_from_model <- function() {
+.get_data_from_model <- function() {
   data <- NULL
   # loop through previous frames until we find data. If we find data, break out of loop
   #
@@ -124,7 +124,7 @@ get_data_from_model <- function() {
 }
 
 # Internal function to expand cluster-level weights to the level of the data
-joinDesignWeights <- function(weights, design, target, data = NULL) {
+.join_design_weights <- function(weights, design, target, data = NULL) {
 
   if (nrow(data) != nrow(design@structure)) {
     # Merge cluster data with weights at cluster level

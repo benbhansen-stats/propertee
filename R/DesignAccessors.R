@@ -59,7 +59,7 @@ setMethod("clusters<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "c")
 
-  x <- .updateStructure(x, value, "c")
+  x <- .update_structure(x, value, "c")
 
   dupclust <- duplicated(clusters(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
@@ -103,7 +103,7 @@ setMethod("unitids<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "c")
 
-  x <- .updateStructure(x, value, "c")
+  x <- .update_structure(x, value, "c")
 
   dupids <- duplicated(unitids(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
@@ -143,7 +143,7 @@ setGeneric("blocks<-", function(x, value) standardGeneric("blocks<-"))
 setMethod("blocks<-", "Design", function(x, value) {
   value <- .convert_to_data.frame(value, x, "b")
 
-  .updateStructure(x, value, "b")
+  .update_structure(x, value, "b")
 })
 
 ############### Forcing
@@ -174,7 +174,7 @@ setMethod("forcings<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "f")
 
-  .updateStructure(x, value, "f")
+  .update_structure(x, value, "f")
 })
 
 ############### Helper Functions
@@ -214,7 +214,7 @@ setMethod("forcings<-", "Design", function(x, value) {
 # Internal helper function
 # Replaces `type` columns in `design` with `new`. Assumes
 # `.convert_to_data.frame` has already been called on `new`
-.updateStructure <- function(design, new, type) {
+.update_structure <- function(design, new, type) {
   design@structure <-
     cbind.data.frame(design@structure[design@columnIndex != type], new)
 

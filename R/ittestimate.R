@@ -48,7 +48,7 @@ ittestimate <- function(design,
   }
 
   if (!is.null(clusterIds)) {
-    design <- update_clusterIds(design, data, clusterIds)
+    design <- .update_clusterids(design, data, clusterIds)
   }
 
   if (is.null(weights)) {

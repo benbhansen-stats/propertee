@@ -25,12 +25,13 @@ block <- cluster
 ##' @export
 forcing <- cluster
 
+# Internal Function
 # Perform checks on formula for creation of Design.
 # Checks performed:
 # - Ensure presence of exactly one of cluster() or unitid()
 # - Disallow multiple cluster(), unitid(), block(), or forcing() terms
 # - Disallow forcing() unless in RDD
-checkDesignFormula <- function(form, allowForcing = FALSE) {
+.check_design_formula <- function(form, allowForcing = FALSE) {
   tt <- terms(form, c("cluster", "unitid", "block", "forcing"))
   specials <- attr(tt, "specials")
 
