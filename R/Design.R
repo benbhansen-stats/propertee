@@ -91,6 +91,11 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   m <- o[[1]]
   index <- o[[2]]
 
+  # Ensure there are not variable transformations (e.g. as.factor(x)
+  if (!all(names(m) %in% names(data))) {
+    stop("Do not use variable transformations in formula.\nInstead modify all relevant data sets as appropriate.")
+    }
+
   if (any(index == "u")) {
     ct <- "unitid"
     index[index == "u"] <- "c"

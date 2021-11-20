@@ -597,6 +597,11 @@ test_that("support for different types of treatment variables", {
   expect_error(New_Design(mpg ~ cluster(qsec), data = mtcars,
                           type = "RCT", call = fc),
                "only contain values 0 and 1")
+
+  # transformation error
+  expect_error(New_Design(as.factor(gear) ~ cluster(qsec), data = mtcars,
+                          type = "RCT", call = fc),
+               "variable transformations")
 })
 
 test_that("Design type conversions", {

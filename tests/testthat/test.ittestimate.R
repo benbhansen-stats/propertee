@@ -139,11 +139,6 @@ test_that("treatment types", {
   it <- ittestimate(des, simdata, "y")
   expect_length(it$coef, 4)
 
-  des <- RD_Design(as.ordered(dose) ~ cluster(cid2, cid1) +
-                     block(bid) + forcing(force),
-                   data = simdata)
-  # Erroring due to `as.ordered(dose)` being variable name.
-  expect_error(ittestimate(des, simdata, "y"), "not found")
   simdata$dose <- as.ordered(simdata$dose)
   des <- RD_Design(dose ~ cluster(cid2, cid1) +
                      block(bid) + forcing(force),
