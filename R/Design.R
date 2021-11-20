@@ -127,16 +127,28 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
       call = call)
 }
 
-##' Generates an RCT Design object with the given specifications.
+##' Generates a Design object with the given specifications.
 ##'
-##' The `formula` must include `cluster()` to identify the units of assignment
-##' (one or more variables), it may optionally contain `strata()` as well.
-##' @title Specify RCT Design
+##' Generates a randomized control treatment Design (`RCT_Design`), or an
+##' observational Design (`Obs_Design`), or a regression discontinuity Design
+##' (`RD_Design`).
+##'
+##' The formula must include `cluster()` or `unitid()` to identify the units of
+##' assignment (one or more variables). If defining an RD_Design, the formula
+##' must also include a `forcing()` entry. The formula may optionally include a
+##' `block()` entry as well.
+##'
+##' It is strongly recommended NOT to transform variables inside the `*_Design`
+##' calls, as that can lead to mismatches between the Design objects and future
+##' data. In other words, avoid calls such as `RCT_Design(as.factor(z) ~ ...`,
+##' and instead transform the variable in all relevant data sets a prior.
+##' @title Specify Design
 ##' @param formula defines the design components
 ##' @param data the data set.
 ##' @param subset optionally subset the data before creating the design object
-##' @return a Design object of type "RCT" for use in further analysis
+##' @return a Design object of the requested type for use in further analysis
 ##' @export
+##' @rdname Design_objects
 RCT_Design <- function(formula, data, subset = NULL) {
   .check_design_formula(formula)
 
@@ -148,17 +160,8 @@ RCT_Design <- function(formula, data, subset = NULL) {
   return(design)
 }
 
-##' Generates an RD Design object with the given specifications.
-##'
-##' The `formula` must include `cluster()` to identify the units of assignment
-##' (one or more variables), it may optionally contain `strata()` and/or
-##' `forcing()` as well.
-##' @title Specify Regression Discontinuity Design
-##' @param formula defines the design components
-##' @param data the data set.
-##' @param subset optionally subset the data before creating the design object
-##' @return a Design object of type "RD" for use in further analysis
 ##' @export
+##' @rdname Design_objects
 RD_Design <- function(formula, data, subset = NULL) {
   .check_design_formula(formula, allowForcing = TRUE)
 
@@ -171,16 +174,8 @@ RD_Design <- function(formula, data, subset = NULL) {
   return(design)
 }
 
-##' Generates an Observationl Data Design object with the given specifications.
-##'
-##' The `formula` must include `cluster()` to identify the units of assignment
-##' (one or more variables), it may optionally contain `strata()` as well.
-##' @title Specify Observational Data Design
-##' @param formula defines the design components
-##' @param data the data set.
-##' @param subset optionally subset the data before creating the design object
-##' @return a Design object of type "Obs" for use in further analysis
 ##' @export
+##' @rdname Design_objects
 Obs_Design <- function(formula, data, subset = NULL) {
   .check_design_formula(formula)
 
