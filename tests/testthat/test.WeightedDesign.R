@@ -130,3 +130,27 @@ test_that("weight function", {
   expect_false(is(weights(wdes), "WeightedDesign"))
 
   })
+
+test_that("Inconsistent treatment levels", {
+
+  data(simdata)
+
+  # Extra level in data into ett, not in design
+  des <- RCT_Design(o ~ cluster(cid1, cid2), data = simdata[simdata$o != 4, ])
+  expect_error(ett(des, data = simdata), "not found in Design")
+  expect_error(ate(des, data = simdata), "not found in Design")
+
+  expect_error(lm(y ~ x, data = simdata, weights = ett(des)) ,
+                 "not found in Design")
+
+  # Extra level in design,not in data to ett
+  des <- RCT_Design(o ~ cluster(cid1, cid2), data = simdata)
+  expect_warning(ett(des, data = simdata[simdata$o != 4, ]),
+                 "not found in data")
+  expect_warning(ate(des, data = simdata[simdata$o != 4, ]),
+                 "not found in data")
+
+  expect_warning(lm(y ~ x, data = simdata[simdata$o != 4, ], weights = ett(des)) ,
+                 "not found in data")
+
+})

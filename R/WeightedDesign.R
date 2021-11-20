@@ -38,6 +38,7 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
     design <- .update_clusterids(design, data, clusterIds)
   }
 
+  .treatment_concordance(design, data)
 
   #### generate weights
   weights <- rev(seq_len(nrow(design@structure)))
@@ -56,10 +57,32 @@ ate <- function(design, data = NULL, clusterIds = NULL) {
     design <- .update_clusterids(design, data, clusterIds)
   }
 
+  .treatment_concordance(design, data)
+
   #### generate weights
   weights <- seq_len(nrow(design@structure))
 
   .join_design_weights(weights, design, target = "ate", data = data)
+}
+
+# Internal function to ensure agreement in treatment levels
+.treatment_concordance <- function(design, data) {
+  treatvar <- colnames(design@structure[which(design@columnIndex == "t")])
+  ldes <- levels(design@structure[, treatvar, drop = TRUE])
+  if (!treatvar %in% names(data)) {
+    stop(paste0("Treatment variable '", treatvar, "' not found in data."))
+  }
+  datatreatment <- .convert_treatment_to_factor(data[, treatvar, drop = TRUE])
+  ldat <- levels(datatreatment)
+
+  if (!identical(ldes, ldat)) {
+    if (!all(ldes %in% ldat)) {
+      warning("Some levels of treatment in Design not found in data")
+    }
+    if (!all(ldat %in% ldes)) {
+      stop("Some levels of treatment in data not found in Design")
+    }
+  }
 }
 
 # Internal function to use clusterIds to update the design with new variable

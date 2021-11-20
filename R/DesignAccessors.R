@@ -244,5 +244,5 @@ setMethod("forcings<-", "Design", function(x, value) {
   } else if (!is.factor(treatment)) {
     stop("Treatment must be binary (0/1), logical, factor or ordered")
   }
-  return(treatment)
+  return(droplevels(treatment))
 }
