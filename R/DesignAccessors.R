@@ -23,7 +23,6 @@ setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
-
   value <- .convert_treatment_to_factor(value)
 
   value <- .convert_to_data.frame(value, x, "t")
@@ -232,7 +231,17 @@ setMethod("forcings<-", "Design", function(x, value) {
     if (ncol(treatment) != 1) {
       stop("Only one treatment variable allowed")
     }
-    treatment <- treatment[,,drop = TRUE]
+    if (is.numeric(treatment[,1])) {
+      if (any(!treatment[,1] %in% 0:1)) {
+        stop("Numerical treatments must only contain values 0 and 1.")
+      }
+      treatment[,1] <- as.factor(treatment[,1])
+    } else if (is.logical(treatment[,1])) {
+      treatment[,1] <- as.factor(treatment[,1])
+    } else if (!is.factor(treatment[,1])) {
+      stop("Treatment must be binary (0/1), logical, factor or ordered")
+    }
+    return(treatment)
   }
   if (is.numeric(treatment)) {
     if (any(!treatment %in% 0:1)) {
