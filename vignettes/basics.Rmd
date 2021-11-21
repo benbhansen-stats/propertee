@@ -42,9 +42,6 @@ The `ittestimate` function also supports a covariance adjustment model (which is
 passed to the `cov_adj` function) and a list passed as `clusterIds` to allow
 renaming of cluster ID variables in a different data.
 
-See [flexida#1](https://github.com/benbhansen-stats/flexida/issues/1) for
-details on outstanding issues.
-
 ## Detail
 
 ```{r setup}
@@ -58,8 +55,9 @@ head(simdata)
 
 `simdata` is some fake data with 50 observations in 10 clusters spread over two
 variables (`cid1`, `cid2`), nested within three blocks (`bid`), an optional
-forcing variable (`force`), with treatment (`z`), outcome (`y`) and predictor
-(`x`). `force` and `z` are constant within cluster.
+forcing variable (`force`), with three potential treatment variables (`z`,
+binary; `o`, ordinal; `dose`, continuous), outcome (`y`) and predictor (`x`).
+`force` and all treatment variables are constant within cluster.
 
 ```{r}
 des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
@@ -77,22 +75,28 @@ The `*_Design` functions (`RD_Design`, `RCT_Design`, `Obs_Design`) create an
 object of class `Design`. Since `Design` is S4, I built a validity checker
 (`setValidity`) that gets run automatically whenever a new `Design` object is
 created, and can be manually run by calling `validObject(des)`. It checks for
-things such as non-binary or constant treatment, disagreement on row numbers,
-and invalid types. Most of these errors should never hit, but its protection if
-we muck around in the internals.
+things such as constant or otherwise problematic treatment, disagreement on row
+numbers, and invalid types. Most of these errors should never hit, but its
+protection if we muck around in the internals.
 
-`Design` objects contain three slots:
+`Design` objects contain five slots:
 
 ```{r}
 des@structure
 des@columnIndex
 des@type
+des@call
+des@clustertype
 ```
 
 The `@columnIndex` flags each column of the table for their type; the treatment
 will always be the first column, but subsequent columns depend on the order of
 the formula. The formula cannot contain multiple elements, e.g. `cluster(cid1) +
 cluster(cid2)` will error.
+
+The `@clustertype` flags whether the Design was created with a `cluster()` or a
+`unitid()`; internally we always refer to this element as the "cluster", but can
+use the `@clustertype` to affect logic (e.g. to change output).
 
 Extractors and replacers work for the cluster information table
 
@@ -108,6 +112,11 @@ treatment(des)
 ```
 
 Note that the replacers handle renaming of these variables appropriately.
+
+```{r}
+# Renaming treatment back
+treatment(des) <- data.frame(z = as.factor(rep(1:0, times = 5)))
+```
 
 Weights can be generated using the `ett` and `ate` functions directly.
 
@@ -134,6 +143,11 @@ There is basic support for including `WeightedDesign` in `lm` models.
 
 ```{r}
 mod <- lm(y ~ x, data = simdata, weights = wdes)
+mod
+class(mod$weights)
+class(mod$model$"(weights)")
+mod
+mod <- lm(y ~ x, data = simdata, weights = ate(des))
 class(mod$weights)
 class(mod$model$"(weights)")
 ```
