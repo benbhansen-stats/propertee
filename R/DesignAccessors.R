@@ -227,31 +227,40 @@ setMethod("forcings<-", "Design", function(x, value) {
 # Internal helper function
 # Converts treatment to factor
 .convert_treatment_to_factor <- function(treatment) {
+  if (!(is.numeric(treatment) |
+          is.factor(treatment) |
+          is.logical(treatment) |
+          is.data.frame(treatment))) {
+    stop("Treatment must be numeric/factor/logical vector or data.frame")
+  }
+
+  return_data_frame <- FALSE
   if (!is.null(dim(treatment))) {
     if (ncol(treatment) != 1) {
       stop("Only one treatment variable allowed")
     }
-    if (is.numeric(treatment[,1])) {
-      if (any(!treatment[,1] %in% 0:1)) {
-        stop("Numerical treatments must only contain values 0 and 1.")
-      }
-      treatment[,1] <- as.factor(treatment[,1])
-    } else if (is.logical(treatment[,1])) {
-      treatment[,1] <- as.factor(treatment[,1])
-    } else if (!is.factor(treatment[,1])) {
-      stop("Treatment must be binary (0/1), logical, factor or ordered")
-    }
-    return(treatment)
+    # If the treatment is named (e.g. column in DF), we'll keep it later...
+    return_data_frame <- TRUE
   }
-  if (is.numeric(treatment)) {
-    if (any(!treatment %in% 0:1)) {
+  else {
+    # ... if its not named, convert to DF for processing first
+    treatment <- data.frame(treatment)
+  }
+
+  if (is.numeric(treatment[,1])) {
+    if (any(!treatment[,1] %in% 0:1)) {
       stop("Numerical treatments must only contain values 0 and 1.")
     }
-    treatment <- as.factor(treatment)
-  } else if (is.logical(treatment)) {
-    treatment <- as.factor(treatment)
-  } else if (!is.factor(treatment)) {
+    treatment[,1] <- as.factor(treatment[,1])
+  } else if (is.logical(treatment[,1])) {
+    treatment[,1] <-  as.factor(treatment[,1])
+  } else if (!is.factor(treatment[,1])) {
     stop("Treatment must be binary (0/1), logical, factor or ordered")
   }
-  return(droplevels(treatment))
+  treatment[,1] <- droplevels(treatment[,1])
+  if (!return_data_frame) {
+    # if treatment wasn't passed as a DF, drop dimension
+    treatment <- treatment[,1]
+  }
+  return(treatment)
 }

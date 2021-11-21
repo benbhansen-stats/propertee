@@ -276,6 +276,9 @@ test_that("Accessing and replacing elements", {
   expect_error(treatment(des) <- data.frame(a = as.factor(c(1,0,1,0,1))),
                "same number")
 
+  expect_error(treatment(des) <- matrix(1:5, ncol(1)),
+               "Treatment must be")
+
 
   ##### Clusters
 
