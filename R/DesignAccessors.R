@@ -227,10 +227,11 @@ setMethod("forcings<-", "Design", function(x, value) {
 # Internal helper function
 # Converts treatment to factor
 .convert_treatment_to_factor <- function(treatment) {
-  if (!(is.numeric(treatment) |
-          is.factor(treatment) |
-          is.logical(treatment) |
-          is.data.frame(treatment))) {
+  if (!(is.data.frame(treatment) |
+          (is.null(dim(treatment)) &
+             (is.numeric(treatment) |
+                is.factor(treatment) |
+                is.logical(treatment))))) {
     stop("Treatment must be numeric/factor/logical vector or data.frame")
   }
 
