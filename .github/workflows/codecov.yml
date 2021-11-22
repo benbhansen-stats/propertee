@@ -49,5 +49,5 @@ jobs:
           done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
 
       - name: Test coverage
-        run: covr::package_coverage()
+        run: covr::zero_coverage(covr::package_coverage())
         shell: Rscript {0}
