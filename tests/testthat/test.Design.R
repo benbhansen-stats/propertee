@@ -352,6 +352,89 @@ test_that("Accessing and replacing elements", {
   expect_identical(varNames(des2, "c"), colnames(m))
   expect_true(all(m == clusters(des2)))
 
+  ##### Unitids
+
+  des <- RD_Design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+
+  expect_identical(unitids(des), des@structure[, 2:3])
+
+  unitids(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
+  expect_identical(varNames(des, "c"), c("cid1", "cid2"))
+  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == unitids(des)))
+
+  unitids(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
+  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == unitids(des)))
+
+  m <- matrix(1:20, ncol = 2)
+  unitids(des) <- m
+  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == unitids(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  unitids(des) <- m
+  expect_identical(varNames(des, "c"), colnames(m))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == unitids(des)))
+
+  unitids(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:10),
+                             asd = c(100, 12:20)) == unitids(des)))
+
+  # less unitids
+  des2 <- des
+  unitids(des2) <- m[,1]
+  expect_identical(varNames(des2, "c"), "qwe")
+  expect_true(all(data.frame(qwe = 1:10) == unitids(des2)))
+
+  des2 <- des
+  unitids(des2) <- 10:1
+  expect_identical(varNames(des2, "c"), "qwe")
+  expect_true(all(data.frame(qwe = 10:1) == unitids(des2)))
+
+  df <- data.frame(abc = 3:12)
+  des2 <- des
+  unitids(des2) <- df
+  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_true(all(df == unitids(des2)))
+
+  ########## Unitids, reduce duplicates
+
+  treatment(des) <- as.factor(rep(0:1, each = 5))
+
+  expect_warning(unitids(des) <- data.frame(c1 = 1, c2 = c(1,1:9)),
+                 "collapsing")
+  expect_equal(nrow(des@structure), 9)
+
+  expect_error(unitids(des) <- data.frame(c1 = 1, c2 = c(1:8, 1)),
+               "non-constant")
+
+  # more unitids
+  df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
+  des <- RD_Design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  des2 <- des
+  unitids(des2) <- df
+  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_true(all(df == unitids(des2)))
+
+  m <- matrix(1:40, ncol = 4)
+  des2 <- des
+  expect_error(unitids(des2) <- m,
+               "be named")
+  colnames(m) <- letters[1:4]
+  unitids(des2) <- m
+  expect_identical(varNames(des2, "c"), colnames(m))
+  expect_true(all(m == unitids(des2)))
+
+  # unitid vs clusters
+
+  expect_error(clusters(des), "not `cluster")
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_error(unitids(des), "not `unitid")
+
   ##### Blocks
 
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
