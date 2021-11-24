@@ -153,4 +153,8 @@ test_that("Inconsistent treatment levels", {
   expect_warning(lm(y ~ x, data = simdata[simdata$o != 4, ], weights = ett(des)) ,
                  "not found in data")
 
+  # Treatment var not found
+  simdata$o <- NULL
+  expect_error(ett(des, data = simdata), "not found in data")
+
 })

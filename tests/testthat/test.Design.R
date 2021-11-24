@@ -187,6 +187,17 @@ test_that("Design creation", {
                       data = mtcars)
   rd_des@call <- fc
   expect_identical(d_rd, rd_des)
+
+
+  # Missing call
+
+  expect_warning(des <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT"),
+                 "Invalid call")
+  expect_identical(des@call[[1]], as.name("New_Design"))
+
+  expect_warning(des <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = 1),
+                 "Invalid call")
+  expect_identical(des@call[[1]], as.name("New_Design"))
 })
 
 test_that("unit of assignment differs from unit of analysis", {
@@ -737,6 +748,8 @@ test_that("Design type conversions", {
   checkequivDesign(desrd, as_RD_Design(desobs, data = simdata,
                                       forcing = ~ . + forcing(force)))
   checkequivDesign(desrd, as_RD_Design(desobs, data = simdata,
-                                      forcing = . ~ . + forcing(force)))
+                                       forcing = . ~ . + forcing(force)))
+  expect_error(as_RD_Design(desobs, data = simdata, forcing = simdata$force),
+               "as a formula")
 
 })
