@@ -22,17 +22,15 @@ In order to pass the design information into the model using the weights=
 argument, functions ett() and ate() will be used to convert the Design into a
 numeric vector with the Design object as an attribute.
 
-    lm(y ~ x, data = studentdata, weights = ate(des))
+    lm(y ~ txt, data = studentdata, weights = ate(des))
 
 Note that the Design is created with teacher level data (`teacherdata`), but the
 analysis is carried out at the student level (`studentdata`); the `ate()` (and
 its alternative `ett()`) will expand the weights appropriately.
 
-Alternatively, the `ittestimate` function offers a more customizeable treatment
-effect estimation, including the use of a separate covariate adjustment model.
+Optionally, we can also include a covariance adjustment model through the
+`cov_adj()` function.
 
-    covadjmod <- lm(y ~ x1 + x2 + ..., data = studentdata)
-    ittest <- ittestimate(des, studentdata,
-                          outcome = "y",
-                          target = "ett",
-                          covAdjModel = covadjmod)
+    covadjmod <- lm(y ~ x1 + x2 + ..., data = studentdata, subset = !txt)
+    lm(y ~ txt, studentdata, weights = ett(des),
+       offset = cov_adj(covadjmod, data = studentdata)
