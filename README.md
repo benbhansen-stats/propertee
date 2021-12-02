@@ -18,9 +18,9 @@ which will keep track of the design structure.
 discontinuity designs (`RDD_Design` which requires a `forcing()` variable as
 well.)
 
-In order to pass the design information into the model using the weights=
-argument, functions ett() and ate() will be used to convert the Design into a
-numeric vector with the Design object as an attribute.
+In order to pass the design information into the model using the `weights=`
+argument, functions `ett()` and `ate()` will be used to convert the Design into
+a numeric vector with the Design object as an attribute.
 
     lm(y ~ txt, data = studentdata, weights = ate(des))
 
