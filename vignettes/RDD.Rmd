@@ -113,12 +113,64 @@ $\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}$.
 Defining an RD design requires, at minimum, identifying the running variable(s) $R$, as well as how $R$ determines treatment assignment.
 In our example,
 ```{r rdDesign}
-fdat$Z <- R<0
-LSO_Design <- RD_Design(R<0~forcing(R),data=fdat)
+fdat$Z <- fdat$R<0
+
+fdatW <- subset(fdat,abs(R)<=0.5)
+
+fdatW$id <- 1:nrow(fdatW)
+des <- RD_Design(Z~forcing(R)+unitid(id),data=fdatW)
+```
+
+### Modeling $Y_C$ as a function of $R$
+We will consider two potential models $\tilde{g}(\cdot)$ of $Y_C$ as a function of $R$.
+First, the standard OLS model:
+
+```{r olsGmod}
+g1 <- lm(nextGPA~R+Z,data=fdatW)
+```
+
+The second is a bounded-influence polynomial model of the type recommended in Sales \& Hansen (2020):
+
+```{r robGmod}
+g2 <- 
+if(require(robustbase)){
+  lmrob(nextGPA~poly(R,5)+Z,data=fdatW)
+} else g1
+```
+[Put something here evaluating them?]
+
+### Estimating Effects
+
+```{r yhat}
+
+yhat1 <- predict(g1,data.frame(R=forcings(des)[[1]],Z=FALSE))
+yhat2 <- predict(g2,data.frame(R=forcings(des)[[1]],Z=FALSE))
+
+plot(yhat1,yhat2)
+```
+
+```{r estEff1}
+### method 1:
+
+mean(fdatW$nextGPA[fdatW$Z]-yhat1[fdatW$Z])-
+  mean(fdatW$nextGPA[!fdatW$Z]-yhat1[!fdatW$Z])
+
+#### method 2:
+coef(lm(nextGPA~Z, offset=yhat1,data=fdatW))['ZTRUE']
+
+
 ```
 
 
+```{r estEff1}
+### method 1:
+
+mean(fdatW$nextGPA[fdatW$Z]-yhat2[fdatW$Z])-
+  mean(fdatW$nextGPA[!fdatW$Z]-yhat2[!fdatW$Z])
+
+#### method 2:
+coef(lm(nextGPA~Z, offset=yhat2,data=fdatW))['ZTRUE']
 
 
-
+```
 
