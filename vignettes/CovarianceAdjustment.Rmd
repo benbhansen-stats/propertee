@@ -35,7 +35,7 @@ Student compliance was not constant over years:
 with(STAR, table(stark, star1), useNA = "always")
 with(STAR, table(star2, star3), useNA = "always")
 ```
-Taking that kindergarten treatment as the intended treatment, we proceed with an intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3. Additionally, we collapse the `regular` and `regular+aide` categories into a single category to compare the effect of small classrooms against regular classrooms, including those with teacher's aides. 
+Taking that kindergarten treatment as the intended treatment, we proceed with an intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3. Additionally, we collapse the `regular` and `regular+aide` categories into a single category to compare the effect of small classrooms against regular classrooms, including those with teacher's aides.
 ```{r}
 STAR$treatment <- STAR$stark == "small"
 STAR$treatment[is.na(STAR$treatment)] <- FALSE
@@ -56,7 +56,7 @@ STAR_pre <- STAR[, c("studentid", "treatment",
 
 As students were blocked into schools, and then randomized within school, we establish the design based on those stratifications. Including a set of weights that we will use later.
 ```{r}
-STAR_school <- group_by(STAR_pre, schoolidk) %>% 
+STAR_school <- group_by(STAR_pre, schoolidk) %>%
   summarize(school_n = n(), school_n1 = sum(treatment), school_n0 = school_n - school_n1)
 STAR_pre <- left_join(STAR_pre, STAR_school, by = "schoolidk") %>%
   mutate(E_Z         = school_n1 / school_n,
@@ -79,14 +79,12 @@ STAR_pre_post <- inner_join(STAR_pre, STAR_post, by = "studentid")
 
 ```
 
-While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level within schools. 
+While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level within schools.
 
 
 ```{r}
-# TODO: update RCT_Design to take logical treatments/import the toZ function
-# TODO: this throws an error 
-## STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid) + strata(schoolidk), data = STAR_pre)
-STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid), data = STAR_pre)
+## STAR_design <- RCT_Design(treatment ~ cluster(studentid) + strata(schoolidk), data = STAR_pre)
+STAR_design <- RCT_Design(treatment ~ cluster(studentid), data = STAR_pre)
 ```
 We are interested in the treatment effects for the the different ethnicities composing the study population.
 
@@ -98,7 +96,7 @@ ggplot(STAR_pre_post, aes(x = read, group = treatment)) + geom_boxplot() + facet
 
 ```{r}
 
-rhs <- ~ gender + ethnicity + birth + lunchk + 
+rhs <- ~ gender + ethnicity + birth + lunchk +
   ladderk + experiencek + tethnicityk + year
 
 covariance_y0_read <- lm(update(rhs, read ~ .), data = STAR_pre_post, subset = !treatment)
@@ -126,7 +124,7 @@ Additionally, for any binary treatment vector $Z$, we can decompose the average 
  &= \frac{n_1}{n} \delta(Z) + \frac{n_0}{n} \delta(1 - Z),
 \end{aligned}
 \]
-where $n_1 = \sum_{i=1}^n Z_i$ and $n_0 = \sum_{i=1}^n 1 - Z_i$. As $Z$ represents a random vector, taking expectation yields the expected treatment effect for the treated units 
+where $n_1 = \sum_{i=1}^n Z_i$ and $n_0 = \sum_{i=1}^n 1 - Z_i$. As $Z$ represents a random vector, taking expectation yields the expected treatment effect for the treated units
 \[
 \begin{aligned}
 \delta_1 &= E(\delta(Z)) =  \frac{1}{n_1} \sum_{i=1}^n E(Z_i) \left[(y_{i1} - \hat y_{i0}) - (y_{i0} - \hat y_{i0})\right]\\
@@ -138,12 +136,12 @@ and the expected treatment effect for the control units $\delta_0 = E(\delta(1 -
 
 To estimate $\Delta$, $\delta_1$, and $\delta_0$,  we introduce a difference of Hajek estimators,
 \[
-d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} - 
+d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 \frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i (1 - Z_i)}.
 \]
 
 - For $\Delta$: $w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)$. In the case of completely randomized designs, $E(Z_i) = n_1/n$, $E(1 - Z_i) = n_0/n$, and the estimator reduces to the well known difference of means estimator.
-- For $\delta_1$: $w_i = Z_i + (1 - Z_i) E(Z_i) / E(1 - Z_i)$. 
+- For $\delta_1$: $w_i = Z_i + (1 - Z_i) E(Z_i) / E(1 - Z_i)$.
 - For $\delta_0$: $w_i = Z_i E(1 - Z_i) / E(Z_i) + (1 - Z_i)$.
 
 The weights may also include case weights or be multiplied by subgroup indicators to estimate subgroup specific effects.
@@ -153,8 +151,8 @@ To demonstrate this function, we implement the estimator directly and also show 
 ```{r}
 dw <- function(w, z, y, y0_hat) {
   tmp <- data.frame(w, z, y, y0_hat) %>% na.omit
-  with(tmp, 
-    sum(w * z * (y - y0_hat)) / sum(w * z) - 
+  with(tmp,
+    sum(w * z * (y - y0_hat)) / sum(w * z) -
       sum(w * (1 - z) * (y - y0_hat)) / sum(w * (1 - z))
   )
 }
@@ -162,14 +160,14 @@ dw <- function(w, z, y, y0_hat) {
 
 We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
 
-```{r} 
-STAR_pre_post_k <- filter(STAR_pre_post, year == "k") 
-  
+```{r}
+STAR_pre_post_k <- filter(STAR_pre_post, year == "k")
+
 pred <- function(mod) {
   predict(mod, newdata = STAR_pre_post_k, type = "response")
 }
 
-STAR_pre_post_k <- 
+STAR_pre_post_k <-
     mutate(STAR_pre_post_k,
          read_y0_hat = pred(covariance_y0_read),
          read_y1_hat = pred(covariance_y1_read),
@@ -184,7 +182,7 @@ STAR_pre_post_k <-
 For each of the treatment effects, we compute the point estimates using both the `lm` function and direct calculation.
 ```{r}
 ## overall treatment effects on the treated
-ett_read_lm <- lm(read ~ treatment, 
+ett_read_lm <- lm(read ~ treatment,
                   data = STAR_pre_post_k,
                   weights = weight_ett,
                   offset = read_y0_hat)
@@ -201,7 +199,7 @@ ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ett = coef(ett_read_ethnicity_lm)[2] + c(cauc = 0, coef(ett_read_ethnicity_lm)[8:12]))
 
-STAR_pre_post_k %>% 
+STAR_pre_post_k %>%
     group_by(ethnicity) %>%
     summarize(dw(weight_ett, treatment, read, read_y0_hat))
 ```
@@ -218,15 +216,15 @@ ett_read_lm <- lm(read ~ treatment, offset = cov_adj(covariance_y0_read), weight
 
 ```{r}
 ## overall ATE
-ate_read_lm <- lm(read ~ treatment, 
-                  data = STAR_pre_post_k, 
+ate_read_lm <- lm(read ~ treatment,
+                  data = STAR_pre_post_k,
                   weights = weight_ate,
                   offset = read_y0_hat)
 coef(ate_read_lm)[2]
 
 with(STAR_pre_post_k, dw(weight_ate, treatment, read, read_y0_hat))
-    
-ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity, 
+
+ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
                             data = STAR_pre_post_k,
                             weights = weight_ate,
                             offset = read_y0_hat)
@@ -234,7 +232,7 @@ ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ate = coef(ate_read_ethnicity_lm)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]))
 
-STAR_pre_post_k %>% 
+STAR_pre_post_k %>%
     group_by(ethnicity) %>%
     summarize(dw(weight_ate, treatment, read, read_y0_hat))
 ```
