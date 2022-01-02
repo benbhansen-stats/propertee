@@ -43,6 +43,7 @@ jobs:
             rcmdcheck
             CBPS
             haven
+            tidyverse
 
       - name: Install system dependencies
         if: runner.os == 'Linux'

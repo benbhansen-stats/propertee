@@ -4,7 +4,7 @@ author: 'Ben Hansen'
 output: rmarkdown::html_vignette
 bibliography: bbhrefs.bib
 vignette: >
-  %\VignetteIndexEntry{sandwich_infrastructure}
+  %\VignetteIndexEntry{Enumeration of data objects required for standard errors of prior covariance model-assisted effect estimation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 date: 'October 2021'
