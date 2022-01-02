@@ -162,7 +162,7 @@ coef(lm(nextGPA~Z, offset=yhat1,data=fdatW))['ZTRUE']
 ```
 
 
-```{r estEff1}
+```{r estEff2}
 ### method 1:
 
 mean(fdatW$nextGPA[fdatW$Z]-yhat2[fdatW$Z])-
