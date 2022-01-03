@@ -18,35 +18,34 @@ Covariate adjusted outcomes
 Covariance Adjustment for Treatment Estimation
 }
 \examples{
-library(AER, quietly = TRUE)
-data(STAR)
-STAR$treatment <- STAR$stark == "small"
-STAR$treatment[is.na(STAR$treatment)] <- FALSE
-STAR$studentid <- as.character(1:nrow(STAR))
+data(STARdata)
+STARdata$treatment <- STARdata$stark == "small"
+STARdata$treatment[is.na(STARdata$treatment)] <- FALSE
+STARdata$studentid <- as.character(1:nrow(STARdata))
 
 covariance_y0_read <- lm(readk ~ gender + ethnicity + birth + lunchk +
                                  ladderk + experiencek + tethnicityk,
-                         data = STAR, subset = !treatment)
+                         data = STARdata, subset = !treatment)
 
-STAR_design <- RCT_Design(treatment ~ cluster(studentid), data = STAR)
-STAR_ate    <- ate(STAR_design, data = STAR)
-STAR_ett    <- ett(STAR_design, data = STAR)
+STARdata_design <- RCT_Design(treatment ~ cluster(studentid), data = STARdata)
+STARdata_ate    <- ate(STARdata_design, data = STARdata)
+STARdata_ett    <- ett(STARdata_design, data = STARdata)
 
 ett_read <- lm(readk ~ treatment,
-               offset = cov_adj(covariance_y0_read, newdata = STAR),
-               data = STAR,
-               weights = STAR_ett)
+               offset = cov_adj(covariance_y0_read, newdata = STARdata),
+               data = STARdata,
+               weights = STARdata_ett)
 coef(ett_read)
 
 ate_read <- lm(readk ~ treatment,
-               offset = cov_adj(covariance_y0_read, newdata = STAR),
-               data = STAR,
-               weights = STAR_ate)
+               offset = cov_adj(covariance_y0_read, newdata = STARdata),
+               data = STARdata,
+               weights = STARdata_ate)
 coef(ate_read)
 
 ate_read_eth <- lm(readk ~ treatment*ethnicity,
-                   offset = cov_adj(covariance_y0_read, newdata = STAR),
-                   data = STAR,
-                   weights = STAR_ate)
+                   offset = cov_adj(covariance_y0_read, newdata = STARdata),
+                   data = STARdata,
+                   weights = STARdata_ate)
 coef(ate_read_eth)
 }

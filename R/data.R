@@ -21,3 +21,11 @@
 #' }
 #' @keywords dataset
 "fdat"
+
+#' @title STAR data
+#' @format The STAR data set
+#' \itemize{
+#'   \item ???
+#' }
+#' @keywords dataset
+"STARdata"
