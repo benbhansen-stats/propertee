@@ -23,7 +23,7 @@ library(flexida)
 
 ## Data and Design
 
-The data come from the state of Tennessee's Student-Teacher Achievement Ratio (STAR) experiment. Students were randomly assigned to three possible classroom conditions: small (13 to 17 students per teacher), regular class (22 to 25 students per teacher), and regular-with-aide class (22 to 25 students with a full-time teacher's aide). The `AER` package for R provides the data set, also available elsewhere on the internet.
+The data come from the state of Tennessee's Student-Teacher Achievement Ratio (STAR) experiment. Students were randomly assigned to three possible classroom conditions: small (13 to 17 students per teacher), regular class (22 to 25 students per teacher), and regular-with-aide class (22 to 25 students with a full-time teacher's aide).
 
 ```{r, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
 data(STARdata)

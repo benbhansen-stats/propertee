@@ -6,12 +6,11 @@
 ## ## Loads the STAR data adn does preprocessing on it
 ## ## Returns only outcomes for kindergarten
 ## load_data <- function() {
-##   library(AER, quietly = TRUE)
-##   data(STAR)
-##   STAR$treatment <- STAR$stark == "small"
-##   STAR$treatment[is.na(STAR$treatment)] <- FALSE
-##   STAR$studentid <- as.character(1:nrow(STAR))
-##   STAR_pre <- STAR[, c("studentid", "treatment",
+##   data(STARdata)
+##   STARdata$treatment <- STARdata$stark == "small"
+##   STARdata$treatment[is.na(STARdata$treatment)] <- FALSE
+##   STARdata$studentid <- as.character(1:nrow(STARdata))
+##   STAR_pre <- STARdata[, c("studentid", "treatment",
 ##                      "gender", "ethnicity", "birth", "lunchk",  # individual demographics
 ##                      "schoolk", "degreek", "ladderk", "experiencek", "tethnicityk", # school and teacher demographics
 ##                      "systemk", "schoolidk" # school ID information
@@ -29,10 +28,10 @@
 ##           weight_etc  = treatment * (1 - E_Z) / E_Z + (1 - treatment))
 
 ##   STAR_post <- rbind(
-##     data.frame(studentid = STAR$studentid, year = "k", read = STAR$readk, math = STAR$mathk, strings.as.factors = FALSE),
-##     data.frame(studentid = STAR$studentid, year = "1", read = STAR$read1, math = STAR$math1, strings.as.factors = FALSE),
-##     data.frame(studentid = STAR$studentid, year = "2", read = STAR$read2, math = STAR$math2, strings.as.factors = FALSE),
-##     data.frame(studentid = STAR$studentid, year = "3", read = STAR$read3, math = STAR$math3, strings.as.factors = FALSE))
+##     data.frame(studentid = STARdata$studentid, year = "k", read = STARdata$readk, math = STARdata$mathk, strings.as.factors = FALSE),
+##     data.frame(studentid = STARdata$studentid, year = "1", read = STARdata$read1, math = STARdata$math1, strings.as.factors = FALSE),
+##     data.frame(studentid = STARdata$studentid, year = "2", read = STARdata$read2, math = STARdata$math2, strings.as.factors = FALSE),
+##     data.frame(studentid = STARdata$studentid, year = "3", read = STARdata$read3, math = STARdata$math3, strings.as.factors = FALSE))
 
 ##   STAR_pre_post <- inner_join(STAR_pre, STAR_post, by = "studentid")
 
