@@ -6,7 +6,7 @@ library(synthpop)
 set.seed(613)
 
 ## first, load in the data
-dat <- foreign::read.dta('data_for_analysis.dta')%>%
+dat <- foreign::read.dta('inst/data_for_analysis.dta')%>%
     mutate(
         R=round(dist_from_cut,2),
         hsgrade_pct=ifelse(hsgrade_pct==100,99.5,hsgrade_pct),
@@ -66,13 +66,13 @@ faux <- syn(dat,minnumlevels=6)
 compare(faux,dat)
 
 ### the actual fake data:
-fdat <- faux$syn%>%
+lsoSynth <- faux$syn%>%
     mutate_if(is.factor,~as.numeric(as.character(.)))
 
 ### now plot the new data, side by side with old:
 ## nextGPA
 bind_rows(
-    mutate(dat,type='real'),mutate(fdat,type='fake'))%>%
+    mutate(dat,type='real'),mutate(lsoSynth,type='fake'))%>%
     group_by(R,type)%>%
     summarize(nextGPA=mean(nextGPA),n=n())%>%
     mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
@@ -81,7 +81,7 @@ bind_rows(
 
 ## mccrary data
 bind_rows(
-    mutate(dat,type='real'),mutate(fdat,type='fake'))%>%
+    mutate(dat,type='real'),mutate(lsoSynth,type='fake'))%>%
     group_by(R,type)%>%
     summarize(n=n(),logn=log(n()))%>%
     mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
@@ -91,7 +91,7 @@ bind_rows(
 ## lhsgrade_pct
 
 bind_rows(
-    mutate(dat,type='real'),mutate(fdat,type='fake'))%>%
+    mutate(dat,type='real'),mutate(lsoSynth,type='fake'))%>%
     group_by(R,type)%>%
     summarize(lhsgrade_pct=mean(lhsgrade_pct),n=n())%>%
     mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
@@ -102,16 +102,16 @@ bind_rows(
 #### now check/fix mccrary test violation
 par(mfrow=c(1,2))
 rdd::DCdensity(dat$R,-0.005, bin=0.01,verbose=TRUE)
-rdd::DCdensity(fdat$R,-0.005, bin=0.01,verbose=TRUE)
+rdd::DCdensity(lsoSynth$R,-0.005, bin=0.01,verbose=TRUE)
 
 ### now for donut design
 dat <- subset(dat,R!=0)
-fdat <- subset(fdat,R!=0)
+lsoSynth <- subset(lsoSynth,R!=0)
 
 
 par(mfrow=c(1,2))
 rdd::DCdensity(dat$R,-0.005, bin=0.01,verbose=TRUE)
-rdd::DCdensity(fdat$R,-0.005, bin=0.01,verbose=TRUE)
+rdd::DCdensity(lsoSynth$R,-0.005, bin=0.01,verbose=TRUE)
 par(mfrow=c(1,1))
 ## ### hmmmm donut doesn't work quite as well with fake data
 ## sum(fdat$R==-0.01)
@@ -127,10 +127,10 @@ par(mfrow=c(1,1))
 ## ## that's more like it
 
 ## ### Now add the treatment effect back in:
-fdat <- mutate(fdat,nextGPA=ifelse(probation_year1==1,nextGPA+0.24,nextGPA))
+lsoSynth <- mutate(lsoSynth,nextGPA=ifelse(probation_year1==1,nextGPA+0.24,nextGPA))
 
 ## and plot
-fdat%>%
+lsoSynth%>%
     group_by(R)%>%
     summarize(nextGPA=mean(nextGPA),n=n())%>%
     mutate(A=ifelse(R<=0,'AP','non-AP'))%>%
@@ -138,4 +138,4 @@ fdat%>%
     geom_point()+geom_smooth()
 
 
-usethis::use_data(fdat, overwrite = TRUE)
+usethis::use_data(lsoSynth, overwrite = TRUE)

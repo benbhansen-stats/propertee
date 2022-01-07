@@ -16,6 +16,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r installFlexida, eval=FALSE,include=FALSE}
+### this is for Adam, to remember how to do this each time
+### LMK if it causes problems, I'll remove
+devtools::install_github('benbhansen-stats/flexida', auth_token=GITHUB_PAT)
+```
+
+
 ```{r}
 library(flexida)
 ```
@@ -24,7 +31,7 @@ library(flexida)
 ## Data and Design
 
 ```{r loadData}
-data(fdat)
+data(lsoSynth)
 ```
 
 The data for this example were randomly simulated using the `synthpop` package in `R` based on data originally collected by [Lindo, Sanders, and Oreopoulos (2010; hereafter LSO)](https://www.aeaweb.org/articles?id=10.1257/app.2.2.95). (The original real data can be found [here](https://www.openicpsr.org/openicpsr/project/113751/version/V1/view); code to simulate the fake data can be found [here](https://github.com/benbhansen-stats/flexida/blob/main/data-raw/makeRDDdata.r).)
@@ -36,9 +43,9 @@ We will attempt to estimate the average effect of AP placement on `nextGPA`, stu
 This figure plots each the average `nextGPA` for students with distinct `R` values (i.e. centered first-year GPA). The cutoff for AP, 0, is denoted with a dotted line. The the sizes of the points are proportional to the natural log of the numbers of students with each unique value of `R`.
 ```{r rddPlots,fig.width=7}
 
-figDat <- aggregate(fdat[,c('nextGPA','lhsgrade_pct')],by=list(R=fdat$R),
+figDat <- aggregate(lsoSynth[,c('nextGPA','lhsgrade_pct')],by=list(R=lsoSynth$R),
                     FUN=mean,na.rm=TRUE)
-figDat$n <- as.vector(table(fdat$R))
+figDat$n <- as.vector(table(lsoSynth$R))
 
 with(figDat,
      plot(R,nextGPA,cex=log(n+1)/3,main='Average Subsequent GPA\n as a function of 1st-Year GPA,\n Centered at AP Cutoff'))
@@ -51,7 +58,8 @@ abline(v=0,lty=2)
 
 What characterizes discontinuity (RD) designs, including the LSO study, is that treatment is assigned as a function of a numeric "running variable" $R$, along with a prespecified cutoff value $c$, so that treatment is assigned to subjects $i$ for whom $R_i>c$, or for whom $R_i<c$.
 If $Z_i$ denote's $i$'s treatment assignment, we write $Z_i=\mathbf{1}\{R_i<c\}$ or $\mathbf{1}\{R_i<c\}$, where $\mathbf{1}\{x\}$ is the indicator function--equal to 1 when $x$ is true and 0 otherwise.
-In the LSO study, $i$ indexes students, centered first-year GPA $R_i$ is the running variable, and the treatment under study is AP placement. Then $Z_i=\mathbf{1}\{R_i<0}$.
+In the LSO study, $i$ indexes students, centered first-year GPA $R_i $ is the running variable, and the treatment under study is AP placement. 
+Then $ Z_i=\mathbf{1}\{R_i<0} $.
 (In "fuzzy" RD designs, $R$'s value relative to $c$ doesn't completely determine treatment, but merely affects the probability of treatment, so subjects with, say, $R_i>c$ are more likely to be treated than those with $R_i<c$; in fuzzy RD designs, $Z_i=\mathbf{1}\{R_i>c\}$ is typically modeled as an instrument for treatment receipt.)
 
 RD designs hold a privileged place in causal inference, because unlike most other observational study designs, the mechanism for treatment assignment is known.
@@ -102,15 +110,16 @@ For the purpose of this example, we will focus our analysis on
 $\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}$.
 
 ### Initializing the RD Design Object
+In general, `flexida` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. 
 Defining an RD design requires, at minimum, identifying the running variable(s) $R$, as well as how $R$ determines treatment assignment.
 In our example,
 ```{r rdDesign}
-fdat$Z <- fdat$R<0
+lsoSynth$Z <- lsoSynth$R<0
 
-fdatW <- subset(fdat,abs(R)<=0.5)
+lsoSynthW <- subset(lsoSynth,abs(R)<=0.5)
 
-fdatW$id <- 1:nrow(fdatW)
-des <- RD_Design(Z~forcing(R)+unitid(id),data=fdatW)
+lsoSynthW$id <- 1:nrow(lsoSynthW)
+des <- RD_Design(Z~forcing(R)+unitid(id),data=lsoSynthW)
 ```
 
 ### Modeling $Y_C$ as a function of $R$
@@ -118,7 +127,7 @@ We will consider two potential models $\tilde{g}(\cdot)$ of $Y_C$ as a function 
 First, the standard OLS model:
 
 ```{r olsGmod}
-g1 <- lm(nextGPA~R+Z,data=fdatW)
+g1 <- lm(nextGPA~R+Z,data=lsoSynthW)
 ```
 
 The second is a bounded-influence polynomial model of the type recommended in Sales \& Hansen (2020):
@@ -126,7 +135,7 @@ The second is a bounded-influence polynomial model of the type recommended in Sa
 ```{r robGmod}
 g2 <-
 if(require(robustbase)){
-  lmrob(nextGPA~poly(R,5)+Z,data=fdatW)
+  lmrob(nextGPA~poly(R,5)+Z,data=lsoSynthW)
 } else g1
 ```
 [Put something here evaluating them?]
@@ -144,11 +153,11 @@ plot(yhat1,yhat2)
 ```{r estEff1}
 ### method 1:
 
-mean(fdatW$nextGPA[fdatW$Z]-yhat1[fdatW$Z])-
-  mean(fdatW$nextGPA[!fdatW$Z]-yhat1[!fdatW$Z])
+mean(lsoSynthW$nextGPA[lsoSynthW$Z]-yhat1[lsoSynthW$Z])-
+  mean(lsoSynthW$nextGPA[!lsoSynthW$Z]-yhat1[!lsoSynthW$Z])
 
 #### method 2:
-coef(lm(nextGPA~Z, offset=yhat1,data=fdatW))['ZTRUE']
+coef(lm(nextGPA~Z, offset=yhat1,data=lsoSynthW))['ZTRUE']
 
 
 ```
@@ -157,11 +166,11 @@ coef(lm(nextGPA~Z, offset=yhat1,data=fdatW))['ZTRUE']
 ```{r estEff2}
 ### method 1:
 
-mean(fdatW$nextGPA[fdatW$Z]-yhat2[fdatW$Z])-
-  mean(fdatW$nextGPA[!fdatW$Z]-yhat2[!fdatW$Z])
+mean(lsoSynthW$nextGPA[lsoSynthW$Z]-yhat2[lsoSynthW$Z])-
+  mean(lsoSynthW$nextGPA[!lsoSynthW$Z]-yhat2[!lsoSynthW$Z])
 
 #### method 2:
-coef(lm(nextGPA~Z, offset=yhat2,data=fdatW))['ZTRUE']
+coef(lm(nextGPA~Z, offset=yhat2,data=lsoSynthW))['ZTRUE']
 
 
 ```
