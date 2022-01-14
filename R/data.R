@@ -20,7 +20,7 @@
 #'   \item ???
 #' }
 #' @keywords dataset
-"fdat"
+"lsoSynth"
 
 #' @title STAR data
 #' @format The STAR data set
