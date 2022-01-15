@@ -14,7 +14,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(tidyverse)
 ```
 
 ```{r}
@@ -55,13 +54,22 @@ STAR_pre <- STARdata[, c("studentid", "treatment",
 
 As students were blocked into schools, and then randomized within school, we establish the design based on those stratifications. Including a set of weights that we will use later.
 ```{r}
-STAR_school <- group_by(STAR_pre, schoolidk) %>%
-  summarize(school_n = n(), school_n1 = sum(treatment), school_n0 = school_n - school_n1)
-STAR_pre <- left_join(STAR_pre, STAR_school, by = "schoolidk") %>%
-  mutate(E_Z         = school_n1 / school_n,
-         weight_ate  = treatment / E_Z + (1 - treatment) / (1 - E_Z),
-         weight_ett  = treatment + (1 - treatment) * E_Z / (1 - E_Z),
-         weight_etc  = treatment * (1 - E_Z) / E_Z + (1 - treatment))
+STAR_school <- data.frame(schoolidk = as.numeric(names(table(STAR_pre$schoolidk))),
+                          school_n = tapply(STAR_pre$treatment,
+                                            STAR_pre$schoolidk,
+                                            FUN = length),
+                          school_n1 = tapply(STAR_pre$treatment,
+                                            STAR_pre$schoolidk,
+                                            FUN = sum))
+STAR_school$school_n0 <- with(STAR_school, school_n - school_n1)
+STAR_pre <- merge(STAR_pre, STAR_school, by = "schoolidk", all.x = TRUE)
+STAR_pre$E_Z         = with(STAR_pre, school_n1 / school_n)
+STAR_pre$weight_ate  = with(STAR_pre,
+                            treatment / E_Z + (1 - treatment) / (1 - E_Z))
+STAR_pre$weight_ett  = with(STAR_pre,
+                            treatment + (1 - treatment) * E_Z / (1 - E_Z))
+STAR_pre$weight_etc  = with(STAR_pre,
+                            treatment * (1 - E_Z) / E_Z + (1 - treatment))
 ```
 
 Post-treatment outcomes include normalized reading and math scores over several years. Missing values are imputed to the within group (treatment/control) mean
@@ -74,7 +82,7 @@ STAR_post <- rbind(
   data.frame(studentid = STARdata$studentid, year = "3", read = STARdata$read3, math = STARdata$math3, strings.as.factors = FALSE))
 
 ## imputation to within group means
-STAR_pre_post <- inner_join(STAR_pre, STAR_post, by = "studentid")
+STAR_pre_post <- merge(STAR_pre, STAR_post, by = "studentid", all = TRUE)
 
 ```
 
@@ -88,7 +96,7 @@ STAR_design <- RCT_Design(treatment ~ cluster(studentid), data = STAR_pre)
 We are interested in the treatment effects for the the different ethnicities composing the study population.
 
 ```{r}
-ggplot(STAR_pre_post, aes(x = read, group = treatment)) + geom_boxplot() + facet_wrap(~ ethnicity)
+#ggplot(STAR_pre_post, aes(x = read, group = treatment)) + geom_boxplot() + facet_wrap(~ ethnicity)
 ```
 
 ## Covariance Model
@@ -149,7 +157,7 @@ To demonstrate this function, we implement the estimator directly and also show 
 
 ```{r}
 dw <- function(w, z, y, y0_hat) {
-  tmp <- data.frame(w, z, y, y0_hat) %>% na.omit
+  tmp <- na.omit(data.frame(w, z, y, y0_hat))
   with(tmp,
     sum(w * z * (y - y0_hat)) / sum(w * z) -
       sum(w * (1 - z) * (y - y0_hat)) / sum(w * (1 - z))
@@ -160,18 +168,16 @@ dw <- function(w, z, y, y0_hat) {
 We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.
 
 ```{r}
-STAR_pre_post_k <- filter(STAR_pre_post, year == "k")
+STAR_pre_post_k <- STAR_pre_post[STAR_pre_post$year == "k",]
 
 pred <- function(mod) {
   predict(mod, newdata = STAR_pre_post_k, type = "response")
 }
 
-STAR_pre_post_k <-
-    mutate(STAR_pre_post_k,
-         read_y0_hat = pred(covariance_y0_read),
-         read_y1_hat = pred(covariance_y1_read),
-         math_y0_hat = pred(covariance_y0_math),
-         math_y1_hat = pred(covariance_y1_math))
+STAR_pre_post_k$read_y0_hat <- pred(covariance_y0_read)
+STAR_pre_post_k$read_y1_hat <- pred(covariance_y1_read)
+STAR_pre_post_k$math_y0_hat <- pred(covariance_y0_math)
+STAR_pre_post_k$math_y1_hat <- pred(covariance_y1_math)
 ```
 
 ### Effect of Treatment on the Treated
@@ -198,9 +204,10 @@ ett_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ett = coef(ett_read_ethnicity_lm)[2] + c(cauc = 0, coef(ett_read_ethnicity_lm)[8:12]))
 
-STAR_pre_post_k %>%
-    group_by(ethnicity) %>%
-    summarize(dw(weight_ett, treatment, read, read_y0_hat))
+aggregate(seq_len(nrow(STAR_pre_post_k)),
+          by=list(STAR_pre_post_k$ethnicity),
+          function(x) with(STAR_pre_post_k[x,],
+                           dw(weight_ett, treatment, read, read_y0_hat)))
 ```
 The following is not currently implemented, but represents expected interface.
 ```{r, eval = FALSE}
@@ -231,9 +238,12 @@ ate_read_ethnicity_lm <- lm(read ~ treatment * ethnicity,
 data.frame(eth = levels(STAR_pre_post_k$ethnicity),
            ate = coef(ate_read_ethnicity_lm)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]))
 
-STAR_pre_post_k %>%
-    group_by(ethnicity) %>%
-    summarize(dw(weight_ate, treatment, read, read_y0_hat))
+aggregate(seq_len(nrow(STAR_pre_post_k)),
+          by = list(STAR_pre_post_k$ethnicity),
+          function(x) with(STAR_pre_post_k[x,],
+                           dw(weight_ate, treatment, read, read_y0_hat)
+                           )
+          )
 ```
 
 
