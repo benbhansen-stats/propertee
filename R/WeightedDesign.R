@@ -126,25 +126,6 @@ ate <- function(design, data = NULL, clusterIds = NULL) {
   return(design)
 }
 
-# Internal function to try and retrieve the data from the model when `ate` or
-# `ett` are called without a data argument
-.get_data_from_model <- function() {
-  data <- NULL
-  # loop through previous frames until we find data. If we find data, break out of loop
-  #
-  for (i in -1:-4) {
-    tryCatch({
-      data <- get("data", envir = sys.frame(i))
-    })
-    if (!is.null(data) && is.data.frame(data)) {
-      break()
-    }
-  }
-  if (is.null(data) || !is.data.frame(data)) {
-    stop("Could not determine appropriate data")
-  }
-  return(data)
-}
 
 # Internal function to expand cluster-level weights to the level of the data
 .join_design_weights <- function(weights, design, target, data = NULL) {
