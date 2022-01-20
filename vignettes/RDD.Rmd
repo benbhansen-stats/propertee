@@ -110,7 +110,10 @@ For the purpose of this example, we will focus our analysis on
 $\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}$.
 
 ### Initializing the RD Design Object
-In general, `flexida` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. 
+In general, `flexida` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. In `lsoSynth`, there are no clusters, and individual students are assigned to academic probation on an individual basis. The dataset does not include an ID variable, but any variable that takes a unique value for each row will do. We will use row-names. 
+```{r defineUnitID}
+lsoSynth$id <- rownames(lsoSynth)
+```
 Defining an RD design requires, at minimum, identifying the running variable(s) $R$, as well as how $R$ determines treatment assignment.
 In our example,
 ```{r rdDesign}
@@ -118,16 +121,22 @@ lsoSynth$Z <- lsoSynth$R<0
 
 lsoSynthW <- subset(lsoSynth,abs(R)<=0.5)
 
-lsoSynthW$id <- 1:nrow(lsoSynthW)
-des <- RD_Design(Z~forcing(R)+unitid(id),data=lsoSynthW)
+#lsoSynthW$id <- 1:nrow(lsoSynthW)
+des <- RD_Design(Z~forcing(R)+unitid(id),data=lsoSynth, subset=abs(lsoSynth$R)<=0.5)
 ```
 
 ### Modeling $Y_C$ as a function of $R$
 We will consider two potential models $\tilde{g}(\cdot)$ of $Y_C$ as a function of $R$.
 First, the standard OLS model:
 
-```{r olsGmod}
-g1 <- lm(nextGPA~R+Z,data=lsoSynthW)
+```{r olsGmod1, eval=FALSE,include=TRUE}
+### this doesn't work:
+g1 <- lm(nextGPA~R+Z,data=lsoSynth, weights=ett(des,data=lsoSynth))
+```
+
+```{r olsGmod2}
+##this works, but it's annoying to enter in the subset expression a 2nd time:
+g1 <- lm(nextGPA~R+Z,data=lsoSynth, subset=abs(R)<=0.5)
 ```
 
 The second is a bounded-influence polynomial model of the type recommended in Sales \& Hansen (2020):
