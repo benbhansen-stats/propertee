@@ -44,8 +44,8 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
   
   # If no block is specified, then E_Z is the proportion of clusters who receive
   # the treatment. 
-  # If a block is specified, then E_Z varies within each block and is the 
-  # proportion of clusters within the block that receive the treatment.
+  # If a block is specified, then E_Z varies by block and is the proportion
+  # of clusters within the block that receive the treatment.
   if(!("b" %in% names(table(design@columnIndex)))){
     cluster_df <- data.frame(design@structure[design@columnIndex == "c"],
                              Tx = as.numeric(design@structure[design@columnIndex == "t"][[1]] == 
