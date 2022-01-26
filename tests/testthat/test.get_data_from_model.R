@@ -20,8 +20,15 @@ test_that("Design creation", {
   expect_equal(mod$coefficients,
                mod4$coefficients)
 
+  # Works using `attach`
+  attach(simdata)
+  mod5 <- lm(y ~ x, weights = ate(des))
+  expect_equal(mod$coefficients,
+               mod5$coefficients)
+  detach(simdata)
+
   # Allow simple manipulation of weights
-  mod5 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
+  mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
 
 
 })
