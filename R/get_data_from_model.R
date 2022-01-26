@@ -24,10 +24,11 @@
   data <- NULL
 
   # Obtain the names of all functions in the callstack
-  fnsCalled <- as.character(lapply(sys.calls(), "[[", 1))
+  fnsCalled <- as.character(lapply(sys.calls(), `[[`, 1))
 
-  # Identify all frames which have `model.frame.default` called
-  modelFramePos <- which(fnsCalled %in% "model.frame.default")
+  # Identify all frames which have `model.frame.default` called (or `ittestimate`)
+  modelFramePos <- which(fnsCalled %in% c("model.frame.default", "ittestimate"))
+
   # Identify the frames in which `ate` or `ett` are passed as weights
   weightsPos <- which(sapply(sapply(sys.calls(), `[[`, "weights"), `[[`, 1) %in% c("ate", "ett"))
 
