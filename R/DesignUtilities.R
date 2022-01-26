@@ -8,7 +8,6 @@
 ##' @rdname DesignSpecials
 cluster <- function (...)
 {
-  #browser()
   allf <- list(...)
   do.call(cbind, allf)
 }
