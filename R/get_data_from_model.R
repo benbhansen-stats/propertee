@@ -29,7 +29,7 @@
   # Identify all frames which have `model.frame.default` called
   modelFramePos <- which(fnsCalled %in% "model.frame.default")
   # Identify the frames in which `ate` or `ett` are passed as weights
-  weightsPos <- which(sapply(sapply(sys.calls(), `[[`, "weights"), `[[`, 1) == "ate")
+  weightsPos <- which(sapply(sapply(sys.calls(), `[[`, "weights"), `[[`, 1) %in% c("ate", "ett"))
 
   # At this point, we know all frames in which the weights are passed,
   # and all frames which are calls to `model.frame.default`. This will identify
