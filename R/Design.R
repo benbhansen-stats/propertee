@@ -63,39 +63,14 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 
   m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
 
-  index <- rep("t", ncol(m))
-
-  rename_vars <- function(modelframe, index, type) {
-    pos <- grepl(paste0("^", type), colnames(modelframe))
-    if (any(pos)) {
-      index[pos] <- substr(type, 1, 1)
-      vars <- colnames(modelframe)[pos][1]
-      vars <- sub(paste0("^", type, "\\("), "", vars)
-      vars <- sub("\\)[\\.0-9]*$", "", vars)
-      vars <- strsplit(gsub(" ", "", vars), ",")[[1]]
-      colnames(modelframe)[pos] <- vars
-    }
-    return(list(modelframe, index))
-  }
-
-  o <- rename_vars(m, index, "cluster")
-  m <- o[[1]]
-  index <- o[[2]]
-  o <- rename_vars(m, index, "unitid")
-  m <- o[[1]]
-  index <- o[[2]]
-  o <- rename_vars(m, index, "block")
-  m <- o[[1]]
-  index <- o[[2]]
-  o <- rename_vars(m, index, "forcing")
-  m <- o[[1]]
-  index <- o[[2]]
+  cd <- .rename_model_frame_columns(m)
+  m <- cd[["renamedModelFrame"]]
+  index <- cd[["index"]]
 
   # Ensure there are not variable transformations (e.g. as.factor(x)
   if (!all(names(m) %in% names(data))) {
     stop("Do not use variable transformations in formula.\nInstead modify all relevant data sets as appropriate.")
-    }
-
+  }
   if (any(index == "u")) {
     ct <- "unitid"
     index[index == "u"] <- "c"
@@ -234,4 +209,39 @@ varNames <- function(x, type) {
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "c", "b", "f"))
   names(x@structure)[x@columnIndex == type]
+}
+
+# Internal to properly rename columns to strip cluster(), block(), etc
+.rename_model_frame_columns <- function(modframe) {
+
+  index <- rep("t", ncol(modframe))
+
+  rename_vars <- function(modelframe, index, type) {
+    pos <- grepl(paste0("^", type), colnames(modelframe))
+    if (any(pos)) {
+      index[pos] <- substr(type, 1, 1)
+      vars <- colnames(modelframe)[pos][1]
+      vars <- sub(paste0("^", type, "\\("), "", vars)
+      vars <- sub("\\)[\\.0-9]*$", "", vars)
+      vars <- strsplit(gsub(" ", "", vars), ",")[[1]]
+      colnames(modelframe)[pos] <- vars
+    }
+    return(list(modelframe, index))
+  }
+
+  o <- rename_vars(modframe, index, "cluster")
+  modframe <- o[[1]]
+  index <- o[[2]]
+  o <- rename_vars(modframe, index, "unitid")
+  modframe <- o[[1]]
+  index <- o[[2]]
+  o <- rename_vars(modframe, index, "block")
+  modframe <- o[[1]]
+  index <- o[[2]]
+  o <- rename_vars(modframe, index, "forcing")
+  modframe <- o[[1]]
+  index <- o[[2]]
+
+  return(list(renamedModelFrame = modframe,
+              index = index))
 }
