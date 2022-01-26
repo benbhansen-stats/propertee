@@ -31,7 +31,7 @@ setValidity("WeightedDesign", function(object) {
 ##' @rdname WeightCreators
 ett <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model()
+    data <- .get_data_from_model(design@call$formula)
   }
 
   if (!is.null(clusterIds)) {
@@ -50,7 +50,7 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model()
+    data <- .get_data_from_model(design@call$formula)
   }
 
   if (!is.null(clusterIds)) {

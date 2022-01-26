@@ -1,15 +1,15 @@
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-.get_data_from_model <- function() {
+.get_data_from_model <- function(form) {
+  stopifnot(is(as.formula(form), "formula"))
 
   # Below we try to be intelligent about finding the appropriate data. If this
   # fails, we may have need for a brute force method that just loops through
   # frames and looks for a `data` object.
   .fallback <- function() {
     for (i in seq_len(sys.nframe())) {
-      tryCatch({
-        data <- get("data", envir = sys.frame(i))
-      })
+      try(data <- get("data", envir = sys.frame(i)),
+          silent = TRUE)
       if (!is.null(data) && is.data.frame(data)) {
         break()
       }
@@ -23,46 +23,33 @@
 
   data <- NULL
 
-  # A list of supported interactive calls. Probably want to move this somewhere
-  # more generic eventually.
-  modelsSupported <- c("lm", "ittestimate")
-
   # Obtain the names of all functions in the callstack
   fnsCalled <- as.character(lapply(sys.calls(), "[[", 1))
 
-  # Identify all frames which contains a function calling a support model
-  modelFramePos <- which(fnsCalled %in% modelsSupported)
-  if (length(modelFramePos) > 1) {
-    stop("Multiple model calls found in call stack")
-  }
+  # Identify all frames which have `model.frame.default` called
+  modelFramePos <- which(fnsCalled %in% "model.frame.default")
+  # Identify the frames in which `ate` or `ett` are passed as weights
+  weightsPos <- which(sapply(sapply(sys.calls(), `[[`, "weights"), `[[`, 1) == "ate")
+
+  # At this point, we know all frames in which the weights are passed,
+  # and all frames which are calls to `model.frame.default`. This will identify
+  # which frames are both.
+  modelFrameandWeightsPos <- intersect(modelFramePos, weightsPos)
+
+  # TODO: What if there are multiple?
+
+
   if (length(modelFramePos) < 1) {
-    warning("No supported models found in stack. Trying fallback method to obtain data")
-    return(.fallback())
-  }
-  ###*** The model call won't be in the first frame if user calls something like
-  # `summary(lm(...`. Also, doing it this way allows us to easily change from
-  # looking for a supported model, to looking for a call to `model.frame`.
-
-  modelcall <- fnsCalled[modelFramePos]
-
-  ##########################
-  ##### Model type: lm #####
-  ##########################
-  if (modelcall == "lm") {
-    try(data <- get("data", envir = sys.frame(modelFramePos)),
+    warning(paste0("No call to `model.frame` with Design wights in the call stack found.\n",
+                   "Trying fallback method to obtain data"))
+    try(data <- .fallback(),
         silent = TRUE)
-    # if the above line fails, `data` will remain NULL and an informative
-    # error will be printed below
-  }
-
-  ###################################
-  ##### Model type: ittestimate #####
-  ###################################
-  if (modelcall == "ittestimate") {
-    try(data <- get("data", envir = sys.frame(modelFramePos)),
+  } else {
+    try(data <- do.call(data.frame,
+                        c(model.frame(form, data = get("data",
+                                                       sys.frame(modelFrameandWeightsPos))),
+                                     check.names = FALSE)),
         silent = TRUE)
-    # if the above line fails, `data` will remain NULL and an informative
-    # error will be printed below
   }
 
   # Ensure data is actually data at this point - if not, try fallback method
@@ -71,10 +58,12 @@
     data <- .fallback()
   }
 
-
   # Finally if even fallback fails, exit
   if (is.null(data) || !is.data.frame(data)) {
     stop("Could not determine appropriate data")
   }
+
+  data <- .rename_model_frame_columns(data)[["renamedModelFrame"]]
+
   return(data)
 }

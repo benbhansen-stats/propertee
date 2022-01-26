@@ -4,31 +4,21 @@ test_that("Design creation", {
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
-  # Error if multiple models in stack
-  expect_error(lm(lm(y~x, data = simdata, weights = ate(des)) ~ 1),
-               "Multiple")
+  #Handling multiple models in the stack
+  mod1 <- lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1)
+  mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(des), data = simdata)
+  expect_true(mod1$coefficients[1] != mod2$coefficients[1])
 
-  # glm is right now an "unsupported model", will need to update this
-  # once we add glm support
-  expect_warning(mod2 <- glm(y ~ x, data = simdata, weights = ate(des)),
-                 "fallback")
-  expect_equal(mod$coefficients,
-               mod2$coefficients)
-
-
-  expect_warning(mod3 <- with(simdata,
-                              lm(y ~ x, weights = ate(des))),
-                 "normal means")
+  # linear glm and lm are equivalent
+  mod3 <- glm(y ~ x, data = simdata, weights = ate(des))
   expect_equal(mod$coefficients,
                mod3$coefficients)
 
-  # again, glm as an "unsupported model"
-  expect_warning(mod4 <- with(simdata,
-                              glm(y ~ x, weights = ate(des))),
-                 "No supported models")
+  # Works using `with`
+  mod4 <- with(simdata,
+               lm(y ~ x, weights = ate(des)))
   expect_equal(mod$coefficients,
-               mod3$coefficients)
-
+               mod4$coefficients)
 
 
 
