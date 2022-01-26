@@ -20,7 +20,6 @@
     return(data)
   }
 
-
   data <- NULL
 
   # Obtain the names of all functions in the callstack
@@ -30,7 +29,17 @@
   modelFramePos <- which(fnsCalled %in% c("model.frame.default", "ittestimate"))
 
   # Identify the frames in which `ate` or `ett` are passed as weights
-  weightsPos <- which(sapply(sapply(sys.calls(), `[[`, "weights"), `[[`, 1) %in% c("ate", "ett"))
+  weightArgs <- sapply(sys.calls(), `[[`, "weights")
+
+  # If the call is `weights = ate(des)`, then we'll be able to find "ate"
+  # directly. This corresponds to `weightsPos`. However, if the call is more
+  # complex, like `weights = 3*ate(des)` or `weights = sqrt(ate(des))`, then
+  # we'll need to find `ate(` instead, leading to `atePos` and `ettPos`.
+  weightsPos <- sapply(weightArgs, `[[`, 1) %in% c("ate", "ett")
+  atePos <- sapply(lapply(weightArgs, as.character), function(x) any(grepl("^ate\\(", x)))
+  ettPos <- sapply(lapply(weightArgs, as.character), function(x) any(grepl("^ett\\(", x)))
+
+  weightsPos <- which(weightsPos | atePos | ettPos)
 
   # At this point, we know all frames in which the weights are passed,
   # and all frames which are calls to `model.frame.default`. This will identify
