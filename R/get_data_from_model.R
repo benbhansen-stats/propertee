@@ -46,9 +46,6 @@
   # which frames are both.
   modelFrameandWeightsPos <- intersect(modelFramePos, weightsPos)
 
-  # TODO: What if there are multiple?
-
-
   if (length(modelFramePos) < 1) {
     warning(paste0("No call to `model.frame` with Design wights in the call stack found.\n",
                    "Trying fallback method to obtain data"))
