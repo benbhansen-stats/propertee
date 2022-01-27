@@ -31,4 +31,7 @@ test_that("Design creation", {
   mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
 
 
+  # Test for fallback if no model.frame call
+
+  expect_warning(with(simdata, ate(des)), "No call")
 })
