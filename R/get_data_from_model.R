@@ -53,8 +53,10 @@
         silent = TRUE)
   } else {
     try(data <- do.call(data.frame,
-                        c(model.frame(form, data = get("data",
-                                                       sys.frame(modelFrameandWeightsPos))),
+                        c(model.frame(form,
+                                      data = get("data",
+                                                 sys.frame(modelFrameandWeightsPos)),
+                                      na.action = na.pass),
                                      check.names = FALSE)),
         silent = TRUE)
   }
