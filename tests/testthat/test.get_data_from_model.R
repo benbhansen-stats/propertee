@@ -1,4 +1,4 @@
-test_that("Design creation", {
+test_that("Obtaining data for weights", {
   data(simdata)
   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
@@ -8,6 +8,11 @@ test_that("Design creation", {
   mod1 <- lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1)
   mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(des), data = simdata)
   expect_true(mod1$coefficients[1] != mod2$coefficients[1])
+
+  # Multiple models in the stack with multiple weights,
+  expect_error(lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1,
+                  weights = ate(des), data = simdata),
+               "Multiple")
 
   # linear glm and lm are equivalent
   mod3 <- glm(y ~ x, data = simdata, weights = ate(des))

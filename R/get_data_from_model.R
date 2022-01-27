@@ -51,6 +51,9 @@
                    "Trying fallback method to obtain data"))
     try(data <- .fallback(),
         silent = TRUE)
+  } else if (length(modelFrameandWeightsPos) > 1) {
+    stop(paste0("Multiple models with weights found on the call stack.\n",
+                "Try splitting the call into multiple lines rather than a single nested model."))
   } else {
     environment(form) <- environment(get("formula", sys.frame(modelFrameandWeightsPos)))
     try(data <- do.call(data.frame,
