@@ -52,6 +52,7 @@
     try(data <- .fallback(),
         silent = TRUE)
   } else {
+    environment(form) <- environment(get("formula", sys.frame(modelFrameandWeightsPos)))
     try(data <- do.call(data.frame,
                         c(model.frame(form,
                                       data = get("data",
