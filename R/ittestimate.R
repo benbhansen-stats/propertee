@@ -51,14 +51,19 @@ ittestimate <- function(design,
     design <- .update_clusterids(design, data, clusterIds)
   }
 
+  # Expand treatment status
+  ctdata <- design@structure[, design@columnIndex %in% c("t", "c")]
+  colnames(ctdata)[1] <- "Design_Treatment"
+  merged <- merge(data, ctdata, by = colnames(ctdata)[-1])
+
   if (is.null(weights)) {
     wtfn <- switch(target,
                    "ate" = ate,
                    "ett" = ett,
                    stop('invalid target'))
-    weights <- wtfn(design, data)
+    weights <- wtfn(design, merged)
   } else {
-    if (length(weights) != nrow(data)) {
+    if (length(weights) != nrow(merged)) {
       stop("weights must be same length as rows of `data`")
     }
     if (!is.numeric(weights)) {
@@ -66,11 +71,6 @@ ittestimate <- function(design,
     }
   }
 
-
-  # Expand treatment status
-  ctdata <- design@structure[, design@columnIndex %in% c("t", "c")]
-  colnames(ctdata)[1] <- "Design_Treatment"
-  merged <- merge(data, ctdata, by = colnames(ctdata)[-1])
 
   if (!is.null(covAdjModel)) {
     model <- lm(merged[, outcome] ~ Design_Treatment + offset(covAdj),
