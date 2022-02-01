@@ -31,7 +31,7 @@ setValidity("WeightedDesign", function(object) {
 ##' @rdname WeightCreators
 ett <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula)
+    data <- .get_data_from_model(design@call$formula, clusterIds)
   }
 
   if (!is.null(clusterIds)) {
@@ -50,7 +50,7 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL, clusterIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula)
+    data <- .get_data_from_model(design@call$formula, clusterIds)
   }
 
   if (!is.null(clusterIds)) {
@@ -112,7 +112,6 @@ ate <- function(design, data = NULL, clusterIds = NULL) {
   # if we have any names or replacements missing in the design or data,
   # there's a warning, and then don't try to replace that element
   clusterIds <- clusterIds[!missingnames & !missingdata]
-
 
   newnames <- vapply(colnames(design@structure), function(x) {
     pos <- names(clusterIds) == x
