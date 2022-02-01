@@ -142,12 +142,12 @@ wdes * -2
 There is basic support for including `WeightedDesign` in `lm` models.
 
 ```{r}
-mod <- lm(y ~ x, data = simdata, weights = wdes)
+mod <- lm(y ~ z, data = simdata, weights = wdes)
 mod
 class(mod$weights)
 class(mod$model$"(weights)")
 mod
-mod <- lm(y ~ x, data = simdata, weights = ate(des))
+mod <- lm(y ~ z, data = simdata, weights = ate(des))
 class(mod$weights)
 class(mod$model$"(weights)")
 ```

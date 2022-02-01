@@ -31,6 +31,17 @@ test_that("ittestimate", {
                "must be quoted")
 })
 
+# These tests will fail as long as the weight functions are dummies.
+## test_that("ittestimate and lm return the same in simple cases", {
+##   data(simdata)
+##   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
+##                    data = simdata)
+
+##   it <- ittestimate(des, simdata, "y")
+##   ml <- lm(y ~ z, data = simdata, weights = ate(des))
+
+## })
+
 test_that("clusterIds in ittestimate", {
   data(simdata)
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
