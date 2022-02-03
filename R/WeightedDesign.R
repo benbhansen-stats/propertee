@@ -79,19 +79,6 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
   .join_design_weights(weights, design, target = "ett", data = data)
 }
 
-## create a function that for a given block, calculates number of treatment clusters
-## in that block
-.blocks_treatment <- function(design){
-  
-  tx_vec <- design@structure[design@columnIndex == "t"][[1]]
-  ind_tx <- levels(tx_vec)[2]
-
-  df <- data.frame(blockid = names(table(design@structure[design@columnIndex == "b"])), 
-                   block_units = as.numeric(table(design@structure[design@columnIndex == "b"])),
-                   tx_units = aggregate(as.numeric(tx_vec == ind_tx),
-                                        by = list(design@structure[design@columnIndex == "b"][[1]]), sum)$x)
-}
-
 ##' @export
 ##' @rdname WeightCreators
 ate <- function(design, data = NULL, clusterIds = NULL) {
