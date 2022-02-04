@@ -1,20 +1,24 @@
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-.get_data_from_model <- function(form, clusterIds = NULL) {
+.get_data_from_model <- function(form, unitOfAssignmentIds = NULL) {
   stopifnot(is(as.formula(form), "formula"))
 
-  if (!is.null(clusterIds)) {
-    # if we're passed clusterIds, need to update the formula.
+  if (!is.null(unitOfAssignmentIds)) {
+    # if we're passed unitOfAssignmentIds, need to update the formula.
 
     # First, convert passed-as-string new variable names to `name` objects
     # to avoid quotation (y ~ "x")` in formula
-    clusterIds <- lapply(clusterIds, as.name)
+    unitOfAssignmentIds <- lapply(unitOfAssignmentIds, as.name)
 
     # Next use substitute to do the replacing.
-    # Cannot just call `substitute(form, clusterIds)` since we want to pass
+    # Cannot just call `substitute(form, unitOfAssignmentIds)` since we want to pass
     # the actual formula object, not just the name "form"
-    form <- as.formula(do.call("substitute", list(form, clusterIds)))
+    form <- as.formula(do.call("substitute", list(form, unitOfAssignmentIds)))
   }
+
+  # update formula to always use unitOfAssignment, since if this is the original
+  # call to *_Design, user may have used cluster/uoa/unitid
+  form <- .updateFormToUnitOfAssignment(form)
 
   # Below we try to be intelligent about finding the appropriate data. If this
   # fails, we may have need for a brute force method that just loops through

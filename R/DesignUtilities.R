@@ -1,12 +1,16 @@
 ##' These are special function used only in the definition of Design class
-##' objects. They identify the clusters, blocks and forcing variables.
+##' objects. They identify the units of assignment, blocks and forcing variables.
+##'
+##' `unitOfAssignment`, `uoa`, `cluster` and `unitid` are all aliases of each
+##' other; you must include one and only one in each Design. The choice of which
+##' to use will have no impact on any analysis.
 ##'
 ##' @title Special terms in Design
 ##' @param ... any number of variables of the same length.
 ##' @return the variables with appropriate labels
 ##' @export
 ##' @rdname DesignSpecials
-cluster <- function (...)
+unitOfAssignment <- function (...)
 {
   allf <- list(...)
   do.call(cbind, allf)
@@ -14,56 +18,73 @@ cluster <- function (...)
 
 ##' @rdname DesignSpecials
 ##' @export
-unitid <- cluster
+unitid <- unitOfAssignment
 
 ##' @rdname DesignSpecials
 ##' @export
-block <- cluster
+cluster <- unitOfAssignment
 
 ##' @rdname DesignSpecials
 ##' @export
-forcing <- cluster
+uoa <- unitOfAssignment
+
+##' @rdname DesignSpecials
+##' @export
+block <- unitOfAssignment
+
+##' @rdname DesignSpecials
+##' @export
+forcing <- unitOfAssignment
 
 # Internal Function
 # Perform checks on formula for creation of Design.
 # Checks performed:
-# - Ensure presence of exactly one of cluster() or unitid()
-# - Disallow multiple cluster(), unitid(), block(), or forcing() terms
+# - Ensure presence of exactly one of unitOfAssignment(), cluster() or unitid()
+# - Disallow multiple block(), or forcing() terms
 # - Disallow forcing() unless in RDD
 .check_design_formula <- function(form, allowForcing = FALSE) {
-  tt <- terms(form, c("cluster", "unitid", "block", "forcing"))
+  tt <- terms(form, c("unitOfAssignment", "uoa", "cluster", "unitid", "block", "forcing"))
   specials <- attr(tt, "specials")
 
   if (attr(tt, "response") == 0) {
     stop("Must specify a treatment variable as the left side of the formula.")
   }
 
-  if (is.null(specials$cluster) & is.null(specials$unitid)) {
-    stop("Must specify a clustering or unitid variable.")
-  } else if (length(specials$cluster) + length(specials$unitid) > 1) {
+  spec_uas <- specials$unitOfAssignment
+  spec_uoa <- specials$uoa
+  spec_clu <- specials$cluster
+  spec_uni <- specials$unitid
+
+  len_uas <- length(spec_uas)
+  len_uoa <- length(spec_uoa)
+  len_clu <- length(spec_clu)
+  len_uni <- length(spec_uni)
+
+#  browser()
+
+  if (is.null(spec_uas) & is.null(spec_uoa) & is.null(spec_clu) & is.null(spec_uni)) {
+    stop("Must specify a unitOfAssignment, cluster or unitid variable.")
+  } else if (len_uas + len_uoa + len_clu + len_uni > 1) {
     # there's 2+ entered; need to figure out what combination
 
-    # at least one of each
-    if (length(specials$cluster) >= 1 & length(specials$unitid) >= 1) {
-      stop(paste("Only one of cluster() or unitid() can be entered.",
-                 "(`cluster()` and `unitid()` can take multiple variables)"))
+    if ( (len_uas >= 1) + (len_uoa >= 1) + (len_clu >= 1) + (len_uni >= 1) > 1) {
+      # There's more than one specified.
+      stop(paste("Only one of `unitOfAssignment()`, `cluster()` or",
+                 "`unitid()` can be entered."))
+    } else {
+      which <- switch(  (len_uoa >= 1) +
+                        (len_uas >= 1) +
+                      2*(len_clu >= 1) +
+                      3*(len_uni >= 1),
+                      "`unitOfAssignment()`",
+                      "`cluster()`",
+                      "`unitid()`")
+      stop(paste0("Only one instance of ", which, " can be entered. (",
+                 which, " can take multiple variables)"))
     }
-
-    # multiple `cluster()`, no `unitid()`
-    if (length(specials$cluster) >= 1 & length(specials$unitid) == 0) {
-      stop(paste("Only one cluster can be entered.",
-                 "(`cluster()` can take multiple variables)"))
-      }
-
-    # multiple `unitid()`, no `cluster()`
-    if (length(specials$cluster) == 0 & length(specials$unitid) >= 1) {
-      stop(paste("Only one unitid can be entered.",
-                 "(`unitid()` can take multiple variables)"))
-    }
-    stop("This error should never be seen, but something went wrong!")
   }
 
-      if (!is.null(specials$block) && length(specials$block) > 1) {
+  if (!is.null(specials$block) && length(specials$block) > 1) {
     stop("Specify only one block() (block() can take multiple variables).")
   }
 
@@ -74,4 +95,13 @@ forcing <- cluster
   }
 
   TRUE
+}
+
+# Internal function to rename cluster/unitid/uoa in a formula to
+# unitOfAssignment
+.updateFormToUnitOfAssignment <- function(form) {
+    renameList <- list("cluster" = as.name("unitOfAssignment"),
+                     "uoa" = as.name("unitOfAssignment"),
+                     "unitid" = as.name("unitOfAssignment"))
+    as.formula(do.call("substitute", list(form, renameList)))
 }

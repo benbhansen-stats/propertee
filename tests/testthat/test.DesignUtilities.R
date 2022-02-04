@@ -3,21 +3,31 @@ test_that("Design formula checking", {
   expect_true(.check_design_formula(y ~ cluster(x,z,q,r)))
   expect_true(.check_design_formula(y ~ unitid(x)))
   expect_true(.check_design_formula(y ~ unitid(x,z,q,r)))
+  expect_true(.check_design_formula(y ~ unitOfAssignment(x)))
+  expect_true(.check_design_formula(y ~ unitOfAssignment(x,z,q,r)))
+  expect_true(.check_design_formula(y ~ uoa(x)))
+  expect_true(.check_design_formula(y ~ uoa(x,z,q,r)))
 
   expect_error(.check_design_formula(~ cluster(x)),
                "treatment")
 
   expect_error(.check_design_formula(y ~ x),
-               "clustering")
+               "cluster")
 
   expect_error(.check_design_formula(y ~ cluster(x) + unitid(z)),
-               "Only one of cluster")
+               "Only one of")
 
   expect_error(.check_design_formula(y ~ cluster(x) + cluster(z)),
-               "Only one cluster")
+               "Only one instance of `cluster")
 
   expect_error(.check_design_formula(y ~ unitid(x) + unitid(z)),
-               "Only one unitid")
+               "Only one instance of `unitid")
+
+  expect_error(.check_design_formula(y ~ unitOfAssignment(x) + unitOfAssignment(z)),
+               "Only one instance of `unitOf")
+
+  expect_error(.check_design_formula(y ~ uoa(x) + uoa(z)),
+               "Only one instance of `unitOf")
 
   expect_true(.check_design_formula(y ~ cluster(x) + block(z)))
   expect_true(.check_design_formula(y ~ cluster(x) + block(z, a, b, c)))

@@ -30,10 +30,10 @@ Generates a randomized control treatment Design (\code{RCT_Design}), or an
 observational Design (\code{Obs_Design}), or a regression discontinuity Design
 (\code{RD_Design}).
 
-The formula must include \code{cluster()} or \code{unitid()} to identify the units of
-assignment (one or more variables). If defining an RD_Design, the formula
-must also include a \code{forcing()} entry. The formula may optionally include a
-\code{block()} entry as well.
+The formula must include exactly one of \code{unitOfAssignment()}, \code{cluster()},
+or \code{unitid()} to identify the units of assignment (one or more variables).
+If defining an RD_Design, the formula must also include a \code{forcing()} entry.
+The formula may optionally include a \code{block()} entry as well.
 
 Vvariable transformation inside the \verb{*_Design} calls are not allowed, as
 that can lead to mismatches between the Design objects and future data. In

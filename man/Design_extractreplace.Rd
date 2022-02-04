@@ -5,6 +5,10 @@
 \alias{treatment,Design-method}
 \alias{treatment<-}
 \alias{treatment<-,Design-method}
+\alias{unitsOfAssignment}
+\alias{unitsOfAssignment,Design-method}
+\alias{unitsOfAssignment<-}
+\alias{unitsOfAssignment<-,Design-method}
 \alias{clusters}
 \alias{clusters,Design-method}
 \alias{clusters<-}
@@ -30,6 +34,14 @@ treatment(x)
 treatment(x) <- value
 
 \S4method{treatment}{Design}(x) <- value
+
+unitsOfAssignment(x)
+
+\S4method{unitsOfAssignment}{Design}(x)
+
+unitsOfAssignment(x) <- value
+
+\S4method{unitsOfAssignment}{Design}(x) <- value
 
 clusters(x)
 
@@ -70,7 +82,7 @@ forcings(x) <- value
 or a named data.frame if renaming variable as well.}
 }
 \value{
-data.frame containing cluster-level information
+data.frame containing unit-leve information
 }
 \description{
 Extract and Replace elements of Design

@@ -24,18 +24,18 @@ setValidity("WeightedDesign", function(object) {
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
-##' @param clusterIds optional; list connecting names of cluster variables in
-##'   `design` to cluster variables in `data`
+##' @param unitOfAssignmentIds optional; list connecting names of unit of
+##'   assignment variables in `design` to unit of assignment variables in `data`
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL, clusterIds = NULL) {
+ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, clusterIds)
+    data <- .get_data_from_model(design@call$formula, unitOfAssignmentIds)
   }
 
-  if (!is.null(clusterIds)) {
-    design <- .update_clusterids(design, data, clusterIds)
+  if (!is.null(unitOfAssignmentIds)) {
+    design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
   }
 
   .treatment_concordance(design, data)
@@ -48,13 +48,13 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL, clusterIds = NULL) {
+ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, clusterIds)
+    data <- .get_data_from_model(design@call$formula, unitOfAssignmentIds)
   }
 
-  if (!is.null(clusterIds)) {
-    design <- .update_clusterids(design, data, clusterIds)
+  if (!is.null(unitOfAssignmentIds)) {
+    design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
   }
 
   .treatment_concordance(design, data)
@@ -85,38 +85,38 @@ ate <- function(design, data = NULL, clusterIds = NULL) {
   }
 }
 
-# Internal function to use clusterIds to update the design with new variable
+# Internal function to use unitOfAssignmentIds to update the design with new variable
 # names
-.update_clusterids <- function(design, data, clusterIds) {
-  if (!is.list(clusterIds) ||
-        is.null(names(clusterIds)) ||
-        any(names(clusterIds) == "")) {
-    stop("clusterIds must be named list")
+.update_unitOfAssignmentIds <- function(design, data, unitOfAssignmentIds) {
+  if (!is.list(unitOfAssignmentIds) ||
+        is.null(names(unitOfAssignmentIds)) ||
+        any(names(unitOfAssignmentIds) == "")) {
+    stop("unitOfAssignmentIds must be named list")
   }
-  if (any(duplicated(names(clusterIds))) || any(duplicated(clusterIds))) {
-    stop("clusterIds must be unique")
+  if (any(duplicated(names(unitOfAssignmentIds))) || any(duplicated(unitOfAssignmentIds))) {
+    stop("unitOfAssignmentIds must be unique")
   }
 
   # Ensure all names and replacements are valid
-  missingnames <- !(names(clusterIds) %in% colnames(design@structure))
+  missingnames <- !(names(unitOfAssignmentIds) %in% colnames(design@structure))
   if (any(missingnames)) {
-    warning(paste("clusterIds labels not found in Design. unknown elements:",
-                  paste(names(clusterIds)[missingnames], collapse = ", ")))
+    warning(paste("unitOfAssignmentIds labels not found in Design. unknown elements:",
+                  paste(names(unitOfAssignmentIds)[missingnames], collapse = ", ")))
   }
-  missingdata <-  !(clusterIds %in% colnames(data))
+  missingdata <-  !(unitOfAssignmentIds %in% colnames(data))
   if (any(missingdata)) {
-    warning(paste("clusterIds replacement values not found in data. unknown elements:",
-                  paste(clusterIds[missingnames], collapse = ", ")))
+    warning(paste("unitOfAssignmentIds replacement values not found in data. unknown elements:",
+                  paste(unitOfAssignmentIds[missingnames], collapse = ", ")))
   }
 
   # if we have any names or replacements missing in the design or data,
   # there's a warning, and then don't try to replace that element
-  clusterIds <- clusterIds[!missingnames & !missingdata]
+  unitOfAssignmentIds <- unitOfAssignmentIds[!missingnames & !missingdata]
 
   newnames <- vapply(colnames(design@structure), function(x) {
-    pos <- names(clusterIds) == x
+    pos <- names(unitOfAssignmentIds) == x
     if (any(pos)) {
-      return(clusterIds[[which(pos)]])
+      return(unitOfAssignmentIds[[which(pos)]])
     }
     return(x)
   }, "character")
@@ -126,16 +126,16 @@ ate <- function(design, data = NULL, clusterIds = NULL) {
 }
 
 
-# Internal function to expand cluster-level weights to the level of the data
+# Internal function to expand uoa-level weights to the level of the data
 .join_design_weights <- function(weights, design, target, data = NULL) {
 
   if (nrow(data) != nrow(design@structure)) {
-    # Merge cluster data with weights at cluster level
-    clusterdata <- design@structure[, design@columnIndex == "c", drop = FALSE]
-    clusterdata$Design_weights <- weights
+    # Merge uoa data with weights at uoa level
+    uoadata <- design@structure[, design@columnIndex == "u", drop = FALSE]
+    uoadata$Design_weights <- weights
 
     # Merge with data to expand weights to unit of analysis level
-    merged <- merge(data, clusterdata, by = colnames(clusterdata)[-ncol(clusterdata)])
+    merged <- merge(data, uoadata, by = colnames(uoadata)[-ncol(uoadata)])
 
     # Extract weights from merged data
     weights <- merged$Design_weights

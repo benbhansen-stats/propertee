@@ -5,8 +5,9 @@
 ##' @param target a function returning a WeightedDesign object, or either "ate"
 ##'   (default) or "ett"
 ##' @param covAdjModel optional; covariable adjustment model
-##' @param clusterIds optional; list connecting names of cluster variables in
-##'   `design` to cluster variables in `data`
+##' @param unitOfAssignmentIds optional; list connecting names of units of
+##'   assignment/clusters/units variables in `design` to units of
+##'   assignment/clusters/units variables in `data`
 ##' @param weights optional; manually include weights. If included, weights will
 ##'   **not** be automatically generated. Instead, the `weights` argument should
 ##'   include the product of any externally created weights and the result of
@@ -20,7 +21,7 @@ ittestimate <- function(design,
                         outcome,
                         target = "ate",
                         covAdjModel = NULL,
-                        clusterIds = NULL,
+                        unitOfAssignmentIds = NULL,
                         ...,
                         weights = NULL) {
 
@@ -47,12 +48,12 @@ ittestimate <- function(design,
     covAdj <- cov_adj(covAdjModel)
   }
 
-  if (!is.null(clusterIds)) {
-    design <- .update_clusterids(design, data, clusterIds)
+  if (!is.null(unitOfAssignmentIds)) {
+    design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
   }
 
   # Expand treatment status
-  ctdata <- design@structure[, design@columnIndex %in% c("t", "c")]
+  ctdata <- design@structure[, design@columnIndex %in% c("t", "u")]
   colnames(ctdata)[1] <- "Design_Treatment"
   merged <- merge(data, ctdata, by = colnames(ctdata)[-1])
 

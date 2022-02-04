@@ -14,9 +14,9 @@ summary.Design <- function(object, ...) {
   cat("\n\n")
 
   cat(paste("Contains ", nrow(object@structure) -
-                           sum(duplicated(object@structure[object@columnIndex == "c"])),
-            paste0(" ", object@clustertype, "s ") ,"(`",
-            paste(varNames(object, "c"), collapse = "`, `"),
+                           sum(duplicated(object@structure[object@columnIndex == "u"])),
+            paste0(" ", object@unitOfAssignmentType, "s ") ,"(`",
+            paste(varNames(object, "u"), collapse = "`, `"),
             "`)",
             sep = ""))
 
@@ -35,8 +35,8 @@ summary.Design <- function(object, ...) {
   #ntreat <- sum(object@structure[object@columnIndex == "t"])
   #nctrl <- sum(1 - object@structure[object@columnIndex == "t"])
 
-  #cat(paste(ntreat, " clusters assigned to treatment, ",
-  #          nctrl, " clusters assigned to control (`",
+  #cat(paste(ntreat, " units  assigned to treatment, ",
+  #          nctrl, " units assigned to control (`",
   #          varNames(object, "t"), "`)",
   #          sep = ""))
   cat("\n")
