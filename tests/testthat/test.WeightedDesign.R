@@ -159,6 +159,30 @@ test_that("Inconsistent treatment levels", {
 
 })
 
+test_that("ett treatment weights are correct length", {
+  
+  testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
+  
+  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  
+  wts <- ett(des, data = testdata)
+  
+  expect_equal(length(wts), nrow(testdata))
+  
+})
+
+test_that("ett treatment weights return numeric", {
+  
+  testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
+  
+  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  
+  wts <- ett(des, data = testdata)
+  
+  expect_s4_class(wts, "numeric")
+  
+})
+
 test_that("ett treatment weights = 1", {
   
   testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
