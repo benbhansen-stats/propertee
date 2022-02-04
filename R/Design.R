@@ -71,7 +71,7 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   } else if (grepl("unitid\\([a-zA-Z]", deparse(form))) {
     autype <- "unitid"
   } else {
-    stop(paste("wtf happened?", deparse(form)))
+    stop("This error should never be hit!")
   }
 
   # Ensure whichever unit of assignment function is used, `unitOfAssignment` is
