@@ -264,10 +264,9 @@ test_that("Design printing", {
 test_that("Accessing and replacing elements", {
   data(simdata)
 
+  ##### Treatment
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
-
-  ##### Treatment
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
 
@@ -293,7 +292,89 @@ test_that("Accessing and replacing elements", {
                "Treatment must be")
 
 
+  ##### UnitsOfAssignment
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_identical(unitsOfAssignment(des), des@structure[, 2:3])
+
+  unitsOfAssignment(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
+  expect_identical(varNames(des, "u"), c("cid1", "cid2"))
+  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == unitsOfAssignment(des)))
+
+  unitsOfAssignment(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == unitsOfAssignment(des)))
+
+  m <- matrix(1:20, ncol = 2)
+  unitsOfAssignment(des) <- m
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == unitsOfAssignment(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  unitsOfAssignment(des) <- m
+  expect_identical(varNames(des, "u"), colnames(m))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == unitsOfAssignment(des)))
+
+  unitsOfAssignment(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:10),
+                             asd = c(100, 12:20)) == unitsOfAssignment(des)))
+
+  # less unitsOfAssignment
+  des2 <- des
+  unitsOfAssignment(des2) <- m[,1]
+  expect_identical(varNames(des2, "u"), "qwe")
+  expect_true(all(data.frame(qwe = 1:10) == unitsOfAssignment(des2)))
+
+  des2 <- des
+  unitsOfAssignment(des2) <- 10:1
+  expect_identical(varNames(des2, "u"), "qwe")
+  expect_true(all(data.frame(qwe = 10:1) == unitsOfAssignment(des2)))
+
+  df <- data.frame(abc = 3:12)
+  des2 <- des
+  unitsOfAssignment(des2) <- df
+  expect_identical(varNames(des2, "u"), colnames(df))
+  expect_true(all(df == unitsOfAssignment(des2)))
+
+  ########## UnitsOfAssignment, reduce duplicates
+
+  treatment(des) <- as.factor(rep(0:1, each = 5))
+
+  expect_warning(unitsOfAssignment(des) <- data.frame(c1 = 1, c2 = c(1,1:9)),
+                 "collapsing")
+  expect_equal(nrow(des@structure), 9)
+
+  expect_error(unitsOfAssignment(des) <- data.frame(c1 = 1, c2 = c(1:8, 1)),
+               "non-constant")
+
+  # more unitsOfAssignment
+  df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  des2 <- des
+  unitsOfAssignment(des2) <- df
+  expect_identical(varNames(des2, "u"), colnames(df))
+  expect_true(all(df == unitsOfAssignment(des2)))
+
+  m <- matrix(1:40, ncol = 4)
+  des2 <- des
+  expect_error(unitsOfAssignment(des2) <- m,
+               "be named")
+  colnames(m) <- letters[1:4]
+  unitsOfAssignment(des2) <- m
+  expect_identical(varNames(des2, "u"), colnames(m))
+  expect_true(all(m == unitsOfAssignment(des2)))
+
+  # uoa
+  des <- RD_Design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_identical(unitsOfAssignment(des), des@structure[, 2:3])
+
+
   ##### Clusters
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   expect_identical(clusters(des), des@structure[, 2:3])
 
@@ -370,7 +451,6 @@ test_that("Accessing and replacing elements", {
   des <- RD_Design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
-
   expect_identical(unitids(des), des@structure[, 2:3])
 
   unitids(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
@@ -441,12 +521,29 @@ test_that("Accessing and replacing elements", {
   expect_identical(varNames(des2, "u"), colnames(m))
   expect_true(all(m == unitids(des2)))
 
-  # unitid vs clusters
+  ##### unitOfAssignment vs unitid vs clusters
 
+  # created with unitid
   expect_error(clusters(des), "not `cluster")
+  expect_error(unitsOfAssignment(des), "not `unitOfAssignment")
+
+  # created with cluster
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
   expect_error(unitids(des), "not `unitid")
+  expect_error(unitsOfAssignment(des), "not `unitOfAssignment")
+
+  # created with unitOfAssignment
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_error(unitids(des), "not `unitid")
+  expect_error(clusters(des), "not `cluster")
+
+  # created with uoa
+  des <- RD_Design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_error(unitids(des), "not `unitid")
+  expect_error(clusters(des), "not `cluster")
 
   ##### Blocks
 

@@ -63,7 +63,7 @@ setMethod("unitsOfAssignment<-", "Design", function(x, value) {
 
   x <- .update_structure(x, value, "u")
 
-  dupclust <- duplicated(clusters(x))
+  dupclust <- duplicated(unitsOfAssignment(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
   if (any(dupclust)) {
 
