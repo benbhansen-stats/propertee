@@ -31,16 +31,24 @@ test_that("ittestimate", {
                "must be quoted")
 })
 
-# These tests will fail as long as the weight functions are dummies.
-## test_that("ittestimate and lm return the same in simple cases", {
-##   data(simdata)
-##   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
-##                    data = simdata)
+test_that("ittestimate and lm return the same in simple cases", {
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
+                   data = simdata)
 
-##   it <- ittestimate(des, simdata, "y")
-##   ml <- lm(y ~ z, data = simdata, weights = ate(des))
+  it <- ittestimate(des, simdata, "y")
+  ml <- lm(y ~ z, data = simdata, weights = ate(des))
 
-## })
+  expect_true(all(it$coef == ml$coef))
+  expect_identical(it$model$`(weights)`, ml$model$`(weights)`)
+
+  it <- ittestimate(des, simdata, "y", target = "ett")
+  ml <- lm(y ~ z, data = simdata, weights = ett(des))
+
+  expect_true(all(it$coef == ml$coef))
+  expect_identical(it$model$`(weights)`, ml$model$`(weights)`)
+
+})
 
 test_that("unitOfAssignmentIds in ittestimate", {
   data(simdata)
