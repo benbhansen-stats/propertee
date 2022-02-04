@@ -852,3 +852,32 @@ test_that("Design type conversions", {
                "as a formula")
 
 })
+
+test_that(".convert_treatment_to_factor", {
+  z <- .convert_treatment_to_factor(0:1)
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(factor(1:3))
+  expect_length(z, 3)
+  expect_true(is.factor(z))
+  expect_true(nlevels(z) == 3)
+
+  z <- .convert_treatment_to_factor(c(TRUE, FALSE))
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(data.frame(x = 0:1))
+  expect_true(is.data.frame(z))
+  expect_true(all(dim(z) == c(2,1)))
+  expect_true(is.factor(z[,1]))
+  expect_equal(colnames(z), "x")
+
+  expect_error(.convert_treatment_to_factor(1:4),
+               "values 0 and 1")
+
+  expect_error(.convert_treatment_to_factor(data.frame(z1 = 0:1,
+                                                       z2 = 0:1)),
+               "Only one treatment")
+
+})
