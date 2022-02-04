@@ -62,8 +62,9 @@ ett <- function(design, data = NULL, clusterIds = NULL) {
     
     block_df <- data.frame(blockid = names(table(design@structure[design@columnIndex == "b"])), 
                      block_units = as.numeric(table(design@structure[design@columnIndex == "b"])),
-                     tx_units = aggregate(as.numeric(tx_vec == ind_tx),
-                                          by = list(design@structure[design@columnIndex == "b"][[1]]), sum)$x)
+                     tx_units = tapply(as.numeric(tx_vec == ind_tx),
+                                       design@structure[design@columnIndex == "b"], 
+                                       FUN = sum))
     block_df$E_Z <- block_df$tx_units / block_df$block_units
     
     # Create a cluster-level data frame that merges design structure with block
