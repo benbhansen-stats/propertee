@@ -50,7 +50,7 @@ ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   # If a block is specified, then E_Z varies by block and is the proportion
   # of clusters within the block that receive the treatment.
   if(!("b" %in% names(table(design@columnIndex)))){
-    cluster_df <- data.frame(design@structure[design@columnIndex == "c"],
+    cluster_df <- data.frame(design@structure[design@columnIndex == "u"],
                              Tx = as.numeric(tx_vec == ind_tx))
     E_Z <- mean(cluster_df$Tx)
     weights <- cluster_df$Tx + (1 - cluster_df$Tx) * E_Z / (1 - E_Z)
