@@ -161,9 +161,9 @@ test_that("Inconsistent treatment levels", {
 
 test_that("ett/ate treatment weights are correct length", {
   
-  testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
   
-  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
@@ -177,9 +177,9 @@ test_that("ett/ate treatment weights are correct length", {
 
 test_that("ett/ate treatment weights return numeric", {
   
-  testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
   
-  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
@@ -193,52 +193,80 @@ test_that("ett/ate treatment weights return numeric", {
 
 test_that("ett treatment weights = 1", {
   
-  testdata <- data.frame(cid = 1:10, z = c(rep(1,4), rep(0,6)))
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
   
-  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
-  expect_equal(wts@.Data[1:4], rep(1,4))
+  expect_equal(wts@.Data[1:4], rep(1, 4))
   
 })
 
 test_that("ett weights for block with P(Z = 1) = 0.5: 1", {
   
-  testdata <- data.frame(cid = 1:10, z = c(rep(1,5), rep(0,5)))
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
   
-  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
-  expect_equal(wts@.Data, rep(1,10))
+  expect_equal(wts@.Data, rep(1, 10))
   
 })
 
 test_that("ett weights for block with P(Z = 1) = 1/3:  1 or 0.5", {
   
-  testdata <- data.frame(cid = 1:30, z = c(rep(1,10), rep(0,20)))
+  testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
   
-  des <- RCT_Design(z ~ cluster(cid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
-  expect_equal(wts@.Data, c(rep(1,10), rep(0.5, 20)))
+  expect_equal(wts@.Data, c(rep(1, 10), rep(0.5, 20)))
   
 })
 
-test_that("combine two previous blocks, obtain proper weights", {
+test_that("ate weights for block with P(Z = 1) = 0.5: 2", {
   
-  testdata <- data.frame(bid = c(rep(1,10), rep(2, 30)),
-                                 cid = 1:40, 
-                                 z = c(rep(1,5), rep(0,5), 
-                                       rep(1,10), rep(0, 20)))
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
   
-  des <- RCT_Design(z ~ cluster(cid) + block(bid), data = testdata)
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  
+  wts <- ate(des, data = testdata)
+  
+  expect_equal(wts@.Data, rep(2, 10))
+  
+})
+
+test_that("ate weights for block with P(Z = 1) = 1/3:  3 or 1.5", {
+  
+  testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
+  
+  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  
+  wts <- ate(des, data = testdata)
+  
+  expect_equal(wts@.Data, c(rep(3, 10), rep(1.5, 20)))
+  
+})
+
+test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
+  
+  testdata <- data.frame(bid = c(rep(1, 10), rep(2, 30)),
+                         cid = 1:40, 
+                         z = c(rep(1, 5), rep(0, 5), 
+                               rep(1, 10), rep(0, 20)))
+  
+  des <- RCT_Design(z ~ unitOfAssignment(cid) + block(bid), data = testdata)
   
   wts <- ett(des, data = testdata)
   
-  expect_equal(wts@.Data, c(rep(1,20), rep(0.5, 20)))
+  expect_equal(wts@.Data, c(rep(1, 20), rep(0.5, 20)))
   
+  wts <- ate(des, data = testdata)
+  
+  expect_equal(wts@.Data, c(rep(2, 10), rep(3, 10), rep(1.5, 20)))
+
 })
 
