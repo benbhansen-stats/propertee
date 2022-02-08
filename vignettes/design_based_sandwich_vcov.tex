@@ -339,7 +339,9 @@ estimators worth implementing as alternative B-matrix estimators.
 It'd be best to design in such a way as to facilitate alternating
 among B-matrix estimation routines.  
 \end{quote}
-%For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0 and $k$ are represented.  
+%<!--For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i
+  \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0
+and $k$ are represented.--> 
 
 \paragraph{Addressing Impediment~\ref{it:prob-covars}}
 If covariate \(X\)  are included in a linear regression specification
@@ -357,6 +359,7 @@ covariate effects themselves; I haven't thought through whether these
 would indeed be interpretable as design-based SEs.%
 }.
 
+%<!-- init segment of document shared w/ Xinhe W, early Feb22, ends here-->
 Another approach to covariates is to have fit their coefficients in a separate and
 prior regression fit --- perhaps a robust linear fit; or perhaps a binary
 regression fit --- and then to contrast Hajek aggregates of residuals
@@ -367,7 +370,7 @@ challenges \ref{it:prob-differentstatuses} and
 \ref{it:prob-nonexperimentals-as-nonrandom}. 
 
 \paragraph{Toward solutions to Impediments (\ref{it:prob-differentstatuses}) and
-(\ref{it:prob-nonexperimentals-as-nonrandom})}
+  (\ref{it:prob-nonexperimentals-as-nonrandom})}
 
 
 To draw a distinction between experimental versus non-experimental
@@ -380,8 +383,8 @@ as above but also full information on clusters falling outside of
 $\mathcal{E} = \bigcap_{S \in \mathcal{P}}S$: 
 \begin{equation} \label{eq:Zdefextended}
   \mathcal{Z} = \sigma\left(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i \in \mathcal{E}\}, \{\sum_{i
-    \in S} A_i : S  \in \mathcal{P}\} , \{(A_{i}, X_i, Y_{0i}, \ldots
-  Y_{Ki}): i \not\in\mathcal{E}\}\right).
+      \in S} A_i : S  \in \mathcal{P}\} , \{(A_{i}, X_i, Y_{0i}, \ldots
+    Y_{Ki}): i \not\in\mathcal{E}\}\right).
 \end{equation}
 One now needs A and B matrices for estimating functions of the Hajek
 estimator and the regression estimator simultaneously.  Given that
@@ -421,9 +424,9 @@ calculation of \(A\) matrices.)
   \item Sufficient information about the prior-stage fitting routine
     to reconstruct specific observations' contributions to its estimating functions.
   \end{itemize}
-The latter is also necessary to address estimator chains model-based
-covariance estimation, in order to estimate $B_{12}$ submatrices
-\citep[p.373]{carroll2006measurement}.
+  The latter is also necessary to address estimator chains model-based
+  covariance estimation, in order to estimate $B_{12}$ submatrices
+  \citep[p.373]{carroll2006measurement}.
 \end{quote}
 
 %%% Local Variables:
