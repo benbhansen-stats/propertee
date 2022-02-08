@@ -30,12 +30,12 @@ where \(\mathcal{P}\) is a given partition of \{1,\ldots{}, n\} encoding
 a stratification. Of particular interest are standard errors for Hajek
 estimators, i.e.~estimators of form
 \[\hat{\mu}_k[\mathbf{v}] = \frac{\sum_i w_{ki} [\![A_i=k]\!] v_i}{\sum_i w_{ki}  [\![A_i=k]\!]}\]
-and their differences 
+and their differences
 \begin{equation}\label{eq:hajekdiff}
 \hat{\mu}_k[\mathbf{u}] - \hat{\mu}_0[\mathbf{v}].
 \end{equation}
 Note that the case weights $\{w_{ki}:i\leq n, k\leq K\}$ are permitted
-to differ by assigned condition. 
+to differ by assigned condition.
 With $w_{ji} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
 $j=0, \ldots, K$,
 $\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ is the
@@ -93,25 +93,25 @@ the Huber-White estimate.  As a result, it's sometimes said that
 ordinary sandwich or cluster-robust variance estimates admit of
 design-based interpretations provided that one uses the HC2
 form. I suspect this works only in special cases, however, perhaps not going far
-beyond the one delimited above. 
+beyond the one delimited above.
 
 \subsection*{Impediments to application of the Neyman insight to
   experiment designs beyond the 1-stratum special case}
 
 The use of the Neyman insight to get design-based SEs through
-Huber-White covariance estimates intended for model-based interpretation 
+Huber-White covariance estimates intended for model-based interpretation
 has several important limitations.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item \label{it:prob-noweights}
   The unequal variances two-sample \(t\) statistic doesn't in itself accommodate
-  clustering.  In particular, it doesn't allow weights figuring in \eqref{eq:hajekdiff}, 
+  clustering.  In particular, it doesn't allow weights figuring in \eqref{eq:hajekdiff},
 $\{w_{0i} :i\}$ or  $\{w_{ki} :i\}$, to vary, as is necessary
 to address clustered treatment assignment by letting $v_{i}$, $u_{i}$,
 $y_{ki}$ and so on
 represent means over all observations clustered within unit of
-assignment $i$. 
+assignment $i$.
 \item \label{it:moderators-multiple-outcomes}  It remains to be
   articulated how the Neyman insight can be made to furnish design-based SEs
   for effect estimates specific to a subgroup or domain. (E.g., ``What was
@@ -119,7 +119,7 @@ assignment $i$.
   effect estimates covary with main effect
   estimates and with one another also remains to be articulated, as
   does the covariance between main effects on distinct outcomes. Both
-  of these are important for multiplicity adjustments.   
+  of these are important for multiplicity adjustments.
 \item \label{it:prob-multreps}
   The unequal variances two-sample \(t\) statistic requires that the two
   conditions being contrasted each have multiple representatives within
@@ -138,15 +138,15 @@ assignment $i$.
     design-based interpretation, they would have said just that.}
   If this is correct,  there's still a need for a general-purpose SE
   estimator for effect estimates calculated with
-covariate adjustments; HC2 does not fill this role.  
+covariate adjustments; HC2 does not fill this role.
 \item \label{it:prob-differentstatuses}
   In the general setting of chained estimation ---  one or more
   preliminary regressions are fit, to the experimental sample, to a
   separate and disjoint sample or to some combination of the two,
   followed by a difference-of-Hajek estimates step involving residuals
-  of these preliminary regressions' residuals --- off-the-shelf 
+  of these preliminary regressions' residuals --- off-the-shelf
   sandwich-type variance estimates such as HC2 can't admit a design-based interpretation as well as
-  a  model-based one. The calculation would have to recognize differing statuses of observations within and outside of the experimental or quasiexperimental sample, something the conventional estimates don't do. 
+  a  model-based one. The calculation would have to recognize differing statuses of observations within and outside of the experimental or quasiexperimental sample, something the conventional estimates don't do.
 \item \label{it:prob-nonexperimentals-as-nonrandom}
   When the covariance adjustment model has been fit to an extraneous or
   broader sample, the natural extension of \(\mathcal{Z}\) regards
@@ -155,7 +155,7 @@ covariate adjustments; HC2 does not fill this role.
   RDD analysis, data points $(X_{i}, A_{i}, Y_{0i}, \ldots, Y_{Ki})$
   falling outside of the analysis window are
   conditioned upon and then regarded as nonrandom \citep[][display A1 on p.22]{salesHansen2019lrd}.} This should decrease standard
-  errors relative to model-based SEs, to which the extraneous observations should make a 
+  errors relative to model-based SEs, to which the extraneous observations should make a
   contribution.
 \item \label{it:quantile-regr-SEs}  We proposed to explore the use of
   quantile regression in RDDs, as an alterative to robust estimation
@@ -173,7 +173,7 @@ covariate adjustments; HC2 does not fill this role.
 
 \section*{The promise of M-estimation}
 The M-estimation framework promises solutions to many or all of
-these impediments.  
+these impediments.
 \paragraph*{An immediate solution to
   Impediment~\ref{it:prob-noweights} and a part of Impediment~\ref{it:moderators-multiple-outcomes}}
 
@@ -186,7 +186,7 @@ multivariate root of the estimating function
 \begin{array}{c}
 \sum_i [\![A_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
 \vdots \\
-\sum_i [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\sum_i [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
 \end{array}
 \right]
 .
@@ -199,7 +199,7 @@ of~\eqref{eq:ee-hajekdiff}.  In the one-stratum case with multiple
 representatives of conditions $k$ and $0$, we can simply apply
 Neyman's two-sample unpooled variances SE to observations $\{ w_{ki}
 (y_{ki} - \mu_k) : A_i = k\}$ and $\{ w_{0i} (y_{0i} - \mu_0) : A_i =
-0\}$.  Impediment~\ref{it:prob-noweights} is solved. 
+0\}$.  Impediment~\ref{it:prob-noweights} is solved.
 
 For standard errors of the difference of Hajek estimators within a
 subgroup $g$,
@@ -252,35 +252,35 @@ purposes of using it to estimate slopes in an RDD.)
 
 \paragraph*{Sketch of a solution to Impediment~\ref{it:prob-multreps}}
 Now consider Impediment~\ref{it:prob-multreps},  strata $S$ in which one
-or both of the conditions $j$ being contrasted have only one 
-representative, $\sum_{i\in S} [\![A_{i}=j]\!] =1$. Consider the situation without covariates. 
+or both of the conditions $j$ being contrasted have only one
+representative, $\sum_{i\in S} [\![A_{i}=j]\!] =1$. Consider the situation without covariates.
 
 As there is independence across if not within strata, the
 B matrices corresponding to~\eqref{eq:ee-hajekdiff} are sums of
-stratum-wise contributions 
+stratum-wise contributions
 \begin{equation} \label{eq:Bform}
-B_S((\mu_0, \ldots, \mu_K)) =  
+B_S((\mu_0, \ldots, \mu_K)) =
 \mathrm{Cov}\left(\left[
 \begin{array}{c}
 \sum_{i\in S} [\![A_i=K]\!] w_{ki} (y_{Ki} - \mu_K) \\
 \vdots \\
-\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
 \end{array}
-\right] \mid \mathcal{Z}\right), \quad S \in \mathcal{P}. 
+\right] \mid \mathcal{Z}\right), \quad S \in \mathcal{P}.
 \end{equation}
-For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, $\mathrm{Var}\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}$ is not estimable, just as the variance $[(\# S)-1]^{-1}\sum_{i \in S} (y_{ki} - \bar{y}_k)^2$ is not estimable. On the other hand, the second moment 
+For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, $\mathrm{Var}\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}$ is not estimable, just as the variance $[(\# S)-1]^{-1}\sum_{i \in S} (y_{ki} - \bar{y}_k)^2$ is not estimable. On the other hand, the second moment
 \[ \mathbb{E}\left[\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\right]
 \]
 \textit{is} estimable, by it sample realization \(\left\{ \sum_{i\in
     S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\): in
 M-estimation, we're entitled to treat $\mu_k$ is a fixed constant, not
-a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.  
+a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.
 
-M-estimation doesn't help us to estimate 
+M-estimation doesn't help us to estimate
 \[
 \mathrm{Cov}\left\{
-\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k), 
-\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k),
+\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
 \right\}
 \]
 but these terms aren't identified even for large strata with multiple
@@ -298,19 +298,19 @@ notes I begin fleshing this out into methods of estimating design-based second
 moments of first differences of the estimating functions
 \eqref{eq:ee-hajekdiff} that define the Hajek estimators, which
 can in turn be used to approximate the corresponding B-matrix terms;
-extending this work might be a suitable problem for a PhD student. 
+extending this work might be a suitable problem for a PhD student.
 
 \begin{quote}
 \textit{Code design notes:}\\
 1. Because we don't really estimate
 \begin{equation*}
   \mathrm{Cov}\left\{
-\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k), 
+\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k),
 \sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
 \right\},
 \end{equation*}
 but only impute this covariance based on
-$\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)$'s and 
+$\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)$'s and
 $\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)$'s estimated
 variances and presumed correlation of 1, we should consider software design that doesn't tempt the user into
 treating our stand-in for it as a real estimate, perhaps in some
@@ -337,9 +337,9 @@ steps of the estimator chain.\\
 3. Current literature \citet[e.g.,][\ldots]{mukerjeeDasguptaRubin18,pashleymiratrix18varestimationblockeddesigns} may well present other design-based covariance
 estimators worth implementing as alternative B-matrix estimators.
 It'd be best to design in such a way as to facilitate alternating
-among B-matrix estimation routines.  
+among B-matrix estimation routines.
 \end{quote}
-%For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0 and $k$ are represented.  
+%For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0 and $k$ are represented.
 
 \paragraph{Addressing Impediment~\ref{it:prob-covars}}
 If covariate \(X\)  are included in a linear regression specification
@@ -364,7 +364,7 @@ from these fits \citep{gelmanPardoe07,bowers:hans:2008}.  This approach calls fo
 stacked estimating equations, with accompanying complications to both
 the A and the B matrix. We might as well consider it in tandem with
 challenges \ref{it:prob-differentstatuses} and
-\ref{it:prob-nonexperimentals-as-nonrandom}. 
+\ref{it:prob-nonexperimentals-as-nonrandom}.
 
 \paragraph{Toward solutions to Impediments (\ref{it:prob-differentstatuses}) and
 (\ref{it:prob-nonexperimentals-as-nonrandom})}
@@ -377,7 +377,7 @@ $\{1, \ldots, n\}$, so that some but not necessarily all clusters
 \mathcal{P}$; these clusters are then the experimental or
 quasi-experimental sample. Re-define $\mathcal{Z}$ to contain similar information
 as above but also full information on clusters falling outside of
-$\mathcal{E} = \bigcap_{S \in \mathcal{P}}S$: 
+$\mathcal{E} = \bigcap_{S \in \mathcal{P}}S$:
 \begin{equation} \label{eq:Zdefextended}
   \mathcal{Z} = \sigma\left(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i \in \mathcal{E}\}, \{\sum_{i
     \in S} A_i : S  \in \mathcal{P}\} , \{(A_{i}, X_i, Y_{0i}, \ldots
@@ -417,7 +417,7 @@ calculation of \(A\) matrices.)
   \begin{itemize}
   \item Sufficient information about the observations used in the
     fitting to precisely identify regions of overlap between the
-    sample used for the prior-stage fit and the experimental sample.  
+    sample used for the prior-stage fit and the experimental sample.
   \item Sufficient information about the prior-stage fitting routine
     to reconstruct specific observations' contributions to its estimating functions.
   \end{itemize}
