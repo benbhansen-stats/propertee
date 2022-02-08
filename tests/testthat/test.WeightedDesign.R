@@ -270,3 +270,17 @@ test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
 
 })
 
+test_that("formula as object is able to be found in data search", {
+  data(simdata)
+
+  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ x, data = simdata, weights = ate(des1))
+
+  f <- z ~ uoa(cid1, cid2)
+  des2 <- RCT_Design(f, data = simdata)
+  mod2 <- lm(y ~ x, data = simdata, weights = ate(des2))
+
+  expect_true(all(mod1$coef == mod2$coef))
+
+
+})
