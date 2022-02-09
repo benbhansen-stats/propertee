@@ -76,6 +76,22 @@ test_that("Design validity", {
                "Missing treatment")
 
   expect_error(new("Design",
+                   structure = data.frame(a = as.factor(c(0, 0)), a = c(1, 0)),
+                   columnIndex = c("t", "u"),
+                   type = "RCT",
+                   unitOfAssignmentType = "cluster",
+                   call = fc),
+               "treatment can not be constant")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = factor(c(0, 0), levels = c(0,1)), a = c(1, 0)),
+                   columnIndex = c("t", "u"),
+                   type = "RCT",
+                   unitOfAssignmentType = "cluster",
+                   call = fc),
+               "treatment can not be constant")
+
+  expect_error(new("Design",
                    structure = data.frame(a = as.factor(c(1, 0)),
                                           b = c(2, 4)),
                    columnIndex = c("t", "b"),
@@ -252,6 +268,22 @@ test_that("different treatment types", {
   simdata$o <- as.factor(as.numeric(simdata$o))
   e2 <- New_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
   expect_false(is(e2@structure[, e2@columnIndex == "t"], "ordered"))
+})
+
+
+test_that("Empty levels in treatment are removed", {
+  data(simdata)
+
+  simdata$z <- factor(simdata$z, levels = 0:2)
+  expect_warning(desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata),
+                 "Empty levels")
+  expect_length(levels(desrct@structure[, desrct@columnIndex == "t"]), 2)
+
+  simdata$o <- factor(simdata$o, levels = 1:7)
+  expect_warning(desrct <- RCT_Design(o ~ cluster(cid1, cid2) + block(bid), data = simdata),
+                 "Empty levels")
+  expect_length(levels(desrct@structure[, desrct@columnIndex == "t"]), 4)
+
 })
 
 test_that("unit of assignment differs from unit of analysis", {

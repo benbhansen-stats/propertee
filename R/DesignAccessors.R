@@ -310,7 +310,14 @@ setMethod("forcings<-", "Design", function(x, value) {
   } else if (!is.factor(treatment[,1])) {
     stop("Treatment must be binary (0/1), logical, factor or ordered")
   }
-  treatment[,1] <- droplevels(treatment[,1])
+
+  # if there are any levels unrepresented in the data, remove them
+  if (length(unique(treatment[,1])) != length(levels(treatment[,1]))) {
+    warning("Empty levels found in treatment, removing")
+    treatment[,1] <- droplevels(treatment[,1])
+  }
+
+
   if (!return_data_frame) {
     # if treatment wasn't passed as a DF, drop dimension
     treatment <- treatment[,1]

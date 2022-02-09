@@ -134,23 +134,26 @@ test_that("Inconsistent treatment levels", {
 
   data(simdata)
 
+  simshort <- simdata[simdata$o != 4,]
+  simshort$o <- droplevels(simshort$o)
+
   # Extra level in data into ett, not in design
-  des <- RCT_Design(o ~ cluster(cid1, cid2), data = simdata[simdata$o != 4, ])
+  des <- RCT_Design(o ~ cluster(cid1, cid2), data = simshort)
   expect_error(ett(des, data = simdata), "not found in Design")
   expect_error(ate(des, data = simdata), "not found in Design")
 
-  expect_error(lm(y ~ x, data = simdata, weights = ett(des)) ,
+  expect_error(lm(y ~ x, data = simdata, weights = ett(des)),
                  "not found in Design")
 
   # Extra level in design,not in data to ett
   des <- RCT_Design(o ~ cluster(cid1, cid2), data = simdata)
   # issue18 - extra expect_warning
-  expect_warning(expect_warning(ett(des, data = simdata[simdata$o != 4, ]),
+  expect_warning(expect_warning(ett(des, data = simshort),
                                  "not found in data"))
-  expect_warning(expect_warning(ate(des, data = simdata[simdata$o != 4, ]),
+  expect_warning(expect_warning(ate(des, data = simshort),
                                 "not found in data"))
 
-  expect_warning(expect_warning(lm(y ~ x, data = simdata[simdata$o != 4, ],
+  expect_warning(expect_warning(lm(y ~ x, data = simshort,
                                    weights = ett(des)) ,
                  "not found in data"))
   # issue18 end
@@ -158,6 +161,13 @@ test_that("Inconsistent treatment levels", {
   # Treatment var not found
   simdata$o <- NULL
   expect_error(ett(des, data = simdata), "not found in data")
+
+  levels(simshort$o) <- 1:6
+  # issue18 extra expect_warning
+  expect_warning(expect_warning(expect_warning(ate(des, data = simshort),
+                                               "Empty levels"),
+                                "not found in data"))
+  # issue18 end
 
 })
 

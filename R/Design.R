@@ -23,6 +23,9 @@ setValidity("Design", function(object) {
   if (is.null(tr) || !is.factor(tr)) {
     return("Invalid treatment; must be factor")
   }
+  if (length(unique(tr)) < 2) {
+    return("Invalid treatment; treatment can not be constant")
+  }
   if (ncol(object@structure) != length(object@columnIndex)) {
     return("@columnIndex does not agree with number of columns in @structure")
   }
@@ -51,7 +54,6 @@ setValidity("Design", function(object) {
 
 
 New_Design <- function(form, data, type, subset = NULL, call = NULL) {
-
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
     warning("Invalid call passed to `New_Design`, using default. Please use RD_Design, RCT_Design, or Obs_Design instead of `New_Design` directly.")
