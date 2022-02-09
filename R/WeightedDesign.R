@@ -46,6 +46,7 @@ ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   ind_tx <- levels(tx_vec)[2]
 
   if(length(levels(tx_vec)) > 2){
+    warning("weights for non-binary treatments not yet implemented.")
     weights <- rep(1, nrow(design@structure))
   } else if(!("b" %in% names(table(design@columnIndex)))){
     # If no block is specified, then E_Z is the proportion of clusters who receive
@@ -98,8 +99,9 @@ ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   #### generate weights
   tx_vec <- design@structure[design@columnIndex == "t"][[1]]
   ind_tx <- levels(tx_vec)[2]
-  
+
   if(length(levels(tx_vec)) > 2){
+    warning("weights for non-binary treatments not yet implemented.")
     weights <- rep(1, nrow(design@structure))
   } else if(!("b" %in% names(table(design@columnIndex)))){
     # If no block is specified, then E_Z is the proportion of clusters who receive
@@ -115,14 +117,14 @@ ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
     # clusters within each block, and the number of clusters receiving the
     # treatment within each block.
     # Then, calculate E_Z.
-    
+
     block_df <- data.frame(blockid = names(table(design@structure[design@columnIndex == "b"])),
                            block_units = as.numeric(table(design@structure[design@columnIndex == "b"])),
                            tx_units = tapply(as.numeric(tx_vec == ind_tx),
                                              design@structure[design@columnIndex == "b"],
                                              FUN = sum))
     block_df$E_Z <- block_df$tx_units / block_df$block_units
-    
+
     # Create a cluster-level data frame that merges design structure with block
     # data frame. Add variable Tx that converts treatment to 0/1 for calculation
     # of ATE weights.
@@ -131,10 +133,10 @@ ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
                         by.y = "blockid")
     cluster_df$Tx <- as.numeric(cluster_df[,names(design@structure[design@columnIndex == "t"])] ==
                                   ind_tx)
-    
+
     weights <- cluster_df$Tx / cluster_df$E_Z + (1 - cluster_df$Tx) / (1 - cluster_df$E_Z)
   }
-  
+
   .join_design_weights(weights, design, target = "ate", data = data)
 }
 

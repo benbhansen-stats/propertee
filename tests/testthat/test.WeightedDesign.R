@@ -119,7 +119,6 @@ test_that("show WeightedDesign", {
 
   expect_silent(invisible(capture.output(expect_identical(wdes, show(wdes)))))
 })
-
 test_that("weight function", {
   data(simdata)
   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
@@ -145,13 +144,16 @@ test_that("Inconsistent treatment levels", {
 
   # Extra level in design,not in data to ett
   des <- RCT_Design(o ~ cluster(cid1, cid2), data = simdata)
-  expect_warning(ett(des, data = simdata[simdata$o != 4, ]),
-                 "not found in data")
-  expect_warning(ate(des, data = simdata[simdata$o != 4, ]),
-                 "not found in data")
+  # issue18 - extra expect_warning
+  expect_warning(expect_warning(ett(des, data = simdata[simdata$o != 4, ]),
+                                 "not found in data"))
+  expect_warning(expect_warning(ate(des, data = simdata[simdata$o != 4, ]),
+                                "not found in data"))
 
-  expect_warning(lm(y ~ x, data = simdata[simdata$o != 4, ], weights = ett(des)) ,
-                 "not found in data")
+  expect_warning(expect_warning(lm(y ~ x, data = simdata[simdata$o != 4, ],
+                                   weights = ett(des)) ,
+                 "not found in data"))
+  # issue18 end
 
   # Treatment var not found
   simdata$o <- NULL
@@ -282,5 +284,67 @@ test_that("formula as object is able to be found in data search", {
 
   expect_true(all(mod1$coef == mod2$coef))
 
+
+})
+
+test_that("varying treatment types", {
+  data(simdata)
+  s2 <- simdata
+
+  # ways of representing binary treatments
+  # numeric
+  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  mod1 <- lm(y ~ z, data = s2, weights = ate(des1))
+  # factor
+  s2$z <- as.factor(s2$z)
+  des2 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  mod2 <- lm(y ~ z, data = s2, weights = ate(des2))
+  expect_identical(mod1$weights, mod2$weights)
+  # ordinal
+  s2$z <- as.ordered(s2$z)
+  des3 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  mod3 <- lm(y ~ z, data = s2, weights = ate(des3))
+  expect_identical(mod1$weights, mod3$weights)
+  # binary
+  s2$z <- s2$z == 1
+  des4 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  mod4 <- lm(y ~ z, data = s2, weights = ate(des4))
+  expect_identical(mod1$weights, mod4$weights)
+
+  # ordinal treatment
+  do1 <- RCT_Design(o ~ uoa(cid1, cid2), data = s2)
+  # issue18 - temporary tests and warning
+  expect_warning(mo1 <- lm(y ~ o, data = s2, weights = ate(do1)))
+  expect_true(all(mo1$weights == 1))
+  # end issue18
+
+  s3 <- simdata
+  # repeat for ett
+  # numeric
+  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  mod1 <- lm(y ~ z, data = s3, weights = ett(des1))
+  # factor
+  s3$z <- as.factor(s3$z)
+  des2 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  mod2 <- lm(y ~ z, data = s3, weights = ett(des2))
+  expect_identical(mod1$weights, mod2$weights)
+  # ordinal
+  s3$z <- as.ordered(s3$z)
+  des3 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  mod3 <- lm(y ~ z, data = s3, weights = ett(des3))
+  expect_identical(mod1$weights, mod3$weights)
+  # binary
+  s3$z <- s3$z == 1
+  des4 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  mod4 <- lm(y ~ z, data = s3, weights = ett(des4))
+  expect_identical(mod1$weights, mod4$weights)
+
+  print(4)
+  # ordinal treatment
+  do1 <- RCT_Design(o ~ uoa(cid1, cid2), data = s3)
+  # issue18 - temporary tests and warning
+  expect_warning(mo1 <- lm(y ~ o, data = s3, weights = ett(do1)))
+  expect_true(all(mo1$weights == 1))
+  # end issue18
 
 })

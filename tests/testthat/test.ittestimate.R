@@ -155,14 +155,18 @@ test_that("treatment types", {
 
   des <- RD_Design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
-  it <- ittestimate(des, simdata, "y")
+  # issue18 extra expect_warning
+  expect_warning(it <- ittestimate(des, simdata, "y"))
+  # issue18 end
   expect_length(it$coef, 4)
 
   simdata$dose <- as.ordered(simdata$dose)
   des <- RD_Design(dose ~ cluster(cid2, cid1) +
                      block(bid) + forcing(force),
                    data = simdata)
-  it <- ittestimate(des, simdata, "y")
+  # issue18 extra expect_warning
+  expect_warning(it <- ittestimate(des, simdata, "y"))
+  # issue18 end
   expect_length(it$coef, 5)
 
 })

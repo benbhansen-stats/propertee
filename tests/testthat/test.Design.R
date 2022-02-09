@@ -1,23 +1,51 @@
+# fake call
 fc <- call("ls")
 
 test_that("Design creation", {
+
+  tests <- function(d) {
+      expect_s4_class(d, "Design")
+      expect_s3_class(d@structure, "data.frame")
+      expect_type(d@columnIndex, "character")
+      expect_type(d@type, "character")
+      expect_type(d@unitOfAssignmentType, "character")
+      expect_type(d@call, "language")
+      expect_true(is(d@call, "call"))
+
+      expect_equal(ncol(d@structure), length(d@columnIndex))
+      expect_length(d@type, 1)
+  }
+
+  # binary treatment
   d <- new("Design",
-           structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
+           structure = data.frame(a = factor(0:1), b = c(2, 4)),
            columnIndex = c("t", "u"),
            type = "RCT",
            unitOfAssignmentType = "cluster",
            call = fc)
 
-  expect_s4_class(d, "Design")
-  expect_s3_class(d@structure, "data.frame")
-  expect_type(d@columnIndex, "character")
-  expect_type(d@type, "character")
-  expect_type(d@unitOfAssignmentType, "character")
-  expect_type(d@call, "language")
-  expect_true(is(d@call, "call"))
+  tests(d)
 
-  expect_equal(ncol(d@structure), length(d@columnIndex))
-  expect_length(d@type, 1)
+  # >2 treatment levels
+  d <- new("Design",
+           structure = data.frame(a = as.factor(c(1, 0, 2)), b = c(2, 4, 6)),
+           columnIndex = c("t", "u"),
+           type = "RCT",
+           unitOfAssignmentType = "cluster",
+           call = fc)
+
+  tests(d)
+
+  # ordinal treatment
+
+  d <- new("Design",
+           structure = data.frame(a = as.ordered(c(1, 0, 2)), b = c(2, 4, 6)),
+           columnIndex = c("t", "u"),
+           type = "RCT",
+           unitOfAssignmentType = "cluster",
+           call = fc)
+
+  tests(d)
 })
 
 test_that("Design validity", {
@@ -200,6 +228,30 @@ test_that("Design creation", {
   expect_warning(des <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = 1),
                  "Invalid call")
   expect_identical(des@call[[1]], as.name("New_Design"))
+})
+
+test_that("different treatment types", {
+  data(simdata)
+
+  # z currently numeric
+  d1 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  # factor
+  simdata$z <- as.factor(simdata$z)
+  d2 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_identical(d1, d2)
+  # binary
+  simdata$z <- simdata$z == 1
+  d3 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_equal(cor(as.numeric(d3@structure$z), as.numeric(d1@structure$z)), 1)
+  # different levels, but same underlying values
+
+  # o currently ordinal
+  e1 <- New_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_true(is(e1@structure[, e1@columnIndex == "t"], "ordered"))
+  # factor
+  simdata$o <- as.factor(as.numeric(simdata$o))
+  e2 <- New_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_false(is(e2@structure[, e2@columnIndex == "t"], "ordered"))
 })
 
 test_that("unit of assignment differs from unit of analysis", {
