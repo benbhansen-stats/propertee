@@ -11,12 +11,12 @@ summary.Design <- function(object, ...) {
 }
 
 ##' @title Print summary object
-##' @param object Design object
+##' @param x Design object
 ##' @param ... Other args
 ##' @return object, invisibly
 ##' @export
-print.summary.Design <- function(object, ...) {
-  des <- object$Design
+print.summary.Design <- function(x, ...) {
+  des <- x$Design
 
   destype <- switch(des@type,
                     "RCT" = "Randomized Control Trial",

@@ -4,10 +4,10 @@
 \alias{print.summary.Design}
 \title{Print summary object}
 \usage{
-\method{print}{summary.Design}(object, ...)
+\method{print}{summary.Design}(x, ...)
 }
 \arguments{
-\item{object}{Design object}
+\item{x}{Design object}
 
 \item{...}{Other args}
 }
