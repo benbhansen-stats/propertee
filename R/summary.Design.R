@@ -1,10 +1,24 @@
 ##' @title Summary of Design object
 ##' @param object Design object
 ##' @param ... Other args
-##' @return object, invisibly
+##' @return object of class "summary.Design"
 ##' @export
 summary.Design <- function(object, ...) {
-  destype <- switch(object@type,
+  out <- list()
+  out$Design <- object
+  class(out) <- "summary.Design"
+  out
+}
+
+##' @title Print summary object
+##' @param object Design object
+##' @param ... Other args
+##' @return object, invisibly
+##' @export
+print.summary.Design <- function(object, ...) {
+  des <- object$Design
+
+  destype <- switch(des@type,
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
@@ -13,42 +27,42 @@ summary.Design <- function(object, ...) {
   cat(destype)
   cat("\n\n")
 
-  cat(paste("Contains ", nrow(object@structure) -
-                           sum(duplicated(object@structure[object@columnIndex == "u"])),
-            paste0(" ", object@unitOfAssignmentType, "s ") ,"(`",
-            paste(varNames(object, "u"), collapse = "`, `"),
+  cat(paste("Contains ", nrow(des@structure) -
+                           sum(duplicated(des@structure[des@columnIndex == "u"])),
+            paste0(" ", des@unitOfAssignmentType, "s ") ,"(`",
+            paste(varNames(des, "u"), collapse = "`, `"),
             "`)",
             sep = ""))
 
-  if (length(varNames(object, "b")) > 0) {
+  if (length(varNames(des, "b")) > 0) {
     cat(paste(" nested within ",
-              nrow(object@structure) -
-                sum(duplicated(object@structure[object@columnIndex == "b"])),
+              nrow(des@structure) -
+                sum(duplicated(des@structure[des@columnIndex == "b"])),
               " blocks (`",
-              paste(varNames(object, "b"), collapse = "`, `"),
+              paste(varNames(des, "b"), collapse = "`, `"),
               "`)",
               sep = ""))
   }
 
   # Without a binary treatment variable, what do we want to print here? #11
   #cat("\n")
-  #ntreat <- sum(object@structure[object@columnIndex == "t"])
-  #nctrl <- sum(1 - object@structure[object@columnIndex == "t"])
+  #ntreat <- sum(des@structure[des@columnIndex == "t"])
+  #nctrl <- sum(1 - des@structure[des@columnIndex == "t"])
 
   #cat(paste(ntreat, " units  assigned to treatment, ",
   #          nctrl, " units assigned to control (`",
-  #          varNames(object, "t"), "`)",
+  #          varNames(des, "t"), "`)",
   #          sep = ""))
   cat("\n")
 
-  if (length(varNames(object, "f")) > 0) {
+  if (length(varNames(des, "f")) > 0) {
     cat(paste("Forcing variable(s): `",
-              paste(varNames(object, "f"), collapse = "`, `"),
+              paste(varNames(des, "f"), collapse = "`, `"),
               "`",
               sep = ""))
     cat("\n")
   }
 
   cat("\n")
-  invisible(object)
+  invisible(des)
 }
