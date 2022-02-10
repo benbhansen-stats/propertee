@@ -191,24 +191,56 @@ setMethod("show", "Design", function(object) {
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
   uoatype <- switch(object@unitOfAssignmentType,
-                      "unitOfAssignment" = "Unit of Assignment  :",
-                      "cluster" = "Cluster  :",
-                      "unitid"  = "Unitid   :")
+                    "unitOfAssignment" = "Unit of Assignment",
+                    "cluster" = "Cluster",
+                    "unitid"  = "Unitid")
 
   cat(destype)
   cat("\n\n")
-  cat(paste("Treatment:", varNames(object, "t")))
-  cat("\n")
-  cat(paste(uoatype, paste(varNames(object, "u"), collapse = ", ")))
-  cat("\n")
+
+  vartable <- c("---------", "---------")
+
+  addrow <- function(name, type) {
+    c(name, paste(varNames(object, type), collapse = ", "))
+  }
+  vartable <- rbind(vartable, addrow("Treatment", "t"))
+  vartable <- rbind(vartable, addrow(uoatype, "u"))
   if (length(varNames(object, "b")) > 0) {
-    cat(paste("Block    :", paste(varNames(object, "b"), collapse = ", ")))
-    cat("\n")
+    vartable <- rbind(vartable, addrow("Block", "b"))
   }
   if (length(varNames(object, "f")) > 0) {
-    cat(paste("Forcing  :", paste(varNames(object, "f"), collapse = ", ")))
-    cat("\n")
+    vartable <- rbind(vartable, addrow("Forcing", "f"))
   }
+  vartable <- data.frame(vartable)
+  colnames(vartable) <- c("Structure", "Variables")
+  print(data.frame(vartable), row.names = FALSE, right = FALSE)
+
+
+  cat("\n")
+  cat("Number of units per Treatment group: \n")
+  tt <- treatmentTable(object)
+  # The value below defines the max number of treatment groups to print
+  maxPrintTable <- min(2, length(tt))
+  tdf <- as.data.frame(tt[seq_len(maxPrintTable)])
+  colnames(tdf) <- c("Txt Grp", "Num Units")
+  # knitr::kable(tt, align = "cc", format = "simple") looks real nice if we want
+  # to add that dependency
+  if (length(tt) > maxPrintTable) {
+    tdf[,1] <- as.character(tdf[,1])
+    tdf <- rbind(tdf, c("...", ""))
+  }
+  print(tdf, row.names = FALSE)
+  if (length(tt) > maxPrintTable) {
+    if (length(tt) - maxPrintTable == 1) {
+      group <- "group"
+    } else {
+      group <- "groups"
+    }
+    cat(paste0(length(tt) - maxPrintTable, " smaller treatment ",
+               group, " excluded.\n"))
+    cat("Use `treatmentTable` function to view full results.")
+  }
+  cat("\n")
   invisible(object)
 })
 
