@@ -256,3 +256,17 @@ varNames <- function(x, type) {
   return(list(renamedModelFrame = modframe,
               index = index))
 }
+
+##' Returns a table of number of units of assignment in each treatment group,
+##' sorted by the size of the groups
+##'
+##' @title treatment group table
+##' @param design A Design object
+##' @param ... add'l optional arguments to `table`
+##' @return a table of class `treatmentTable`
+##' @export
+treatmentTable <- function(design, ...) {
+  tab <- table(design@structure[varNames(design, "t")], ...)
+  tab <- sort(tab, decreasing = TRUE)
+  return(tab)
+}
