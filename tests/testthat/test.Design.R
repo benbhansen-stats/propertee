@@ -343,6 +343,10 @@ test_that("Design printing", {
   expect_output(show(desrd), "bid")
   expect_output(show(desrd), "force")
 
+  desrct <- RCT_Design(o ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  expect_output(show(desrct), "...")
+  expect_output(show(desrct), "excluded")
+
 })
 
 test_that("Accessing and replacing elements", {
