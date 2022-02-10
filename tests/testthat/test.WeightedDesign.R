@@ -349,7 +349,6 @@ test_that("varying treatment types", {
   mod4 <- lm(y ~ z, data = s3, weights = ett(des4))
   expect_identical(mod1$weights, mod4$weights)
 
-  print(4)
   # ordinal treatment
   do1 <- RCT_Design(o ~ uoa(cid1, cid2), data = s3)
   # issue18 - temporary tests and warning
