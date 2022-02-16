@@ -24,7 +24,8 @@ An alternative would be to offer sandwich standard errors under a design-based
 interpretation, differing from the above principally in terms of
 conditioning on
 
-\[\mathcal{Z} = \sigma(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i\}, \{\sum_{i \in S} A_i : S  \in \mathcal{P}\} )\]
+\[\mathcal{Z} = \sigma(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i\}, \{\sum_{i
+    \in S}\, \![A_i=k\!] : k \in \{0, \ldots, K\}; S  \in \mathcal{P}\} )\]
 
 where \(\mathcal{P}\) is a given partition of \{1,\ldots{}, n\} encoding
 a stratification. Of particular interest are standard errors for Hajek
@@ -71,7 +72,7 @@ stratum, \(\mathcal{P} = \{\{1,\ldots,n\}\}\); with
 In this case the variance estimate used
 in the 2 sample \(t\) test without pooling of variances validly
 estimates the variance of \eqref{eq:hajekdiff}, in the following sense. If \(v\) is observed
-only when \(A=k\) while \(b\) is observed only when \(A=0\), then
+only when \(A=k\) while \(u\) is observed only when \(A=0\), then
 \(s_{vu} = (n-1)^{-1} \sum_{i=1}^n (v_i - \bar v)(u_i - \bar v)\) is
 not identified; as far as the data are concerned, it could lie anywhere
 between \(\pm s_{v} s_{u}\), where
@@ -340,8 +341,7 @@ It'd be best to design in such a way as to facilitate alternating
 among B-matrix estimation routines.  
 \end{quote}
 %<!--For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i
-  \in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0
-and $k$ are represented.--> 
+%\in S} [\![A_i=0]\!]=1$, e.g. a matched pair in which conditions 0 and $k$ are represented.--> 
 
 \paragraph{Addressing Impediment~\ref{it:prob-covars}}
 If covariate \(X\)  are included in a linear regression specification
@@ -382,9 +382,14 @@ quasi-experimental sample. Re-define $\mathcal{Z}$ to contain similar informatio
 as above but also full information on clusters falling outside of
 $\mathcal{E} = \bigcap_{S \in \mathcal{P}}S$: 
 \begin{equation} \label{eq:Zdefextended}
-  \mathcal{Z} = \sigma\left(\{(X_i, Y_{0i}, \ldots Y_{Ki}): i \in \mathcal{E}\}, \{\sum_{i
-      \in S} A_i : S  \in \mathcal{P}\} , \{(A_{i}, X_i, Y_{0i}, \ldots
-    Y_{Ki}): i \not\in\mathcal{E}\}\right).
+  \mathcal{Z} = \sigma\left(\begin{array}{c}
+                              \{(X_i, Y_{0i}, \ldots Y_{Ki}): i \in
+                              \mathcal{E}\},
+                              \{\sum_{i \in S}\, \![A_i=k\!] :
+                              k \in \{0, \ldots, K\}; S  \in \mathcal{P}\} , \\
+                              \{(A_{i}, X_i, Y_{0i}, \ldots
+                              Y_{Ki}): i \not\in\mathcal{E}\}
+                              \end{array}\right).
 \end{equation}
 One now needs A and B matrices for estimating functions of the Hajek
 estimator and the regression estimator simultaneously.  Given that
