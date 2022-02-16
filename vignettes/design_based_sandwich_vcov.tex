@@ -66,7 +66,7 @@ In one special case a design-based SE for \eqref{eq:hajekdiff} has been availabl
 \item  simple or complete random assignment within a single
 stratum, \(\mathcal{P} = \{\{1,\ldots,n\}\}\); with
 \item constant weights, i.e. there exist $w_0$ and $w_k$ s.t. $w_{ki}= w_k$ and $w_{0i}= w_0$ for each $i$; and
-\item  \(\sum_i [\![A_i = k]\!]\geq 2\) and \(\sum_i [\![A_i = 0]\!] \geq 2\).
+\item  \(\sum_i [\![a_i = k]\!]\geq 2\) and \(\sum_i [\![a_i = 0]\!] \geq 2\).
 \end{itemize}
 In this case the variance estimate used
 in the 2 sample \(t\) test without pooling of variances validly
@@ -184,9 +184,9 @@ multivariate root of the estimating function
 (\mu_{0}, \ldots, \mu_{K}) \mapsto
   \left[
 \begin{array}{c}
-\sum_i [\![A_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
+\sum_i [\![a_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
 \vdots \\
-\sum_i [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\sum_i [\![a_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
 \end{array}
 \right]
 .
@@ -239,7 +239,7 @@ quantile regression estimating functions --- for a quantile regression
 with covariates $X$ and $c_{i}$ observations per cluster $i$,
 \begin{equation*}
 \beta \mapsto  \sum_{i=1}^{n}\sum_{j=1}^{c_{i}}\sum_{k=0}^{K} x_{ij}([\![y_{kij} -
-  X_{ij}'\beta, A_{i}= k)]\!] - \tau)
+  X_{ij}'\beta, a_{i}= k)]\!] - \tau)
 \end{equation*}
 \citep[][\S2.7]{he18resampling} --- are likely to be estimable in
 much the same way as variances and covariances of estimating functions
@@ -272,7 +272,7 @@ For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, 
 \[ \mathbb{E}\left[\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\right]
 \]
 \textit{is} estimable, by it sample realization \(\left\{ \sum_{i\in
-    S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\): in
+    S} [\![a_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\): in
 M-estimation, we're entitled to treat $\mu_k$ is a fixed constant, not
 a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.  
 
@@ -346,7 +346,7 @@ and $k$ are represented.-->
 \paragraph{Addressing Impediment~\ref{it:prob-covars}}
 If covariate \(X\)  are included in a linear regression specification
 \verb|y ~ a + x| with
-unit weights $\sum_{j=1}^{K}w_{ji}[\![A_{i}=j]\!]$ --- that is, the
+unit weights $\sum_{j=1}^{K}w_{ji}[\![a_{i}=j]\!]$ --- that is, the
 specification that without \(X\) would have engendered estimation
 of Hajek estimator differences as in \eqref{eq:ee-hajekdiff} ---
 then B-matrix estimation can still be done just
