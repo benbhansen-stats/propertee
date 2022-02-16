@@ -1,20 +1,42 @@
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-.get_data_from_model <- function(form, clusterIds = NULL) {
-  stopifnot(is(as.formula(form), "formula"))
+.get_data_from_model <- function(form, unitOfAssignmentIds = NULL) {
 
-  if (!is.null(clusterIds)) {
-    # if we're passed clusterIds, need to update the formula.
+  if (!(is.call(form) | is(form, "formula") | is.name(form))) {
+    stop("internal error: form must be a formula or name")
+  }
+
+  # Evaluate as needed.
+  if (is.name(form)) {
+    form <- dynGet(form) # dynGet searches iteratively backwards in the
+                         # callstack. Per the documentation, it is experimental
+                         # and should be used with caution. We should only be hitting
+                         # this if the user passes a predefined formula, e.g.:
+                         # f <- y ~ x, RCT_Design(f)
+  } else if (is.call(form)) {
+    form <- as.formula(form)
+  }
+  # By this point we should have hit an earlier error
+  if (!is(form, "formula")) {
+    stop("internal error: unable to convert form to formula class")
+  }
+
+  if (!is.null(unitOfAssignmentIds)) {
+    # if we're passed unitOfAssignmentIds, need to update the formula.
 
     # First, convert passed-as-string new variable names to `name` objects
     # to avoid quotation (y ~ "x")` in formula
-    clusterIds <- lapply(clusterIds, as.name)
+    unitOfAssignmentIds <- lapply(unitOfAssignmentIds, as.name)
 
     # Next use substitute to do the replacing.
-    # Cannot just call `substitute(form, clusterIds)` since we want to pass
+    # Cannot just call `substitute(form, unitOfAssignmentIds)` since we want to pass
     # the actual formula object, not just the name "form"
-    form <- as.formula(do.call("substitute", list(form, clusterIds)))
+    form <- as.formula(do.call("substitute", list(form, unitOfAssignmentIds)))
   }
+
+  # update formula to always use unitOfAssignment, since if this is the original
+  # call to *_Design, user may have used cluster/uoa/unitid
+  form <- .updateFormToUnitOfAssignment(form)
 
   # Below we try to be intelligent about finding the appropriate data. If this
   # fails, we may have need for a brute force method that just loops through
@@ -42,15 +64,15 @@
   modelFramePos <- which(fnsCalled %in% c("model.frame.default", "ittestimate"))
 
   # Identify the frames in which `ate` or `ett` are passed as weights
-  weightArgs <- sapply(sys.calls(), `[[`, "weights")
+  weightArgs <- lapply(sys.calls(), `[[`, "weights")
 
   # If the call is `weights = ate(des)`, then we'll be able to find "ate"
   # directly. This corresponds to `weightsPos`. However, if the call is more
   # complex, like `weights = 3*ate(des)` or `weights = sqrt(ate(des))`, then
   # we'll need to find `ate(` instead, leading to `atePos` and `ettPos`.
-  weightsPos <- sapply(weightArgs, `[[`, 1) %in% c("ate", "ett")
-  atePos <- sapply(lapply(weightArgs, as.character), function(x) any(grepl("^ate\\(", x)))
-  ettPos <- sapply(lapply(weightArgs, as.character), function(x) any(grepl("^ett\\(", x)))
+  weightsPos <- lapply(weightArgs, `[[`, 1) %in% c("ate", "ett")
+  atePos <- vapply(lapply(weightArgs, as.character), function(x) any(grepl("^ate\\(", x)), TRUE)
+  ettPos <- vapply(lapply(weightArgs, as.character), function(x) any(grepl("^ett\\(", x)), TRUE)
 
   weightsPos <- which(weightsPos | atePos | ettPos)
 

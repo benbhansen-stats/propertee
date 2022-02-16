@@ -12,7 +12,7 @@
 \item{...}{Other args}
 }
 \value{
-object, invisibly
+object of class "summary.Design"
 }
 \description{
 Summary of Design object

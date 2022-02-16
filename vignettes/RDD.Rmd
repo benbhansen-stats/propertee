@@ -58,7 +58,7 @@ abline(v=0,lty=2)
 
 What characterizes discontinuity (RD) designs, including the LSO study, is that treatment is assigned as a function of a numeric "running variable" $R$, along with a prespecified cutoff value $c$, so that treatment is assigned to subjects $i$ for whom $R_i>c$, or for whom $R_i<c$.
 If $Z_i$ denote's $i$'s treatment assignment, we write $Z_i=\mathbf{1}\{R_i<c\}$ or $\mathbf{1}\{R_i<c\}$, where $\mathbf{1}\{x\}$ is the indicator function--equal to 1 when $x$ is true and 0 otherwise.
-In the LSO study, $i$ indexes students, centered first-year GPA $R_i $ is the running variable, and the treatment under study is AP placement. 
+In the LSO study, $i$ indexes students, centered first-year GPA $R_i $ is the running variable, and the treatment under study is AP placement.
 Then $ Z_i=\mathbf{1}\{R_i<0} $.
 (In "fuzzy" RD designs, $R$'s value relative to $c$ doesn't completely determine treatment, but merely affects the probability of treatment, so subjects with, say, $R_i>c$ are more likely to be treated than those with $R_i<c$; in fuzzy RD designs, $Z_i=\mathbf{1}\{R_i>c\}$ is typically modeled as an instrument for treatment receipt.)
 
@@ -110,7 +110,7 @@ For the purpose of this example, we will focus our analysis on
 $\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}$.
 
 ### Initializing the RD Design Object
-In general, `flexida` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. In `lsoSynth`, there are no clusters, and individual students are assigned to academic probation on an individual basis. The dataset does not include an ID variable, but any variable that takes a unique value for each row will do. We will use row-names. 
+In general, `flexida` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. In `lsoSynth`, there are no clusters, and individual students are assigned to academic probation on an individual basis. The dataset does not include an ID variable, but any variable that takes a unique value for each row will do. We will use row-names.
 ```{r defineUnitID}
 lsoSynth$id <- rownames(lsoSynth)
 ```
@@ -183,4 +183,3 @@ coef(lm(nextGPA~Z, offset=yhat2,data=lsoSynthW))['ZTRUE']
 
 
 ```
-

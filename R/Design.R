@@ -2,7 +2,7 @@ setClass("Design",
          slots = c(structure = "data.frame",
                    columnIndex = "character",
                    type = "character",
-                   clustertype = "character",
+                   unitOfAssignmentType = "character",
                    call = "call"))
 
 setValidity("Design", function(object) {
@@ -23,15 +23,18 @@ setValidity("Design", function(object) {
   if (is.null(tr) || !is.factor(tr)) {
     return("Invalid treatment; must be factor")
   }
+  if (length(unique(tr)) < 2) {
+    return("Invalid treatment; treatment can not be constant")
+  }
   if (ncol(object@structure) != length(object@columnIndex)) {
     return("@columnIndex does not agree with number of columns in @structure")
   }
   if (any(colnames(object@structure) != names(object@columnIndex))) {
     return("name disagree between @structure and @columnIndex")
   }
-  if (!all(object@columnIndex %in% c("t", "c", "b", "f"))) {
-    wrong <- object@columnIndex[!object@columnIndex %in% c("t", "c", "b", "f")]
-    return(paste("@columnIndex design elements must be [t,c,b,f]. unknown elements:",
+  if (!all(object@columnIndex %in% c("t", "u", "b", "f"))) {
+    wrong <- object@columnIndex[!object@columnIndex %in% c("t", "u", "b", "f")]
+    return(paste("@columnIndex design elements must be [t,u,b,f]. unknown elements:",
                  paste(wrong, collapse = ", ")))
   }
   if (!object@type %in% c("RCT", "RD", "Obs")) {
@@ -43,15 +46,14 @@ setValidity("Design", function(object) {
   if (object@type == "RD" && !any(object@columnIndex == "f")) {
     return("RD designs must include at least one forcing variables")
   }
-  if (!object@clustertype %in% c("cluster", "unitid")) {
-    return('valid `clustertype`s are "cluster" or "unitid"')
+  if (!object@unitOfAssignmentType %in% c("cluster", "unitid", "unitOfAssignment")) {
+    return('valid `unitOfAssignmentType`s are "unitOfAssignment", "cluster" or "unitid"')
   }
   TRUE
 })
 
 
 New_Design <- function(form, data, type, subset = NULL, call = NULL) {
-
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
     warning("Invalid call passed to `New_Design`, using default. Please use RD_Design, RCT_Design, or Obs_Design instead of `New_Design` directly.")
@@ -60,6 +62,23 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
+
+  ### Track whether Design uses uoa/cluster/unitid for nicer output later
+
+  if (grepl("unitOfAssignment\\([a-zA-Z]", deparse(form)) |
+        grepl("uoa\\([a-zA-Z]", deparse(form))) {
+    autype <- "unitOfAssignment"
+  } else if (grepl("cluster\\([a-zA-Z]", deparse(form))) {
+    autype <- "cluster"
+  } else if (grepl("unitid\\([a-zA-Z]", deparse(form))) {
+    autype <- "unitid"
+  } else {
+    stop("This error should never be hit!")
+  }
+
+  # Ensure whichever unit of assignment function is used, `unitOfAssignment` is
+  # called
+  form <- .updateFormToUnitOfAssignment(form)
 
   m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
 
@@ -71,12 +90,6 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   if (!all(names(m) %in% names(data))) {
     stop("Do not use variable transformations in formula.\nInstead modify all relevant data sets as appropriate.")
   }
-  if (any(index == "u")) {
-    ct <- "unitid"
-    index[index == "u"] <- "c"
-  } else {
-    ct <- "cluster"
-  }
 
   m_collapse <- unique(m)
 
@@ -85,10 +98,10 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   treatment <- m_collapse[, index == "t", drop = FALSE]
   m_collapse[, index == "t"] <- .convert_treatment_to_factor(treatment)
 
-  differing <- duplicated(m_collapse[, index == "c"])
+  differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
-    noncon <- m_collapse[differing, index == "c", drop = FALSE]
-    cat("\nClusters with non-constant treatment, block or forcing:\n")
+    noncon <- m_collapse[differing, index == "u", drop = FALSE]
+    cat("\nUnits of assignment with non-constant treatment, block or forcing:\n")
     if (nrow(noncon) >= 6) {
       print(noncon[1:5,,drop = FALSE])
       cat("...\n")
@@ -96,14 +109,14 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
       print(noncon)
     }
 
-    stop("Each of treatment assignment, block and forcing must be constant within cluster.")
+    stop("Each of treatment assignment, block and forcing must be constant within unit of assignment.")
   }
 
   new("Design",
       structure = m_collapse,
       columnIndex = index,
       type = type,
-      clustertype = ct,
+      unitOfAssignmentType = autype,
       call = call)
 }
 
@@ -113,10 +126,10 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 ##' observational Design (`Obs_Design`), or a regression discontinuity Design
 ##' (`RD_Design`).
 ##'
-##' The formula must include `cluster()` or `unitid()` to identify the units of
-##' assignment (one or more variables). If defining an RD_Design, the formula
-##' must also include a `forcing()` entry. The formula may optionally include a
-##' `block()` entry as well.
+##' The formula must include exactly one of `unitOfAssignment()`, `cluster()`,
+##' or `unitid()` to identify the units of assignment (one or more variables).
+##' If defining an RD_Design, the formula must also include a `forcing()` entry.
+##' The formula may optionally include a `block()` entry as well.
 ##'
 ##' Vvariable transformation inside the `*_Design` calls are not allowed, as
 ##' that can lead to mismatches between the Design objects and future data. In
@@ -177,41 +190,74 @@ setMethod("show", "Design", function(object) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
-  clusttype <- switch(object@clustertype,
-                      "cluster" = "Cluster  :",
-                      "unitid"  = "Unitid   :")
+  uoatype <- switch(object@unitOfAssignmentType,
+                    "unitOfAssignment" = "Unit of Assignment",
+                    "cluster" = "Cluster",
+                    "unitid"  = "Unitid")
 
   cat(destype)
   cat("\n\n")
-  cat(paste("Treatment:", varNames(object, "t")))
-  cat("\n")
-  cat(paste(clusttype, paste(varNames(object, "c"), collapse = ", ")))
-  cat("\n")
+
+  vartable <- c("---------", "---------")
+
+  addrow <- function(name, type) {
+    c(name, paste(varNames(object, type), collapse = ", "))
+  }
+  vartable <- rbind(vartable, addrow("Treatment", "t"))
+  vartable <- rbind(vartable, addrow(uoatype, "u"))
   if (length(varNames(object, "b")) > 0) {
-    cat(paste("Block    :", paste(varNames(object, "b"), collapse = ", ")))
-    cat("\n")
+    vartable <- rbind(vartable, addrow("Block", "b"))
   }
   if (length(varNames(object, "f")) > 0) {
-    cat(paste("Forcing  :", paste(varNames(object, "f"), collapse = ", ")))
-    cat("\n")
+    vartable <- rbind(vartable, addrow("Forcing", "f"))
   }
+  vartable <- data.frame(vartable)
+  colnames(vartable) <- c("Structure", "Variables")
+  print(data.frame(vartable), row.names = FALSE, right = FALSE)
+
+
+  cat("\n")
+  cat("Number of units per Treatment group: \n")
+  tt <- treatmentTable(object)
+  # The value below defines the max number of treatment groups to print
+  maxPrintTable <- min(2, length(tt))
+  tdf <- as.data.frame(tt[seq_len(maxPrintTable)])
+  colnames(tdf) <- c("Txt Grp", "Num Units")
+  # knitr::kable(tt, align = "cc", format = "simple") looks real nice if we want
+  # to add that dependency
+  if (length(tt) > maxPrintTable) {
+    tdf[,1] <- as.character(tdf[,1])
+    tdf <- rbind(tdf, c("...", ""))
+  }
+  print(tdf, row.names = FALSE)
+  if (length(tt) > maxPrintTable) {
+    if (length(tt) - maxPrintTable == 1) {
+      group <- "group"
+    } else {
+      group <- "groups"
+    }
+    cat(paste0(length(tt) - maxPrintTable, " smaller treatment ",
+               group, " excluded.\n"))
+    cat("Use `treatmentTable` function to view full results.")
+  }
+  cat("\n")
   invisible(object)
 })
 
 ##' @title Extract names of Design variables
 ##' @param x Design x
-##' @param type one of "t", "c", "b", "f"; for "treatment", "cluster", "block",
-##'   and "forcing"
+##' @param type one of "t", "u", "b", "f"; for "treatment", "unitOfAssignment",
+##'   "block", and "forcing"
 ##' @return character vector of variable names of the given type
 ##' @export
 varNames <- function(x, type) {
   stopifnot(class(x) == "Design")
   stopifnot(length(type) == 1)
-  stopifnot(type %in% c("t", "c", "b", "f"))
+  stopifnot(type %in% c("t", "u", "b", "f"))
   names(x@structure)[x@columnIndex == type]
 }
 
-# Internal to properly rename columns to strip cluster(), block(), etc
+# Internal to properly rename columns to strip unitOfAssignment(), block(), etc
 .rename_model_frame_columns <- function(modframe) {
 
   index <- rep("t", ncol(modframe))
@@ -229,10 +275,7 @@ varNames <- function(x, type) {
     return(list(modelframe, index))
   }
 
-  o <- rename_vars(modframe, index, "cluster")
-  modframe <- o[[1]]
-  index <- o[[2]]
-  o <- rename_vars(modframe, index, "unitid")
+  o <- rename_vars(modframe, index, "unitOfAssignment")
   modframe <- o[[1]]
   index <- o[[2]]
   o <- rename_vars(modframe, index, "block")
@@ -244,4 +287,18 @@ varNames <- function(x, type) {
 
   return(list(renamedModelFrame = modframe,
               index = index))
+}
+
+##' Returns a table of number of units of assignment in each treatment group,
+##' sorted by the size of the groups
+##'
+##' @title treatment group table
+##' @param design A Design object
+##' @param ... add'l optional arguments to `table`
+##' @return a table of class `treatmentTable`
+##' @export
+treatmentTable <- function(design, ...) {
+  tab <- table(design@structure[varNames(design, "t")], ...)
+  tab <- sort(tab, decreasing = TRUE)
+  return(tab)
 }

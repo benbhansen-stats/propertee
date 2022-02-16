@@ -31,18 +31,26 @@ test_that("ittestimate", {
                "must be quoted")
 })
 
-# These tests will fail as long as the weight functions are dummies.
-## test_that("ittestimate and lm return the same in simple cases", {
-##   data(simdata)
-##   des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
-##                    data = simdata)
+test_that("ittestimate and lm return the same in simple cases", {
+  data(simdata)
+  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
+                   data = simdata)
 
-##   it <- ittestimate(des, simdata, "y")
-##   ml <- lm(y ~ z, data = simdata, weights = ate(des))
+  it <- ittestimate(des, simdata, "y")
+  ml <- lm(y ~ z, data = simdata, weights = ate(des))
 
-## })
+  expect_true(all(it$coef == ml$coef))
+  expect_identical(it$model$`(weights)`, ml$model$`(weights)`)
 
-test_that("clusterIds in ittestimate", {
+  it <- ittestimate(des, simdata, "y", target = "ett")
+  ml <- lm(y ~ z, data = simdata, weights = ett(des))
+
+  expect_true(all(it$coef == ml$coef))
+  expect_identical(it$model$`(weights)`, ml$model$`(weights)`)
+
+})
+
+test_that("unitOfAssignmentIds in ittestimate", {
   data(simdata)
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
@@ -51,29 +59,29 @@ test_that("clusterIds in ittestimate", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  it2 <- ittestimate(des, simdata2, "y", clusterIds = list("cid2" = "cccc"))
+  it2 <- ittestimate(des, simdata2, "y", unitOfAssignmentIds = list("cid2" = "cccc"))
 
   expect_identical(it1$coef, it2$coef)
 
   expect_error(ittestimate(des, simdata2, "y",
-                           clusterIds = list("abc")),
+                           unitOfAssignmentIds = list("abc")),
                "named list")
 
   expect_error(ittestimate(des, simdata2, "y",
-                           clusterIds = list("cid2" = "cccc", "cid2" = "bbbb")),
+                           unitOfAssignmentIds = list("cid2" = "cccc", "cid2" = "bbbb")),
                "unique")
 
   expect_warning(it3 <- ittestimate(des, simdata2, "y",
-                           clusterIds = list("cid2" = "cccc", "abc" = "cid1")),
+                           unitOfAssignmentIds = list("cid2" = "cccc", "abc" = "cid1")),
                "not found in Design")
 
   expect_warning(it4 <- ittestimate(des, simdata2, "y",
-                           clusterIds = list("cid2" = "cccc", "cid1" = "abc")),
+                           unitOfAssignmentIds = list("cid2" = "cccc", "cid1" = "abc")),
                "not found in data")
   expect_identical(it3$coef, it4$coef)
 
   expect_warning(expect_warning(it5 <- ittestimate(des, simdata2, "y",
-                           clusterIds = list("cid2" = "cccc", "abc" = "def")),
+                           unitOfAssignmentIds = list("cid2" = "cccc", "abc" = "def")),
                "not found in data"), "not found in Design")
   expect_identical(it3$coef, it5$coef)
 
@@ -147,14 +155,18 @@ test_that("treatment types", {
 
   des <- RD_Design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
-  it <- ittestimate(des, simdata, "y")
+  # issue18 extra expect_warning
+  expect_warning(it <- ittestimate(des, simdata, "y"))
+  # issue18 end
   expect_length(it$coef, 4)
 
   simdata$dose <- as.ordered(simdata$dose)
   des <- RD_Design(dose ~ cluster(cid2, cid1) +
                      block(bid) + forcing(force),
                    data = simdata)
-  it <- ittestimate(des, simdata, "y")
+  # issue18 extra expect_warning
+  expect_warning(it <- ittestimate(des, simdata, "y"))
+  # issue18 end
   expect_length(it$coef, 5)
 
 })

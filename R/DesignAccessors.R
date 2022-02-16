@@ -1,4 +1,3 @@
-
 ############### Treatment
 
 ##' @export
@@ -7,7 +6,7 @@ setGeneric("treatment", function(x) standardGeneric("treatment"))
 
 ##' @title Extract and Replace elements of Design
 ##' @param x Design object
-##' @return data.frame containing cluster-level information
+##' @return data.frame containing unit-leve information
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment", "Design", function(x) {
@@ -33,6 +32,53 @@ setMethod("treatment<-", "Design", function(x, value) {
   x
 })
 
+############### Units of Assignment
+
+##' @export
+##' @rdname Design_extractreplace
+setGeneric("unitsOfAssignment", function(x) standardGeneric("unitsOfAssignment"))
+
+##' @export
+##' @rdname Design_extractreplace
+setMethod("unitsOfAssignment", "Design", function(x) {
+  if (x@unitOfAssignmentType == "unitid") {
+    stop("Design specified with `unitid()`, not `unitOfAssignment()`")
+  }
+  if (x@unitOfAssignmentType == "cluster") {
+    stop("Design specified with `cluster()`, not `unitOfAssignment()`")
+  }
+  x@structure[x@columnIndex == "u"]
+})
+
+##' @export
+##' @rdname Design_extractreplace
+setGeneric("unitsOfAssignment<-", function(x, value) standardGeneric("unitsOfAssignment<-"))
+
+##' @export
+##' @rdname Design_extractreplace
+setMethod("unitsOfAssignment<-", "Design", function(x, value) {
+
+  value <- .convert_to_data.frame(value, x, "u")
+
+  x <- .update_structure(x, value, "u")
+
+  dupclust <- duplicated(unitsOfAssignment(x))
+  dupall <- duplicated(x@structure[x@columnIndex != "f"])
+  if (any(dupclust)) {
+
+    if (sum(dupclust) != sum(dupall)) {
+      stop(paste("Fewer new units of assignment then original, but new collapsed",
+                 "units would have non-constant treatment and/or",
+                 "block structure"))
+    }
+    warning("Fewer new units of assignment then original, collapsing")
+
+    x@structure <- x@structure[-dupclust,]
+  }
+  validObject(x)
+  x
+})
+
 ############### Cluster
 
 ##' @export
@@ -42,10 +88,13 @@ setGeneric("clusters", function(x) standardGeneric("clusters"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("clusters", "Design", function(x) {
-  if (x@clustertype != "cluster") {
+  if (x@unitOfAssignmentType == "unitid") {
     stop("Design specified with `unitid()`, not `cluster()`")
   }
-  x@structure[x@columnIndex == "c"]
+  if (x@unitOfAssignmentType == "unitOfAssignment") {
+    stop("Design specified with `unitOfAssignment()`, not `cluster()`")
+  }
+  x@structure[x@columnIndex == "u"]
 })
 
 ##' @export
@@ -56,9 +105,9 @@ setGeneric("clusters<-", function(x, value) standardGeneric("clusters<-"))
 ##' @rdname Design_extractreplace
 setMethod("clusters<-", "Design", function(x, value) {
 
-  value <- .convert_to_data.frame(value, x, "c")
+  value <- .convert_to_data.frame(value, x, "u")
 
-  x <- .update_structure(x, value, "c")
+  x <- .update_structure(x, value, "u")
 
   dupclust <- duplicated(clusters(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
@@ -86,10 +135,13 @@ setGeneric("unitids", function(x) standardGeneric("unitids"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("unitids", "Design", function(x) {
-  if (x@clustertype != "unitid") {
+  if (x@unitOfAssignmentType == "cluster") {
     stop("Design specified with `cluster()`, not `unitid()`")
   }
-  x@structure[x@columnIndex == "c"]
+  if (x@unitOfAssignmentType == "unitOfAssignment") {
+    stop("Design specified with `unitOfAssignment()`, not `unitid()`")
+  }
+  x@structure[x@columnIndex == "u"]
 })
 
 ##' @export
@@ -100,9 +152,9 @@ setGeneric("unitids<-", function(x, value) standardGeneric("unitids<-"))
 ##' @rdname Design_extractreplace
 setMethod("unitids<-", "Design", function(x, value) {
 
-  value <- .convert_to_data.frame(value, x, "c")
+  value <- .convert_to_data.frame(value, x, "u")
 
-  x <- .update_structure(x, value, "c")
+  x <- .update_structure(x, value, "u")
 
   dupids <- duplicated(unitids(x))
   dupall <- duplicated(x@structure[x@columnIndex != "f"])
@@ -110,10 +162,10 @@ setMethod("unitids<-", "Design", function(x, value) {
 
     if (sum(dupids) != sum(dupall)) {
       stop(paste("Fewer new unitids then original, but new collapsed",
-                 "clusters would have non-constant treatment and/or",
+                 "units would have non-constant treatment and/or",
                  "block structure"))
     }
-    warning("Fewer new clusters then original, collapsing")
+    warning("Fewer new unitids then original, collapsing")
 
     x@structure <- x@structure[-dupids,]
   }
@@ -258,7 +310,14 @@ setMethod("forcings<-", "Design", function(x, value) {
   } else if (!is.factor(treatment[,1])) {
     stop("Treatment must be binary (0/1), logical, factor or ordered")
   }
-  treatment[,1] <- droplevels(treatment[,1])
+
+  # if there are any levels unrepresented in the data, remove them
+  if (length(unique(treatment[,1])) != length(levels(treatment[,1]))) {
+    warning("Empty levels found in treatment, removing")
+    treatment[,1] <- droplevels(treatment[,1])
+  }
+
+
   if (!return_data_frame) {
     # if treatment wasn't passed as a DF, drop dimension
     treatment <- treatment[,1]

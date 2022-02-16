@@ -21,7 +21,7 @@ Covariance Adjustment for Treatment Estimation
 data(STARdata)
 STARdata$treatment <- STARdata$stark == "small"
 STARdata$treatment[is.na(STARdata$treatment)] <- FALSE
-STARdata$studentid <- as.character(1:nrow(STARdata))
+STARdata$studentid <- as.character(seq_len(nrow(STARdata)))
 
 covariance_y0_read <- lm(readk ~ gender + ethnicity + birth + lunchk +
                                  ladderk + experiencek + tethnicityk,

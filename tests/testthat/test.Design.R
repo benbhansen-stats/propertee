@@ -1,23 +1,51 @@
+# fake call
 fc <- call("ls")
 
 test_that("Design creation", {
+
+  tests <- function(d) {
+      expect_s4_class(d, "Design")
+      expect_s3_class(d@structure, "data.frame")
+      expect_type(d@columnIndex, "character")
+      expect_type(d@type, "character")
+      expect_type(d@unitOfAssignmentType, "character")
+      expect_type(d@call, "language")
+      expect_true(is(d@call, "call"))
+
+      expect_equal(ncol(d@structure), length(d@columnIndex))
+      expect_length(d@type, 1)
+  }
+
+  # binary treatment
   d <- new("Design",
-           structure = data.frame(a = as.factor(c(1, 0)), b = c(2, 4)),
-           columnIndex = c("t", "c"),
+           structure = data.frame(a = factor(0:1), b = c(2, 4)),
+           columnIndex = c("t", "u"),
            type = "RCT",
-           clustertype = "cluster",
+           unitOfAssignmentType = "cluster",
            call = fc)
 
-  expect_s4_class(d, "Design")
-  expect_s3_class(d@structure, "data.frame")
-  expect_type(d@columnIndex, "character")
-  expect_type(d@type, "character")
-  expect_type(d@clustertype, "character")
-  expect_type(d@call, "language")
-  expect_true(is(d@call, "call"))
+  tests(d)
 
-  expect_equal(ncol(d@structure), length(d@columnIndex))
-  expect_length(d@type, 1)
+  # >2 treatment levels
+  d <- new("Design",
+           structure = data.frame(a = as.factor(c(1, 0, 2)), b = c(2, 4, 6)),
+           columnIndex = c("t", "u"),
+           type = "RCT",
+           unitOfAssignmentType = "cluster",
+           call = fc)
+
+  tests(d)
+
+  # ordinal treatment
+
+  d <- new("Design",
+           structure = data.frame(a = as.ordered(c(1, 0, 2)), b = c(2, 4, 6)),
+           columnIndex = c("t", "u"),
+           type = "RCT",
+           unitOfAssignmentType = "cluster",
+           call = fc)
+
+  tests(d)
 })
 
 test_that("Design validity", {
@@ -26,7 +54,7 @@ test_that("Design validity", {
                    structure = data.frame(),
                    columnIndex = "t",
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "positive dimensions")
 
@@ -35,24 +63,40 @@ test_that("Design validity", {
                                           a = as.factor(c(1, 0))),
                    columnIndex = c("t", "t"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "one treatment")
 
   expect_error(new("Design",
                    structure = data.frame(a = c(1, 0), a = c(1, 0)),
-                   columnIndex = c("c", "b"),
+                   columnIndex = c("u", "b"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "Missing treatment")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = as.factor(c(0, 0)), a = c(1, 0)),
+                   columnIndex = c("t", "u"),
+                   type = "RCT",
+                   unitOfAssignmentType = "cluster",
+                   call = fc),
+               "treatment can not be constant")
+
+  expect_error(new("Design",
+                   structure = data.frame(a = factor(c(0, 0), levels = c(0,1)), a = c(1, 0)),
+                   columnIndex = c("t", "u"),
+                   type = "RCT",
+                   unitOfAssignmentType = "cluster",
+                   call = fc),
+               "treatment can not be constant")
 
   expect_error(new("Design",
                    structure = data.frame(a = as.factor(c(1, 0)),
                                           b = c(2, 4)),
                    columnIndex = c("t", "b"),
                    type = "abc",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "unknown @type")
 
@@ -60,9 +104,9 @@ test_that("Design validity", {
                    structure = data.frame(a = c(1, 2),
                                           b = as.factor(c(1, 0)),
                                           c = c(2, 0)),
-                   columnIndex = c("c", "t"),
+                   columnIndex = c("u", "t"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "number of columns")
 
@@ -71,16 +115,16 @@ test_that("Design validity", {
                                           b = c(2, 4)),
                    columnIndex = c("t", "k"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "unknown elements")
 
   expect_error(new("Design",
                    structure = data.frame(a = c(1, 0),
                                           b = c(1, 0)),
-                   columnIndex = c("t", "c"),
+                   columnIndex = c("t", "u"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "must be factor")
 
@@ -89,18 +133,20 @@ test_that("Design validity", {
                                           b = c(1, 0)),
                    columnIndex = c("t", "f"),
                    type = "RCT",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
                "Forcing variables only valid")
 
   expect_error(new("Design",
                    structure = data.frame(a = as.factor(c(1, 0)),
                                           b = c(1, 0)),
-                   columnIndex = c("t", "c"),
+                   columnIndex = c("t", "u"),
                    type = "RD",
-                   clustertype = "cluster",
+                   unitOfAssignmentType = "cluster",
                    call = fc),
-               "at least one forcing")})
+               "at least one forcing")
+
+})
 
 test_that("Design creation", {
   data(mtcars)
@@ -112,7 +158,7 @@ test_that("Design creation", {
   expect_s3_class(d_rct@structure, "data.frame")
   expect_type(d_rct@columnIndex, "character")
   expect_type(d_rct@type, "character")
-  expect_type(d_rct@clustertype, "character")
+  expect_type(d_rct@unitOfAssignmentType, "character")
   expect_type(d_rct@call, "language")
   expect_true(is(d_rct@call, "call"))
 
@@ -123,8 +169,8 @@ test_that("Design creation", {
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rct@structure == mtcars_subset))
-  expect_equal(d_rct@columnIndex, c("t", "c"), ignore_attr = TRUE)
-  expect_equal(d_rct@clustertype, "cluster")
+  expect_equal(d_rct@columnIndex, c("t", "u"), ignore_attr = TRUE)
+  expect_equal(d_rct@unitOfAssignmentType, "cluster")
   expect_equal(d_rct@type, "RCT")
 
   # subset
@@ -140,8 +186,8 @@ test_that("Design creation", {
                           subset = mtcars$mpg > 17)
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_obs@structure == mtcars_subset))
-  expect_equal(d_obs@columnIndex, c("t", "c"), ignore_attr = TRUE)
-  expect_equal(d_obs@clustertype, "cluster")
+  expect_equal(d_obs@columnIndex, c("t", "u"), ignore_attr = TRUE)
+  expect_equal(d_obs@unitOfAssignmentType, "cluster")
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
@@ -153,9 +199,9 @@ test_that("Design creation", {
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rd@structure == mtcars_subset))
-  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+  expect_equal(d_rd@columnIndex, c("t", "b", "b", "f", "f", "u", "u"),
                ignore_attr = TRUE)
-  expect_equal(d_rd@clustertype, "cluster")
+  expect_equal(d_rd@unitOfAssignmentType, "cluster")
   expect_equal(d_rd@type, "RD")
 
   ### Complex design with unitid
@@ -167,9 +213,9 @@ test_that("Design creation", {
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
   expect_true(all(d_rd2@structure == mtcars_subset))
-  expect_equal(d_rd2@columnIndex, c("t", "b", "b", "f", "f", "c", "c"),
+  expect_equal(d_rd2@columnIndex, c("t", "b", "b", "f", "f", "u", "u"),
                ignore_attr = TRUE)
-  expect_equal(d_rd2@clustertype, "unitid")
+  expect_equal(d_rd2@unitOfAssignmentType, "unitid")
   expect_equal(d_rd2@type, "RD")
 
   ### Specific designs
@@ -198,6 +244,46 @@ test_that("Design creation", {
   expect_warning(des <- New_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = 1),
                  "Invalid call")
   expect_identical(des@call[[1]], as.name("New_Design"))
+})
+
+test_that("different treatment types", {
+  data(simdata)
+
+  # z currently numeric
+  d1 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  # factor
+  simdata$z <- as.factor(simdata$z)
+  d2 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_identical(d1, d2)
+  # binary
+  simdata$z <- simdata$z == 1
+  d3 <- New_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_equal(cor(as.numeric(d3@structure$z), as.numeric(d1@structure$z)), 1)
+  # different levels, but same underlying values
+
+  # o currently ordinal
+  e1 <- New_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_true(is(e1@structure[, e1@columnIndex == "t"], "ordered"))
+  # factor
+  simdata$o <- as.factor(as.numeric(simdata$o))
+  e2 <- New_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
+  expect_false(is(e2@structure[, e2@columnIndex == "t"], "ordered"))
+})
+
+
+test_that("Empty levels in treatment are removed", {
+  data(simdata)
+
+  simdata$z <- factor(simdata$z, levels = 0:2)
+  expect_warning(desrct <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata),
+                 "Empty levels")
+  expect_length(levels(desrct@structure[, desrct@columnIndex == "t"]), 2)
+
+  simdata$o <- factor(simdata$o, levels = 1:7)
+  expect_warning(desrct <- RCT_Design(o ~ cluster(cid1, cid2) + block(bid), data = simdata),
+                 "Empty levels")
+  expect_length(levels(desrct@structure[, desrct@columnIndex == "t"]), 4)
+
 })
 
 test_that("unit of assignment differs from unit of analysis", {
@@ -257,15 +343,18 @@ test_that("Design printing", {
   expect_output(show(desrd), "bid")
   expect_output(show(desrd), "force")
 
+  desrct <- RCT_Design(o ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  expect_output(show(desrct), "...")
+  expect_output(show(desrct), "excluded")
+
 })
 
 test_that("Accessing and replacing elements", {
   data(simdata)
 
+  ##### Treatment
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
-
-  ##### Treatment
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
 
@@ -291,26 +380,108 @@ test_that("Accessing and replacing elements", {
                "Treatment must be")
 
 
+  ##### UnitsOfAssignment
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_identical(unitsOfAssignment(des), des@structure[, 2:3])
+
+  unitsOfAssignment(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
+  expect_identical(varNames(des, "u"), c("cid1", "cid2"))
+  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == unitsOfAssignment(des)))
+
+  unitsOfAssignment(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == unitsOfAssignment(des)))
+
+  m <- matrix(1:20, ncol = 2)
+  unitsOfAssignment(des) <- m
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == unitsOfAssignment(des)))
+
+  colnames(m) <- c("qwe", "asd")
+  unitsOfAssignment(des) <- m
+  expect_identical(varNames(des, "u"), colnames(m))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == unitsOfAssignment(des)))
+
+  unitsOfAssignment(des)[1,1:2] <- 100
+  expect_true(all(data.frame(qwe = c(100, 2:10),
+                             asd = c(100, 12:20)) == unitsOfAssignment(des)))
+
+  # less unitsOfAssignment
+  des2 <- des
+  unitsOfAssignment(des2) <- m[,1]
+  expect_identical(varNames(des2, "u"), "qwe")
+  expect_true(all(data.frame(qwe = 1:10) == unitsOfAssignment(des2)))
+
+  des2 <- des
+  unitsOfAssignment(des2) <- 10:1
+  expect_identical(varNames(des2, "u"), "qwe")
+  expect_true(all(data.frame(qwe = 10:1) == unitsOfAssignment(des2)))
+
+  df <- data.frame(abc = 3:12)
+  des2 <- des
+  unitsOfAssignment(des2) <- df
+  expect_identical(varNames(des2, "u"), colnames(df))
+  expect_true(all(df == unitsOfAssignment(des2)))
+
+  ########## UnitsOfAssignment, reduce duplicates
+
+  treatment(des) <- as.factor(rep(0:1, each = 5))
+
+  expect_warning(unitsOfAssignment(des) <- data.frame(c1 = 1, c2 = c(1,1:9)),
+                 "collapsing")
+  expect_equal(nrow(des@structure), 9)
+
+  expect_error(unitsOfAssignment(des) <- data.frame(c1 = 1, c2 = c(1:8, 1)),
+               "non-constant")
+
+  # more unitsOfAssignment
+  df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  des2 <- des
+  unitsOfAssignment(des2) <- df
+  expect_identical(varNames(des2, "u"), colnames(df))
+  expect_true(all(df == unitsOfAssignment(des2)))
+
+  m <- matrix(1:40, ncol = 4)
+  des2 <- des
+  expect_error(unitsOfAssignment(des2) <- m,
+               "be named")
+  colnames(m) <- letters[1:4]
+  unitsOfAssignment(des2) <- m
+  expect_identical(varNames(des2, "u"), colnames(m))
+  expect_true(all(m == unitsOfAssignment(des2)))
+
+  # uoa
+  des <- RD_Design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_identical(unitsOfAssignment(des), des@structure[, 2:3])
+
+
   ##### Clusters
+  des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   expect_identical(clusters(des), des@structure[, 2:3])
 
   clusters(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
-  expect_identical(varNames(des, "c"), c("cid1", "cid2"))
+  expect_identical(varNames(des, "u"), c("cid1", "cid2"))
   expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == clusters(des)))
 
   clusters(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
-  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
   expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == clusters(des)))
 
   m <- matrix(1:20, ncol = 2)
   clusters(des) <- m
-  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
   expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == clusters(des)))
 
   colnames(m) <- c("qwe", "asd")
   clusters(des) <- m
-  expect_identical(varNames(des, "c"), colnames(m))
+  expect_identical(varNames(des, "u"), colnames(m))
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == clusters(des)))
 
   clusters(des)[1,1:2] <- 100
@@ -320,18 +491,18 @@ test_that("Accessing and replacing elements", {
   # less clusters
   des2 <- des
   clusters(des2) <- m[,1]
-  expect_identical(varNames(des2, "c"), "qwe")
+  expect_identical(varNames(des2, "u"), "qwe")
   expect_true(all(data.frame(qwe = 1:10) == clusters(des2)))
 
   des2 <- des
   clusters(des2) <- 10:1
-  expect_identical(varNames(des2, "c"), "qwe")
+  expect_identical(varNames(des2, "u"), "qwe")
   expect_true(all(data.frame(qwe = 10:1) == clusters(des2)))
 
   df <- data.frame(abc = 3:12)
   des2 <- des
   clusters(des2) <- df
-  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_identical(varNames(des2, "u"), colnames(df))
   expect_true(all(df == clusters(des2)))
 
   ########## Clusters, reduce duplicates
@@ -351,7 +522,7 @@ test_that("Accessing and replacing elements", {
                    data = simdata)
   des2 <- des
   clusters(des2) <- df
-  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_identical(varNames(des2, "u"), colnames(df))
   expect_true(all(df == clusters(des2)))
 
   m <- matrix(1:40, ncol = 4)
@@ -360,7 +531,7 @@ test_that("Accessing and replacing elements", {
                "be named")
   colnames(m) <- letters[1:4]
   clusters(des2) <- m
-  expect_identical(varNames(des2, "c"), colnames(m))
+  expect_identical(varNames(des2, "u"), colnames(m))
   expect_true(all(m == clusters(des2)))
 
   ##### Unitids
@@ -368,25 +539,24 @@ test_that("Accessing and replacing elements", {
   des <- RD_Design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
-
   expect_identical(unitids(des), des@structure[, 2:3])
 
   unitids(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
-  expect_identical(varNames(des, "c"), c("cid1", "cid2"))
+  expect_identical(varNames(des, "u"), c("cid1", "cid2"))
   expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == unitids(des)))
 
   unitids(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
-  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
   expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == unitids(des)))
 
   m <- matrix(1:20, ncol = 2)
   unitids(des) <- m
-  expect_identical(varNames(des, "c"), c("abc1", "abc2"))
+  expect_identical(varNames(des, "u"), c("abc1", "abc2"))
   expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == unitids(des)))
 
   colnames(m) <- c("qwe", "asd")
   unitids(des) <- m
-  expect_identical(varNames(des, "c"), colnames(m))
+  expect_identical(varNames(des, "u"), colnames(m))
   expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == unitids(des)))
 
   unitids(des)[1,1:2] <- 100
@@ -396,18 +566,18 @@ test_that("Accessing and replacing elements", {
   # less unitids
   des2 <- des
   unitids(des2) <- m[,1]
-  expect_identical(varNames(des2, "c"), "qwe")
+  expect_identical(varNames(des2, "u"), "qwe")
   expect_true(all(data.frame(qwe = 1:10) == unitids(des2)))
 
   des2 <- des
   unitids(des2) <- 10:1
-  expect_identical(varNames(des2, "c"), "qwe")
+  expect_identical(varNames(des2, "u"), "qwe")
   expect_true(all(data.frame(qwe = 10:1) == unitids(des2)))
 
   df <- data.frame(abc = 3:12)
   des2 <- des
   unitids(des2) <- df
-  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_identical(varNames(des2, "u"), colnames(df))
   expect_true(all(df == unitids(des2)))
 
   ########## Unitids, reduce duplicates
@@ -427,7 +597,7 @@ test_that("Accessing and replacing elements", {
                    data = simdata)
   des2 <- des
   unitids(des2) <- df
-  expect_identical(varNames(des2, "c"), colnames(df))
+  expect_identical(varNames(des2, "u"), colnames(df))
   expect_true(all(df == unitids(des2)))
 
   m <- matrix(1:40, ncol = 4)
@@ -436,15 +606,32 @@ test_that("Accessing and replacing elements", {
                "be named")
   colnames(m) <- letters[1:4]
   unitids(des2) <- m
-  expect_identical(varNames(des2, "c"), colnames(m))
+  expect_identical(varNames(des2, "u"), colnames(m))
   expect_true(all(m == unitids(des2)))
 
-  # unitid vs clusters
+  ##### unitOfAssignment vs unitid vs clusters
 
+  # created with unitid
   expect_error(clusters(des), "not `cluster")
+  expect_error(unitsOfAssignment(des), "not `unitOfAssignment")
+
+  # created with cluster
   des <- RD_Design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
   expect_error(unitids(des), "not `unitid")
+  expect_error(unitsOfAssignment(des), "not `unitOfAssignment")
+
+  # created with unitOfAssignment
+  des <- RD_Design(z ~ unitOfAssignment(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_error(unitids(des), "not `unitid")
+  expect_error(clusters(des), "not `cluster")
+
+  # created with uoa
+  des <- RD_Design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+  expect_error(unitids(des), "not `unitid")
+  expect_error(clusters(des), "not `cluster")
 
   ##### Blocks
 
@@ -709,7 +896,7 @@ test_that("Design type conversions", {
     expect_identical(d1@type, d2@type)
     expect_identical(d1@structure, d2@structure)
     expect_identical(d1@columnIndex, d2@columnIndex)
-    expect_identical(d1@clustertype, d2@clustertype)
+    expect_identical(d1@unitOfAssignmentType, d2@unitOfAssignmentType)
 
     # Due to formula hacking in the @call, the calls can be non-identical.
     # However, they should both produce the same Design if `eval`'d.
@@ -718,7 +905,7 @@ test_that("Design type conversions", {
     expect_identical(d1redux@type, d2redux@type)
     expect_identical(d1redux@structure, d2redux@structure)
     expect_identical(d1redux@columnIndex, d2redux@columnIndex)
-    expect_identical(d1redux@clustertype, d2redux@clustertype)
+    expect_identical(d1redux@unitOfAssignmentType, d2redux@unitOfAssignmentType)
 
     invisible(TRUE)
   }
@@ -751,5 +938,34 @@ test_that("Design type conversions", {
                                        forcing = . ~ . + forcing(force)))
   expect_error(as_RD_Design(desobs, data = simdata, forcing = simdata$force),
                "as a formula")
+
+})
+
+test_that(".convert_treatment_to_factor", {
+  z <- .convert_treatment_to_factor(0:1)
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(factor(1:3))
+  expect_length(z, 3)
+  expect_true(is.factor(z))
+  expect_true(nlevels(z) == 3)
+
+  z <- .convert_treatment_to_factor(c(TRUE, FALSE))
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(data.frame(x = 0:1))
+  expect_true(is.data.frame(z))
+  expect_true(all(dim(z) == c(2,1)))
+  expect_true(is.factor(z[,1]))
+  expect_equal(colnames(z), "x")
+
+  expect_error(.convert_treatment_to_factor(1:4),
+               "values 0 and 1")
+
+  expect_error(.convert_treatment_to_factor(data.frame(z1 = 0:1,
+                                                       z2 = 0:1)),
+               "Only one treatment")
 
 })
