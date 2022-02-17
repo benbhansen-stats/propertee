@@ -13,14 +13,14 @@ date: 'October 2021'
 ## Context
 
 Suppose an estimator chain beginning with fitting a covariance model,
-`cmod` say, to a covariance sample, and ending with a model along the
+`covmod` say, to a covariance sample, and ending with a model along the
 lines of `lm(promotion ~ treat, data=qe_spl, weights=ate(des),
-offset=cov_adj(cmod))` or `lm(promotion ~ treat*demographics,
-data=qe_spl, weights=ate(des), offset=cov_adj(cmod))` --- a *direct
+offset=cov_adj(covmod))` or `lm(promotion ~ treat*demographics,
+data=qe_spl, weights=ate(des), offset=cov_adj(covmod))` --- a *direct
 adjustment* model.  (Much or all of what's said here may apply also
 with end models of more general forms, for example `lm(promotion ~
-treat + cov_adj(cmod), data=qe_spl, weights=ate(des))` or
-`lm(promotion ~ treat * cov_adj(cmod), <...>)`. But for now our focus
+treat + cov_adj(covmod), data=qe_spl, weights=ate(des))` or
+`lm(promotion ~ treat * cov_adj(covmod), <...>)`. But for now our focus
 is covariance modeling followed by direct adjustment.)  The covariance
 sample and quasiexperimental sample may be disjoint, identical or
 overlapping.  This note describes computational infrastructure for
@@ -29,49 +29,66 @@ covariance model need to be propagated into standard errors reported
 for `treat` coefficients.
 
 The direct adjustment model may be fit in a different context than the
-covariance model, with only the artifacts of that modeling that are
-stored in `cov_adj(cmod)`.  We determine this list, but we want it to
+covariance model, using only the artifacts of that modeling that are
+stored in `cov_adj(covmod)`.  We determine this list, but we want it to
 be a minimal list, for storage, privacy and regulatory reasons.  It's
 imperative that it not contain student- or patient-level data,
 directly or implicitly. Ideally it won't even contain aggregates of
 such data up to a recognizable administrative unit, such as the
 school, district or clinic.
 
+## Proposal
+
+(Class & function names are tentative.)
+
+- S4 classes `SandwichLayer` and `VeganLayer`, carrying certain extracts of the fit of a linear or asymptotically linear model.
+
+  When the predictions of this model, model A, are used as independent variables in the fitting of a subsequent linear or asymptotically linear model, model B, objects and data carried in the `SandwichLayer` derived from model A will suffice to estimate the variance of errors of estimation in model B's parameters that is propagated down from estimation of model A. For variance propagation under the design-based perspective, it suffices to use a `VeganLayer`, i.e. a `SandwichLayer` minus the meat.^[A `SandwichLayer` object deriving from model A carries estimates of model A's "bread" and "meat" matrices, along with additional material relating to predictions and estimating functions of model A that will serve to connect it to the next "deck" of a multi-decker sandwich.  `VeganLayer` has all of this minus the meat. See detail below.]
+
+  These classes extend the base numeric vector type, with numeric vectors (of predictions) in their `@.Data` slots.  Their `@.Data` and their `@prediction_gradient` slots are not shared with the related classes `SandwichLayerKit` and `VeganLayerKit`, although the rest of their slots are so shared.
+
+- S4 classes `SandwichLayerKit` and `VeganLayerKit`, containing materials sufficient to generate a `SandwichLayer` or `VeganLayer` when supplied with a data set.
+
+  These classes lack `@.Data` and `@prediction_gradient` slots, although otherwise they carry the same material as is carried in a {`Sandwich`/`Vegan`}`Layer`. (Instead they have an `@predictor` slot for a function to generate an `@.Data` vector and an `@prediction_gradient` matrix, from a supplied data frame.)
+
+- S3 generic makers of `VeganLayer`s and `VeganLayerKit`s, with methods for `glm`, ...
+- A separate `add_meat()` function accepting a `glm` or other fitted model and a `VeganLayer` or `VeganLayerKit`, transforming the `VeganLayer` or `VeganLayerKit` into a `SandwichLayer` or `SandwichLayerKit`.  
+- A maker of `SandwichLayer` and `VeganLayer` objects, a function of the {`Sandwich`/`Vegan`}`LayerKit` and a data frame carrying variables needed for prediction from model A.
+
+  This presumes that the {`Sandwich`/`Vegan`}`LayerKit` carries what's needed to generate model A's predictions for a new data set.^[Predictions from model A aren't themselves needed to connect model A's sandwich layer to the next deck of the sandwich.  But their derivatives (with respect to each of model A's parameters) are required, and once we're taking responsibility for those the predictions themselves aren't much more to add.  Plus, by bundling these in the {`Sandwich`/`Vegan`}`LayerKit` without also encasing microdata in there, storing a {`Sandwich`/`Vegan`}`LayerKit` becomes a means of storing what's needed for predictions from model A while respecting privacy and data sharing agreement constraints.]
+
+- `cov_adj()` invokes the maker function described at the last step, returning a {`Sandwich`/`Vegan`}`Layer`, the predictions of which are on the response scale.  (`optmatch::scores()` might be changed to do the same, but returning the predictions on the scale of the linear predictor.) 
+
+
+As a result, in the model frame stored with model B, the column of predictions deriving from model A has type {`Sandwich`/`Vegan`}`Layer`, and carries the needed info from fitting of model A to calculated sandwich SEs for the multi-decker sandwich.  Two more thing will facilitate folding our calculations into existing R workflows:
+
+- `as.multi_decker_lm()`, a conversion function accepting an object `x` inheriting from `lm`.
+
+   This identifies {`Sandwich`/`Vegan`}`Layer` objects among its predictor variables, assembling the associated {`Sandwich`/`Vegan`}`Layer` objects into a list that's tacked on to `x`.  The class attribute ot `x` is then prepended with `multi_decker_lm`, and the result is returned.
+- Method `vcov.multi_decker_lm()`
+
+
+## Basis in known extensions of Huber-White setup to chained estimators
+
 With reference to the formulas for stacked estimating equations of
-@carroll2006measurement, p.373:
+Carroll, Ruppert, Stefanski and Crainiceanu (2006, p.373), the
+covariance model has estimating equations $\phi(\tilde{\mathbf{Y}},
+\alpha)$ with parameters $\alpha$, and Fisher information and estimating-equation covariance matrices $A_{11}$ and $B_{11}$ respectively; while the direct adjustment model's
+are $\psi(\tilde{\mathbf{Y}}, \tau, \alpha)$, the `treat` coefficients
+being $\tau$, with sandwich components $A_{22}$ and $B_{22}$. (The symbols "$\phi()$", "$\psi()$" and "$\alpha$" are
+used as Carroll et al use them, while our "$\tau$" corresponds to
+their "$\mathcal{B}$".)
 
-- the covariance model has parameters $\alpha$, estimating equations
-$\phi(\tilde{\mathbf{Y}}, \alpha)$, Fisher information $A_{11}$ and
-estimating-equation covariance matrices $B_{11}$;
+The leading $n^{-1}$ factor should be struck from the expression for $\mathrm{var}(\hat{\mathcal{B}})$.  Carroll et al's formulas for $A_{11}$, $A_{21}$ and $A_{22}$ then apply, although design-based standard errors call for a different calculations of $B_{11}$, $B_{12}$ and $B_{22}$. With the understanding that we don't apply Carroll et al's formulas for B matrices in terms of estimating functions^[Carroll et al's B-formulas are for model-based SEs without clustering; even when we're calculating model-based and not design-based SEs, we'll need to aggregate (by summing) the elementwise estimating equation contributions to the cluster level, to form cluster-wise estimating equation contributions, before applying their formulas.], we can then take $i$ to range over elements not clusters.    Denote elements represented in covariance and quasiexperimental samples by $\mathcal{C}$ and $\mathcal{Q}$ respectively.
 
-- the direct adjustment model has parameters (`treat` coefficients)
-$\tau$, estimating equations$\psi(\tilde{\mathbf{Y}}, \tau, \alpha)$
-and sandwich components $A_{22}$ and $B_{22}$.
-  (The symbols "$\phi()$", "$\psi()$" and "$\alpha$" are used as Carroll et
-al use them, while our "$\tau$" corresponds to their "$\mathcal{B}$".)
+## Required materials for SE calculations
 
-The leading $n^{-1}$ factor should be struck from the expression for
-$\mathrm{var}(\hat{\mathcal{B}})$.  Carroll et al's formulas for
-$A_{11}$, $A_{21}$ and $A_{22}$ then apply, although design-based
-standard errors call for a different calculations of $B_{11}$,
-$B_{12}$ and $B_{22}$. In these expressions, $i$ is taken to range
-over clusters, element-wise estimating equation contributions being
-summed within clusters to form cluster-wise estimating equation
-contributions.  Denote clusters represented in covariance and
-quasiexperimental samples by $\mathcal{C}$ and $\mathcal{Q}$
-respectively.
+To estimate variances and covariances of $\tau$, we'll need to assemble the following materials. 
 
-## Materials to have assembled when SE calculations are to be performed
-
-To estimate variances and covariances of $\tau$, we'll need:
-
-1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to
-identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed
-to estimate $B_{21}$;
-2. Vectors of estimating functions $\{\phi(\tilde{\mathbf{Y}}_i;
-\hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$ and
-$\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in
-\mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$;
+1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$; 
+2. Vectors of estimating
+functions $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$
+and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$, along with element-cluster containment relationships; 
 3. For the quasiexperimental sample $\mathcal{Q}$, matrices
 $$\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}):
 i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to
@@ -98,7 +115,7 @@ information, $\sum_{i \in \mathcal{C}} \nabla_\alpha \mathbb{E}
 observed information is agnostic as to whether expectation is
 calculated with conditioning on potential outcomes, ie the finite
 population perspective, or with conditioning on treatment assignment,
-the model based perspective.
+the model based perspective. In the special case of quantile regression^[Strictly speaking, the estimating equations of a quantile regression aren't differentiable in $\alpha$. All directional derivatives will exist, and I'm expecting this to be enough for our purposes, but I haven't thought it through.], observed information isn't ordinarily used in standard error calculations, and it may take some doing to get.
 
 Regarding (6), $B_{11}$ is not needed for design-based standard
 errors, as in this setting observations outside of the
@@ -110,76 +127,37 @@ and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in
 \mathcal{Q}\}$, we can use these materials to estimate $B_{12}$ and
 $B_{22}$.
 
+## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
-## Software implementation comments on 1--6 above
+1\. A {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} object must identify $\mathcal{Q}$, by a key variable table defaulting to the row names of whatever data contributed to the fit of the model being summarized in this Layer (as an *n* by 1 data frame), for consistency with non-default situations where there may be multiple key variables.  
 
-1\. When there's a cluster/elements distinction, `cmod` will likely be
-aware of elements not clusters. That's natural for the direct
-adjustment model also.  We can make this an expectation: when we get
-to calculating covariances, we'll use the design object to identify
-element-cluster containment associations.
+When there's a cluster/elements distinction, `covmod` will likely be aware of elements but not clusters. That's one reason that $\mathcal{Q}$ is identified at the element level; if it were a collection of clusters, it wouldn't be possible to identify it from `covmod` alone. When we get to calculating covariances, e.g. $B_{21}$, we'll use the design object to identify element-cluster containment associations.  
 
-2\. Rather than passing $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i
-\in \mathcal{C}\}$ forward along with `cmod`, it would be preferable
-to pass forward what's needed to reconstruct
-$\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C} \cap
-\mathcal{Q}\}$ from the combination of a person-record free summary of
-`cmod` with microdata on $\mathcal{Q}$.  I propose that we serve these
-needs with a function that applies to fitted covariance models (or
-reductions of them that we might hide away and pass around as
-attributes of other things) and returns a function.  This returned
-function itself accepts a data frame as its argument and returns a
-numeric matrix of `cmod` estimating function values corresponding to
-the rows of the provided data frame. In particular, if offered the
-data frame $\mathcal{C} \cap \mathcal{Q}$, the returned function
-returns $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}
-\cap \mathcal{Q}\}$.  (As suffices for estimation of $B_{21}$, if not
-$B_{11}$.)
+2\. The {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes also carry an `@estfun_maker` slot for a specialized function, a function of data frames returning numeric matrices of estimating functions that align with those data frames.
 
-3\. This leaves, $\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i,
-\hat{\tau}, {\alpha}): i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha}$.
-For $\psi()$'s that use only "predictions" of the covariance model, as
-ours does, the first derivative of the covariance model predictions as
-applied to data in $\mathcal{Q}$ will provide sufficient information
-from the covariance model to complete this calculation. Specifically,
-the derivative of whatever's returned by `optmatch::scores(cmod)`, or
-`predict(cmod, newdata=Q)`.  Our options include:
+Rather than passing $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\}$ forward along with `covmod`, it is preferable^[This will help to address RQ2 of the project proposal.] to pass forward what's needed to reconstruct $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C} \cap \mathcal{Q}\}$ from the combination of a person-record free summary of `covmod` with microdata on elements within clusters in $\mathcal{Q}$.  I propose that we serve these needs with a function that applies to fitted covariance models (or reductions of them that we might hide away and pass around as attributes of other things) and returns a function.  This returned function itself accepts a data frame as its argument, e.g. the quasiexperimental sample $\mathcal{Q}$, and returns $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{Q}\}$, the empirical estimating function of the covariance model, as returned by `sandwich::estfun()`, except evaluated over $\mathcal{Q}$, not whatever sample the covariance model was fit to.
 
-a. Expand the role of `scores()` to include furnishing first
-derivatives w.r.t. variables figuring in the prediction.  (Perhaps
-when given additional argument `deriv=TRUE`; `predict.smooth.spline()`
-does something like this.)
-b.  Expect a fast predict method, and use it to figure numerical
-derivatives of the prediction.
+Element-cluster associations are needed, to organize these element-wise estimating function contributions prior to estimation of $B_{21}$; it's assumed that there'll be a Design object present that we can gather this material from. 
 
-I understand that `geex` does (b).  I'm attracted to (a).  The two
-approaches aren't necessarily incompatible, in that one could have
-dedicated `scores()` methods for specific model classes plus a generic
-method that figures the derivatives numerically.  But as (a) seems
-straightforward for `lm`'s and `glm`'s, and I expect it should be
-straightforward even for quantile regressions, I think we should focus
-on (a), tabling (b).
+3\. The {`Sandwich`/`Vegan`}`Layer` class differs from {`Sandwich`/`Vegan`}`LayerKit` not ony with the inclusion of an `@.Data` slot carrying an numeric vector of predictions, but also an `@prediction_gradient` slot for a numeric matrix.  This matrix has as many rows as there are entries in the `.Data` vector, and as many columns as there are estimating equations.
 
-4\. We can take extant calculations of a direct adjustment model's
-information matrix, with the proviso that we keep track of whatever
-scaling those calculations may have applied. For design-based SEs we'll
-need our own B matrix calculation.  For model-based SEs we can plug in
-to extant software, again with attention to how they're scaling
-things. (I have yet to consider whether use of HC0--3 etc for $B_{22}$
-calls for corresponding adjustment to estimation of $B_{21}$ and/or
-$B_{11}$, nor whether heuristics animating these adjustments make
-sense in this context.)
+The `@prediction_gradient` slot carries $\{\nabla_\alpha f_{\alpha}(\tilde{\mathbf{Y}}_i)|_\alpha=\hat\alpha, i \in \mathcal{Q}\}$, where $f_\alpha(\mathbf{Y})$ represents the prediction for data $\mathbf{Y}$ from a fitted model of `class(cov_mod)` with parameters $\alpha$. For $\psi()$'s that use only "predictions" of the covariance model, as ours does, the first derivative of the covariance model predictions as applied to data in $\mathcal{Q}$ will provide sufficient information from the covariance model to complete the calculation of  $\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}) \vert_{\alpha=\hat\alpha}: i \in \mathcal{Q}\}$. 
 
-5\. We can take extant calculations of a covariance model's
-information matrix, with the proviso that we keep track of whatever
-scaling those calculations may have applied.
+(To calculate these gradients in from what's carried in a {`Sandwich`/`Vegan`}`LayerKit`, there are two options.
 
-6\. We can take extant calculations of a covariance model's B matrix,
-with the provisos that we keep track of whatever scaling those
-calculations may have applied and we look to the study design for
-clustering.  (I have yet to consider whether use of HC0--3 etc for
-$B_{11}$ calls for corresponding adjustment to estimation of $B_{21}$
-and/or $B_{22}$, nor whether heuristics animating these adjustments
-make sense in this context.)
+a. Assume that the function in the `@predictor` slot of the `LayerKit` furnishes not only model predictions but also first partial derivatives w.r.t. variables figuring in the prediction.  
+b.  Don't expect partial derivatives from the `@predictor` function, but do expect it to be fast, and use it to figure numerical derivatives of the prediction.
+
+I understand that `geex` does (b).  I'm attracted to (a).  The two approaches aren't necessarily incompatible, in that one could have dedicated `scores()` methods for specific model classes plus a generic method that figures the derivatives numerically.)
+
+4\. The {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes aren't implicated in (4).  We can take extant calculations of a direct adjustment model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied. For design-based SEs we'll need our own B matrix calculation.  For model-based SEs we can plug in to extant software, again with attention to how they're scaling things. (I have yet to consider whether use of HC0--3 etc for $B_{22}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{11}$, nor whether heuristics animating these adjustments make sense in this context.)
+
+5\. {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes carry a slot for the covariance models's observed information matrix.  The rows and columns of this matrix align with the columns of estimating functions that are produced by the function residing in the `@estfun_maker` slot.
+
+We can take extant calculations of a covariance model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied.
+
+6\. The `VeganLayer` class carries a slot for an estimated B matrix.  `SandwichLayer` does not carry this slot, and that's the whole of the distinction between the `VeganLayer` and `SandwichLayer` classes.
+
+We can take extant calculations of a covariance model's B matrix, with the provisos that we keep track of whatever scaling those calculations may have applied and we look to the study design for clustering.  (I have yet to consider whether use of HC0--3 etc for $B_{11}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{22}$, nor whether heuristics animating these adjustments make sense in this context.)
 
 ## References
