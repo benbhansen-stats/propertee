@@ -34,4 +34,20 @@ Optionally, we can also include a covariance adjustment model through the
     covadjmod <- lm(y ~ x1 + x2 + ..., data = studentdata, subset = !txt)
     lm(y ~ txt, studentdata, weights = ett(des),
        offset = cov_adj(covadjmod, data = studentdata)
-      )
+    )
+
+# Contributing
+
+### White space changes
+
+To ease searches of the commit history:
+
+- Commit white space changes only when they occur on lines with substantive changes.
+- Avoid committing trailing white spaces.
+
+In emacs, you can remove white spaces at ends of lines with M-x delete-trailing-whitespace.  To do this automatically whenever you save, add the following to your init file:
+
+   ;; Remove trailing whtiespace and lines upon saving
+   (add-hook 'before-save-hook (lambda ()
+                                 (delete-trailing-whitespace)))
+   (setq delete-trailing-lines t)
