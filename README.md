@@ -34,3 +34,4 @@ Optionally, we can also include a covariance adjustment model through the
     covadjmod <- lm(y ~ x1 + x2 + ..., data = studentdata, subset = !txt)
     lm(y ~ txt, studentdata, weights = ett(des),
        offset = cov_adj(covadjmod, data = studentdata)
+      )
