@@ -878,10 +878,6 @@ test_that("support for different types of treatment variables", {
                           type = "RCT", call = fc),
                "only contain values 0 and 1")
 
-  # transformation error
-  expect_error(New_Design(as.factor(gear) ~ cluster(qsec), data = mtcars,
-                          type = "RCT", call = fc),
-               "variable transformations")
 })
 
 test_that("Design type conversions", {
@@ -963,5 +959,20 @@ test_that(".convert_treatment_to_factor", {
   expect_error(.convert_treatment_to_factor(data.frame(z1 = 0:1,
                                                        z2 = 0:1)),
                "Only one treatment")
+
+})
+
+test_that("variable transformations in Design", {
+
+  data(simdata)
+
+  des <- RCT_Design(as.factor(dose) ~ uoa(cid1, cid2), data = simdata)
+  expect_s3_class(des@structure[,des@columnIndex == "t"], "factor")
+  expect_equal(length(levels(des@structure[,des@columnIndex == "t"])),
+               length(unique(simdata$dose)))
+
+  des <- RD_Design(force > 4 & bid < 2 ~ cluster(cid1, cid2) +  forcing(force), data = simdata)
+  expect_s3_class(des@structure[,des@columnIndex == "t"], "factor")
+  expect_length(levels(des@structure[,des@columnIndex == "t"]), 2)
 
 })

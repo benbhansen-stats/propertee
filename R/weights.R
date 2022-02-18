@@ -18,8 +18,6 @@ ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
     design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
   }
 
-  .treatment_concordance(design, data)
-
   #### generate weights
 
   tx_vec <- design@structure[design@columnIndex == "t"][[1]]
@@ -73,8 +71,6 @@ ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
   if (!is.null(unitOfAssignmentIds)) {
     design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
   }
-
-  .treatment_concordance(design, data)
 
   #### generate weights
   tx_vec <- design@structure[design@columnIndex == "t"][[1]]

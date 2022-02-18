@@ -86,11 +86,6 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
   m <- cd[["renamedModelFrame"]]
   index <- cd[["index"]]
 
-  # Ensure there are not variable transformations (e.g. as.factor(x)
-  if (!all(names(m) %in% names(data))) {
-    stop("Do not use variable transformations in formula.\nInstead modify all relevant data sets as appropriate.")
-  }
-
   m_collapse <- unique(m)
 
   rownames(m_collapse) <- NULL
