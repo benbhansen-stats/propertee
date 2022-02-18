@@ -6,6 +6,7 @@
 summary.Design <- function(object, ...) {
   out <- list()
   out$Design <- object
+  out$treatmentTable <- treatmentTable(object)
   class(out) <- "summary.Design"
   out
 }
@@ -13,56 +14,36 @@ summary.Design <- function(object, ...) {
 ##' @title Print summary object
 ##' @param x Design object
 ##' @param ... Other args
+##' @param maxUnitPrint Maximum number of treatment levels to print in treatment
+##'   table
 ##' @return object, invisibly
 ##' @export
-print.summary.Design <- function(x, ...) {
-  des <- x$Design
+print.summary.Design <- function(x, ..., maxUnitPrint = 3) {
+  show(x$Design)
 
-  destype <- switch(des@type,
-                    "RCT" = "Randomized Control Trial",
-                    "RD" = "Regression Discontinuity Design",
-                    "Obs" = "Observational Study")
-
-  cat("\n")
-  cat(destype)
-  cat("\n\n")
-
-  cat(paste("Contains ", nrow(des@structure) -
-                           sum(duplicated(des@structure[des@columnIndex == "u"])),
-            paste0(" ", des@unitOfAssignmentType, "s ") ,"(`",
-            paste(varNames(des, "u"), collapse = "`, `"),
-            "`)",
-            sep = ""))
-
-  if (length(varNames(des, "b")) > 0) {
-    cat(paste(" nested within ",
-              nrow(des@structure) -
-                sum(duplicated(des@structure[des@columnIndex == "b"])),
-              " blocks (`",
-              paste(varNames(des, "b"), collapse = "`, `"),
-              "`)",
-              sep = ""))
+  cat("Number of units per Treatment group: \n")
+  tt <- x$treatmentTable
+  # The value below defines the max number of treatment groups to print
+  maxPrintTable <- min(maxUnitPrint, length(tt))
+  tdf <- as.data.frame(tt[seq_len(maxPrintTable)])
+  colnames(tdf) <- c("Txt Grp", "Num Units")
+  # knitr::kable(tt, align = "cc", format = "simple") looks real nice if we want
+  # to add that dependency
+  if (length(tt) > maxPrintTable) {
+    tdf[,1] <- as.character(tdf[,1])
+    tdf <- rbind(tdf, c("...", ""))
   }
-
-  # Without a binary treatment variable, what do we want to print here? #11
-  #cat("\n")
-  #ntreat <- sum(des@structure[des@columnIndex == "t"])
-  #nctrl <- sum(1 - des@structure[des@columnIndex == "t"])
-
-  #cat(paste(ntreat, " units  assigned to treatment, ",
-  #          nctrl, " units assigned to control (`",
-  #          varNames(des, "t"), "`)",
-  #          sep = ""))
-  cat("\n")
-
-  if (length(varNames(des, "f")) > 0) {
-    cat(paste("Forcing variable(s): `",
-              paste(varNames(des, "f"), collapse = "`, `"),
-              "`",
-              sep = ""))
-    cat("\n")
+  print(tdf, row.names = FALSE)
+  if (length(tt) > maxPrintTable) {
+    if (length(tt) - maxPrintTable == 1) {
+      group <- "group"
+    } else {
+      group <- "groups"
+    }
+    cat(paste0(length(tt) - maxPrintTable, " smaller treatment ",
+               group, " excluded.\n"))
+    cat("Use `treatmentTable` function to view full results.")
   }
-
   cat("\n")
-  invisible(des)
+  invisible(x)
 }

@@ -4,12 +4,15 @@
 \alias{print.summary.Design}
 \title{Print summary object}
 \usage{
-\method{print}{summary.Design}(x, ...)
+\method{print}{summary.Design}(x, ..., maxUnitPrint = 3)
 }
 \arguments{
 \item{x}{Design object}
 
 \item{...}{Other args}
+
+\item{maxUnitPrint}{Maximum number of treatment levels to print in treatment
+table}
 }
 \value{
 object, invisibly

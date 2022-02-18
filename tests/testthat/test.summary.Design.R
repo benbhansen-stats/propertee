@@ -17,4 +17,10 @@ test_that("summary.Design", {
   expect_output(print(summary(desrd)) , "Discontinuity")
   expect_output(print(summary(desobs)), "Observational")
 
+  desrct <- RCT_Design(o ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  expect_output(print(summary(desrct)), "...")
+  expect_output(print(summary(desrct)), "excluded")
+  expect_identical(desrct, summary(desrct)$Design)
+  expect_s3_class(summary(desrct)$treatmentTable, "table")
+
 })
