@@ -92,13 +92,13 @@ To ease searches of the commit history:
 In **RStudio**, there are options to enable automatically removing white space
 as the end of lines and trailing whitespaces in the Settings, Code -> Saving.
 
-In **emacs**, you can remove white spaces at ends of lines with M-x
-delete-trailing-whitespace. To do this automatically whenever you save, add the
+In **emacs**, you can remove white spaces at ends of lines with `M-x
+delete-trailing-whitespace`. To do this automatically whenever you save, add the
 following to your init file:
 
-   (add-hook 'before-save-hook (lambda ()
+    (add-hook 'before-save-hook (lambda ()
                                  (delete-trailing-whitespace)))
 
 To remove trailing lines when saving, you can also add this:
 
-   (setq delete-trailing-lines t)
+    (setq delete-trailing-lines t)
