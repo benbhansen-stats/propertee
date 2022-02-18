@@ -16,38 +16,37 @@
   WeightedDesign(weights, Design = design, target = target)
 }
 
-# Internal function to use unitOfAssignmentIds to update the design with new
-# variable names
-.update_unitOfAssignmentIds <- function(design, data, unitOfAssignmentIds) {
-  if (!is.list(unitOfAssignmentIds) ||
-        is.null(names(unitOfAssignmentIds)) ||
-        any(names(unitOfAssignmentIds) == "")) {
-    stop("unitOfAssignmentIds must be named list")
+# Internal function to use varLinks to update the design with new variable names
+.update_varLinks <- function(design, data, varLinks) {
+  if (!is.list(varLinks) ||
+        is.null(names(varLinks)) ||
+        any(names(varLinks) == "")) {
+    stop("varLinks must be named list")
   }
-  if (any(duplicated(names(unitOfAssignmentIds))) || any(duplicated(unitOfAssignmentIds))) {
-    stop("unitOfAssignmentIds must be unique")
+  if (any(duplicated(names(varLinks))) || any(duplicated(varLinks))) {
+    stop("varLinks must be unique")
   }
 
   # Ensure all names and replacements are valid
-  missingnames <- !(names(unitOfAssignmentIds) %in% colnames(design@structure))
+  missingnames <- !(names(varLinks) %in% colnames(design@structure))
   if (any(missingnames)) {
-    warning(paste("unitOfAssignmentIds labels not found in Design. unknown elements:",
-                  paste(names(unitOfAssignmentIds)[missingnames], collapse = ", ")))
+    warning(paste("varLinks labels not found in Design. unknown elements:",
+                  paste(names(varLinks)[missingnames], collapse = ", ")))
   }
-  missingdata <-  !(unitOfAssignmentIds %in% colnames(data))
+  missingdata <-  !(varLinks %in% colnames(data))
   if (any(missingdata)) {
-    warning(paste("unitOfAssignmentIds replacement values not found in data. unknown elements:",
-                  paste(unitOfAssignmentIds[missingnames], collapse = ", ")))
+    warning(paste("varLinks replacement values not found in data. unknown elements:",
+                  paste(varLinks[missingnames], collapse = ", ")))
   }
 
   # if we have any names or replacements missing in the design or data,
   # there's a warning, and then don't try to replace that element
-  unitOfAssignmentIds <- unitOfAssignmentIds[!missingnames & !missingdata]
+  varLinks <- varLinks[!missingnames & !missingdata]
 
   newnames <- vapply(colnames(design@structure), function(x) {
-    pos <- names(unitOfAssignmentIds) == x
+    pos <- names(varLinks) == x
     if (any(pos)) {
-      return(unitOfAssignmentIds[[which(pos)]])
+      return(varLinks[[which(pos)]])
     }
     return(x)
   }, "character")

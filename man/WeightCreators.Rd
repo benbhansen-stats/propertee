@@ -5,9 +5,9 @@
 \alias{ate}
 \title{Generate Direct Adjusted Weights}
 \usage{
-ett(design, data = NULL, unitOfAssignmentIds = NULL)
+ett(design, data = NULL, varLinks = NULL)
 
-ate(design, data = NULL, unitOfAssignmentIds = NULL)
+ate(design, data = NULL, varLinks = NULL)
 }
 \arguments{
 \item{design}{a Design object created by one of \code{RCT_Design}, \code{RD_Design},
@@ -17,8 +17,9 @@ or \code{Obs_Design}.}
 excluded if these functions are included as the \code{weights} argument of a
 model.}
 
-\item{unitOfAssignmentIds}{optional; list connecting names of unit of
-assignment variables in \code{design} to unit of assignment variables in \code{data}}
+\item{varLinks}{optional; list connecting names of cluster/unit of
+assignment variables in \code{design} to cluster/unit of assignment variables
+in \code{data}. Only needed if variable names differ.}
 }
 \value{
 a WeightedDesign object

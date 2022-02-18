@@ -52,7 +52,7 @@ test_that("ate and ett in lm call", {
 
 })
 
-test_that("unitOfAssignmentIds", {
+test_that("varLinks", {
 
   data(simdata)
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
@@ -61,24 +61,34 @@ test_that("unitOfAssignmentIds", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  w2 <- ate(des, data = simdata2, unitOfAssignmentIds = list("cid2" = "cccc"))
+  w2 <- ate(des, data = simdata2, varLinks = list("cid2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 
   w1 <- ett(des, data = simdata)
-  w2 <- ett(des, data = simdata2, unitOfAssignmentIds = list("cid2" = "cccc"))
+  w2 <- ett(des, data = simdata2, varLinks = list("cid2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des,unitOfAssignmentIds = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des,varLinks = list("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ett(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des,unitOfAssignmentIds = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des,varLinks = list("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
+
+  des <- RD_Design(z ~ unitOfAssignment(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+
+  w1 <- ate(des, data = simdata)
+
+  simdata2 <- simdata
+  colnames(simdata2)[2] <- "cccc"
+  w2 <- ate(des, data = simdata2, varLinks = list("cid2" = "cccc"))
+
+  expect_equal(w1@.Data, w2@.Data)
 
 })
 

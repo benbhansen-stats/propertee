@@ -1,6 +1,6 @@
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-.get_data_from_model <- function(form, unitOfAssignmentIds = NULL) {
+.get_data_from_model <- function(form, varLinks = NULL) {
 
   if (!(is.call(form) | is(form, "formula") | is.name(form))) {
     stop("internal error: form must be a formula or name")
@@ -21,17 +21,17 @@
     stop("internal error: unable to convert form to formula class")
   }
 
-  if (!is.null(unitOfAssignmentIds)) {
-    # if we're passed unitOfAssignmentIds, need to update the formula.
+  if (!is.null(varLinks)) {
+    # if we're passed varLinks, need to update the formula.
 
     # First, convert passed-as-string new variable names to `name` objects
     # to avoid quotation (y ~ "x")` in formula
-    unitOfAssignmentIds <- lapply(unitOfAssignmentIds, as.name)
+    varLinks <- lapply(varLinks, as.name)
 
     # Next use substitute to do the replacing.
-    # Cannot just call `substitute(form, unitOfAssignmentIds)` since we want to pass
+    # Cannot just call `substitute(form, varLinks)` since we want to pass
     # the actual formula object, not just the name "form"
-    form <- as.formula(do.call("substitute", list(form, unitOfAssignmentIds)))
+    form <- as.formula(do.call("substitute", list(form, varLinks)))
   }
 
   # update formula to always use unitOfAssignment, since if this is the original

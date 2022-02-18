@@ -4,18 +4,19 @@
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
-##' @param unitOfAssignmentIds optional; list connecting names of unit of
-##'   assignment variables in `design` to unit of assignment variables in `data`
+##' @param varLinks optional; list connecting names of cluster/unit of
+##'   assignment variables in `design` to cluster/unit of assignment variables
+##'   in `data`. Only needed if variable names differ.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
+ett <- function(design, data = NULL, varLinks = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, unitOfAssignmentIds)
+    data <- .get_data_from_model(design@call$formula, varLinks)
   }
 
-  if (!is.null(unitOfAssignmentIds)) {
-    design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
+  if (!is.null(varLinks)) {
+    design <- .update_varLinks(design, data, varLinks)
   }
 
   #### generate weights
@@ -63,13 +64,13 @@ ett <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL, unitOfAssignmentIds = NULL) {
+ate <- function(design, data = NULL, varLinks = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, unitOfAssignmentIds)
+    data <- .get_data_from_model(design@call$formula, varLinks)
   }
 
-  if (!is.null(unitOfAssignmentIds)) {
-    design <- .update_unitOfAssignmentIds(design, data, unitOfAssignmentIds)
+  if (!is.null(varLinks)) {
+    design <- .update_varLinks(design, data, varLinks)
   }
 
   #### generate weights
