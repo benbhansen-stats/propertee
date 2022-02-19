@@ -12,7 +12,7 @@ treatmentTable(design, ...)
 \item{...}{add'l optional arguments to \code{table}}
 }
 \value{
-a table of class \code{treatmentTable}
+a table of treatment by units
 }
 \description{
 Returns a table of number of units of assignment in each treatment group,

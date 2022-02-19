@@ -193,22 +193,12 @@ setMethod("show", "Design", function(object) {
   cat(destype)
   cat("\n\n")
 
-  vartable <- c("---------", "---------")
 
-  addrow <- function(name, type) {
-    c(name, paste(varNames(object, type), collapse = ", "))
-  }
-  vartable <- rbind(vartable, addrow("Treatment", "t"))
-  vartable <- rbind(vartable, addrow(uoatype, "u"))
-  if (length(varNames(object, "b")) > 0) {
-    vartable <- rbind(vartable, addrow("Block", "b"))
-  }
-  if (length(varNames(object, "f")) > 0) {
-    vartable <- rbind(vartable, addrow("Forcing", "f"))
-  }
-  vartable <- data.frame(vartable)
-  colnames(vartable) <- c("Structure", "Variables")
-  print(data.frame(vartable), row.names = FALSE, right = FALSE)
+  vartab <- varTable(object)
+  # Add a nice separating line for printing
+  vartab <- rbind(c("---------", "---------"),
+                  vartab)
+  print(data.frame(vartab), row.names = FALSE, right = FALSE)
 
 
   cat("\n")
@@ -266,10 +256,79 @@ varNames <- function(x, type) {
 ##' @title treatment group table
 ##' @param design A Design object
 ##' @param ... add'l optional arguments to `table`
-##' @return a table of class `treatmentTable`
+##' @return a table of treatment by units
 ##' @export
 treatmentTable <- function(design, ...) {
   tab <- table(design@structure[varNames(design, "t")], ...)
   tab <- sort(tab, decreasing = TRUE)
   return(tab)
+}
+
+##' Returns a table containing the variables identified in each structure
+##'
+##' @title variable identification table
+##' @param design A Design object
+##' @param ... add'l optional arguments to `table`
+##' @param compress Should multiple variables be compressed into a
+##'   comma-separated string? Default TRUE.
+##' @param reportAll Should we report all possible structures even if they don't
+##'   exist in the Design? Default FALSE.
+##' @return a table of variables in the Design structure
+##' @export
+varTable <- function(design, ..., compress = TRUE, reportAll = FALSE) {
+  uoatype <- switch(design@unitOfAssignmentType,
+                    "unitOfAssignment" = "Unit of Assignment",
+                    "cluster" = "Cluster",
+                    "unitid"  = "Unitid")
+
+  rows <- list()
+  rows[["t"]] <- c("Treatment", varNames(design, "t"))
+  rows[["u"]] <- c(uoatype    , varNames(design, "u"))
+  rows[["b"]] <- c("Block"    , varNames(design, "b"))
+  rows[["f"]] <- c("Forcing"  , varNames(design, "f"))
+
+  # Identify if we have more than one variable specified in a specific
+  # structure, and if so how ,long
+  maxvar <- max(vapply(rows, length, 1))
+  if (maxvar < 2) {
+    # Should never hit this error
+    stop("Internal error: No variables identified!")
+  }
+
+  # If we have more than 1 variable in at least 1 structure, add NA padding to
+  # each row
+  if (maxvar > 2) {
+    rows <- lapply(rows, function(x) {
+      if (length(x) < maxvar) {
+        x <- c(x, rep(NA, maxvar - length(x)))
+      }
+      return(x)
+    })
+  }
+  out <- do.call(rbind, rows)
+
+  if (!reportAll) {
+    # Drop any rows we don't need
+    out <- out[!is.na(out[,2]),]
+  }
+
+  if (compress == TRUE) {
+    # If compressing, collapse any repeats if necessary
+    if (maxvar > 2) {
+      out2 <- apply(out[,-1], 1, function(x) {
+        x <- x[!is.na(x)]
+        return(paste(x, collapse = ", "))
+      })
+      out <- cbind(out[,1], out2)
+    }
+    colnames(out) <- c("Structure", "Variables")
+  } else {
+    if (maxvar == 2) {
+      colnames(out) <- c("Structure", "Variables")
+    } else {
+      colnames(out) <- c("Structure", paste("Variable", seq_len(maxvar - 1)))
+    }
+  }
+  rownames(out) <- NULL
+  return(out)
 }
