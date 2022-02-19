@@ -4,12 +4,14 @@
 \alias{cov_adj}
 \title{Covariance Adjustment for Treatment Estimation}
 \usage{
-cov_adj(model, newdata = NULL)
+cov_adj(model, newdata = NULL, design = NULL)
 }
 \arguments{
 \item{model}{Any model which supports a \code{predict} function}
 
 \item{newdata}{New data}
+
+\item{design}{Optional \code{Design}.}
 }
 \value{
 Covariate adjusted outcomes

@@ -45,7 +45,7 @@ ittestimate <- function(design,
   }
 
   if (!is.null(covAdjModel)) {
-    covAdj <- cov_adj(covAdjModel)
+    covAdj <- cov_adj(covAdjModel, design = design)
   }
 
   if (!is.null(varLinks)) {
