@@ -4,19 +4,19 @@
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
-##' @param varLinks optional; list connecting names of cluster/unit of
+##' @param by optional; list connecting names of cluster/unit of
 ##'   assignment variables in `design` to cluster/unit of assignment variables
 ##'   in `data`. Only needed if variable names differ.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL, varLinks = NULL) {
+ett <- function(design, data = NULL, by = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, varLinks)
+    data <- .get_data_from_model(design@call$formula, by)
   }
 
-  if (!is.null(varLinks)) {
-    design <- .update_varLinks(design, data, varLinks)
+  if (!is.null(by)) {
+    design <- .update_by(design, data, by)
   }
 
   #### generate weights
@@ -64,13 +64,13 @@ ett <- function(design, data = NULL, varLinks = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL, varLinks = NULL) {
+ate <- function(design, data = NULL, by = NULL) {
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, varLinks)
+    data <- .get_data_from_model(design@call$formula, by)
   }
 
-  if (!is.null(varLinks)) {
-    design <- .update_varLinks(design, data, varLinks)
+  if (!is.null(by)) {
+    design <- .update_by(design, data, by)
   }
 
   #### generate weights

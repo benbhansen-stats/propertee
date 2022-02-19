@@ -50,7 +50,7 @@ test_that("ittestimate and lm return the same in simple cases", {
 
 })
 
-test_that("varLinks in ittestimate", {
+test_that("by in ittestimate", {
   data(simdata)
   des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
@@ -59,29 +59,29 @@ test_that("varLinks in ittestimate", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  it2 <- ittestimate(des, simdata2, "y", varLinks = list("cid2" = "cccc"))
+  it2 <- ittestimate(des, simdata2, "y", by = list("cid2" = "cccc"))
 
   expect_identical(it1$coef, it2$coef)
 
   expect_error(ittestimate(des, simdata2, "y",
-                           varLinks = list("abc")),
+                           by = list("abc")),
                "named list")
 
   expect_error(ittestimate(des, simdata2, "y",
-                           varLinks = list("cid2" = "cccc", "cid2" = "bbbb")),
+                           by = list("cid2" = "cccc", "cid2" = "bbbb")),
                "unique")
 
   expect_warning(it3 <- ittestimate(des, simdata2, "y",
-                           varLinks = list("cid2" = "cccc", "abc" = "cid1")),
+                           by = list("cid2" = "cccc", "abc" = "cid1")),
                "not found in Design")
 
   expect_warning(it4 <- ittestimate(des, simdata2, "y",
-                           varLinks = list("cid2" = "cccc", "cid1" = "abc")),
+                           by = list("cid2" = "cccc", "cid1" = "abc")),
                "not found in data")
   expect_identical(it3$coef, it4$coef)
 
   expect_warning(expect_warning(it5 <- ittestimate(des, simdata2, "y",
-                           varLinks = list("cid2" = "cccc", "abc" = "def")),
+                           by = list("cid2" = "cccc", "abc" = "def")),
                "not found in data"), "not found in Design")
   expect_identical(it3$coef, it5$coef)
 

@@ -5,7 +5,7 @@
 ##' @param target a function returning a WeightedDesign object, or either "ate"
 ##'   (default) or "ett"
 ##' @param covAdjModel optional; covariable adjustment model
-##' @param varLinks optional; list connecting names of units of
+##' @param by optional; list connecting names of units of
 ##'   assignment/clusters/units variables in `design` to units of
 ##'   assignment/clusters/units variables in `data`
 ##' @param weights optional; manually include weights. If included, weights will
@@ -21,7 +21,7 @@ ittestimate <- function(design,
                         outcome,
                         target = "ate",
                         covAdjModel = NULL,
-                        varLinks = NULL,
+                        by = NULL,
                         ...,
                         weights = NULL) {
 
@@ -48,8 +48,8 @@ ittestimate <- function(design,
     covAdj <- cov_adj(covAdjModel, design = design)
   }
 
-  if (!is.null(varLinks)) {
-    design <- .update_varLinks(design, data, varLinks)
+  if (!is.null(by)) {
+    design <- .update_by(design, data, by)
   }
 
   # Expand treatment status

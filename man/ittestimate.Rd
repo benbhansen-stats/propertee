@@ -10,7 +10,7 @@ ittestimate(
   outcome,
   target = "ate",
   covAdjModel = NULL,
-  varLinks = NULL,
+  by = NULL,
   ...,
   weights = NULL
 )
@@ -27,7 +27,7 @@ ittestimate(
 
 \item{covAdjModel}{optional; covariable adjustment model}
 
-\item{varLinks}{optional; list connecting names of units of
+\item{by}{optional; list connecting names of units of
 assignment/clusters/units variables in \code{design} to units of
 assignment/clusters/units variables in \code{data}}
 

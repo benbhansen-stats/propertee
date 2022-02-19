@@ -16,37 +16,37 @@
   WeightedDesign(weights, Design = design, target = target)
 }
 
-# Internal function to use varLinks to update the design with new variable names
-.update_varLinks <- function(design, data, varLinks) {
-  if (!is.list(varLinks) ||
-        is.null(names(varLinks)) ||
-        any(names(varLinks) == "")) {
-    stop("varLinks must be named list")
+# Internal function to use by to update the design with new variable names
+.update_by <- function(design, data, by) {
+  if (!is.list(by) ||
+        is.null(names(by)) ||
+        any(names(by) == "")) {
+    stop("by must be named list")
   }
-  if (any(duplicated(names(varLinks))) || any(duplicated(varLinks))) {
-    stop("varLinks must be unique")
+  if (any(duplicated(names(by))) || any(duplicated(by))) {
+    stop("by must be unique")
   }
 
   # Ensure all names and replacements are valid
-  missingnames <- !(names(varLinks) %in% colnames(design@structure))
+  missingnames <- !(names(by) %in% colnames(design@structure))
   if (any(missingnames)) {
-    warning(paste("varLinks labels not found in Design. unknown elements:",
-                  paste(names(varLinks)[missingnames], collapse = ", ")))
+    warning(paste("by labels not found in Design. unknown elements:",
+                  paste(names(by)[missingnames], collapse = ", ")))
   }
-  missingdata <-  !(varLinks %in% colnames(data))
+  missingdata <-  !(by %in% colnames(data))
   if (any(missingdata)) {
-    warning(paste("varLinks replacement values not found in data. unknown elements:",
-                  paste(varLinks[missingnames], collapse = ", ")))
+    warning(paste("by replacement values not found in data. unknown elements:",
+                  paste(by[missingnames], collapse = ", ")))
   }
 
   # if we have any names or replacements missing in the design or data,
   # there's a warning, and then don't try to replace that element
-  varLinks <- varLinks[!missingnames & !missingdata]
+  by <- by[!missingnames & !missingdata]
 
   newnames <- vapply(colnames(design@structure), function(x) {
-    pos <- names(varLinks) == x
+    pos <- names(by) == x
     if (any(pos)) {
-      return(varLinks[[which(pos)]])
+      return(by[[which(pos)]])
     }
     return(x)
   }, "character")
