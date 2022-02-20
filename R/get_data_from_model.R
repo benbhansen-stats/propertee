@@ -66,15 +66,16 @@
   # Identify the frames in which `ate` or `ett` are passed as weights
   weightArgs <- lapply(sys.calls(), `[[`, "weights")
 
-  # If the call is `weights = ate(des)`, then we'll be able to find "ate"
-  # directly. This corresponds to `weightsPos`. However, if the call is more
-  # complex, like `weights = 3*ate(des)` or `weights = sqrt(ate(des))`, then
-  # we'll need to find `ate(` instead, leading to `atePos` and `ettPos`.
-  weightsPos <- lapply(weightArgs, `[[`, 1) %in% c("ate", "ett")
-  atePos <- vapply(lapply(weightArgs, as.character), function(x) any(grepl("^ate\\(", x)), TRUE)
-  ettPos <- vapply(lapply(weightArgs, as.character), function(x) any(grepl("^ett\\(", x)), TRUE)
+  # Within each `weights` argument, we're looking for the string "ate(" or
+  # "ett(", ensuring that the previous character (if there is one: ?) is not a
+  # letter, thus ensuring we don't have some oddity like `translate(x)`
+  # triggering.
+  atePos <- vapply(lapply(weightArgs, deparse),
+                   function(x) any(grepl("[^a-zA-Z]?ate\\(", x)), TRUE)
+  ettPos <- vapply(lapply(weightArgs, deparse),
+                   function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
 
-  weightsPos <- which(weightsPos | atePos | ettPos)
+  weightsPos <- which(atePos | ettPos)
 
   # At this point, we know all frames in which the weights are passed,
   # and all frames which are calls to `model.frame.default`. This will identify
@@ -90,6 +91,7 @@
     stop(paste0("Multiple models with weights found on the call stack.\n",
                 "Try splitting the call into multiple lines rather than a single nested model."))
   } else {
+
     environment(form) <- environment(get("formula", sys.frame(modelFrameandWeightsPos)))
     try(data <- do.call(data.frame,
                         c(model.frame(form,
