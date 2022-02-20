@@ -1,3 +1,49 @@
+test_that("internal weight function", {
+  data (simdata)
+  des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  wdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
+  expect_s4_class(wdes, "WeightedDesign")
+  expect_true(is.numeric(wdes@.Data))
+  expect_s4_class(wdes@Design, "Design")
+  expect_identical(des, wdes@Design)
+  expect_type(wdes@target, "character")
+
+  expect_equal(wdes@target, "ate")
+
+  expect_equal(nrow(simdata), length(wdes))
+  expect_true(all(wdes == wdes@.Data))
+
+  wdes <- .weights_calc(des, simdata, by = NULL, target = "ett")
+  expect_s4_class(wdes, "WeightedDesign")
+  expect_true(is.numeric(wdes@.Data))
+  expect_s4_class(wdes@Design, "Design")
+  expect_identical(des, wdes@Design)
+  expect_type(wdes@target, "character")
+
+  expect_equal(wdes@target, "ett")
+
+  expect_equal(nrow(simdata), length(wdes))
+  expect_true(all(wdes == wdes@.Data))
+
+  expect_error(.weights_calc(des, simdata, by = NULL, target = "foo"),
+               "Invalid weight target")
+})
+
+test_that("internal and external weight function agreement", {
+  data (simdata)
+  des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
+  ewdes <- ate(des, simdata)
+  expect_identical(iwdes, ewdes)
+
+  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ett")
+  ewdes <- ett(des, simdata)
+  expect_identical(iwdes, ewdes)
+
+})
+
 test_that("ate and ett with data argument", {
 
   # n_clusters = n
