@@ -1,3 +1,47 @@
+test_that("cov_adj basics", {
+  data(STARdata)
+  STARdata$id <- seq_len(nrow(STARdata))
+  des <- RCT_Design(stark == "small" ~ unitid(id), data = STARdata)
+  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
+
+
+  ca <- cov_adj(cmod, design = des)
+  expect_true(is(ca, "numeric"))
+  expect_true(is(ca, "vector"))
+  expect_equal(length(ca), nrow(cmod$model))
+
+  expect_error(cov_adj(cmod), "Unable to locate")
+})
+
+test_that("cov_adj as offset", {
+  data(simdata)
+  des <- Obs_Design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  m <- lm(y ~ z, data = simdata,
+          offset = cov_adj(cmod),
+          weights = ate(des))
+  expect_true(is(m$offset, "numeric"))
+  expect_true(is(m$offset, "vector"))
+
+
+  data(STARdata)
+  STARdata$id <- seq_len(nrow(STARdata))
+  des <- RCT_Design(stark == "small" ~ unitid(id), data = STARdata)
+  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
+
+
+  # This currently errors with
+  # Error in model.frame.default(formula = readk ~ birth + lunchk, data =
+  #STARdata, : variable lengths differ (found for '(weights)')
+  #mod <- lm(readk ~ birth + lunchk, data = STARdata,
+  #          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
+
+})
+
+
+
+
+
 ## ## Stop tidyverse from spamming the test output display
 ## options(tidyverse.quiet = TRUE)
 ## options(conflicts.policy = list(warn = FALSE))
