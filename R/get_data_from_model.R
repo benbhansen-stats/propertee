@@ -22,6 +22,7 @@
   }
 
   if (!is.null(by)) {
+    .check_by(by)
     # if we're passed by, need to update the formula.
 
     # First, convert passed-as-string new variable names to `name` objects

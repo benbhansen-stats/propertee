@@ -31,7 +31,7 @@ test_that("internal weight function", {
 })
 
 test_that("internal and external weight function agreement", {
-  data (simdata)
+  data(simdata)
   des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
   iwdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
@@ -107,22 +107,26 @@ test_that("by", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  w2 <- ate(des, data = simdata2, by = list("cid2" = "cccc"))
+  w2 <- ate(des, data = simdata2, by = c("cid2" = "cccc"))
+  w3 <- ate(des, data = simdata2, by = list("cid2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
+  expect_equal(w1@.Data, w3@.Data)
 
   w1 <- ett(des, data = simdata)
-  w2 <- ett(des, data = simdata2, by = list("cid2" = "cccc"))
+  w2 <- ett(des, data = simdata2, by = c("cid2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des,by = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des, by = c("cid2" = "cccc")))
+  mod3 <- lm(y ~ x, data = simdata2, weights = ate(des, by = list("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
+  expect_identical(mod1$coef, mod3$coef)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ett(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des,by = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des, by = c("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
 
@@ -132,7 +136,7 @@ test_that("by", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  w2 <- ate(des, data = simdata2, by = list("cid2" = "cccc"))
+  w2 <- ate(des, data = simdata2, by = c("cid2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 

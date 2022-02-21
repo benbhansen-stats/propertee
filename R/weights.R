@@ -4,9 +4,10 @@
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
-##' @param by optional; list connecting names of cluster/unit of
+##' @param by optional; named vector or list connecting names of cluster/unit of
 ##'   assignment variables in `design` to cluster/unit of assignment variables
-##'   in `data`. Only needed if variable names differ.
+##'   in `data`. Names represent variables in the Design; values represent
+##'   variables in the data. Only needed if variable names differ.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators

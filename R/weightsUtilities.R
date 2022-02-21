@@ -18,14 +18,7 @@
 
 # Internal function to use by to update the design with new variable names
 .update_by <- function(design, data, by) {
-  if (!is.list(by) ||
-        is.null(names(by)) ||
-        any(names(by) == "")) {
-    stop("by must be named list")
-  }
-  if (any(duplicated(names(by))) || any(duplicated(by))) {
-    stop("by must be unique")
-  }
+  .check_by(by)
 
   # Ensure all names and replacements are valid
   missingnames <- !(names(by) %in% colnames(design@structure))
@@ -53,4 +46,17 @@
 
   colnames(design@structure) <- newnames
   return(design)
+}
+
+# Internal function to throw errors is `by` is inappropriate.
+.check_by <- function(by) {
+  if (!(is.vector(by) || is.list(by)) ||
+        is.null(names(by)) ||
+        any(names(by) == "")) {
+    stop("'by' must be named vector or named list")
+  }
+  if (any(duplicated(names(by))) || any(duplicated(by))) {
+    stop("all entries in 'by' must be unique")
+  }
+  NULL
 }

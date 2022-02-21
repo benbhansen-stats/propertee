@@ -59,29 +59,29 @@ test_that("by in ittestimate", {
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  it2 <- ittestimate(des, simdata2, "y", by = list("cid2" = "cccc"))
+  it2 <- ittestimate(des, simdata2, "y", by = c("cid2" = "cccc"))
 
   expect_identical(it1$coef, it2$coef)
 
   expect_error(ittestimate(des, simdata2, "y",
-                           by = list("abc")),
-               "named list")
+                           by = c("abc")),
+               "named vector")
 
   expect_error(ittestimate(des, simdata2, "y",
-                           by = list("cid2" = "cccc", "cid2" = "bbbb")),
+                           by = c("cid2" = "cccc", "cid2" = "bbbb")),
                "unique")
 
   expect_warning(it3 <- ittestimate(des, simdata2, "y",
-                           by = list("cid2" = "cccc", "abc" = "cid1")),
+                           by = c("cid2" = "cccc", "abc" = "cid1")),
                "not found in Design")
 
   expect_warning(it4 <- ittestimate(des, simdata2, "y",
-                           by = list("cid2" = "cccc", "cid1" = "abc")),
+                           by = c("cid2" = "cccc", "cid1" = "abc")),
                "not found in data")
   expect_identical(it3$coef, it4$coef)
 
   expect_warning(expect_warning(it5 <- ittestimate(des, simdata2, "y",
-                           by = list("cid2" = "cccc", "abc" = "def")),
+                           by = c("cid2" = "cccc", "abc" = "def")),
                "not found in data"), "not found in Design")
   expect_identical(it3$coef, it5$coef)
 

@@ -17,9 +17,10 @@ or \code{Obs_Design}.}
 excluded if these functions are included as the \code{weights} argument of a
 model.}
 
-\item{by}{optional; list connecting names of cluster/unit of
+\item{by}{optional; named vector or list connecting names of cluster/unit of
 assignment variables in \code{design} to cluster/unit of assignment variables
-in \code{data}. Only needed if variable names differ.}
+in \code{data}. Names represent variables in the Design; values represent
+variables in the data. Only needed if variable names differ.}
 }
 \value{
 a WeightedDesign object
