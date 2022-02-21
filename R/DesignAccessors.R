@@ -32,6 +32,12 @@ setMethod("treatment<-", "Design", function(x, value) {
   x
 })
 
+# Internal function to quickly return the treatment as numeric
+.treatment_as_numeric <- function(design) {
+  t <- treatment(design)[[1]]
+  as.numeric(levels(t)[t])
+}
+
 ############### Units of Assignment
 
 ##' @export

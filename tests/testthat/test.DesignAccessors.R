@@ -496,3 +496,14 @@ test_that("Accessing and replacing elements", {
                "more than once")
 
 })
+
+test_that(".treatment_as_numeric", {
+  data(simdata)
+  des <- Obs_Design(o ~ cluster(cid1, cid2), data = simdata)
+
+  txt <- .treatment_as_numeric(des)
+  expect_true(is.numeric(txt))
+  expect_true(is.vector(txt))
+  txtf <- treatment(des)[[1]]
+  expect_identical(as.numeric(levels(txtf)[txtf]), txt)
+})
