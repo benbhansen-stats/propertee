@@ -229,7 +229,14 @@ varNames <- function(x, type) {
       index[pos] <- substr(type, 1, 1)
       vars <- colnames(modelframe)[pos][1]
       vars <- sub(paste0("^", type, "\\("), "", vars)
-      vars <- sub("\\)[\\.0-9]*$", "", vars)
+      if (grepl("^cbind", vars)) {
+        # If user called something like `uoa(cbind(a, b))`
+        vars <- sub("^cbind\\(", "", vars)
+        vars <- sub("\\)\\).*$", "", vars)
+      } else {
+        # If user just called `uoa(a, b)`
+        vars <- sub("\\)[\\.0-9]*$", "", vars)
+      }
       vars <- strsplit(gsub(" ", "", vars), ",")[[1]]
       colnames(modelframe)[pos] <- vars
     }

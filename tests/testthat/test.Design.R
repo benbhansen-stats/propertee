@@ -976,3 +976,14 @@ test_that("variable transformations in Design", {
   expect_length(levels(des@structure[,des@columnIndex == "t"]), 2)
 
 })
+
+test_that("#26 cbind in identification variables", {
+  data(simdata)
+  des1 <- Obs_Design(o ~ cluster(cbind(cid1, cid2)), data = simdata)
+  des2 <- Obs_Design(o ~ cluster(cid1, cid2), data = simdata)
+
+  des1@call <- fc
+  des2@call <- fc
+  expect_identical(des1, des2)
+
+})
