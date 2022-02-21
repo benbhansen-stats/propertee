@@ -36,10 +36,8 @@ ate <- function(design, data = NULL, by = NULL) {
   }
 
   #### generate weights
-  tx_vec <- design@structure[design@columnIndex == "t"][[1]]
-  ind_tx <- levels(tx_vec)[2]
 
-  if(length(levels(tx_vec)) > 2){
+  if(length(levels(design@structure[design@columnIndex == "t"][[1]])) > 2){
     warning("weights for non-binary treatments not yet implemented.")
     weights <- rep(1, nrow(design@structure))
   } else if(!("b" %in% names(table(design@columnIndex)))){
@@ -48,7 +46,7 @@ ate <- function(design, data = NULL, by = NULL) {
     # If a block is specified, then E_Z varies by block and is the proportion
     # of clusters within the block that receive the treatment.
     cluster_df <- data.frame(design@structure[design@columnIndex == "u"],
-                             Tx = as.numeric(tx_vec == ind_tx))
+                             Tx = .treatment_as_numeric(design))
     E_Z <- mean(cluster_df$Tx)
     if (target == "ate") {
       weights <- cluster_df$Tx / E_Z + (1 - cluster_df$Tx) / (1 - E_Z)
@@ -62,9 +60,9 @@ ate <- function(design, data = NULL, by = NULL) {
     # treatment within each block.
     # Then, calculate E_Z.
 
-    block_df <- data.frame(blockid = names(table(design@structure[design@columnIndex == "b"])),
-                           block_units = as.numeric(table(design@structure[design@columnIndex == "b"])),
-                           tx_units = tapply(as.numeric(tx_vec == ind_tx),
+    block_df <- data.frame(blockid = names(table(blocks(design))),
+                           block_units = as.numeric(table(blocks(design))),
+                           tx_units = tapply(.treatment_as_numeric(design),
                                              design@structure[design@columnIndex == "b"],
                                              FUN = sum))
     block_df$E_Z <- block_df$tx_units / block_df$block_units
@@ -75,8 +73,7 @@ ate <- function(design, data = NULL, by = NULL) {
     cluster_df <- merge(design@structure, block_df,
                         by.x = colnames(design@structure[which(design@columnIndex == "b")]),
                         by.y = "blockid")
-    cluster_df$Tx <- as.numeric(cluster_df[,names(design@structure[design@columnIndex == "t"])] ==
-                                  ind_tx)
+    cluster_df$Tx <- .treatment_as_numeric(design)
     if (target == "ate") {
       weights <- cluster_df$Tx / cluster_df$E_Z + (1 - cluster_df$Tx) / (1 - cluster_df$E_Z)
     }
