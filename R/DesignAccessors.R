@@ -32,10 +32,15 @@ setMethod("treatment<-", "Design", function(x, value) {
   x
 })
 
-# Internal function to quickly return the treatment as numeric
-.treatment_as_numeric <- function(design) {
+# Internal function to quickly return the treatment as binary numeric 0/1
+# See https://github.com/benbhansen-stats/flexida/wiki/Treatment-storage-and-access for
+# details of input/output
+.treatment_binary <- function(design) {
   t <- treatment(design)[[1]]
-  as.numeric(t == levels(t)[2])
+  if (nlevels(t) > 2) {
+    stop("Multi-level treatments not yet implemented in .treatment_binary")
+  }
+  as.numeric(t) - 1
 }
 
 ############### Units of Assignment

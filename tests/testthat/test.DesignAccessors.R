@@ -498,12 +498,31 @@ test_that("Accessing and replacing elements", {
 })
 
 test_that(".treatment_as_numeric", {
+  # See https://github.com/benbhansen-stats/flexida/wiki/Treatment-storage-and-access
   data(simdata)
-  des <- Obs_Design(o ~ cluster(cid1, cid2), data = simdata)
+  # Case 1: numeric 0/1 input
+  des1 <- Obs_Design(z ~ cluster(cid1, cid2), data = simdata)
 
-  txt <- .treatment_as_numeric(des)
-  expect_true(is.numeric(txt))
-  expect_true(is.vector(txt))
-  txtf <- treatment(des)[[1]]
-  expect_identical(as.numeric(levels(txtf)[txtf]), txt)
+  txt1 <- .treatment_binary(des1)
+  expect_true(is.numeric(txt1))
+  expect_true(is.vector(txt1))
+  expect_true(all(txt1 %in% 0:1))
+
+  # Case 2: Binary input
+  simdata$z <- simdata$z == 1
+  des2 <- Obs_Design(z ~ cluster(cid1, cid2), data = simdata)
+  txt2 <- .treatment_binary(des2)
+  expect_identical(txt1, txt2)
+
+  # Case 3: 2 level categorical
+  des3 <- Obs_Design(as.factor(z) ~ cluster(cid1, cid2), data = simdata)
+  txt3 <- .treatment_binary(des3)
+  expect_identical(txt1, txt3)
+
+  # Case 3: 2 level ordered
+  des4 <- Obs_Design(as.ordered(z) ~ cluster(cid1, cid2), data = simdata)
+  txt4 <- .treatment_binary(des4)
+  expect_identical(txt1, txt4)
+
+
 })

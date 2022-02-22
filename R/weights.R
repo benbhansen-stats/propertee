@@ -46,7 +46,7 @@ ate <- function(design, data = NULL, by = NULL) {
     # If a block is specified, then E_Z varies by block and is the proportion
     # of clusters within the block that receive the treatment.
     cluster_df <- data.frame(design@structure[design@columnIndex == "u"],
-                             Tx = .treatment_as_numeric(design))
+                             Tx = .treatment_binary(design))
     E_Z <- mean(cluster_df$Tx)
     if (target == "ate") {
       weights <- cluster_df$Tx / E_Z + (1 - cluster_df$Tx) / (1 - E_Z)
@@ -62,7 +62,7 @@ ate <- function(design, data = NULL, by = NULL) {
 
     block_df <- data.frame(blockid = names(table(blocks(design))),
                            block_units = as.numeric(table(blocks(design))),
-                           tx_units = tapply(.treatment_as_numeric(design),
+                           tx_units = tapply(.treatment_binary(design),
                                              design@structure[design@columnIndex == "b"],
                                              FUN = sum))
     block_df$E_Z <- block_df$tx_units / block_df$block_units
@@ -73,7 +73,7 @@ ate <- function(design, data = NULL, by = NULL) {
     cluster_df <- merge(design@structure, block_df,
                         by.x = colnames(design@structure[which(design@columnIndex == "b")]),
                         by.y = "blockid")
-    cluster_df$Tx <- .treatment_as_numeric(design)
+    cluster_df$Tx <- .treatment_binary(design)
     if (target == "ate") {
       weights <- cluster_df$Tx / cluster_df$E_Z + (1 - cluster_df$Tx) / (1 - cluster_df$E_Z)
     }
