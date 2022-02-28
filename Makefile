@@ -55,7 +55,11 @@ check_win: FUNC=check_win_release        # ... on win-builder release
 .PHONY:check_win_dev
 check_win_dev: FUNC=check_win_devel    # ... on win-builder dev
 
-dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old: .devtools
+.PHONY:check_rhub
+check_rhub: FUNC=check_rhub
+check_rhub: DEVTOOLSARG=interactive=FALSE
+
+dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old check_rhub: .devtools
 
 .PHONY:clean
 clean: clean-vignette
