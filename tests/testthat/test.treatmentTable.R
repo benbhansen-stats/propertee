@@ -8,7 +8,6 @@ test_that("treatmentTable", {
   expect_s3_class(tt, "table")
   expect_length(tt, 2)
   expect_identical(as.character(unique(des@structure$z)), names(tt))
-  expect_identical(table(des@structure$z), tt)
 
   des <- RCT_Design(o ~ uoa(cid1, cid2), data = simdata)
 
