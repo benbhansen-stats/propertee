@@ -137,14 +137,15 @@ g1 <- lm(nextGPA~R+Z,data=lsoSynth, weights=ett(des,data=lsoSynth))
 ```{r olsGmod2}
 ##this works, but it's annoying to enter in the subset expression a 2nd time:
 g1 <- lm(nextGPA~R+Z,data=lsoSynth, subset=abs(R)<=0.5)
+
 ```
 
 The second is a bounded-influence polynomial model of the type recommended in Sales \& Hansen (2020):
 
 ```{r robGmod}
 g2 <-
-if(require(robustbase)){
-  lmrob(nextGPA~poly(R,5)+Z,data=lsoSynthW)
+if(requireNamespace("robustbase", quietly = TRUE)){
+  robustbase::lmrob(nextGPA~poly(R,5)+Z,data=lsoSynthW)
 } else g1
 ```
 [Put something here evaluating them?]
