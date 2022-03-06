@@ -5,19 +5,22 @@
   uoadata <- design@structure[, varNames(design, "u"), drop = FALSE]
   uoadata$Design_weights <- weights
 
-  # Save original ordering to restore after merging
-  data$orig_ordering <- seq_len(nrow(data))
 
   # Merge with data to expand weights to unit of analysis level
-  merged <- merge(data, uoadata, by = colnames(uoadata)[-ncol(uoadata)])
-
-  # Restore original ordering
-  merged <- merged[order(merged$orig_ordering),]
-
-  # Extract weights from merged data
-  weights <- merged$Design_weights
+  weights <- .merge_preserve_order(data, uoadata,
+                                  by = varNames(design, "u"))$Design_weights
 
   WeightedDesign(weights, Design = design, target = target)
+}
+
+# Internal function to merge data.frames ensuring order of first data.frame is
+# maintained
+.merge_preserve_order <- function(x, ...) {
+  x$..orig_ordering.. <- seq_len(nrow(x))
+  x <- merge(x, ...)
+  x <- x[order(x$..orig_ordering..),]
+  x$..orig_ordering.. <- NULL
+  return(x)
 }
 
 # Internal function to use by to update the design with new variable names
