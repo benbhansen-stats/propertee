@@ -196,3 +196,43 @@ test_that("cov_adj as offset", {
 ##   ate_3 <- c(coef(ate_read_eth_flex)[2] + c(cauc = 0, coef(ate_read_ethnicity_lm)[8:12]), NaN)
 ##   expect_equal(ate_3, ate_1, ignore_attr = TRUE)
 ## })
+
+test_that("cov_adj yields proper variance estimates", {
+  
+  set.seed(230274373)
+  k <- 25
+  n <- 4 * k 
+  x1 <- c(rep(1, 2 * k) , rep(-1, 2 * k))
+  x2 <- c(rep(1, k), rep(-1, 2 * k), rep(1, k))
+  z <- c(rep(1, k), rep(-1, k), rep(1, k), rep(-1, k))
+  
+  # all orthogonal by design
+  expect_equal((t(x1) %*% x2)[1], 0)
+  expect_equal((t(x1) %*% z)[1], 0)
+  expect_equal((t(x2) %*% z)[1], 0)
+  
+  xy <- function(b0 =  1, b1 = 2, b2 = 3, b3 = -1, sigma2 = 4) {
+    y <- b0 + b1 * x1 + b2 * x2 + b3 * z + rnorm(n, sd = sqrt(sigma2))
+    data.frame(id = 1:n, x1 = x1, x2 = x2, z = z, y = y)
+  }
+  
+  df <- xy()
+  mboth <- glm(y ~ x1 + x2 + z, data = df)
+  m1 <- glm(y ~ x1, data = df)
+  
+  # we'll start by manually doing the offest Y - \hat Y
+  m2 <- glm(y ~ x2 + z, data = df, offset = predict(m1))
+  
+  # Because of orthogonality, we should get $\hat \beta_0= \hat \alpha_0$, 
+  # $\hat \beta_1 = \hat \alpha_1$, and $\hat beta_2 = \hat gamma_1$. 
+  
+  expect_equal(coef(mboth), c(coef(m1), coef(m2)[2:3]))
+  
+  # now repeat with cov_adj
+  design <- RCT_Design(z == 1 ~ unitid(id), data = df)
+  m2ca <- glm(y ~ x2 + z, data = df, offset = cov_adj(m1, design = design))
+  
+  expect_equal(coef(mboth), c(coef(m1), coef(m2ca)[2:3]))
+  
+  
+})
