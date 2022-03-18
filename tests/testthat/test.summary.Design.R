@@ -23,4 +23,9 @@ test_that("summary.Design", {
   expect_identical(desrct, summary(desrct)$Design)
   expect_s3_class(summary(desrct)$treatmentTable, "table")
 
+  expect_output(print(summary(desrct)),
+                "group excluded")
+  expect_output(print(summary(desrct), maxUnitPrint = 2),
+                "groups excluded")
+
 })

@@ -519,10 +519,44 @@ test_that(".treatment_as_numeric", {
   txt3 <- .treatment_binary(des3)
   expect_identical(txt1, txt3)
 
-  # Case 3: 2 level ordered
+  # Case 4: 2 level ordered
   des4 <- Obs_Design(as.ordered(z) ~ cluster(cid1, cid2), data = simdata)
   txt4 <- .treatment_binary(des4)
   expect_identical(txt1, txt4)
 
+  # Case 5: 3 level shoukd error
+  des5 <- Obs_Design(o ~ cluster(cid1, cid2), data = simdata)
+  expect_error(.treatment_binary(des5), "not yet")
 
+})
+
+test_that(".convert_treatment_to_factor", {
+  z <- .convert_treatment_to_factor(0:1)
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(factor(1:3))
+  expect_length(z, 3)
+  expect_true(is.factor(z))
+  expect_true(nlevels(z) == 3)
+
+  z <- .convert_treatment_to_factor(c(TRUE, FALSE))
+  expect_length(z, 2)
+  expect_true(is.factor(z))
+
+  z <- .convert_treatment_to_factor(data.frame(x = 0:1))
+  expect_true(is.data.frame(z))
+  expect_true(all(dim(z) == c(2,1)))
+  expect_true(is.factor(z[,1]))
+  expect_equal(colnames(z), "x")
+
+  expect_error(.convert_treatment_to_factor(1:4),
+               "values 0 and 1")
+
+  expect_error(.convert_treatment_to_factor(data.frame(z1 = 0:1,
+                                                       z2 = 0:1)),
+               "Only one treatment")
+
+  expect_error(.convert_treatment_to_factor("a"),
+               "must be numeric")
 })

@@ -376,3 +376,23 @@ test_that("varying treatment types", {
   # end issue18
 
 })
+
+test_that("Weighting respects ordering", {
+  data (simdata)
+  sd <- simdata[c(1, 11, 31),]
+  # Rows 1/2 are z=0, row 3 is z=1
+
+  des <- RCT_Design(z ~ cluster(cid1), data = sd)
+  w1 <- ate(des, data = sd)
+  # Since first two rows are the same, they should have the same weight
+  expect_true(w1[1] == w1[2])
+  expect_true(w1[1] != w1[3])
+
+  # Re-order
+  sd2 <- sd[c(1,3,2),]
+  # Now rows 1 and 3 share treatment
+  w2 <- ate(des, data = sd2)
+  expect_true(w2[1] == w2[3])
+  expect_true(w2[1] != w2[2])
+
+})

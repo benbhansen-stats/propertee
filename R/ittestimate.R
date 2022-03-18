@@ -55,7 +55,7 @@ ittestimate <- function(design,
   # Expand treatment status
   ctdata <- design@structure[, design@columnIndex %in% c("t", "u")]
   colnames(ctdata)[1] <- "Design_Treatment"
-  merged <- merge(data, ctdata, by = colnames(ctdata)[-1])
+  merged <- .merge_preserve_order(data, ctdata, by = colnames(ctdata)[-1])
 
   if (is.null(weights)) {
     wtfn <- switch(target,
