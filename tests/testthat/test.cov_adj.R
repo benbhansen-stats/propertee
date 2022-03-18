@@ -234,5 +234,10 @@ test_that("cov_adj yields proper variance estimates", {
   
   expect_equal(coef(mboth), c(coef(m1), coef(m2ca)[2:3]))
   
+  ## naive case
+  m2naive <- glm(y ~ x2 + z, data = df)
   
+  ## waldo is used by testthat in recent versions
+  expect_false(all(vcov(m2naive) == vcov(m2ca)))
 })
+  
