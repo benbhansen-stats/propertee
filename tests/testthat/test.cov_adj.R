@@ -197,8 +197,8 @@ test_that("cov_adj as offset", {
 ##   expect_equal(ate_3, ate_1, ignore_attr = TRUE)
 ## })
 
-test_that("cov_adj yields proper variance estimates", {
-  
+test_that("cov_adj variance estimates for orthogonal predictors", {
+  library(sandwich)
   set.seed(230274373)
   k <- 25
   n <- 4 * k 
@@ -237,7 +237,20 @@ test_that("cov_adj yields proper variance estimates", {
   ## naive case
   m2naive <- glm(y ~ x2 + z, data = df)
   
-  ## waldo is used by testthat in recent versions
   expect_false(all(vcov(m2naive) == vcov(m2ca)))
+  
+  hc_both  <- vcovHC(mboth, type = "HC0")
+  hc_naive <- vcovHC(m2naive, type = "HC0")
+  hc_m2ca  <- vcovHC(m2ca, type = "HC0")
+  
+  # trim down the bigger model to just the variables in the second stage
+  in_two <- c("(Intercept)", "x2", "z")
+  hc_both_trimmed <- hc_both[in_two, in_two]
+  
+  expect_equal(hc_m2ca, hc_both_trimmed)
+  expect_false(all(hc_naive == hc_m2ca))
+  
+  
 })
   
+
