@@ -254,3 +254,44 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
 })
   
 
+test_that("cov_adj variance estimates for correlated predictors", {
+  library(sandwich)
+  set.seed(230274373)
+  k <- 25
+  n <- 4 * k 
+  x1 <- c(rep(1, 2 * k) , rep(-1, 2 * k))
+  z <- sample(c(rep(1, 2 * k), rep(0, 2 * k)), prob = x1 + 2)
+  
+  xy <- function(b0 =  1, b1 = 2, b2 = 3, sigma2 = 4) {
+    y <- b0 + b1 * x1 + b2 * z + rnorm(n, sd = sqrt(sigma2))
+    data.frame(id = 1:n, x1 = x1,  z = z, y = y)
+  }
+  
+  df <- xy()
+  mboth <- glm(y ~ x1 + z, data = df)
+  m1 <- glm(y ~ x1, data = df)
+  
+  # we'll start by manually doing the offest Y - \hat Y
+  m2 <- glm(y ~ z, data = df, offset = predict(m1))
+  
+  # now repeat with cov_adj
+  design <- RCT_Design(z == 1 ~ unitid(id), data = df)
+  m2ca <- glm(y ~  z, data = df, offset = cov_adj(m1, design = design))
+  ## naive case
+  m2naive <- glm(y ~ z, data = df)
+  
+  expect_false(all(vcov(m2naive) == vcov(m2ca)))
+  
+  hc_both  <- vcovHC(mboth, type = "HC0")
+  hc_naive <- vcovHC(m2naive, type = "HC0")
+  hc_m2ca  <- vcovHC(m2ca, type = "HC0")
+  
+  # trim down the bigger model to just the variables in the second stage
+  in_two <- c("(Intercept)", "z")
+  hc_both_trimmed <- hc_both[in_two, in_two]
+  
+  expect_equal(hc_m2ca, hc_both_trimmed)
+  expect_false(all(hc_naive == hc_m2ca))
+  
+  
+})
