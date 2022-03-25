@@ -1,6 +1,6 @@
 test_that("internal weight function", {
-  data (simdata)
-  des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  data(simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
   wdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
   expect_s4_class(wdes, "WeightedDesign")
@@ -32,7 +32,7 @@ test_that("internal weight function", {
 
 test_that("internal and external weight function agreement", {
   data(simdata)
-  des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
   iwdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
   ewdes <- ate(des, simdata)
@@ -48,8 +48,8 @@ test_that("ate and ett with data argument", {
 
   # n_clusters = n
   data(mtcars)
-  mtcars <- mtcars[-c(5, 11),]
-  des <- RD_Design(am ~ cluster(qsec) + forcing(vs), data = mtcars)
+  mtcars <- mtcars[-c(5, 11), ]
+  des <- rd_design(am ~ cluster(qsec) + forcing(vs), data = mtcars)
 
   wdes <- ate(des, data = mtcars)
 
@@ -67,7 +67,7 @@ test_that("ate and ett with data argument", {
 
   # n_clusters < n
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -86,7 +86,7 @@ test_that("ate and ett with data argument", {
 
 test_that("ate and ett in lm call", {
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
@@ -101,7 +101,7 @@ test_that("ate and ett in lm call", {
 test_that("by", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
 
   w1 <- ate(des, data = simdata)
 
@@ -130,7 +130,7 @@ test_that("by", {
 
   expect_identical(mod1$coef, mod2$coef)
 
-  des <- RD_Design(z ~ unitOfAssignment(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) + block(bid) + forcing(force), data = simdata)
 
   w1 <- ate(des, data = simdata)
 
@@ -144,7 +144,7 @@ test_that("by", {
 
 test_that("Ops", {
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -173,7 +173,7 @@ test_that("Ops", {
 test_that("show WeightedDesign", {
 
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -181,7 +181,7 @@ test_that("show WeightedDesign", {
 })
 test_that("weight function", {
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -194,7 +194,7 @@ test_that("ett/ate treatment weights are correct length", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -210,7 +210,7 @@ test_that("ett/ate treatment weights return numeric", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -226,7 +226,7 @@ test_that("ett treatment weights = 1", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -238,7 +238,7 @@ test_that("ett weights for block with P(Z = 1) = 0.5: 1", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -250,7 +250,7 @@ test_that("ett weights for block with P(Z = 1) = 1/3:  1 or 0.5", {
 
   testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -262,7 +262,7 @@ test_that("ate weights for block with P(Z = 1) = 0.5: 2", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ate(des, data = testdata)
 
@@ -274,7 +274,7 @@ test_that("ate weights for block with P(Z = 1) = 1/3:  3 or 1.5", {
 
   testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid), data = testdata)
 
   wts <- ate(des, data = testdata)
 
@@ -289,7 +289,7 @@ test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
                          z = c(rep(1, 5), rep(0, 5),
                                rep(1, 10), rep(0, 20)))
 
-  des <- RCT_Design(z ~ unitOfAssignment(cid) + block(bid), data = testdata)
+  des <- rct_design(z ~ unit_of_assignment(cid) + block(bid), data = testdata)
 
   wts <- ett(des, data = testdata)
 
@@ -304,11 +304,11 @@ test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
 test_that("formula as object is able to be found in data search", {
   data(simdata)
 
-  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = simdata)
+  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des1))
 
   f <- z ~ uoa(cid1, cid2)
-  des2 <- RCT_Design(f, data = simdata)
+  des2 <- rct_design(f, data = simdata)
   mod2 <- lm(y ~ x, data = simdata, weights = ate(des2))
 
   expect_true(all(mod1$coef == mod2$coef))
@@ -322,26 +322,26 @@ test_that("varying treatment types", {
 
   # ways of representing binary treatments
   # numeric
-  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  des1 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
   mod1 <- lm(y ~ z, data = s2, weights = ate(des1))
   # factor
   s2$z <- as.factor(s2$z)
-  des2 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  des2 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
   mod2 <- lm(y ~ z, data = s2, weights = ate(des2))
   expect_identical(mod1$weights, mod2$weights)
   # ordinal
   s2$z <- as.ordered(s2$z)
-  des3 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  des3 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
   mod3 <- lm(y ~ z, data = s2, weights = ate(des3))
   expect_identical(mod1$weights, mod3$weights)
   # binary
   s2$z <- s2$z == 1
-  des4 <- RCT_Design(z ~ uoa(cid1, cid2), data = s2)
+  des4 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
   mod4 <- lm(y ~ z, data = s2, weights = ate(des4))
   expect_identical(mod1$weights, mod4$weights)
 
   # ordinal treatment
-  do1 <- RCT_Design(o ~ uoa(cid1, cid2), data = s2)
+  do1 <- rct_design(o ~ uoa(cid1, cid2), data = s2)
   # issue18 - temporary tests and warning
   expect_warning(mo1 <- lm(y ~ o, data = s2, weights = ate(do1)))
   expect_true(all(mo1$weights == 1))
@@ -350,26 +350,26 @@ test_that("varying treatment types", {
   s3 <- simdata
   # repeat for ett
   # numeric
-  des1 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  des1 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
   mod1 <- lm(y ~ z, data = s3, weights = ett(des1))
   # factor
   s3$z <- as.factor(s3$z)
-  des2 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  des2 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
   mod2 <- lm(y ~ z, data = s3, weights = ett(des2))
   expect_identical(mod1$weights, mod2$weights)
   # ordinal
   s3$z <- as.ordered(s3$z)
-  des3 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  des3 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
   mod3 <- lm(y ~ z, data = s3, weights = ett(des3))
   expect_identical(mod1$weights, mod3$weights)
   # binary
   s3$z <- s3$z == 1
-  des4 <- RCT_Design(z ~ uoa(cid1, cid2), data = s3)
+  des4 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
   mod4 <- lm(y ~ z, data = s3, weights = ett(des4))
   expect_identical(mod1$weights, mod4$weights)
 
   # ordinal treatment
-  do1 <- RCT_Design(o ~ uoa(cid1, cid2), data = s3)
+  do1 <- rct_design(o ~ uoa(cid1, cid2), data = s3)
   # issue18 - temporary tests and warning
   expect_warning(mo1 <- lm(y ~ o, data = s3, weights = ett(do1)))
   expect_true(all(mo1$weights == 1))
@@ -378,18 +378,18 @@ test_that("varying treatment types", {
 })
 
 test_that("Weighting respects ordering", {
-  data (simdata)
-  sd <- simdata[c(1, 11, 31),]
+  data(simdata)
+  sd <- simdata[c(1, 11, 31), ]
   # Rows 1/2 are z=0, row 3 is z=1
 
-  des <- RCT_Design(z ~ cluster(cid1), data = sd)
+  des <- rct_design(z ~ cluster(cid1), data = sd)
   w1 <- ate(des, data = sd)
   # Since first two rows are the same, they should have the same weight
   expect_true(w1[1] == w1[2])
   expect_true(w1[1] != w1[3])
 
   # Re-order
-  sd2 <- sd[c(1,3,2),]
+  sd2 <- sd[c(1, 3, 2), ]
   # Now rows 1 and 3 share treatment
   w2 <- ate(des, data = sd2)
   expect_true(w2[1] == w2[3])

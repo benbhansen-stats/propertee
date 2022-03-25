@@ -10,8 +10,8 @@ ett(design, data = NULL, by = NULL)
 ate(design, data = NULL, by = NULL)
 }
 \arguments{
-\item{design}{a Design object created by one of \code{RCT_Design}, \code{RD_Design},
-or \code{Obs_Design}.}
+\item{design}{a Design object created by one of \code{rct_design}, \code{rd_design},
+or \code{obs_design}.}
 
 \item{data}{optionally the data for the analysis to be performed on. May be
 excluded if these functions are included as the \code{weights} argument of a

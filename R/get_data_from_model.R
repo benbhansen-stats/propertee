@@ -12,7 +12,7 @@
                          # callstack. Per the documentation, it is experimental
                          # and should be used with caution. We should only be hitting
                          # this if the user passes a predefined formula, e.g.:
-                         # f <- y ~ x, RCT_Design(f)
+                         # f <- y ~ x, rct_design(f)
   } else if (is.call(form)) {
     form <- as.formula(form)
   }
@@ -35,9 +35,9 @@
     form <- as.formula(do.call("substitute", list(form, by)))
   }
 
-  # update formula to always use unitOfAssignment, since if this is the original
+  # update formula to always use unit_of_assignment, since if this is the original
   # call to *_Design, user may have used cluster/uoa/unitid
-  form <- .updateFormToUnitOfAssignment(form)
+  form <- .update_form_to_unit_of_assignment(form)
 
   # Below we try to be intelligent about finding the appropriate data. If this
   # fails, we may have need for a brute force method that just loops through
@@ -59,45 +59,45 @@
   data <- NULL
 
   # Obtain the names of all functions in the callstack
-  fnsCalled <- as.character(lapply(sys.calls(), `[[`, 1))
+  fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
   # Identify all frames which have `model.frame.default` called (or `ittestimate`)
-  modelFramePos <- which(fnsCalled %in% c("model.frame.default", "ittestimate"))
+  model_frame_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
   # Identify the frames in which `ate` or `ett` are passed as weights
-  weightArgs <- lapply(sys.calls(), `[[`, "weights")
+  weights_args <- lapply(sys.calls(), `[[`, "weights")
 
   # Within each `weights` argument, we're looking for the string "ate(" or
   # "ett(", ensuring that the previous character (if there is one: ?) is not a
   # letter, thus ensuring we don't have some oddity like `translate(x)`
   # triggering.
-  atePos <- vapply(lapply(weightArgs, deparse),
+  ate_pos <- vapply(lapply(weights_args, deparse),
                    function(x) any(grepl("[^a-zA-Z]?ate\\(", x)), TRUE)
-  ettPos <- vapply(lapply(weightArgs, deparse),
+  ett_pos <- vapply(lapply(weights_args, deparse),
                    function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
 
-  weightsPos <- which(atePos | ettPos)
+  weights_pos <- which(ate_pos | ett_pos)
 
   # At this point, we know all frames in which the weights are passed,
   # and all frames which are calls to `model.frame.default`. This will identify
   # which frames are both.
-  modelFrameandWeightsPos <- intersect(modelFramePos, weightsPos)
+  model_frame_and_weights_pos <- intersect(model_frame_pos, weights_pos)
 
-  if (length(modelFramePos) < 1) {
+  if (length(model_frame_pos) < 1) {
     warning(paste0("No call to `model.frame` with Design wights in the call stack found.\n",
                    "Trying fallback method to obtain data"))
     try(data <- .fallback(),
         silent = TRUE)
-  } else if (length(modelFrameandWeightsPos) > 1) {
+  } else if (length(model_frame_and_weights_pos) > 1) {
     stop(paste0("Multiple models with weights found on the call stack.\n",
                 "Try splitting the call into multiple lines rather than a single nested model."))
   } else {
 
-    environment(form) <- environment(get("formula", sys.frame(modelFrameandWeightsPos)))
+    environment(form) <- environment(get("formula", sys.frame(model_frame_and_weights_pos)))
     try(data <- do.call(data.frame,
                         c(model.frame(form,
                                       data = get("data",
-                                                 sys.frame(modelFrameandWeightsPos)),
+                                                 sys.frame(model_frame_and_weights_pos)),
                                       na.action = na.pass),
                                      check.names = FALSE)),
         silent = TRUE)

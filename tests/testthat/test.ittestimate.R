@@ -1,7 +1,7 @@
 test_that("ittestimate", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
   it <- ittestimate(des, simdata, "y")
@@ -33,7 +33,7 @@ test_that("ittestimate", {
 
 test_that("ittestimate and lm return the same in simple cases", {
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid),
                    data = simdata)
 
   it <- ittestimate(des, simdata, "y")
@@ -52,7 +52,7 @@ test_that("ittestimate and lm return the same in simple cases", {
 
 test_that("by in ittestimate", {
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
   it1 <- ittestimate(des, simdata, "y")
@@ -89,33 +89,33 @@ test_that("by in ittestimate", {
 
 test_that("covariate adjustment", {
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
   camod <- lm(y ~ x, data = simdata)
 
-  it <- ittestimate(des, simdata, "y", covAdjModel = camod)
-  expect_true(!is.null(it$model$"offset(covAdj)"))
+  it <- ittestimate(des, simdata, "y", cov_adj_model = camod)
+  expect_true(!is.null(it$model$"offset(cov_adj)"))
 
   camod2 <- glm(y ~ x, data = simdata)
 
-  it <- ittestimate(des, simdata, "y", covAdjModel = camod2)
-  expect_true(!is.null(it$model$"offset(covAdj)"))
+  it <- ittestimate(des, simdata, "y", cov_adj_model = camod2)
+  expect_true(!is.null(it$model$"offset(cov_adj)"))
 
-  expect_error(ittestimate(des, simdata, "y", covAdjModel = 1),
+  expect_error(ittestimate(des, simdata, "y", cov_adj_model = 1),
                "support predict")
 })
 
 test_that("manually passing weights", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
 
   myweights <- rep(10.1, nrow(simdata))
 
-  it <- ittestimate(des, simdata, "y", weights = myweights*ate(des))
+  it <- ittestimate(des, simdata, "y", weights = myweights * ate(des))
 
-  expect_true(all(it$weights == myweights*ate(des, data = simdata)))
+  expect_true(all(it$weights == myweights * ate(des, data = simdata)))
 
   expect_error(ittestimate(des, simdata, "y", weights = myweights),
                "must be")
@@ -133,7 +133,7 @@ test_that("manually passing weights", {
 test_that("WeightedDesign argument instead of Design", {
 
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
   wdes <- ate(des, simdata)
@@ -148,12 +148,12 @@ test_that("WeightedDesign argument instead of Design", {
 
 test_that("treatment types", {
   data(simdata)
-  des <- RD_Design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
   it <- ittestimate(des, simdata, "y")
   expect_length(it$coef, 2)
 
-  des <- RD_Design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
   # issue18 extra expect_warning
   expect_warning(it <- ittestimate(des, simdata, "y"))
@@ -161,7 +161,7 @@ test_that("treatment types", {
   expect_length(it$coef, 4)
 
   simdata$dose <- as.ordered(simdata$dose)
-  des <- RD_Design(dose ~ cluster(cid2, cid1) +
+  des <- rd_design(dose ~ cluster(cid2, cid1) +
                      block(bid) + forcing(force),
                    data = simdata)
   # issue18 extra expect_warning

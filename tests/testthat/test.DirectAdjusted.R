@@ -1,7 +1,7 @@
 test_that("DirectAdjusted object", {
 
   data(simdata)
-  des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
@@ -12,7 +12,7 @@ test_that("DirectAdjusted object", {
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 
-  des <- Obs_Design(o ~ cluster(cid2, cid1) + block(bid), data = simdata)
+  des <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   # issue18 - extra expect_warning
   expect_warning(dalm <- DirectAdjusted(lm(y ~ o, data = simdata,
@@ -37,7 +37,7 @@ test_that("DirectAdjusted object", {
 test_that("DirectAdjusted print/show", {
 
   data(simdata)
-  des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
@@ -54,18 +54,18 @@ test_that("DirectAdjusted print/show", {
 test_that("Conversion from lm to DirectAdjusted", {
 
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
   mod <- lm(y~z, data = simdata, weights = ate(des))
 
-  modDA <- as.DirectAdjusted(mod)
+  mod_da <- as.DirectAdjusted(mod)
 
-  expect_s4_class(modDA, "DirectAdjusted")
+  expect_s4_class(mod_da, "DirectAdjusted")
 
-  modIT <- ittestimate(des, simdata, "y")
+  mod_itt <- ittestimate(des, simdata, "y")
 
-  expect_true(all(modDA$coef == modIT$coef))
-  expect_identical(modDA@Design, modIT@Design)
+  expect_true(all(mod_da$coef == mod_itt$coef))
+  expect_identical(mod_da@Design, mod_itt@Design)
 
   expect_error(as.DirectAdjusted(1),
                "lm object")
@@ -84,16 +84,16 @@ test_that("Conversion from lm to DirectAdjusted", {
 
 test_that("vcov, confint, etc", {
   data(simdata)
-  des <- Obs_Design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                          Design = des, target = "ett")
 
   expect_true(is.matrix(vcov(dalm)))
-  expect_equal(dim(vcov(dalm)), c(2,2))
+  expect_equal(dim(vcov(dalm)), c(2, 2))
 
   expect_true(is.matrix(confint(dalm)))
-  expect_equal(dim(confint(dalm)), c(2,2))
+  expect_equal(dim(confint(dalm)), c(2, 2))
 
 
 })

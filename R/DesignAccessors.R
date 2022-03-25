@@ -10,7 +10,7 @@ setGeneric("treatment", function(x) standardGeneric("treatment"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment", "Design", function(x) {
-  x@structure[x@columnIndex == "t"]
+  x@structure[x@column_index == "t"]
 })
 
 ##' @export
@@ -26,8 +26,8 @@ setMethod("treatment<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "t")
 
-  x@structure[x@columnIndex == "t"] <- value
-  names(x@structure)[x@columnIndex == "t"] <- colnames(value)
+  x@structure[x@column_index == "t"] <- value
+  names(x@structure)[x@column_index == "t"] <- colnames(value)
   validObject(x)
   x
 })
@@ -47,44 +47,44 @@ setMethod("treatment<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("unitsOfAssignment", function(x) standardGeneric("unitsOfAssignment"))
+setGeneric("units_of_assignment", function(x) standardGeneric("units_of_assignment"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("unitsOfAssignment", "Design", function(x) {
-  if (x@unitOfAssignmentType == "unitid") {
-    stop("Design specified with `unitid()`, not `unitOfAssignment()`")
+setMethod("units_of_assignment", "Design", function(x) {
+  if (x@unit_of_assignment_type == "unitid") {
+    stop("Design specified with `unitid()`, not `unit_of_assignment()`")
   }
-  if (x@unitOfAssignmentType == "cluster") {
-    stop("Design specified with `cluster()`, not `unitOfAssignment()`")
+  if (x@unit_of_assignment_type == "cluster") {
+    stop("Design specified with `cluster()`, not `unit_of_assignment()`")
   }
-  x@structure[x@columnIndex == "u"]
+  x@structure[x@column_index == "u"]
 })
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("unitsOfAssignment<-", function(x, value) standardGeneric("unitsOfAssignment<-"))
+setGeneric("units_of_assignment<-", function(x, value) standardGeneric("units_of_assignment<-"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("unitsOfAssignment<-", "Design", function(x, value) {
+setMethod("units_of_assignment<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "u")
 
   x <- .update_structure(x, value, "u")
 
-  dupclust <- duplicated(unitsOfAssignment(x))
-  dupall <- duplicated(x@structure[x@columnIndex != "f"])
-  if (any(dupclust)) {
+  dupuoa <- duplicated(units_of_assignment(x))
+  dupall <- duplicated(x@structure[x@column_index != "f"])
+  if (any(dupuoa)) {
 
-    if (sum(dupclust) != sum(dupall)) {
+    if (sum(dupuoa) != sum(dupall)) {
       stop(paste("Fewer new units of assignment then original, but new collapsed",
                  "units would have non-constant treatment and/or",
                  "block structure"))
     }
     warning("Fewer new units of assignment then original, collapsing")
 
-    x@structure <- x@structure[-dupclust,]
+    x@structure <- x@structure[-dupuoa, ]
   }
   validObject(x)
   x
@@ -99,13 +99,13 @@ setGeneric("clusters", function(x) standardGeneric("clusters"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("clusters", "Design", function(x) {
-  if (x@unitOfAssignmentType == "unitid") {
+  if (x@unit_of_assignment_type == "unitid") {
     stop("Design specified with `unitid()`, not `cluster()`")
   }
-  if (x@unitOfAssignmentType == "unitOfAssignment") {
-    stop("Design specified with `unitOfAssignment()`, not `cluster()`")
+  if (x@unit_of_assignment_type == "unit_of_assignment") {
+    stop("Design specified with `unit_of_assignment()`, not `cluster()`")
   }
-  x@structure[x@columnIndex == "u"]
+  x@structure[x@column_index == "u"]
 })
 
 ##' @export
@@ -121,7 +121,7 @@ setMethod("clusters<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "u")
 
   dupclust <- duplicated(clusters(x))
-  dupall <- duplicated(x@structure[x@columnIndex != "f"])
+  dupall <- duplicated(x@structure[x@column_index != "f"])
   if (any(dupclust)) {
 
     if (sum(dupclust) != sum(dupall)) {
@@ -131,7 +131,7 @@ setMethod("clusters<-", "Design", function(x, value) {
     }
     warning("Fewer new clusters then original, collapsing")
 
-    x@structure <- x@structure[-dupclust,]
+    x@structure <- x@structure[-dupclust, ]
   }
   validObject(x)
   x
@@ -146,13 +146,13 @@ setGeneric("unitids", function(x) standardGeneric("unitids"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("unitids", "Design", function(x) {
-  if (x@unitOfAssignmentType == "cluster") {
+  if (x@unit_of_assignment_type == "cluster") {
     stop("Design specified with `cluster()`, not `unitid()`")
   }
-  if (x@unitOfAssignmentType == "unitOfAssignment") {
-    stop("Design specified with `unitOfAssignment()`, not `unitid()`")
+  if (x@unit_of_assignment_type == "unit_of_assignment") {
+    stop("Design specified with `unit_of_assignment()`, not `unitid()`")
   }
-  x@structure[x@columnIndex == "u"]
+  x@structure[x@column_index == "u"]
 })
 
 ##' @export
@@ -168,7 +168,7 @@ setMethod("unitids<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "u")
 
   dupids <- duplicated(unitids(x))
-  dupall <- duplicated(x@structure[x@columnIndex != "f"])
+  dupall <- duplicated(x@structure[x@column_index != "f"])
   if (any(dupids)) {
 
     if (sum(dupids) != sum(dupall)) {
@@ -178,7 +178,7 @@ setMethod("unitids<-", "Design", function(x, value) {
     }
     warning("Fewer new unitids then original, collapsing")
 
-    x@structure <- x@structure[-dupids,]
+    x@structure <- x@structure[-dupids, ]
   }
   validObject(x)
   x
@@ -193,7 +193,7 @@ setGeneric("blocks", function(x) standardGeneric("blocks"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("blocks", "Design", function(x) {
-  x@structure[x@columnIndex == "b"]
+  x@structure[x@column_index == "b"]
 })
 
 ##' @export
@@ -220,7 +220,7 @@ setMethod("forcings", "Design", function(x) {
   if (x@type != "RD") {
     stop("Forcing variable only used in RD designs")
   }
-  x@structure[x@columnIndex == "f"]
+  x@structure[x@column_index == "f"]
 })
 
 ##' @export
@@ -249,22 +249,22 @@ setMethod("forcings<-", "Design", function(x, value) {
 .convert_to_data.frame <- function(value, design, type) {
   if (!is(value, "data.frame")) {
     if (is.null(colnames(value))) {
-      nullName <- TRUE
+      null_name <- TRUE
     } else {
-      nullName <- FALSE
+      null_name <- FALSE
     }
     value <- as.data.frame(value)
     if (nrow(design@structure) != nrow(value)) {
       stop("replacement entries do not have same number of rows as current")
     }
-    if (nullName) {
-      oldNames <- varNames(design, type)
-      if (length(oldNames) > ncol(value)) {
-        oldNames <- oldNames[seq_len(ncol(value))]
-      } else if (length(oldNames) < ncol(value)) {
+    if (null_name) {
+      old_names <- var_names(design, type)
+      if (length(old_names) > ncol(value)) {
+        old_names <- old_names[seq_len(ncol(value))]
+      } else if (length(old_names) < ncol(value)) {
         stop("additional variables must be named")
       }
-      colnames(value) <- oldNames
+      colnames(value) <- old_names
     }
   }
   if (nrow(design@structure) != nrow(value)) {
@@ -278,11 +278,11 @@ setMethod("forcings<-", "Design", function(x, value) {
 # `.convert_to_data.frame` has already been called on `new`
 .update_structure <- function(design, new, type) {
   design@structure <-
-    cbind.data.frame(design@structure[design@columnIndex != type], new)
+    cbind.data.frame(design@structure[design@column_index != type], new)
 
-  design@columnIndex<- c(design@columnIndex[design@columnIndex != type],
-                         rep(type, ncol(new)))
-  names(design@columnIndex) <- colnames(design@structure)
+  design@column_index <- c(design@column_index[design@column_index != type],
+                           rep(type, ncol(new)))
+  names(design@column_index) <- colnames(design@structure)
   validObject(design)
   return(design)
   }
@@ -311,27 +311,27 @@ setMethod("forcings<-", "Design", function(x, value) {
     treatment <- data.frame(treatment)
   }
 
-  if (is.numeric(treatment[,1])) {
-    if (any(!treatment[,1] %in% 0:1)) {
+  if (is.numeric(treatment[, 1])) {
+    if (any(!treatment[, 1] %in% 0:1)) {
       stop("Numerical treatments must only contain values 0 and 1.")
     }
-    treatment[,1] <- as.factor(treatment[,1])
-  } else if (is.logical(treatment[,1])) {
-    treatment[,1] <-  as.factor(treatment[,1])
-  } else if (!is.factor(treatment[,1])) {
+    treatment[, 1] <- as.factor(treatment[, 1])
+  } else if (is.logical(treatment[, 1])) {
+    treatment[, 1] <-  as.factor(treatment[, 1])
+  } else if (!is.factor(treatment[, 1])) {
     stop("Treatment must be binary (0/1), logical, factor or ordered")
   }
 
   # if there are any levels unrepresented in the data, remove them
-  if (length(unique(treatment[,1])) != length(levels(treatment[,1]))) {
+  if (length(unique(treatment[, 1])) != length(levels(treatment[, 1]))) {
     warning("Empty levels found in treatment, removing")
-    treatment[,1] <- droplevels(treatment[,1])
+    treatment[, 1] <- droplevels(treatment[, 1])
   }
 
 
   if (!return_data_frame) {
     # if treatment wasn't passed as a DF, drop dimension
-    treatment <- treatment[,1]
+    treatment <- treatment[, 1]
   }
   return(treatment)
 }

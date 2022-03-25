@@ -90,8 +90,8 @@ While students were grouped within classrooms with the same teacher, the assignm
 
 
 ```{r}
-## STAR_design <- RCT_Design(treatment ~ cluster(studentid) + strata(schoolidk), data = STAR_pre)
-STAR_design <- RCT_Design(treatment ~ cluster(studentid), data = STAR_pre)
+## STAR_design <- rct_design(treatment ~ cluster(studentid) + strata(schoolidk), data = STAR_pre)
+STAR_design <- rct_design(treatment ~ cluster(studentid), data = STAR_pre)
 ```
 We are interested in the treatment effects for the the different ethnicities composing the study population.
 

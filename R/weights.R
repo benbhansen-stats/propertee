@@ -1,6 +1,6 @@
 ##' @title Generate Direct Adjusted Weights
-##' @param design a Design object created by one of `RCT_Design`, `RD_Design`,
-##'   or `Obs_Design`.
+##' @param design a Design object created by one of `rct_design`, `rd_design`,
+##'   or `obs_design`.
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the `weights` argument of a
 ##'   model.
@@ -37,48 +37,46 @@ ate <- function(design, data = NULL, by = NULL) {
 
   #### generate weights
 
-  if(length(levels(design@structure[design@columnIndex == "t"][[1]])) > 2){
+  if (length(levels(design@structure[design@column_index == "t"][[1]])) > 2) {
     warning("weights for non-binary treatments not yet implemented.")
     weights <- rep(1, nrow(design@structure))
-  } else if(!("b" %in% names(table(design@columnIndex)))){
-    # If no block is specified, then E_Z is the proportion of clusters who receive
+    return(.join_design_weights(weights, design, target = target, data = data))
+  }
+
+  txt <- .treatment_binary(design)
+
+  if (length(var_names(design, "b")) == 0) {
+    # If no block is specified, then e_z is the proportion of clusters who receive
     # the treatment.
-    # If a block is specified, then E_Z varies by block and is the proportion
+    e_z <- mean(txt)
+
+    if (target == "ate") {
+      weights <- txt / e_z + (1 - txt) / (1 - e_z)
+    } else if (target == "ett") {
+      weights <- txt + (1 - txt) * e_z / (1 - e_z)
+    } else {
+      stop("Invalid weight target")
+    }
+  } else {
+    # If a block is specified, then e_z varies by block and is the proportion
     # of clusters within the block that receive the treatment.
-    cluster_df <- data.frame(design@structure[design@columnIndex == "u"],
-                             Tx = .treatment_binary(design))
-    E_Z <- mean(cluster_df$Tx)
-    if (target == "ate") {
-      weights <- cluster_df$Tx / E_Z + (1 - cluster_df$Tx) / (1 - E_Z)
-    }
-    if (target == "ett") {
-      weights <- cluster_df$Tx + (1 - cluster_df$Tx) * E_Z / (1 - E_Z)
-    }
-  } else{
-    # Create a data frame at the block level with the block id, the number of
-    # clusters within each block, and the number of clusters receiving the
-    # treatment within each block.
-    # Then, calculate E_Z.
 
-    block_df <- data.frame(blockid = names(table(blocks(design))),
-                           block_units = as.numeric(table(blocks(design))),
-                           tx_units = tapply(.treatment_binary(design),
-                                             design@structure[design@columnIndex == "b"],
-                                             FUN = sum))
-    block_df$E_Z <- block_df$tx_units / block_df$block_units
+    # Identify number of units per block, and number of treated units per blodk
+    block_units <- table(blocks(design))
+    block_tx_units <- tapply(.treatment_binary(design),
+                             blocks(design),
+                             FUN = sum)
+    e_z <- block_tx_units / block_units
 
-    # Create a cluster-level data frame that merges design structure with block
-    # data frame. Add variable Tx that converts treatment to 0/1 for calculation
-    # of weights.
-    cluster_df <- merge(design@structure, block_df,
-                        by.x = colnames(design@structure[which(design@columnIndex == "b")]),
-                        by.y = "blockid")
-    cluster_df$Tx <- .treatment_binary(design)
+    # Expand e_z to cluster-level
+    e_z <- as.numeric(e_z[blocks(design)[, 1]])
+
     if (target == "ate") {
-      weights <- cluster_df$Tx / cluster_df$E_Z + (1 - cluster_df$Tx) / (1 - cluster_df$E_Z)
-    }
-    if (target == "ett") {
-      weights <- cluster_df$Tx + (1 - cluster_df$Tx) * cluster_df$E_Z / (1 - cluster_df$E_Z)
+      weights <- txt / e_z + (1 - txt) / (1 - e_z)
+    } else if (target == "ett") {
+      weights <- txt + (1 - txt) * e_z / (1 - e_z)
+    } else {
+      stop("Invalid weight target")
     }
   }
 

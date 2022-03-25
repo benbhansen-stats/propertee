@@ -9,7 +9,7 @@ ittestimate(
   data,
   outcome,
   target = "ate",
-  covAdjModel = NULL,
+  cov_adj_model = NULL,
   by = NULL,
   ...,
   weights = NULL
@@ -25,7 +25,7 @@ ittestimate(
 \item{target}{a function returning a WeightedDesign object, or either "ate"
 (default) or "ett"}
 
-\item{covAdjModel}{optional; covariable adjustment model}
+\item{cov_adj_model}{optional; covariable adjustment model}
 
 \item{by}{optional; list connecting names of units of
 assignment/clusters/units variables in \code{design} to units of

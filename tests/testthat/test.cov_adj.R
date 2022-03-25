@@ -1,7 +1,7 @@
 test_that("cov_adj basics", {
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
-  des <- RCT_Design(stark == "small" ~ unitid(id), data = STARdata)
+  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
   cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
 
 
@@ -15,7 +15,7 @@ test_that("cov_adj basics", {
 
 test_that("cov_adj as offset", {
   data(simdata)
-  des <- Obs_Design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
   m <- lm(y ~ z, data = simdata,
           offset = cov_adj(cmod),
@@ -26,7 +26,7 @@ test_that("cov_adj as offset", {
 
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
-  des <- RCT_Design(stark == "small" ~ unitid(id), data = STARdata)
+  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
   cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
 
 
@@ -172,7 +172,7 @@ test_that("cov_adj as offset", {
 
 ##   ## NB: treatment must be numeric right now, hence `1 * treatment`
 ##   ## NB: including a strata() arg causes an error
-##   STAR_design <- RCT_Design(I(1 * treatment) ~ cluster(studentid), data = STAR_pre)
+##   STAR_design <- rct_design(I(1 * treatment) ~ cluster(studentid), data = STAR_pre)
 ##   STAR_ate    <- ate(STAR_design)
 ##   STAR_ett    <- ett(STAR_design)
 
@@ -201,97 +201,97 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
   library(sandwich)
   set.seed(230274373)
   k <- 25
-  n <- 4 * k 
-  x1 <- c(rep(1, 2 * k) , rep(-1, 2 * k))
+  n <- 4 * k
+  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
   x2 <- c(rep(1, k), rep(-1, 2 * k), rep(1, k))
   z <- c(rep(1, k), rep(-1, k), rep(1, k), rep(-1, k))
-  
+
   # all orthogonal by design
   expect_equal((t(x1) %*% x2)[1], 0)
   expect_equal((t(x1) %*% z)[1], 0)
   expect_equal((t(x2) %*% z)[1], 0)
-  
+
   xy <- function(b0 =  1, b1 = 2, b2 = 3, b3 = -1, sigma2 = 4) {
     y <- b0 + b1 * x1 + b2 * x2 + b3 * z + rnorm(n, sd = sqrt(sigma2))
     data.frame(id = 1:n, x1 = x1, x2 = x2, z = z, y = y)
   }
-  
+
   df <- xy()
   mboth <- glm(y ~ x1 + x2 + z, data = df)
   m1 <- glm(y ~ x1, data = df)
-  
+
   # we'll start by manually doing the offest Y - \hat Y
   m2 <- glm(y ~ x2 + z, data = df, offset = predict(m1))
-  
-  # Because of orthogonality, we should get $\hat \beta_0= \hat \alpha_0$, 
-  # $\hat \beta_1 = \hat \alpha_1$, and $\hat beta_2 = \hat gamma_1$. 
-  
+
+  # Because of orthogonality, we should get $\hat \beta_0= \hat \alpha_0$,
+  # $\hat \beta_1 = \hat \alpha_1$, and $\hat beta_2 = \hat gamma_1$.
+
   expect_equal(coef(mboth), c(coef(m1), coef(m2)[2:3]))
-  
+
   # now repeat with cov_adj
-  design <- RCT_Design(z == 1 ~ unitid(id), data = df)
+  design <- rct_design(z == 1 ~ unitid(id), data = df)
   m2ca <- glm(y ~ x2 + z, data = df, offset = cov_adj(m1, design = design))
-  
+
   expect_equal(coef(mboth), c(coef(m1), coef(m2ca)[2:3]))
-  
+
   ## naive case
   m2naive <- glm(y ~ x2 + z, data = df)
-  
+
   expect_false(all(vcov(m2naive) == vcov(m2ca)))
-  
+
   hc_both  <- vcovHC(mboth, type = "HC0")
   hc_naive <- vcovHC(m2naive, type = "HC0")
   hc_m2ca  <- vcovHC(m2ca, type = "HC0")
-  
+
   # trim down the bigger model to just the variables in the second stage
   in_two <- c("(Intercept)", "x2", "z")
   hc_both_trimmed <- hc_both[in_two, in_two]
-  
+
   expect_equal(hc_m2ca, hc_both_trimmed)
   expect_false(all(hc_naive == hc_m2ca))
-  
-  
+
+
 })
-  
+
 
 test_that("cov_adj variance estimates for correlated predictors", {
   library(sandwich)
   set.seed(230274373)
   k <- 25
-  n <- 4 * k 
-  x1 <- c(rep(1, 2 * k) , rep(-1, 2 * k))
+  n <- 4 * k
+  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
   z <- sample(c(rep(1, 2 * k), rep(0, 2 * k)), prob = x1 + 2)
-  
+
   xy <- function(b0 =  1, b1 = 2, b2 = 3, sigma2 = 4) {
     y <- b0 + b1 * x1 + b2 * z + rnorm(n, sd = sqrt(sigma2))
     data.frame(id = 1:n, x1 = x1,  z = z, y = y)
   }
-  
+
   df <- xy()
   mboth <- glm(y ~ x1 + z, data = df)
   m1 <- glm(y ~ x1, data = df)
-  
+
   # we'll start by manually doing the offest Y - \hat Y
   m2 <- glm(y ~ z, data = df, offset = predict(m1))
-  
+
   # now repeat with cov_adj
-  design <- RCT_Design(z == 1 ~ unitid(id), data = df)
+  design <- rct_design(z == 1 ~ unitid(id), data = df)
   m2ca <- glm(y ~  z, data = df, offset = cov_adj(m1, design = design))
   ## naive case
   m2naive <- glm(y ~ z, data = df)
-  
+
   expect_false(all(vcov(m2naive) == vcov(m2ca)))
-  
+
   hc_both  <- vcovHC(mboth, type = "HC0")
   hc_naive <- vcovHC(m2naive, type = "HC0")
   hc_m2ca  <- vcovHC(m2ca, type = "HC0")
-  
+
   # trim down the bigger model to just the variables in the second stage
   in_two <- c("(Intercept)", "z")
   hc_both_trimmed <- hc_both[in_two, in_two]
-  
+
   expect_equal(hc_m2ca, hc_both_trimmed)
   expect_false(all(hc_naive == hc_m2ca))
-  
-  
+
+
 })

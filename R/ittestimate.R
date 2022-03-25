@@ -4,7 +4,7 @@
 ##' @param outcome string containing name of outcome variable in `data`
 ##' @param target a function returning a WeightedDesign object, or either "ate"
 ##'   (default) or "ett"
-##' @param covAdjModel optional; covariable adjustment model
+##' @param cov_adj_model optional; covariable adjustment model
 ##' @param by optional; list connecting names of units of
 ##'   assignment/clusters/units variables in `design` to units of
 ##'   assignment/clusters/units variables in `data`
@@ -20,7 +20,7 @@ ittestimate <- function(design,
                         data,
                         outcome,
                         target = "ate",
-                        covAdjModel = NULL,
+                        cov_adj_model = NULL,
                         by = NULL,
                         ...,
                         weights = NULL) {
@@ -44,8 +44,8 @@ ittestimate <- function(design,
     stop("outcome must be a column in data")
   }
 
-  if (!is.null(covAdjModel)) {
-    covAdj <- cov_adj(covAdjModel, design = design)
+  if (!is.null(cov_adj_model)) {
+    cov_adj <- cov_adj(cov_adj_model, design = design)
   }
 
   if (!is.null(by)) {
@@ -53,7 +53,7 @@ ittestimate <- function(design,
   }
 
   # Expand treatment status
-  ctdata <- design@structure[, design@columnIndex %in% c("t", "u")]
+  ctdata <- design@structure[, design@column_index %in% c("t", "u")]
   colnames(ctdata)[1] <- "Design_Treatment"
   merged <- .merge_preserve_order(data, ctdata, by = colnames(ctdata)[-1])
 
@@ -61,7 +61,7 @@ ittestimate <- function(design,
     wtfn <- switch(target,
                    "ate" = ate,
                    "ett" = ett,
-                   stop('invalid target'))
+                   stop("invalid target"))
     weights <- wtfn(design, merged)
   } else {
     if (length(weights) != nrow(merged)) {
@@ -73,8 +73,8 @@ ittestimate <- function(design,
   }
 
 
-  if (!is.null(covAdjModel)) {
-    model <- lm(merged[, outcome] ~ Design_Treatment + offset(covAdj),
+  if (!is.null(cov_adj_model)) {
+    model <- lm(merged[, outcome] ~ Design_Treatment + offset(cov_adj),
                 data = merged, weights = weights, ...)
   } else {
     model <- lm(merged[, outcome] ~ Design_Treatment,

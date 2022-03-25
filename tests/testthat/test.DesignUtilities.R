@@ -1,12 +1,12 @@
 test_that("Design formula checking", {
   expect_true(.check_design_formula(y ~ cluster(x)))
-  expect_true(.check_design_formula(y ~ cluster(x,z,q,r)))
+  expect_true(.check_design_formula(y ~ cluster(x, z, q, r)))
   expect_true(.check_design_formula(y ~ unitid(x)))
-  expect_true(.check_design_formula(y ~ unitid(x,z,q,r)))
-  expect_true(.check_design_formula(y ~ unitOfAssignment(x)))
-  expect_true(.check_design_formula(y ~ unitOfAssignment(x,z,q,r)))
+  expect_true(.check_design_formula(y ~ unitid(x, z, q, r)))
+  expect_true(.check_design_formula(y ~ unit_of_assignment(x)))
+  expect_true(.check_design_formula(y ~ unit_of_assignment(x, z, q, r)))
   expect_true(.check_design_formula(y ~ uoa(x)))
-  expect_true(.check_design_formula(y ~ uoa(x,z,q,r)))
+  expect_true(.check_design_formula(y ~ uoa(x, z, q, r)))
 
   expect_error(.check_design_formula(~ cluster(x)),
                "treatment")
@@ -23,11 +23,11 @@ test_that("Design formula checking", {
   expect_error(.check_design_formula(y ~ unitid(x) + unitid(z)),
                "Only one instance of `unitid")
 
-  expect_error(.check_design_formula(y ~ unitOfAssignment(x) + unitOfAssignment(z)),
-               "Only one instance of `unitOf")
+  expect_error(.check_design_formula(y ~ unit_of_assignment(x) + unit_of_assignment(z)),
+               "Only one instance of `unit_of")
 
   expect_error(.check_design_formula(y ~ uoa(x) + uoa(z)),
-               "Only one instance of `unitOf")
+               "Only one instance of `unit_of")
 
   expect_true(.check_design_formula(y ~ cluster(x) + block(z)))
   expect_true(.check_design_formula(y ~ cluster(x) + block(z, a, b, c)))
@@ -39,10 +39,10 @@ test_that("Design formula checking", {
                "only allowed")
 
   expect_true(.check_design_formula(y ~ cluster(x) + forcing(z),
-                                 allowForcing = TRUE))
+                                 allow_forcing = TRUE))
 
   expect_error(.check_design_formula(y ~ cluster(x) + forcing(z) + forcing(q),
-                                  allowForcing = TRUE),
+                                  allow_forcing = TRUE),
                "only one forcing")
 
 })

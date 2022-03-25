@@ -8,14 +8,14 @@
 cov_adj <- function(model, newdata = NULL, design =  NULL) {
   if (is.null(design)) {
     # Identify all frames with a weights argument
-    weightArgs <- lapply(sys.calls(), `[[`, "weights")
+    weights_args <- lapply(sys.calls(), `[[`, "weights")
     # Loop over each frame which has a weight argument.
     # Its most likely the first frame, but perhaps not.
-    for (i in which(!vapply(weightArgs, is.null, logical(1)))) {
-      possibleDesign <- get("weights", sys.frame(i))
-      if (is(possibleDesign, "WeightedDesign")) {
+    for (i in which(!vapply(weights_args, is.null, logical(1)))) {
+      possible_design <- get("weights", sys.frame(i))
+      if (is(possible_design, "WeightedDesign")) {
         # If we have a WeightedDesign, save it and break
-        design <- possibleDesign
+        design <- possible_design
         break()
       }
     }
@@ -26,10 +26,10 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
   }
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  covAdj <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
-                     error = function(e) {
-                       stop(paste("covariate adjustment model",
-                                  "must support predict function"))
-                     })
-  covAdj
+  ca <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
+                 error = function(e) {
+                   stop(paste("covariate adjustment model",
+                              "must support predict function"))
+                 })
+  ca
 }

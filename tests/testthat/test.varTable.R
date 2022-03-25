@@ -1,31 +1,31 @@
-test_that("varTable", {
+test_that("var_table", {
   data(simdata)
-  des <- RCT_Design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  tbl <- varTable(des)
+  tbl <- var_table(des)
 
   expect_true(is(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(3, 2))
 
-  expect_equal(tbl[,1], c("Treatment", "Unit of Assignment", "Block"))
+  expect_equal(tbl[, 1], c("Treatment", "Unit of Assignment", "Block"))
 
-  tbl <- varTable(des, compress = FALSE)
+  tbl <- var_table(des, compress = FALSE)
   expect_true(is(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(3, 3))
-  expect_true(is.na(tbl[1,3]))
-  expect_true(!is.na(tbl[2,3]))
-  expect_true(is.na(tbl[3,3]))
+  expect_true(is.na(tbl[1, 3]))
+  expect_true(!is.na(tbl[2, 3]))
+  expect_true(is.na(tbl[3, 3]))
 
-  tbl <- varTable(des, reportAll = TRUE)
+  tbl <- var_table(des, report_all = TRUE)
   expect_true(is(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(4, 2))
-  expect_true(tbl[4,2] == "")
-  expect_length(unique(tbl[,1]), 4)
+  expect_true(tbl[4, 2] == "")
+  expect_length(unique(tbl[, 1]), 4)
 
-  tbl <- varTable(des, compress = FALSE, reportAll = TRUE)
+  tbl <- var_table(des, compress = FALSE, report_all = TRUE)
   expect_true(is(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(4, 3))

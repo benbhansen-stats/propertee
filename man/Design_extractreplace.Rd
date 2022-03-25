@@ -5,10 +5,10 @@
 \alias{treatment,Design-method}
 \alias{treatment<-}
 \alias{treatment<-,Design-method}
-\alias{unitsOfAssignment}
-\alias{unitsOfAssignment,Design-method}
-\alias{unitsOfAssignment<-}
-\alias{unitsOfAssignment<-,Design-method}
+\alias{units_of_assignment}
+\alias{units_of_assignment,Design-method}
+\alias{units_of_assignment<-}
+\alias{units_of_assignment<-,Design-method}
 \alias{clusters}
 \alias{clusters,Design-method}
 \alias{clusters<-}
@@ -35,13 +35,13 @@ treatment(x) <- value
 
 \S4method{treatment}{Design}(x) <- value
 
-unitsOfAssignment(x)
+units_of_assignment(x)
 
-\S4method{unitsOfAssignment}{Design}(x)
+\S4method{units_of_assignment}{Design}(x)
 
-unitsOfAssignment(x) <- value
+units_of_assignment(x) <- value
 
-\S4method{unitsOfAssignment}{Design}(x) <- value
+\S4method{units_of_assignment}{Design}(x) <- value
 
 clusters(x)
 

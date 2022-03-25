@@ -35,28 +35,32 @@ setMethod("show", "WeightedDesign", function(object) {
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),
-          function(e1, e2) addsubtracterror() )
+          function(e1, e2) addsubtracterror()
+          )
 
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("+", signature(e1 = "numeric", e2 = "WeightedDesign"),
-          function(e1, e2) addsubtracterror() )
+          function(e1, e2) addsubtracterror()
+          )
 
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("-", signature(e1 = "WeightedDesign", e2 = "numeric"),
-          function(e1, e2) addsubtracterror() )
+          function(e1, e2) addsubtracterror()
+          )
 
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("-", signature(e1 = "numeric", e2 = "WeightedDesign"),
-          function(e1, e2) addsubtracterror() )
+          function(e1, e2) addsubtracterror()
+          )
 
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("*", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) {
-            e1@.Data <- e1@.Data*e2
+            e1@.Data <- e1@.Data * e2
             validObject(e1)
             e1
           })
@@ -65,7 +69,7 @@ setMethod("*", signature(e1 = "WeightedDesign", e2 = "numeric"),
 ##' @export
 setMethod("*", signature(e1 = "numeric", e2 = "WeightedDesign"),
           function(e1, e2) {
-            e2@.Data <- e1*e2@.Data
+            e2@.Data <- e1 * e2@.Data
             validObject(e2)
             e2
           })

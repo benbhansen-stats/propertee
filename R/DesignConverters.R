@@ -14,50 +14,50 @@
 ##' @export
 ##' @importFrom stats as.formula update
 ##' @rdname designconversion
-as_RCT_Design <- function(Design, ..., loseforcing = FALSE) {
-  if ( Design@type == "RD") {
+as_rct_design <- function(Design, ..., loseforcing = FALSE) {
+  if (Design@type == "RD") {
     if (!loseforcing) {
       stop("Any `forcing` variables will be dropped. Pass option `loseforcing = TRUE` to proceed.")
     }
     Design <- .remove_forcing(Design)
   }
   Design@type <- "RCT"
-  Design@call[[1]] <- as.name("RCT_Design")
+  Design@call[[1]] <- as.name("rct_design")
   validObject(Design)
   return(Design)
 }
 
 ##' @export
 ##' @rdname designconversion
-as_Obs_Design <- function(Design, ..., loseforcing = FALSE) {
-  if ( Design@type == "RD") {
+as_obs_design <- function(Design, ..., loseforcing = FALSE) {
+  if (Design@type == "RD") {
     if (!loseforcing) {
       stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
     }
     Design <- .remove_forcing(Design)
   }
   Design@type <- "Obs"
-  Design@call[[1]] <- as.name("Obs_Design")
+  Design@call[[1]] <- as.name("obs_design")
   validObject(Design)
   return(Design)
 }
 
 ##' @export
 ##' @rdname designconversion
-as_RD_Design <- function(Design, data, ..., forcing) {
+as_rd_design <- function(Design, data, ..., forcing) {
   if (!is(forcing, "formula")) {
     stop('`forcing` must be entered as a formula such as "~ . + forcing(a, b)"')
   }
 
   origcall <- Design@call
 
-  Design <- RD_Design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
+  Design <- rd_design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
                       data = data,
                       subset = eval(Design@call[["subset"]]))
 
   Design@call <- origcall
-  Design@call[[1]] <- as.name("RD_Design")
-  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing) )
+  Design@call[[1]] <- as.name("rd_design")
+  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing))
 
   validObject(Design)
   return(Design)
@@ -66,8 +66,8 @@ as_RD_Design <- function(Design, data, ..., forcing) {
 # Internal function
 # Removes the forcing column to prepare conversion from RD to another type.
 .remove_forcing <- function(d) {
-  d@structure <- d@structure[, d@columnIndex != "f"]
-  d@columnIndex <- d@columnIndex[d@columnIndex != "f"]
+  d@structure <- d@structure[, d@column_index != "f"]
+  d@column_index <- d@column_index[d@column_index != "f"]
 
   # Remove the "forcing" element from the formula
   d@call[[2]][[3]] <- d@call[[2]][[3]][!grepl("forcing", d@call[[2]][[3]])]

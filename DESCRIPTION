@@ -17,7 +17,8 @@ Suggests:
     knitr,
     rmarkdown,
     robustbase,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    sandwich
 Config/testthat/edition: 3
 Imports:
     stats,

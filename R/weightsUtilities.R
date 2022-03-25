@@ -2,13 +2,13 @@
 .join_design_weights <- function(weights, design, target, data = NULL) {
 
   # Merge uoa data with weights at uoa level
-  uoadata <- design@structure[, varNames(design, "u"), drop = FALSE]
-  uoadata$Design_weights <- weights
+  uoadata <- design@structure[, var_names(design, "u"), drop = FALSE]
+  uoadata$design_weights <- weights
 
 
   # Merge with data to expand weights to unit of analysis level
   weights <- .merge_preserve_order(data, uoadata,
-                                  by = varNames(design, "u"))$Design_weights
+                                  by = var_names(design, "u"))$design_weights
 
   WeightedDesign(weights, Design = design, target = target)
 }
@@ -18,7 +18,7 @@
 .merge_preserve_order <- function(x, ...) {
   x$..orig_ordering.. <- seq_len(nrow(x))
   x <- merge(x, ...)
-  x <- x[order(x$..orig_ordering..),]
+  x <- x[order(x$..orig_ordering..), ]
   x$..orig_ordering.. <- NULL
   return(x)
 }

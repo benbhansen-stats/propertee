@@ -1,6 +1,6 @@
 test_that("Obtaining data for weights", {
   data(simdata)
-  des <- RCT_Design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 

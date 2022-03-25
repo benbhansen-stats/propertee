@@ -14,11 +14,11 @@ setValidity("DirectAdjusted", function(object) {
   if (ncol(object$model) < 3) {
     return("model must contain a treatment predictor")
   }
-  object$model[,2] <- .convert_treatment_to_factor(object$model[, 2, drop = FALSE])
-  if (!is.factor(object$model[,2])) {
+  object$model[, 2] <- .convert_treatment_to_factor(object$model[, 2, drop = FALSE])
+  if (!is.factor(object$model[, 2])) {
     return("treatment variable must be factor")
   }
-  if (all(object$model[1,2] == object$model[,2])) {
+  if (all(object$model[1, 2] == object$model[, 2])) {
     return("treatment variable must not be constant")
   }
   if (is.na(object$coef[2])) {

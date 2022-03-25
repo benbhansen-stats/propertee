@@ -1,8 +1,8 @@
 setClass("Design",
          slots = c(structure = "data.frame",
-                   columnIndex = "character",
+                   column_index = "character",
                    type = "character",
-                   unitOfAssignmentType = "character",
+                   unit_of_assignment_type = "character",
                    call = "call"))
 
 setValidity("Design", function(object) {
@@ -12,51 +12,51 @@ setValidity("Design", function(object) {
   if (any(duplicated(colnames(object@structure)))) {
     return("variables cannot be used more than once")
   }
-  tr <- object@structure[object@columnIndex == "t"]
+  tr <- object@structure[object@column_index == "t"]
   if (ncol(tr) == 0) {
     return("Missing treatment index")
   }
   if (ncol(tr) > 1) {
     return("Only one treatment variable allowed")
   }
-  tr <- tr[,1]
+  tr <- tr[, 1]
   if (is.null(tr) || !is.factor(tr)) {
     return("Invalid treatment; must be factor")
   }
   if (length(unique(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
   }
-  if (ncol(object@structure) != length(object@columnIndex)) {
-    return("@columnIndex does not agree with number of columns in @structure")
+  if (ncol(object@structure) != length(object@column_index)) {
+    return("@column_index does not agree with number of columns in @structure")
   }
-  if (any(colnames(object@structure) != names(object@columnIndex))) {
-    return("name disagree between @structure and @columnIndex")
+  if (any(colnames(object@structure) != names(object@column_index))) {
+    return("name disagree between @structure and @column_index")
   }
-  if (!all(object@columnIndex %in% c("t", "u", "b", "f"))) {
-    wrong <- object@columnIndex[!object@columnIndex %in% c("t", "u", "b", "f")]
-    return(paste("@columnIndex design elements must be [t,u,b,f]. unknown elements:",
+  if (!all(object@column_index %in% c("t", "u", "b", "f"))) {
+    wrong <- object@column_index[!object@column_index %in% c("t", "u", "b", "f")]
+    return(paste("@column_index design elements must be [t,u,b,f]. unknown elements:",
                  paste(wrong, collapse = ", ")))
   }
   if (!object@type %in% c("RCT", "RD", "Obs")) {
     return(paste("@type must be one of [RCT,RD,Obs]. unknown @type:", object@type))
   }
-  if (object@type != "RD" && any(object@columnIndex == "f")) {
+  if (object@type != "RD" && any(object@column_index == "f")) {
     return("Forcing variables only valid in RD")
   }
-  if (object@type == "RD" && !any(object@columnIndex == "f")) {
+  if (object@type == "RD" && !any(object@column_index == "f")) {
     return("RD designs must include at least one forcing variables")
   }
-  if (!object@unitOfAssignmentType %in% c("cluster", "unitid", "unitOfAssignment")) {
-    return('valid `unitOfAssignmentType`s are "unitOfAssignment", "cluster" or "unitid"')
+  if (!object@unit_of_assignment_type %in% c("cluster", "unitid", "unit_of_assignment")) {
+    return('valid `unit_of_assignment_type`s are "unit_of_assignment", "cluster" or "unitid"')
   }
   TRUE
 })
 
 
-New_Design <- function(form, data, type, subset = NULL, call = NULL) {
+new_Design <- function(form, data, type, subset = NULL, call = NULL) {
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
-    warning("Invalid call passed to `New_Design`, using default. Please use RD_Design, RCT_Design, or Obs_Design instead of `New_Design` directly.")
+    warning("Invalid call passed to `new_Design`, using default. Please use rd_design, rct_design, or obs_design instead of `new_Design` directly.")
   }
 
   if (!is.null(subset)) {
@@ -65,9 +65,9 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
-  if (grepl("unitOfAssignment\\([a-zA-Z]", deparse(form)) |
+  if (grepl("unit_of_assignment\\([a-zA-Z]", deparse(form)) |
         grepl("uoa\\([a-zA-Z]", deparse(form))) {
-    autype <- "unitOfAssignment"
+    autype <- "unit_of_assignment"
   } else if (grepl("cluster\\([a-zA-Z]", deparse(form))) {
     autype <- "cluster"
   } else if (grepl("unitid\\([a-zA-Z]", deparse(form))) {
@@ -76,9 +76,9 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
     stop("This error should never be hit!")
   }
 
-  # Ensure whichever unit of assignment function is used, `unitOfAssignment` is
+  # Ensure whichever unit of assignment function is used, `unit_of_assignment` is
   # called
-  form <- .updateFormToUnitOfAssignment(form)
+  form <- .update_form_to_unit_of_assignment(form)
 
   m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
 
@@ -98,7 +98,7 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
     noncon <- m_collapse[differing, index == "u", drop = FALSE]
     cat("\nUnits of assignment with non-constant treatment, block or forcing:\n")
     if (nrow(noncon) >= 6) {
-      print(noncon[1:5,,drop = FALSE])
+      print(noncon[1:5, , drop = FALSE])
       cat("...\n")
     } else {
       print(noncon)
@@ -109,71 +109,62 @@ New_Design <- function(form, data, type, subset = NULL, call = NULL) {
 
   new("Design",
       structure = m_collapse,
-      columnIndex = index,
+      column_index = index,
       type = type,
-      unitOfAssignmentType = autype,
+      unit_of_assignment_type = autype,
       call = call)
 }
 
 ##' Generates a Design object with the given specifications.
 ##'
-##' Generates a randomized control treatment Design (`RCT_Design`), or an
-##' observational Design (`Obs_Design`), or a regression discontinuity Design
-##' (`RD_Design`).
+##' Generates a randomized control treatment Design (`rct_design`), or an
+##' observational Design (`obs_design`), or a regression discontinuity Design
+##' (`rd_design`).
 ##'
-##' The formula must include exactly one of `unitOfAssignment()`, `cluster()`,
-##' or `unitid()` to identify the units of assignment (one or more variables).
-##' If defining an RD_Design, the formula must also include a `forcing()` entry.
-##' The formula may optionally include a `block()` entry as well.
-##'
-##' Vvariable transformation inside the `*_Design` calls are not allowed, as
-##' that can lead to mismatches between the Design objects and future data. In
-##' other words, avoid calls such as `RCT_Design(as.factor(z) ~ ...`, and
-##' instead transform the variable in ALL relevant data sets a prior.
+##' The formula must include exactly one of `unit_of_assignment()`, `uoa()`,
+##' `cluster()`, or `unitid()` to identify the units of assignment (one or more
+##' variables). If defining an rd_design, the formula must also include a
+##' `forcing()` entry. The formula may optionally include a `block()` entry as
+##' well.
 ##' @title Specify Design
-##' @param formula defines the design components
+##' @param formula defines the Design components
 ##' @param data the data set.
-##' @param subset optionally subset the data before creating the design object
+##' @param subset optionally subset the data before creating the Design object
 ##' @return a Design object of the requested type for use in further analysis
 ##' @export
 ##' @rdname Design_objects
-RCT_Design <- function(formula, data, subset = NULL) {
+rct_design <- function(formula, data, subset = NULL) {
   .check_design_formula(formula)
 
-  design <- New_Design(form = formula,
-                       data = data,
-                       type = "RCT",
-                       subset = subset,
-                       call = match.call())
-  return(design)
+  new_Design(form = formula,
+             data = data,
+             type = "RCT",
+             subset = subset,
+             call = match.call())
 }
 
 ##' @export
 ##' @rdname Design_objects
-RD_Design <- function(formula, data, subset = NULL) {
-  .check_design_formula(formula, allowForcing = TRUE)
+rd_design <- function(formula, data, subset = NULL) {
+  .check_design_formula(formula, allow_forcing = TRUE)
 
-
-  design <- New_Design(form = formula,
-                       data = data,
-                       type = "RD",
-                       subset = subset,
-                       call = match.call())
-  return(design)
+  new_Design(form = formula,
+             data = data,
+             type = "RD",
+             subset = subset,
+             call = match.call())
 }
 
 ##' @export
 ##' @rdname Design_objects
-Obs_Design <- function(formula, data, subset = NULL) {
+obs_design <- function(formula, data, subset = NULL) {
   .check_design_formula(formula)
 
-
-  design <- New_Design(form = formula,
-                       data = data,
-                       type = "Obs",
-                       subset = subset,
-                       call = match.call())
-  return(design)
+  new_Design(form = formula,
+             data = data,
+             type = "Obs",
+             subset = subset,
+             call = match.call())
 }
 
 ##' @title Show a Design
@@ -185,8 +176,8 @@ setMethod("show", "Design", function(object) {
                     "RCT" = "Randomized Control Trial",
                     "RD" = "Regression Discontinuity Design",
                     "Obs" = "Observational Study")
-  uoatype <- switch(object@unitOfAssignmentType,
-                    "unitOfAssignment" = "Unit of Assignment",
+  uoatype <- switch(object@unit_of_assignment_type,
+                    "unit_of_assignment" = "Unit of Assignment",
                     "cluster" = "Cluster",
                     "unitid"  = "Unitid")
 
@@ -194,7 +185,7 @@ setMethod("show", "Design", function(object) {
   cat("\n\n")
 
 
-  vartab <- varTable(object)
+  vartab <- var_table(object)
   # Add a nice separating line for printing
   vartab <- rbind(c("---------", "---------"),
                   vartab)
@@ -207,18 +198,18 @@ setMethod("show", "Design", function(object) {
 
 ##' @title Extract names of Design variables
 ##' @param x Design x
-##' @param type one of "t", "u", "b", "f"; for "treatment", "unitOfAssignment",
+##' @param type one of "t", "u", "b", "f"; for "treatment", "unit_of_assignment",
 ##'   "block", and "forcing"
 ##' @return character vector of variable names of the given type
 ##' @export
-varNames <- function(x, type) {
+var_names <- function(x, type) {
   stopifnot(class(x) == "Design")
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "u", "b", "f"))
-  names(x@structure)[x@columnIndex == type]
+  names(x@structure)[x@column_index == type]
 }
 
-# Internal to properly rename columns to strip unitOfAssignment(), block(), etc
+# Internal to properly rename columns to strip unit_of_assignment(), block(), etc
 .rename_model_frame_columns <- function(modframe) {
 
   index <- rep("t", ncol(modframe))
@@ -243,7 +234,7 @@ varNames <- function(x, type) {
     return(list(modelframe, index))
   }
 
-  o <- rename_vars(modframe, index, "unitOfAssignment")
+  o <- rename_vars(modframe, index, "unit_of_assignment")
   modframe <- o[[1]]
   index <- o[[2]]
   o <- rename_vars(modframe, index, "block")
@@ -265,8 +256,8 @@ varNames <- function(x, type) {
 ##' @param ... add'l optional arguments to `table`
 ##' @return a table of treatment by units
 ##' @export
-treatmentTable <- function(design, ...) {
-  tab <- table(design@structure[varNames(design, "t")], ...)
+treatment_table <- function(design, ...) {
+  tab <- table(design@structure[var_names(design, "t")], ...)
   tab <- sort(tab, decreasing = TRUE)
   return(tab)
 }
@@ -278,21 +269,21 @@ treatmentTable <- function(design, ...) {
 ##' @param ... add'l optional arguments to `table`
 ##' @param compress Should multiple variables be compressed into a
 ##'   comma-separated string? Default TRUE.
-##' @param reportAll Should we report all possible structures even if they don't
+##' @param report_all Should we report all possible structures even if they don't
 ##'   exist in the Design? Default FALSE.
 ##' @return a table of variables in the Design structure
 ##' @export
-varTable <- function(design, ..., compress = TRUE, reportAll = FALSE) {
-  uoatype <- switch(design@unitOfAssignmentType,
-                    "unitOfAssignment" = "Unit of Assignment",
+var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
+  uoatype <- switch(design@unit_of_assignment_type,
+                    "unit_of_assignment" = "Unit of Assignment",
                     "cluster" = "Cluster",
                     "unitid"  = "Unitid")
 
   rows <- list()
-  rows[["t"]] <- c("Treatment", varNames(design, "t"))
-  rows[["u"]] <- c(uoatype    , varNames(design, "u"))
-  rows[["b"]] <- c("Block"    , varNames(design, "b"))
-  rows[["f"]] <- c("Forcing"  , varNames(design, "f"))
+  rows[["t"]] <- c("Treatment", var_names(design, "t"))
+  rows[["u"]] <- c(uoatype    , var_names(design, "u"))
+  rows[["b"]] <- c("Block"    , var_names(design, "b"))
+  rows[["f"]] <- c("Forcing"  , var_names(design, "f"))
 
   # Identify if we have more than one variable specified in a specific
   # structure, and if so how ,long
@@ -314,19 +305,19 @@ varTable <- function(design, ..., compress = TRUE, reportAll = FALSE) {
   }
   out <- do.call(rbind, rows)
 
-  if (!reportAll) {
+  if (!report_all) {
     # Drop any rows we don't need
-    out <- out[!is.na(out[,2]),]
+    out <- out[!is.na(out[, 2]), ]
   }
 
   if (compress == TRUE) {
     # If compressing, collapse any repeats if necessary
     if (maxvar > 2) {
-      out2 <- apply(out[,-1], 1, function(x) {
+      out2 <- apply(out[, -1], 1, function(x) {
         x <- x[!is.na(x)]
         return(paste(x, collapse = ", "))
       })
-      out <- cbind(out[,1], out2)
+      out <- cbind(out[, 1], out2)
     }
     colnames(out) <- c("Structure", "Variables")
   } else {
