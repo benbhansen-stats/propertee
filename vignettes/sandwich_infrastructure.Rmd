@@ -129,9 +129,9 @@ $B_{22}$.
 
 ## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
-1\. A {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} object must identify $\mathcal{Q}$, by a key variable table defaulting to the row names of whatever data contributed to the fit of the model being summarized in this Layer (as an *n* by 1 data frame), for consistency with non-default situations where there may be multiple key variables.  
+1\. A {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} object must identify $\mathcal{C}$, by a key variable table defaulting to the row names of whatever data contributed to the fit of the model being summarized in this Layer (as an *n* by 1 data frame), for consistency with non-default situations where there may be multiple key variables.
 
-When there's a cluster/elements distinction, `covmod` will likely be aware of elements but not clusters. That's one reason that $\mathcal{Q}$ is identified at the element level; if it were a collection of clusters, it wouldn't be possible to identify it from `covmod` alone. When we get to calculating covariances, e.g. $B_{21}$, we'll use the design object to identify element-cluster containment associations.  
+When there's a cluster/elements distinction, `covmod` will likely be aware of elements but not clusters. That's one reason that $\mathcal{C}$ is identified at the element level; if it were a collection of clusters, it wouldn't be possible to identify it from `covmod` alone. When we get to calculating covariances, e.g. $B_{21}$, we'll use the design object to identify element-cluster containment associations.
 
 2\. The {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes also carry an `@estfun_maker` slot for a specialized function, a function of data frames returning numeric matrices of estimating functions that align with those data frames.
 
@@ -156,7 +156,7 @@ I understand that `geex` does (b).  I'm attracted to (a).  The two approaches ar
 
 We can take extant calculations of a covariance model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied.
 
-6\. The `VeganLayer` class carries a slot for an estimated B matrix.  `SandwichLayer` does not carry this slot, and that's the whole of the distinction between the `VeganLayer` and `SandwichLayer` classes.
+6\. The `SandwichLayer` class carries a slot for an estimated B ("meat") matrix.  `VeganLayer` does not carry this slot, and that's the whole of the distinction between the `VeganLayer` and `SandwichLayer` classes.
 
 We can take extant calculations of a covariance model's B matrix, with the provisos that we keep track of whatever scaling those calculations may have applied and we look to the study design for clustering.  (I have yet to consider whether use of HC0--3 etc for $B_{11}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{22}$, nor whether heuristics animating these adjustments make sense in this context.)
 
