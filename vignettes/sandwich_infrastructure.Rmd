@@ -7,7 +7,7 @@ vignette: >
   %\VignetteIndexEntry{Enumeration of data objects required for standard errors of prior covariance model-assisted effect estimation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-date: 'October 2021'
+date: 'April 2022'
 ---
 
 ## Context
@@ -40,6 +40,34 @@ school, district or clinic.
 ## Proposal
 
 (Class & function names are tentative.)
+
+<!-- couldn't get the below to render properly--> 
+```{r classdiagram, eval=FALSE, echo=FALSE, fig.height=6, fig.width=6}
+DiagrammeR::mermaid("
+classDiagram
+  VeganLayerKit <|-- SandwichLayerKit
+  VeganLayerKit <|-- VeganLayer
+  SandwichLayerKit <|-- SandwichLayer
+  numeric <|-- SandwichLayer
+  numeric <|-- VeganLayer
+
+  VeganLayerKit: +character covariance_sample_keys
+  VeganLayerKit: +double estfun_matrix
+  VeganLayerKit: +double bread_matrix
+  VeganLayerKit: +function predict_with_gradient
+  VeganLayerKit: +add_meat()
+
+  SandwichLayerKit : +double meat_matrix
+
+  VeganLayer : +double .Data
+  VeganLayer : +double prediction_gradient
+
+  SandwichLayer : +double .Data
+  SandwichLayer : +double prediction_gradient
+")
+```
+<!-- Rendering from https://mermaid.live/ --> 
+![](images/sandwich_layers.png)
 
 - S4 classes `SandwichLayer` and `VeganLayer`, carrying certain extracts of the fit of a linear or asymptotically linear model.
 
