@@ -52,19 +52,24 @@ classDiagram
   numeric <|-- SandwichLayer
   numeric <|-- VeganLayer
 
-  VeganLayerKit: +character covariance_sample_keys
   VeganLayerKit: +double estfun_matrix
   VeganLayerKit: +double bread_matrix
-  VeganLayerKit: +function predict_with_gradient
-  VeganLayerKit: +add_meat()
 
-  SandwichLayerKit : +double meat_matrix
+  VeganLayerKit <|-- PreVeganLayerGLM
+  PreVeganLayerGLM: +integer na.action
+  PreVeganLayerGLM: +terms terms
+  PreVeganLayerGLM: +as.VeganLayer(preobj)
+  PreVeganLayerGLM: +as.SandwichLayer(preobj)
 
-  VeganLayer : +double .Data
-  VeganLayer : +double prediction_gradient
+  VeganLayer: +character keys
+  VeganLayer: +double .Data
+  VeganLayer: +double prediction_gradient
+  VeganLayer: +add_meat()
 
-  SandwichLayer : +double .Data
-  SandwichLayer : +double prediction_gradient
+  SandwichLayer: +character keys
+  SandwichLayer: +double meat_matrix
+  SandwichLayer: +double .Data
+  SandwichLayer: +double prediction_gradient
 ")
 ```
 <!-- Rendering from https://mermaid.live/ --> 
