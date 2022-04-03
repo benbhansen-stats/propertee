@@ -30,12 +30,13 @@ for `treat` coefficients.
 
 The direct adjustment model may be fit in a different context than the
 covariance model, using only the artifacts of that modeling that are
-stored in `cov_adj(covmod)`.  We determine this list, but we want it to
-be a minimal list, for storage, privacy and regulatory reasons.  It's
-imperative that it not contain student- or patient-level data,
-directly or implicitly. Ideally it won't even contain aggregates of
-such data up to a recognizable administrative unit, such as the
-school, district or clinic.
+stored in `cov_adj(covmod)`.  We determine this list, but we want it
+to be a minimal list, for storage, privacy and regulatory reasons. If
+the units of assignment are clusters of students or patients, then
+where feasible the result of `cov_adj(covmod)`/`cov_adj(covmod,
+<...>)` should contain only elements that are aggregated to that
+level.
+
 
 ## Proposal
 
@@ -107,7 +108,17 @@ being $\tau$, with sandwich components $A_{22}$ and $B_{22}$. (The symbols "$\ph
 used as Carroll et al use them, while our "$\tau$" corresponds to
 their "$\mathcal{B}$".)
 
-The leading $n^{-1}$ factor should be struck from the expression for $\mathrm{var}(\hat{\mathcal{B}})$.  Carroll et al's formulas for $A_{11}$, $A_{21}$ and $A_{22}$ then apply, although design-based standard errors call for a different calculations of $B_{11}$, $B_{12}$ and $B_{22}$. With the understanding that we don't apply Carroll et al's formulas for B matrices in terms of estimating functions^[Carroll et al's B-formulas are for model-based SEs without clustering; even when we're calculating model-based and not design-based SEs, we'll need to aggregate (by summing) the elementwise estimating equation contributions to the cluster level, to form cluster-wise estimating equation contributions, before applying their formulas.], we can then take $i$ to range over elements not clusters.    Denote elements represented in covariance and quasiexperimental samples by $\mathcal{C}$ and $\mathcal{Q}$ respectively.
+The leading $n^{-1}$ factor should be struck from the expression for
+$\mathrm{var}(\hat{\mathcal{B}})$.  We take $i$ to range over the
+units of assignment (clusters) not elements^[We'll need to aggregate
+(by summing) the elementwise estimating equation contributions to the
+cluster level, to form cluster-wise estimating equation
+contributions.]. Carroll et al's formulas for $A_{11}$, $A_{21}$ and
+$A_{22}$ then apply, although design-based standard errors call for
+different calculations of $B_{11}$, $B_{12}$ and $B_{22}$.  Denote the
+clusters/units of assignment that are represented in covariance and
+quasiexperimental samples by $\mathcal{C}$ and $\mathcal{Q}$
+respectively.
 
 ## Required materials for SE calculations
 
@@ -116,7 +127,7 @@ To estimate variances and covariances of $\tau$, we'll need to assemble the foll
 1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$; 
 2. Vectors of estimating
 functions $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$
-and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$, along with element-cluster containment relationships (or having been summed to cluster level); 
+and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$; 
 3. For the quasiexperimental sample $\mathcal{Q}$, matrices
 $$\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}):
 i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to
@@ -157,15 +168,16 @@ $B_{22}$.
 
 ## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
-1\. The {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes carry an `@estfun_matrix` slot for a matrix of estimating function contributions, $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\}$ but potentially with aggregation of rows.  These contributions correspond either to members of $\mathcal{C}$ or, in cases where more than one of those have been associated with single unit of assignment described in the Design, with a unit of assigment described in the Design. 
+1\. The {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} classes carry an `@estfun_matrix` slot for a matrix of estimating function contributions, $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\}$ (rows being sums of elementwise contributions).  These contributions correspond either to members of $\mathcal{C}$ or, in cases where more than one of those have been associated with single unit of assignment described in the Design, with a unit of assigment described in the Design. 
 
-2\. A {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} object carries a `covariance_sample_keys` data frame with which to identify rows of the `estfun_matrix` with units of assignment (that may potentially be described in a Design object.  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, how to assemble this info at runtime is an open question. An NA in `covariance_sample_keys` indicates a unit not appearing in the Design. 
+2\. A {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} object carries a `covariance_sample_keys` data frame with which to identify rows of the `estfun_matrix` with units of assignment (that may potentially be described in a Design object.  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. An NA in `covariance_sample_keys` indicates a unit not appearing in the Design. 
 
 3\. The {`Sandwich`/`Vegan`}`Layer` class differs from {`Sandwich`/`Vegan`}`LayerKit` not ony with the inclusion of an `@.Data` slot carrying an numeric vector of predictions, but also an `@prediction_gradient` slot for a numeric matrix.  This matrix has as many rows as there are entries in the `.Data` vector, and as many columns as there are estimating equations.
 
 The `@prediction_gradient` slot carries $\{\nabla_\alpha f_{\alpha}(\tilde{\mathbf{Y}}_i)|_\alpha=\hat\alpha, i \in \mathcal{Q}\}$, where $f_\alpha(\mathbf{Y})$ represents the prediction for data $\mathbf{Y}$ from a fitted model of `class(cov_mod)` with parameters $\alpha$. For $\psi()$'s that use only "predictions" of the covariance model, as ours does, the first derivative of the covariance model predictions as applied to data in $\mathcal{Q}$ will provide sufficient information from the covariance model to complete the calculation of $\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}) \vert_{\alpha=\hat\alpha}: i \in \mathcal{Q}\}$. 
 
-(To calculate these gradients in from what's carried in a {`Sandwich`/`Vegan`}`LayerKit`, there are two options.
+(To calculate these gradients from what's carried in a {`Sandwich`/`Vegan
+`}`LayerKit`, there are two options.
 
 a. Assume that the function in the `@predictor` slot of the `LayerKit` furnishes not only model predictions but also first partial derivatives w.r.t. variables figuring in the prediction.  
 b.  Don't expect partial derivatives from the `@predictor` function, but do expect it to be fast, and use it to figure numerical derivatives of the prediction.
