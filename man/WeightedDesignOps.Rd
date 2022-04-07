@@ -9,7 +9,8 @@
 \alias{*,numeric,WeightedDesign-method}
 \alias{/,WeightedDesign,numeric-method}
 \alias{/,numeric,WeightedDesign-method}
-\title{WeightedDesign Ops}
+\alias{c,WeightedDesign-method}
+\title{\code{WeightedDesign} Ops}
 \usage{
 \S4method{+}{WeightedDesign,numeric}(e1, e2)
 
@@ -26,13 +27,25 @@
 \S4method{/}{WeightedDesign,numeric}(e1, e2)
 
 \S4method{/}{numeric,WeightedDesign}(e1, e2)
+
+\S4method{c}{WeightedDesign}(x, ...)
 }
 \arguments{
-\item{e1}{WeightedDesign or numeric}
+\item{e1}{\code{WeightedDesign} or numeric}
 
-\item{e2}{numeric or WeightedDesign}
+\item{e2}{numeric or \code{WeightedDesign}}
+
+\item{x}{\code{WeightedDesign}}
+
+\item{...}{additional \code{WeightedDesign}s}
 }
 \description{
-WeightedDesigns do not support addition or subtraction, but do support all
-other reasonable operations.
+\code{WeightedDesign}s do not support addition or subtraction, but do
+support all other reasonable operations.
+}
+\details{
+Concatenating \code{WeightedDesign}s with \code{c()} requires both
+individual \code{WeightedDesign}s to come from the same \code{Design} and
+have the target (\code{ate()} or \code{ett()}). Both arguments to \code{c()}
+must be \code{WeightedDesign}.
 }

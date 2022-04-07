@@ -396,3 +396,40 @@ test_that("Weighting respects ordering", {
   expect_true(w2[1] != w2[2])
 
 })
+
+test_that("Combining weighted designs", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+
+  w1 <- ate(des, data = simdata[1:30,])
+  w2 <- ate(des, data = simdata[31:40,])
+  w3 <- ate(des, data = simdata[41:50,])
+
+  c_w <- c(w1, w2, w3)
+  expect_true(is(c_w, "WeightedDesign"))
+  expect_length(c_w, 50)
+  expect_identical(c_w, ate(des, data = simdata))
+
+  w1e <- ett(des, data = simdata[1:30,])
+  w2e <- ett(des, data = simdata[31:40,])
+  w3e <- ett(des, data = simdata[41:50,])
+
+  c_we <- c(w1e, w2e, w3e)
+  expect_true(is(c_we, "WeightedDesign"))
+  expect_length(c_we, 50)
+  expect_identical(c_we, ett(des, data = simdata))
+
+  expect_error(c(w1, 1:5), "with other")
+  expect_error(c(w1, w1e), "same target")
+
+  des2 <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  alt_w1 <- ate(des2, data = simdata)
+
+  expect_error(c(w1, alt_w1), "identical Designs")
+
+  # if the first argument is compatible with WeightedDesign but isn't one (e.g.
+  # numeric vector), c() will return a numeric vector
+  #expect_true(is(c(1:5, w1), "WeightedDesign"))
+})

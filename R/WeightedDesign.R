@@ -26,12 +26,19 @@ setMethod("show", "WeightedDesign", function(object) {
 })
 
 
-##' WeightedDesigns do not support addition or subtraction, but do support all
-##' other reasonable operations.
+##' \code{WeightedDesign}s do not support addition or subtraction, but do
+##' support all other reasonable operations.
 ##'
-##' @title WeightedDesign Ops
-##' @param e1 WeightedDesign or numeric
-##' @param e2 numeric or WeightedDesign
+##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
+##' individual \code{WeightedDesign}s to come from the same \code{Design} and
+##' have the target (\code{ate()} or \code{ett()}). Both arguments to \code{c()}
+##' must be \code{WeightedDesign}.
+##'
+##' @title \code{WeightedDesign} Ops
+##' @param e1 \code{WeightedDesign} or numeric
+##' @param e2 numeric or \code{WeightedDesign}
+##' @param x \code{WeightedDesign}
+##' @param ... additional \code{WeightedDesign}s
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),
@@ -107,3 +114,36 @@ setGeneric("weights")
 setMethod("weights", "WeightedDesign", function(object, ...) {
   as.numeric(object)
 })
+
+##' @rdname WeightedDesignOps
+##' @export
+##' @importFrom methods slot
+setMethod("c", signature(x = "WeightedDesign"),
+          function(x, ...) {
+            dots <- list(...)
+            # x must be a WeightedDesign to get here; ensure all other elements
+            # are as well
+            if (any(vapply(dots, function(k) !is(k, "WeightedDesign"), TRUE))) {
+              stop("WeightedDesigns can only be combined with other WeightedDesigns")
+            }
+
+            # Make sure all Designs are the same. Create a list of all targets,
+            # then check if `unique` returns a single element
+            designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
+            if (length(unique(designs)) > 1) {
+              stop("WeightedDesigns can only be concatenated from identical Designs")
+            }
+
+            # Same with targets
+            targets <- c(x@target, lapply(dots, methods::slot, "target"))
+            if (length(unique(targets)) > 1) {
+              stop("WeightedDesigns can only be concatenated with the same target (ate or ett)")
+            }
+
+            # The `Reduce` call c's together all the .Data in ... . The `init`
+            # argument adds the .Data to it.
+            new("WeightedDesign",
+                Reduce(c, lapply(dots, methods::slot , ".Data"), init = x@.Data),
+                Design = x@Design, target = x@target)
+
+          })
