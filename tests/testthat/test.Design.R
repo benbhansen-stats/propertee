@@ -18,7 +18,7 @@ test_that("Design creation", {
 
   # binary treatment
   d <- new("Design",
-           structure = data.frame(a = factor(0:1), b = c(2, 4)),
+           structure = data.frame(a = 0:1, b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
@@ -28,7 +28,7 @@ test_that("Design creation", {
 
   # >2 treatment levels
   d <- new("Design",
-           structure = data.frame(a = as.factor(c(1, 0, 2)), b = c(2, 4, 6)),
+           structure = data.frame(a = 0:2, b = c(2, 4, 6)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
@@ -36,10 +36,20 @@ test_that("Design creation", {
 
   tests(d)
 
-  # ordinal treatment
+  # character treatment
 
   d <- new("Design",
-           structure = data.frame(a = as.ordered(c(1, 0, 2)), b = c(2, 4, 6)),
+           structure = data.frame(a = letters[1:2], b = c(2, 4)),
+           column_index = c("t", "u"),
+           type = "RCT",
+           unit_of_assignment_type = "cluster",
+           call = fc)
+
+  tests(d)
+
+  # >2 character treatment levels
+  d <- new("Design",
+           structure = data.frame(a = letters[1:3], b = c(2, 4, 6)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
@@ -59,8 +69,8 @@ test_that("Design validity", {
                "positive dimensions")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
-                                          a = as.factor(c(1, 0))),
+                   structure = data.frame(a = 0:1,
+                                          b = 0:1),
                    column_index = c("t", "t"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
@@ -76,7 +86,7 @@ test_that("Design validity", {
                "Missing treatment")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(0, 0)), a = c(1, 0)),
+                   structure = data.frame(a = c(0, 0), a = c(1, 0)),
                    column_index = c("t", "u"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
@@ -84,15 +94,7 @@ test_that("Design validity", {
                "treatment can not be constant")
 
   expect_error(new("Design",
-                   structure = data.frame(a = factor(c(0, 0), levels = c(0, 1)), a = c(1, 0)),
-                   column_index = c("t", "u"),
-                   type = "RCT",
-                   unit_of_assignment_type = "cluster",
-                   call = fc),
-               "treatment can not be constant")
-
-  expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "b"),
                    type = "abc",
@@ -104,14 +106,14 @@ test_that("Design validity", {
                    structure = data.frame(a = c(1, 2),
                                           b = as.factor(c(1, 0)),
                                           c = c(2, 0)),
-                   column_index = c("u", "t"),
+                   column_index = c("t", "u", "u", "u"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
                    call = fc),
                "number of columns")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "k"),
                    type = "RCT",
@@ -120,16 +122,7 @@ test_that("Design validity", {
                "unknown elements")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0),
-                                          b = c(1, 0)),
-                   column_index = c("t", "u"),
-                   type = "RCT",
-                   unit_of_assignment_type = "cluster",
-                   call = fc),
-               "must be factor")
-
-  expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "f"),
                    type = "RCT",
@@ -138,7 +131,7 @@ test_that("Design validity", {
                "Forcing variables only valid")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "u"),
                    type = "RD",
