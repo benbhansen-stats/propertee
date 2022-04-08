@@ -8,21 +8,24 @@
 ##'   assignment variables in `design` to cluster/unit of assignment variables
 ##'   in `data`. Names represent variables in the Design; values represent
 ##'   variables in the data. Only needed if variable names differ.
+##' @param dichotomize optionally, a formula defining the dichotomization of the
+##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
+##'   help for \code{\link{rct_design()}} e.g. for details.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL, by = NULL) {
-  .weights_calc(design, data, by, "ett")
+ett <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
+  .weights_calc(design, data, by, "ett", dichotomize = dichotomize)
 }
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL, by = NULL) {
-  .weights_calc(design, data, by, "ate")
+ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
+  .weights_calc(design, data, by, "ate", dichotomize = dichotomize)
 }
 
 # (Internal) Calculates weights
-.weights_calc <- function(design, data, by, target) {
+.weights_calc <- function(design, data, by, target, dichotomize) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
@@ -31,24 +34,31 @@ ate <- function(design, data = NULL, by = NULL) {
     data <- .get_data_from_model(design@call$formula, by)
   }
 
+  if (!is.null(dichotomize)) {
+    if (is_dichotomized(design)) {
+      warning("design is already dichotomized; over-writing with new `dichotomize`")
+    }
+    design <- dichotomize_design(design, dichotomize  = dichotomize)
+  }
+
   if (!is.null(by)) {
     design <- .update_by(design, data, by)
   }
 
   #### generate weights
 
-  if (length(levels(design@structure[design@column_index == "t"][[1]])) > 2) {
+  txt <- treatment(design)[[1]]
+
+  if (length(unique(txt[!is.na(txt)])) > 2) {
     warning("weights for non-binary treatments not yet implemented.")
     weights <- rep(1, nrow(design@structure))
     return(.join_design_weights(weights, design, target = target, data = data))
   }
 
-  txt <- .treatment_binary(design)
-
   if (length(var_names(design, "b")) == 0) {
     # If no block is specified, then e_z is the proportion of clusters who receive
     # the treatment.
-    e_z <- mean(txt)
+    e_z <- mean(txt, na.rm = TRUE)
 
     if (target == "ate") {
       weights <- txt / e_z + (1 - txt) / (1 - e_z)
@@ -62,10 +72,11 @@ ate <- function(design, data = NULL, by = NULL) {
     # of clusters within the block that receive the treatment.
 
     # Identify number of units per block, and number of treated units per blodk
-    block_units <- table(blocks(design))
-    block_tx_units <- tapply(.treatment_binary(design),
+    block_units <- table(blocks(design)[!is.na(txt), ])
+    block_tx_units <- tapply(txt,
                              blocks(design),
-                             FUN = sum)
+                             FUN = sum,
+                             na.rm = TRUE)
     e_z <- block_tx_units / block_units
 
     # Expand e_z to cluster-level

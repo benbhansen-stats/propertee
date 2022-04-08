@@ -152,7 +152,8 @@ test_that("Design creation", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11), ]
 
-  d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = fc)
+  d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars,
+                      type = "RCT", call = fc, dichotomize = NULL)
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")

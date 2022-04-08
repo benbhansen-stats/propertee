@@ -1,6 +1,5 @@
 # Internal function to expand uoa-level weights to the level of the data
 .join_design_weights <- function(weights, design, target, data = NULL) {
-
   # Merge uoa data with weights at uoa level
   uoadata <- design@structure[, var_names(design, "u"), drop = FALSE]
   uoadata$design_weights <- weights

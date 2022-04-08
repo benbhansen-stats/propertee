@@ -102,3 +102,11 @@ forcing <- unit_of_assignment
                         "unitid" = as.name("unit_of_assignment"))
     as.formula(do.call("substitute", list(form, rename_list)))
 }
+##' Check if Design's treatment was dichotomized
+##'
+##' @param des A design
+##' @return TRUE if \code{des} was dichotomized; FALSE otherwise
+##' @export
+is_dichotomized <- function(des) {
+  length(des@treatment_binary) == 2
+}

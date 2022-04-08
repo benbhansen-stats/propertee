@@ -53,7 +53,8 @@ as_rd_design <- function(Design, data, ..., forcing) {
 
   Design <- rd_design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
                       data = data,
-                      subset = eval(Design@call[["subset"]]))
+                      subset = eval(Design@call[["subset"]]),
+                      dichotomize = Design@treatment_binary[[1]])
 
   Design@call <- origcall
   Design@call[[1]] <- as.name("rd_design")

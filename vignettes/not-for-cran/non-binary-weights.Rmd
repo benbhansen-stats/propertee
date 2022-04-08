@@ -1,0 +1,58 @@
+---
+title: "Non-Binary Treatment"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r, include = FALSE}
+setwd("~/repositories/R/flexida")
+devtools::load_all()
+```
+
+Binary treatments are straightforward:
+
+```{r}
+des1 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+ate(des1, data = simdata)
+```
+
+We now allow non-binary treatment as well:
+
+```{r}
+simdata$dose
+des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+```
+
+Proceeding with this treatment will cause an error:
+
+```{r}
+ate(des2, data = simdata)
+```
+
+Instead, we pass a `dichotomize` argument:
+
+```{r}
+ate(des2, data = simdata, dichotomize = dose < 200 ~ dose >= 200)
+ate(des2, data = simdata, dichotomize = dose > 200 | dose < 100 ~ .)
+ate(des2, data = simdata, dichotomize = . ~ dose %in% c(50, 300))
+ate(des2, data = simdata, dichotomize = dose <= 100 ~ dose == 300)
+```
+
+Alternatively, we could place the dichotimization in the Design instead.
+
+```{r}
+des2b <- dichotomize_design(des2, dose > 200 ~ dose <= 100)
+ate(des2b, data = simdata)
+des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata, dichotomize = dose > 200 ~ dose <= 100)
+ate(des3, data = simdata)
+```
+## Storage of non-binary treatment
+
+When a design's treatment is dichotomized, we replace the original treatment
+with the binarized version, but store the original.
+
+```{r}
+des2@structure
+des2b@structure
+des2b@treatment_binary
+```

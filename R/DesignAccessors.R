@@ -22,8 +22,6 @@ setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
-  value <- .convert_treatment_to_factor(value)
-
   value <- .convert_to_data.frame(value, x, "t")
 
   x@structure[x@column_index == "t"] <- value
@@ -287,51 +285,51 @@ setMethod("forcings<-", "Design", function(x, value) {
   return(design)
   }
 
-# Internal helper function
-# Converts treatment to factor
-.convert_treatment_to_factor <- function(treatment) {
-  if (!(is.data.frame(treatment) |
-          (is.null(dim(treatment)) &
-             (is.numeric(treatment) |
-                is.factor(treatment) |
-                is.logical(treatment))))) {
-    stop("Treatment must be numeric/factor/logical vector or data.frame")
-  }
+## # Internal helper function
+## # Converts treatment to factor
+## .convert_treatment_to_factor <- function(treatment) {
+##   if (!(is.data.frame(treatment) |
+##           (is.null(dim(treatment)) &
+##              (is.numeric(treatment) |
+##                 is.factor(treatment) |
+##                 is.logical(treatment))))) {
+##     stop("Treatment must be numeric/factor/logical vector or data.frame")
+##   }
 
-  return_data_frame <- FALSE
-  if (!is.null(dim(treatment))) {
-    if (ncol(treatment) != 1) {
-      stop("Only one treatment variable allowed")
-    }
-    # If the treatment is named (e.g. column in DF), we'll keep it later...
-    return_data_frame <- TRUE
-  }
-  else {
-    # ... if its not named, convert to DF for processing first
-    treatment <- data.frame(treatment)
-  }
+##   return_data_frame <- FALSE
+##   if (!is.null(dim(treatment))) {
+##     if (ncol(treatment) != 1) {
+##       stop("Only one treatment variable allowed")
+##     }
+##     # If the treatment is named (e.g. column in DF), we'll keep it later...
+##     return_data_frame <- TRUE
+##   }
+##   else {
+##     # ... if its not named, convert to DF for processing first
+##     treatment <- data.frame(treatment)
+##   }
 
-  if (is.numeric(treatment[, 1])) {
-    if (any(!treatment[, 1] %in% 0:1)) {
-      stop("Numerical treatments must only contain values 0 and 1.")
-    }
-    treatment[, 1] <- as.factor(treatment[, 1])
-  } else if (is.logical(treatment[, 1])) {
-    treatment[, 1] <-  as.factor(treatment[, 1])
-  } else if (!is.factor(treatment[, 1])) {
-    stop("Treatment must be binary (0/1), logical, factor or ordered")
-  }
+##   if (is.numeric(treatment[, 1])) {
+##     if (any(!treatment[, 1] %in% 0:1)) {
+##       stop("Numerical treatments must only contain values 0 and 1.")
+##     }
+##     treatment[, 1] <- as.factor(treatment[, 1])
+##   } else if (is.logical(treatment[, 1])) {
+##     treatment[, 1] <-  as.factor(treatment[, 1])
+##   } else if (!is.factor(treatment[, 1])) {
+##     stop("Treatment must be binary (0/1), logical, factor or ordered")
+##   }
 
-  # if there are any levels unrepresented in the data, remove them
-  if (length(unique(treatment[, 1])) != length(levels(treatment[, 1]))) {
-    warning("Empty levels found in treatment, removing")
-    treatment[, 1] <- droplevels(treatment[, 1])
-  }
+##   # if there are any levels unrepresented in the data, remove them
+##   if (length(unique(treatment[, 1])) != length(levels(treatment[, 1]))) {
+##     warning("Empty levels found in treatment, removing")
+##     treatment[, 1] <- droplevels(treatment[, 1])
+##   }
 
 
-  if (!return_data_frame) {
-    # if treatment wasn't passed as a DF, drop dimension
-    treatment <- treatment[, 1]
-  }
-  return(treatment)
-}
+##   if (!return_data_frame) {
+##     # if treatment wasn't passed as a DF, drop dimension
+##     treatment <- treatment[, 1]
+##   }
+##   return(treatment)
+## }

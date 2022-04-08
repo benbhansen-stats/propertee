@@ -4,10 +4,10 @@ WeightedDesign <- setClass("WeightedDesign",
                                      target = "character"))
 
 setValidity("WeightedDesign", function(object) {
-  if (any(object < 0)) {
+  if (any(object[!is.na(object)] < 0)) {
     return("Weights must be non-negative")
   }
-  if (all(object == 0)) {
+  if (all(is.na(object)) || all(object[!is.na(object)] == 0)) {
     return("At least one weight must be positive")
   }
   if (!object@target %in% c("ate", "ett")) {

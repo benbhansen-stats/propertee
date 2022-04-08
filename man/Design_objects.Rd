@@ -6,11 +6,11 @@
 \alias{obs_design}
 \title{Specify Design}
 \usage{
-rct_design(formula, data, subset = NULL)
+rct_design(formula, data, subset = NULL, dichotomize = NULL)
 
-rd_design(formula, data, subset = NULL)
+rd_design(formula, data, subset = NULL, dichotomize = NULL)
 
-obs_design(formula, data, subset = NULL)
+obs_design(formula, data, subset = NULL, dichotomize = NULL)
 }
 \arguments{
 \item{formula}{defines the Design components}
@@ -18,6 +18,9 @@ obs_design(formula, data, subset = NULL)
 \item{data}{the data set.}
 
 \item{subset}{optionally subset the data before creating the Design object}
+
+\item{dichotomize}{optionally, a formula defining the dichotomization of the
+treatment variable if it isn't already \code{0}/\code{1}. See details.}
 }
 \value{
 a Design object of the requested type for use in further analysis
@@ -35,4 +38,40 @@ The formula must include exactly one of \code{unit_of_assignment()}, \code{uoa()
 variables). If defining an rd_design, the formula must also include a
 \code{forcing()} entry. The formula may optionally include a \code{block()} entry as
 well.
+
+The treatment variable passsed into \code{formula} can be either a character
+or an object that can be coerced into \code{numeric} (e.g. \code{factor} or
+\code{logical}). If the treatment is not a \code{\numeric}
+\code{0}/\code{1}, then in order to generate weights with \code{ate()} or
+\code{ett()}, the \code{dichotomize} argument must be used to identify the
+treatment and control groups. The \code{Design} creation functions
+(\code{rct_design()}, \code{rd_design()}, \code{obs_design()}) all support
+the \code{dichotomize} argument, or instead \code{dichotomize} can be passed
+to \code{ett()} and \code{ate()} directly.
+
+The \code{dichotomize} argument should be a formula consisting of a
+conditional statement on both the left-hand side (identifying treatment
+levels associated with "treatment") and the right hand side (identifying
+treatment levels associated with "control"). For example, if your treatment
+variable was called \code{dose}, you might write:
+
+\code{dichotomize = dose > 250 ~ dose <= 250}
+
+The conditionals need not assign all values of treatment to control or
+treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
+\code{200 <= dose <= 300}. Units of assignment with treatment values not
+assigned to either treatment or control as assumed to not recieve either,
+but will be maintained in the Design for proper standard error calculations.
+
+The period (\code{.}) can be used to assign all other units of assignment.
+For example, we could have written the above example as
+
+\code{dichotomize = dose > 250 ~ .}
+
+or
+
+\code{dichotomize = . ~ dose <= 250}
+
+The \code{dichotomize} formula supports all Relational Operators, Logical
+Operators, and \code{\%in\%}.
 }
