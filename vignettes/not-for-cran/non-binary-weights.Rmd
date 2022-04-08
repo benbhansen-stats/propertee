@@ -32,18 +32,24 @@ ate(des2, data = simdata)
 Instead, we pass a `dichotomize` argument:
 
 ```{r}
-ate(des2, data = simdata, dichotomize = dose < 200 ~ dose >= 200)
-ate(des2, data = simdata, dichotomize = dose > 200 | dose < 100 ~ .)
-ate(des2, data = simdata, dichotomize = . ~ dose %in% c(50, 300))
-ate(des2, data = simdata, dichotomize = dose <= 100 ~ dose == 300)
+ate(des2, data = simdata,
+    dichotomize = dose < 200 ~ dose >= 200)
+ate(des2, data = simdata,
+    dichotomize = dose > 200 | dose < 100 ~ .)
+ate(des2, data = simdata,
+    dichotomize = . ~ dose %in% c(50, 300))
+ate(des2, data = simdata,
+    dichotomize = dose <= 100 ~ dose == 300)
 ```
 
 Alternatively, we could place the dichotimization in the Design instead.
 
 ```{r}
-des2b <- dichotomize_design(des2, dose > 200 ~ dose <= 100)
+des2b <- dichotomize_design(des2,
+                            dose >= 200 ~ dose < 100)
 ate(des2b, data = simdata)
-des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata, dichotomize = dose > 200 ~ dose <= 100)
+des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
+                   dichotomize = dose >= 200 ~ dose < 100)
 ate(des3, data = simdata)
 ```
 ## Storage of non-binary treatment
@@ -55,4 +61,16 @@ with the binarized version, but store the original.
 des2@structure
 des2b@structure
 des2b@treatment_binary
+```
+
+## `WeightedDesign`
+
+This ensures that the `@Design` slot inside a `WeightedDesign` object has a
+binary 0/1 treatment, as well as stores (see above) the original treatment data
+if necessary.
+
+```{r}
+wght <- ate(des2b, data = simdata)
+treatment(wght@Design)
+wght@Design@treatment_binary
 ```
