@@ -72,7 +72,7 @@ test_that("Accessing and replacing elements", {
 
   ########## UnitsOfAssignment, reduce duplicates
 
-  treatment(des) <- as.factor(rep(0:1, each = 5))
+  treatment(des) <- rep(0:1, each = 5)
 
   expect_warning(units_of_assignment(des) <- data.frame(c1 = 1, c2 = c(1, 1:9)),
                  "collapsing")
@@ -152,7 +152,7 @@ test_that("Accessing and replacing elements", {
 
   ########## Clusters, reduce duplicates
 
-  treatment(des) <- as.factor(rep(0:1, each = 5))
+  treatment(des) <- rep(0:1, each = 5)
 
   expect_warning(clusters(des) <- data.frame(c1 = 1, c2 = c(1, 1:9)),
                  "collapsing")
@@ -227,7 +227,7 @@ test_that("Accessing and replacing elements", {
 
   ########## Unitids, reduce duplicates
 
-  treatment(des) <- as.factor(rep(0:1, each = 5))
+  treatment(des) <- rep(0:1, each = 5)
 
   expect_warning(unitids(des) <- data.frame(c1 = 1, c2 = c(1, 1:9)),
                  "collapsing")
@@ -490,38 +490,5 @@ test_that("Accessing and replacing elements", {
                "more than once")
   expect_error(rct_design(z ~ cluster(cid1, cid1, cid2), data = simdata),
                "more than once")
-
-})
-
-test_that(".treatment_as_numeric", {
-  # See https://github.com/benbhansen-stats/flexida/wiki/Treatment-storage-and-access
-  data(simdata)
-  # Case 1: numeric 0/1 input
-  des1 <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
-
-  txt1 <- .treatment_binary(des1)
-  expect_true(is.numeric(txt1))
-  expect_true(is.vector(txt1))
-  expect_true(all(txt1 %in% 0:1))
-
-  # Case 2: Binary input
-  simdata$z <- simdata$z == 1
-  des2 <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
-  txt2 <- .treatment_binary(des2)
-  expect_identical(txt1, txt2)
-
-  # Case 3: 2 level categorical
-  des3 <- obs_design(as.factor(z) ~ cluster(cid1, cid2), data = simdata)
-  txt3 <- .treatment_binary(des3)
-  expect_identical(txt1, txt3)
-
-  # Case 4: 2 level ordered
-  des4 <- obs_design(as.ordered(z) ~ cluster(cid1, cid2), data = simdata)
-  txt4 <- .treatment_binary(des4)
-  expect_identical(txt1, txt4)
-
-  # Case 5: 3 level shoukd error
-  des5 <- obs_design(o ~ cluster(cid1, cid2), data = simdata)
-  expect_error(.treatment_binary(des5), "not yet")
 
 })
