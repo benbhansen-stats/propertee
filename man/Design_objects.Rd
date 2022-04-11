@@ -20,7 +20,7 @@ obs_design(formula, data, subset = NULL, dichotomize = NULL)
 \item{subset}{optionally subset the data before creating the Design object}
 
 \item{dichotomize}{optionally, a formula defining the dichotomization of the
-treatment variable if it isn't already \code{0}/\code{1}. See details.}
+treatment variable if it isn't already 0/1 or \code{logical}. See details.}
 }
 \value{
 a Design object of the requested type for use in further analysis
@@ -29,15 +29,15 @@ a Design object of the requested type for use in further analysis
 Generates a Design object with the given specifications.
 }
 \details{
-Generates a randomized control treatment Design (\code{rct_design}), or an
-observational Design (\code{obs_design}), or a regression discontinuity Design
-(\code{rd_design}).
+Generates a randomized control treatment Design (\code{rct_design()}), or an
+observational Design (\code{obs_design()}), or a regression discontinuity
+Design (\code{rd_design()}).
 
-The formula must include exactly one of \code{unit_of_assignment()}, \code{uoa()},
-\code{cluster()}, or \code{unitid()} to identify the units of assignment (one or more
-variables). If defining an rd_design, the formula must also include a
-\code{forcing()} entry. The formula may optionally include a \code{block()} entry as
-well.
+The formula must include exactly one of \code{unit_of_assignment()},
+\code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
+assignment (one or more variables). If defining an rd_design, the formula
+must also include a \code{forcing()} entry. The formula may optionally
+include a \code{block()} entry as well.
 
 The treatment variable passed into the left-hand side of \code{formula} can
 either be \code{logical}, \code{numeric}, or \code{character}. If it is
@@ -79,10 +79,10 @@ The \code{dichotomize} formula supports all Relational Operators, Logical
 Operators, and \code{\%in\%}.
 
 Note that you can specify a conditional logic treatment in the formula (e.g.
-\code{rct_design(dose > 250 ~ unitOfAssignment(...\code}) but we would
-suggest instead passing the treatment variable directly and using
+\code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
+instead passing the treatment variable directly and using
 \code{dichotomize}. Otherwise changing the dichotomization will require
 re-creating the Design, instead of simply using
-\code{dichotomization(design) <-`} or passing \code{dichotomize} to
+\code{dichotomization(design) <-} or passing \code{dichotomize} to
 \code{ate()} or \code{ett()}.
 }

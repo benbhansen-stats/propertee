@@ -3,7 +3,7 @@
 \name{is_dichotomized}
 \alias{is_dichotomized}
 \alias{has_binary_treatment}
-\title{Check if Design's treatment was dichotomized}
+\title{Check if Design has binary treatment}
 \usage{
 is_dichotomized(des)
 
@@ -13,12 +13,27 @@ has_binary_treatment(des)
 \item{des}{A design}
 }
 \value{
-\code{TRUE if \code{des} was dichotomized; \code{FALSE} otherwise
-
-\code{TRUE if \code{des} has a binary treatment; \code{FALSE}
-otherwise
+\code{TRUE} if \code{des} was dichotomized; \code{FALSE} otherwise
 }
 \description{
-A Design's treatment is considered binary if the treatment is numeric with
-only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA}, if the Design is dichotomized.
+These functions determine if a Design is dichotomized
+(\code{is_dichotomized()}) or has access to a binary treatment variable
+(\code{has_binary_treatment()}).
+}
+\details{
+\code{is_dichotomized()} checks for the the presence of a
+\code{@dichotomization} slot in the Design, either passed directly into the
+various \code{*_design()} Design creators, or added afterwards with
+\code{dichotomization(my_design) <-}.
+
+\code{has_binary_treatment()} returns \code{TRUE} if the treatment is
+numeric with only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA},
+if the Design is dichotomized.
+
+Note that if the treatment given into a Design is already binary
+(exclusively measured as encoding only 0's and 1's, or is \code{logical}),
+then \code{has_binary_treatment()} would return \code{TRUE} while
+\code{is_dichotomized()} would return false. Therefore, if your goal is to
+identify whether we can obtain a binary treatment, use
+\code{has_binary_treatment()}.
 }

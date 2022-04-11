@@ -56,13 +56,13 @@ setValidity("Design", function(object) {
   TRUE
 })
 
-
+##' @importFrom stats formula
 new_Design <- function(form,
                        data,
                        type,
                        subset = NULL,
                        call = NULL,
-                       dichotomize = formula()) {
+                       dichotomize = stats::formula()) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -74,7 +74,7 @@ new_Design <- function(form,
   }
 
   # `formula()` is a close equivalent of a NULL formula
-  if (is.null(dichotomize)) dichotomize <- formula()
+  if (is.null(dichotomize)) dichotomize <- stats::formula()
   # the fact that a formula has an environment is playing hell with testing. I
   # don't believe we'll ever need the environment in which the dichotomize
   # formula is created as we use it on wahtever data we need, so setting it
@@ -183,15 +183,15 @@ new_Design <- function(form,
 
 ##' Generates a Design object with the given specifications.
 ##'
-##' Generates a randomized control treatment Design (`rct_design`), or an
-##' observational Design (`obs_design`), or a regression discontinuity Design
-##' (`rd_design`).
+##' Generates a randomized control treatment Design (\code{rct_design()}), or an
+##' observational Design (\code{obs_design()}), or a regression discontinuity
+##' Design (\code{rd_design()}).
 ##'
-##' The formula must include exactly one of `unit_of_assignment()`, `uoa()`,
-##' `cluster()`, or `unitid()` to identify the units of assignment (one or more
-##' variables). If defining an rd_design, the formula must also include a
-##' `forcing()` entry. The formula may optionally include a `block()` entry as
-##' well.
+##' The formula must include exactly one of \code{unit_of_assignment()},
+##' \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
+##' assignment (one or more variables). If defining an rd_design, the formula
+##' must also include a \code{forcing()} entry. The formula may optionally
+##' include a \code{block()} entry as well.
 ##'
 ##' The treatment variable passed into the left-hand side of \code{formula} can
 ##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
@@ -233,11 +233,11 @@ new_Design <- function(form,
 ##' Operators, and \code{%in%}.
 ##'
 ##' Note that you can specify a conditional logic treatment in the formula (e.g.
-##' \code{rct_design(dose > 250 ~ unitOfAssignment(...\code}) but we would
-##' suggest instead passing the treatment variable directly and using
+##' \code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
+##' instead passing the treatment variable directly and using
 ##' \code{dichotomize}. Otherwise changing the dichotomization will require
 ##' re-creating the Design, instead of simply using
-##' \code{dichotomization(design) <-`} or passing \code{dichotomize} to
+##' \code{dichotomization(design) <-} or passing \code{dichotomize} to
 ##' \code{ate()} or \code{ett()}.
 ##'
 ##' @title Specify Design
@@ -245,7 +245,7 @@ new_Design <- function(form,
 ##' @param data the data set.
 ##' @param subset optionally subset the data before creating the Design object
 ##' @param dichotomize optionally, a formula defining the dichotomization of the
-##'   treatment variable if it isn't already \code{0}/\code{1}. See details.
+##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @return a Design object of the requested type for use in further analysis
 ##' @export
 ##' @rdname Design_objects
@@ -288,7 +288,7 @@ obs_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
 
 ##' @title Show a Design
 ##' @param object Design object
-##' @return an invisible copy of `object`
+##' @return an invisible copy of \code{object}
 ##' @export
 setMethod("show", "Design", function(object) {
   destype <- switch(object@type,
@@ -377,7 +377,7 @@ var_names <- function(x, type) {
 ##'
 ##' @title treatment group table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to `table`
+##' @param ... add'l optional arguments to \code{table}
 ##' @return a table of treatment by units
 ##' @export
 treatment_table <- function(design, ...) {
@@ -390,7 +390,7 @@ treatment_table <- function(design, ...) {
 ##'
 ##' @title variable identification table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to `table`
+##' @param ... add'l optional arguments to \code{table}
 ##' @param compress Should multiple variables be compressed into a
 ##'   comma-separated string? Default TRUE.
 ##' @param report_all Should we report all possible structures even if they don't

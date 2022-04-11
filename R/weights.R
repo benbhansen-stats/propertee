@@ -10,7 +10,7 @@
 ##'   variables in the data. Only needed if variable names differ.
 ##' @param dichotomize optionally, a formula defining the dichotomization of the
 ##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
-##'   help for \code{\link{rct_design()}} e.g. for details.
+##'   help for \code{rct_design()} e.g. for details.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
