@@ -11,12 +11,8 @@ setValidity("DirectAdjusted", function(object) {
   if (!is(object$model$"(weights)", "WeightedDesign")) {
     return("weight must be WeightedDesign created by `ate()` or `ett()`")
   }
-  if (ncol(object$model) < 3) {
-    return("model must contain a treatment predictor")
-  }
-  object$model[, 2] <- .convert_treatment_to_factor(object$model[, 2, drop = FALSE])
-  if (!is.factor(object$model[, 2])) {
-    return("treatment variable must be factor")
+  if (!has_binary_treatment(object@Design)) {
+    return("Treatment must be binary or have a dichotomization.")
   }
   if (all(object$model[1, 2] == object$model[, 2])) {
     return("treatment variable must not be constant")
