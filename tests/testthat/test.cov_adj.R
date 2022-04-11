@@ -1,3 +1,7 @@
+old_opt <- options()
+on.exit(options(old_opt))
+options(flexida_warn_on_conditional_treatment = FALSE)
+
 test_that("cov_adj basics", {
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
@@ -295,3 +299,5 @@ test_that("cov_adj variance estimates for correlated predictors", {
 
 
 })
+
+options(old_opt)
