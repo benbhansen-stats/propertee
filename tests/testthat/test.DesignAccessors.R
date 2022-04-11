@@ -1,10 +1,11 @@
-test_that("Accessing and replacing elements", {
+test_that("Accessing and replacing treatment", {
   data(simdata)
 
-  ##### Treatment
   des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
+  expect_equal(dim(treatment(des)), c(10, 1))
+  expect_true(is.numeric(treatment(des)[, 1]))
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
 
   treatment(des) <- rep(0:1, each = 5)
@@ -25,7 +26,45 @@ test_that("Accessing and replacing elements", {
   expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
 
-  ##### UnitsOfAssignment
+  # no dichotomization
+  expect_identical(treatment(des), treatment(des, binary = TRUE))
+  expect_identical(treatment(des, binary = FALSE), treatment(des, binary = TRUE))
+
+  des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata, dichotomize = dose <= 100 ~ dose == 200)
+
+  expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
+  expect_identical(treatment(des), treatment(des, binary = FALSE))
+  tt <- treatment(des, binary = TRUE)
+
+  expect_equal(dim(tt), c(10, 1))
+  expect_true(is.numeric(tt[, 1]))
+  expect_true(all(tt[, 1] %in% c(0, 1, NA)))
+  expect_equal(colnames(tt), "z__")
+
+  ############ .bin_txt
+
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_identical(treatment(des)[, 1], .bin_txt(des))
+
+  des <- rd_design(o ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata, dichotomize = o >= 3 ~ .)
+
+  expect_true(all(.bin_txt(des) %in% c(0, 1, NA)))
+  expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
+
+  des <- rd_design(o ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_error(.bin_txt(des), "cannot be obtained")
+
+})
+
+test_that("Accessing and replacing unit of assignment", {
+  data(simdata)
+
   des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
@@ -104,8 +143,11 @@ test_that("Accessing and replacing elements", {
                    data = simdata)
   expect_identical(units_of_assignment(des), des@structure[, 2:3])
 
+})
 
-  ##### Clusters
+test_that("Accessing and replacing clusters", {
+  data(simdata)
+
   des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
@@ -178,8 +220,10 @@ test_that("Accessing and replacing elements", {
   clusters(des2) <- m
   expect_identical(var_names(des2, "u"), colnames(m))
   expect_true(all(m == clusters(des2)))
+})
 
-  ##### Unitids
+test_that("Accessing and replacing unitids", {
+  data(simdata)
 
   des <- rd_design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
@@ -254,7 +298,13 @@ test_that("Accessing and replacing elements", {
   expect_identical(var_names(des2, "u"), colnames(m))
   expect_true(all(m == unitids(des2)))
 
-  ##### unit_of_assignment vs unitid vs clusters
+})
+
+test_that("Accessing and replacing uoa vs unitid vs cluster", {
+  data(simdata)
+
+  des <- rd_design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
 
   # created with unitid
   expect_error(clusters(des), "not `cluster")
@@ -277,8 +327,10 @@ test_that("Accessing and replacing elements", {
                    data = simdata)
   expect_error(unitids(des), "not `unitid")
   expect_error(clusters(des), "not `cluster")
+})
 
-  ##### Blocks
+test_that("Accessing and replacing blocks", {
+  data(simdata)
 
   des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
@@ -378,9 +430,12 @@ test_that("Accessing and replacing elements", {
   blocks(des2) <- df
   expect_identical(var_names(des2, "b"), colnames(df))
   expect_true(all(blocks(des2) == df))
+})
 
 
-  #### Forcing
+test_that("Accessing and replacing forcing", {
+  data(simdata)
+
   des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata)
 
@@ -491,4 +546,55 @@ test_that("Accessing and replacing elements", {
   expect_error(rct_design(z ~ cluster(cid1, cid1, cid2), data = simdata),
                "more than once")
 
+})
+
+
+test_that("Accessing and replacing dichotomization", {
+  data(simdata)
+
+  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
+                    dichotomize = dose >= 250 ~ dose < 100)
+
+  dd <- dichotomization(des)
+  expect_true(is(dd, "formula"))
+  expect_length(dd, 3)
+
+  expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
+
+  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
+  dd <- dichotomization(des)
+  expect_true(is(dd, "formula"))
+  expect_length(dd, 0)
+
+
+  # assignment
+
+  dichotomization(des) <- dose >= 250 ~ dose < 100
+
+  expect_true(is_dichotomized(des))
+  dd <- dichotomization(des)
+  expect_true(is(dd, "formula"))
+  expect_length(dd, 3)
+
+  expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
+
+  # remove dichot with `formula()`
+  dichotomization(des) <- formula()
+  dd <- dichotomization(des)
+  expect_true(is(dd, "formula"))
+  expect_length(dd, 0)
+
+  # remove dichot with `NULL` (after re-adding it)
+  dichotomization(des) <- dose >= 250 ~ dose < 100
+  dichotomization(des) <- NULL
+  dd <- dichotomization(des)
+  expect_true(is(dd, "formula"))
+  expect_length(dd, 0)
+
+
+  expect_error(dichotomization(des) <- 1,
+               "not valid")
+  # dichot too short
+  expect_error(dichotomization(des) <- ~ a,
+               "invalid")
 })

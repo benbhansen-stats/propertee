@@ -6,6 +6,10 @@
     stop("`dichotomization` must be formula")
   }
 
+  if (!is.data.frame(trt)) {
+    stop("`trt` is expected to be a named `data.frame` (e.g. from `treatment(des)`)")
+  }
+
   lhs_dot <- rhs_dot <- FALSE
   if (dichot[[3]] == ".") {
     # control group is .
@@ -20,7 +24,7 @@
     lhs_dot <- TRUE
   }
   if (lhs_dot & rhs_dot) {
-    stop("Both dots")
+    stop("At least one side for dichotomization formula must not be `.`")
   }
 
   m <- model.frame(dichot, trt)
@@ -33,7 +37,7 @@
     ditxt <- m[,2] + 2*m[,1] - 1
     ditxt[ditxt == -1] <- NA
     if (any(!is.na(ditxt) & ditxt > 1)) {
-      stop("treatment dichotoization overlaps")
+      stop("treatment dichotomization overlaps")
     }
     return(ditxt)
   }

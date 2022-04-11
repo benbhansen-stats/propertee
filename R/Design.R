@@ -144,13 +144,13 @@ new_Design <- function(form,
                      warning = function(w) {
                        newt
                      }, error = function(e) {
-                       newt
+                       newt # should never hit here (warning only)
                      })
   } else if (!is.numeric(treatment) & !is.character(treatment) & !is.logical(treatment)) {
     # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or a
     # character. It is some other type. Warn user before converting to numeric.
     warning(paste("Treatment variables which are not numeric or character",
-                  "are converted into numeric.\nIt is suggested to do this",
+                  "are converted into numeric.\nIt is STRONGLY suggested to do this",
                   "conversion yourself to ensure it proceeds as you expect."))
     treatment <- as.numeric(treatment)
   }

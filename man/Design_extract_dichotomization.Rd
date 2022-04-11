@@ -18,7 +18,7 @@ dichotomization(x) <- value
 \arguments{
 \item{x}{Design object}
 
-\item{value}{Replacement dichotomization formula}
+\item{value}{Replacement dichotomization formula, or \code{NULL} to remove}
 }
 \value{
 Dichomization formula

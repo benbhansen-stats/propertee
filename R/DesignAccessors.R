@@ -262,7 +262,7 @@ setMethod("forcings<-", "Design", function(x, value) {
 
 ##' Extract or replace dichotomization
 ##' @param x Design object
-##' @param value Replacement dichotomization formula
+##' @param value Replacement dichotomization formula, or \code{NULL} to remove
 ##' @return Dichomization formula
 ##' @export
 ##' @rdname Design_extract_dichotomization
@@ -281,6 +281,9 @@ setGeneric("dichotomization<-", function(x, value) standardGeneric("dichotomizat
 ##' @export
 ##' @rdname Design_extract_dichotomization
 setMethod("dichotomization<-", "Design", function(x, value) {
+  if (is.null(value)) {
+    value <- stats::formula()
+  }
   x@dichotomization <- value
   validObject(x)
   x

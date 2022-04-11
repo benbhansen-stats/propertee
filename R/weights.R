@@ -47,19 +47,14 @@ ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
 
   # Ensure treatment is binary
   if (!has_binary_treatment(design)) {
-    stop("To calculate weights, treatment must either be 0/1 binary, or the Design must have a dichotomization.")
+    stop(paste("To calculate weights, treatment must either be 0/1 binary,\n",
+               "or the Design must have a dichotomization."))
   }
 
 
   #### generate weights
 
   txt <- .bin_txt(design)
-
-  if (length(unique(txt[!is.na(txt)])) > 2) {
-    warning("weights for non-binary treatments not yet implemented.")
-    weights <- rep(1, nrow(design@structure))
-    return(.join_design_weights(weights, design, target = target, data = data))
-  }
 
   if (length(var_names(design, "b")) == 0) {
     # If no block is specified, then e_z is the proportion of clusters who receive
@@ -70,8 +65,6 @@ ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
       weights <- txt / e_z + (1 - txt) / (1 - e_z)
     } else if (target == "ett") {
       weights <- txt + (1 - txt) * e_z / (1 - e_z)
-    } else {
-      stop("Invalid weight target")
     }
   } else {
     # If a block is specified, then e_z varies by block and is the proportion
@@ -92,8 +85,6 @@ ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
       weights <- txt / e_z + (1 - txt) / (1 - e_z)
     } else if (target == "ett") {
       weights <- txt + (1 - txt) * e_z / (1 - e_z)
-    } else {
-      stop("Invalid weight target")
     }
   }
 

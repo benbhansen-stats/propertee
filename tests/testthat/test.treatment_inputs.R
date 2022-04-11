@@ -79,5 +79,20 @@ test_that("Treatment inputs", {
   expect_true(has_binary_treatment(d))
   options(old_opt)
 
+  # Non-conditional but bad variable name
+  names(simdata)[5] <- "z==1"
+  expect_warning(expect_error(d <- rct_design(`z==1`  ~ uoa(cid1, cid2), data = simdata),
+                              "isn't logical"),
+                 "conditional logic")
+
+
   # tests for other things...?
+
+  z <- c(10485849600, 10477641600, 10561104000, 10562745600)
+  d <- data.frame(z = as.Date(as.POSIXct(z, origin = "1582-10-14", tz = "GMT")),
+                  unit = 1:4)
+
+  expect_warning(rct_design(z ~ unitid(unit), data = d),
+                 "STRONGLY suggested")
+
 })

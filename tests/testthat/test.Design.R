@@ -32,6 +32,16 @@ test_that("Design creation", {
 
   tests(d)
 
+  # logical treatment
+  d <- new("Design",
+           structure = data.frame(a = c(TRUE, FALSE), b = c(2, 4)),
+           column_index = c("t", "u"),
+           type = "RCT",
+           unit_of_assignment_type = "cluster",
+           call = fc)
+
+  tests(d)
+
   # >2 treatment levels
   d <- new("Design",
            structure = data.frame(a = 0:2, b = c(2, 4, 6)),
@@ -62,6 +72,7 @@ test_that("Design creation", {
            call = fc)
 
   tests(d)
+
 })
 
 test_that("Design validity", {
