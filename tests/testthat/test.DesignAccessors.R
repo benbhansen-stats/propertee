@@ -7,27 +7,23 @@ test_that("Accessing and replacing elements", {
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
 
-  treatment(des) <- as.factor(rep(0:1, each = 5))
-  expect_equal(treatment(des), data.frame(z = as.factor(rep(0:1, each = 5))))
+  treatment(des) <- rep(0:1, each = 5)
+  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
 
-  df <- data.frame(z = as.factor(rep(0:1, each = 5)))
+  df <- data.frame(z = rep(0:1, each = 5))
   treatment(des) <- df
-  expect_equal(treatment(des), data.frame(z = as.factor(rep(0:1, each = 5))))
+  expect_equal(treatment(des), data.frame(z = rep(0:1, each = 5)))
 
   treatment(des)[1:2, 1] <- 1
   expect_equal(treatment(des),
-               data.frame(z = as.factor(rep(c(1, 0, 1),
-                                            times = c(2, 3, 5)))))
+               data.frame(z = rep(c(1, 0, 1),
+                                  times = c(2, 3, 5))))
 
-  expect_error(treatment(des) <- as.factor(1:5),
+  expect_error(treatment(des) <- 1:5,
                "same number")
 
-  expect_error(treatment(des) <- data.frame(a = as.factor(c(1, 0, 1, 0, 1))),
+  expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
-
-  expect_error(treatment(des) <- matrix(1:5, ncol = 1),
-               "Treatment must be")
-
 
   ##### UnitsOfAssignment
   des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) + forcing(force),
@@ -528,35 +524,4 @@ test_that(".treatment_as_numeric", {
   des5 <- obs_design(o ~ cluster(cid1, cid2), data = simdata)
   expect_error(.treatment_binary(des5), "not yet")
 
-})
-
-test_that(".convert_treatment_to_factor", {
-  z <- .convert_treatment_to_factor(0:1)
-  expect_length(z, 2)
-  expect_true(is.factor(z))
-
-  z <- .convert_treatment_to_factor(factor(1:3))
-  expect_length(z, 3)
-  expect_true(is.factor(z))
-  expect_true(nlevels(z) == 3)
-
-  z <- .convert_treatment_to_factor(c(TRUE, FALSE))
-  expect_length(z, 2)
-  expect_true(is.factor(z))
-
-  z <- .convert_treatment_to_factor(data.frame(x = 0:1))
-  expect_true(is.data.frame(z))
-  expect_true(all(dim(z) == c(2, 1)))
-  expect_true(is.factor(z[, 1]))
-  expect_equal(colnames(z), "x")
-
-  expect_error(.convert_treatment_to_factor(1:4),
-               "values 0 and 1")
-
-  expect_error(.convert_treatment_to_factor(data.frame(z1 = 0:1,
-                                                       z2 = 0:1)),
-               "Only one treatment")
-
-  expect_error(.convert_treatment_to_factor("a"),
-               "must be numeric")
 })

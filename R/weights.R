@@ -38,16 +38,22 @@ ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
     if (is_dichotomized(design)) {
       warning("design is already dichotomized; over-writing with new `dichotomize`")
     }
-    design <- dichotomize_design(design, dichotomize  = dichotomize)
+    dichotomization(design) <- dichotomize
   }
 
   if (!is.null(by)) {
     design <- .update_by(design, data, by)
   }
 
+  # Ensure treatment is binary
+  if (!has_binary_treatment(design)) {
+    stop("To calculate weights, treatment must either be 0/1 binary, or the Design must have a dichotomization.")
+  }
+
+
   #### generate weights
 
-  txt <- treatment(design)[[1]]
+  txt <- .bin_txt(design)
 
   if (length(unique(txt[!is.na(txt)])) > 2) {
     warning("weights for non-binary treatments not yet implemented.")

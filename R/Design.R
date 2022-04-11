@@ -4,11 +4,7 @@ Design <- setClass("Design",
                              type = "character",
                              unit_of_assignment_type = "character",
                              call = "call",
-                             treatment_binary = "list"))
-
-## If user passes a dichotomize argument:
-## treatment_binary[[1]] is formula
-## treatment_binary[[2]] is original treatment
+                             dichotomization = "formula"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -25,7 +21,7 @@ setValidity("Design", function(object) {
     return("Only one treatment variable allowed")
   }
   tr <- tr[, 1]
-  if (is.null(tr) || (!is.numeric(tr) && !is.character(tr))) {
+  if (is.null(tr) || (!is.numeric(tr) && !is.character(tr)) && !is.logical(tr)) {
     return("Invalid treatment; must be numberic or character")
   }
   if (length(unique(tr)) < 2) {
@@ -54,25 +50,20 @@ setValidity("Design", function(object) {
   if (!object@unit_of_assignment_type %in% c("cluster", "unitid", "unit_of_assignment")) {
     return('valid `unit_of_assignment_type`s are "unit_of_assignment", "cluster" or "unitid"')
   }
-  if (!length(object@treatment_binary) %in% c(0, 2)) {
-    return("@treatment_binary wrong length")
-  }
-  if (length(object@treatment_binary) == 2) {
-    if (!is(object@treatment_binary[[1]], "formula")) {
-      return("@treatment_binary[[1]] must be formula")
-    }
-    if (!is.data.frame(object@treatment_binary[[2]])) {
-      return("@treatment_binary[[1]] must be vector")
-    }
-    if (nrow(object@treatment_binary[[2]]) != nrow(object@structure)) {
-      return("@treatment_binary[[1]] and @structure must have same number of elements")
-    }
+  if (!length(object@dichotomization) %in% c(0, 3)) {
+    return("@dichotomization invalid")
   }
   TRUE
 })
 
 
-new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize = NULL) {
+new_Design <- function(form,
+                       data,
+                       type,
+                       subset = NULL,
+                       call = NULL,
+                       dichotomize = formula()) {
+
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
     warning("Invalid call passed to `new_Design`, using default. Please use rd_design, rct_design, or obs_design instead of `new_Design` directly.")
@@ -81,6 +72,14 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
+
+  # `formula()` is a close equivalent of a NULL formula
+  if (is.null(dichotomize)) dichotomize <- formula()
+  # the fact that a formula has an environment is playing hell with testing. I
+  # don't believe we'll ever need the environment in which the dichotomize
+  # formula is created as we use it on wahtever data we need, so setting it
+  # always to the generic interactive environment for simplicity.
+  environment(dichotomize) <- globalenv()
 
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
@@ -109,51 +108,55 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize
 
   rownames(m_collapse) <- NULL
 
-  # If there are any non-numeric, non-string treatment columns, convert to numeric
-  # with a warning.
-  treatment <- m_collapse[, index == "t", drop = FALSE]
-  character_treatment <- vapply(treatment, is.character, TRUE)
-  if (any(!character_treatment)) {
-    # idenify non-character treatments which aren't already numeric
-    non_numeric_treatment <- !character_treatment & !vapply(treatment, is.numeric, TRUE)
-    if (any(non_numeric_treatment)) {
-      warning(paste("Treatment is not numeric or character. Attempting to convert",
-                    "to numeric.\n It is suggested to convert to numeric or",
-                    "character prior to creating Design."))
-      treatment[, non_numeric_treatment] <- lapply(treatment[, non_numeric_treatment, drop = FALSE],
-                                                    as.numeric)
+  ########### Examine treatment variable.
+  treatment <- m_collapse[, index == "t"]
+
+  if (options()$flexida_warn_on_conditional_treatment &
+                grepl("[<>=]", deparse(form[[2]]))) {
+    # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <, =
+    # and if found, evaluate and convert to numeric, but warn users.
+    warning(paste("It appears that you've identified the treatment group",
+                  "using conditional logic\n(by including one of <, >, or =",
+                  "in the left hand side of `form`).\n",
+                  "This is supported, but it is recommended to instead",
+                  "include the non-binary\ntreatment variable in the `form`",
+                  "and use the `dichotomize` to define the groups.\n",
+                  "Using `dichotomize` will make modifying the groups",
+                  "easier in the future\nshould you need to adjust."))
+    # If the user is using conditionals, we'll be converting logical to numeric
+    # later but don't need to the add'l warning message.
+    if (!is.logical(treatment)) {
+      stop(paste("treatment has conditional but isn't logical.\n",
+                 "This may happen if treatment variable name has\n",
+                 "'<', '>', or '=' in it. Rename variable to proceed."))
     }
-    # TODO: HAndle factors/ordered more gracefully
   }
-
-
-  if (!is.null(dichotomize)) {
-    if ("z__" %in% names(data)) {
-      # We name the dichotomized treatment variable "z__", this is just a
-      # warning to users if they happen to have a column in the data of the same
-      # name.
-      warning(paste('Variable "z__" found in data. Due to dichotomization,',
-                    '"z__" is used as the binary treatment variable.\n',
-                    'This isn\' necessarily a problem, but be careful!'))
-    }
-
-    # First, store the dichotomization info
-    treatment_binary <- list(dichotomize = dichotomize,
-                             original_treatment = treatment)
-
-    # Replace treatment with dichotomized version with name "z__"
-    treatment <- data.frame(z__ = .binarize_treatment(treatment, dichotomize))
-
-    # Replace treatment in `m_collapse`. Future-proofing for multiple-treatment
-    # variables, update index as well.
-    m_collapse <- cbind(treatment, m_collapse[index != "t"])
-    index <- c("t", index[index != "t"])
-  } else {
-    # If no dichotomization, `@treatment_binary` is empty list.
-    treatment_binary <- list()
-    m_collapse[, index == "t"] <- treatment
+  else if (is.factor(treatment)) {
+    # Case 2: Input is a factor or ordinal. Warn user before converting to
+    # numeric if levels are numeric, otherwise return as character.
+    warning(paste("Factor treatment variables have their labels converted",
+                  "to numeric/character as appropriate.\nIt is suggested",
+                  "to do this conversion yourself to ensure it proceeds",
+                  "as you expect."))
+    newt <- levels(treatment)[treatment]
+    # if levels were numeric, convert to numeric. Otherwise leave as is
+    treatment <- tryCatch(as.numeric(newt),
+                     warning = function(w) {
+                       newt
+                     }, error = function(e) {
+                       newt
+                     })
+  } else if (!is.numeric(treatment) & !is.character(treatment) & !is.logical(treatment)) {
+    # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or a
+    # character. It is some other type. Warn user before converting to numeric.
+    warning(paste("Treatment variables which are not numeric or character",
+                  "are converted into numeric.\nIt is suggested to do this",
+                  "conversion yourself to ensure it proceeds as you expect."))
+    treatment <- as.numeric(treatment)
   }
+  # Case 0: treatment is numeric, logical, or character. No additional steps needed.
 
+  m_collapse[, index == "t"] <- treatment
 
   differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
@@ -175,7 +178,7 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize
       type = type,
       unit_of_assignment_type = autype,
       call = call,
-      treatment_binary = treatment_binary)
+      dichotomization = dichotomize)
 }
 
 ##' Generates a Design object with the given specifications.
@@ -190,15 +193,18 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize
 ##' `forcing()` entry. The formula may optionally include a `block()` entry as
 ##' well.
 ##'
-##' The treatment variable passsed into \code{formula} can be either a character
-##' or an object that can be coerced into \code{numeric} (e.g. \code{factor} or
-##' \code{logical}). If the treatment is not a \code{\numeric}
-##' \code{0}/\code{1}, then in order to generate weights with \code{ate()} or
-##' \code{ett()}, the \code{dichotomize} argument must be used to identify the
-##' treatment and control groups. The \code{Design} creation functions
-##' (\code{rct_design()}, \code{rd_design()}, \code{obs_design()}) all support
-##' the \code{dichotomize} argument, or instead \code{dichotomize} can be passed
-##' to \code{ett()} and \code{ate()} directly.
+##' The treatment variable passed into the left-hand side of \code{formula} can
+##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
+##' anything else, it is attemped to be converted to one of those (for example,
+##' \code{factor} and \code{ordered} are converted to \code{numeric} if the
+##' levels are \code{numeric}, otherwise to \code{character}. If the treatment
+##' is not \code{logical} or \code{numeric} with only values 0 and 1, in order
+##' to generate weights with \code{ate()} or \code{ett()}, the
+##' \code{dichotomize} argument must be used to identify the treatment and
+##' control groups. The \code{Design} creation functions (\code{rct_design()},
+##' \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomize}
+##' argument, or instead \code{dichotomize} can be passed to \code{ett()} and
+##' \code{ate()} directly.
 ##'
 ##' The \code{dichotomize} argument should be a formula consisting of a
 ##' conditional statement on both the left-hand side (identifying treatment
@@ -225,6 +231,14 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL, dichotomize
 ##'
 ##' The \code{dichotomize} formula supports all Relational Operators, Logical
 ##' Operators, and \code{%in%}.
+##'
+##' Note that you can specify a conditional logic treatment in the formula (e.g.
+##' \code{rct_design(dose > 250 ~ unitOfAssignment(...\code}) but we would
+##' suggest instead passing the treatment variable directly and using
+##' \code{dichotomize}. Otherwise changing the dichotomization will require
+##' re-creating the Design, instead of simply using
+##' \code{dichotomization(design) <-`} or passing \code{dichotomize} to
+##' \code{ate()} or \code{ett()}.
 ##'
 ##' @title Specify Design
 ##' @param formula defines the Design components
@@ -298,8 +312,7 @@ setMethod("show", "Design", function(object) {
 
   if (is_dichotomized(object)) {
     cat("\n")
-    cat(paste("Treatment was dichotomized; original treatment variable:",
-              names(object@treatment_binary[[2]])))
+    cat(paste("Dichotomization rule:", deparse(object@dichotomization)))
     cat("\n")
   }
 

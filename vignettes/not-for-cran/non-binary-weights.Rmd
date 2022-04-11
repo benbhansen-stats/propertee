@@ -25,7 +25,7 @@ des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
 
 Proceeding with this treatment will cause an error:
 
-```{r}
+```{r, error = TRUE}
 ate(des2, data = simdata)
 ```
 
@@ -42,35 +42,51 @@ ate(des2, data = simdata,
     dichotomize = dose <= 100 ~ dose == 300)
 ```
 
-Alternatively, we could place the dichotimization in the Design instead.
+Alternatively, we could place the dichotomization in the Design instead.
 
 ```{r}
-des2b <- dichotomize_design(des2,
-                            dose >= 200 ~ dose < 100)
-ate(des2b, data = simdata)
+dichotomization(des2) <- dose >= 200 ~ dose < 100
+ate(des2, data = simdata)
 des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
                    dichotomize = dose >= 200 ~ dose < 100)
 ate(des3, data = simdata)
 ```
 ## Storage of non-binary treatment
 
-When a design's treatment is dichotomized, we replace the original treatment
-with the binarized version, but store the original.
+When a design's treatment is dichotomized, we keep the orignal treatment in
+place, but add a slot for the dichotomization
 
 ```{r}
 des2@structure
-des2b@structure
-des2b@treatment_binary
+des2@dichotomization
 ```
+
+We can then evaluate this dichotomization with either of the two functions
+(`treatment()` being user-facing, `.bin_txt()` being internal)
+
+```{r}
+treatment(des2)
+treatment(des2, binary = TRUE)
+.bin_txt(des2)
+```
+
 
 ## `WeightedDesign`
 
 This ensures that the `@Design` slot inside a `WeightedDesign` object has a
-binary 0/1 treatment, as well as stores (see above) the original treatment data
-if necessary.
+binary 0/1 treatment either through a direct 0/1 treatment, or the presence of a
+`dichotomization` slot.
 
 ```{r}
-wght <- ate(des2b, data = simdata)
-treatment(wght@Design)
-wght@Design@treatment_binary
+wght <- ate(des2, data = simdata)
+.bin_txt(wght@Design)
+```
+
+There are two helper functions to check this:
+
+```{r}
+is_dichotomized(des1)
+has_binary_treatment(des1)
+is_dichotomized(des2)
+has_binary_treatment(des2)
 ```

@@ -39,15 +39,18 @@ variables). If defining an rd_design, the formula must also include a
 \code{forcing()} entry. The formula may optionally include a \code{block()} entry as
 well.
 
-The treatment variable passsed into \code{formula} can be either a character
-or an object that can be coerced into \code{numeric} (e.g. \code{factor} or
-\code{logical}). If the treatment is not a \code{\numeric}
-\code{0}/\code{1}, then in order to generate weights with \code{ate()} or
-\code{ett()}, the \code{dichotomize} argument must be used to identify the
-treatment and control groups. The \code{Design} creation functions
-(\code{rct_design()}, \code{rd_design()}, \code{obs_design()}) all support
-the \code{dichotomize} argument, or instead \code{dichotomize} can be passed
-to \code{ett()} and \code{ate()} directly.
+The treatment variable passed into the left-hand side of \code{formula} can
+either be \code{logical}, \code{numeric}, or \code{character}. If it is
+anything else, it is attemped to be converted to one of those (for example,
+\code{factor} and \code{ordered} are converted to \code{numeric} if the
+levels are \code{numeric}, otherwise to \code{character}. If the treatment
+is not \code{logical} or \code{numeric} with only values 0 and 1, in order
+to generate weights with \code{ate()} or \code{ett()}, the
+\code{dichotomize} argument must be used to identify the treatment and
+control groups. The \code{Design} creation functions (\code{rct_design()},
+\code{rd_design()}, \code{obs_design()}) all support the \code{dichotomize}
+argument, or instead \code{dichotomize} can be passed to \code{ett()} and
+\code{ate()} directly.
 
 The \code{dichotomize} argument should be a formula consisting of a
 conditional statement on both the left-hand side (identifying treatment
@@ -74,4 +77,12 @@ or
 
 The \code{dichotomize} formula supports all Relational Operators, Logical
 Operators, and \code{\%in\%}.
+
+Note that you can specify a conditional logic treatment in the formula (e.g.
+\code{rct_design(dose > 250 ~ unitOfAssignment(...\code}) but we would
+suggest instead passing the treatment variable directly and using
+\code{dichotomize}. Otherwise changing the dichotomization will require
+re-creating the Design, instead of simply using
+\code{dichotomization(design) <-`} or passing \code{dichotomize} to
+\code{ate()} or \code{ett()}.
 }

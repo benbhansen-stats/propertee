@@ -102,11 +102,43 @@ forcing <- unit_of_assignment
                         "unitid" = as.name("unit_of_assignment"))
     as.formula(do.call("substitute", list(form, rename_list)))
 }
+
 ##' Check if Design's treatment was dichotomized
 ##'
 ##' @param des A design
-##' @return TRUE if \code{des} was dichotomized; FALSE otherwise
+##' @return \code{TRUE if \code{des} was dichotomized; \code{FALSE} otherwise
 ##' @export
+##' @rdname design_treatment_status
 is_dichotomized <- function(des) {
-  length(des@treatment_binary) == 2
+  if (!is(des, "Design")) {
+    stop("des must be a Design object.")
+  }
+
+  length(des@dichotomization) == 3
+
+}
+
+##' Check if Design's treatment is binary
+##'
+##' A Design's treatment is considered binary if the treatment is numeric with
+##' only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA}, if the Design is dichotomized.
+##'
+##' @param des A design
+##' @return \code{TRUE if \code{des} has a binary treatment; \code{FALSE}
+##'   otherwise
+##' @export
+##' @rdname design_treatment_status
+has_binary_treatment <- function(des) {
+  if (!is(des, "Design")) {
+    stop("des must be a Design object.")
+  }
+
+  if (is_dichotomized(des)) {
+    return(TRUE)
+  }
+
+  if (all(treatment(des)[, 1] %in% c(0, 1, TRUE, FALSE, NA))) {
+    return(TRUE)
+  }
+  return(FALSE)
 }
