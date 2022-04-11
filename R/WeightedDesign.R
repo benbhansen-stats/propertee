@@ -35,9 +35,17 @@ setMethod("show", "WeightedDesign", function(object) {
 ##' support all other reasonable operations.
 ##'
 ##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
-##' individual \code{WeightedDesign}s to come from the same \code{Design} and
-##' have the target (\code{ate()} or \code{ett()}). Both arguments to \code{c()}
-##' must be \code{WeightedDesign}.
+##' individual \code{WeightedDesign}s to come from the same \code{Design}
+##' (except \code{dichotomization}, see below) and have the target (\code{ate()}
+##' or \code{ett()}). Both arguments to \code{c()} must be
+##' \code{WeightedDesign}.
+##'
+##' One exception when concatenting \code{WeightedDesign}s with different
+##' \code{Design} exists. There may be cases where the treatment is continuous
+##' or has multiple levels, and there is a need to combine the weights from the
+##' same general design, but with different dichotomizations. Therefore multiple
+##' \code{WeightedDesign}s can be combined if they are identical except for
+##' their \code{@dichotomization} slots.
 ##'
 ##' @title \code{WeightedDesign} Ops
 ##' @param e1 \code{WeightedDesign} or numeric
@@ -121,10 +129,13 @@ setMethod("weights", "WeightedDesign", function(object, ...) {
 })
 
 ##' @rdname WeightedDesignOps
+##' @param force_dichotomization_equal if \code{FALSE} (default), Designs are
+##'   considered equivalent even if their \code{dichotomization} differs. If
+##'   \code{TRUE}, \code{@dichotomization} must also be equal.
 ##' @export
 ##' @importFrom methods slot
 setMethod("c", signature(x = "WeightedDesign"),
-          function(x, ...) {
+          function(x, ..., force_dichotomization_equal = FALSE) {
             dots <- list(...)
             # x must be a WeightedDesign to get here; ensure all other elements
             # are as well
@@ -135,6 +146,10 @@ setMethod("c", signature(x = "WeightedDesign"),
             # Make sure all Designs are the same. Create a list of all targets,
             # then check if `unique` returns a single element
             designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
+            # Remove dichotomizations to not check them for equality
+            if (!force_dichotomization_equal) {
+              designs <- lapply(designs, `dichotomization<-`, formula())
+            }
             if (length(unique(designs)) > 1) {
               stop("WeightedDesigns can only be concatenated from identical Designs")
             }

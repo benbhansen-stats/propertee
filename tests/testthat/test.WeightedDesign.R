@@ -430,3 +430,17 @@ test_that("Combining weighted designs", {
   # numeric vector), c() will return a numeric vector
   #expect_true(is(c(1:5, w1), "WeightedDesign"))
 })
+
+test_that("Combining weighted designs with different dichotomizations ", {
+  des <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
+
+  w1 <- ate(des, data = simdata, dichotomize = dose >= 300 ~ .)
+  w2 <- ate(des, data = simdata, dichotomize = dose >= 200 ~ .)
+  w3 <- ate(des, data = simdata, dichotomize = dose >= 100 ~ .)
+
+  c_w <- c(w1, w2, w3)
+  expect_true(is(c_w, "WeightedDesign"))
+  expect_length(c_w, 150)
+
+  expect_error(c(w1, w2, w3, force_dichotomization_equal = TRUE))
+})
