@@ -1,6 +1,8 @@
 # flexida
 
-[![R-build-check](https://github.com/benbhansen-stats/flexida/actions/workflows/r.yml/badge.svg)](https://github.com/benbhansen-stats/flexida/actions/workflows/r.yml)
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/benbhansen-stats/flexida/workflows/R-CMD-check/badge.svg)](https://github.com/benbhansen-stats/flexida/actions)
+<!-- badges: end -->
 
 ## Overview
 
