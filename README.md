@@ -1,7 +1,7 @@
 # flexida
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/benbhansen-stats/flexida/workflows/R-CMD-check/badge.svg)](https://github.com/benbhansen-stats/flexida/actions)
+[![R-build-check](https://github.com/benbhansen-stats/flexida/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/flexida/actions)
 <!-- badges: end -->
 
 ## Overview
