@@ -3,7 +3,8 @@ Design <- setClass("Design",
                              column_index = "character",
                              type = "character",
                              unit_of_assignment_type = "character",
-                             call = "call"))
+                             call = "call",
+                             dichotomization = "formula"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -20,8 +21,8 @@ setValidity("Design", function(object) {
     return("Only one treatment variable allowed")
   }
   tr <- tr[, 1]
-  if (is.null(tr) || !is.factor(tr)) {
-    return("Invalid treatment; must be factor")
+  if (is.null(tr) || (!is.numeric(tr) && !is.character(tr)) && !is.logical(tr)) {
+    return("Invalid treatment; must be numberic or character")
   }
   if (length(unique(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
@@ -49,11 +50,20 @@ setValidity("Design", function(object) {
   if (!object@unit_of_assignment_type %in% c("cluster", "unitid", "unit_of_assignment")) {
     return('valid `unit_of_assignment_type`s are "unit_of_assignment", "cluster" or "unitid"')
   }
+  if (!length(object@dichotomization) %in% c(0, 3)) {
+    return("@dichotomization invalid")
+  }
   TRUE
 })
 
+##' @importFrom stats formula
+new_Design <- function(form,
+                       data,
+                       type,
+                       subset = NULL,
+                       call = NULL,
+                       dichotomize = stats::formula()) {
 
-new_Design <- function(form, data, type, subset = NULL, call = NULL) {
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
     warning("Invalid call passed to `new_Design`, using default. Please use rd_design, rct_design, or obs_design instead of `new_Design` directly.")
@@ -62,6 +72,14 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL) {
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
+
+  # `formula()` is a close equivalent of a NULL formula
+  if (is.null(dichotomize)) dichotomize <- stats::formula()
+  # the fact that a formula has an environment is playing hell with testing. I
+  # don't believe we'll ever need the environment in which the dichotomize
+  # formula is created as we use it on wahtever data we need, so setting it
+  # always to the generic interactive environment for simplicity.
+  environment(dichotomize) <- globalenv()
 
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
@@ -90,8 +108,55 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL) {
 
   rownames(m_collapse) <- NULL
 
-  treatment <- m_collapse[, index == "t", drop = FALSE]
-  m_collapse[, index == "t"] <- .convert_treatment_to_factor(treatment)
+  ########### Examine treatment variable.
+  treatment <- m_collapse[, index == "t"]
+
+  if (options()$flexida_warn_on_conditional_treatment &
+                grepl("[<>=]", deparse(form[[2]]))) {
+    # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <, =
+    # and if found, evaluate and convert to numeric, but warn users.
+    warning(paste("It appears that you've identified the treatment group",
+                  "using conditional logic\n(by including one of <, >, or =",
+                  "in the left hand side of `form`).\n",
+                  "This is supported, but it is recommended to instead",
+                  "include the non-binary\ntreatment variable in the `form`",
+                  "and use the `dichotomize` to define the groups.\n",
+                  "Using `dichotomize` will make modifying the groups",
+                  "easier in the future\nshould you need to adjust."))
+    # If the user is using conditionals, we'll be converting logical to numeric
+    # later but don't need to the add'l warning message.
+    if (!is.logical(treatment)) {
+      stop(paste("treatment has conditional but isn't logical.\n",
+                 "This may happen if treatment variable name has\n",
+                 "'<', '>', or '=' in it. Rename variable to proceed."))
+    }
+  }
+  else if (is.factor(treatment)) {
+    # Case 2: Input is a factor or ordinal. Warn user before converting to
+    # numeric if levels are numeric, otherwise return as character.
+    warning(paste("Factor treatment variables have their labels converted",
+                  "to numeric/character as appropriate.\nIt is suggested",
+                  "to do this conversion yourself to ensure it proceeds",
+                  "as you expect."))
+    newt <- levels(treatment)[treatment]
+    # if levels were numeric, convert to numeric. Otherwise leave as is
+    treatment <- tryCatch(as.numeric(newt),
+                     warning = function(w) {
+                       newt
+                     }, error = function(e) {
+                       newt # should never hit here (warning only)
+                     })
+  } else if (!is.numeric(treatment) & !is.character(treatment) & !is.logical(treatment)) {
+    # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or a
+    # character. It is some other type. Warn user before converting to numeric.
+    warning(paste("Treatment variables which are not numeric or character",
+                  "are converted into numeric.\nIt is STRONGLY suggested to do this",
+                  "conversion yourself to ensure it proceeds as you expect."))
+    treatment <- as.numeric(treatment)
+  }
+  # Case 0: treatment is numeric, logical, or character. No additional steps needed.
+
+  m_collapse[, index == "t"] <- treatment
 
   differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
@@ -112,64 +177,118 @@ new_Design <- function(form, data, type, subset = NULL, call = NULL) {
       column_index = index,
       type = type,
       unit_of_assignment_type = autype,
-      call = call)
+      call = call,
+      dichotomization = dichotomize)
 }
 
 ##' Generates a Design object with the given specifications.
 ##'
-##' Generates a randomized control treatment Design (`rct_design`), or an
-##' observational Design (`obs_design`), or a regression discontinuity Design
-##' (`rd_design`).
+##' Generates a randomized control treatment Design (\code{rct_design()}), or an
+##' observational Design (\code{obs_design()}), or a regression discontinuity
+##' Design (\code{rd_design()}).
 ##'
-##' The formula must include exactly one of `unit_of_assignment()`, `uoa()`,
-##' `cluster()`, or `unitid()` to identify the units of assignment (one or more
-##' variables). If defining an rd_design, the formula must also include a
-##' `forcing()` entry. The formula may optionally include a `block()` entry as
-##' well.
+##' The formula must include exactly one of \code{unit_of_assignment()},
+##' \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
+##' assignment (one or more variables). If defining an rd_design, the formula
+##' must also include a \code{forcing()} entry. The formula may optionally
+##' include a \code{block()} entry as well.
+##'
+##' The treatment variable passed into the left-hand side of \code{formula} can
+##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
+##' anything else, it is attemped to be converted to one of those (for example,
+##' \code{factor} and \code{ordered} are converted to \code{numeric} if the
+##' levels are \code{numeric}, otherwise to \code{character}. If the treatment
+##' is not \code{logical} or \code{numeric} with only values 0 and 1, in order
+##' to generate weights with \code{ate()} or \code{ett()}, the
+##' \code{dichotomize} argument must be used to identify the treatment and
+##' control groups. The \code{Design} creation functions (\code{rct_design()},
+##' \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomize}
+##' argument, or instead \code{dichotomize} can be passed to \code{ett()} and
+##' \code{ate()} directly.
+##'
+##' The \code{dichotomize} argument should be a formula consisting of a
+##' conditional statement on both the left-hand side (identifying treatment
+##' levels associated with "treatment") and the right hand side (identifying
+##' treatment levels associated with "control"). For example, if your treatment
+##' variable was called \code{dose}, you might write:
+##'
+##' \code{dichotomize = dose > 250 ~ dose <= 250}
+##'
+##' The conditionals need not assign all values of treatment to control or
+##' treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
+##' \code{200 <= dose <= 300}. Units of assignment with treatment values not
+##' assigned to either treatment or control as assumed to not recieve either,
+##' but will be maintained in the Design for proper standard error calculations.
+##'
+##' The period (\code{.}) can be used to assign all other units of assignment.
+##' For example, we could have written the above example as
+##'
+##' \code{dichotomize = dose > 250 ~ .}
+##'
+##' or
+##'
+##' \code{dichotomize = . ~ dose <= 250}
+##'
+##' The \code{dichotomize} formula supports all Relational Operators, Logical
+##' Operators, and \code{%in%}.
+##'
+##' Note that you can specify a conditional logic treatment in the formula (e.g.
+##' \code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
+##' instead passing the treatment variable directly and using
+##' \code{dichotomize}. Otherwise changing the dichotomization will require
+##' re-creating the Design, instead of simply using
+##' \code{dichotomization(design) <-} or passing \code{dichotomize} to
+##' \code{ate()} or \code{ett()}.
+##'
 ##' @title Specify Design
 ##' @param formula defines the Design components
 ##' @param data the data set.
 ##' @param subset optionally subset the data before creating the Design object
+##' @param dichotomize optionally, a formula defining the dichotomization of the
+##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @return a Design object of the requested type for use in further analysis
 ##' @export
 ##' @rdname Design_objects
-rct_design <- function(formula, data, subset = NULL) {
+rct_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
   .check_design_formula(formula)
 
   new_Design(form = formula,
              data = data,
              type = "RCT",
              subset = subset,
-             call = match.call())
+             call = match.call(),
+             dichotomize = dichotomize)
 }
 
 ##' @export
 ##' @rdname Design_objects
-rd_design <- function(formula, data, subset = NULL) {
+rd_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
   new_Design(form = formula,
              data = data,
              type = "RD",
              subset = subset,
-             call = match.call())
+             call = match.call(),
+             dichotomize = dichotomize)
 }
 
 ##' @export
 ##' @rdname Design_objects
-obs_design <- function(formula, data, subset = NULL) {
+obs_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
   .check_design_formula(formula)
 
   new_Design(form = formula,
              data = data,
              type = "Obs",
              subset = subset,
-             call = match.call())
+             call = match.call(),
+             dichotomize = dichotomize)
 }
 
 ##' @title Show a Design
 ##' @param object Design object
-##' @return an invisible copy of `object`
+##' @return an invisible copy of \code{object}
 ##' @export
 setMethod("show", "Design", function(object) {
   destype <- switch(object@type,
@@ -191,6 +310,11 @@ setMethod("show", "Design", function(object) {
                   vartab)
   print(data.frame(vartab), row.names = FALSE, right = FALSE)
 
+  if (is_dichotomized(object)) {
+    cat("\n")
+    cat(paste("Dichotomization rule:", deparse(object@dichotomization)))
+    cat("\n")
+  }
 
   cat("\n")
   invisible(object)
@@ -253,7 +377,7 @@ var_names <- function(x, type) {
 ##'
 ##' @title treatment group table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to `table`
+##' @param ... add'l optional arguments to \code{table}
 ##' @return a table of treatment by units
 ##' @export
 treatment_table <- function(design, ...) {
@@ -266,7 +390,7 @@ treatment_table <- function(design, ...) {
 ##'
 ##' @title variable identification table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to `table`
+##' @param ... add'l optional arguments to \code{table}
 ##' @param compress Should multiple variables be compressed into a
 ##'   comma-separated string? Default TRUE.
 ##' @param report_all Should we report all possible structures even if they don't

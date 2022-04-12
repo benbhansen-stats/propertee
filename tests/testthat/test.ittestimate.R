@@ -153,20 +153,11 @@ test_that("treatment types", {
   it <- ittestimate(des, simdata, "y")
   expect_length(it$coef, 2)
 
-  des <- rd_design(o ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  simdata$z <- simdata$z == 1
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
-  # issue18 extra expect_warning
-  expect_warning(it <- ittestimate(des, simdata, "y"))
-  # issue18 end
-  expect_length(it$coef, 4)
+  it2 <- ittestimate(des, simdata, "y")
+  expect_length(it$coef, 2)
 
-  simdata$dose <- as.ordered(simdata$dose)
-  des <- rd_design(dose ~ cluster(cid2, cid1) +
-                     block(bid) + forcing(force),
-                   data = simdata)
-  # issue18 extra expect_warning
-  expect_warning(it <- ittestimate(des, simdata, "y"))
-  # issue18 end
-  expect_length(it$coef, 5)
-
+  expect_true(all(it$coef == it2$coef))
 })

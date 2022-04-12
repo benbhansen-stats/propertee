@@ -1,6 +1,12 @@
 # fake call
 fc <- call("ls")
 
+identical_designs <- function(a, b) {
+  attr(a@dichotomization, ".Environment") <- NULL
+  attr(b@dichotomization, ".Environment") <- NULL
+  expect_identical(a, b)
+}
+
 test_that("Design creation", {
 
   tests <- function(d) {
@@ -18,7 +24,17 @@ test_that("Design creation", {
 
   # binary treatment
   d <- new("Design",
-           structure = data.frame(a = factor(0:1), b = c(2, 4)),
+           structure = data.frame(a = 0:1, b = c(2, 4)),
+           column_index = c("t", "u"),
+           type = "RCT",
+           unit_of_assignment_type = "cluster",
+           call = fc)
+
+  tests(d)
+
+  # logical treatment
+  d <- new("Design",
+           structure = data.frame(a = c(TRUE, FALSE), b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
@@ -28,7 +44,7 @@ test_that("Design creation", {
 
   # >2 treatment levels
   d <- new("Design",
-           structure = data.frame(a = as.factor(c(1, 0, 2)), b = c(2, 4, 6)),
+           structure = data.frame(a = 0:2, b = c(2, 4, 6)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
@@ -36,16 +52,27 @@ test_that("Design creation", {
 
   tests(d)
 
-  # ordinal treatment
+  # character treatment
 
   d <- new("Design",
-           structure = data.frame(a = as.ordered(c(1, 0, 2)), b = c(2, 4, 6)),
+           structure = data.frame(a = letters[1:2], b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
            unit_of_assignment_type = "cluster",
            call = fc)
 
   tests(d)
+
+  # >2 character treatment levels
+  d <- new("Design",
+           structure = data.frame(a = letters[1:3], b = c(2, 4, 6)),
+           column_index = c("t", "u"),
+           type = "RCT",
+           unit_of_assignment_type = "cluster",
+           call = fc)
+
+  tests(d)
+
 })
 
 test_that("Design validity", {
@@ -59,8 +86,8 @@ test_that("Design validity", {
                "positive dimensions")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
-                                          a = as.factor(c(1, 0))),
+                   structure = data.frame(a = 0:1,
+                                          b = 0:1),
                    column_index = c("t", "t"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
@@ -76,7 +103,7 @@ test_that("Design validity", {
                "Missing treatment")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(0, 0)), a = c(1, 0)),
+                   structure = data.frame(a = c(0, 0), a = c(1, 0)),
                    column_index = c("t", "u"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
@@ -84,15 +111,7 @@ test_that("Design validity", {
                "treatment can not be constant")
 
   expect_error(new("Design",
-                   structure = data.frame(a = factor(c(0, 0), levels = c(0, 1)), a = c(1, 0)),
-                   column_index = c("t", "u"),
-                   type = "RCT",
-                   unit_of_assignment_type = "cluster",
-                   call = fc),
-               "treatment can not be constant")
-
-  expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "b"),
                    type = "abc",
@@ -104,14 +123,14 @@ test_that("Design validity", {
                    structure = data.frame(a = c(1, 2),
                                           b = as.factor(c(1, 0)),
                                           c = c(2, 0)),
-                   column_index = c("u", "t"),
+                   column_index = c("t", "u", "u", "u"),
                    type = "RCT",
                    unit_of_assignment_type = "cluster",
                    call = fc),
                "number of columns")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "k"),
                    type = "RCT",
@@ -120,16 +139,7 @@ test_that("Design validity", {
                "unknown elements")
 
   expect_error(new("Design",
-                   structure = data.frame(a = c(1, 0),
-                                          b = c(1, 0)),
-                   column_index = c("t", "u"),
-                   type = "RCT",
-                   unit_of_assignment_type = "cluster",
-                   call = fc),
-               "must be factor")
-
-  expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "f"),
                    type = "RCT",
@@ -138,7 +148,7 @@ test_that("Design validity", {
                "Forcing variables only valid")
 
   expect_error(new("Design",
-                   structure = data.frame(a = as.factor(c(1, 0)),
+                   structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "u"),
                    type = "RD",
@@ -152,7 +162,8 @@ test_that("Design creation", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11), ]
 
-  d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = fc)
+  d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars,
+                      type = "RCT", call = fc, dichotomize = NULL)
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")
@@ -221,18 +232,18 @@ test_that("Design creation", {
   ### Specific designs
   rct_des <- rct_design(vs ~ cluster(qsec), data = mtcars)
   rct_des@call <- fc
-  expect_identical(d_rct, rct_des)
+  identical_designs(d_rct, rct_des)
 
   obs_des <- obs_design(vs ~ cluster(qsec), data = mtcars,
                         subset = mtcars$mpg > 17)
   obs_des@call <- fc
-  expect_identical(d_obs, obs_des)
+  identical_designs(d_obs, obs_des)
 
   rd_des <- rd_design(vs ~ block(disp, gear) + forcing(wt, cyl) +
                         cluster(mpg, qsec),
                       data = mtcars)
   rd_des@call <- fc
-  expect_identical(d_rd, rd_des)
+  identical_designs(d_rd, rd_des)
 
 
   # Missing call
@@ -244,46 +255,6 @@ test_that("Design creation", {
   expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = 1),
                  "Invalid call")
   expect_identical(des@call[[1]], as.name("new_Design"))
-})
-
-test_that("different treatment types", {
-  data(simdata)
-
-  # z currently numeric
-  d1 <- new_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
-  # factor
-  simdata$z <- as.factor(simdata$z)
-  d2 <- new_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
-  expect_identical(d1, d2)
-  # binary
-  simdata$z <- simdata$z == 1
-  d3 <- new_Design(z ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
-  expect_equal(cor(as.numeric(d3@structure$z), as.numeric(d1@structure$z)), 1)
-  # different levels, but same underlying values
-
-  # o currently ordinal
-  e1 <- new_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
-  expect_true(is(e1@structure[, e1@column_index == "t"], "ordered"))
-  # factor
-  simdata$o <- as.factor(as.numeric(simdata$o))
-  e2 <- new_Design(o ~ cluster(cid1, cid2), data = simdata, type = "RCT", call = fc)
-  expect_false(is(e2@structure[, e2@column_index == "t"], "ordered"))
-})
-
-
-test_that("Empty levels in treatment are removed", {
-  data(simdata)
-
-  simdata$z <- factor(simdata$z, levels = 0:2)
-  expect_warning(desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata),
-                 "Empty levels")
-  expect_length(levels(desrct@structure[, desrct@column_index == "t"]), 2)
-
-  simdata$o <- factor(simdata$o, levels = 1:7)
-  expect_warning(desrct <- rct_design(o ~ cluster(cid1, cid2) + block(bid), data = simdata),
-                 "Empty levels")
-  expect_length(levels(desrct@structure[, desrct@column_index == "t"]), 4)
-
 })
 
 test_that("unit of assignment differs from unit of analysis", {
@@ -346,41 +317,6 @@ test_that("Design printing", {
 })
 
 
-test_that("support for different types of treatment variables", {
-  data(mtcars)
-  mtcars <- mtcars[-c(5, 11), ]
-
-  # 0/1 binary
-  treat_binary <- new_Design(vs ~ cluster(qsec), data = mtcars,
-                             type = "RCT", call = fc)
-
-  # logical
-  mtcars$vs <- as.logical(mtcars$vs)
-  treat_logical <- new_Design(vs ~ cluster(qsec), data = mtcars,
-                              type = "RCT", call = fc)
-  expect_identical(as.numeric(treat_binary@structure$vs),
-                   as.numeric(treat_logical@structure$vs))
-
-
-  # Factor
-  mtcars$carb <- as.factor(mtcars$carb)
-  treat_factor <- new_Design(carb ~ cluster(qsec), data = mtcars,
-                             type = "RCT", call = fc)
-  expect_identical(unique(treat_factor@structure$carb), unique(mtcars$carb))
-
-  # Ordinal
-  mtcars$gear <- as.ordered(mtcars$gear)
-  treat_ordered <- new_Design(gear ~ cluster(qsec), data = mtcars,
-                              type = "RCT", call = fc)
-  expect_identical(unique(treat_ordered@structure$gear), unique(mtcars$gear))
-
-  # non-binary numerical
-  expect_error(new_Design(mpg ~ cluster(qsec), data = mtcars,
-                          type = "RCT", call = fc),
-               "only contain values 0 and 1")
-
-})
-
 test_that("Design type conversions", {
 
   # Helper function to check equivalence of Designs without worrying about some
@@ -440,15 +376,13 @@ test_that("variable transformations in Design", {
 
   data(simdata)
 
-  des <- rct_design(as.factor(dose) ~ uoa(cid1, cid2), data = simdata)
-  expect_s3_class(des@structure[, des@column_index == "t"], "factor")
-  expect_equal(length(levels(des@structure[, des@column_index == "t"])),
-               length(unique(simdata$dose)))
+  des <- rct_design(dose + 3 ~ uoa(cid1, cid2), data = simdata)
+  expect_true(all(treatment(des)[, 1] %in% (simdata$dose + 3)))
 
-  des <- rd_design(force > 4 & bid < 2 ~ cluster(cid1, cid2) +  forcing(force), data = simdata)
-  expect_s3_class(des@structure[, des@column_index == "t"], "factor")
-  expect_length(levels(des@structure[, des@column_index == "t"]), 2)
-
+  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(cid1, cid2) + forcing(force),
+                                  data = simdata),
+                 "conditional logic")
+  expect_true(is.logical(treatment(des)[, 1]))
 })
 
 test_that("#26 cbind in identification variables", {

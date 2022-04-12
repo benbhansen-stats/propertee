@@ -2,14 +2,31 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x) standardGeneric("treatment"))
+setGeneric("treatment", function(x, binary = FALSE) standardGeneric("treatment"))
 
-##' @title Extract and Replace elements of Design
+##' Extract and replace elements of the Design
+##'
+##' For \code{treatment()}, the value of \code{binary} also affects the
+##' dimensions of what is return. \code{treatment(..., binary = FALSE)} (the
+##' default) will return a \code{data.frame} with the treatment as a column, for
+##' consistency with the other accessors. However, for \code{treatment(...,
+##' binary = TRUE)}, the output is a vector.
+##' @title Accessors for Design
 ##' @param x Design object
-##' @return data.frame containing unit-leve information
+##' @param binary Logical; if FALSE (default), return a `data.frame` containing
+##'   the named treatment variable. If TRUE and \code{x} has a formula in
+##'   \code{@dichotomization}, return a `data.frame` containing a binary
+##'   treatment variable with the name "z__". Has no effect if
+##'   \code{@dichotomization} is \code{NULL}.
+##' @return If \code{binary = FALSE} data.frame containing treatment variable.
+##'   If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
+##'   membership.
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("treatment", "Design", function(x) {
+setMethod("treatment", "Design", function(x, binary = FALSE) {
+  if (binary & is_dichotomized(x)) {
+    return(data.frame(z__ = .bin_txt(x)))
+  }
   x@structure[x@column_index == "t"]
 })
 
@@ -22,25 +39,27 @@ setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
-  value <- .convert_treatment_to_factor(value)
-
   value <- .convert_to_data.frame(value, x, "t")
 
   x@structure[x@column_index == "t"] <- value
   names(x@structure)[x@column_index == "t"] <- colnames(value)
+  #x@call$formula[[2]] <- as.name(paste(colnames(value), col = "+"))
   validObject(x)
   x
 })
 
-# Internal function to quickly return the treatment as binary numeric 0/1
-# See https://github.com/benbhansen-stats/flexida/wiki/Treatment-storage-and-access for
-# details of input/output
-.treatment_binary <- function(design) {
-  t <- treatment(design)[[1]]
-  if (nlevels(t) > 2) {
-    stop("Multi-level treatments not yet implemented in .treatment_binary")
+# (Internal) Extracts treatment as binary vector if possible (if design has
+# dichotomization, or if treatment is 0/1), or else errors.
+.bin_txt <- function(des) {
+  if (!is_dichotomized(des)) {
+    tt <- treatment(des, binary = FALSE)[, 1]
+    if (!all(tt %in% 0:1)) {
+      stop("binary treatment cannot be obtained")
+    }
+    return(tt)
   }
-  as.numeric(t) - 1
+  .binarize_treatment(treatment(des, binary = FALSE),
+                      des@dichotomization)
 }
 
 ############### Units of Assignment
@@ -239,6 +258,38 @@ setMethod("forcings<-", "Design", function(x, value) {
   .update_structure(x, value, "f")
 })
 
+############### dichotomization
+
+##' Extract or replace dichotomization
+##' @param x Design object
+##' @param value Replacement dichotomization formula, or \code{NULL} to remove
+##' @return Dichomization formula
+##' @export
+##' @rdname Design_extract_dichotomization
+setGeneric("dichotomization", function(x) standardGeneric("dichotomization"))
+
+##' @export
+##' @rdname Design_extract_dichotomization
+setMethod("dichotomization", "Design", function(x) {
+  x@dichotomization
+})
+
+##' @export
+##' @rdname Design_extract_dichotomization
+setGeneric("dichotomization<-", function(x, value) standardGeneric("dichotomization<-"))
+
+##' @export
+##' @rdname Design_extract_dichotomization
+setMethod("dichotomization<-", "Design", function(x, value) {
+  if (is.null(value)) {
+    value <- stats::formula()
+  }
+  x@dichotomization <- value
+  validObject(x)
+  x
+})
+
+
 ############### Helper Functions
 
 # Internal helper function
@@ -286,52 +337,3 @@ setMethod("forcings<-", "Design", function(x, value) {
   validObject(design)
   return(design)
   }
-
-# Internal helper function
-# Converts treatment to factor
-.convert_treatment_to_factor <- function(treatment) {
-  if (!(is.data.frame(treatment) |
-          (is.null(dim(treatment)) &
-             (is.numeric(treatment) |
-                is.factor(treatment) |
-                is.logical(treatment))))) {
-    stop("Treatment must be numeric/factor/logical vector or data.frame")
-  }
-
-  return_data_frame <- FALSE
-  if (!is.null(dim(treatment))) {
-    if (ncol(treatment) != 1) {
-      stop("Only one treatment variable allowed")
-    }
-    # If the treatment is named (e.g. column in DF), we'll keep it later...
-    return_data_frame <- TRUE
-  }
-  else {
-    # ... if its not named, convert to DF for processing first
-    treatment <- data.frame(treatment)
-  }
-
-  if (is.numeric(treatment[, 1])) {
-    if (any(!treatment[, 1] %in% 0:1)) {
-      stop("Numerical treatments must only contain values 0 and 1.")
-    }
-    treatment[, 1] <- as.factor(treatment[, 1])
-  } else if (is.logical(treatment[, 1])) {
-    treatment[, 1] <-  as.factor(treatment[, 1])
-  } else if (!is.factor(treatment[, 1])) {
-    stop("Treatment must be binary (0/1), logical, factor or ordered")
-  }
-
-  # if there are any levels unrepresented in the data, remove them
-  if (length(unique(treatment[, 1])) != length(levels(treatment[, 1]))) {
-    warning("Empty levels found in treatment, removing")
-    treatment[, 1] <- droplevels(treatment[, 1])
-  }
-
-
-  if (!return_data_frame) {
-    # if treatment wasn't passed as a DF, drop dimension
-    treatment <- treatment[, 1]
-  }
-  return(treatment)
-}

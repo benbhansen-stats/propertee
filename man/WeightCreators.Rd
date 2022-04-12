@@ -5,9 +5,9 @@
 \alias{ate}
 \title{Generate Direct Adjusted Weights}
 \usage{
-ett(design, data = NULL, by = NULL)
+ett(design, data = NULL, by = NULL, dichotomize = NULL)
 
-ate(design, data = NULL, by = NULL)
+ate(design, data = NULL, by = NULL, dichotomize = NULL)
 }
 \arguments{
 \item{design}{a Design object created by one of \code{rct_design}, \code{rd_design},
@@ -21,6 +21,10 @@ model.}
 assignment variables in \code{design} to cluster/unit of assignment variables
 in \code{data}. Names represent variables in the Design; values represent
 variables in the data. Only needed if variable names differ.}
+
+\item{dichotomize}{optionally, a formula defining the dichotomization of the
+treatment variable if it isn't already \code{0}/\code{1}. See details of
+help for \code{rct_design()} e.g. for details.}
 }
 \value{
 a WeightedDesign object

@@ -2,7 +2,8 @@ test_that("internal weight function", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  wdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
+  wdes <- .weights_calc(des, simdata, by = NULL, target = "ate",
+                        dichotomize = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
   expect_s4_class(wdes@Design, "Design")
@@ -14,7 +15,8 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  wdes <- .weights_calc(des, simdata, by = NULL, target = "ett")
+  wdes <- .weights_calc(des, simdata, by = NULL, target = "ett",
+                        dichotomize = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
   expect_s4_class(wdes@Design, "Design")
@@ -26,19 +28,51 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_error(.weights_calc(des, simdata, by = NULL, target = "foo"),
+  expect_error(.weights_calc(des, simdata, by = NULL, target = "foo",
+                             dichotomize = NULL),
                "Invalid weight target")
+})
+
+test_that("dichotomization issues", {
+
+  data(simdata)
+  des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  expect_error(.weights_calc(des, simdata, by = NULL, target = "ate",
+                             dichotomize = NULL),
+               "must have a dichotomization")
+
+  dichotomization(des) <- . ~ dose > 150
+
+  wdes <- .weights_calc(des, simdata, by = NULL, target = "ate",
+                        dichotomize = NULL)
+  expect_s4_class(wdes, "WeightedDesign")
+  expect_true(is.numeric(wdes@.Data))
+  expect_s4_class(wdes@Design, "Design")
+  expect_identical(des, wdes@Design)
+  expect_type(wdes@target, "character")
+
+  expect_equal(wdes@target, "ate")
+
+  expect_equal(nrow(simdata), length(wdes))
+  expect_true(all(wdes == wdes@.Data))
+
+  expect_warning(wdes <- .weights_calc(des, simdata, by = NULL, target = "ate",
+                                       dichotomize = dose > 200 ~ .),
+                 "over-writing")
+  expect_identical(deparse(dichotomization(wdes@Design)), "dose > 200 ~ .")
+
 })
 
 test_that("internal and external weight function agreement", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ate")
+  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ate", dichotomize = NULL)
   ewdes <- ate(des, simdata)
   expect_identical(iwdes, ewdes)
 
-  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ett")
+  iwdes <- .weights_calc(des, simdata, by = NULL, target = "ett", dichotomize = NULL)
   ewdes <- ett(des, simdata)
   expect_identical(iwdes, ewdes)
 
@@ -316,64 +350,27 @@ test_that("formula as object is able to be found in data search", {
 
 })
 
-test_that("varying treatment types", {
+test_that("numeric and logical treatments work the same", {
   data(simdata)
-  s2 <- simdata
 
   # ways of representing binary treatments
   # numeric
-  des1 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
-  mod1 <- lm(y ~ z, data = s2, weights = ate(des1))
-  # factor
-  s2$z <- as.factor(s2$z)
-  des2 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
-  mod2 <- lm(y ~ z, data = s2, weights = ate(des2))
-  expect_identical(mod1$weights, mod2$weights)
-  # ordinal
-  s2$z <- as.ordered(s2$z)
-  des3 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
-  mod3 <- lm(y ~ z, data = s2, weights = ate(des3))
-  expect_identical(mod1$weights, mod3$weights)
+  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ z, data = simdata, weights = ate(des1))
   # binary
-  s2$z <- s2$z == 1
-  des4 <- rct_design(z ~ uoa(cid1, cid2), data = s2)
-  mod4 <- lm(y ~ z, data = s2, weights = ate(des4))
-  expect_identical(mod1$weights, mod4$weights)
-
-  # ordinal treatment
-  do1 <- rct_design(o ~ uoa(cid1, cid2), data = s2)
-  # issue18 - temporary tests and warning
-  expect_warning(mo1 <- lm(y ~ o, data = s2, weights = ate(do1)))
-  expect_true(all(mo1$weights == 1))
-  # end issue18
-
-  s3 <- simdata
+  simdata$z <- simdata$z == 1
+  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod2 <- lm(y ~ z, data = simdata, weights = ate(des2))
+  expect_identical(mod1$weights, mod2$weights)
   # repeat for ett
   # numeric
-  des1 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
-  mod1 <- lm(y ~ z, data = s3, weights = ett(des1))
-  # factor
-  s3$z <- as.factor(s3$z)
-  des2 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
-  mod2 <- lm(y ~ z, data = s3, weights = ett(des2))
-  expect_identical(mod1$weights, mod2$weights)
-  # ordinal
-  s3$z <- as.ordered(s3$z)
-  des3 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
-  mod3 <- lm(y ~ z, data = s3, weights = ett(des3))
-  expect_identical(mod1$weights, mod3$weights)
+  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ z, data = simdata, weights = ett(des1))
   # binary
-  s3$z <- s3$z == 1
-  des4 <- rct_design(z ~ uoa(cid1, cid2), data = s3)
-  mod4 <- lm(y ~ z, data = s3, weights = ett(des4))
-  expect_identical(mod1$weights, mod4$weights)
-
-  # ordinal treatment
-  do1 <- rct_design(o ~ uoa(cid1, cid2), data = s3)
-  # issue18 - temporary tests and warning
-  expect_warning(mo1 <- lm(y ~ o, data = s3, weights = ett(do1)))
-  expect_true(all(mo1$weights == 1))
-  # end issue18
+  simdata$z <- simdata$z == 1
+  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod2 <- lm(y ~ z, data = simdata, weights = ett(des2))
+  expect_identical(mod1$weights, mod2$weights)
 
 })
 
@@ -432,4 +429,19 @@ test_that("Combining weighted designs", {
   # if the first argument is compatible with WeightedDesign but isn't one (e.g.
   # numeric vector), c() will return a numeric vector
   #expect_true(is(c(1:5, w1), "WeightedDesign"))
+})
+
+test_that("Combining weighted designs with different dichotomizations ", {
+  des <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
+
+  w1 <- ate(des, data = simdata, dichotomize = dose >= 300 ~ .)
+  w2 <- ate(des, data = simdata, dichotomize = dose >= 200 ~ .)
+  w3 <- ate(des, data = simdata, dichotomize = dose >= 100 ~ .)
+
+  expect_warning(c_w <- c(w1, w2, w3),
+                 "differ")
+  expect_true(is(c_w, "WeightedDesign"))
+  expect_length(c_w, 150)
+
+  expect_error(c(w1, w2, w3, force_dichotomization_equal = TRUE))
 })

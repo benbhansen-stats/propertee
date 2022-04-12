@@ -25,11 +25,11 @@
 \alias{forcings,Design-method}
 \alias{forcings<-}
 \alias{forcings<-,Design-method}
-\title{Extract and Replace elements of Design}
+\title{Accessors for Design}
 \usage{
-treatment(x)
+treatment(x, binary = FALSE)
 
-\S4method{treatment}{Design}(x)
+\S4method{treatment}{Design}(x, binary = FALSE)
 
 treatment(x) <- value
 
@@ -78,12 +78,27 @@ forcings(x) <- value
 \arguments{
 \item{x}{Design object}
 
+\item{binary}{Logical; if FALSE (default), return a \code{data.frame} containing
+the named treatment variable. If TRUE and \code{x} has a formula in
+\code{@dichotomization}, return a \code{data.frame} containing a binary
+treatment variable with the name "z__". Has no effect if
+\code{@dichotomization} is \code{NULL}.}
+
 \item{value}{Replacement. Either a vector/matrix of appropriate dimension,
 or a named data.frame if renaming variable as well.}
 }
 \value{
-data.frame containing unit-leve information
+If \code{binary = FALSE} data.frame containing treatment variable.
+If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
+membership.
 }
 \description{
-Extract and Replace elements of Design
+Extract and replace elements of the Design
+}
+\details{
+For \code{treatment()}, the value of \code{binary} also affects the
+dimensions of what is return. \code{treatment(..., binary = FALSE)} (the
+default) will return a \code{data.frame} with the treatment as a column, for
+consistency with the other accessors. However, for \code{treatment(...,
+binary = TRUE)}, the output is a vector.
 }

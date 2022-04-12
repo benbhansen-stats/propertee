@@ -12,26 +12,10 @@ test_that("DirectAdjusted object", {
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 
-  des <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata)
-
-  # issue18 - extra expect_warning
-  expect_warning(dalm <- DirectAdjusted(lm(y ~ o, data = simdata,
-                                           weights = ate(des)),
-                                        Design = des, target = "ett"))
-  # issue18 end
-
-  expect_s4_class(dalm, "DirectAdjusted")
-  expect_true(is(dalm, "lm"))
-
-  expect_identical(dalm$model$"(weights)"@Design, des)
-  expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
-
-
-  # issue18 - extra expect_warning
-  expect_warning(expect_error(DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
+  expect_error(DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
                                              Design = des, target = "abc"),
-                              "must be one of"))
-  # issue18 end
+                              "must be one of")
+
 })
 
 test_that("DirectAdjusted print/show", {
@@ -71,12 +55,6 @@ test_that("Conversion from lm to DirectAdjusted", {
                "lm object")
   expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
                "WeightedDesign weights")
-
-  expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
-               "treatment")
-
-  expect_error(as.DirectAdjusted(lm(y ~ 1, data = simdata, weights = ate(des))),
-               "treatment")
 
   expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)), data = simdata, weights = ate(des))),
                "constant")
