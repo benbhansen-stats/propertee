@@ -148,6 +148,12 @@ setMethod("c", signature(x = "WeightedDesign"),
             designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
             # Remove dichotomizations to not check them for equality
             if (!force_dichotomization_equal) {
+              if (length(unique(lapply(designs, slot, "dichotomization"))) > 1) {
+                warning(paste("Dichotomizations differ among `WeightedDesigns`",
+                              "to be combined. \nResult will have",
+                              "`dichotomization` from first `WeightedDesign`",
+                              "entered."), call. = FALSE)
+              }
               designs <- lapply(designs, `dichotomization<-`, formula())
             }
             if (length(unique(designs)) > 1) {

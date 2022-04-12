@@ -438,7 +438,8 @@ test_that("Combining weighted designs with different dichotomizations ", {
   w2 <- ate(des, data = simdata, dichotomize = dose >= 200 ~ .)
   w3 <- ate(des, data = simdata, dichotomize = dose >= 100 ~ .)
 
-  c_w <- c(w1, w2, w3)
+  expect_warning(c_w <- c(w1, w2, w3),
+                 "differ")
   expect_true(is(c_w, "WeightedDesign"))
   expect_length(c_w, 150)
 
