@@ -125,14 +125,28 @@ being $\tau$, with sandwich components $A_{22}$ and $B_{22}$. (The symbols "$\ph
 used as Carroll et al use them, while our "$\tau$" corresponds to
 their "$\mathcal{B}$".)
 
-The leading $n^{-1}$ factor should be struck from the expression for
-$\mathrm{var}(\hat{\mathcal{B}})$.  We take $i$ to range over the
+We take $i$ to range over the
 units of assignment (clusters) not elements^[We'll need to aggregate
 (by summing) the elementwise estimating equation contributions to the
 cluster level, to form cluster-wise estimating equation
-contributions.]. Carroll et al's formulas for $A_{11}$, $A_{21}$ and
+contributions.].
+The Carroll et al development is missing $n^{-1}$ factors at the right of
+the equations defining $A_{n,\, 11}, \ldots, B_{n,\, 22}$.  To avoid ambiguities in mapping to external subroutines' understanding of "$n$"^[Carroll et al seem to have a single sample in mind,
+without clusters, whereas we have both $\mathcal{C}$ and $\mathcal{Q}$,
+with or without clusters. Where necessary, we use $n_\mathcal{C}$ and
+$n_\mathcal{Q}$ for the unit-of-assignment counts in the two samples
+respectively.], let's address the error by leaving those displays as-is,
+while striking the leading $n^{-1}$ factors from display (A.34)
+and from the subsequent expression for
+$\mathrm{var}(\hat{\mathcal{B}})$: i.e., turn the A and B matrices
+into sums not means.
+Carroll et al's formulas for $A_{11}$, $A_{21}$ and
 $A_{22}$ then apply, although design-based standard errors call for
-different calculations of $B_{11}$, $B_{12}$ and $B_{22}$.  Denote the
+different calculations of $B_{11}$, $B_{12}$ and $B_{22}$.
+(When we get around to putting the multidecker sandwich together, we'll need
+to be cognizant of the fact that its As and Bs are means not sums,
+and ready to compensate for the fact that it will have divided by different
+$ns$ in figuring the means that are $A_{11}$ and $A_{22}$, for example.) Denote the
 clusters/units of assignment that are represented in covariance and
 quasiexperimental samples by $\mathcal{C}$ and $\mathcal{Q}$
 respectively.
@@ -146,28 +160,31 @@ To estimate variances and covariances of $\tau$, we'll need to assemble the foll
 functions $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$
 and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$; 
 3. For the quasiexperimental sample $\mathcal{Q}$, matrices
-$$\nabla_{\alpha} \{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}):
+$$\nabla_{\alpha} \{\sum_{j \in i}\psi(\tilde{\mathbf{Y}}_j, \hat{\tau}, {\alpha}):
 i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to
-$A_{21}$;
-4. Estimates of the direct adjustment model's A "bread matrix" $(n A_{22})^{-1} =
-\{\nabla_\tau \sum_{i \in \mathcal{Q}}
+$A_{21}$, where "$j \in i$" means "elements $j$ of cluster $i$" and "$\sum_{j \in i} \psi(\tilde{\mathbf{Y}}_j, \hat{\tau}, {\alpha})$" is interpreted to mean "$\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha})$" if there is no clustering;
+4. Estimates of the direct adjustment model's "bread matrix" $(n_\mathcal{Q}^{-1} A_{22})^{-1} =
+\{\frac{1}{\# \mathcal{Q}}\nabla_\tau \sum_{i \in \mathcal{Q}}
 \mathbb{E}[\psi(\tilde{\mathbf{Y}}_i, \tau, \hat{\alpha})]
-\vert_{\tau=\hat\tau}\}^{-1}$, i.e. the inverse of its unscaled Fisher information
-w.r.t. $\tau$ only, along with the (similarly unscaled) "meat" or B matrix $n B_{22} =
+\vert_{\tau=\hat\tau}\}^{-1}$, i.e. the inverse of its Fisher information
+w.r.t. $\tau$ only, along with the "meat matrix" 
+$n_\mathcal{Q}^{-1} B_{22} = n_\mathcal{Q}^{-1}
 \mathrm{Cov}[\sum_{i \in \mathcal{Q}} \psi(\tilde{\mathbf{Y}}_i,
 {\tau}, {\alpha})]_{({\tau}, {\alpha})=(\hat{\tau}, \hat{\alpha})}$;
-5. The covariance model's bread matrix $(n \hat{A}_{11})^{-1} = \{\sum_{i \in \mathcal{C}}
+5. The covariance model's bread matrix $(n_\mathcal{C}^{-1} \hat{A}_{11})^{-1} = 
+\{n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
 \nabla_\alpha [\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}\}^{-1}$; and
 6. for covariance estimation in the conventional "model-based" setup
-only, estimates of the covariance model's B matrix $nB_{11} =
+only, estimates of the covariance model's B matrix $n_\mathcal{C}^{-1}B_{11} =
+n_\mathcal{C}^{-1}
 \mathrm{Cov}[\sum_{i \in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}$ (a "clustered" covariance estimate).
 
-In (5), observed information $\sum_{i \in \mathcal{C}}
+In (5), observed information $n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
 \nabla_\alpha [\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}$ is preferred to "observed expected"
-information, $\sum_{i \in \mathcal{C}} \nabla_\alpha \mathbb{E}
+information, $n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}} \nabla_\alpha \mathbb{E}
 [\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}$, because
 observed information is agnostic as to whether expectation is
 calculated with conditioning on potential outcomes, ie the finite
