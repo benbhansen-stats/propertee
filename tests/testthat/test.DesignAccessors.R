@@ -598,3 +598,35 @@ test_that("Accessing and replacing dichotomization", {
   expect_error(dichotomization(des) <- ~ a,
                "invalid")
 })
+
+test_that("Updating call works", {
+
+  data(simdata)
+
+  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
+
+  expect_true(any(grepl("dose", des@call$formula[[2]])))
+  treatment(des) <- data.frame(newt = 1:10)
+  expect_false(all(grepl("dose", des@call$formula[[2]])))
+  expect_true(any(grepl("newt", des@call$formula[[2]])))
+
+  expect_true(any(grepl("cid1", des@call$formula[[3]])))
+  unitids(des) <- data.frame(newua = 1:10)
+  expect_false(all(grepl("cid1", des@call$formula[[3]])))
+  expect_true(any(grepl("newua", des@call$formula[[3]])))
+
+  des2 <- rd_design(dose ~ unitid(cid1, cid2) + block(bid) +
+                      forcing(force), data = simdata)
+
+  expect_true(any(grepl("bid", des2@call$formula[[3]])))
+  blocks(des2) <- data.frame(newb = 1:10)
+  expect_false(all(grepl("bid", des2@call$formula[[3]])))
+  expect_true(any(grepl("newb", des2@call$formula[[3]])))
+
+  expect_true(any(grepl("force", des2@call$formula[[3]])))
+  forcings(des2) <- data.frame(newf = 1:10)
+  expect_false(all(grepl("force", des2@call$formula[[3]])))
+  expect_true(any(grepl("newf", des2@call$formula[[3]])))
+
+
+})

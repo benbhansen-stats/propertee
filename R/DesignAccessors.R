@@ -43,7 +43,7 @@ setMethod("treatment<-", "Design", function(x, value) {
 
   x@structure[x@column_index == "t"] <- value
   names(x@structure)[x@column_index == "t"] <- colnames(value)
-  #x@call$formula[[2]] <- as.name(paste(colnames(value), col = "+"))
+  x@call$formula <- .update_call_formula(x)
   validObject(x)
   x
 })
@@ -105,6 +105,7 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
 
     x@structure <- x@structure[-dupuoa, ]
   }
+  x@call$formula <- .update_call_formula(x)
   validObject(x)
   x
 })
@@ -152,6 +153,7 @@ setMethod("clusters<-", "Design", function(x, value) {
 
     x@structure <- x@structure[-dupclust, ]
   }
+  x@call$formula <- .update_call_formula(x)
   validObject(x)
   x
 })
@@ -199,6 +201,7 @@ setMethod("unitids<-", "Design", function(x, value) {
 
     x@structure <- x@structure[-dupids, ]
   }
+  x@call$formula <- .update_call_formula(x)
   validObject(x)
   x
 })
@@ -224,7 +227,10 @@ setGeneric("blocks<-", function(x, value) standardGeneric("blocks<-"))
 setMethod("blocks<-", "Design", function(x, value) {
   value <- .convert_to_data.frame(value, x, "b")
 
-  .update_structure(x, value, "b")
+  x <- .update_structure(x, value, "b")
+  x@call$formula <- .update_call_formula(x)
+  validObject(x)
+  x
 })
 
 ############### Forcing
@@ -255,7 +261,10 @@ setMethod("forcings<-", "Design", function(x, value) {
 
   value <- .convert_to_data.frame(value, x, "f")
 
-  .update_structure(x, value, "f")
+  x <- .update_structure(x, value, "f")
+  x@call$formula <- .update_call_formula(x)
+  validObject(x)
+  x
 })
 
 ############### dichotomization
@@ -337,3 +346,50 @@ setMethod("dichotomization<-", "Design", function(x, value) {
   validObject(design)
   return(design)
   }
+
+# (Internal) Updates `des@call`'s formula with the currently defined variable
+# names. Returns the updated formula, should be stuck into the design via
+# `des@call$formula <- .update_call_formula(des)`
+.update_call_formula <- function(design) {
+
+  .collapse <- function(d, type) {
+    paste(var_names(d, type), collapse = ",")
+  }
+
+  # Get treatment, ~, and uoa/cluster
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
+                 .collapse(design, "u"), ")")
+
+  # Get block if included
+  if (length(var_names(design, "b")) > 0) {
+    form <- paste0(form, "+ block(", .collapse(design, "b"), ")")
+  }
+
+  if (design@type == "RD") {
+    form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
+  }
+  form <- formula(form)
+}
+# (Internal) Updates `des@call`'s formula with the currently defined variable
+# names. Returns the updated formula, should be stuck into the design via
+# `des@call$formula <- .update_call_formula(des)`
+.update_call_formula <- function(design) {
+
+  .collapse <- function(d, type) {
+    paste(var_names(d, type), collapse = ",")
+  }
+
+  # Get treatment, ~, and uoa/cluster
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
+                 .collapse(design, "u"), ")")
+
+  # Get block if included
+  if (length(var_names(design, "b")) > 0) {
+    form <- paste0(form, "+ block(", .collapse(design, "b"), ")")
+  }
+
+  if (design@type == "RD") {
+    form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
+  }
+  form <- formula(form)
+}
