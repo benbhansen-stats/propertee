@@ -136,7 +136,7 @@ test_that("WeightedDesign argument instead of Design", {
   des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
-  wdes <- ate(des, simdata)
+  wdes <- ate(des, data = simdata)
 
   withdes <- ittestimate(des,  simdata, "y")
   withwdes <- ittestimate(wdes, simdata, "y")

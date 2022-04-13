@@ -62,7 +62,7 @@ ittestimate <- function(design,
                    "ate" = ate,
                    "ett" = ett,
                    stop("invalid target"))
-    weights <- wtfn(design, merged)
+    weights <- wtfn(design, data = merged)
   } else {
     if (length(weights) != nrow(merged)) {
       stop("weights must be same length as rows of `data`")

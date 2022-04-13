@@ -1,47 +1,61 @@
 ##' @title Generate Direct Adjusted Weights
 ##' @param design a Design object created by one of `rct_design`, `rd_design`,
 ##'   or `obs_design`.
-##' @param data optionally the data for the analysis to be performed on. May be
-##'   excluded if these functions are included as the `weights` argument of a
-##'   model.
+##' @param dichotomize optionally, a formula defining the dichotomization of the
+##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
+##'   help for \code{rct_design()} e.g. for details.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
 ##'   assignment variables in `design` to cluster/unit of assignment variables
 ##'   in `data`. Names represent variables in the Design; values represent
 ##'   variables in the data. Only needed if variable names differ.
-##' @param dichotomize optionally, a formula defining the dichotomization of the
-##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
-##'   help for \code{rct_design()} e.g. for details.
+##' @param data optionally the data for the analysis to be performed on. May be
+##'   excluded if these functions are included as the `weights` argument of a
+##'   model.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
-  .weights_calc(design, data, by, "ett", dichotomize = dichotomize)
+ett <- function(design, dichotomize = NULL, by = NULL, data = NULL) {
+  .weights_calc(design = design,
+                target = "ett",
+                dichotomize = dichotomize,
+                by = by,
+                data = data)
 }
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, data = NULL, by = NULL, dichotomize = NULL) {
-  .weights_calc(design, data, by, "ate", dichotomize = dichotomize)
+ate <- function(design, dichotomize = NULL, by = NULL, data = NULL) {
+  .weights_calc(design = design,
+                target = "ate",
+                dichotomize = dichotomize,
+                by = by,
+                data = data)
 }
 
 # (Internal) Calculates weights
-.weights_calc <- function(design, data, by, target, dichotomize) {
+.weights_calc <- function(design, target, dichotomize, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
 
-  if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, by)
-  }
-
   if (!is.null(dichotomize)) {
+    if (!is(dichotomize, "formula")) {
+      stop("`dichotomize` must be a `formula`")
+    }
     if (is_dichotomized(design)) {
       warning("design is already dichotomized; over-writing with new `dichotomize`")
     }
     dichotomization(design) <- dichotomize
   }
 
+  if (is.null(data)) {
+    data <- .get_data_from_model(design@call$formula, by)
+  } else if (!is.data.frame(data)) {
+    stop("`data` must be `data.frame`")
+  }
+
   if (!is.null(by)) {
+    # .update_by handles checking input
     design <- .update_by(design, data, by)
   }
 
