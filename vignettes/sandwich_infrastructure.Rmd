@@ -1,10 +1,10 @@
 ---
-title: 'Enumeration of data objects required for standard errors of prior covariance model-assisted effect estimation'
+title: 'Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model'
 author: 'Ben Hansen'
 output: rmarkdown::html_vignette
 bibliography: bbhrefs.bib
 vignette: >
-  %\VignetteIndexEntry{Enumeration of data objects required for standard errors of prior covariance model-assisted effect estimation}
+  %\VignetteIndexEntry{Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 date: 'April 2022'
@@ -45,10 +45,8 @@ units described in `Q`; the offset is similar to what `predict(cmod, newdata=Q, 
 
 At this point `m` has class `lm`, but with
 additional information tucked away in `m[['model']]`: this data frame
-will have a column `(weights)` of class `WeightedDesign`, and a column
-`offset(cov_adj(cmod))` that's either of class `SandwichLayer`, if
-`cov_adj()` was able to arrange this, or `PreSandwichLayer` as a
-fallback.
+will have special columns `(weights)` and
+`offset(cov_adj(cmod))`.  As of this writing, the flexida package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two planned classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information. 
 
 Standard errors will be obtained through subsequent steps, e.g. 
 ```{r eval=FALSE}
