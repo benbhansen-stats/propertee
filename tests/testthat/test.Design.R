@@ -314,6 +314,14 @@ test_that("Design printing", {
   expect_output(show(desrd), "bid")
   expect_output(show(desrd), "force")
 
+  expect_no_match(capture.output(show(desrct)), "Dichotomy rule")
+
+  d <- o > 2 ~ .
+  desdichot <- rct_design(o ~ cluster(cid1, cid2), data = simdata,
+                          dichotomy = d)
+
+  expect_output(show(desdichot), "Dichotomy rule")
+  expect_output(show(desdichot), deparse(d))
 })
 
 
