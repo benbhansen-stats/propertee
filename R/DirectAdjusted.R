@@ -12,7 +12,7 @@ setValidity("DirectAdjusted", function(object) {
     return("weight must be WeightedDesign created by `ate()` or `ett()`")
   }
   if (!has_binary_treatment(object@Design)) {
-    return("Treatment must be binary or have a dichotomization.")
+    return("Treatment must be binary or have a dichotomy.")
   }
   if (all(object$model[1, 2] == object$model[, 2])) {
     return("treatment variable must not be constant")

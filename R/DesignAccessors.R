@@ -15,9 +15,9 @@ setGeneric("treatment", function(x, binary = FALSE) standardGeneric("treatment")
 ##' @param x Design object
 ##' @param binary Logical; if FALSE (default), return a `data.frame` containing
 ##'   the named treatment variable. If TRUE and \code{x} has a formula in
-##'   \code{@dichotomization}, return a `data.frame` containing a binary
+##'   \code{@dichotomy}, return a `data.frame` containing a binary
 ##'   treatment variable with the name "z__". Has no effect if
-##'   \code{@dichotomization} is \code{NULL}.
+##'   \code{@dichotomy} is \code{NULL}.
 ##' @return If \code{binary = FALSE} data.frame containing treatment variable.
 ##'   If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
 ##'   membership.
@@ -49,7 +49,7 @@ setMethod("treatment<-", "Design", function(x, value) {
 })
 
 # (Internal) Extracts treatment as binary vector if possible (if design has
-# dichotomization, or if treatment is 0/1), or else errors.
+# dichotomy, or if treatment is 0/1), or else errors.
 .bin_txt <- function(des) {
   if (!is_dichotomized(des)) {
     tt <- treatment(des, binary = FALSE)[, 1]
@@ -59,7 +59,7 @@ setMethod("treatment<-", "Design", function(x, value) {
     return(tt)
   }
   .binarize_treatment(treatment(des, binary = FALSE),
-                      des@dichotomization)
+                      des@dichotomy)
 }
 
 ############### Units of Assignment
@@ -267,33 +267,33 @@ setMethod("forcings<-", "Design", function(x, value) {
   x
 })
 
-############### dichotomization
+############### dichotomy
 
-##' Extract or replace dichotomization
+##' Extract or replace dichotomy
 ##' @param x Design object
-##' @param value Replacement dichotomization formula, or \code{NULL} to remove
+##' @param value Replacement dichotomy formula, or \code{NULL} to remove
 ##' @return Dichomization formula
 ##' @export
-##' @rdname Design_extract_dichotomization
-setGeneric("dichotomization", function(x) standardGeneric("dichotomization"))
+##' @rdname Design_extract_dichotomy
+setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))
 
 ##' @export
-##' @rdname Design_extract_dichotomization
-setMethod("dichotomization", "Design", function(x) {
-  x@dichotomization
+##' @rdname Design_extract_dichotomy
+setMethod("dichotomy", "Design", function(x) {
+  x@dichotomy
 })
 
 ##' @export
-##' @rdname Design_extract_dichotomization
-setGeneric("dichotomization<-", function(x, value) standardGeneric("dichotomization<-"))
+##' @rdname Design_extract_dichotomy
+setGeneric("dichotomy<-", function(x, value) standardGeneric("dichotomy<-"))
 
 ##' @export
-##' @rdname Design_extract_dichotomization
-setMethod("dichotomization<-", "Design", function(x, value) {
+##' @rdname Design_extract_dichotomy
+setMethod("dichotomy<-", "Design", function(x, value) {
   if (is.null(value)) {
     value <- stats::formula()
   }
-  x@dichotomization <- value
+  x@dichotomy <- value
   validObject(x)
   x
 })

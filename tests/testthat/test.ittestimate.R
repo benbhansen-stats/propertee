@@ -102,7 +102,8 @@ test_that("covariate adjustment", {
   it <- ittestimate(des, simdata, "y", cov_adj_model = camod2)
   expect_true(!is.null(it$model$"offset(cov_adj)"))
 
-  expect_error(ittestimate(des, simdata, "y", cov_adj_model = 1),
+  # Silly argument to cov_adj_model just to get to the proper error
+  expect_error(ittestimate(des, simdata, "y", cov_adj_model = 1~1),
                "support predict")
 })
 

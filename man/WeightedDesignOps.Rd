@@ -28,7 +28,7 @@
 
 \S4method{/}{numeric,WeightedDesign}(e1, e2)
 
-\S4method{c}{WeightedDesign}(x, ..., force_dichotomization_equal = FALSE)
+\S4method{c}{WeightedDesign}(x, ..., force_dichotomy_equal = FALSE)
 }
 \arguments{
 \item{e1}{\code{WeightedDesign} or numeric}
@@ -39,9 +39,9 @@
 
 \item{...}{additional \code{WeightedDesign}s}
 
-\item{force_dichotomization_equal}{if \code{FALSE} (default), Designs are
-considered equivalent even if their \code{dichotomization} differs. If
-\code{TRUE}, \code{@dichotomization} must also be equal.}
+\item{force_dichotomy_equal}{if \code{FALSE} (default), Designs are
+considered equivalent even if their \code{dichotomy} differs. If
+\code{TRUE}, \code{@dichotomy} must also be equal.}
 }
 \description{
 \code{WeightedDesign}s do not support addition or subtraction, but do
@@ -50,14 +50,13 @@ support all other reasonable operations.
 \details{
 Concatenating \code{WeightedDesign}s with \code{c()} requires both
 individual \code{WeightedDesign}s to come from the same \code{Design}
-(except \code{dichotomization}, see below) and have the target (\code{ate()}
-or \code{ett()}). Both arguments to \code{c()} must be
-\code{WeightedDesign}.
+(except \code{dichotomy}, see below) and have the target (\code{ate()} or
+\code{ett()}). Both arguments to \code{c()} must be \code{WeightedDesign}.
 
 One exception when concatenting \code{WeightedDesign}s with different
 \code{Design} exists. There may be cases where the treatment is continuous
 or has multiple levels, and there is a need to combine the weights from the
-same general design, but with different dichotomizations. Therefore multiple
+same general design, but with different dichotomys. Therefore multiple
 \code{WeightedDesign}s can be combined if they are identical except for
-their \code{@dichotomization} slots.
+their \code{@dichotomy} slots.
 }

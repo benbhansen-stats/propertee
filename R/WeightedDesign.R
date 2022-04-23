@@ -16,7 +16,7 @@ setValidity("WeightedDesign", function(object) {
   }
   # The design in weighted design must have an accessible binary treatment.
   if (!has_binary_treatment(object@Design)) {
-    return("Treatment must be binary or have a dichotomization.")
+    return("Treatment must be binary or have a dichotomy.")
   }
   TRUE
 })
@@ -36,16 +36,15 @@ setMethod("show", "WeightedDesign", function(object) {
 ##'
 ##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
 ##' individual \code{WeightedDesign}s to come from the same \code{Design}
-##' (except \code{dichotomization}, see below) and have the target (\code{ate()}
-##' or \code{ett()}). Both arguments to \code{c()} must be
-##' \code{WeightedDesign}.
+##' (except \code{dichotomy}, see below) and have the target (\code{ate()} or
+##' \code{ett()}). Both arguments to \code{c()} must be \code{WeightedDesign}.
 ##'
 ##' One exception when concatenting \code{WeightedDesign}s with different
 ##' \code{Design} exists. There may be cases where the treatment is continuous
 ##' or has multiple levels, and there is a need to combine the weights from the
-##' same general design, but with different dichotomizations. Therefore multiple
+##' same general design, but with different dichotomys. Therefore multiple
 ##' \code{WeightedDesign}s can be combined if they are identical except for
-##' their \code{@dichotomization} slots.
+##' their \code{@dichotomy} slots.
 ##'
 ##' @title \code{WeightedDesign} Ops
 ##' @param e1 \code{WeightedDesign} or numeric
@@ -129,13 +128,13 @@ setMethod("weights", "WeightedDesign", function(object, ...) {
 })
 
 ##' @rdname WeightedDesignOps
-##' @param force_dichotomization_equal if \code{FALSE} (default), Designs are
-##'   considered equivalent even if their \code{dichotomization} differs. If
-##'   \code{TRUE}, \code{@dichotomization} must also be equal.
+##' @param force_dichotomy_equal if \code{FALSE} (default), Designs are
+##'   considered equivalent even if their \code{dichotomy} differs. If
+##'   \code{TRUE}, \code{@dichotomy} must also be equal.
 ##' @export
 ##' @importFrom methods slot
 setMethod("c", signature(x = "WeightedDesign"),
-          function(x, ..., force_dichotomization_equal = FALSE) {
+          function(x, ..., force_dichotomy_equal = FALSE) {
             dots <- list(...)
             # x must be a WeightedDesign to get here; ensure all other elements
             # are as well
@@ -146,15 +145,15 @@ setMethod("c", signature(x = "WeightedDesign"),
             # Make sure all Designs are the same. Create a list of all targets,
             # then check if `unique` returns a single element
             designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
-            # Remove dichotomizations to not check them for equality
-            if (!force_dichotomization_equal) {
-              if (length(unique(lapply(designs, slot, "dichotomization"))) > 1) {
-                warning(paste("Dichotomizations differ among `WeightedDesigns`",
+            # Remove dichotomys to not check them for equality
+            if (!force_dichotomy_equal) {
+              if (length(unique(lapply(designs, slot, "dichotomy"))) > 1) {
+                warning(paste("Dichotomys differ among `WeightedDesigns`",
                               "to be combined. \nResult will have",
-                              "`dichotomization` from first `WeightedDesign`",
+                              "`dichotomy` from first `WeightedDesign`",
                               "entered."), call. = FALSE)
               }
-              designs <- lapply(designs, `dichotomization<-`, formula())
+              designs <- lapply(designs, `dichotomy<-`, formula())
             }
             if (length(unique(designs)) > 1) {
               stop("WeightedDesigns can only be concatenated from identical Designs")

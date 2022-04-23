@@ -1,7 +1,7 @@
 ##' @title Generate Direct Adjusted Weights
 ##' @param design a Design object created by one of `rct_design`, `rd_design`,
 ##'   or `obs_design`.
-##' @param dichotomize optionally, a formula defining the dichotomization of the
+##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
 ##'   help for \code{rct_design()} e.g. for details.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
@@ -14,38 +14,38 @@
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, dichotomize = NULL, by = NULL, data = NULL) {
+ett <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ett",
-                dichotomize = dichotomize,
+                dichotomy = dichotomy,
                 by = by,
                 data = data)
 }
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, dichotomize = NULL, by = NULL, data = NULL) {
+ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ate",
-                dichotomize = dichotomize,
+                dichotomy = dichotomy,
                 by = by,
                 data = data)
 }
 
 # (Internal) Calculates weights
-.weights_calc <- function(design, target, dichotomize, by, data) {
+.weights_calc <- function(design, target, dichotomy, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
 
-  if (!is.null(dichotomize)) {
-    if (!is(dichotomize, "formula")) {
-      stop("`dichotomize` must be a `formula`")
+  if (!is.null(dichotomy)) {
+    if (!is(dichotomy, "formula")) {
+      stop("`dichotomy` must be a `formula`")
     }
     if (is_dichotomized(design)) {
-      warning("design is already dichotomized; over-writing with new `dichotomize`")
+      warning("design is already dichotomized; over-writing with new `dichotomy`")
     }
-    dichotomization(design) <- dichotomize
+    dichotomy(design) <- dichotomy
   }
 
   if (is.null(data)) {
@@ -62,7 +62,7 @@ ate <- function(design, dichotomize = NULL, by = NULL, data = NULL) {
   # Ensure treatment is binary
   if (!has_binary_treatment(design)) {
     stop(paste("To calculate weights, treatment must either be 0/1 binary,\n",
-               "or the Design must have a dichotomization."))
+               "or the Design must have a dichotomy."))
   }
 
 

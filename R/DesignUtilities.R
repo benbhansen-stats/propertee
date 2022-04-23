@@ -110,13 +110,13 @@ forcing <- unit_of_assignment
 ##' (\code{has_binary_treatment()}).
 ##'
 ##' \code{is_dichotomized()} checks for the the presence of a
-##' \code{@dichotomization} slot in the Design, either passed directly into the
+##' \code{@dichotomy} slot in the Design, either passed directly into the
 ##' various \code{*_design()} Design creators, or added afterwards with
-##' \code{dichotomization(my_design) <-}.
+##' \code{dichotomy(my_design) <-}.
 ##'
 ##' \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
 ##' numeric with only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA},
-##' if the Design is dichotomized.
+##' if the Design has a \code{dichotomy}.
 ##'
 ##' Note that if the treatment given into a Design is already binary
 ##' (exclusively measured as encoding only 0's and 1's, or is \code{logical}),
@@ -126,7 +126,8 @@ forcing <- unit_of_assignment
 ##' \code{has_binary_treatment()}.
 ##'
 ##' @param des A design
-##' @return \code{TRUE} if \code{des} was dichotomized; \code{FALSE} otherwise
+##' @return \code{TRUE} if \code{des} has a \code{dichotomy}; \code{FALSE}
+##'   otherwise
 ##' @export
 ##' @rdname design_treatment_status
 is_dichotomized <- function(des) {
@@ -134,7 +135,7 @@ is_dichotomized <- function(des) {
     stop("des must be a Design object.")
   }
 
-  length(des@dichotomization) == 3
+  length(des@dichotomy) == 3
 
 }
 

@@ -4,7 +4,7 @@ Design <- setClass("Design",
                              type = "character",
                              unit_of_assignment_type = "character",
                              call = "call",
-                             dichotomization = "formula"))
+                             dichotomy = "formula"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -50,8 +50,8 @@ setValidity("Design", function(object) {
   if (!object@unit_of_assignment_type %in% c("cluster", "unitid", "unit_of_assignment")) {
     return('valid `unit_of_assignment_type`s are "unit_of_assignment", "cluster" or "unitid"')
   }
-  if (!length(object@dichotomization) %in% c(0, 3)) {
-    return("@dichotomization invalid")
+  if (!length(object@dichotomy) %in% c(0, 3)) {
+    return("@dichotomy invalid")
   }
   TRUE
 })
@@ -62,7 +62,7 @@ new_Design <- function(form,
                        type,
                        subset = NULL,
                        call = NULL,
-                       dichotomize = stats::formula()) {
+                       dichotomy = stats::formula()) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -74,12 +74,12 @@ new_Design <- function(form,
   }
 
   # `formula()` is a close equivalent of a NULL formula
-  if (is.null(dichotomize)) dichotomize <- stats::formula()
+  if (is.null(dichotomy)) dichotomy <- stats::formula()
   # the fact that a formula has an environment is playing hell with testing. I
-  # don't believe we'll ever need the environment in which the dichotomize
+  # don't believe we'll ever need the environment in which the dichotomy
   # formula is created as we use it on wahtever data we need, so setting it
   # always to the generic interactive environment for simplicity.
-  environment(dichotomize) <- globalenv()
+  environment(dichotomy) <- globalenv()
 
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
@@ -120,8 +120,8 @@ new_Design <- function(form,
                   "in the left hand side of `form`).\n",
                   "This is supported, but it is recommended to instead",
                   "include the non-binary\ntreatment variable in the `form`",
-                  "and use the `dichotomize` to define the groups.\n",
-                  "Using `dichotomize` will make modifying the groups",
+                  "and use the `dichotomy` to define the groups.\n",
+                  "Using `dichotomy` will make modifying the groups",
                   "easier in the future\nshould you need to adjust."))
     # If the user is using conditionals, we'll be converting logical to numeric
     # later but don't need to the add'l warning message.
@@ -178,7 +178,7 @@ new_Design <- function(form,
       type = type,
       unit_of_assignment_type = autype,
       call = call,
-      dichotomization = dichotomize)
+      dichotomy = dichotomy)
 }
 
 ##' Generates a Design object with the given specifications.
@@ -199,20 +199,19 @@ new_Design <- function(form,
 ##' \code{factor} and \code{ordered} are converted to \code{numeric} if the
 ##' levels are \code{numeric}, otherwise to \code{character}. If the treatment
 ##' is not \code{logical} or \code{numeric} with only values 0 and 1, in order
-##' to generate weights with \code{ate()} or \code{ett()}, the
-##' \code{dichotomize} argument must be used to identify the treatment and
-##' control groups. The \code{Design} creation functions (\code{rct_design()},
-##' \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomize}
-##' argument, or instead \code{dichotomize} can be passed to \code{ett()} and
-##' \code{ate()} directly.
+##' to generate weights with \code{ate()} or \code{ett()}, the \code{dichotomy}
+##' argument must be used to identify the treatment and control groups. The
+##' \code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
+##' \code{obs_design()}) all support the \code{dichotomy} argument, or instead
+##' \code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
 ##'
-##' The \code{dichotomize} argument should be a formula consisting of a
+##' The \code{dichotomy} argument should be a formula consisting of a
 ##' conditional statement on both the left-hand side (identifying treatment
 ##' levels associated with "treatment") and the right hand side (identifying
 ##' treatment levels associated with "control"). For example, if your treatment
 ##' variable was called \code{dose}, you might write:
 ##'
-##' \code{dichotomize = dose > 250 ~ dose <= 250}
+##' \code{dichotomy = dose > 250 ~ dose <= 250}
 ##'
 ##' The conditionals need not assign all values of treatment to control or
 ##' treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
@@ -223,33 +222,32 @@ new_Design <- function(form,
 ##' The period (\code{.}) can be used to assign all other units of assignment.
 ##' For example, we could have written the above example as
 ##'
-##' \code{dichotomize = dose > 250 ~ .}
+##' \code{dichotomy = dose > 250 ~ .}
 ##'
 ##' or
 ##'
-##' \code{dichotomize = . ~ dose <= 250}
+##' \code{dichotomy = . ~ dose <= 250}
 ##'
-##' The \code{dichotomize} formula supports all Relational Operators, Logical
+##' The \code{dichotomy} formula supports all Relational Operators, Logical
 ##' Operators, and \code{%in%}.
 ##'
 ##' Note that you can specify a conditional logic treatment in the formula (e.g.
 ##' \code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
-##' instead passing the treatment variable directly and using
-##' \code{dichotomize}. Otherwise changing the dichotomization will require
-##' re-creating the Design, instead of simply using
-##' \code{dichotomization(design) <-} or passing \code{dichotomize} to
-##' \code{ate()} or \code{ett()}.
+##' instead passing the treatment variable directly and using \code{dichotomy}.
+##' Otherwise changing the dichotomy will require re-creating the Design,
+##' instead of simply using \code{dichotomy(design) <-} or passing
+##' \code{dichotomy} to \code{ate()} or \code{ett()}.
 ##'
 ##' @title Specify Design
 ##' @param formula defines the Design components
 ##' @param data the data set.
 ##' @param subset optionally subset the data before creating the Design object
-##' @param dichotomize optionally, a formula defining the dichotomization of the
+##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @return a Design object of the requested type for use in further analysis
 ##' @export
 ##' @rdname Design_objects
-rct_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
+rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
   new_Design(form = formula,
@@ -257,12 +255,12 @@ rct_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
              type = "RCT",
              subset = subset,
              call = match.call(),
-             dichotomize = dichotomize)
+             dichotomy = dichotomy)
 }
 
 ##' @export
 ##' @rdname Design_objects
-rd_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
+rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
   new_Design(form = formula,
@@ -270,12 +268,12 @@ rd_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
              type = "RD",
              subset = subset,
              call = match.call(),
-             dichotomize = dichotomize)
+             dichotomy = dichotomy)
 }
 
 ##' @export
 ##' @rdname Design_objects
-obs_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
+obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
   new_Design(form = formula,
@@ -283,7 +281,7 @@ obs_design <- function(formula, data, subset = NULL, dichotomize = NULL) {
              type = "Obs",
              subset = subset,
              call = match.call(),
-             dichotomize = dichotomize)
+             dichotomy = dichotomy)
 }
 
 ##' @title Show a Design
@@ -312,7 +310,7 @@ setMethod("show", "Design", function(object) {
 
   if (is_dichotomized(object)) {
     cat("\n")
-    cat(paste("Dichotomization rule:", deparse(object@dichotomization)))
+    cat(paste("Dichotomy rule:", deparse(object@dichotomy)))
     cat("\n")
   }
 

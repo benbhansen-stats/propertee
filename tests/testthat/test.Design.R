@@ -2,8 +2,8 @@
 fc <- call("ls")
 
 identical_designs <- function(a, b) {
-  attr(a@dichotomization, ".Environment") <- NULL
-  attr(b@dichotomization, ".Environment") <- NULL
+  attr(a@dichotomy, ".Environment") <- NULL
+  attr(b@dichotomy, ".Environment") <- NULL
   expect_identical(a, b)
 }
 
@@ -163,7 +163,7 @@ test_that("Design creation", {
   mtcars <- mtcars[-c(5, 11), ]
 
   d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars,
-                      type = "RCT", call = fc, dichotomize = NULL)
+                      type = "RCT", call = fc, dichotomy = NULL)
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")

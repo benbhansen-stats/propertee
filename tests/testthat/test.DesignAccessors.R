@@ -26,12 +26,12 @@ test_that("Accessing and replacing treatment", {
   expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
 
-  # no dichotomization
+  # no dichotomy
   expect_identical(treatment(des), treatment(des, binary = TRUE))
   expect_identical(treatment(des, binary = FALSE), treatment(des, binary = TRUE))
 
   des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
-                   data = simdata, dichotomize = dose <= 100 ~ dose == 200)
+                   data = simdata, dichotomy = dose <= 100 ~ dose == 200)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
   expect_identical(treatment(des), treatment(des, binary = FALSE))
@@ -50,7 +50,7 @@ test_that("Accessing and replacing treatment", {
   expect_identical(treatment(des)[, 1], .bin_txt(des))
 
   des <- rd_design(o ~ cluster(cid1, cid2) + block(bid) + forcing(force),
-                   data = simdata, dichotomize = o >= 3 ~ .)
+                   data = simdata, dichotomy = o >= 3 ~ .)
 
   expect_true(all(.bin_txt(des) %in% c(0, 1, NA)))
   expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
@@ -549,53 +549,53 @@ test_that("Accessing and replacing forcing", {
 })
 
 
-test_that("Accessing and replacing dichotomization", {
+test_that("Accessing and replacing dichotomy", {
   data(simdata)
 
   des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
-                    dichotomize = dose >= 250 ~ dose < 100)
+                    dichotomy = dose >= 250 ~ dose < 100)
 
-  dd <- dichotomization(des)
+  dd <- dichotomy(des)
   expect_true(is(dd, "formula"))
   expect_length(dd, 3)
 
   expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
 
   des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
-  dd <- dichotomization(des)
+  dd <- dichotomy(des)
   expect_true(is(dd, "formula"))
   expect_length(dd, 0)
 
 
   # assignment
 
-  dichotomization(des) <- dose >= 250 ~ dose < 100
+  dichotomy(des) <- dose >= 250 ~ dose < 100
 
   expect_true(is_dichotomized(des))
-  dd <- dichotomization(des)
+  dd <- dichotomy(des)
   expect_true(is(dd, "formula"))
   expect_length(dd, 3)
 
   expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
 
   # remove dichot with `formula()`
-  dichotomization(des) <- formula()
-  dd <- dichotomization(des)
+  dichotomy(des) <- formula()
+  dd <- dichotomy(des)
   expect_true(is(dd, "formula"))
   expect_length(dd, 0)
 
   # remove dichot with `NULL` (after re-adding it)
-  dichotomization(des) <- dose >= 250 ~ dose < 100
-  dichotomization(des) <- NULL
-  dd <- dichotomization(des)
+  dichotomy(des) <- dose >= 250 ~ dose < 100
+  dichotomy(des) <- NULL
+  dd <- dichotomy(des)
   expect_true(is(dd, "formula"))
   expect_length(dd, 0)
 
 
-  expect_error(dichotomization(des) <- 1,
+  expect_error(dichotomy(des) <- 1,
                "not valid")
   # dichot too short
-  expect_error(dichotomization(des) <- ~ a,
+  expect_error(dichotomy(des) <- ~ a,
                "invalid")
 })
 

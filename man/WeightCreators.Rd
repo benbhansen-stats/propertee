@@ -5,15 +5,15 @@
 \alias{ate}
 \title{Generate Direct Adjusted Weights}
 \usage{
-ett(design, dichotomize = NULL, by = NULL, data = NULL)
+ett(design, dichotomy = NULL, by = NULL, data = NULL)
 
-ate(design, dichotomize = NULL, by = NULL, data = NULL)
+ate(design, dichotomy = NULL, by = NULL, data = NULL)
 }
 \arguments{
 \item{design}{a Design object created by one of \code{rct_design}, \code{rd_design},
 or \code{obs_design}.}
 
-\item{dichotomize}{optionally, a formula defining the dichotomization of the
+\item{dichotomy}{optionally, a formula defining the dichotomy of the
 treatment variable if it isn't already \code{0}/\code{1}. See details of
 help for \code{rct_design()} e.g. for details.}
 

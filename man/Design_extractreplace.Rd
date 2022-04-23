@@ -80,9 +80,9 @@ forcings(x) <- value
 
 \item{binary}{Logical; if FALSE (default), return a \code{data.frame} containing
 the named treatment variable. If TRUE and \code{x} has a formula in
-\code{@dichotomization}, return a \code{data.frame} containing a binary
+\code{@dichotomy}, return a \code{data.frame} containing a binary
 treatment variable with the name "z__". Has no effect if
-\code{@dichotomization} is \code{NULL}.}
+\code{@dichotomy} is \code{NULL}.}
 
 \item{value}{Replacement. Either a vector/matrix of appropriate dimension,
 or a named data.frame if renaming variable as well.}

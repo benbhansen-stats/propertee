@@ -6,11 +6,11 @@
 \alias{obs_design}
 \title{Specify Design}
 \usage{
-rct_design(formula, data, subset = NULL, dichotomize = NULL)
+rct_design(formula, data, subset = NULL, dichotomy = NULL)
 
-rd_design(formula, data, subset = NULL, dichotomize = NULL)
+rd_design(formula, data, subset = NULL, dichotomy = NULL)
 
-obs_design(formula, data, subset = NULL, dichotomize = NULL)
+obs_design(formula, data, subset = NULL, dichotomy = NULL)
 }
 \arguments{
 \item{formula}{defines the Design components}
@@ -19,7 +19,7 @@ obs_design(formula, data, subset = NULL, dichotomize = NULL)
 
 \item{subset}{optionally subset the data before creating the Design object}
 
-\item{dichotomize}{optionally, a formula defining the dichotomization of the
+\item{dichotomy}{optionally, a formula defining the dichotomy of the
 treatment variable if it isn't already 0/1 or \code{logical}. See details.}
 }
 \value{
@@ -45,20 +45,19 @@ anything else, it is attemped to be converted to one of those (for example,
 \code{factor} and \code{ordered} are converted to \code{numeric} if the
 levels are \code{numeric}, otherwise to \code{character}. If the treatment
 is not \code{logical} or \code{numeric} with only values 0 and 1, in order
-to generate weights with \code{ate()} or \code{ett()}, the
-\code{dichotomize} argument must be used to identify the treatment and
-control groups. The \code{Design} creation functions (\code{rct_design()},
-\code{rd_design()}, \code{obs_design()}) all support the \code{dichotomize}
-argument, or instead \code{dichotomize} can be passed to \code{ett()} and
-\code{ate()} directly.
+to generate weights with \code{ate()} or \code{ett()}, the \code{dichotomy}
+argument must be used to identify the treatment and control groups. The
+\code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
+\code{obs_design()}) all support the \code{dichotomy} argument, or instead
+\code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
 
-The \code{dichotomize} argument should be a formula consisting of a
+The \code{dichotomy} argument should be a formula consisting of a
 conditional statement on both the left-hand side (identifying treatment
 levels associated with "treatment") and the right hand side (identifying
 treatment levels associated with "control"). For example, if your treatment
 variable was called \code{dose}, you might write:
 
-\code{dichotomize = dose > 250 ~ dose <= 250}
+\code{dichotomy = dose > 250 ~ dose <= 250}
 
 The conditionals need not assign all values of treatment to control or
 treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
@@ -69,20 +68,19 @@ but will be maintained in the Design for proper standard error calculations.
 The period (\code{.}) can be used to assign all other units of assignment.
 For example, we could have written the above example as
 
-\code{dichotomize = dose > 250 ~ .}
+\code{dichotomy = dose > 250 ~ .}
 
 or
 
-\code{dichotomize = . ~ dose <= 250}
+\code{dichotomy = . ~ dose <= 250}
 
-The \code{dichotomize} formula supports all Relational Operators, Logical
+The \code{dichotomy} formula supports all Relational Operators, Logical
 Operators, and \code{\%in\%}.
 
 Note that you can specify a conditional logic treatment in the formula (e.g.
 \code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
-instead passing the treatment variable directly and using
-\code{dichotomize}. Otherwise changing the dichotomization will require
-re-creating the Design, instead of simply using
-\code{dichotomization(design) <-} or passing \code{dichotomize} to
-\code{ate()} or \code{ett()}.
+instead passing the treatment variable directly and using \code{dichotomy}.
+Otherwise changing the dichotomy will require re-creating the Design,
+instead of simply using \code{dichotomy(design) <-} or passing
+\code{dichotomy} to \code{ate()} or \code{ett()}.
 }

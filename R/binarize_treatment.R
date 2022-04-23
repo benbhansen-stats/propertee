@@ -1,9 +1,9 @@
-# (Internal) Uses a dichotomization formula to create a binary version of the
+# (Internal) Uses a dichotomy formula to create a binary version of the
 # treatment variable.
 .binarize_treatment <- function(trt, dichot) {
 
   if (!is(dichot, "formula")) {
-    stop("`dichotomization` must be formula")
+    stop("`dichotomy` must be formula")
   }
 
   if (!is.data.frame(trt)) {
@@ -24,7 +24,7 @@
     lhs_dot <- TRUE
   }
   if (lhs_dot & rhs_dot) {
-    stop("At least one side for dichotomization formula must not be `.`")
+    stop("At least one side for dichotomy formula must not be `.`")
   }
 
   m <- model.frame(dichot, trt)
@@ -37,7 +37,7 @@
     ditxt <- m[,2] + 2*m[,1] - 1
     ditxt[ditxt == -1] <- NA
     if (any(!is.na(ditxt) & ditxt > 1)) {
-      stop("treatment dichotomization overlaps")
+      stop("treatment dichotomy overlaps")
     }
     return(ditxt)
   }
