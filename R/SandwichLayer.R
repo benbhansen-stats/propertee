@@ -1,6 +1,6 @@
 SandwichLayer <- setClass("SandwichLayer",
                           contains = "numeric",
-                          slots = c(fitted_covariance_model = "list",
+                          slots = c(fitted_covariance_model = "ANY",
                                     prediction_gradient = "matrix",
                                     keys = "data.frame"))
 
