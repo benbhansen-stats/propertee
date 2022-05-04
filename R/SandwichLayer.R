@@ -1,7 +1,7 @@
 SandwichLayer <- setClass("SandwichLayer",
                           contains = "numeric",
                           slots = c(fitted_covariance_model = "list",
-                                    prediction_gradient = "numeric",
+                                    prediction_gradient = "matrix",
                                     keys = "data.frame"))
 
 setValidity("SandwichLayer", function(object) {
@@ -23,9 +23,6 @@ setValidity("SandwichLayer", function(object) {
     return("Functions for extracting vcov elements not applicable to fitted covariance model")
   }
   
-  if (is.null(dim(object@prediction_gradient))) {
-    return("Prediction gradient must be a matrix with valid dimensions")
-  }
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
@@ -36,11 +33,16 @@ setValidity("SandwichLayer", function(object) {
     return(paste0("Prediction gradient does not have the same number of columns as ",
                   "predictors in the covariance model"))
   }
+  
   if (is.null(dim(object@keys))) {
     return("Keys must be a valid dataframe")
   }
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return("Keys does not have the same number of rows as the experiment design matrix")
+  }
+  
+  if (any(is.na(object))) {
+    warning("Offset has NA values; these observations will be dropped in the design model")
   }
   TRUE
 })
