@@ -4,7 +4,7 @@ SandwichLayer <- setClass("SandwichLayer",
                                     prediction_gradient = "numeric",
                                     keys = "data.frame"))
 
-validPreSandwichLayer <- function(object) {
+setValidity("SandwichLayer", function(object) {
   if (!("terms" %in% attr(object@fitted_covariance_model, "names"))) {
     return("Fitted covariance model must have a 'terms' attribute")
   }
@@ -36,15 +36,12 @@ validPreSandwichLayer <- function(object) {
     return(paste0("Prediction gradient does not have the same number of columns as ",
                   "predictors in the covariance model"))
   }
-}
-
-setValidity("SandwichLayer", function(object) {
-  validPreSandwichLayer(object)
   if (is.null(dim(object@keys))) {
     return("Keys must be a valid dataframe")
   }
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return("Keys does not have the same number of rows as the experiment design matrix")
   }
+  TRUE
 })
 
