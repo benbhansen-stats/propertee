@@ -7,16 +7,35 @@ test_that("Sandwich Layer validity", {
                       "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
                       "x" = rnorm(100))
   
-  valid_lm_cmod <- lm(y ~ x)
+  valid_cmod <- lm(y ~ x)
   invalid_cmod <- list("a" = c(1, 2, 3))
-  offset <- stats::predict(valid_lm_cmod, xstar)
-  pred_gradient <- x
+  offset <- stats::predict(valid_cmod, xstar)
+  pred_gradient <- matrix(x, ncol = 1)
   keys <- cbind(xstar[, c("uoa1", "uoa2", "t")], "offset" = offset)
   
+  # covariance model incompatible with model.matrix
   expect_error(new("SandwichLayer",
                    offset,
                    fitted_covariance_model = invalid_cmod,
                    prediction_gradient = pred_gradient,
                    keys = keys),
                "must have a 'terms' attribute")
+  
+  # covariance model incompatible with sandwich package functions
+  invalid_cmod$terms <- valid_cmod$terms
+  expect_error(new("SandwichLayer",
+                   offset,
+                   fitted_covariance_model = invalid_cmod,
+                   prediction_gradient = pred_gradient,
+                   keys = keys),
+               "extracting vcov elements not applicable")
+  
+  # prediction gradient is not a matrix
+  expect_error(new("SandwichLayer",
+                   offset,
+                   fitted_covariance_model = valid_cmod,
+                   prediction_gradient = matrix(as.character(x), ncol = 1),
+                   keys = keys),
+               "must be a numeric matrix")
+  
 })
