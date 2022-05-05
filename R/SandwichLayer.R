@@ -38,11 +38,13 @@ setValidity("SandwichLayer", function(object) {
     return("Keys must be a valid dataframe")
   }
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
-    return("Keys does not have the same number of rows as the experiment design matrix")
+    return(paste0("Keys does not have the same number of rows as the dataset used ",
+                  "to fit the covariance model"))
   }
-  
+
   if (any(is.na(object))) {
-    warning("Offset has NA values; these observations will be dropped in the design model")
+    warning(paste0("Offset has NA values; be careful of dropping these observations ",
+                   "when fitting the design model"))
   }
   TRUE
 })
