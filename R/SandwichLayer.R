@@ -108,8 +108,9 @@ setMethod("as.SandwichLayer", "PreSandwichLayer", function(object, design, by=NU
     colnames(keys) <- desvars
   }
   
-  return(SandwichLayer(object@.Data,
-                       fitted_covariance_model = object@fitted_covariance_model,
-                       prediction_gradient = object@prediction_gradient,
-                       keys = keys))
+  return(new("SandwichLayer",
+             object@.Data,
+             fitted_covariance_model = object@fitted_covariance_model,
+             prediction_gradient = object@prediction_gradient,
+             keys = keys))
 })
