@@ -86,16 +86,26 @@ setValidity("PreSandwichLayer", function(object) {
   TRUE
 })
 
-setMethod("as.SandwichLayer", "PreSandwichLayer", function(object, design, by=NULL) {
+##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
+##' @param x PreSandwichLayer
+##' @param design Design
+##' @param by character; must be named with entries corresponding to Design's
+##' group assignment columns
+##' @return SandwichLayer
+##' @export
+as.SandwichLayer <- function(x, design, by=NULL) {
+  if (!is(x, "PreSandwichLayer")) {
+    stop("x must be a `PreSandwichLayer` object")
+  }
   if (is.null(by)) {
     desvars <- colnames(design@structure)
     missing_desvars <- setdiff(desvars,
-                               colnames(eval(object@fitted_covariance_model$call$data)))
+                               colnames(eval(x@fitted_covariance_model$call$data)))
     for (col in missing_desvars) {
-      object@fitted_covariance_model$call$data[col] <- NA_integer_
+      x@fitted_covariance_model$call$data[col] <- NA_integer_
     }
     
-    keys <- expand.model.frame(object@fitted_covariance_model,
+    keys <- expand.model.frame(x@fitted_covariance_model,
                                desvars,
                                na.expand = T)[colnames(design@structure)]
   } else {
@@ -104,15 +114,15 @@ setMethod("as.SandwichLayer", "PreSandwichLayer", function(object, design, by=NU
     }
     
     desvars <- names(by)
-    keys <- expand.model.frame(object@fitted_covariance_model,
+    keys <- expand.model.frame(x@fitted_covariance_model,
                                by[desvars],
                                na.expand = T)[by[desvars]]
     colnames(keys) <- desvars
   }
   
   return(new("SandwichLayer",
-             object@.Data,
-             fitted_covariance_model = object@fitted_covariance_model,
-             prediction_gradient = object@prediction_gradient,
+             x@.Data,
+             fitted_covariance_model = x@fitted_covariance_model,
+             prediction_gradient = x@prediction_gradient,
              keys = keys))
-})
+}

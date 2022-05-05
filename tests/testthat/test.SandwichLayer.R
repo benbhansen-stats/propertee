@@ -12,8 +12,8 @@ test_that("Sandwich Layer validity", {
   valid_cmod <- lm(y ~ cont_x + as.factor(cat_x))
   invalid_cmod <- list("a" = c(1, 2, 3))
   offset <- stats::predict(valid_cmod, xstar)
-  pred_gradient <- as.matrix(cbind(cont_x, cat_x))
-  keys <- cbind(xstar[, c("uoa1", "uoa2", "t")], "offset" = offset)
+  pred_gradient <- model.matrix(valid_cmod)
+  keys <- xstar[, c("uoa1", "uoa2", "t")]
   
   # covariance model incompatible with model.matrix
   expect_error(new("SandwichLayer",
@@ -47,5 +47,21 @@ test_that("Sandwich Layer validity", {
                    prediction_gradient = as.matrix(cbind(cont_x, cat_x)[2:100,]),
                    keys = keys),
                "same number of rows")
+  
+  # prediction gradient does not have valid number of columns
+  expect_error(new("SandwichLayer",
+                   offset,
+                   fitted_covariance_model = valid_cmod,
+                   prediction_gradient = as.matrix(cont_x),
+                   keys = keys),
+               "same number of columns")
+
+  # prediction gradient has NA's
+  expect_warning(new("SandwichLayer",
+                     c(offset[1:99], NA_real_),
+                     fitted_covariance_model = valid_cmod,
+                     prediction_gradient = pred_gradient,
+                     keys = keys),
+                 "has NA values")
   
 })
