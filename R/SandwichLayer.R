@@ -85,16 +85,28 @@ setValidity("PreSandwichLayer", function(object) {
 })
 
 setMethod("as.SandwichLayer", "PreSandwichLayer", function(object, design, by=NULL) {
-  missing_des_cols <- setdiff(colnames(design@structure),
-                              colnames(eval(object@fitted_covariance_model$call$data)))
-  for (col in missing_des_cols) {
-    object@fitted_covariance_model$call$data[col] <- NA_integer_
+  if (is.null(by)) {
+    desvars <- colnames(design@structure)
+    missing_desvars <- setdiff(desvars,
+                               colnames(eval(object@fitted_covariance_model$call$data)))
+    for (col in missing_desvars) {
+      object@fitted_covariance_model$call$data[col] <- NA_integer_
+    }
+    
+    keys <- expand.model.frame(object@fitted_covariance_model,
+                               desvars,
+                               na.expand = T)[colnames(design@structure)]
+  } else {
+    if (is.null(names(by))) {
+      stop("`by` must be a named vector")
+    }
+    
+    desvars <- names(by)
+    keys <- expand.model.frame(object@fitted_covariance_model,
+                               by[desvars],
+                               na.expand = T)[by[desvars]]
+    colnames(keys) <- desvars
   }
-  
-  keys <- model.matrix(object@fitted_covariance_model)
-  keys <- expand.model.frame(object@fitted_covariance_model,
-                             colnames(design@structure),
-                             na.expand = T)[colnames(design@structure)]
   
   return(SandwichLayer(object@.Data,
                        fitted_covariance_model = object@fitted_covariance_model,
