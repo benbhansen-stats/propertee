@@ -38,4 +38,12 @@ test_that("Sandwich Layer validity", {
                    keys = keys),
                "must be a numeric matrix")
   
+  # prediction gradient does not have valid number of rows
+  expect_error(new("SandwichLayer",
+                   offset,
+                   fitted_covariance_model = valid_cmod,
+                   prediction_gradient = matrix(x[2:100], ncol = 1),
+                   keys = keys),
+               "same number of rows")
+  
 })
