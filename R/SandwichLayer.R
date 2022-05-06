@@ -93,10 +93,11 @@ setValidity("PreSandwichLayer", function(object) {
 ##' group assignment columns
 ##' @return SandwichLayer
 ##' @export
-as.SandwichLayer <- function(x, design, by=NULL) {
+as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
   check_desvar_cols <- function(cols, cov_mod) {
     missing_desvar_cols <- setdiff(cols,
-                                   colnames(eval(cov_mod[["call"]][["data"]])))
+                                   colnames(eval(cov_mod[["call"]][["data"]],
+                                                 envir = envir)))
     if (length(missing_desvar_cols) > 0) {
       stop(paste0("The treatment assignment columns \"",
                   paste(missing_desvar_cols, collapse = "\", \""),
@@ -107,6 +108,10 @@ as.SandwichLayer <- function(x, design, by=NULL) {
   if (!is(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
+  if (is.null(x@fitted_covariance_model[["call"]][["data"]])) {
+    stop("The fitted covariance model for x must be fit using a `data` argument")
+  }
+
   if (is.null(by)) {
     get_desvars_func <- switch(
       design@unit_of_assignment_type,
@@ -118,7 +123,7 @@ as.SandwichLayer <- function(x, design, by=NULL) {
     
     keys <- expand.model.frame(x@fitted_covariance_model,
                                desvars,
-                               na.expand = T)[colnames(design@structure)]
+                               na.expand = T)[desvars]
   } else {
     if (is.null(names(by))) {
       stop("`by` must be a named vector")
