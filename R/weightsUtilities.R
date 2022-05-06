@@ -9,7 +9,9 @@
   weights <- .merge_preserve_order(data, uoadata,
                                   by = var_names(design, "u"))$design_weights
 
-  WeightedDesign(weights, Design = design, target = target)
+  WeightedDesign(weights,
+                 Design = design,
+                 target = target)
 }
 
 # Internal function to merge data.frames ensuring order of first data.frame is

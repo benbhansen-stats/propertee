@@ -1,3 +1,7 @@
+#' @include Design.R
+NULL
+# The above ensures that `Design` is defined prior to `WeightedDesign`
+
 WeightedDesign <- setClass("WeightedDesign",
                            contains = "numeric",
                            slots = c(Design = "Design",
@@ -37,14 +41,14 @@ setMethod("show", "WeightedDesign", function(object) {
 ##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
 ##' individual \code{WeightedDesign}s to come from the same \code{Design}
 ##' (except \code{dichotomy}, see below) and have the target (\code{ate()} or
-##' \code{ett()}). Both arguments to \code{c()} must be \code{WeightedDesign}.
+##' \code{ett()}). All arguments to \code{c()} must be \code{WeightedDesign}.
 ##'
-##' One exception when concatenting \code{WeightedDesign}s with different
-##' \code{Design} exists. There may be cases where the treatment is continuous
-##' or has multiple levels, and there is a need to combine the weights from the
-##' same general design, but with different dichotomys. Therefore multiple
-##' \code{WeightedDesign}s can be combined if they are identical except for
-##' their \code{@dichotomy} slots.
+##' One exception is when concatenting \code{WeightedDesign}s with the same
+##' \code{Design} but different dichotomies. There may be cases where the
+##' treatment is continuous or has multiple levels, and there is a need to
+##' combine the weights from the same general design, but with different
+##' dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
+##' they are identical except for their \code{@dichotomy} slots.
 ##'
 ##' @title \code{WeightedDesign} Ops
 ##' @param e1 \code{WeightedDesign} or numeric
@@ -126,49 +130,3 @@ setGeneric("weights")
 setMethod("weights", "WeightedDesign", function(object, ...) {
   as.numeric(object)
 })
-
-##' @rdname WeightedDesignOps
-##' @param force_dichotomy_equal if \code{FALSE} (default), Designs are
-##'   considered equivalent even if their \code{dichotomy} differs. If
-##'   \code{TRUE}, \code{@dichotomy} must also be equal.
-##' @export
-##' @importFrom methods slot
-setMethod("c", signature(x = "WeightedDesign"),
-          function(x, ..., force_dichotomy_equal = FALSE) {
-            dots <- list(...)
-            # x must be a WeightedDesign to get here; ensure all other elements
-            # are as well
-            if (any(vapply(dots, function(k) !is(k, "WeightedDesign"), TRUE))) {
-              stop("WeightedDesigns can only be combined with other WeightedDesigns")
-            }
-
-            # Make sure all Designs are the same. Create a list of all targets,
-            # then check if `unique` returns a single element
-            designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
-            # Remove dichotomys to not check them for equality
-            if (!force_dichotomy_equal) {
-              if (length(unique(lapply(designs, slot, "dichotomy"))) > 1) {
-                warning(paste("Dichotomys differ among `WeightedDesigns`",
-                              "to be combined. \nResult will have",
-                              "`dichotomy` from first `WeightedDesign`",
-                              "entered."), call. = FALSE)
-              }
-              designs <- lapply(designs, `dichotomy<-`, formula())
-            }
-            if (length(unique(designs)) > 1) {
-              stop("WeightedDesigns can only be concatenated from identical Designs")
-            }
-
-            # Same with targets
-            targets <- c(x@target, lapply(dots, methods::slot, "target"))
-            if (length(unique(targets)) > 1) {
-              stop("WeightedDesigns can only be concatenated with the same target (ate or ett)")
-            }
-
-            # The `Reduce` call c's together all the .Data in ... . The `init`
-            # argument adds the .Data to it.
-            new("WeightedDesign",
-                Reduce(c, lapply(dots, methods::slot , ".Data"), init = x@.Data),
-                Design = x@Design, target = x@target)
-
-          })

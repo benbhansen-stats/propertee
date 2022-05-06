@@ -435,7 +435,7 @@ test_that("Combining weighted designs", {
 
   alt_w1 <- ate(des2, data = simdata)
 
-  expect_error(c(w1, alt_w1), "identical Designs")
+  expect_error(c(w1, alt_w1), "which differ on elements")
 
   # if the first argument is compatible with WeightedDesign but isn't one (e.g.
   # numeric vector), c() will return a numeric vector
@@ -449,10 +449,10 @@ test_that("Combining weighted designs with different dichotomys ", {
   w2 <- ate(des, data = simdata, dichotomy = dose >= 200 ~ .)
   w3 <- ate(des, data = simdata, dichotomy = dose >= 100 ~ .)
 
-  expect_warning(c_w <- c(w1, w2, w3),
-                 "differ")
+  c_w <- c(w1, w2, w3)
   expect_true(is(c_w, "WeightedDesign"))
   expect_length(c_w, 150)
 
-  expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE))
+  expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
+               "must be identical")
 })
