@@ -94,16 +94,27 @@ setValidity("PreSandwichLayer", function(object) {
 ##' @return SandwichLayer
 ##' @export
 as.SandwichLayer <- function(x, design, by=NULL) {
+  check_desvar_cols <- function(cols, cov_mod) {
+    missing_desvar_cols <- setdiff(cols,
+                                   colnames(eval(cov_mod[["call"]][["data"]])))
+    if (length(missing_desvar_cols) > 0) {
+      stop(paste0("The treatment assignment columns \"",
+                  paste(missing_desvar_cols, collapse = "\", \""),
+                  "\" are missing from the dataset used to fit the covariance model"))
+    }
+  }
+
   if (!is(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
   if (is.null(by)) {
-    desvars <- colnames(design@structure)
-    missing_desvars <- setdiff(desvars,
-                               colnames(eval(x@fitted_covariance_model$call$data)))
-    for (col in missing_desvars) {
-      x@fitted_covariance_model$call$data[col] <- NA_integer_
-    }
+    get_desvars_func <- switch(
+      design@unit_of_assignment_type,
+      "unit_of_assignment" = units_of_assignment,
+      "cluster" = clusters,
+      "unitid" = unitids)
+    desvars <- colnames(get_desvars_func(design))
+    check_desvar_cols(desvars, x@fitted_covariance_model)
     
     keys <- expand.model.frame(x@fitted_covariance_model,
                                desvars,
@@ -114,6 +125,7 @@ as.SandwichLayer <- function(x, design, by=NULL) {
     }
     
     desvars <- names(by)
+    check_desvar_cols(by[desvars], x@fitted_covariance_model)
     keys <- expand.model.frame(x@fitted_covariance_model,
                                by[desvars],
                                na.expand = T)[by[desvars]]
