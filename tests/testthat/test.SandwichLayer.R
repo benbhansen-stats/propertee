@@ -15,7 +15,7 @@ xstar <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                     "cat_x" = rbinom(100, 2, 0.2))
 
 des <- rct_design(t ~ uoa(uoa1, uoa2), data = x)
-by <- c("uoa1" = "teacher", "uoa2" = "student")
+by <- c("teacher" = "uoa1", "student" = "uoa2")
 cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
 offset <- stats::predict(cmod, xstar)
 pred_gradient <- model.matrix(cmod)
@@ -146,7 +146,6 @@ test_that("as.SandwichLayer used correctly", {
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
-  des <- rct_design(t ~ uoa(uoa1, uoa2), data = x)
   mock_uoa_cols <- mockery::mock(des@structure[c("uoa1", "uoa2")])
   suppressWarnings(with_mock(units_of_assignment = mock_uoa_cols, {
     expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
@@ -166,4 +165,14 @@ test_that("as.SandwichLayer used correctly", {
     expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
     mockery::expect_called(mock_unitids, 1)
   }))
+})
+
+test_that("as.SandwichLayer used correctly with `by`", {
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- as.SandwichLayer(psl, des, by)
+  expect_true(is(sl, "SandwichLayer"))
+  expect_equal(colnames(sl@keys), names(by))
 })
