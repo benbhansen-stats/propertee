@@ -1,3 +1,7 @@
+##' @title Adopters
+##' @param design Optional design
+##' @return Treatment
+##' @export
 adopters <- function(design = NULL) {
   if (is.null(design)) {
     # Identify all frames with a weights argument
@@ -8,25 +12,25 @@ adopters <- function(design = NULL) {
       possible_design <- get("weights", sys.frame(i))
       if (is(possible_design, "WeightedDesign")) {
         # If we have a WeightedDesign, save it and break
-        wd <- possible_design
+        design <- possible_design@Design
         break()
       }
     }
   }
 
-  data <- .get_data_from_model_2(wd@Design@call$formula)
+  data <- .get_data_from_model_2(design@call$formula)
 
 
-  treatment_uoa <- cbind(treatment(wd@Design),
-                         wd@Design@structure[, var_names(wd@Design, "u"),
+  treatment_uoa <- cbind(treatment(design),
+                         design@structure[, var_names(design, "u"),
                                              drop = FALSE])
 
   treatment_data <- .merge_preserve_order(data, treatment_uoa,
-                                          by = var_names(wd@Design, "u"))
+                                          by = var_names(design, "u"))
 
-  treatment <- tryCatch(treatment_data[, var_names(wd@Design, "t")],
+  treatment <- tryCatch(treatment_data[, var_names(design, "t")],
                         error = function(e) {
-                          treatment_data[, paste0(var_names(wd@Design, "t"), ".y")]
+                          treatment_data[, paste0(var_names(design, "t"), ".y")]
                         })
 
   return(treatment)
@@ -85,12 +89,7 @@ adopters <- function(design = NULL) {
   } else {
 
     environment(form) <- environment(get("formula", sys.frame(model_frame_and_adopters_pos)))
-    try(data <- do.call(data.frame,
-                        c(model.frame(form,
-                                      data = get("data",
-                                                 sys.frame(model_frame_and_weights_pos)),
-                                      na.action = na.pass),
-                                     check.names = FALSE)),
+    try(data <- get("data", sys.frame(model_frame_and_adopters_pos)),
         silent = TRUE)
   }
 
