@@ -11,6 +11,11 @@
 # will fail.
 .get_design <- function() {
 
+  # Short circuit if called directly
+  if (sys.nframe() == 1) {
+    stop("Cannot call .get_design manually")
+  }
+
   design <- NULL
 
   # Searching for weights or cov_adj is basically the same, except for argument
