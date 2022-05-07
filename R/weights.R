@@ -1,20 +1,20 @@
 ##' @title Generate Direct Adjusted Weights
-##' @param design a Design object created by one of `rct_design`, `rd_design`,
-##'   or `obs_design`.
+##' @param design a Design object created by one of \code{rct_design()},
+##'   \code{rd_design()}, or \code{obs_design()}.
 ##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
 ##'   help for \code{rct_design()} e.g. for details.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in `design` to cluster/unit of assignment variables
-##'   in `data`. Names represent variables in the Design; values represent
-##'   variables in the data. Only needed if variable names differ.
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
 ##' @param data optionally the data for the analysis to be performed on. May be
-##'   excluded if these functions are included as the `weights` argument of a
-##'   model.
+##'   excluded if these functions are included as the \code{weights} argument of
+##'   a model.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
+ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ett",
                 dichotomy = dichotomy,
@@ -24,7 +24,7 @@ ett <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
+ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ate",
                 dichotomy = dichotomy,
@@ -46,6 +46,10 @@ ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
       warning("design is already dichotomized; over-writing with new `dichotomy`")
     }
     dichotomy(design) <- dichotomy
+  }
+
+  if (is.null(design)) {
+    design <- .get_design()
   }
 
   if (is.null(data)) {

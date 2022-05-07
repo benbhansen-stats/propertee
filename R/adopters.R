@@ -4,18 +4,7 @@
 ##' @export
 adopters <- function(design = NULL) {
   if (is.null(design)) {
-    # Identify all frames with a weights argument
-    weights_args <- lapply(sys.calls(), `[[`, "weights")
-    # Loop over each frame which has a weight argument.
-    # Its most likely the first frame, but perhaps not.
-    for (i in which(!vapply(weights_args, is.null, logical(1)))) {
-      possible_design <- get("weights", sys.frame(i))
-      if (is(possible_design, "WeightedDesign")) {
-        # If we have a WeightedDesign, save it and break
-        design <- possible_design@Design
-        break()
-      }
-    }
+    design <- .get_design()
   }
 
   data <- .get_data_from_model_2(design@call$formula)

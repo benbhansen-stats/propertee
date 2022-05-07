@@ -5,26 +5,26 @@
 \alias{ate}
 \title{Generate Direct Adjusted Weights}
 \usage{
-ett(design, dichotomy = NULL, by = NULL, data = NULL)
+ett(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
 
-ate(design, dichotomy = NULL, by = NULL, data = NULL)
+ate(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
 }
 \arguments{
-\item{design}{a Design object created by one of \code{rct_design}, \code{rd_design},
-or \code{obs_design}.}
+\item{design}{a Design object created by one of \code{rct_design()},
+\code{rd_design()}, or \code{obs_design()}.}
 
 \item{dichotomy}{optionally, a formula defining the dichotomy of the
 treatment variable if it isn't already \code{0}/\code{1}. See details of
 help for \code{rct_design()} e.g. for details.}
 
 \item{by}{optional; named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment variables
-in \code{data}. Names represent variables in the Design; values represent
-variables in the data. Only needed if variable names differ.}
+assignment variables in \code{design} to cluster/unit of assignment
+variables in \code{data}. Names represent variables in the Design; values
+represent variables in the data. Only needed if variable names differ.}
 
 \item{data}{optionally the data for the analysis to be performed on. May be
-excluded if these functions are included as the \code{weights} argument of a
-model.}
+excluded if these functions are included as the \code{weights} argument of
+a model.}
 }
 \value{
 a WeightedDesign object
