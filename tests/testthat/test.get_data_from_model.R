@@ -38,5 +38,6 @@ test_that("Obtaining data for weights", {
 
   # Test for fallback if no model.frame call
 
-  expect_warning(with(simdata, ate(des)), "No call")
+  expect_warning(expect_warning(with(simdata, ate(des)), "No call"),
+                 "trying fallback")
 })

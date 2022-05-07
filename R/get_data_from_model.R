@@ -1,18 +1,19 @@
 # Internal function to try and retrieve the data from the model when `ate` or
 # `ett` are called without a data argument
-.get_data_from_model <- function(form, by = NULL) {
-
+.get_data_from_model <- function(form = NULL,
+                                 by = NULL) {
   if (!(is.call(form) | is(form, "formula") | is.name(form))) {
     stop("internal error: form must be a formula or name")
   }
 
   # Evaluate as needed.
   if (is.name(form)) {
-    form <- dynGet(form) # dynGet searches iteratively backwards in the
-                         # callstack. Per the documentation, it is experimental
-                         # and should be used with caution. We should only be hitting
-                         # this if the user passes a predefined formula, e.g.:
-                         # f <- y ~ x, rct_design(f)
+     # dynGet searches iteratively backwards in the
+    # callstack. Per the documentation, it is experimental
+    # and should be used with caution. We should only be hitting
+    # this if the user passes a predefined formula, e.g.:
+    # f <- y ~ x; rct_design(f, ...)
+    form <- dynGet(form)
   } else if (is.call(form)) {
     form <- as.formula(form)
   }
@@ -39,74 +40,63 @@
   # call to *_Design, user may have used cluster/uoa/unitid
   form <- .update_form_to_unit_of_assignment(form)
 
-  # Below we try to be intelligent about finding the appropriate data. If this
-  # fails, we may have need for a brute force method that just loops through
-  # frames and looks for a `data` object.
-  .fallback <- function() {
-    for (i in seq_len(sys.nframe())) {
-      try(data <- get("data", envir = sys.frame(i)),
-          silent = TRUE)
-      if (!is.null(data) && is.data.frame(data)) {
-        break()
-      }
-    }
-    if (is.null(data) || !is.data.frame(data)) {
-      stop("Could not determine appropriate data")
-    }
-    return(data)
-  }
-
   data <- NULL
 
   # Obtain the names of all functions in the callstack
   fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
   # Identify all frames which have `model.frame.default` called (or `ittestimate`)
-  model_frame_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
+  mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
-  # Identify the frames in which `ate` or `ett` are passed as weights
-  weights_args <- lapply(sys.calls(), `[[`, "weights")
+  # identify whether we're looking inside weights or adopters
+  which_fn <- sys.call(-1)[[1]]
+  if (which_fn == ".weights_calc") {
+    weights_args <- lapply(sys.calls(), `[[`, "weights")
 
-  # Within each `weights` argument, we're looking for the string "ate(" or
-  # "ett(", ensuring that the previous character (if there is one: ?) is not a
-  # letter, thus ensuring we don't have some oddity like `translate(x)`
-  # triggering.
-  ate_pos <- vapply(lapply(weights_args, deparse),
-                   function(x) any(grepl("[^a-zA-Z]?ate\\(", x)), TRUE)
-  ett_pos <- vapply(lapply(weights_args, deparse),
-                   function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
+    # Within each `weights` argument, we're looking for the string "ate(" or
+    # "ett(", ensuring that the previous character (if there is one: ?) is not a
+    # letter, thus ensuring we don't have some oddity like `translate(x)`
+    # triggering.
+    ate_pos <- vapply(lapply(weights_args, deparse),
+                      function(x) any(grepl("[^a-zA-Z]?ate\\(", x)), TRUE)
+    ett_pos <- vapply(lapply(weights_args, deparse),
+                      function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
 
-  weights_pos <- which(ate_pos | ett_pos)
-
-  # At this point, we know all frames in which the weights are passed,
-  # and all frames which are calls to `model.frame.default`. This will identify
-  # which frames are both.
-  model_frame_and_weights_pos <- intersect(model_frame_pos, weights_pos)
-
-  if (length(model_frame_pos) < 1) {
-    warning(paste0("No call to `model.frame` with Design wights in the call stack found.\n",
-                   "Trying fallback method to obtain data"))
-    try(data <- .fallback(),
-        silent = TRUE)
-  } else if (length(model_frame_and_weights_pos) > 1) {
-    stop(paste0("Multiple models with weights found on the call stack.\n",
-                "Try splitting the call into multiple lines rather than a single nested model."))
+    fn_pos <- which(ate_pos | ett_pos)
+  } else if (which_fn == "adopters") {
+    adopter_args <- lapply(sys.calls(), `[[`, "formula")
+    fn_pos <- which(grepl("[^a-zA-Z]?adopters\\(",
+                                lapply(adopter_args, deparse)))
   } else {
+    stop("Internal error: can't figure out where .get_data is called from")
+  }
 
-    environment(form) <- environment(get("formula", sys.frame(model_frame_and_weights_pos)))
+
+  if (length(mf_pos) == 0) {
+    warning(paste0("No call to `model.frame` with Design weights in the ",
+                   "call stack found."))
+  } else {
+    if (length(mf_pos) > 1) {
+      mf_pos <- mf_pos[mf_pos %in% fn_pos]
+      if (length(mf_pos) > 1) {
+        stop("Multiple calls to model.frame.default contain function")
+      }
+    }
+    environment(form) <-
+      environment(get("formula", sys.frame(mf_pos)))
     try(data <- do.call(data.frame,
                         c(model.frame(form,
-                                      data = get("data",
-                                                 sys.frame(model_frame_and_weights_pos)),
+                                      data = get("data", sys.frame(mf_pos)),
                                       na.action = na.pass),
-                                     check.names = FALSE)),
+                          check.names = FALSE)),
         silent = TRUE)
   }
 
   # Ensure data is actually data at this point - if not, try fallback method
   if (is.null(data) || !is.data.frame(data)) {
-    warning("Unable to detect data by normal means, trying fallback method to obtain data")
-    data <- .fallback()
+    warning(paste("Unable to detect data by normal means,",
+                  "trying fallback method to obtain data"))
+    data <- .fallback_data_search()
   }
 
   # Finally if even fallback fails, exit
@@ -116,5 +106,23 @@
 
   data <- .rename_model_frame_columns(data)[["renamedModelFrame"]]
 
+  return(data)
+}
+
+
+# (Internal) We try to be intelligent about finding the appropriate data. If
+# this fails, we may have need for a brute force method that just loops through
+# frames and looks for a `data` object.
+.fallback_data_search <- function() {
+  for (i in seq_len(sys.nframe())) {
+    try(data <- get("data", envir = sys.frame(i)),
+        silent = TRUE)
+    if (!is.null(data) && is.data.frame(data)) {
+      break()
+    }
+  }
+  if (is.null(data) || !is.data.frame(data)) {
+    stop("Could not determine appropriate data")
+  }
   return(data)
 }
