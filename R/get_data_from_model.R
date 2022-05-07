@@ -1,14 +1,17 @@
-# Internal function to try and retrieve the data from the model when `ate` or
-# `ett` are called without a data argument
+# (Internal) Whenever a function in a model (ate/ett/cov_adj/adopters) is called
+# without an explicit `data` argument, this will attempt to extract the data
+# from the model itself.
 .get_data_from_model <- function(form = NULL,
                                  by = NULL) {
+
+  # Formula should be from a Design; it is used inside `model.frame` below
   if (!(is.call(form) | is(form, "formula") | is.name(form))) {
     stop("internal error: form must be a formula or name")
   }
 
   # Evaluate as needed.
   if (is.name(form)) {
-     # dynGet searches iteratively backwards in the
+    # dynGet searches iteratively backwards in the
     # callstack. Per the documentation, it is experimental
     # and should be used with caution. We should only be hitting
     # this if the user passes a predefined formula, e.g.:
@@ -51,6 +54,7 @@
   # identify whether we're looking inside weights or adopters
   which_fn <- sys.call(-1)[[1]]
   if (which_fn == ".weights_calc") {
+    # Find all frames with `weights` argument
     weights_args <- lapply(sys.calls(), `[[`, "weights")
 
     # Within each `weights` argument, we're looking for the string "ate(" or
@@ -64,24 +68,36 @@
 
     fn_pos <- which(ate_pos | ett_pos)
   } else if (which_fn == "adopters") {
+    # Find all frames with `formula`
     adopter_args <- lapply(sys.calls(), `[[`, "formula")
+
+    # Search these formula for "adopters(", ensuring that the previous character
+    # is not a letter, in case there are functions like customadopters().
     fn_pos <- which(grepl("[^a-zA-Z]?adopters\\(",
                                 lapply(adopter_args, deparse)))
   } else {
+    # This should never be hit as .get_data_from_model is only called in these
+    # two places
     stop("Internal error: can't figure out where .get_data is called from")
   }
 
 
   if (length(mf_pos) == 0) {
+    # If no model.frames were identified
     warning(paste0("No call to `model.frame` with Design weights in the ",
                    "call stack found."))
   } else {
+    # We've identified at least one model.frame.default
     if (length(mf_pos) > 1) {
+      # If we have more than one, pick the one that has weights/adopters.
       mf_pos <- mf_pos[mf_pos %in% fn_pos]
       if (length(mf_pos) > 1) {
-        stop("Multiple calls to model.frame.default contain function")
+        # still multiple; too confusing!
+        stop("Multiple calls to model.frame.default contain flexida elements")
       }
     }
+
+    # Regenerate the model.frame with the appropriate data
     environment(form) <-
       environment(get("formula", sys.frame(mf_pos)))
     try(data <- do.call(data.frame,
@@ -115,8 +131,9 @@
 # frames and looks for a `data` object.
 .fallback_data_search <- function() {
   for (i in seq_len(sys.nframe())) {
-    try(data <- get("data", envir = sys.frame(i)),
-        silent = TRUE)
+    try({
+      data <- get("data", envir = sys.frame(i))
+    }, silent = TRUE)
     if (!is.null(data) && is.data.frame(data)) {
       break()
     }
