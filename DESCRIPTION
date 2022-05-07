@@ -32,6 +32,7 @@ Collate:
     'Design.R'
     'WeightedDesign.R'
     'CombinedWeightedDesign.R'
+    'CovAdjPrediction.R'
     'DesignAccessors.R'
     'DesignConverters.R'
     'DesignUtilities.R'
