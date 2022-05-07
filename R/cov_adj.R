@@ -31,5 +31,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
                    stop(paste("covariate adjustment model",
                               "must support predict function"))
                  })
-  ca
+  return(new("CovAdjPrediction",
+             ca,
+             Design = design))
 }
