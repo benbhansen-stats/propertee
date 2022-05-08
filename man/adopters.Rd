@@ -2,16 +2,18 @@
 % Please edit documentation in R/adopters.R
 \name{adopters}
 \alias{adopters}
-\title{Adopters}
+\title{Obtain Treatment from Design}
 \usage{
 adopters(design = NULL)
 }
 \arguments{
-\item{design}{Optional design}
+\item{design}{Optional design. If \code{NULL}, the Design will be identified
+from its inclusion in a weight (\code{ate()} or \code{ett()}) or from a
+covariate adjustment model (\code{cov_adj()}).}
 }
 \value{
-Treatment
+The treatment variable to be placed in the regression formula.
 }
 \description{
-Adopters
+Obtain Treatment from Design
 }
