@@ -11,11 +11,6 @@
 # will fail.
 .get_design <- function() {
 
-  # Short circuit if called directly
-  if (sys.nframe() == 1) {
-    stop("Cannot call .get_design manually")
-  }
-
   design <- NULL
 
   # Searching for weights or cov_adj is basically the same, except for argument
@@ -26,14 +21,11 @@
     design <- NULL
 
     # Identify all frames with the appropriate argument
-    keyframes <- lapply(sys.calls(), `[[`, type)
+    keyframes <- !vapply(lapply(sys.calls(), `[[`, type), is.null, logical(1))
 
-    if (length(keyframes) == 0) {
-      return(NULL)
-    }
-    # Loop over each frame which has a weight argument.
+    # Loop over each frame which has an `type` argument.
     # Its most likely the first frame, but perhaps not.
-    for (i in which(!vapply(keyframes, is.null, TRUE))) {
+    for (i in which(keyframes)) {
       possible_design_holder <- get(type, sys.frame(i))
       if (is(possible_design_holder, "WeightedDesign") ||
           is(possible_design_holder, "CovAdjPrediction")) {
