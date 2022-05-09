@@ -401,14 +401,24 @@ treatment_table <- function(design, ...) {
 
 ##' Returns a table containing the variables identified in each structure
 ##'
+##' When \code{compress} is \code{TRUE}, the result will always have two
+##' columns. When \code{FALSE}, the result will have number of columns equal to
+##' the largest number of variables in a particular role, plus one. E.g., a call
+##' such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
+##' in the output matrix.
+##'
+##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
+##' rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
+##' \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
+##' rows (treatment and cluster/unitid/unif of assignment).
 ##' @title variable identification table
 ##' @param design A Design object
 ##' @param ... add'l optional arguments to \code{table}
 ##' @param compress Should multiple variables be compressed into a
-##'   comma-separated string? Default TRUE.
+##'   comma-separated string? Default \code{TRUE}.
 ##' @param report_all Should we report all possible structures even if they
-##'   don't exist in the Design? Default FALSE.
-##' @return a table of variables in the Design structure
+##'   don't exist in the Design? Default \code{FALSE}.
+##' @return a \code{matrix} of variables in the Design structure
 ##' @export
 var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
@@ -416,11 +426,15 @@ var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
                     "cluster" = "Cluster",
                     "unitid"  = "Unitid")
 
+  # Start with the "table" as a list; easier to handle non-equal number of
+  # elements.
   rows <- list()
   rows[["t"]] <- c("Treatment", var_names(design, "t"))
   rows[["u"]] <- c(uoatype    , var_names(design, "u"))
   rows[["b"]] <- c("Block"    , var_names(design, "b"))
-  rows[["f"]] <- c("Forcing"  , var_names(design, "f"))
+  if (design@type == "RD") {
+    rows[["f"]] <- c("Forcing"  , var_names(design, "f"))
+  }
 
   # Identify if we have more than one variable specified in a specific
   # structure, and if so how ,long
@@ -430,33 +444,32 @@ var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
     stop("Internal error: No variables identified!")
   }
 
-  # If we have more than 1 variable in at least 1 structure, add NA padding to
-  # each row
-  if (maxvar > 2) {
-    rows <- lapply(rows, function(x) {
-      if (length(x) < maxvar) {
-        x <- c(x, rep(NA, maxvar - length(x)))
-      }
-      return(x)
-    })
-  }
-  out <- do.call(rbind, rows)
-
   if (!report_all) {
     # Drop any rows we don't need
-    out <- out[!is.na(out[, 2]), ]
+    rows <- rows[vapply(rows, length, 1) > 1]
   }
+
+  # add NA padding to make all rows the same length so the `rbind` that follows
+  # doesn't need to recycle length
+  rows <- lapply(rows, function(x) {
+    if (length(x) < maxvar) {
+      x <- c(x, rep(NA, maxvar - length(x)))
+    }
+    return(x)
+  })
+
+  # list to data.frame
+  out <- do.call(rbind, rows)
 
   if (compress == TRUE) {
     # If compressing, collapse any repeats if necessary
-    if (maxvar > 2) {
-      out2 <- apply(out[, -1], 1, function(x) {
-        x <- x[!is.na(x)]
-        return(paste(x, collapse = ", "))
-      })
-      out <- cbind(out[, 1], out2)
-    }
+    rows <- lapply(rows, function(x) {
+      x <- x[!is.na(x)]
+      c(x[1], paste(x[-1], collapse = ", "))
+    })
+    out <- do.call(rbind, rows)
     colnames(out) <- c("Structure", "Variables")
+    out[out == ""] <- NA
   } else {
     if (maxvar == 2) {
       colnames(out) <- c("Structure", "Variables")
