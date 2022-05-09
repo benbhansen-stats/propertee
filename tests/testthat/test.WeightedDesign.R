@@ -66,7 +66,8 @@ test_that("dichotomy issues", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_warning(wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
+  expect_warning(wdes <- .weights_calc(des, data = simdata, by = NULL,
+                                       target = "ate",
                                        dichotomy = dose > 200 ~ .),
                  "over-writing")
   expect_identical(deparse(dichotomy(wdes@Design)), "dose > 200 ~ .")
@@ -146,7 +147,8 @@ test_that("ate and ett in lm call", {
 test_that("by", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   w1 <- ate(des, data = simdata)
 
@@ -164,18 +166,22 @@ test_that("by", {
   expect_equal(w1@.Data, w2@.Data)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des, by = c("cid2" = "cccc")))
-  mod3 <- lm(y ~ x, data = simdata2, weights = ate(des, by = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2,
+             weights = ate(des, by = c("cid2" = "cccc")))
+  mod3 <- lm(y ~ x, data = simdata2,
+             weights = ate(des, by = list("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
   expect_identical(mod1$coef, mod3$coef)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ett(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des, by = c("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2,
+             weights = ett(des, by = c("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
 
-  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) +
+                     block(bid) + forcing(force), data = simdata)
 
   w1 <- ate(des, data = simdata)
 

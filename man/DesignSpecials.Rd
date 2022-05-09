@@ -29,7 +29,8 @@ the variables with appropriate labels
 }
 \description{
 These are special function used only in the definition of Design class
-objects. They identify the units of assignment, blocks and forcing variables.
+objects. They identify the units of assignment, blocks and forcing
+variables.
 }
 \details{
 \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are all aliases of each

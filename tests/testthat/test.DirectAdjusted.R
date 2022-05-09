@@ -53,10 +53,12 @@ test_that("Conversion from lm to DirectAdjusted", {
 
   expect_error(as.DirectAdjusted(1),
                "lm object")
-  expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
+  expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata,
+                                    weights = seq_len(nrow(simdata)))),
                "WeightedDesign weights")
 
-  expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)), data = simdata, weights = ate(des))),
+  expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)),
+                                    data = simdata, weights = ate(des))),
                "constant")
 })
 

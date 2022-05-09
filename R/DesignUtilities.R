@@ -1,5 +1,6 @@
 ##' These are special function used only in the definition of Design class
-##' objects. They identify the units of assignment, blocks and forcing variables.
+##' objects. They identify the units of assignment, blocks and forcing
+##' variables.
 ##'
 ##' `unit_of_assignment`, `uoa`, `cluster` and `unitid` are all aliases of each
 ##' other; you must include one and only one in each Design. The choice of which
@@ -38,11 +39,13 @@ forcing <- unit_of_assignment
 # Internal Function
 # Perform checks on formula for creation of Design.
 # Checks performed:
-# - Ensure presence of exactly one of unit_of_assignment(), cluster() or unitid()
+# - Ensure presence of exactly one of unit_of_assignment(), cluster() or
+#   unitid()
 # - Disallow multiple block(), or forcing() terms
 # - Disallow forcing() unless in RDD
 .check_design_formula <- function(form, allow_forcing = FALSE) {
-  tt <- terms(form, c("unit_of_assignment", "uoa", "cluster", "unitid", "block", "forcing"))
+  tt <- terms(form, c("unit_of_assignment", "uoa", "cluster",
+                      "unitid", "block", "forcing"))
   specials <- attr(tt, "specials")
 
   if (attr(tt, "response") == 0) {
@@ -59,7 +62,10 @@ forcing <- unit_of_assignment
   len_clu <- length(spec_clu)
   len_uni <- length(spec_uni)
 
-  if (is.null(spec_uas) & is.null(spec_uoa) & is.null(spec_clu) & is.null(spec_uni)) {
+  if (is.null(spec_uas) &
+      is.null(spec_uoa) &
+      is.null(spec_clu) &
+      is.null(spec_uni)) {
     stop("Must specify a unit_of_assignment, cluster or unitid variable.")
   } else if (len_uas + len_uoa + len_clu + len_uni > 1) {
     # there's 2+ entered; need to figure out what combination

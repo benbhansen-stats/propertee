@@ -14,8 +14,8 @@ summary.Design <- function(object, ...) {
 ##' @title Print summary object
 ##' @param x Design object
 ##' @param ... Other args
-##' @param max_unit_print Maximum number of treatment levels to print in treatment
-##'   table
+##' @param max_unit_print Maximum number of treatment levels to print in
+##'   treatment table
 ##' @return object, invisibly
 ##' @export
 print.summary.Design <- function(x, ..., max_unit_print = 3) {

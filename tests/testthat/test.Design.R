@@ -248,11 +248,13 @@ test_that("Design creation", {
 
   # Missing call
 
-  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT"),
+  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars,
+                                   type = "RCT"),
                  "Invalid call")
   expect_identical(des@call[[1]], as.name("new_Design"))
 
-  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "RCT", call = 1),
+  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars,
+                                   type = "RCT", call = 1),
                  "Invalid call")
   expect_identical(des@call[[1]], as.name("new_Design"))
 })
@@ -293,8 +295,10 @@ test_that("Design printing", {
   expect_output(print(desrct), "Randomized")
   expect_output(show(desrct),  "Randomized")
 
-  expect_silent(invisible(capture.output(expect_identical(desrct, show(desrct)))))
-  expect_silent(invisible(capture.output(expect_identical(desrct, print(desrct)))))
+  expect_silent(invisible(capture.output(expect_identical(desrct,
+                                                          show(desrct)))))
+  expect_silent(invisible(capture.output(expect_identical(desrct,
+                                                          print(desrct)))))
 
   expect_output(print(desrd), "Discontinuity")
   expect_output(show(desrd),  "Discontinuity")
@@ -342,7 +346,8 @@ test_that("Design type conversions", {
     expect_identical(d1redux@type, d2redux@type)
     expect_identical(d1redux@structure, d2redux@structure)
     expect_identical(d1redux@column_index, d2redux@column_index)
-    expect_identical(d1redux@unit_of_assignment_type, d2redux@unit_of_assignment_type)
+    expect_identical(d1redux@unit_of_assignment_type,
+                     d2redux@unit_of_assignment_type)
 
     invisible(TRUE)
   }
@@ -387,7 +392,8 @@ test_that("variable transformations in Design", {
   des <- rct_design(dose + 3 ~ uoa(cid1, cid2), data = simdata)
   expect_true(all(treatment(des)[, 1] %in% (simdata$dose + 3)))
 
-  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(cid1, cid2) + forcing(force),
+  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(cid1, cid2) +
+                                    forcing(force),
                                   data = simdata),
                  "conditional logic")
   expect_true(is.logical(treatment(des)[, 1]))

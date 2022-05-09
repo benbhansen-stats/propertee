@@ -110,7 +110,8 @@ test_that("covariate adjustment", {
 test_that("manually passing weights", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   myweights <- rep(10.1, nrow(simdata))
 
@@ -125,7 +126,8 @@ test_that("manually passing weights", {
   expect_error(ittestimate(des, simdata, "y", weights = 3),
                "same length")
 
-  expect_error(ittestimate(des, simdata, "y", weights = rep("a", nrow(simdata))),
+  expect_error(ittestimate(des, simdata, "y",
+                           weights = rep("a", nrow(simdata))),
                "numeric")
 
 })

@@ -11,8 +11,8 @@
 
 \item{...}{Other args}
 
-\item{max_unit_print}{Maximum number of treatment levels to print in treatment
-table}
+\item{max_unit_print}{Maximum number of treatment levels to print in
+treatment table}
 }
 \value{
 object, invisibly

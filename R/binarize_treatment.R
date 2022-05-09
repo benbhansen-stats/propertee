@@ -7,7 +7,8 @@
   }
 
   if (!is.data.frame(trt)) {
-    stop("`trt` is expected to be a named `data.frame` (e.g. from `treatment(des)`)")
+    stop(paste("`trt` is expected to be a named `data.frame`",
+               "(e.g. from `treatment(des)`)"))
   }
 
   lhs_dot <- rhs_dot <- FALSE

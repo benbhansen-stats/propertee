@@ -74,6 +74,7 @@ setGeneric("confint")
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("confint", "DirectAdjusted", function(object, parm, level = 0.95, ...) {
+setMethod("confint", "DirectAdjusted",
+          function(object, parm, level = 0.95, ...) {
   confint(as(object, "lm"), parm, level = level, ...)
 })

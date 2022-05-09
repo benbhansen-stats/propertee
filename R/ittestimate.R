@@ -1,17 +1,18 @@
 ##' @title Estimate Treatment Effect
 ##' @param design study Design
 ##' @param data Data for analysis
-##' @param outcome string containing name of outcome variable in `data`
+##' @param outcome string containing name of outcome variable in \code{data}
 ##' @param target a function returning a WeightedDesign object, or either "ate"
 ##'   (default) or "ett"
 ##' @param cov_adj_model optional; covariable adjustment model
 ##' @param by optional; list connecting names of units of
-##'   assignment/clusters/units variables in `design` to units of
-##'   assignment/clusters/units variables in `data`
-##' @param weights optional; manually include weights. If included, weights will
-##'   **not** be automatically generated. Instead, the `weights` argument should
-##'   include the product of any externally created weights and the result of
-##'   `ate()` or `ett()`. For example, `weights = myweights*ate(des)`.
+##'   assignment/clusters/units variables in \code{design} to units of
+##'   assignment/clusters/units variables in \code{data}
+##' @param weights optional; manually include weights. If included, the weights
+##'   specified in \code{target} will **not** be automatically generated.
+##'   Instead, the \code{weights} argument should include the product of any
+##'   externally created weights and the result of \code{ate()} or \code{ett()}.
+##'   For example, \code{weights = myweights*ate(des)}.
 ##' @param ... Additional arguments to the model.
 ##' @return Estimated treatment effect
 ##' @export

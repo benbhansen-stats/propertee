@@ -33,10 +33,11 @@ assignment/clusters/units variables in \code{data}}
 
 \item{...}{Additional arguments to the model.}
 
-\item{weights}{optional; manually include weights. If included, weights will
-\strong{not} be automatically generated. Instead, the \code{weights} argument should
-include the product of any externally created weights and the result of
-\code{ate()} or \code{ett()}. For example, \code{weights = myweights*ate(des)}.}
+\item{weights}{optional; manually include weights. If included, the weights
+specified in \code{target} will \strong{not} be automatically generated.
+Instead, the \code{weights} argument should include the product of any
+externally created weights and the result of \code{ate()} or \code{ett()}.
+For example, \code{weights = myweights*ate(des)}.}
 }
 \value{
 Estimated treatment effect

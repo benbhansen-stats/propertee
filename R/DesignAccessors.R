@@ -2,7 +2,9 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x, binary = FALSE) standardGeneric("treatment"))
+setGeneric("treatment", function(x, binary = FALSE) {
+  standardGeneric("treatment")
+})
 
 ##' Extract and replace elements of the Design
 ##'
@@ -15,9 +17,9 @@ setGeneric("treatment", function(x, binary = FALSE) standardGeneric("treatment")
 ##' @param x Design object
 ##' @param binary Logical; if FALSE (default), return a `data.frame` containing
 ##'   the named treatment variable. If TRUE and \code{x} has a formula in
-##'   \code{@dichotomy}, return a `data.frame` containing a binary
-##'   treatment variable with the name "z__". Has no effect if
-##'   \code{@dichotomy} is \code{NULL}.
+##'   \code{@dichotomy}, return a `data.frame` containing a binary treatment
+##'   variable with the name "z__". Has no effect if \code{@dichotomy} is
+##'   \code{NULL}.
 ##' @return If \code{binary = FALSE} data.frame containing treatment variable.
 ##'   If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
 ##'   membership.
@@ -66,7 +68,9 @@ setMethod("treatment<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("units_of_assignment", function(x) standardGeneric("units_of_assignment"))
+setGeneric("units_of_assignment", function(x) {
+  standardGeneric("units_of_assignment")
+})
 
 ##' @export
 ##' @rdname Design_extractreplace
@@ -82,7 +86,9 @@ setMethod("units_of_assignment", "Design", function(x) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("units_of_assignment<-", function(x, value) standardGeneric("units_of_assignment<-"))
+setGeneric("units_of_assignment<-", function(x, value) {
+  standardGeneric("units_of_assignment<-")
+})
 
 ##' @export
 ##' @rdname Design_extractreplace
@@ -97,8 +103,8 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
   if (any(dupuoa)) {
 
     if (sum(dupuoa) != sum(dupall)) {
-      stop(paste("Fewer new units of assignment then original, but new collapsed",
-                 "units would have non-constant treatment and/or",
+      stop(paste("Fewer new units of assignment then original, but new",
+                 "collapsed units would have non-constant treatment and/or",
                  "block structure"))
     }
     warning("Fewer new units of assignment then original, collapsing")
@@ -357,8 +363,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
 
   # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
-                 .collapse(design, "u"), ")")
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
+                 "(", .collapse(design, "u"), ")")
 
   # Get block if included
   if (length(var_names(design, "b")) > 0) {
@@ -380,8 +386,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
 
   # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
-                 .collapse(design, "u"), ")")
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
+                 "(", .collapse(design, "u"), ")")
 
   # Get block if included
   if (length(var_names(design, "b")) > 0) {

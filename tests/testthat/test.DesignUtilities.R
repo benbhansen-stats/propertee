@@ -23,7 +23,8 @@ test_that("Design formula checking", {
   expect_error(.check_design_formula(y ~ unitid(x) + unitid(z)),
                "Only one instance of `unitid")
 
-  expect_error(.check_design_formula(y ~ unit_of_assignment(x) + unit_of_assignment(z)),
+  expect_error(.check_design_formula(y ~ unit_of_assignment(x) +
+                                       unit_of_assignment(z)),
                "Only one instance of `unit_of")
 
   expect_error(.check_design_formula(y ~ uoa(x) + uoa(z)),
@@ -55,7 +56,8 @@ test_that("binary treatment and dichotomy", {
 
   des1 <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
   des2 <- obs_design(o ~ uoa(cid1, cid2), data = simdata)
-  des3 <- obs_design(o ~ uoa(cid1, cid2), data = simdata, dichotomy = o > 3 ~ o == 1)
+  des3 <- obs_design(o ~ uoa(cid1, cid2), data = simdata,
+                     dichotomy = o > 3 ~ o == 1)
 
   expect_false(is_dichotomized(des1))
   expect_true(has_binary_treatment(des1))

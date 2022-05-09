@@ -2,7 +2,8 @@ test_that("summary.Design", {
   data(simdata)
 
   desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force), data = simdata)
+  desrd  <-  rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                       data = simdata)
   desobs <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
   expect_s3_class(summary(desrct), "summary.Design")

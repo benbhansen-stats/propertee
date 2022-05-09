@@ -43,7 +43,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
       stop("`dichotomy` must be a `formula`")
     }
     if (is_dichotomized(design)) {
-      warning("design is already dichotomized; over-writing with new `dichotomy`")
+      warning(paste("design is already dichotomized; over-writing",
+                    "with new `dichotomy`"))
     }
     dichotomy(design) <- dichotomy
   }
@@ -75,8 +76,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   txt <- .bin_txt(design)
 
   if (length(var_names(design, "b")) == 0) {
-    # If no block is specified, then e_z is the proportion of clusters who receive
-    # the treatment.
+    # If no block is specified, then e_z is the proportion of clusters who
+    # receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
 
     if (target == "ate") {
@@ -88,7 +89,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     # If a block is specified, then e_z varies by block and is the proportion
     # of clusters within the block that receive the treatment.
 
-    # Identify number of units per block, and number of treated units per blodk
+    # Identify number of units per block, and number of treated units per block
     block_units <- table(blocks(design)[!is.na(txt), ])
     block_tx_units <- tapply(txt,
                              blocks(design),

@@ -17,7 +17,8 @@
 as_rct_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {
-      stop("Any `forcing` variables will be dropped. Pass option `loseforcing = TRUE` to proceed.")
+      stop(paste("Any `forcing` variables will be dropped. Pass option",
+                 "`loseforcing = TRUE` to proceed."))
     }
     Design <- .remove_forcing(Design)
   }
@@ -32,7 +33,8 @@ as_rct_design <- function(Design, ..., loseforcing = FALSE) {
 as_obs_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {
-      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
+      stop(paste("Any `forcing` variables will be dropped. Pass option",
+                 " `force = TRUE` to proceed."))
     }
     Design <- .remove_forcing(Design)
   }
@@ -51,14 +53,17 @@ as_rd_design <- function(Design, data, ..., forcing) {
 
   origcall <- Design@call
 
-  Design <- rd_design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
+  Design <- rd_design(formula =
+                        stats::update(stats::as.formula(Design@call[[2]]),
+                                      forcing),
                       data = data,
                       subset = eval(Design@call[["subset"]]),
                       dichotomy = Design@dichotomy)
 
   Design@call <- origcall
   Design@call[[1]] <- as.name("rd_design")
-  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing))
+  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]),
+                                            forcing))
 
   validObject(Design)
   return(Design)

@@ -14,8 +14,8 @@ var_table(design, ..., compress = TRUE, report_all = FALSE)
 \item{compress}{Should multiple variables be compressed into a
 comma-separated string? Default TRUE.}
 
-\item{report_all}{Should we report all possible structures even if they don't
-exist in the Design? Default FALSE.}
+\item{report_all}{Should we report all possible structures even if they
+don't exist in the Design? Default FALSE.}
 }
 \value{
 a table of variables in the Design structure

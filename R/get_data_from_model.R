@@ -39,8 +39,8 @@
     form <- as.formula(do.call("substitute", list(form, by)))
   }
 
-  # update formula to always use unit_of_assignment, since if this is the original
-  # call to *_Design, user may have used cluster/uoa/unitid
+  # update formula to always use unit_of_assignment, since if this is the
+  # original call to *_Design, user may have used cluster/uoa/unitid
   form <- .update_form_to_unit_of_assignment(form)
 
   data <- NULL
@@ -48,7 +48,8 @@
   # Obtain the names of all functions in the callstack
   fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
-  # Identify all frames which have `model.frame.default` called (or `ittestimate`)
+  # Identify all frames which have `model.frame.default` called (or
+  # `ittestimate`)
   mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
   # identify whether we're looking inside weights or adopters

@@ -9,7 +9,8 @@ test_that("basic adopters", {
              data = simdata)
   mod4 <- lm(y ~ z, weights = ate(des), offset = cov_adj(mod1),
              data = simdata)
-  mod5 <- lm(y ~ adopters(), weights = ate(), offset = cov_adj(mod1, design = des),
+  mod5 <- lm(y ~ adopters(), weights = ate(),
+             offset = cov_adj(mod1, design = des),
              data = simdata)
   mod6 <- lm(y ~ adopters(), weights = ate(des), offset = cov_adj(mod1),
              data = simdata)
