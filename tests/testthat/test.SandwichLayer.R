@@ -146,25 +146,13 @@ test_that("as.SandwichLayer used correctly", {
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
-  mock_uoa_cols <- mockery::mock(des@structure[c("uoa1", "uoa2")])
-  suppressWarnings(with_mock(units_of_assignment = mock_uoa_cols, {
-    expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
-    mockery::expect_called(mock_uoa_cols, 1)
-  }))
+  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
 
   des <- rct_design(t ~ cluster(uoa1, uoa2), data = x)
-  mock_clusters <- mockery::mock(des@structure[c("uoa1", "uoa2")])
-  suppressWarnings(with_mock(clusters = mock_clusters, {
-    expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
-    mockery::expect_called(mock_clusters, 1)
-  }))
+  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
   
   des <- rct_design(t ~ unitid(uoa1, uoa2), data = x)
-  mock_unitids <- mockery::mock(des@structure[c("uoa1", "uoa2")])
-  suppressWarnings(with_mock(unitids = mock_unitids, {
-    expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
-    mockery::expect_called(mock_unitids, 1)
-  }))
+  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
 })
 
 test_that("as.SandwichLayer used correctly with `by`", {
