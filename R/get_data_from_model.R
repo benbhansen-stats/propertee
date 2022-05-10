@@ -1,8 +1,13 @@
 # (Internal) Whenever a function in a model (ate/ett/cov_adj/adopters) is called
 # without an explicit `data` argument, this will attempt to extract the data
 # from the model itself.
-.get_data_from_model <- function(form = NULL,
+.get_data_from_model <- function(which_fn,
+                                 form = NULL,
                                  by = NULL) {
+
+  if (!which_fn %in% c("weights", "adopters")) {
+    stop(paste("Internal error: which_fn is invalid,", which_fn))
+  }
 
   # Formula should be from a Design; it is used inside `model.frame` below
   if (!(is.call(form) | is(form, "formula") | is.name(form))) {
@@ -53,8 +58,7 @@
   mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
   # identify whether we're looking inside weights or adopters
-  which_fn <- sys.call(-1)[[1]]
-  if (which_fn == ".weights_calc") {
+  if (which_fn == "weights") {
     # Find all frames with `weights` argument
     weights_args <- lapply(sys.calls(), `[[`, "weights")
 
@@ -76,10 +80,6 @@
     # is not a letter, in case there are functions like customadopters().
     fn_pos <- which(grepl("[^a-zA-Z]?adopters\\(",
                                 lapply(adopter_args, deparse)))
-  } else {
-    # This should never be hit as .get_data_from_model is only called in these
-    # two places
-    stop("Internal error: can't figure out where .get_data is called from")
   }
 
 

@@ -9,7 +9,7 @@ adopters <- function(design = NULL) {
     design <- .get_design()
   }
 
-  data <- .get_data_from_model(design@call$formula)
+  data <- .get_data_from_model("adopters", design@call$formula)
 
 
   treatment_uoa <- cbind(treatment(design),
