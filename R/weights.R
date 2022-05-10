@@ -54,7 +54,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, by)
+    data <- .get_data_from_model("weights", design@call$formula, by)
   } else if (!is.data.frame(data)) {
     stop("`data` must be `data.frame`")
   }

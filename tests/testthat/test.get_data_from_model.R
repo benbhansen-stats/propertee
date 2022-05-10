@@ -42,6 +42,6 @@ test_that("Obtaining data for weights", {
   expect_warning(expect_warning(with(simdata, ate(des)), "No call"),
                  "trying fallback")
 
-  expect_error(.get_data_from_model(1),
+  expect_error(.get_data_from_model("weights", 1),
                "must be a formula")
 })
