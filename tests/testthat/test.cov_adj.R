@@ -272,32 +272,56 @@ test_that("cov_adj variance estimates for correlated predictors", {
   }
 
   df <- xy()
-  mboth <- glm(y ~ x1 + z, data = df)
-  m1 <- glm(y ~ x1, data = df)
+  mboth <- lm(y ~ x1 + z, data = df)
+  m1 <- lm(y ~ x1, data = df) # includes an intercept
 
-  # we'll start by manually doing the offest Y - \hat Y
-  m2 <- glm(y ~ z, data = df, offset = predict(m1))
-
+  # we'll start by manually doing the offset Y - \hat Y
+  # the intercept is in the "x" variables, not the z variables
+  m2 <- lm(y ~ z - 1, data = df, offset = predict(m1))
+  
+  ## verify some of the results of the VarianceEstimation vignette
+  X <- model.matrix(m1)
+  Z <- model.matrix(m2)
+  Id <- diag(n)
+  
+  # some quantities we will need
+  XtXinv <- solve(t(X) %*% X)
+  ZtZinv <- solve(t(Z) %*% Z)
+  H <- Id - X %*% XtXinv %*% t(X)
+  G <- Id - Z %*% ZtZinv %*% t(Z)
+  
+  a <- solve(t(X) %*% G %*% X)
+  b <- solve(t(Z) %*% H %*% Z)
+  s2_1 <- (1/(n - 3)) * t(df$y) %*% (Id - X %*% a %*% t(X) %*% G - Z %*% b %*% t(Z) %*% H) %*% df$y
+  s2_1 <- s2_1[1,1]
+  expect_equal(summary(mboth)$sigma, sqrt(s2_1))
+  
+  # variance we will get from the combined model (just subsetting for the 'z' variable)
+  var_beta_1 <- s2_1 * b
+  expect_equal(vcov(mboth)[3,3], var_beta_1[1,1])
+  
+  alpha_2 <- (XtXinv %*% t(X) %*% df$y)[,1]
+  beta_2 <- (ZtZinv %*% t(Z) %*% H %*% df$y)[1,1]
+  expect_equal(coef(m1), alpha_2)
+  expect_equal(coef(m2), beta_2)
+  
+  s2_2 <- (1 / (n - 1)) * t(df$y) %*% H %*% G %*% H %*% df$y
+  s2_2 <- s2_2[1,1]
+  expect_equal(summary(m2)$sigma, sqrt(s2_2))
+  
+  r_2 <- resid(m2)
+  expect_equal(summary(m2)$sigma, sqrt((1/(n - 1)) * sum(r_2^2)))
+  expect_equal(r_2, df$y - X %*% alpha_2 - Z %*% beta_2, ignore_attr = TRUE)
+  expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
+  
   # now repeat with cov_adj
-  design <- rct_design(z == 1 ~ unitid(id), data = df)
-  m2ca <- glm(y ~  z, data = df, offset = cov_adj(m1, design = design))
-  ## naive case
-  m2naive <- glm(y ~ z, data = df)
-
-  expect_false(all(vcov(m2naive) == vcov(m2ca)))
-
-  hc_both  <- vcovHC(mboth, type = "HC0")
-  hc_naive <- vcovHC(m2naive, type = "HC0")
-  hc_m2ca  <- vcovHC(m2ca, type = "HC0")
-
-  # trim down the bigger model to just the variables in the second stage
-  in_two <- c("(Intercept)", "z")
-  hc_both_trimmed <- hc_both[in_two, in_two]
-
-#  expect_equal(hc_m2ca, hc_both_trimmed)
-#  expect_false(all(hc_naive == hc_m2ca))
-
-
+  design <- rct_design(z ~ unitid(id), data = df)
+  m2ca <- lm(y ~ z - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
+ 
+  ## TODO: currently causing an error, see issue #35 
+  ## m2ca_da <- as.DirectAdjusted(m2ca) 
+  
+  ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
 })
 
 options(old_opt)
