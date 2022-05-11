@@ -89,8 +89,9 @@ setValidity("PreSandwichLayer", function(object) {
 ##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
 ##' @param x PreSandwichLayer
 ##' @param design Design
-##' @param by character; must be named with entries corresponding to Design's
-##' group assignment columns
+##' @param by character; must have entries corresponding to Design's
+##' group assignment columns and names corresponding to the new desired column
+##' names
 ##' @return SandwichLayer
 ##' @export
 as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
