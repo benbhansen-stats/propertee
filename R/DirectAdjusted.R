@@ -34,21 +34,62 @@ setMethod("show", "DirectAdjusted", function(object) {
 
 ##' @title Convert lm object into DirectAdjusted
 ##' @param x lm object with weights containing a WeightedDesign
+##' @param design Optional, explicitly specify the \code{Design} to be used. If
+##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
+##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
+##'   \code{adopters()}) it will be found automatically and does not need to be
+##'   passed here as well. (If the \code{Design} is found in the model, this
+##'   argument is ignored.)
+##' @param target Optional, explicitly specify the estimand. If the model in
+##'   \code{x} does not contain a \code{weights} argument generated using either
+##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
+##'   ("ate") or ETT ("ett").
 ##' @param ... Add'l arguments
 ##' @return DirectAdjusted
 ##' @export
-as.DirectAdjusted <- function(x, ...) {
+as.DirectAdjusted <- function(x, design = NULL, target = NULL, ...) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
 
-  if (!is(x$model$"(weights)", "WeightedDesign")) {
-    stop("input model must contain WeightedDesign weights")
+  hasweights <- is(x$model$"(weights)", "WeightedDesign")
+  hascov_adj <- is(x$model$"(offset)", "CovAdjPrediction")
+
+  # Check if we can find a design in either Weights (preferred) or cov_adj
+  found_design <- NULL
+  if (hasweights) {
+    found_design <- x$model$"(weights)"@Design
+  } else if (hascov_adj) {
+    found_design <- x$model$"(offset)"@Design
   }
 
-  DirectAdjusted(x,
-                 Design = x$model$"(weights)"@Design,
-                 target = x$model$"(weights)"@target)
+  if (is(found_design, "Design")) {
+    design <- found_design
+  }
+  if (!is(design, "Design")) {
+    stop("Cannot locate `Design`, pass via `design=` argument")
+  }
+
+  # Check if we can find "target" in the weights
+  found_target <- NULL
+  if (hasweights) {
+    found_target <- x$model$"(weights)"@target
+  }
+
+  if (found_target %in% c("ate", "ett")) {
+    target <- found_target
+  }
+
+  if (!(found_target %in% c("ate", "ett"))) {
+    stop('Cannot locate `target`, pass via `target=` argument ("ate" or "ette")')
+  }
+
+  # 5. Identify treatment variable
+
+  new("DirectAdjusted",
+      x,
+      Design = design,
+      target = target)
 }
 
 setGeneric("vcov")
