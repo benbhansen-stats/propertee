@@ -20,6 +20,44 @@ test_that("DirectAdjusted object", {
 
 })
 
+test_that("DA ensure treatment is found", {
+
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+
+  dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+
+  expect_type(treatment(dalm), "character")
+  expect_length(treatment(dalm), 1)
+  expect_identical(treatment(dalm), var_names(des, "t"))
+  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+
+  dalm <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
+                               weights = ate(des)))
+
+  expect_type(treatment(dalm), "character")
+  expect_length(treatment(dalm), 1)
+  expect_identical(treatment(dalm), "adopters()")
+  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+
+  des2 <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata,
+                     dichotomy = o > 2 ~ . )
+
+  dalm2 <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
+                                weights = ate(des2)))
+
+  expect_type(treatment(dalm2), "character")
+  expect_length(treatment(dalm2), 1)
+  expect_identical(treatment(dalm2), "adopters()")
+  expect_true(!is.na(coef(dalm2)[treatment(dalm2)]))
+
+  expect_error(as.DirectAdjusted(lm(y ~ o, data = simdata,
+                                    weights = ate(des2))),
+               "treatment not found")
+
+
+})
+
 test_that("DirectAdjusted print/show", {
 
   data(simdata)
@@ -43,7 +81,7 @@ test_that("Conversion from lm to DirectAdjusted", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  mod <- lm(y~z, data = simdata, weights = ate(des))
+  mod <- lm(y ~ z, data = simdata, weights = ate(des))
 
   mod_da <- as.DirectAdjusted(mod)
 

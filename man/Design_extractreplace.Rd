@@ -27,9 +27,9 @@
 \alias{forcings<-,Design-method}
 \title{Accessors for Design}
 \usage{
-treatment(x, binary = FALSE)
+treatment(x, ...)
 
-\S4method{treatment}{Design}(x, binary = FALSE)
+\S4method{treatment}{Design}(x, binary = FALSE, ...)
 
 treatment(x) <- value
 
@@ -77,6 +77,8 @@ forcings(x) <- value
 }
 \arguments{
 \item{x}{Design object}
+
+\item{...}{Ignored.}
 
 \item{binary}{Logical; if FALSE (default), return a \code{data.frame} containing
 the named treatment variable. If TRUE and \code{x} has a formula in

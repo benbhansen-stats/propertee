@@ -2,7 +2,7 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x, binary = FALSE) {
+setGeneric("treatment", function(x, ...) {
   standardGeneric("treatment")
 })
 
@@ -20,12 +20,13 @@ setGeneric("treatment", function(x, binary = FALSE) {
 ##'   \code{@dichotomy}, return a `data.frame` containing a binary treatment
 ##'   variable with the name "z__". Has no effect if \code{@dichotomy} is
 ##'   \code{NULL}.
+##' @param ... Ignored.
 ##' @return If \code{binary = FALSE} data.frame containing treatment variable.
 ##'   If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
 ##'   membership.
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("treatment", "Design", function(x, binary = FALSE) {
+setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
   if (binary & is_dichotomized(x)) {
     return(data.frame(z__ = .bin_txt(x)))
   }

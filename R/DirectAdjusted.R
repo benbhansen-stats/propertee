@@ -1,3 +1,8 @@
+#' @include Design.R WeightedDesign.R DesignAccessors.R
+NULL
+# The above ensures that `Design` and `WeightedDesign` are defined prior to
+# `DirectAdjusted`
+
 DirectAdjusted <- setClass("DirectAdjusted",
                            contains = "lm",
                            slots = c(Design = "Design",
@@ -17,8 +22,8 @@ setValidity("DirectAdjusted", function(object) {
   if (all(object$model[1, 2] == object$model[, 2])) {
     return("treatment variable must not be constant")
   }
-  if (is.na(object$coef[2])) {
-    return("treatment effect failed to estimate")
+  if (!treatment(object) %in% names(coef(object))) {
+    return("treatment not found in model")
   }
   TRUE
 })
@@ -80,11 +85,9 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL, ...) {
     target <- found_target
   }
 
-  if (!(found_target %in% c("ate", "ett"))) {
+  if (!(target %in% c("ate", "ett"))) {
     stop('Cannot locate `target`, pass via `target=` argument ("ate" or "ette")')
   }
-
-  # 5. Identify treatment variable
 
   new("DirectAdjusted",
       x,
@@ -118,4 +121,37 @@ setGeneric("confint")
 setMethod("confint", "DirectAdjusted",
           function(object, parm, level = 0.95, ...) {
   confint(as(object, "lm"), parm, level = level, ...)
+})
+
+##' Identify treatment variable in DirectAdjusted object
+##' @param x DirectAdjusted model
+##' @param ... Ignored
+##' @return Name of treatment in model.
+##' @author Josh Errickson
+##' @importFrom stats coef
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
+##' mod <- lm(y ~ z, data = simdata, weights = ett(des))
+##' damod <- as.DirectAdjusted(mod)
+##' damod$coef[treatment(damod)]
+##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
+##'                    dichotomy = dose > 200 ~ . )
+##' mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
+##' damod2 <- as.DirectAdjusted(mod2)
+##' damod2$coef[treatment(damod2)]
+setMethod("treatment", "DirectAdjusted", function(x, ...) {
+  if (has_binary_treatment(x@Design)) {
+    # Only if Design has a truly binary treatment variable...
+    zname <- var_names(x@Design, "t")
+    if (zname %in% names(stats::coef(x))) {
+      # If treatment variable name is found in coefficients, return it
+      return(zname)
+    }
+    # Otherwise return adopters
+    return("adopters()")
+  }
+  # If Design's treatment variable isn't exactly binary, always require
+  # adopters().
+  return("adopters()")
 })
