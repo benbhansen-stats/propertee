@@ -119,10 +119,6 @@ test_that("manually passing weights", {
 
   expect_true(all(it$weights == myweights * ate(des, data = simdata)))
 
-  expect_error(ittestimate(des, simdata, "y", weights = myweights),
-               "must be")
-
-
   expect_error(ittestimate(des, simdata, "y", weights = 3),
                "same length")
 
@@ -163,4 +159,15 @@ test_that("treatment types", {
   expect_length(it$coef, 2)
 
   expect_true(all(it$coef == it2$coef))
+})
+
+test_that("checking for z__ in data", {
+  data(simdata)
+  names(simdata)[3] <- "z__"
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+
+  expect_error(ittestimate(des, simdata, "y"),
+               "used internally")
+
 })

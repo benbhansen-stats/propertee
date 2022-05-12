@@ -54,8 +54,8 @@ ittestimate <- function(design,
   }
 
   if ("z__" %in% colnames(data)) {
-    stop(paste("'z__' is used internally as a name; please rename",
-               "column in your data"))
+    stop(paste("'z__' is used internally to identify treatment; please",
+               "rename column in your data"))
   }
 
   # Expand treatment status

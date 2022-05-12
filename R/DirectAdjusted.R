@@ -13,9 +13,6 @@ setValidity("DirectAdjusted", function(object) {
     return(paste("@target must be one of [ett, ate]. unknown @target:",
                  paste(object@target, collapse = " ")))
   }
-  if (!is(object$model$"(weights)", "WeightedDesign")) {
-    return("weight must be WeightedDesign created by `ate()` or `ett()`")
-  }
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
@@ -81,12 +78,13 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL, ...) {
     found_target <- x$model$"(weights)"@target
   }
 
-  if (found_target %in% c("ate", "ett")) {
+  if (!is.null(found_target) && found_target %in% c("ate", "ett")) {
     target <- found_target
   }
 
-  if (!(target %in% c("ate", "ett"))) {
-    stop('Cannot locate `target`, pass via `target=` argument ("ate" or "ette")')
+  if (is.null(target) || !(target %in% c("ate", "ett"))) {
+    stop(paste('Cannot locate `target`, pass via `target=` argument',
+               '("ate" or "ett")'))
   }
 
   new("DirectAdjusted",
