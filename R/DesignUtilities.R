@@ -109,11 +109,12 @@ forcing <- unit_of_assignment
     as.formula(do.call("substitute", list(form, rename_list)))
 }
 
-##' Check if Design has binary treatment
+##' Check if Design has access to a binary treatment
 ##'
 ##' These functions determine if a Design is dichotomized
 ##' (\code{is_dichotomized()}) or has access to a binary treatment variable
-##' (\code{has_binary_treatment()}).
+##' (\code{has_binary_treatment()}) or has either
+##' (\code{is_binary_or_dichotomized()}).
 ##'
 ##' \code{is_dichotomized()} checks for the the presence of a
 ##' \code{@dichotomy} slot in the Design, either passed directly into the
@@ -121,19 +122,15 @@ forcing <- unit_of_assignment
 ##' \code{dichotomy(my_design) <-}.
 ##'
 ##' \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
-##' numeric with only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA},
-##' if the Design has a \code{dichotomy}.
+##' numeric with only values of \code{0} and \code{1}, or is logical. It also
+##' allows \code{NA} in the treatment.
 ##'
-##' Note that if the treatment given into a Design is already binary
-##' (exclusively measured as encoding only 0's and 1's, or is \code{logical}),
-##' then \code{has_binary_treatment()} would return \code{TRUE} while
-##' \code{is_dichotomized()} would return false. Therefore, if your goal is to
-##' identify whether we can obtain a binary treatment, use
-##' \code{has_binary_treatment()}.
+##' \code{is_binary_or_dichotomized} returns \code{TRUE} if either
+##' \code{is_dichotomized()} and \code{has_binary_treatment()} return
+##' \code{TRUE}.
 ##'
 ##' @param des A design
-##' @return \code{TRUE} if \code{des} has a \code{dichotomy}; \code{FALSE}
-##'   otherwise
+##' @return Logical; see details.
 ##' @export
 ##' @rdname design_treatment_status
 is_dichotomized <- function(des) {
@@ -141,8 +138,8 @@ is_dichotomized <- function(des) {
     stop("des must be a Design object.")
   }
 
-  length(des@dichotomy) == 3
-
+  # legnth 3 formula implies a LHS, a ~, and a RHS.
+  return(length(des@dichotomy) == 3)
 }
 
 ##' @export
@@ -152,12 +149,15 @@ has_binary_treatment <- function(des) {
     stop("des must be a Design object.")
   }
 
-  if (is_dichotomized(des)) {
-    return(TRUE)
+  return(all(treatment(des)[, 1] %in% c(0, 1, TRUE, FALSE, NA)))
+}
+
+##' @export
+##' @rdname design_treatment_status
+is_binary_or_dichotomized <- function(des) {
+  if (!is(des, "Design")) {
+    stop("des must be a Design object.")
   }
 
-  if (all(treatment(des)[, 1] %in% c(0, 1, TRUE, FALSE, NA))) {
-    return(TRUE)
-  }
-  return(FALSE)
+  return(is_dichotomized(des) || has_binary_treatment(des))
 }

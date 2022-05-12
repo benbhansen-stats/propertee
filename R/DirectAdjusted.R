@@ -11,7 +11,7 @@ setValidity("DirectAdjusted", function(object) {
   if (!is(object$model$"(weights)", "WeightedDesign")) {
     return("weight must be WeightedDesign created by `ate()` or `ett()`")
   }
-  if (!has_binary_treatment(object@Design)) {
+  if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
   if (all(object$model[1, 2] == object$model[, 2])) {

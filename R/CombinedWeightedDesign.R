@@ -92,9 +92,9 @@ setMethod("c", signature(x = "WeightedDesign"),
             target = x@target)
   # Note that the Design is `x@Design` which will have some particular
   # dichotomization. I think its better to force this in general in
-  # WeightedDesign (that wd@Design passes has_binary_treatment())
-  # since that'll be important in non-`c`'d scenarios. In
-  # CombinedWeightedDesigns, we'll have to make sure to ignore that.
+  # WeightedDesign (that wd@Design passes is_binary_or_dichotomized()) since
+  # that'll be important in non-`c`'d scenarios. In CombinedWeightedDesigns,
+  # we'll have to make sure to ignore that.
 
   return(new("CombinedWeightedDesign",
              wd,

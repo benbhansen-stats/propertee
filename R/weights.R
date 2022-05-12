@@ -65,7 +65,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   # Ensure treatment is binary
-  if (!has_binary_treatment(design)) {
+  if (!is_binary_or_dichotomized(design)) {
     stop(paste("To calculate weights, treatment must either be 0/1 binary,\n",
                "or the Design must have a dichotomy."))
   }

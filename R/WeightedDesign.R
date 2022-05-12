@@ -19,7 +19,7 @@ setValidity("WeightedDesign", function(object) {
                  object@target))
   }
   # The design in weighted design must have an accessible binary treatment.
-  if (!has_binary_treatment(object@Design)) {
+  if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
   TRUE
