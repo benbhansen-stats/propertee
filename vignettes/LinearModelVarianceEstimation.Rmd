@@ -2,7 +2,11 @@
 title: "Variance Estimation Testing Using A Simple Linear Specification"
 author: "Mark Fredrickson"
 date: '2022-05-09'
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Variance Estimation Testing Using A Simple Linear Specification}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}output: html_document
 ---
 
 ```{r setup, include=FALSE}
