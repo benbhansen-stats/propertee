@@ -53,9 +53,18 @@ ittestimate <- function(design,
     design <- .update_by(design, data, by)
   }
 
+  if ("z__" %in% colnames(data)) {
+    stop(paste("'z__' is used internally as a name; please rename",
+               "column in your data"))
+  }
+
   # Expand treatment status
   ctdata <- design@structure[, design@column_index %in% c("t", "u")]
-  colnames(ctdata)[1] <- "Design_Treatment"
+  colnames(ctdata)[1] <- "z__"
+  if (is.logical(ctdata$z__)) {
+    # To avoid `z__` being renamed below, convert logical to numeric
+    ctdata$z__ <- as.numeric(ctdata$z__)
+  }
   merged <- .merge_preserve_order(data, ctdata, by = colnames(ctdata)[-1])
 
   if (is.null(weights)) {
@@ -75,10 +84,10 @@ ittestimate <- function(design,
 
 
   if (!is.null(cov_adj_model)) {
-    model <- lm(merged[, outcome] ~ Design_Treatment + offset(cov_adj),
+    model <- lm(merged[, outcome] ~ z__ + offset(cov_adj),
                 data = merged, weights = weights, ...)
   } else {
-    model <- lm(merged[, outcome] ~ Design_Treatment,
+    model <- lm(merged[, outcome] ~ z__,
                 data = merged, weights = weights, ...)
   }
 

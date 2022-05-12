@@ -141,6 +141,12 @@ setMethod("confint", "DirectAdjusted",
 ##' damod2 <- as.DirectAdjusted(mod2)
 ##' damod2$coef[treatment(damod2)]
 setMethod("treatment", "DirectAdjusted", function(x, ...) {
+
+  if ("z__" %in% names(stats::coef(x))) {
+    # ittestimate uses this
+    return("z__")
+  }
+
   if (has_binary_treatment(x@Design)) {
     # Only if Design has a truly binary treatment variable...
     zname <- var_names(x@Design, "t")

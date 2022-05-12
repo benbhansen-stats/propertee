@@ -56,6 +56,13 @@ test_that("DA ensure treatment is found", {
                "treatment not found")
 
 
+  daitt <- ittestimate(des, simdata, "y")
+
+  expect_type(treatment(daitt), "character")
+  expect_length(treatment(daitt), 1)
+  expect_identical(treatment(daitt), "z__")
+  # internal name used in ittestimate
+  expect_true(!is.na(coef(daitt)[treatment(daitt)]))
 })
 
 test_that("DirectAdjusted print/show", {
