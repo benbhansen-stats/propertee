@@ -19,7 +19,7 @@ setValidity("DirectAdjusted", function(object) {
   if (all(object$model[1, 2] == object$model[, 2])) {
     return("treatment variable must not be constant")
   }
-  if (!treatment(object) %in% names(coef(object))) {
+  if (!treatment(object) %in% names(object$coefficients)) {
     return("treatment not found in model")
   }
   TRUE
@@ -126,7 +126,6 @@ setMethod("confint", "DirectAdjusted",
 ##' @param ... Ignored
 ##' @return Name of treatment in model.
 ##' @author Josh Errickson
-##' @importFrom stats coef
 ##' @examples
 ##' data(simdata)
 ##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
@@ -140,7 +139,7 @@ setMethod("confint", "DirectAdjusted",
 ##' damod2$coef[treatment(damod2)]
 setMethod("treatment", "DirectAdjusted", function(x, ...) {
 
-  if ("z__" %in% names(stats::coef(x))) {
+  if ("z__" %in% names(x$coefficients)) {
     # ittestimate uses this
     return("z__")
   }
@@ -148,7 +147,7 @@ setMethod("treatment", "DirectAdjusted", function(x, ...) {
   if (has_binary_treatment(x@Design)) {
     # Only if Design has a truly binary treatment variable...
     zname <- var_names(x@Design, "t")
-    if (zname %in% names(stats::coef(x))) {
+    if (zname %in% names(x$coefficients)) {
       # If treatment variable name is found in coefficients, return it
       return(zname)
     }
