@@ -29,6 +29,3 @@ mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
 damod2 <- as.DirectAdjusted(mod2)
 damod2$coef[treatment(damod2)]
 }
-\author{
-Josh Errickson
-}

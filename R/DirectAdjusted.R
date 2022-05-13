@@ -127,7 +127,6 @@ setMethod("confint", "DirectAdjusted",
 ##' @param x DirectAdjusted model
 ##' @param ... Ignored
 ##' @return Name of treatment in model.
-##' @author Josh Errickson
 ##' @examples
 ##' data(simdata)
 ##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
