@@ -31,4 +31,7 @@ test_that(".get_design", {
   expect_error(lm( y ~ adopters(), data = simdata),
                "Unable to locate")
 
+  # #37 offset in formula isntead of argument
+  mod7 <- lm(y ~ z + offset(cov_adj(mod)), data = simdata, weights = ate(des))
+  expect_true(all(mod1$coef == mod7$coef))
 })
