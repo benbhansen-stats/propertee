@@ -55,14 +55,16 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL, ...) {
   }
 
   hasweights <- is(x$model$"(weights)", "WeightedDesign")
-  hascov_adj <- is(x$model$"(offset)", "CovAdjPrediction")
 
   # Check if we can find a design in either Weights (preferred) or cov_adj
   found_design <- NULL
   if (hasweights) {
     found_design <- x$model$"(weights)"@Design
-  } else if (hascov_adj) {
-    found_design <- x$model$"(offset)"@Design
+  } else {
+    capred <- .get_cov_adj(x)
+    if (is(capred, "CovAdjPrediction")) {
+      found_design <- capred@Design
+    }
   }
 
   if (is(found_design, "Design")) {

@@ -118,6 +118,14 @@ test_that("Conversion from lm to DirectAdjusted", {
   damod <- as.DirectAdjusted(mod2, target = "ate")
   expect_true(is(damod, "DirectAdjusted"))
   expect_identical(damod@target, "ate")
+
+  mod3 <- lm(y ~ z + offset(cov_adj(camod, design = des)), data = simdata)
+
+  expect_error(as.DirectAdjusted(mod3), "Cannot locate `target`")
+
+  damod <- as.DirectAdjusted(mod3, target = "ate")
+  expect_true(is(damod, "DirectAdjusted"))
+  expect_identical(damod@target, "ate")
 })
 
 test_that("vcov, confint, etc", {
