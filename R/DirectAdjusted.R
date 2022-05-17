@@ -16,9 +16,6 @@ setValidity("DirectAdjusted", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
-  if (all(object$model[1, 2] == object$model[, 2])) {
-    return("treatment variable must not be constant")
-  }
   if (!treatment(object) %in% names(object$coefficients)) {
     return("treatment not found in model")
   }
