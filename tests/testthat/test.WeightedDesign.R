@@ -134,13 +134,28 @@ test_that("ate and ett in lm call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
-  mod <- lm(y ~ x, data = simdata, weights = ate(des))
+  mod <- lm(y ~ x + cid1 + cid2, data = simdata, weights = ate(des))
 
   expect_equal(mod$weights, ate(des, data = simdata)@.Data)
 
-  mod <- lm(y ~ x, data = simdata, weights = ett(des))
+  mod <- lm(y ~ x + cid1 + cid2, data = simdata, weights = ett(des))
 
   expect_equal(mod$weights, ett(des, data = simdata)@.Data)
+
+  expect_error(lm(y ~ x + cid2, data = simdata, weights = ate(des)),
+               "All variables identifying cluster")
+
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  expect_error(lm(y ~ x + cid2, data = simdata, weights = ate(des)),
+               "All variables identifying unit of")
+
+  simdata$cid <- paste0(simdata$cid1, simdata$cid2)
+
+  des <- rct_design(z ~ unitid(cid) + block(bid), data = simdata)
+
+  expect_error(lm(y ~ x, data = simdata, weights = ate(des)),
+               "Variable identifying unitid")
 
 })
 

@@ -1,13 +1,31 @@
 # Internal function to expand uoa-level weights to the level of the data
 .join_design_weights <- function(weights, design, target, data = NULL) {
-  # Merge uoa data with weights at uoa level
-  uoadata <- design@structure[, var_names(design, "u"), drop = FALSE]
-  uoadata$design_weights <- weights
 
+  uoanames <- var_names(design, "u")
+
+  # Nice error if cluster info not found in model.
+  if (!all(uoanames %in% names(data))) {
+
+    if (length(uoanames) > 1) {
+      varstring <- "All variables"
+    } else {
+      varstring <- "Variable"
+    }
+
+    unittype <- gsub("_", " ", design@unit_of_assignment_type)
+
+    stop(paste(varstring, "identifying", unittype,
+               "must be in model formula.\nYou can use `by` argument if",
+               "the names differ."))
+  }
+
+  # Merge uoa data with weights at uoa level
+  uoadata <- design@structure[, uoanames, drop = FALSE]
+  uoadata$design_weights <- weights
 
   # Merge with data to expand weights to unit of analysis level
   weights <- .merge_preserve_order(data, uoadata,
-                                  by = var_names(design, "u"))$design_weights
+                                   by = uoanames)$design_weights
 
   WeightedDesign(weights,
                  Design = design,
