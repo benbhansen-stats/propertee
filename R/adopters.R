@@ -12,18 +12,8 @@ adopters <- function(design = NULL) {
   form <- .get_form_from_model("adopters")
   # Remove adopters from formula to avoid infinite recursion
 
-  # Remove "adopters(...)" from RHS
-  form <- gsub("adopters\\([^\\)]*\\)", "", deparse(form))
-  # Remove any trailing "+"
-  form <- gsub("\\+[[:blank:]]*$", "", form)
-  # Remove "~ +"
-  form <- gsub("~[[:blank:]]*\\+", "~", form)
-  # Remove "+ +"
-  form <- gsub("\\+[[:blank:]]*\\+", "\\+", form)
-  # Add cluster variable names
-  form <- paste(form, "+", paste(var_names(des, "u"), collapse = "+"))
-  form <- as.formula(form)
-
+  # Remove "adopters(...)"
+  form <- .update_form_adpt_clstr(form, var_names(design, "u"))
   data <- .get_data_from_model("adopters", form)
 
 
@@ -48,4 +38,20 @@ adopters <- function(design = NULL) {
                         })
 
   return(treatment)
+}
+
+# (internal) strips `adopters()` from formula, and addes uoanames (must be
+# output of `var_names(design, "u")`
+.update_form_adpt_clstr <- function(form, uoanames) {
+  # Remove "adopters(...)" from RHS
+  form <- gsub("adopters\\([^\\)]*\\)", "", deparse(form))
+  # Remove any trailing "+"
+  form <- gsub("\\+[[:blank:]]*$", "", form)
+  # Remove "~ +"
+  form <- gsub("~[[:blank:]]*\\+", "~", form)
+  # Remove "+ +"
+  form <- gsub("\\+[[:blank:]]*\\+", "\\+", form)
+  # Add cluster variable names
+  form <- paste(form, "+", paste(uoanames, collapse = "+"))
+  form <- as.formula(form)
 }
