@@ -59,13 +59,13 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                                         collapse = "+")))
 
     clusterdata <- .get_data_from_model("weights", form, by)
-  } else if (!is.data.frame(data)) {
+  } else if (!is.data.frame(clusterdata)) {
     stop("`data` must be `data.frame`")
   }
 
   if (!is.null(by)) {
     # .update_by handles checking input
-    design <- .update_by(design, data, by)
+    design <- .update_by(design, clusterdata, by)
   }
 
   # Ensure treatment is binary

@@ -105,10 +105,6 @@ test_that("Conversion from lm to DirectAdjusted", {
                                     weights = seq_len(nrow(simdata)))),
                "Cannot locate `Design`")
 
-  expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)),
-                                    data = simdata, weights = ate(des))),
-               "constant")
-
 
   camod <- lm(y ~ x, data = simdata)
   mod2 <- lm(y ~ z, data = simdata, offset = cov_adj(camod, design = des))
