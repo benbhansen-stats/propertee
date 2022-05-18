@@ -48,10 +48,6 @@
     form <- as.formula(do.call("substitute", list(form, by)))
   }
 
-  # update formula to always use unit_of_assignment, since if this is the
-  # original call to *_Design, user may have used cluster/uoa/unitid
-  form <- .update_form_to_unit_of_assignment(form)
-
   data <- NULL
 
   # Obtain the names of all functions in the callstack
