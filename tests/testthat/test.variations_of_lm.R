@@ -2,49 +2,117 @@
 # tests for that), but instead will run each different variation of `lm` call
 # and ensure that no messages, warnings, or errors are produced.
 
-test_that("running all variations of lm", {
+# ******************** IMPORTANT ********************
+# If debugging things in here, REMOVE EXPECT_SILENT!!! Running it will suppress
+# all output, including inside `browser()`
+test_that("binary treatment, in all data", {
 
   # Treatment exists in data
   data(simdata)
 
-  des1 <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
-
-  # Weight alone
-  expect_silent(a <- lm(y ~ z, data = simdata, weights = ate(des1)))
-
-  # Weight + adopters
-  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des1)))
-  expect_silent(a <- lm(y ~ adopters(des1), data = simdata,
-                        weights = ett(des1)))
-
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
   camod <- lm(y ~ x, data = simdata)
 
+  # Weight alone
+  expect_silent(a <- lm(y ~ z, data = simdata, weights = ate(des)))
+
+  # Adopters alone
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
+
+  # cov_adj alone
+  expect_silent(a <- lm(y ~ z, data = simdata,
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ z + offset(cov_adj(camod, design = des)),
+                        data = simdata))
+
+
+  # Weight + adopters
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des)))
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata,
+                        weights = ett(des)))
+
+
   # weight + cov_adj
-  expect_silent(a <- lm(y ~ z, data = simdata, weights = ett(des1),
+  expect_silent(a <- lm(y ~ z, data = simdata, weights = ett(des),
                         offset = cov_adj(camod)))
   expect_silent(a <- lm(y ~ z, data = simdata, weights = ett(),
-                        offset = cov_adj(camod, design = des1)))
-  expect_silent(a <- lm(y ~ z, data = simdata, weights = ett(des1),
-                        offset = cov_adj(camod, design = des1)))
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ z, data = simdata, weights = ett(des),
+                        offset = cov_adj(camod, design = des)))
+
+  # weight + cov_adj in formula
   expect_silent(a <- lm(y ~ z + offset(cov_adj(camod)), data = simdata,
-                        weights = ett(des1)))
-#  expect_silent(a <- lm(y ~ z + offset(cov_adj(camod, design = des1)),
-#                        data = simdata, weights = ett()))
-  expect_silent(a <- lm(y ~ z + offset(cov_adj(camod, design = des1)),
-                        data = simdata, weights = ett(des1)))
+                        weights = ett(des)))
+  # Fails when trying to obtain Design from a cov_adj inside offset in formula
+  #expect_silent(a <- lm(y ~ z + offset(cov_adj(camod, design = des)),
+  #                      data = simdata, weights = ett()))
+  expect_silent(a <- lm(y ~ z + offset(cov_adj(camod, design = des)),
+                        data = simdata, weights = ett(des)))
 
+  # adopters + cov_adj
+  expect_silent(a <- lm(y ~ adopters(), data = simdata,
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata,
+                        offset = cov_adj(camod, design = des)))
 
+  # weights + adopters + cov_adj
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des),
+                        offset = cov_adj(camod)))
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(),
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des),
+                        offset = cov_adj(camod, design = des)))
+
+  # weight + adopter + cov_adj in formula
+  expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod)), data = simdata,
+                        weights = ett(des)))
+  # Fails when trying to obtain Design from a cov_adj inside offset in formula
+  #expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #                      data = simdata, weights = ett()))
+  expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+                        data = simdata, weights = ett(des)))
+
+})
+
+test_that("binary treatment, not in data2", {
   # Treatment doesn't exist in data
   data(simdata)
 
-  des2 <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  camod <- lm(y ~ x, data = simdata)
   simdata$z <- NULL
 
-  # Weight + adopters
-  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des2)))
-  expect_silent(a <- lm(y ~ adopters(des2), data = simdata,
-                        weights = ett(des2)))
 
+  # Adopters alone
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
+
+  # Weight + adopters
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des)))
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata,
+                        weights = ett(des)))
+
+  # adopters + cov_adj
+  expect_silent(a <- lm(y ~ adopters(), data = simdata,
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ adopters(des), data = simdata,
+                        offset = cov_adj(camod, design = des)))
+
+  # weights + adopters + cov_adj
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des),
+                        offset = cov_adj(camod)))
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(),
+                        offset = cov_adj(camod, design = des)))
+  expect_silent(a <- lm(y ~ adopters(), data = simdata, weights = ett(des),
+                        offset = cov_adj(camod, design = des)))
+
+  # weight + adopter + cov_adj in formula
+  expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod)), data = simdata,
+                        weights = ett(des)))
+  # Fails when trying to obtain Design from a cov_adj inside offset in formula
+  #expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #                      data = simdata, weights = ett()))
+  expect_silent(a <- lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+                        data = simdata, weights = ett(des)))
 
 
 })
