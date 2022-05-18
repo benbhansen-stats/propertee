@@ -142,6 +142,15 @@ setMethod("treatment", "DirectAdjusted", function(x, ...) {
     return("z__")
   }
 
+  adopters_regexp <- "adopters\\([^)]*\\)"
+  adopters_found <- which(grepl(adopters_regexp, names(x$coefficients)))
+  if (length(adopters_found) == 1) {
+    return(names(x$coefficients)[adopters_found])
+  }
+  if (length(adopters_found) > 1) {
+    stop("Multiple adopters() found in model formula")
+  }
+
   if (has_binary_treatment(x@Design)) {
     # Only if Design has a truly binary treatment variable...
     zname <- var_names(x@Design, "t")
@@ -149,10 +158,10 @@ setMethod("treatment", "DirectAdjusted", function(x, ...) {
       # If treatment variable name is found in coefficients, return it
       return(zname)
     }
-    # Otherwise return adopters
-    return("adopters()")
+    stop(paste("Treatment", zname, "or `adopters()` must be found in formula"))
   }
-  # If Design's treatment variable isn't exactly binary, always require
-  # adopters().
-  return("adopters()")
+  # If we hit this point, there's no adopter and non-binary treatment, so we
+  # must have non-binary treatment specified
+  stop("With non-binary treatment, `adopters()` must be found in formula")
+
 })

@@ -32,7 +32,13 @@ test_that("DA ensure treatment is found", {
   expect_identical(treatment(dalm), var_names(des, "t"))
   expect_true(!is.na(coef(dalm)[treatment(dalm)]))
 
-  dalm <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
+  sd2 <- simdata
+  sd2$z <- NULL
+
+  expect_error(as.DirectAdjusted(lm(y ~ z, data = sd2,
+                                    weights = ate(des))),
+               "'z' not found")
+  dalm <- as.DirectAdjusted(lm(y ~ adopters(), data = sd2,
                                weights = ate(des)))
 
   expect_type(treatment(dalm), "character")
