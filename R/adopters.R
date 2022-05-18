@@ -9,11 +9,10 @@ adopters <- function(design = NULL) {
     design <- .get_design()
   }
 
-  form <- .get_form_from_model("adopters")
-  # Remove adopters from formula to avoid infinite recursion
+  # Only thing we need from the data is cluster info to enable later merge
+  form <- as.formula(paste("~", paste(var_names(design, "u"),
+                                      collapse = "+")))
 
-  # Remove "adopters(...)"
-  form <- .update_form_adpt_clstr(form, var_names(design, "u"))
   data <- .get_data_from_model("adopters", form)
 
 
@@ -38,20 +37,4 @@ adopters <- function(design = NULL) {
                         })
 
   return(treatment)
-}
-
-# (internal) strips `adopters()` from formula, and addes uoanames (must be
-# output of `var_names(design, "u")`
-.update_form_adpt_clstr <- function(form, uoanames) {
-  # Remove "adopters(...)" from RHS
-  form <- gsub("adopters\\([^\\)]*\\)", "", deparse(form))
-  # Remove any trailing "+"
-  form <- gsub("\\+[[:blank:]]*$", "", form)
-  # Remove "~ +"
-  form <- gsub("~[[:blank:]]*\\+", "~", form)
-  # Remove "+ +"
-  form <- gsub("\\+[[:blank:]]*\\+", "\\+", form)
-  # Add cluster variable names
-  form <- paste(form, "+", paste(uoanames, collapse = "+"))
-  form <- as.formula(form)
 }

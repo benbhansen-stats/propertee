@@ -1,5 +1,5 @@
 # Internal function to expand uoa-level weights to the level of the data
-.join_design_weights <- function(weights, design, target, data = NULL) {
+.join_design_weights <- function(weights, design, target, clusterdata = NULL) {
 
   uoanames <- var_names(design, "u")
 
@@ -8,7 +8,7 @@
   uoadata$design_weights <- weights
 
   # Merge with data to expand weights to unit of analysis level
-  weights <- .merge_preserve_order(data, uoadata,
+  weights <- .merge_preserve_order(clusterdata, uoadata,
                                    by = uoanames)$design_weights
 
   WeightedDesign(weights,

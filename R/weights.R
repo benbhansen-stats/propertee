@@ -19,7 +19,7 @@ ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                 target = "ett",
                 dichotomy = dichotomy,
                 by = by,
-                data = data)
+                clusterdata = data)
 }
 
 ##' @export
@@ -29,11 +29,11 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                 target = "ate",
                 dichotomy = dichotomy,
                 by = by,
-                data = data)
+                clusterdata = data)
 }
 
 # (Internal) Calculates weights
-.weights_calc <- function(design, target, dichotomy, by, data) {
+.weights_calc <- function(design, target, dichotomy, by, clusterdata) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
@@ -53,12 +53,12 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     design <- .get_design()
   }
 
-  if (is.null(data)) {
-    form <- .get_form_from_model("weights")
-    # Remove adopters() and add cluster variable names
-    form <- .update_form_adpt_clstr(form, var_names(design, "u"))
+  if (is.null(clusterdata)) {
+    # Only thing we need from the data is cluster info to enable later merge
+    form <- as.formula(paste("~", paste(var_names(design, "u"),
+                                        collapse = "+")))
 
-    data <- .get_data_from_model("weights", form, by)
+    clusterdata <- .get_data_from_model("weights", form, by)
   } else if (!is.data.frame(data)) {
     stop("`data` must be `data.frame`")
   }
@@ -111,5 +111,6 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     }
   }
 
-  .join_design_weights(weights, design, target = target, data = data)
+  .join_design_weights(weights, design, target = target,
+                       clusterdata = clusterdata)
 }

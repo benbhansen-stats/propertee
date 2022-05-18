@@ -44,7 +44,6 @@ Collate:
     'flexida_package.R'
     'get_data_from_model.R'
     'get_design.R'
-    'get_form_from_model.R'
     'ittestimate.R'
     'summary.Design.R'
     'weights.R'
