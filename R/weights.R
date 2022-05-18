@@ -55,6 +55,11 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
   if (is.null(data)) {
     form <- .get_form_from_model("weights")
+    # Add cluster variable names
+    form <- paste(deparse(form), "+", paste(var_names(design, "u"),
+                                            collapse = "+"))
+    form <- as.formula(form)
+
     data <- .get_data_from_model("weights", form, by)
   } else if (!is.data.frame(data)) {
     stop("`data` must be `data.frame`")

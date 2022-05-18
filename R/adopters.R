@@ -9,7 +9,22 @@ adopters <- function(design = NULL) {
     design <- .get_design()
   }
 
-  data <- .get_data_from_model("adopters", design@call$formula)
+  form <- .get_form_from_model("adopters")
+  # Remove adopters from formula to avoid infinite recursion
+
+  # Remove "adopters(...)" from RHS
+  form <- gsub("adopters\\([^\\)]*\\)", "", deparse(form))
+  # Remove any trailing "+"
+  form <- gsub("\\+[[:blank:]]*$", "", form)
+  # Remove "~ +"
+  form <- gsub("~[[:blank:]]*\\+", "~", form)
+  # Remove "+ +"
+  form <- gsub("\\+[[:blank:]]*\\+", "\\+", form)
+  # Add cluster variable names
+  form <- paste(form, "+", paste(var_names(des, "u"), collapse = "+"))
+  form <- as.formula(form)
+
+  data <- .get_data_from_model("adopters", form)
 
 
   # Extract treatment and unitofassignment variables from the Design
