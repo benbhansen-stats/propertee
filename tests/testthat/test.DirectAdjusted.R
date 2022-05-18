@@ -59,7 +59,7 @@ test_that("DA ensure treatment is found", {
 
   expect_error(as.DirectAdjusted(lm(y ~ o, data = simdata,
                                     weights = ate(des2))),
-               "treatment not found")
+               "non-binary treatment")
 
 
   daitt <- ittestimate(des, simdata, "y")
