@@ -2,12 +2,12 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{treatment,DirectAdjusted-method}
 \alias{treatment,DirectAdjusted-method}
-\title{Identify treatment variable in DirectAdjusted object}
+\title{Identify treatment variable in \code{DirectAdjusted} object}
 \usage{
 \S4method{treatment}{DirectAdjusted}(x, ...)
 }
 \arguments{
-\item{x}{DirectAdjusted model}
+\item{x}{\code{DirectAdjusted} model}
 
 \item{...}{Ignored}
 }
@@ -15,7 +15,7 @@
 Name of treatment in model.
 }
 \description{
-Identify treatment variable in DirectAdjusted object
+Identify treatment variable in \code{DirectAdjusted} object
 }
 \examples{
 data(simdata)

@@ -1,7 +1,7 @@
-##' @title Summary of Design object
+##' @title Summary of \code{Design} object
 ##' @param object Design object
 ##' @param ... Other args
-##' @return object of class "summary.Design"
+##' @return object of class \code{summary.Design}
 ##' @export
 summary.Design <- function(object, ...) {
   out <- list()
@@ -12,7 +12,7 @@ summary.Design <- function(object, ...) {
 }
 
 ##' @title Print summary object
-##' @param x Design object
+##' @param x \code{summary.Design} object
 ##' @param ... Other args
 ##' @param max_unit_print Maximum number of treatment levels to print in
 ##'   treatment table

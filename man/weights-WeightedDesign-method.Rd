@@ -2,18 +2,18 @@
 % Please edit documentation in R/WeightedDesign.R
 \name{weights,WeightedDesign-method}
 \alias{weights,WeightedDesign-method}
-\title{Extract Weights from WeightedDesign}
+\title{Extract Weights from \code{WeightedDesign}}
 \usage{
 \S4method{weights}{WeightedDesign}(object, ...)
 }
 \arguments{
-\item{object}{WeightedDesign object}
+\item{object}{\code{WeightedDesign} object}
 
 \item{...}{Ignored}
 }
 \value{
-Weights
+vector of weights
 }
 \description{
-Extract Weights from WeightedDesign
+Extract Weights from \code{WeightedDesign}
 }

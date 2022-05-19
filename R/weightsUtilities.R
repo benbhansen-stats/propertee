@@ -1,4 +1,4 @@
-# Internal function to expand uoa-level weights to the level of the data
+# (Internal) Expand uoa-level weights to the level of the data
 .join_design_weights <- function(weights, design, target, clusterdata = NULL) {
 
   uoanames <- var_names(design, "u")
@@ -16,8 +16,7 @@
                  target = target)
 }
 
-# Internal function to merge data.frames ensuring order of first data.frame is
-# maintained
+# (Internal) Merge data.frames ensuring order of first data.frame is maintained
 .merge_preserve_order <- function(x, ...) {
   x$..orig_ordering.. <- seq_len(nrow(x))
   x <- merge(x, ...)
@@ -26,7 +25,7 @@
   return(x)
 }
 
-# Internal function to use by to update the design with new variable names
+# (Internal) Use by to update the design with new variable names
 .update_by <- function(design, data, by) {
   .check_by(by)
 

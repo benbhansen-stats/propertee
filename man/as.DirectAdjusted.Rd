@@ -4,7 +4,7 @@
 \alias{as.DirectAdjusted}
 \title{Convert lm object into DirectAdjusted}
 \usage{
-as.DirectAdjusted(x, design = NULL, target = NULL, ...)
+as.DirectAdjusted(x, design = NULL, target = NULL)
 }
 \arguments{
 \item{x}{lm object with weights containing a WeightedDesign}
@@ -19,9 +19,8 @@ argument is ignored.)}
 \item{target}{Optional, explicitly specify the estimand. If the model in
 \code{x} does not contain a \code{weights} argument generated using either
 \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
-("ate") or ETT ("ett").}
-
-\item{...}{Add'l arguments}
+("ate") or ETT ("ett"). (If weights are specified, this argument is
+ignored.)}
 }
 \value{
 DirectAdjusted

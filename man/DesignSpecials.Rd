@@ -7,7 +7,7 @@
 \alias{uoa}
 \alias{block}
 \alias{forcing}
-\title{Special terms in Design}
+\title{Special terms in \code{Design}}
 \usage{
 unit_of_assignment(...)
 
@@ -33,7 +33,11 @@ objects. They identify the units of assignment, blocks and forcing
 variables.
 }
 \details{
-\code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are all aliases of each
-other; you must include one and only one in each Design. The choice of which
-to use will have no impact on any analysis.
+These functions have no use outside of the formula in creating a
+\code{Design}.
+
+\code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are
+all aliases of each other; you must include one and only one in each
+\code{Design}. The choice of which to use will have no impact on any
+analysis, only on some output display.
 }

@@ -322,11 +322,9 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 
 ############### Helper Functions
 
-# Internal helper function
-# Takes in a replacement item and a design,
-# and if replacement isn't a data.frame already,
-# converts it to a data.frame, extracting names from
-# the design if original value isn't already named
+# (Internal) Takes in a replacement item and a design, and if replacement isn't
+# a data.frame already, converts it to a data.frame, extracting names from the
+# design if original value isn't already named
 .convert_to_data.frame <- function(value, design, type) {
   if (!is(value, "data.frame")) {
     if (is.null(colnames(value))) {
@@ -354,8 +352,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   value
 }
 
-# Internal helper function
-# Replaces `type` columns in `design` with `new`. Assumes
+# (Internal) Replaces `type` columns in `design` with `new`. Assumes
 # `.convert_to_data.frame` has already been called on `new`
 .update_structure <- function(design, new, type) {
   design@structure <-
@@ -391,6 +388,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
   form <- formula(form)
 }
+
 # (Internal) Updates `des@call`'s formula with the currently defined variable
 # names. Returns the updated formula, should be stuck into the design via
 # `des@call$formula <- .update_call_formula(des)`

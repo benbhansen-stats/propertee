@@ -1,10 +1,10 @@
 # (Internal) Whenever a function in a model (ate/ett/cov_adj/adopters) is called
 # without an explicit `data` argument, this will attempt to extract the data
 # from the model itself.
-# which_fn = "weights" or "adopters", helps separate logic for the two
+# @param which_fn = "weights" or "adopters", helps separate logic for the two
 # functions.
-# form = formula passed to model.frame.
-# by = translation of cluster ID names, passed down from weights.
+# @param form = formula passed to model.frame.
+# @param by = translation of cluster ID names, passed down from weights.
 .get_data_from_model <- function(which_fn,
                                  form = NULL,
                                  by = NULL) {

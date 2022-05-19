@@ -40,21 +40,24 @@ setMethod("show", "WeightedDesign", function(object) {
 ##'
 ##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
 ##' individual \code{WeightedDesign}s to come from the same \code{Design}
-##' (except \code{dichotomy}, see below) and have the target (\code{ate()} or
-##' \code{ett()}). All arguments to \code{c()} must be \code{WeightedDesign}.
+##' (except \code{dichotomy}, see below) and have the target (e.g all created
+##' with \code{ate()} or all created with \code{ett()}, no mixing-and-matching).
+##' All arguments to \code{c()} must be \code{WeightedDesign}.
 ##'
 ##' One exception is when concatenting \code{WeightedDesign}s with the same
 ##' \code{Design} but different dichotomies. There may be cases where the
 ##' treatment is continuous or has multiple levels, and there is a need to
 ##' combine the weights from the same general design, but with different
 ##' dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
-##' they are identical except for their \code{@dichotomy} slots.
+##' they are identical except for their \code{@dichotomy} slots. The resulting
+##' object will be a \code{CombinedWeightedDesign} which tracks all individual
+##' \code{dichotomy}.
 ##'
 ##' @title \code{WeightedDesign} Ops
-##' @param e1 \code{WeightedDesign} or numeric
-##' @param e2 numeric or \code{WeightedDesign}
+##' @param e1 \code{WeightedDesign} or \code{numeric}
+##' @param e2 \code{numeric} or \code{WeightedDesign}
 ##' @param x \code{WeightedDesign}
-##' @param ... additional \code{WeightedDesign}s
+##' @param ... additional \code{WeightedDesign}sx
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),
@@ -122,10 +125,10 @@ addsubtracterror <- function() {
 
 setGeneric("weights")
 
-##' @title Extract Weights from WeightedDesign
-##' @param object WeightedDesign object
+##' @title Extract Weights from \code{WeightedDesign}
+##' @param object \code{WeightedDesign} object
 ##' @param ... Ignored
-##' @return Weights
+##' @return vector of weights
 ##' @export
 setMethod("weights", "WeightedDesign", function(object, ...) {
   as.numeric(object)

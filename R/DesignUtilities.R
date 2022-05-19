@@ -2,11 +2,15 @@
 ##' objects. They identify the units of assignment, blocks and forcing
 ##' variables.
 ##'
-##' `unit_of_assignment`, `uoa`, `cluster` and `unitid` are all aliases of each
-##' other; you must include one and only one in each Design. The choice of which
-##' to use will have no impact on any analysis.
+##' These functions have no use outside of the formula in creating a
+##' \code{Design}.
 ##'
-##' @title Special terms in Design
+##' \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are
+##' all aliases of each other; you must include one and only one in each
+##' \code{Design}. The choice of which to use will have no impact on any
+##' analysis, only on some output display.
+##'
+##' @title Special terms in \code{Design}
 ##' @param ... any number of variables of the same length.
 ##' @return the variables with appropriate labels
 ##' @export
@@ -36,8 +40,7 @@ block <- unit_of_assignment
 ##' @export
 forcing <- unit_of_assignment
 
-# Internal Function
-# Perform checks on formula for creation of Design.
+# (Internal) Perform checks on formula for creation of Design.
 # Checks performed:
 # - Ensure presence of exactly one of unit_of_assignment(), cluster() or
 #   unitid()
@@ -100,8 +103,8 @@ forcing <- unit_of_assignment
   TRUE
 }
 
-# Internal function to rename cluster/unitid/uoa in a formula to
-# unit_of_assignment
+# (Internal) Rename cluster/unitid/uoa in a formula to unit_of_assignment for
+# internal consistency
 .update_form_to_unit_of_assignment <- function(form) {
     rename_list <- list("cluster" = as.name("unit_of_assignment"),
                         "uoa" = as.name("unit_of_assignment"),
@@ -109,17 +112,17 @@ forcing <- unit_of_assignment
     as.formula(do.call("substitute", list(form, rename_list)))
 }
 
-##' Check if Design has access to a binary treatment
+##' Check if \code{Design} has access to a binary treatment
 ##'
-##' These functions determine if a Design is dichotomized
+##' These functions determine if a \code{Design} is dichotomized
 ##' (\code{is_dichotomized()}) or has access to a binary treatment variable
 ##' (\code{has_binary_treatment()}) or has either
 ##' (\code{is_binary_or_dichotomized()}).
 ##'
-##' \code{is_dichotomized()} checks for the the presence of a
-##' \code{@dichotomy} slot in the Design, either passed directly into the
-##' various \code{*_design()} Design creators, or added afterwards with
-##' \code{dichotomy(my_design) <-}.
+##' \code{is_dichotomized()} checks for the the presence of a \code{@dichotomy}
+##' slot in the \code{Design}, either passed directly into the various
+##' \code{*_design()} \code{Design} creators, or added afterwards with
+##' \code{dichotomy(my_design)<-}.
 ##'
 ##' \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
 ##' numeric with only values of \code{0} and \code{1}, or is logical. It also
@@ -129,7 +132,7 @@ forcing <- unit_of_assignment
 ##' \code{is_dichotomized()} and \code{has_binary_treatment()} return
 ##' \code{TRUE}.
 ##'
-##' @param des A design
+##' @param des A \code{Design}
 ##' @return Logical; see details.
 ##' @export
 ##' @rdname design_treatment_status

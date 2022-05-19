@@ -1,7 +1,7 @@
 ##' @title Covariance Adjustment for Treatment Estimation
-##' @param model Any model which supports a `predict` function
+##' @param model Any model which supports a \code{predict} function
 ##' @param newdata New data
-##' @param design Optional `Design`.
+##' @param design Optional \code{Design}.
 ##' @return Covariate adjusted outcomes
 ##' @export
 ##' @example inst/examples/cov_adj.R

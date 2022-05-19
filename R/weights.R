@@ -1,9 +1,9 @@
 ##' @title Generate Direct Adjusted Weights
-##' @param design a Design object created by one of \code{rct_design()},
+##' @param design a \code{Design} object created by one of \code{rct_design()},
 ##'   \code{rd_design()}, or \code{obs_design()}.
-##' @param dichotomy optionally, a formula defining the dichotomy of the
-##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
-##'   help for \code{rct_design()} e.g. for details.
+##' @param dichotomy optional; a formula defining the dichotomy of the treatment
+##'   variable if it isn't already \code{0}/\code{1}. See details of help for
+##'   \code{rct_design()} e.g. for details.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
 ##'   assignment variables in \code{design} to cluster/unit of assignment
 ##'   variables in \code{data}. Names represent variables in the Design; values

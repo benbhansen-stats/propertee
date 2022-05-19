@@ -16,7 +16,9 @@ setValidity("CombinedWeightedDesign", function(object) {
 })
 
 ##' @rdname WeightedDesignOps
-##' @param force_dichotomy_equal if \code{FALSE} (default), Designs are
+##' @param ... any number of \code{WeightedDesign} objects with equivalent
+##'   \code{Design}.
+##' @param force_dichotomy_equal if \code{FALSE} (default), \code{Design}s are
 ##'   considered equivalent even if their \code{dichotomy} differs. If
 ##'   \code{TRUE}, \code{@dichotomy} must also be equal.
 ##' @export

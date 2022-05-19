@@ -7,7 +7,7 @@
 \method{print}{summary.Design}(x, ..., max_unit_print = 3)
 }
 \arguments{
-\item{x}{Design object}
+\item{x}{\code{summary.Design} object}
 
 \item{...}{Other args}
 

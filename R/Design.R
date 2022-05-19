@@ -410,17 +410,17 @@ treatment_table <- function(design, ...) {
 ##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
 ##' rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
 ##' \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
-##' rows (treatment and cluster/unitid/unif of assignment).
+##' rows (treatment and cluster/unitid/unif of assignment), with additional rows
+##' for blocks and forcing if included in the \code{Design}.
 ##' @title variable identification table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to \code{table}
 ##' @param compress Should multiple variables be compressed into a
 ##'   comma-separated string? Default \code{TRUE}.
 ##' @param report_all Should we report all possible structures even if they
 ##'   don't exist in the Design? Default \code{FALSE}.
 ##' @return a \code{matrix} of variables in the Design structure
 ##' @export
-var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
+var_table <- function(design, compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
                     "unit_of_assignment" = "Unit of Assignment",
                     "cluster" = "Cluster",

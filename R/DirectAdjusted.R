@@ -42,11 +42,11 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @param target Optional, explicitly specify the estimand. If the model in
 ##'   \code{x} does not contain a \code{weights} argument generated using either
 ##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
-##'   ("ate") or ETT ("ett").
-##' @param ... Add'l arguments
+##'   ("ate") or ETT ("ett"). (If weights are specified, this argument is
+##'   ignored.)
 ##' @return DirectAdjusted
 ##' @export
-as.DirectAdjusted <- function(x, design = NULL, target = NULL, ...) {
+as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
@@ -120,8 +120,9 @@ setMethod("confint", "DirectAdjusted",
   confint(as(object, "lm"), parm, level = level, ...)
 })
 
-##' Identify treatment variable in DirectAdjusted object
-##' @param x DirectAdjusted model
+##' Identify treatment variable in \code{DirectAdjusted} object
+##'
+##' @param x \code{DirectAdjusted} model
 ##' @param ... Ignored
 ##' @return Name of treatment in model.
 ##' @examples

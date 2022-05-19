@@ -1,5 +1,5 @@
-# (Internal) Uses a dichotomy formula to create a binary version of the
-# treatment variable.
+# (Internal) Uses a `@dichotomy` to create a binary version of the treatment
+# variable.
 .binarize_treatment <- function(trt, dichot) {
 
   if (!is(dichot, "formula")) {

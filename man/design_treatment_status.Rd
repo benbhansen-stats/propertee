@@ -4,7 +4,7 @@
 \alias{is_dichotomized}
 \alias{has_binary_treatment}
 \alias{is_binary_or_dichotomized}
-\title{Check if Design has access to a binary treatment}
+\title{Check if \code{Design} has access to a binary treatment}
 \usage{
 is_dichotomized(des)
 
@@ -13,22 +13,22 @@ has_binary_treatment(des)
 is_binary_or_dichotomized(des)
 }
 \arguments{
-\item{des}{A design}
+\item{des}{A \code{Design}}
 }
 \value{
 Logical; see details.
 }
 \description{
-These functions determine if a Design is dichotomized
+These functions determine if a \code{Design} is dichotomized
 (\code{is_dichotomized()}) or has access to a binary treatment variable
 (\code{has_binary_treatment()}) or has either
 (\code{is_binary_or_dichotomized()}).
 }
 \details{
-\code{is_dichotomized()} checks for the the presence of a
-\code{@dichotomy} slot in the Design, either passed directly into the
-various \code{*_design()} Design creators, or added afterwards with
-\code{dichotomy(my_design) <-}.
+\code{is_dichotomized()} checks for the the presence of a \code{@dichotomy}
+slot in the \code{Design}, either passed directly into the various
+\code{*_design()} \code{Design} creators, or added afterwards with
+\code{dichotomy(my_design)<-}.
 
 \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
 numeric with only values of \code{0} and \code{1}, or is logical. It also
