@@ -37,9 +37,6 @@ setValidity("SandwichLayer", function(object) {
                   "predictors in the covariance model"))
   }
   
-  if (is.null(dim(object@keys))) {
-    return("Keys must be a valid dataframe")
-  }
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return(paste0("Keys does not have the same number of rows as the dataset used ",
                   "to fit the covariance model"))

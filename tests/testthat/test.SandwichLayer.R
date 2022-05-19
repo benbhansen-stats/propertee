@@ -19,7 +19,7 @@ by <- c("teacher" = "uoa1", "student" = "uoa2")
 cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
 offset <- stats::predict(cmod, xstar)
 pred_gradient <- model.matrix(cmod)
-keys <- xstar[, c("uoa1", "uoa2", "t")]
+keys <- xstar[, c("uoa1", "uoa2")]
 invalid_cmod <- list("a" = c(1, 2, 3))
 
 expectSandwichLayerError <- function(err_msg,
@@ -84,7 +84,24 @@ test_that("SandwichLayer prediction gradient has NA's", {
                  "has NA values")
 })
 
+test_that("SandwichLayer keys doesn't have the same row count as covariance model data", {
+  on.exit(keys <- xstar[, c("uoa1", "uoa2", "t")])
+  
+  keys <- keys[1:99,]
+  expectSandwichLayerError("to fit the covariance model",
+                           offset, cmod, pred_gradient, keys)
+})
+
 test_that("SandwichLayer created correctly", {
+  on.exit(keys <- xstar[, c("uoa1", "uoa2", "t")])
+  expect_true(is(new("SandwichLayer",
+                     offset,
+                     fitted_covariance_model = cmod,
+                     prediction_gradient = pred_gradient,
+                     keys = keys),
+                 "SandwichLayer"))
+  
+  keys[100,] <- rep(NA_integer_, ncol(keys))
   expect_true(is(new("SandwichLayer",
                      offset,
                      fitted_covariance_model = cmod,
