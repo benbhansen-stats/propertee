@@ -7,7 +7,7 @@ vignette: >
   %\VignetteIndexEntry{Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-date: 'April 2022'
+date: "April 2022 (+ non-substantive updates in May '22)"
 ---
 
 ## Context
@@ -59,13 +59,14 @@ m <- as.DirectAdjusted(m,
 		       )
 vcov(m)
 ```
-or
+with "`cid1`" and "`cid2`" the column names of `clusters(des)`, while `altcid1` and `altcid2` corresponding column names of `C`,  or
 ```r
 m <- as.DirectAdjusted(m,
-                       by=<data frame with columns "cid1", "cid2">)
-		       )
+                       by=keys_data_frame)
 vcov(m)
 ```
+where `keys_data_frame` has rows aligned with those of `C` and columns including "`cid1`" and "`cid2`".
+
 Either way, once `m` has been coerced to class `DirectAdjusted`, it has acquired a `@Design` slot for the information in `des`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
 
 - attend to the structure of the design, as recorded in `des`; and
@@ -202,7 +203,7 @@ $B_{22}$.
 ## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
 
-1\. A `SandwichLayer` object `l` carries a `keys` data frame with which to identify rows of `model.matrix(l)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. An NA in `keys` indicates a unit not appearing in the Design.
+1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. An NA in `keys` indicates a unit not appearing in the Design.
 
 2\.  Estimating functions may need to be aggregated (summed) to the cluster level before calculation of $B_{21}$.  There should be a dedicated function to calculate $B_{21}$ from the cluster-aggregated estimating function matrices. 
 
