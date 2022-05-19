@@ -1,23 +1,25 @@
-##' Converts between Design types
+##' Converts between \code{Design} types
 ##' @title Design conversion
-##' @param Design Design to convert
-##' @param data Converting to an RD requires adding a `forcing` variable, which
-##'   requires access to the original data.
+##' @param Design \code{Design} to convert
+##' @param data Converting to an RD requires adding a \code{forcing} variable,
+##'   which requires access to the original data.
 ##' @param ... No addiitonal options at present
-##' @param loseforcing Converting from RD to another design will error to avoid
-##'   losing the forcing variable. Setting `loseforcing = TRUE` allows the
-##'   conversion to automatically drop the forcing variable.
-##' @param forcing Converting to an RD requires adding a `forcing` variable.
-##'   This should be entered as the update to a formula, e.g.
-##'   "~ . + forcing(forcevar)".
-##' @return The design of the updated type
+##' @param loseforcing Converting from RD to another \code{Design} type will
+##'   error to avoid losing the forcing variable. Setting \code{loseforcing =
+##'   TRUE} allows the conversion to automatically drop the forcing variable.
+##'   Default \code{FALSE}.
+##' @param forcing Converting to an RD requires adding a \code{forcing}
+##'   variable. This should be entered as the update to a formula, e.g.
+##'   \code{"~ . + forcing(forcevar)"}.
+##' @return \code{Design} of the updated type
 ##' @export
 ##' @importFrom stats as.formula update
 ##' @rdname designconversion
 as_rct_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {
-      stop("Any `forcing` variables will be dropped. Pass option `loseforcing = TRUE` to proceed.")
+      stop(paste("Any `forcing` variables will be dropped. Pass option",
+                 "`loseforcing = TRUE` to proceed."))
     }
     Design <- .remove_forcing(Design)
   }
@@ -32,7 +34,8 @@ as_rct_design <- function(Design, ..., loseforcing = FALSE) {
 as_obs_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {
-      stop("Any `forcing` variables will be dropped. Pass option `force = TRUE` to proceed.")
+      stop(paste("Any `forcing` variables will be dropped. Pass option",
+                 " `force = TRUE` to proceed."))
     }
     Design <- .remove_forcing(Design)
   }
@@ -51,21 +54,24 @@ as_rd_design <- function(Design, data, ..., forcing) {
 
   origcall <- Design@call
 
-  Design <- rd_design(formula = stats::update(stats::as.formula(Design@call[[2]]), forcing),
+  Design <- rd_design(formula =
+                        stats::update(stats::as.formula(Design@call[[2]]),
+                                      forcing),
                       data = data,
                       subset = eval(Design@call[["subset"]]),
                       dichotomy = Design@dichotomy)
 
   Design@call <- origcall
   Design@call[[1]] <- as.name("rd_design")
-  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]), forcing))
+  Design@call[[2]] <- as.call(stats::update(stats::as.formula(origcall[[2]]),
+                                            forcing))
 
   validObject(Design)
   return(Design)
 }
 
-# Internal function
-# Removes the forcing column to prepare conversion from RD to another type.
+# (Internal) Removes the forcing column to prepare conversion from RD to another
+# type.
 .remove_forcing <- function(d) {
   d@structure <- d@structure[, d@column_index != "f"]
   d@column_index <- d@column_index[d@column_index != "f"]

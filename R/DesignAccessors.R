@@ -2,32 +2,49 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x, binary = FALSE) standardGeneric("treatment"))
+setGeneric("treatment", function(x, ...) {
+  standardGeneric("treatment")
+})
 
-##' Extract and replace elements of the Design
+##' For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the
+##' treatment variable passed into the \code{Design} is returned as a one-column
+##' \code{data.frame}. If \code{binary = TRUE} is passed, and the \code{Design}
+##' either has a binary treatment variable, or has a \code{dichotomy}, a binary
+##' one-column \code{data.frame} will be returned. If the \code{Design} does not
+##' have access to binary treatment (non-binary treatment and no
+##' \code{dichotomy} specified), this will error.
 ##'
-##' For \code{treatment()}, the value of \code{binary} also affects the
-##' dimensions of what is return. \code{treatment(..., binary = FALSE)} (the
-##' default) will return a \code{data.frame} with the treatment as a column, for
-##' consistency with the other accessors. However, for \code{treatment(...,
-##' binary = TRUE)}, the output is a vector.
+##' The one-column \code{data.frame} returned by \code{treatment()} is named as
+##' entered in the \code{Design} creation, but if a \code{dichotomy} is in the
+##' \code{Design}, the column name is \code{"__z"}.
 ##' @title Accessors for Design
-##' @param x Design object
-##' @param binary Logical; if FALSE (default), return a `data.frame` containing
-##'   the named treatment variable. If TRUE and \code{x} has a formula in
-##'   \code{@dichotomy}, return a `data.frame` containing a binary
-##'   treatment variable with the name "z__". Has no effect if
-##'   \code{@dichotomy} is \code{NULL}.
-##' @return If \code{binary = FALSE} data.frame containing treatment variable.
-##'   If \code{binary = TRUE}, a vector of 0/1 indicating treatment group
-##'   membership.
+##' @param x \code{Design} object
+##' @param binary Logical; if \code{FALSE} (default), return a \code{data.frame}
+##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
+##'   formula in \code{@dichotomy}, return a \code{data.frame} containing a
+##'   binary treatment variable with the name \code{"z__"}. Errors on
+##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .
+##' @param ... Ignored.
+##' @return data.frame containing treatment variable
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("treatment", "Design", function(x, binary = FALSE) {
-  if (binary & is_dichotomized(x)) {
+setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
+  if (!binary) {
+    # binary = FALSE, always return original treatment
+    return(x@structure[x@column_index == "t"])
+  }
+  # Below here is only `binary = TRUE`
+  if (has_binary_treatment(x)) {
+    # Treatment is binary, return original treatment
+    return(x@structure[x@column_index == "t"])
+  }
+  if (is_dichotomized(x)) {
+    # Has dichotomization return that
     return(data.frame(z__ = .bin_txt(x)))
   }
-  x@structure[x@column_index == "t"]
+  stop(paste("No binary treatment can be produced. Treatment is",
+             "non-binary and `x` does not contain a `@dichotomy`."))
+
 })
 
 ##' @export
@@ -66,7 +83,9 @@ setMethod("treatment<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("units_of_assignment", function(x) standardGeneric("units_of_assignment"))
+setGeneric("units_of_assignment", function(x) {
+  standardGeneric("units_of_assignment")
+})
 
 ##' @export
 ##' @rdname Design_extractreplace
@@ -82,7 +101,9 @@ setMethod("units_of_assignment", "Design", function(x) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("units_of_assignment<-", function(x, value) standardGeneric("units_of_assignment<-"))
+setGeneric("units_of_assignment<-", function(x, value) {
+  standardGeneric("units_of_assignment<-")
+})
 
 ##' @export
 ##' @rdname Design_extractreplace
@@ -97,8 +118,8 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
   if (any(dupuoa)) {
 
     if (sum(dupuoa) != sum(dupall)) {
-      stop(paste("Fewer new units of assignment then original, but new collapsed",
-                 "units would have non-constant treatment and/or",
+      stop(paste("Fewer new units of assignment then original, but new",
+                 "collapsed units would have non-constant treatment and/or",
                  "block structure"))
     }
     warning("Fewer new units of assignment then original, collapsing")
@@ -301,11 +322,9 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 
 ############### Helper Functions
 
-# Internal helper function
-# Takes in a replacement item and a design,
-# and if replacement isn't a data.frame already,
-# converts it to a data.frame, extracting names from
-# the design if original value isn't already named
+# (Internal) Takes in a replacement item and a design, and if replacement isn't
+# a data.frame already, converts it to a data.frame, extracting names from the
+# design if original value isn't already named
 .convert_to_data.frame <- function(value, design, type) {
   if (!is(value, "data.frame")) {
     if (is.null(colnames(value))) {
@@ -333,8 +352,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   value
 }
 
-# Internal helper function
-# Replaces `type` columns in `design` with `new`. Assumes
+# (Internal) Replaces `type` columns in `design` with `new`. Assumes
 # `.convert_to_data.frame` has already been called on `new`
 .update_structure <- function(design, new, type) {
   design@structure <-
@@ -357,8 +375,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
 
   # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
-                 .collapse(design, "u"), ")")
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
+                 "(", .collapse(design, "u"), ")")
 
   # Get block if included
   if (length(var_names(design, "b")) > 0) {
@@ -370,6 +388,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
   form <- formula(form)
 }
+
 # (Internal) Updates `des@call`'s formula with the currently defined variable
 # names. Returns the updated formula, should be stuck into the design via
 # `des@call$formula <- .update_call_formula(des)`
@@ -380,8 +399,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
 
   # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type, "(",
-                 .collapse(design, "u"), ")")
+  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
+                 "(", .collapse(design, "u"), ")")
 
   # Get block if included
   if (length(var_names(design, "b")) > 0) {

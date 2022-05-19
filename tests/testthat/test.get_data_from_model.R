@@ -6,7 +6,8 @@ test_that("Obtaining data for weights", {
 
   #Handling multiple models in the stack
   mod1 <- lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1)
-  mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(des), data = simdata)
+  mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(des),
+             data = simdata)
   expect_true(mod1$coefficients[1] != mod2$coefficients[1])
 
   # Multiple models in the stack with multiple weights,
@@ -38,5 +39,9 @@ test_that("Obtaining data for weights", {
 
   # Test for fallback if no model.frame call
 
-  expect_warning(with(simdata, ate(des)), "No call")
+  expect_warning(expect_warning(with(simdata, ate(des)), "No call"),
+                 "trying fallback")
+
+  expect_error(.get_data_from_model("weights", 1),
+               "must be a formula")
 })

@@ -3,38 +3,38 @@
 \name{is_dichotomized}
 \alias{is_dichotomized}
 \alias{has_binary_treatment}
-\title{Check if Design has binary treatment}
+\alias{is_binary_or_dichotomized}
+\title{Check if \code{Design} has access to a binary treatment}
 \usage{
 is_dichotomized(des)
 
 has_binary_treatment(des)
+
+is_binary_or_dichotomized(des)
 }
 \arguments{
-\item{des}{A design}
+\item{des}{A \code{Design}}
 }
 \value{
-\code{TRUE} if \code{des} has a \code{dichotomy}; \code{FALSE}
-otherwise
+Logical; see details.
 }
 \description{
-These functions determine if a Design is dichotomized
+These functions determine if a \code{Design} is dichotomized
 (\code{is_dichotomized()}) or has access to a binary treatment variable
-(\code{has_binary_treatment()}).
+(\code{has_binary_treatment()}) or has either
+(\code{is_binary_or_dichotomized()}).
 }
 \details{
-\code{is_dichotomized()} checks for the the presence of a
-\code{@dichotomy} slot in the Design, either passed directly into the
-various \code{*_design()} Design creators, or added afterwards with
-\code{dichotomy(my_design) <-}.
+\code{is_dichotomized()} checks for the the presence of a \code{@dichotomy}
+slot in the \code{Design}, either passed directly into the various
+\code{*_design()} \code{Design} creators, or added afterwards with
+\code{dichotomy(my_design)<-}.
 
 \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
-numeric with only values of 0/1, or \code{TRUE}/\code{FALSE}, or \code{NA},
-if the Design has a \code{dichotomy}.
+numeric with only values of \code{0} and \code{1}, or is logical. It also
+allows \code{NA} in the treatment.
 
-Note that if the treatment given into a Design is already binary
-(exclusively measured as encoding only 0's and 1's, or is \code{logical}),
-then \code{has_binary_treatment()} would return \code{TRUE} while
-\code{is_dichotomized()} would return false. Therefore, if your goal is to
-identify whether we can obtain a binary treatment, use
-\code{has_binary_treatment()}.
+\code{is_binary_or_dichotomized} returns \code{TRUE} if either
+\code{is_dichotomized()} and \code{has_binary_treatment()} return
+\code{TRUE}.
 }

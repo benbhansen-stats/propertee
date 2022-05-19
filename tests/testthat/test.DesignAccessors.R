@@ -25,11 +25,21 @@ test_that("Accessing and replacing treatment", {
 
   expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
-
   # no dichotomy
   expect_identical(treatment(des), treatment(des, binary = TRUE))
-  expect_identical(treatment(des, binary = FALSE), treatment(des, binary = TRUE))
+  expect_identical(treatment(des, binary = FALSE),
+                   treatment(des, binary = TRUE))
 
+  # Continuous treatment, no dichotomy
+  des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
+  expect_identical(treatment(des), treatment(des, binary = FALSE))
+
+  expect_error(treatment(des, binary = TRUE), "No binary")
+
+  # Continuous treatment, dichotomy
   des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata, dichotomy = dose <= 100 ~ dose == 200)
 
@@ -65,32 +75,38 @@ test_that("Accessing and replacing treatment", {
 test_that("Accessing and replacing unit of assignment", {
   data(simdata)
 
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+                     forcing(force),
                    data = simdata)
 
   expect_identical(units_of_assignment(des), des@structure[, 2:3])
 
   units_of_assignment(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
   expect_identical(var_names(des, "u"), c("cid1", "cid2"))
-  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == units_of_assignment(des)))
+  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) ==
+                    units_of_assignment(des)))
 
   units_of_assignment(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
   expect_identical(var_names(des, "u"), c("abc1", "abc2"))
-  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) == units_of_assignment(des)))
+  expect_true(all(data.frame(abc1 = 10:1, abc2 = 1:10) ==
+                    units_of_assignment(des)))
 
   m <- matrix(1:20, ncol = 2)
   units_of_assignment(des) <- m
   expect_identical(var_names(des, "u"), c("abc1", "abc2"))
-  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) == units_of_assignment(des)))
+  expect_true(all(data.frame(abc1 = 1:10, abc2 = 11:20) ==
+                    units_of_assignment(des)))
 
   colnames(m) <- c("qwe", "asd")
   units_of_assignment(des) <- m
   expect_identical(var_names(des, "u"), colnames(m))
-  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) == units_of_assignment(des)))
+  expect_true(all(data.frame(qwe = 1:10, asd = 11:20) ==
+                    units_of_assignment(des)))
 
   units_of_assignment(des)[1, 1:2] <- 100
   expect_true(all(data.frame(qwe = c(100, 2:10),
-                             asd = c(100, 12:20)) == units_of_assignment(des)))
+                             asd = c(100, 12:20)) ==
+                    units_of_assignment(des)))
 
   # less units_of_assignment
   des2 <- des
@@ -122,8 +138,8 @@ test_that("Accessing and replacing unit of assignment", {
 
   # more units_of_assignment
   df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) + forcing(force),
-                   data = simdata)
+  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+                     forcing(force), data = simdata)
   des2 <- des
   units_of_assignment(des2) <- df
   expect_identical(var_names(des2, "u"), colnames(df))
@@ -317,8 +333,8 @@ test_that("Accessing and replacing uoa vs unitid vs cluster", {
   expect_error(units_of_assignment(des), "not `unit_of_assignment")
 
   # created with unit_of_assignment
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) + forcing(force),
-                   data = simdata)
+  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+                     forcing(force), data = simdata)
   expect_error(unitids(des), "not `unitid")
   expect_error(clusters(des), "not `cluster")
 
@@ -479,8 +495,8 @@ test_that("Accessing and replacing forcing", {
 
   simdata2 <- simdata
   simdata2$force2 <- rep(rnorm(10, mean = 5), times = rep(c(4, 6), times = 5))
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2),
-                   data = simdata2)
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) +
+                     forcing(force, force2), data = simdata2)
 
   expect_identical(forcings(des), des@structure[, 5:6])
 
@@ -541,7 +557,8 @@ test_that("Accessing and replacing forcing", {
                "only used")
 
   # duplicate variable names
-  expect_error(rct_design(z ~ cluster(cid1, cid2) + block(cid1), data = simdata),
+  expect_error(rct_design(z ~ cluster(cid1, cid2) + block(cid1),
+                          data = simdata),
                "more than once")
   expect_error(rct_design(z ~ cluster(cid1, cid1, cid2), data = simdata),
                "more than once")

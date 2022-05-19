@@ -3,8 +3,9 @@ test_that("DirectAdjusted object", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
-                         Design = des, target = "ett")
+  dalm <- new("DirectAdjusted",
+              lm(y ~ z, data = simdata, weights = ate(des)),
+              Design = des, target = "ett")
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(is(dalm, "lm"))
@@ -12,10 +13,82 @@ test_that("DirectAdjusted object", {
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 
-  expect_error(DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
-                                             Design = des, target = "abc"),
+  expect_error(new("DirectAdjusted",
+                   lm(y ~ z, data = simdata, weights = ate(des)),
+                   Design = des, target = "abc"),
                               "must be one of")
 
+})
+
+test_that("DA ensure treatment is found", {
+
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
+
+  dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+
+  expect_type(treatment(dalm), "character")
+  expect_length(treatment(dalm), 1)
+  expect_identical(treatment(dalm), var_names(des, "t"))
+  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+
+  dalm2 <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  expect_true(all.equal(dalm$coefficients, dalm2$coefficients))
+
+  # two identical adopters works silently
+  dalm3 <- as.DirectAdjusted(lm(y ~ adopters() + adopters(), data = simdata,
+                                weights = ate(des)))
+  expect_true(all.equal(dalm$coefficients,
+                        dalm3$coefficients,
+                        check.names = FALSE))
+
+  # two different adopters fails
+
+  expect_error(as.DirectAdjusted(lm(y ~ adopters(des) + adopters(),
+                                    data = simdata, weights = ate(des))),
+               "Multiple adopters")
+
+  # No treatment
+  expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
+               "Treatment z")
+
+  sd2 <- simdata
+  sd2$z <- NULL
+
+  expect_error(as.DirectAdjusted(lm(y ~ z, data = sd2,
+                                    weights = ate(des))),
+               "'z' not found")
+  dalm <- as.DirectAdjusted(lm(y ~ adopters(), data = sd2,
+                               weights = ate(des)))
+
+  expect_type(treatment(dalm), "character")
+  expect_length(treatment(dalm), 1)
+  expect_identical(treatment(dalm), "adopters()")
+  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+
+  des2 <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata,
+                     dichotomy = o > 2 ~ . )
+
+  dalm2 <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
+                                weights = ate(des2)))
+
+  expect_type(treatment(dalm2), "character")
+  expect_length(treatment(dalm2), 1)
+  expect_identical(treatment(dalm2), "adopters()")
+  expect_true(!is.na(coef(dalm2)[treatment(dalm2)]))
+
+  expect_error(as.DirectAdjusted(lm(y ~ o, data = simdata,
+                                    weights = ate(des2))),
+               "non-binary treatment")
+
+
+  daitt <- ittestimate(des, simdata, "y")
+
+  expect_type(treatment(daitt), "character")
+  expect_length(treatment(daitt), 1)
+  expect_identical(treatment(daitt), "z__")
+  # internal name used in ittestimate
+  expect_true(!is.na(coef(daitt)[treatment(daitt)]))
 })
 
 test_that("DirectAdjusted print/show", {
@@ -23,8 +96,9 @@ test_that("DirectAdjusted print/show", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
-                         Design = des, target = "ett")
+  dalm <- new("DirectAdjusted",
+              lm(y ~ z, data = simdata, weights = ate(des)),
+              Design = des, target = "ett")
 
   aslm <- as(dalm, "lm")
 
@@ -40,7 +114,7 @@ test_that("Conversion from lm to DirectAdjusted", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  mod <- lm(y~z, data = simdata, weights = ate(des))
+  mod <- lm(y ~ z, data = simdata, weights = ate(des))
 
   mod_da <- as.DirectAdjusted(mod)
 
@@ -53,11 +127,27 @@ test_that("Conversion from lm to DirectAdjusted", {
 
   expect_error(as.DirectAdjusted(1),
                "lm object")
-  expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = seq_len(nrow(simdata)))),
-               "WeightedDesign weights")
+  expect_error(as.DirectAdjusted(lm(y ~ z, data = simdata,
+                                    weights = seq_len(nrow(simdata)))),
+               "Cannot locate `Design`")
 
-  expect_error(as.DirectAdjusted(lm(y ~ rep(0, nrow(simdata)), data = simdata, weights = ate(des))),
-               "constant")
+
+  camod <- lm(y ~ x, data = simdata)
+  mod2 <- lm(y ~ z, data = simdata, offset = cov_adj(camod, design = des))
+
+  expect_error(as.DirectAdjusted(mod2), "Cannot locate `target`")
+
+  damod <- as.DirectAdjusted(mod2, target = "ate")
+  expect_true(is(damod, "DirectAdjusted"))
+  expect_identical(damod@target, "ate")
+
+  mod3 <- lm(y ~ z + offset(cov_adj(camod, design = des)), data = simdata)
+
+  expect_error(as.DirectAdjusted(mod3), "Cannot locate `target`")
+
+  damod <- as.DirectAdjusted(mod3, target = "ate")
+  expect_true(is(damod, "DirectAdjusted"))
+  expect_identical(damod@target, "ate")
 })
 
 test_that("vcov, confint, etc", {

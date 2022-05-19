@@ -12,7 +12,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 Suggests:
     knitr,
     rmarkdown,
@@ -28,19 +28,22 @@ Depends:
 VignetteBuilder: knitr
 URL: https://github.com/benbhansen-stats/flexida
 BugReports: https://github.com/benbhansen-stats/flexida/issues
-Collate: 
+Collate:
     'Design.R'
+    'WeightedDesign.R'
+    'CombinedWeightedDesign.R'
+    'CovAdjPrediction.R'
     'DesignAccessors.R'
     'DesignConverters.R'
     'DesignUtilities.R'
     'DirectAdjusted.R'
-    'SandwichLayer.R'
-    'WeightedDesign.R'
+    'adopters.R'
     'binarize_treatment.R'
     'cov_adj.R'
     'data.R'
     'flexida_package.R'
     'get_data_from_model.R'
+    'get_design.R'
     'ittestimate.R'
     'summary.Design.R'
     'weights.R'

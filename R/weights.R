@@ -1,39 +1,39 @@
 ##' @title Generate Direct Adjusted Weights
-##' @param design a Design object created by one of `rct_design`, `rd_design`,
-##'   or `obs_design`.
-##' @param dichotomy optionally, a formula defining the dichotomy of the
-##'   treatment variable if it isn't already \code{0}/\code{1}. See details of
-##'   help for \code{rct_design()} e.g. for details.
+##' @param design a \code{Design} object created by one of \code{rct_design()},
+##'   \code{rd_design()}, or \code{obs_design()}.
+##' @param dichotomy optional; a formula defining the dichotomy of the treatment
+##'   variable if it isn't already \code{0}/\code{1}. See details of help for
+##'   \code{rct_design()} e.g. for details.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in `design` to cluster/unit of assignment variables
-##'   in `data`. Names represent variables in the Design; values represent
-##'   variables in the data. Only needed if variable names differ.
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
 ##' @param data optionally the data for the analysis to be performed on. May be
-##'   excluded if these functions are included as the `weights` argument of a
-##'   model.
+##'   excluded if these functions are included as the \code{weights} argument of
+##'   a model.
 ##' @return a WeightedDesign object
 ##' @export
 ##' @rdname WeightCreators
-ett <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
+ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ett",
                 dichotomy = dichotomy,
                 by = by,
-                data = data)
+                clusterdata = data)
 }
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
+ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   .weights_calc(design = design,
                 target = "ate",
                 dichotomy = dichotomy,
                 by = by,
-                data = data)
+                clusterdata = data)
 }
 
 # (Internal) Calculates weights
-.weights_calc <- function(design, target, dichotomy, by, data) {
+.weights_calc <- function(design, target, dichotomy, by, clusterdata) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
@@ -43,24 +43,33 @@ ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
       stop("`dichotomy` must be a `formula`")
     }
     if (is_dichotomized(design)) {
-      warning("design is already dichotomized; over-writing with new `dichotomy`")
+      warning(paste("design is already dichotomized; over-writing",
+                    "with new `dichotomy`"))
     }
     dichotomy(design) <- dichotomy
   }
 
-  if (is.null(data)) {
-    data <- .get_data_from_model(design@call$formula, by)
-  } else if (!is.data.frame(data)) {
+  if (is.null(design)) {
+    design <- .get_design()
+  }
+
+  if (is.null(clusterdata)) {
+    # Only thing we need from the data is cluster info to enable later merge
+    form <- as.formula(paste("~", paste(var_names(design, "u"),
+                                        collapse = "+")))
+
+    clusterdata <- .get_data_from_model("weights", form, by)
+  } else if (!is.data.frame(clusterdata)) {
     stop("`data` must be `data.frame`")
   }
 
   if (!is.null(by)) {
     # .update_by handles checking input
-    design <- .update_by(design, data, by)
+    design <- .update_by(design, clusterdata, by)
   }
 
   # Ensure treatment is binary
-  if (!has_binary_treatment(design)) {
+  if (!is_binary_or_dichotomized(design)) {
     stop(paste("To calculate weights, treatment must either be 0/1 binary,\n",
                "or the Design must have a dichotomy."))
   }
@@ -71,8 +80,8 @@ ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
   txt <- .bin_txt(design)
 
   if (length(var_names(design, "b")) == 0) {
-    # If no block is specified, then e_z is the proportion of clusters who receive
-    # the treatment.
+    # If no block is specified, then e_z is the proportion of clusters who
+    # receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
 
     if (target == "ate") {
@@ -84,7 +93,7 @@ ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
     # If a block is specified, then e_z varies by block and is the proportion
     # of clusters within the block that receive the treatment.
 
-    # Identify number of units per block, and number of treated units per blodk
+    # Identify number of units per block, and number of treated units per block
     block_units <- table(blocks(design)[!is.na(txt), ])
     block_tx_units <- tapply(txt,
                              blocks(design),
@@ -102,5 +111,6 @@ ate <- function(design, dichotomy = NULL, by = NULL, data = NULL) {
     }
   }
 
-  .join_design_weights(weights, design, target = target, data = data)
+  .join_design_weights(weights, design, target = target,
+                       clusterdata = clusterdata)
 }

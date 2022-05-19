@@ -81,7 +81,8 @@ test_that("Treatment inputs", {
 
   # Non-conditional but bad variable name
   names(simdata)[5] <- "z==1"
-  expect_warning(expect_error(d <- rct_design(`z==1`  ~ uoa(cid1, cid2), data = simdata),
+  expect_warning(expect_error(d <- rct_design(`z==1`  ~ uoa(cid1, cid2),
+                                              data = simdata),
                               "isn't logical"),
                  "conditional logic")
 

@@ -21,7 +21,8 @@ setValidity("Design", function(object) {
     return("Only one treatment variable allowed")
   }
   tr <- tr[, 1]
-  if (is.null(tr) || (!is.numeric(tr) && !is.character(tr)) && !is.logical(tr)) {
+  if (is.null(tr) ||
+        (!is.numeric(tr) && !is.character(tr)) && !is.logical(tr)) {
     return("Invalid treatment; must be numberic or character")
   }
   if (length(unique(tr)) < 2) {
@@ -34,12 +35,14 @@ setValidity("Design", function(object) {
     return("name disagree between @structure and @column_index")
   }
   if (!all(object@column_index %in% c("t", "u", "b", "f"))) {
-    wrong <- object@column_index[!object@column_index %in% c("t", "u", "b", "f")]
-    return(paste("@column_index design elements must be [t,u,b,f]. unknown elements:",
-                 paste(wrong, collapse = ", ")))
+    wrong <- object@column_index[!object@column_index %in%
+                                   c("t", "u", "b", "f")]
+    return(paste("@column_index design elements must be [t,u,b,f].",
+                 "unknown elements:", paste(wrong, collapse = ", ")))
   }
   if (!object@type %in% c("RCT", "RD", "Obs")) {
-    return(paste("@type must be one of [RCT,RD,Obs]. unknown @type:", object@type))
+    return(paste("@type must be one of [RCT,RD,Obs]. unknown @type:",
+                 object@type))
   }
   if (object@type != "RD" && any(object@column_index == "f")) {
     return("Forcing variables only valid in RD")
@@ -47,8 +50,10 @@ setValidity("Design", function(object) {
   if (object@type == "RD" && !any(object@column_index == "f")) {
     return("RD designs must include at least one forcing variables")
   }
-  if (!object@unit_of_assignment_type %in% c("cluster", "unitid", "unit_of_assignment")) {
-    return('valid `unit_of_assignment_type`s are "unit_of_assignment", "cluster" or "unitid"')
+  if (!object@unit_of_assignment_type %in%
+        c("cluster", "unitid", "unit_of_assignment")) {
+    return(paste('valid `unit_of_assignment_type`s are "unit_of_assignment",',
+                 '"cluster" or "unitid"'))
   }
   if (!length(object@dichotomy) %in% c(0, 3)) {
     return("@dichotomy invalid")
@@ -66,7 +71,9 @@ new_Design <- function(form,
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
-    warning("Invalid call passed to `new_Design`, using default. Please use rd_design, rct_design, or obs_design instead of `new_Design` directly.")
+    warning(paste("Invalid call passed to `new_Design`, using default.",
+                  "Please use rd_design, rct_design, or obs_design instead ",
+                  "of `new_Design` directly."))
   }
 
   if (!is.null(subset)) {
@@ -94,8 +101,8 @@ new_Design <- function(form,
     stop("This error should never be hit!")
   }
 
-  # Ensure whichever unit of assignment function is used, `unit_of_assignment` is
-  # called
+  # Ensure whichever unit of assignment function is used, `unit_of_assignment`
+  # is called
   form <- .update_form_to_unit_of_assignment(form)
 
   m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
@@ -113,8 +120,8 @@ new_Design <- function(form,
 
   if (options()$flexida_warn_on_conditional_treatment &
                 grepl("[<>=]", deparse(form[[2]]))) {
-    # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <, =
-    # and if found, evaluate and convert to numeric, but warn users.
+    # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <,
+    # = and if found, evaluate and convert to numeric, but warn users.
     warning(paste("It appears that you've identified the treatment group",
                   "using conditional logic\n(by including one of <, >, or =",
                   "in the left hand side of `form`).\n",
@@ -146,22 +153,28 @@ new_Design <- function(form,
                      }, error = function(e) {
                        newt # should never hit here (warning only)
                      })
-  } else if (!is.numeric(treatment) & !is.character(treatment) & !is.logical(treatment)) {
-    # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or a
-    # character. It is some other type. Warn user before converting to numeric.
-    warning(paste("Treatment variables which are not numeric or character",
-                  "are converted into numeric.\nIt is STRONGLY suggested to do this",
-                  "conversion yourself to ensure it proceeds as you expect."))
+  } else if (!is.numeric(treatment) &
+             !is.character(treatment) &
+             !is.logical(treatment)) {
+    # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or
+    # a character. It is some other type. Warn user before converting to
+    # numeric.
+    warning(paste("Treatment variables which are not numeric or character are",
+                  "converted into numeric.\nIt is STRONGLY suggested to do",
+                  "this conversion yourself to ensure it proceeds",
+                  "as you expect."))
     treatment <- as.numeric(treatment)
   }
-  # Case 0: treatment is numeric, logical, or character. No additional steps needed.
+  # Case 0: treatment is numeric, logical, or character. No additional steps
+  # needed.
 
   m_collapse[, index == "t"] <- treatment
 
   differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
     noncon <- m_collapse[differing, index == "u", drop = FALSE]
-    cat("\nUnits of assignment with non-constant treatment, block or forcing:\n")
+    cat(paste("\nUnits of assignment with non-constant treatment, block",
+              "or forcing:\n"))
     if (nrow(noncon) >= 6) {
       print(noncon[1:5, , drop = FALSE])
       cat("...\n")
@@ -169,7 +182,8 @@ new_Design <- function(form,
       print(noncon)
     }
 
-    stop("Each of treatment assignment, block and forcing must be constant within unit of assignment.")
+    stop(paste("Each of treatment assignment, block and forcing must be",
+               "constant within unit of assignment."))
   }
 
   new("Design",
@@ -320,8 +334,8 @@ setMethod("show", "Design", function(object) {
 
 ##' @title Extract names of Design variables
 ##' @param x Design x
-##' @param type one of "t", "u", "b", "f"; for "treatment", "unit_of_assignment",
-##'   "block", and "forcing"
+##' @param type one of "t", "u", "b", "f"; for "treatment",
+##'   "unit_of_assignment", "block", and "forcing"
 ##' @return character vector of variable names of the given type
 ##' @export
 var_names <- function(x, type) {
@@ -331,7 +345,8 @@ var_names <- function(x, type) {
   names(x@structure)[x@column_index == type]
 }
 
-# Internal to properly rename columns to strip unit_of_assignment(), block(), etc
+# Internal to properly rename columns to strip unit_of_assignment(), block(),
+# etc
 .rename_model_frame_columns <- function(modframe) {
 
   index <- rep("t", ncol(modframe))
@@ -386,26 +401,40 @@ treatment_table <- function(design, ...) {
 
 ##' Returns a table containing the variables identified in each structure
 ##'
+##' When \code{compress} is \code{TRUE}, the result will always have two
+##' columns. When \code{FALSE}, the result will have number of columns equal to
+##' the largest number of variables in a particular role, plus one. E.g., a call
+##' such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
+##' in the output matrix.
+##'
+##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
+##' rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
+##' \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
+##' rows (treatment and cluster/unitid/unif of assignment), with additional rows
+##' for blocks and forcing if included in the \code{Design}.
 ##' @title variable identification table
 ##' @param design A Design object
-##' @param ... add'l optional arguments to \code{table}
 ##' @param compress Should multiple variables be compressed into a
-##'   comma-separated string? Default TRUE.
-##' @param report_all Should we report all possible structures even if they don't
-##'   exist in the Design? Default FALSE.
-##' @return a table of variables in the Design structure
+##'   comma-separated string? Default \code{TRUE}.
+##' @param report_all Should we report all possible structures even if they
+##'   don't exist in the Design? Default \code{FALSE}.
+##' @return a \code{matrix} of variables in the Design structure
 ##' @export
-var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
+var_table <- function(design, compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
                     "unit_of_assignment" = "Unit of Assignment",
                     "cluster" = "Cluster",
                     "unitid"  = "Unitid")
 
+  # Start with the "table" as a list; easier to handle non-equal number of
+  # elements.
   rows <- list()
   rows[["t"]] <- c("Treatment", var_names(design, "t"))
   rows[["u"]] <- c(uoatype    , var_names(design, "u"))
   rows[["b"]] <- c("Block"    , var_names(design, "b"))
-  rows[["f"]] <- c("Forcing"  , var_names(design, "f"))
+  if (design@type == "RD") {
+    rows[["f"]] <- c("Forcing"  , var_names(design, "f"))
+  }
 
   # Identify if we have more than one variable specified in a specific
   # structure, and if so how ,long
@@ -415,33 +444,32 @@ var_table <- function(design, ..., compress = TRUE, report_all = FALSE) {
     stop("Internal error: No variables identified!")
   }
 
-  # If we have more than 1 variable in at least 1 structure, add NA padding to
-  # each row
-  if (maxvar > 2) {
-    rows <- lapply(rows, function(x) {
-      if (length(x) < maxvar) {
-        x <- c(x, rep(NA, maxvar - length(x)))
-      }
-      return(x)
-    })
-  }
-  out <- do.call(rbind, rows)
-
   if (!report_all) {
     # Drop any rows we don't need
-    out <- out[!is.na(out[, 2]), ]
+    rows <- rows[vapply(rows, length, 1) > 1]
   }
+
+  # add NA padding to make all rows the same length so the `rbind` that follows
+  # doesn't need to recycle length
+  rows <- lapply(rows, function(x) {
+    if (length(x) < maxvar) {
+      x <- c(x, rep(NA, maxvar - length(x)))
+    }
+    return(x)
+  })
+
+  # list to data.frame
+  out <- do.call(rbind, rows)
 
   if (compress == TRUE) {
     # If compressing, collapse any repeats if necessary
-    if (maxvar > 2) {
-      out2 <- apply(out[, -1], 1, function(x) {
-        x <- x[!is.na(x)]
-        return(paste(x, collapse = ", "))
-      })
-      out <- cbind(out[, 1], out2)
-    }
+    rows <- lapply(rows, function(x) {
+      x <- x[!is.na(x)]
+      c(x[1], paste(x[-1], collapse = ", "))
+    })
+    out <- do.call(rbind, rows)
     colnames(out) <- c("Structure", "Variables")
+    out[out == ""] <- NA
   } else {
     if (maxvar == 2) {
       colnames(out) <- c("Structure", "Variables")

@@ -7,12 +7,12 @@
 \method{print}{summary.Design}(x, ..., max_unit_print = 3)
 }
 \arguments{
-\item{x}{Design object}
+\item{x}{\code{summary.Design} object}
 
 \item{...}{Other args}
 
-\item{max_unit_print}{Maximum number of treatment levels to print in treatment
-table}
+\item{max_unit_print}{Maximum number of treatment levels to print in
+treatment table}
 }
 \value{
 object, invisibly

@@ -4,22 +4,33 @@
 \alias{var_table}
 \title{variable identification table}
 \usage{
-var_table(design, ..., compress = TRUE, report_all = FALSE)
+var_table(design, compress = TRUE, report_all = FALSE)
 }
 \arguments{
 \item{design}{A Design object}
 
-\item{...}{add'l optional arguments to \code{table}}
-
 \item{compress}{Should multiple variables be compressed into a
-comma-separated string? Default TRUE.}
+comma-separated string? Default \code{TRUE}.}
 
-\item{report_all}{Should we report all possible structures even if they don't
-exist in the Design? Default FALSE.}
+\item{report_all}{Should we report all possible structures even if they
+don't exist in the Design? Default \code{FALSE}.}
 }
 \value{
-a table of variables in the Design structure
+a \code{matrix} of variables in the Design structure
 }
 \description{
 Returns a table containing the variables identified in each structure
+}
+\details{
+When \code{compress} is \code{TRUE}, the result will always have two
+columns. When \code{FALSE}, the result will have number of columns equal to
+the largest number of variables in a particular role, plus one. E.g., a call
+such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
+in the output matrix.
+
+When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
+rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
+\code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
+rows (treatment and cluster/unitid/unif of assignment), with additional rows
+for blocks and forcing if included in the \code{Design}.
 }

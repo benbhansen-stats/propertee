@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary.Design.R
 \name{summary.Design}
 \alias{summary.Design}
-\title{Summary of Design object}
+\title{Summary of \code{Design} object}
 \usage{
 \method{summary}{Design}(object, ...)
 }
@@ -12,8 +12,8 @@
 \item{...}{Other args}
 }
 \value{
-object of class "summary.Design"
+object of class \code{summary.Design}
 }
 \description{
-Summary of Design object
+Summary of \code{Design} object
 }

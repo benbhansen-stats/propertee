@@ -2,7 +2,7 @@ test_that("internal weight function", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
+  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -15,7 +15,7 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ett",
+  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -28,16 +28,16 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_error(.weights_calc(des, data = simdata, by = NULL, target = "foo",
-                             dichotomy = NULL),
+  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+                             target = "foo", dichotomy = NULL),
                "Invalid weight target")
 
-  expect_error(.weights_calc(des, data = 1, by = NULL, target = "ate",
+  expect_error(.weights_calc(des, clusterdata = 1, by = NULL, target = "ate",
                              dichotomy = NULL),
                "`data` must be")
 
-  expect_error(.weights_calc(des, data = simdata, by = NULL, target = "ate",
-                             dichotomy = 1),
+  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+                             target = "ate", dichotomy = 1),
                "`dichotomy` must be")
 
 })
@@ -47,13 +47,13 @@ test_that("dichotomy issues", {
   data(simdata)
   des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  expect_error(.weights_calc(des, data = simdata, by = NULL, target = "ate",
-                             dichotomy = NULL),
+  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+                             target = "ate", dichotomy = NULL),
                "must have a dichotomy")
 
   dichotomy(des) <- . ~ dose > 150
 
-  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
+  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -66,7 +66,8 @@ test_that("dichotomy issues", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_warning(wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
+  expect_warning(wdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
+                                       target = "ate",
                                        dichotomy = dose > 200 ~ .),
                  "over-writing")
   expect_identical(deparse(dichotomy(wdes@Design)), "dose > 200 ~ .")
@@ -77,12 +78,12 @@ test_that("internal and external weight function agreement", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  iwdes <- .weights_calc(des, data = simdata, by = NULL,
+  iwdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
   ewdes <- ate(des, data = simdata)
   expect_identical(iwdes, ewdes)
 
-  iwdes <- .weights_calc(des, data = simdata, by = NULL,
+  iwdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
                          target = "ett", dichotomy = NULL)
   ewdes <- ett(des, data = simdata)
   expect_identical(iwdes, ewdes)
@@ -146,7 +147,8 @@ test_that("ate and ett in lm call", {
 test_that("by", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+                   data = simdata)
 
   w1 <- ate(des, data = simdata)
 
@@ -164,18 +166,22 @@ test_that("by", {
   expect_equal(w1@.Data, w2@.Data)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ate(des, by = c("cid2" = "cccc")))
-  mod3 <- lm(y ~ x, data = simdata2, weights = ate(des, by = list("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2,
+             weights = ate(des, by = c("cid2" = "cccc")))
+  mod3 <- lm(y ~ x, data = simdata2,
+             weights = ate(des, by = list("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
   expect_identical(mod1$coef, mod3$coef)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ett(des))
-  mod2 <- lm(y ~ x, data = simdata2, weights = ett(des, by = c("cid2" = "cccc")))
+  mod2 <- lm(y ~ x, data = simdata2,
+             weights = ett(des, by = c("cid2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
 
-  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) + block(bid) + forcing(force), data = simdata)
+  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) +
+                     block(bid) + forcing(force), data = simdata)
 
   w1 <- ate(des, data = simdata)
 
@@ -435,7 +441,7 @@ test_that("Combining weighted designs", {
 
   alt_w1 <- ate(des2, data = simdata)
 
-  expect_error(c(w1, alt_w1), "identical Designs")
+  expect_error(c(w1, alt_w1), "which differ on elements")
 
   # if the first argument is compatible with WeightedDesign but isn't one (e.g.
   # numeric vector), c() will return a numeric vector
@@ -449,10 +455,10 @@ test_that("Combining weighted designs with different dichotomys ", {
   w2 <- ate(des, data = simdata, dichotomy = dose >= 200 ~ .)
   w3 <- ate(des, data = simdata, dichotomy = dose >= 100 ~ .)
 
-  expect_warning(c_w <- c(w1, w2, w3),
-                 "differ")
+  c_w <- c(w1, w2, w3)
   expect_true(is(c_w, "WeightedDesign"))
   expect_length(c_w, 150)
 
-  expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE))
+  expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
+               "must be identical")
 })
