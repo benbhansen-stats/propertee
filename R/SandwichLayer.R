@@ -89,9 +89,11 @@ setValidity("PreSandwichLayer", function(object) {
 ##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
 ##' @param x PreSandwichLayer
 ##' @param design Design
-##' @param by character; must have entries corresponding to Design's
+##' @param by character; named vector with entries corresponding to Design's
 ##' group assignment columns and names corresponding to the new desired column
 ##' names
+##' @param envir Environment; the environment in which to find the covariance
+##' model data to instantiate, default is `parent.frame()`
 ##' @return SandwichLayer
 ##' @export
 as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {

@@ -11,9 +11,12 @@ as.SandwichLayer(x, design, by = NULL, envir = parent.frame())
 
 \item{design}{Design}
 
-\item{by}{character; must have entries corresponding to Design's
+\item{by}{character; named vector with entries corresponding to Design's
 group assignment columns and names corresponding to the new desired column
 names}
+
+\item{envir}{Environment; the environment in which to find the covariance
+model data to instantiate, default is \code{parent.frame()}}
 }
 \value{
 SandwichLayer
