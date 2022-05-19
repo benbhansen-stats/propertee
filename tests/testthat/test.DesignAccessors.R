@@ -25,12 +25,21 @@ test_that("Accessing and replacing treatment", {
 
   expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
-
   # no dichotomy
   expect_identical(treatment(des), treatment(des, binary = TRUE))
   expect_identical(treatment(des, binary = FALSE),
                    treatment(des, binary = TRUE))
 
+  # Continuous treatment, no dichotomy
+  des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
+  expect_identical(treatment(des), treatment(des, binary = FALSE))
+
+  expect_error(treatment(des, binary = TRUE), "No binary")
+
+  # Continuous treatment, dichotomy
   des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata, dichotomy = dose <= 100 ~ dose == 200)
 
