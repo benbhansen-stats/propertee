@@ -28,3 +28,20 @@ Depends:
 VignetteBuilder: knitr
 URL: https://github.com/benbhansen-stats/flexida
 BugReports: https://github.com/benbhansen-stats/flexida/issues
+Collate: 
+    'Design.R'
+    'DesignAccessors.R'
+    'DesignConverters.R'
+    'DesignUtilities.R'
+    'DirectAdjusted.R'
+    'SandwichLayer.R'
+    'WeightedDesign.R'
+    'binarize_treatment.R'
+    'cov_adj.R'
+    'data.R'
+    'flexida_package.R'
+    'get_data_from_model.R'
+    'ittestimate.R'
+    'summary.Design.R'
+    'weights.R'
+    'weightsUtilities.R'

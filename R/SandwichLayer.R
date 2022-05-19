@@ -1,3 +1,6 @@
+#' @include DesignAccessors.R
+NULL
+
 SandwichLayer <- setClass("SandwichLayer",
                           contains = "numeric",
                           slots = c(fitted_covariance_model = "ANY",
