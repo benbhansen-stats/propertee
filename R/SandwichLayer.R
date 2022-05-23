@@ -32,7 +32,7 @@ setValidity("SandwichLayer", function(object) {
   if (dim(object@prediction_gradient)[1] != length(object)) {
     return("Prediction gradient does not have the same number of rows as the offset")
   }
-  if (dim(object@prediction_gradient)[2] != length(coef(object@fitted_covariance_model))) {
+  if (dim(object@prediction_gradient)[2] != length(object@fitted_covariance_model$coefficients)) {
     return(paste0("Prediction gradient does not have the same number of columns as ",
                   "predictors in the covariance model"))
   }
@@ -79,7 +79,7 @@ setValidity("PreSandwichLayer", function(object) {
   if (dim(object@prediction_gradient)[1] != length(object)) {
     return("Prediction gradient does not have the same number of rows as the offset")
   }
-  if (dim(object@prediction_gradient)[2] != length(coef(object@fitted_covariance_model))) {
+  if (dim(object@prediction_gradient)[2] != length(object@fitted_covariance_model$coefficients)) {
     return(paste0("Prediction gradient does not have the same number of columns as ",
                   "predictors in the covariance model"))
   }
