@@ -18,7 +18,7 @@ des <- rct_design(t ~ uoa(uoa1, uoa2), data = x)
 by <- c("teacher" = "uoa1", "student" = "uoa2")
 cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
 offset <- stats::predict(cmod, xstar)
-pred_gradient <- model.matrix(cmod)
+pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), xstar)
 keys <- xstar[, c("uoa1", "uoa2")]
 invalid_cmod <- list("a" = c(1, 2, 3))
 
