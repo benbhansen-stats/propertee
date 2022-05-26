@@ -116,24 +116,23 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
   }
 
   if (is.null(by)) {
-    desvars <- var_names(design, "u")
-    check_desvar_cols(desvars, x@fitted_covariance_model)
-    
-    keys <- expand.model.frame(x@fitted_covariance_model,
-                               desvars,
-                               na.expand = T)[desvars]
+    by <- desvars <- var_names(design, "u")
   } else {
-    if (is.null(names(by))) {
+    desvars <- names(by)
+    if (is.null(desvars)) {
       stop("`by` must be a named vector")
     }
-    
-    desvars <- names(by)
-    check_desvar_cols(by[desvars], x@fitted_covariance_model)
-    keys <- expand.model.frame(x@fitted_covariance_model,
-                               by[desvars],
-                               na.expand = T)[by[desvars]]
-    colnames(keys) <- desvars
   }
+
+  check_desvar_cols(by, x@fitted_covariance_model)
+  wide_frame <- expand.model.frame(x@fitted_covariance_model,
+                                   by,
+                                   na.expand = T)[by]
+  # in case of only partial overlap, this doesn't return rows in-place--NA's appear last
+  keys <- merge(wide_frame, design@structure, all.x = T, sort = F)
+  keys[is.na(keys[, var_names(design, "t")]), by] <- NA
+  keys <- keys[, by]
+  colnames(keys) <- desvars
   
   return(new("SandwichLayer",
              x@.Data,

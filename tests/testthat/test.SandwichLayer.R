@@ -181,3 +181,52 @@ test_that("as.SandwichLayer used correctly with `by`", {
   expect_true(is(sl, "SandwichLayer"))
   expect_equal(colnames(sl@keys), names(by))
 })
+
+test_that("as.SandwichLayer produces NA rows in `keys` for non-NA uoa values", {
+  on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
+                          "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
+                          "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
+                          "cont_x" = cont_x,
+                          "cat_x" = cat_x,
+                          "y" = y))
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
+
+  x[x$uoa1 == 1 & x$uoa2 == 1, c("uoa1", "uoa2")] <- c(0, 0)
+  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- as.SandwichLayer(psl, des)
+  expect_equal(nrow(sl@keys),
+               nrow(sl@fitted_covariance_model$model))
+  expect_true(nrow(sl@keys[is.na(sl@keys$uoa1),]) > 0)
+  expect_equal(nrow(x[x$uoa1 == 0 & x$uoa2 == 0,]),
+               nrow(sl@keys[is.na(sl@keys$uoa1),]))
+})
+
+
+test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
+  on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
+                          "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
+                          "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
+                          "cont_x" = cont_x,
+                          "cat_x" = cat_x,
+                          "y" = y))
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
+  
+  x[x$uoa1 == 1 & x$uoa2 == 1, c("uoa1", "uoa2")] <- c(NA, NA)
+  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- as.SandwichLayer(psl, des)
+  expect_equal(nrow(sl@keys),
+               nrow(sl@fitted_covariance_model$model))
+  expect_true(nrow(sl@keys[is.na(sl@keys$uoa1),]) > 0)
+  expect_equal(nrow(x[x$uoa1 == 0 & x$uoa2 == 0,]),
+               nrow(sl@keys[is.na(sl@keys$uoa1),]))
+})
