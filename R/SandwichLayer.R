@@ -125,9 +125,9 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
   }
 
   check_desvar_cols(by, x@fitted_covariance_model)
-  wide_frame <- expand.model.frame(x@fitted_covariance_model,
-                                   by,
-                                   na.expand = T)[by]
+  wide_frame <- stats::expand.model.frame(x@fitted_covariance_model,
+                                          by,
+                                          na.expand = T)[by]
   wide_frame$idx <- 1:nrow(wide_frame)  # add idx to keep merge results in place
   keys <- merge(wide_frame, design@structure, all.x = T)
   keys[is.na(keys[, var_names(design, "t")]), by] <- NA
