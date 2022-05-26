@@ -465,3 +465,12 @@ test_that("Combining weighted designs with different dichotomys ", {
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
                "must be identical")
 })
+
+test_that("Passing previously created formula", {
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ z, data = simdata, weights = ett(des))
+  f <- y ~ z
+  mod2 <- lm(f, data = simdata, weights = ett(des))
+  mod1$call <- mod2$call <- call("ls")
+  expect_identical(mod1, mod2)
+})
