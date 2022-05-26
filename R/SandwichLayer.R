@@ -116,12 +116,7 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
   }
 
   if (is.null(by)) {
-    get_desvars_func <- switch(
-      design@unit_of_assignment_type,
-      "unit_of_assignment" = units_of_assignment,
-      "cluster" = clusters,
-      "unitid" = unitids)
-    desvars <- colnames(get_desvars_func(design))
+    desvars <- var_names(design, "u")
     check_desvar_cols(desvars, x@fitted_covariance_model)
     
     keys <- expand.model.frame(x@fitted_covariance_model,
