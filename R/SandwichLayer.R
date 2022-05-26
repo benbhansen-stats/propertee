@@ -128,11 +128,12 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
   wide_frame <- expand.model.frame(x@fitted_covariance_model,
                                    by,
                                    na.expand = T)[by]
-  # in case of only partial overlap, this doesn't return rows in-place--NA's appear last
-  keys <- merge(wide_frame, design@structure, all.x = T, sort = F)
+  wide_frame$idx <- 1:nrow(wide_frame)  # add idx to keep merge results in place
+  keys <- merge(wide_frame, design@structure, all.x = T)
   keys[is.na(keys[, var_names(design, "t")]), by] <- NA
-  keys <- keys[, by]
+  keys <- keys[order(keys$idx), by]
   colnames(keys) <- desvars
+  row.names(keys) <- wide_frame$idx
   
   return(new("SandwichLayer",
              x@.Data,
