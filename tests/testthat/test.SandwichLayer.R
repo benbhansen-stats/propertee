@@ -227,6 +227,6 @@ test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
   expect_equal(nrow(sl@keys),
                nrow(sl@fitted_covariance_model$model))
   expect_true(nrow(sl@keys[is.na(sl@keys$uoa1),]) > 0)
-  expect_equal(nrow(x[x$uoa1 == 0 & x$uoa2 == 0,]),
+  expect_equal(nrow(x[is.na(x$uoa1) & is.na(x$uoa2),]),
                nrow(sl@keys[is.na(sl@keys$uoa1),]))
 })
