@@ -54,6 +54,7 @@
   }, "character")
 
   colnames(design@structure) <- newnames
+  validObject(design)
   return(design)
 }
 

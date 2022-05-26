@@ -191,6 +191,9 @@ test_that("by", {
 
   expect_equal(w1@.Data, w2@.Data)
 
+  expect_error(ate(des, data = simdata2, by = c("cid2" = "z")),
+               "variables cannot be used more than once")
+
 })
 
 test_that("Ops", {
