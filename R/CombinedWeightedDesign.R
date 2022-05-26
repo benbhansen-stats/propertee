@@ -3,10 +3,10 @@ NULL
 # The above ensures that `WeightedDesign` is defined prior to
 # `CombinedWeightedDesign`
 
-CombinedWeightedDesign <- setClass("CombinedWeightedDesign",
-                                   contains = "WeightedDesign",
-                                   slots = c(dichotomies = "list",
-                                             keys = "list"))
+setClass("CombinedWeightedDesign",
+         contains = "WeightedDesign",
+         slots = c(dichotomies = "list",
+                   keys = "list"))
 
 setValidity("CombinedWeightedDesign", function(object) {
   if (length(object@dichotomies) != length(object@keys)) {

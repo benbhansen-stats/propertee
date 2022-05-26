@@ -154,8 +154,7 @@ test_that("vcov, confint, etc", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)),
-                         Design = des, target = "ett")
+  dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
 
   expect_true(is.matrix(vcov(dalm)))
   expect_equal(dim(vcov(dalm)), c(2, 2))

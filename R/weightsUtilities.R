@@ -11,9 +11,10 @@
   weights <- .merge_preserve_order(clusterdata, uoadata,
                                    by = uoanames)$design_weights
 
-  WeightedDesign(weights,
-                 Design = design,
-                 target = target)
+  new("WeightedDesign",
+      weights,
+      Design = design,
+      target = target)
 }
 
 # (Internal) Merge data.frames ensuring order of first data.frame is maintained

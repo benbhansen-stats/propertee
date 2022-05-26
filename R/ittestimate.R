@@ -91,5 +91,5 @@ ittestimate <- function(design,
                 data = merged, weights = weights, ...)
   }
 
-  return(DirectAdjusted(model, Design = design, target = target))
+  return(new("DirectAdjusted", model, Design = design, target = target))
 }

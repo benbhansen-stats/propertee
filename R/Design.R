@@ -1,10 +1,10 @@
-Design <- setClass("Design",
-                   slots = c(structure = "data.frame",
-                             column_index = "character",
-                             type = "character",
-                             unit_of_assignment_type = "character",
-                             call = "call",
-                             dichotomy = "formula"))
+setClass("Design",
+         slots = c(structure = "data.frame",
+                   column_index = "character",
+                   type = "character",
+                   unit_of_assignment_type = "character",
+                   call = "call",
+                   dichotomy = "formula"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {

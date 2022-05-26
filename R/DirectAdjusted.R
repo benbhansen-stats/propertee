@@ -3,10 +3,10 @@ NULL
 # The above ensures that `Design` and `WeightedDesign` are defined prior to
 # `DirectAdjusted`
 
-DirectAdjusted <- setClass("DirectAdjusted",
-                           contains = "lm",
-                           slots = c(Design = "Design",
-                                     target = "character"))
+setClass("DirectAdjusted",
+         contains = "lm",
+         slots = c(Design = "Design",
+                   target = "character"))
 
 setValidity("DirectAdjusted", function(object) {
   if (length(object@target) != 1 || !object@target %in% c("ett", "ate")) {

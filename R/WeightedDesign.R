@@ -2,10 +2,10 @@
 NULL
 # The above ensures that `Design` is defined prior to `WeightedDesign`
 
-WeightedDesign <- setClass("WeightedDesign",
-                           contains = "numeric",
-                           slots = c(Design = "Design",
-                                     target = "character"))
+setClass("WeightedDesign",
+         contains = "numeric",
+         slots = c(Design = "Design",
+                   target = "character"))
 
 setValidity("WeightedDesign", function(object) {
   if (any(object[!is.na(object)] < 0)) {
