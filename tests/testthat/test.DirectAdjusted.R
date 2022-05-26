@@ -26,6 +26,7 @@ test_that("DA ensure treatment is found", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  dalm2 <- lmda(y ~ z, data = simdata, weights = ate(des))
 
   expect_type(treatment(dalm), "character")
   expect_length(treatment(dalm), 1)
@@ -82,13 +83,13 @@ test_that("DA ensure treatment is found", {
                "non-binary treatment")
 
 
-  daitt <- ittestimate(des, simdata, "y")
+  dalm_direct <- lmda(y ~ adopters(), data = simdata, weights = ate(des2))
 
-  expect_type(treatment(daitt), "character")
-  expect_length(treatment(daitt), 1)
-  expect_identical(treatment(daitt), "z__")
+  expect_type(treatment(dalm_direct), "character")
+  expect_length(treatment(dalm_direct), 1)
+  expect_identical(treatment(dalm_direct), "adopters()")
   # internal name used in ittestimate
-  expect_true(!is.na(coef(daitt)[treatment(daitt)]))
+  expect_true(!is.na(coef(dalm_direct)[treatment(dalm_direct)]))
 })
 
 test_that("DirectAdjusted print/show", {
@@ -120,10 +121,10 @@ test_that("Conversion from lm to DirectAdjusted", {
 
   expect_s4_class(mod_da, "DirectAdjusted")
 
-  mod_itt <- ittestimate(des, simdata, "y")
+  mod_lmda <- lmda(y ~ z, data = simdata, weights = ate(des))
 
-  expect_true(all(mod_da$coef == mod_itt$coef))
-  expect_identical(mod_da@Design, mod_itt@Design)
+  expect_true(all(mod_da$coef == mod_lmda$coef))
+  expect_identical(mod_da@Design, mod_lmda@Design)
 
   expect_error(as.DirectAdjusted(1),
                "lm object")
