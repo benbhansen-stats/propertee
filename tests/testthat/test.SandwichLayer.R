@@ -141,7 +141,7 @@ test_that("as.SandwichLayer `by` is not a named vector", {
                "must be a named vector")
 })
 
-test_that("as.SandwichLayer missing desvars from cov mod data", {
+test_that("as.SandwichLayer missing desvar columns from covariance model data", {
   on.exit(rm(psl))
   on.exit(offset <- stats::predict(cmod, xstar))
   
