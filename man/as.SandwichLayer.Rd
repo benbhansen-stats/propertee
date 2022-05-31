@@ -7,19 +7,21 @@
 as.SandwichLayer(x, design, by = NULL, envir = parent.frame())
 }
 \arguments{
-\item{x}{PreSandwichLayer}
+\item{x}{a \code{PreSandwichLayer} object.}
 
-\item{design}{Design}
+\item{design}{a \code{Design} object created by one of \code{rct_design()},
+\code{rd_design()}, or \code{obs_design()}.}
 
-\item{by}{character; named vector with entries corresponding to Design's
-group assignment columns and names corresponding to the new desired column
-names}
+\item{by}{optional; named vector or list connecting names of cluster/unit of
+assignment variables in \code{design} to cluster/unit of assignment
+variables in \code{data}. Names represent variables in the Design; values
+represent variables in the data. Only needed if variable names differ.}
 
-\item{envir}{Environment; the environment in which to find the covariance
-model data to instantiate, default is \code{parent.frame()}}
+\item{envir}{an \code{Environment} object. The environment in which to find
+the covariance model data to instantiate. By default, \code{parent.frame()}.}
 }
 \value{
-SandwichLayer
+a \code{SandwichLayer} object
 }
 \description{
 Convert a PreSandwichLayer to a SandwichLayer via a Design Object
