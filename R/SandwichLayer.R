@@ -1,4 +1,4 @@
-#' @include DesignAccessors.R, Design.R
+#' @include Design.R DesignAccessors.R
 NULL
 
 setClass("PreSandwichLayer",
