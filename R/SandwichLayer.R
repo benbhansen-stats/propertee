@@ -64,6 +64,23 @@ setValidity("SandwichLayer", function(object) {
   TRUE
 })
 
+show_layer <- function(object) {
+  print(object@.Data)
+  invisible(object)
+}
+
+##' @title Show a PreSandwichLayer
+##' @param object PreSandwichLayer object
+##' @return an invisible copy of `object`
+##' @export
+setMethod("show", "PreSandwichLayer", show_layer)
+
+##' @title Show a SandwichLayer
+##' @param object SandwichLayer object
+##' @return an invisible copy of `object`
+##' @export
+setMethod("show", "SandwichLayer", show_layer)
+
 ##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
 ##' @param x a \code{PreSandwichLayer} object.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},

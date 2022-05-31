@@ -232,3 +232,22 @@ test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
                nrow(sl@keys[is.na(sl@keys$uoa1),]))
   expect_equal(1:25, which(is.na(sl@keys$uoa1)))
 })
+
+test_that("show_sandwich_layer works", {
+  on.exit(des <- rct_design(t ~ uoa(uoa1, uoa2), data = x))
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  out <- capture.output(show(as.vector(psl)))
+  caout <- capture.output(show(psl))
+  expect_identical(out, caout)
+  
+  sl <- as.SandwichLayer(psl, des)
+  out <- capture.output(show(as.vector(sl)))
+  caout <- capture.output(show(sl))
+  expect_identical(out, caout)
+  
+  
+})
