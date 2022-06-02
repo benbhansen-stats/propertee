@@ -194,6 +194,25 @@ test_that("by", {
   expect_error(ate(des, data = simdata2, by = c("cid2" = "z")),
                "variables cannot be used more than once")
 
+  expect_error(ate(des, data = simdata2, by = c("abc")), "named vector")
+
+  expect_error(ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "cid2" = "bbbb")),
+               "unique")
+
+  expect_warning(w3 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "abc" = "cid1")),
+               "not found in Design")
+
+  expect_warning(w4 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "cid1" = "abc")),
+               "not found in data")
+  expect_identical(w3, w4)
+
+  expect_warning(expect_warning(w5 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "abc" = "def")),
+               "not found in data"), "not found in Design")
+  expect_identical(w3, w5)
 })
 
 test_that("Ops", {

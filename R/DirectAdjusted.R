@@ -138,11 +138,6 @@ setMethod("confint", "DirectAdjusted",
 ##' damod2$coef[treatment(damod2)]
 setMethod("treatment", "DirectAdjusted", function(x, ...) {
 
-  if ("z__" %in% names(x$coefficients)) {
-    # ittestimate uses this
-    return("z__")
-  }
-
   adopters_regexp <- "adopters\\([^)]*\\)"
   adopters_found <- which(grepl(adopters_regexp, names(x$coefficients)))
   if (length(adopters_found) == 1) {
