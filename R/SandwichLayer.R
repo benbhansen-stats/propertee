@@ -86,12 +86,12 @@ setMethod("show", "SandwichLayer", show_layer)
 ##' @param model Any model of class \code{glm} or \code{lm} (excluding those from
 ##' the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
 ##' methods
-##' @param newdata a data.frame of new data
+##' @param newdata Optional; a data.frame of new data
 ##' @return Covariate adjusted outcomes and their prediction gradient (a list of
 ##' a numeric vector and a matrix)
-.get_ca_and_prediction_gradient <- function(model, newdata) {
-  if (!is.data.frame(newdata)) {
-    stop("newdata must be a dataframe")
+.get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
+  if (!is.null(newdata) & !is.data.frame(newdata)) {
+    stop("If supplied, `newdata` must be a dataframe")
   }
 
   X <- tryCatch(stats::model.matrix(model, data = newdata),

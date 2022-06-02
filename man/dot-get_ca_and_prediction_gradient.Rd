@@ -5,14 +5,14 @@
 \title{(Internal) Get the a vector of "response" predictions from a covariance model
 and its gradient with respect to the fitted coefficients}
 \usage{
-.get_ca_and_prediction_gradient(model, newdata)
+.get_ca_and_prediction_gradient(model, newdata = NULL)
 }
 \arguments{
 \item{model}{Any model of class \code{glm} or \code{lm} (excluding those from
 the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
 methods}
 
-\item{newdata}{a data.frame of new data}
+\item{newdata}{Optional; a data.frame of new data}
 }
 \value{
 Covariate adjusted outcomes and their prediction gradient (a list of
