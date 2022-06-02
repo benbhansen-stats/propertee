@@ -94,13 +94,17 @@ setMethod("show", "SandwichLayer", show_layer)
     stop("If supplied, `newdata` must be a dataframe")
   }
 
-  X <- tryCatch(stats::model.matrix(model, data = newdata),
-                error = function(e) {
-                  stop("`model` does not have a method for `model.matrix`")
-                })
+  X <- tryCatch(
+    if (is.null(newdata)) {
+      stats::model.matrix(model)
+    } else {
+      stats::model.matrix(model, data = newdata)
+    }, error = function(e) {
+    stop("`model` does not have a method for `model.matrix`")
+  })
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  ca <- tryCatch(stats::predict(model, newdata, type = "response"),
+  ca <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
                  error = function(e) {
                    stop(paste("covariate adjustment model",
                               "must support predict function"))
