@@ -81,6 +81,45 @@ setMethod("show", "PreSandwichLayer", show_layer)
 ##' @export
 setMethod("show", "SandwichLayer", show_layer)
 
+##' (Internal) Get the a vector of "response" predictions from a covariance model
+##' and its gradient with respect to the fitted coefficients
+##' @param model Any model of class \code{glm} or \code{lm} (excluding those from
+##' the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
+##' methods
+##' @param newdata a data.frame of new data
+##' @return Covariate adjusted outcomes and their prediction gradient (a list of
+##' a numeric vector and a matrix)
+.get_ca_and_prediction_gradient <- function(model, newdata) {
+  if (!is.data.frame(newdata)) {
+    stop("newdata must be a dataframe")
+  }
+
+  X <- tryCatch(stats::model.matrix(model, data = newdata),
+                error = function(e) {
+                  stop("`model` does not have a method for `model.matrix`")
+                })
+
+  # TODO: support predict(..., type = "response"/"link"/other?)
+  ca <- tryCatch(stats::predict(model, newdata, type = "response"),
+                 error = function(e) {
+                   stop(paste("covariate adjustment model",
+                              "must support predict function"))
+                 })
+
+  # this branch applies to `glm`, `surveyglm`, `robustbase::glmrob` models
+  if (is(model, "glm") & !is(model, "gam")) {
+    pred_gradient <- model$family$mu.eta(ca) * X
+  } else if (is(model, "lm") | is(model, "lmrob")) {
+    # `lm` doesn't have a `family` object, but we know its prediction gradient
+    pred_gradient <- X
+  } else {
+    stop("`model` must be a `glm` or `lm` object (and not a `gam` object)")
+  }
+  
+  return(list("ca" = ca,
+              "prediction_gradient" = pred_gradient))
+}
+
 ##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
 ##' @param x a \code{PreSandwichLayer} object.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},

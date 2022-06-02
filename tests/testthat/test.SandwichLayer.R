@@ -251,3 +251,42 @@ test_that("show_sandwich_layer works", {
   
   
 })
+
+test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
+  expect_error(.get_ca_and_prediction_gradient(cmod, as.matrix(xstar)),
+               "must be a dataframe")
+})
+
+test_that(".get_ca_and_prediction_gradient model doesn't have a model.matrix method", {
+  expect_error(.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
+                                               xstar),
+               "does not have a method")
+})
+
+test_that(".get_ca_and_prediction_gradient model doesn't have a predict method", {
+  expect_error(.get_ca_and_prediction_gradient(as.formula(~ cont_x),
+                                               xstar),
+               "must support")
+})
+
+test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
+                 "for `lm` object"), {
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
+  expect_equal(ca_and_grad$ca, offset)
+  expect_equal(ca_and_grad$prediction_gradient, pred_gradient)
+})
+
+test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
+                 "for `glm` object"), {
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
+
+  cmod <- glm(as.factor(cat_x) ~ cont_x, data = x, family = stats::binomial())
+  mm <- stats::model.matrix(cmod, data = xstar)
+
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
+  expect_equal(ca_and_grad$ca,
+               drop(exp(mm %*% coef(cmod)) / (1 + exp(mm %*% coef(cmod)))))
+  expect_equal(ca_and_grad$prediction_gradient,
+               cmod$family$mu.eta(drop(exp(mm %*% coef(cmod)) /
+                                         (1 + exp(mm %*% coef(cmod))))) * mm)
+})
