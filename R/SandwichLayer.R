@@ -11,19 +11,13 @@ setValidity("PreSandwichLayer", function(object) {
     return("Fitted covariance model must have a 'terms' attribute")
   }
   
-  sandwich_env <- new.env()
-  assign("bread", sandwich::bread, envir = sandwich_env)
-  assign("estfun", sandwich::estfun, envir = sandwich_env)
-  if (is.null(utils::getS3method("bread",
-                                 class(object@fitted_covariance_model),
-                                 optional = T,
-                                 envir = sandwich_env)) |
-      is.null(utils::getS3method("estfun",
-                                 class(object@fitted_covariance_model),
-                                 optional = T,
-                                 envir = sandwich_env))) {
-    return("Functions for extracting vcov elements not applicable to fitted covariance model")
-  }
+  tryCatch({
+    sandwich::bread(object@fitted_covariance_model)
+    sandwich::estfun(object@fitted_covariance_model)
+    }, error = function(e) {
+      stop(paste("Functions for extracting vcov elements not applicable to",
+                 "fitted covariance model"))
+  })
   
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
