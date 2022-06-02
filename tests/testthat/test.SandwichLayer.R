@@ -260,12 +260,14 @@ test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
 test_that(".get_ca_and_prediction_gradient model doesn't have a model.matrix method", {
   expect_error(.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
                                                xstar),
-               "does not have a method")
+               "must have a `call`")
 })
 
 test_that(".get_ca_and_prediction_gradient model doesn't have a predict method", {
-  expect_error(.get_ca_and_prediction_gradient(as.formula(~ cont_x),
-                                               xstar),
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
+  cmod <- cmod$call
+  cmod$call <- cmod
+  expect_error(.get_ca_and_prediction_gradient(cmod, xstar),
                "must support")
 })
 
@@ -299,7 +301,7 @@ test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction g
 })
 
 test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
-                 "for `glm` object"), {
+                 "for `glm` object with new data"), {
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
 
   cmod <- glm(as.factor(cat_x) ~ cont_x, data = x, family = stats::binomial())
@@ -311,4 +313,20 @@ test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction g
   expect_equal(ca_and_grad$prediction_gradient,
                cmod$family$mu.eta(drop(exp(mm %*% coef(cmod)) /
                                          (1 + exp(mm %*% coef(cmod))))) * mm)
+})
+
+test_that(paste(".get_ca_and_prediction_gradient produces covariance adjustment",
+                "and prediction gradient with expected NA's"), {
+  on.exit(xstar <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
+                              "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
+                              "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
+                              "cont_x" = rnorm(100),
+                              "cat_x" = rbinom(100, 2, 0.2)))
+
+  xstar[100, c("cont_x", "cat_x")] <- NA_real_
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
+  expect_equal(length(ca_and_grad$ca), 100)
+  expect_equal(sum(is.na(ca_and_grad$ca)), 1)
+  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient))
+  expect_equal(ca_and_grad$prediction_gradient[1:99,], pred_gradient[1:99,])
 })

@@ -87,23 +87,25 @@ setMethod("show", "SandwichLayer", show_layer)
   if (!is.null(newdata) & !is.data.frame(newdata)) {
     stop("If supplied, `newdata` must be a dataframe")
   }
-
+  
   X <- tryCatch(
     if (is.null(newdata)) {
       stats::model.matrix(model)
     } else {
-      stats::model.matrix(model, data = newdata)
+      form <- as.formula(model$call$formula[-2])
+      stats::model.matrix(form,
+                          stats::model.frame(form, data = newdata, na.action = 'na.pass'))
     }, error = function(e) {
-    stop("`model` does not have a method for `model.matrix`")
-  })
-
+      stop("`model` must have a `call` object and `model.matrix` method")
+    })
+  
   # TODO: support predict(..., type = "response"/"link"/other?)
   ca <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
                  error = function(e) {
                    stop(paste("covariate adjustment model",
                               "must support predict function"))
                  })
-
+  
   # this branch applies to `glm`, `surveyglm`, `robustbase::glmrob` models
   if (is(model, "glm") & !is(model, "gam")) {
     pred_gradient <- model$family$mu.eta(ca) * X
@@ -117,6 +119,7 @@ setMethod("show", "SandwichLayer", show_layer)
   return(list("ca" = ca,
               "prediction_gradient" = pred_gradient))
 }
+
 
 ##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
 ##' @param x a \code{PreSandwichLayer} object.
