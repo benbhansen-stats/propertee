@@ -1,4 +1,4 @@
-##' @title Direct Adjusted Linear Regression Model
+##' @title Linear Model for Intention To Treat
 ##' @param formula See \code{lm()}
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in the model (e.g. passed as an
@@ -27,7 +27,7 @@
 ##' @return \code{DirectAdjusted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
-lmda <- function(formula,
+lmitt <- function(formula,
                  design = NULL,
                  target = NULL,
                  data,
@@ -52,7 +52,7 @@ lmda <- function(formula,
   mf[[1L]] <- quote(stats::lm)
   model <- eval(mf, parent.frame())
 
-  model$call[[1]] <- as.name("lmda")
+  model$call[[1]] <- as.name("lmitt")
 
   return(as.DirectAdjusted(model, design, target))
 

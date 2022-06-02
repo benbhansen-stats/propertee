@@ -26,7 +26,7 @@ test_that("DA ensure treatment is found", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
-  dalm2 <- lmda(y ~ z, data = simdata, weights = ate(des))
+  dalm2 <- lmitt(y ~ z, data = simdata, weights = ate(des))
 
   expect_type(treatment(dalm), "character")
   expect_length(treatment(dalm), 1)
@@ -83,7 +83,7 @@ test_that("DA ensure treatment is found", {
                "non-binary treatment")
 
 
-  dalm_direct <- lmda(y ~ adopters(), data = simdata, weights = ate(des2))
+  dalm_direct <- lmitt(y ~ adopters(), data = simdata, weights = ate(des2))
 
   expect_type(treatment(dalm_direct), "character")
   expect_length(treatment(dalm_direct), 1)
@@ -121,10 +121,10 @@ test_that("Conversion from lm to DirectAdjusted", {
 
   expect_s4_class(mod_da, "DirectAdjusted")
 
-  mod_lmda <- lmda(y ~ z, data = simdata, weights = ate(des))
+  mod_lmitt <- lmitt(y ~ z, data = simdata, weights = ate(des))
 
-  expect_true(all(mod_da$coef == mod_lmda$coef))
-  expect_identical(mod_da@Design, mod_lmda@Design)
+  expect_true(all(mod_da$coef == mod_lmitt$coef))
+  expect_identical(mod_da@Design, mod_lmitt@Design)
 
   expect_error(as.DirectAdjusted(1),
                "lm object")
