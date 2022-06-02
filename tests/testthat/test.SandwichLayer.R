@@ -271,9 +271,31 @@ test_that(".get_ca_and_prediction_gradient model doesn't have a predict method",
 
 test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
                  "for `lm` object"), {
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
+  expect_equal(ca_and_grad$ca, cmod$fitted.values)
+  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+})
+
+test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
+                 "for `lm` object with new data"), {
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
   expect_equal(ca_and_grad$ca, offset)
   expect_equal(ca_and_grad$prediction_gradient, pred_gradient)
+})
+
+test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
+                 "for `glm` object"), {
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
+  
+  cmod <- glm(as.factor(cat_x) ~ cont_x, data = x, family = stats::binomial())
+  mm <- stats::model.matrix(cmod)
+  
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
+  expect_equal(ca_and_grad$ca,
+              drop(exp(mm %*% coef(cmod)) / (1 + exp(mm %*% coef(cmod)))))
+  expect_equal(ca_and_grad$prediction_gradient,
+              cmod$family$mu.eta(drop(exp(mm %*% coef(cmod)) /
+                                        (1 + exp(mm %*% coef(cmod))))) * mm)
 })
 
 test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
