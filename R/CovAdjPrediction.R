@@ -2,9 +2,9 @@
 NULL
 # The above ensures that `Design` is defined prior to `CovAdjPrediction`
 
-CovAdjPrediction <- setClass("CovAdjPrediction",
-                             contains = "numeric",
-                             slots = c(Design = "Design"))
+setClass("CovAdjPrediction",
+         contains = "numeric",
+         slots = c(Design = "Design"))
 
 setValidity("CovAdjPrediction", function(object) {
   TRUE

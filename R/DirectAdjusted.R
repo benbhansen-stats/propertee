@@ -3,10 +3,10 @@ NULL
 # The above ensures that `Design` and `WeightedDesign` are defined prior to
 # `DirectAdjusted`
 
-DirectAdjusted <- setClass("DirectAdjusted",
-                           contains = "lm",
-                           slots = c(Design = "Design",
-                                     target = "character"))
+setClass("DirectAdjusted",
+         contains = "lm",
+         slots = c(Design = "Design",
+                   target = "character"))
 
 setValidity("DirectAdjusted", function(object) {
   if (length(object@target) != 1 || !object@target %in% c("ett", "ate")) {
@@ -137,11 +137,6 @@ setMethod("confint", "DirectAdjusted",
 ##' damod2 <- as.DirectAdjusted(mod2)
 ##' damod2$coef[treatment(damod2)]
 setMethod("treatment", "DirectAdjusted", function(x, ...) {
-
-  if ("z__" %in% names(x$coefficients)) {
-    # ittestimate uses this
-    return("z__")
-  }
 
   adopters_regexp <- "adopters\\([^)]*\\)"
   adopters_found <- which(grepl(adopters_regexp, names(x$coefficients)))

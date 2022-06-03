@@ -409,3 +409,114 @@ test_that("#26 cbind in identification variables", {
   expect_identical(des1, des2)
 
 })
+
+test_that("variable_concordance", {
+
+  data(simdata)
+
+  # No issues
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  expect_silent(expect_true(design_data_concordance(des, simdata)))
+
+  # inconsistent block
+  sd <- simdata
+  sd$bid[1] <- 2
+
+  expect_warning(a <- design_data_concordance(des, sd),
+                 "Inconsistencies.*`bid`")
+  expect_false(a)
+
+  # Inconsistent block & force
+  sd$force[2] <- 2
+
+  expect_warning(expect_warning(a <- design_data_concordance(des, sd),
+                                "Inconsistencies.*`bid`"),
+                  "Inconsistencies.*`force`")
+  expect_false(a)
+
+  # inconsistent treatment
+  sd <- simdata
+  sd$z[1] <- 1
+
+  expect_warning(a <- design_data_concordance(des, sd),
+                 "Inconsistencies.*`z`")
+
+  # Missing variables
+  sd <- simdata
+  sd$z <- NULL
+  expect_warning(a <- design_data_concordance(des, sd),
+                 "`z` not found")
+  expect_false(a)
+  expect_silent(a <- design_data_concordance(des, sd,
+                                             warn_on_nonexistence = FALSE))
+  expect_true(a)
+
+  sd <- simdata
+  sd$bid <- NULL
+  expect_warning(a <- design_data_concordance(des, sd),
+                 "`bid` not found")
+  expect_false(a)
+  expect_silent(a <- design_data_concordance(des, sd,
+                                             warn_on_nonexistence = FALSE))
+  expect_true(a)
+
+  sd <- simdata
+  sd$force <- NULL
+  expect_warning(a <- design_data_concordance(des, sd),
+                 "`force` not found")
+  expect_false(a)
+  expect_silent(a <- design_data_concordance(des, sd,
+                                             warn_on_nonexistence = FALSE))
+  expect_true(a)
+
+  sd$cid1 <- NULL
+  expect_error(design_data_concordance(des, sd),
+               "missing a `by=`")
+
+  # No block
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force),
+                   data = simdata)
+  expect_silent(expect_true(design_data_concordance(des, simdata)))
+
+  # multiple variables
+  sd <- simdata
+  sd$force2 <- sd$force + 1
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2),
+                   data = sd)
+  expect_silent(expect_true(design_data_concordance(des, sd)))
+
+  expect_warning(design_data_concordance(des, simdata),
+                 "`force2` not found")
+
+  sd$force[1] <- 1
+  expect_warning(design_data_concordance(des, sd),
+                 "Inconsistencies.*`force`$")
+
+  sd2 <- simdata
+  sd2$force[1] <- 1
+  expect_warning(expect_warning(design_data_concordance(des, sd2),
+                                "Inconsistencies.*`force`$"),
+                 "`force2` not found")
+
+  sd$force2[1] <- 2
+  expect_warning(expect_warning(design_data_concordance(des, sd),
+                                "Inconsistencies.*`force`$"),
+                 "Inconsistencies.*`force2`$")
+
+  data(simdata)
+
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  names(simdata)[names(simdata) == "cid1"] <- "ccc"
+  names(simdata)[names(simdata) == "force"] <- "fff"
+
+  expect_silent(expect_true({
+    design_data_concordance(des, simdata,
+                            by = list(force = "fff",
+                                      cid1 = "ccc"))
+  }))
+
+})

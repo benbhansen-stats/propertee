@@ -191,6 +191,28 @@ test_that("by", {
 
   expect_equal(w1@.Data, w2@.Data)
 
+  expect_error(ate(des, data = simdata2, by = c("cid2" = "z")),
+               "variables cannot be used more than once")
+
+  expect_error(ate(des, data = simdata2, by = c("abc")), "named vector")
+
+  expect_error(ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "cid2" = "bbbb")),
+               "unique")
+
+  expect_warning(w3 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "abc" = "cid1")),
+               "not found in Design")
+
+  expect_warning(w4 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "cid1" = "abc")),
+               "not found in data")
+  expect_identical(w3, w4)
+
+  expect_warning(expect_warning(w5 <- ate(des, data = simdata2,
+                           by = c("cid2" = "cccc", "abc" = "def")),
+               "not found in data"), "not found in Design")
+  expect_identical(w3, w5)
 })
 
 test_that("Ops", {
@@ -461,4 +483,13 @@ test_that("Combining weighted designs with different dichotomys ", {
 
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
                "must be identical")
+})
+
+test_that("Passing previously created formula", {
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ z, data = simdata, weights = ett(des))
+  f <- y ~ z
+  mod2 <- lm(f, data = simdata, weights = ett(des))
+  mod1$call <- mod2$call <- call("ls")
+  expect_identical(mod1, mod2)
 })

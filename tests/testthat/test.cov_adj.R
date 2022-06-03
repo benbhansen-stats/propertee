@@ -27,7 +27,7 @@ test_that("cov_adj outside of lm call without specifying newdata argument", {
   data(simdata)
   des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
-  
+
   w <- capture_warnings(cov_adj(cmod, design = des))
   expect_equal(any(vapply(w, function(x) grepl("quasiexperimental data", x), TRUE)),
                TRUE)
@@ -77,11 +77,11 @@ test_that("cov_adj where cmod data differs from quasiexperimental sample data", 
   STARdata$id <- seq_len(nrow(STARdata))
   Q <- STARdata[STARdata$id <= 1000,]
   C <- STARdata[STARdata$id > 1000,]
-  
+
   des <- rct_design(stark == "small" ~ unitid(id), data = Q)
   cmod <- lm(readk ~ gender + ethnicity, data = C)
   m <- lm(readk ~ stark == "small", data = Q, offset = cov_adj(cmod, design = des))
-  
+
   expect_true(is(m$offset, "numeric"))
   expect_true(is(m$offset, "vector"))
   expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
@@ -325,49 +325,49 @@ test_that("cov_adj variance estimates for correlated predictors", {
   # we'll start by manually doing the offset Y - \hat Y
   # the intercept is in the "x" variables, not the z variables
   m2 <- lm(y ~ z - 1, data = df, offset = predict(m1))
-  
+
   ## verify some of the results of the VarianceEstimation vignette
   X <- model.matrix(m1)
   Z <- model.matrix(m2)
   Id <- diag(n)
-  
+
   # some quantities we will need
   XtXinv <- solve(t(X) %*% X)
   ZtZinv <- solve(t(Z) %*% Z)
   H <- Id - X %*% XtXinv %*% t(X)
   G <- Id - Z %*% ZtZinv %*% t(Z)
-  
+
   a <- solve(t(X) %*% G %*% X)
   b <- solve(t(Z) %*% H %*% Z)
   s2_1 <- (1/(n - 3)) * t(df$y) %*% (Id - X %*% a %*% t(X) %*% G - Z %*% b %*% t(Z) %*% H) %*% df$y
   s2_1 <- s2_1[1,1]
   expect_equal(summary(mboth)$sigma, sqrt(s2_1))
-  
+
   # variance we will get from the combined model (just subsetting for the 'z' variable)
   var_beta_1 <- s2_1 * b
   expect_equal(vcov(mboth)[3,3], var_beta_1[1,1])
-  
+
   alpha_2 <- (XtXinv %*% t(X) %*% df$y)[,1]
   beta_2 <- (ZtZinv %*% t(Z) %*% H %*% df$y)[1,1]
   expect_equal(coef(m1), alpha_2)
   expect_equal(coef(m2), beta_2)
-  
+
   s2_2 <- (1 / (n - 1)) * t(df$y) %*% H %*% G %*% H %*% df$y
   s2_2 <- s2_2[1,1]
   expect_equal(summary(m2)$sigma, sqrt(s2_2))
-  
+
   r_2 <- resid(m2)
   expect_equal(summary(m2)$sigma, sqrt((1/(n - 1)) * sum(r_2^2)))
   expect_equal(r_2, df$y - X %*% alpha_2 - Z %*% beta_2, ignore_attr = TRUE)
   expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
-  
+
   # now repeat with cov_adj
   design <- rct_design(z ~ unitid(id), data = df)
   m2ca <- lm(y ~ z - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
- 
-  ## TODO: currently causing an error, see issue #35 
-  ## m2ca_da <- as.DirectAdjusted(m2ca) 
-  
+
+  ## TODO: currently causing an error, see issue #35
+  ## m2ca_da <- as.DirectAdjusted(m2ca)
+
   ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
 })
 

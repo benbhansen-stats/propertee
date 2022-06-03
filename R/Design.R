@@ -1,10 +1,10 @@
-Design <- setClass("Design",
-                   slots = c(structure = "data.frame",
-                             column_index = "character",
-                             type = "character",
-                             unit_of_assignment_type = "character",
-                             call = "call",
-                             dichotomy = "formula"))
+setClass("Design",
+         slots = c(structure = "data.frame",
+                   column_index = "character",
+                   type = "character",
+                   unit_of_assignment_type = "character",
+                   call = "call",
+                   dichotomy = "formula"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -479,4 +479,99 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
   }
   rownames(out) <- NULL
   return(out)
+}
+
+##' Useful for debugging purposes to ensure that there is concordance between
+##' variables in the \code{Design} and data.
+##'
+##' Consider the following scenario: A \code{Design} is generated from some
+##' dataset, "data1", which includes a block variable "b1". Within each unique
+##' cluster/unit of assignment of "data1", it must be the case that "b1" is
+##' constant. (Otherwise the creation of the \code{Design} will fail.)
+##'
+##' Next, a model is fit which includes weights generated from the
+##' \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
+##' also exists, but due to some issue with data cleaning, does not agree with
+##' "b1" in "data1".
+##'
+##' This could cause errors, either directly (via actual error messages) or
+##' simply produce nonsense results. `design_data_concordance()` is designed to
+##' help debug these scenarios but providing information on whether variables in
+##' both "data1" (used in the creation of the \code{Design}) and "data2" (some
+##' new dataset passed to \code{design_data_concordance()}) have any
+##' inconsistencies.
+##' @title Checks for variable agreement within units of assignment
+##' @param design A Design object
+##' @param data Data set, presumably not the same used to create \code{design}.
+##' @param by optional; named vector or list connecting names of variables in
+##'   \code{design} to variables in \code{data}. Names represent variables in
+##'   \code{design}; values represent variables in \code{data}. Only needed if
+##'   variable names differ.
+##' @param warn_on_nonexistence Default \code{TRUE}. If a variable does not
+##'   exist in \code{data}, should this be flagged? If \code{FALSE}, silently
+##'   move on if a variable doesn't exist in \code{data}.
+##' @return Invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
+##'   any warnings are produced.
+##' @export
+design_data_concordance <- function(design,
+                                    data,
+                                    by = NULL,
+                                    warn_on_nonexistence = TRUE) {
+  if (!is.null(by)) {
+    design <- .update_by(design, data, by)
+  }
+
+  if (!all(var_names(design, "u") %in% names(data))) {
+    stop(paste("Missing cluster/unit of assignment variables in data set.\n",
+               "Are you missing a `by=` argument?"))
+  }
+
+  merged <- merge(design@structure, data,
+                  all = TRUE,
+                  by = var_names(design, "u"))
+
+  # Returns TRUE if any warnings were printed, FALSE otherwise
+  .check <- function(type, design, data) {
+    anywarnings <- FALSE
+
+    vnames <- var_names(design, type)
+    # If this particular type of variable exists in the design...
+    if (length(vnames) > 0) {
+      # Loop over all variables of `type`
+      for (var in vnames) {
+        # If variable name exists in the data ...
+        xynames <- paste0(var, c(".x", ".y"))
+        if (all(xynames %in% names(data))) {
+          varcompare <- merged[, xynames]
+          # Ensure differences are 0
+          if (!all(apply(varcompare[, xynames], 1, diff) == 0)) {
+            warning(paste0("Inconsistencies in variable `", var, "`"))
+            anywarnings <- TRUE
+          }
+        } else {
+          if (warn_on_nonexistence) {
+            warning(paste0("Variable `", var, "` not found in data"))
+            anywarnings <- TRUE
+          }
+        }
+      }
+    }
+    if (anywarnings) {
+      return(invisible(TRUE))
+    } else {
+      return(invisible(FALSE))
+    }
+  }
+
+  treat_had_warnings <- .check("t", design, merged)
+  block_had_warnings <- .check("b", design, merged)
+  force_had_warnings <- .check("f", design, merged)
+
+  if (any(treat_had_warnings,
+          block_had_warnings,
+          force_had_warnings)) {
+    return(invisible(FALSE))
+  } else {
+    return(invisible(TRUE))
+  }
 }

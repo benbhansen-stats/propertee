@@ -9,8 +9,11 @@
 # will both work, but
 #   lm(y ~ adopters(des), weights = ate(), offest = cov_adj(mod1))
 # will fail.
-.get_design <- function() {
-
+# @param NULL_on_error if `TRUE`, returns `NULL` if a Design object is not found
+# rather than an exception
+# @return a \code{Design} object if one can be found in the call stack,
+# otherwise an error or `NULL` depending on `NULL_on_error`
+.get_design <- function(NULL_on_error = FALSE) {
   design <- NULL
 
   # Searching for weights or cov_adj is basically the same, except for argument
@@ -57,6 +60,9 @@
 
   if (is.null(weight_design) && is.null(covadj_design)) {
     # Found nothing
+    if (NULL_on_error) {
+      return(NULL)
+    }
     stop(paste("Unable to locate Design in call stack, please use the",
                " `design` argument to pass a Design object."))
   }
