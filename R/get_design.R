@@ -61,7 +61,6 @@
   if (is.null(weight_design) && is.null(covadj_design)) {
     # Found nothing
     if (NULL_on_error) {
-      message("Unable to locate Design in call stack.")
       return(NULL)
     }
     stop(paste("Unable to locate Design in call stack, please use the",

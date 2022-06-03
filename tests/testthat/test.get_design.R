@@ -42,14 +42,13 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
   cov_adj <- function(model, newdata = NULL) {
     design <- .get_design(TRUE)
     
-    return(stats::predict(model, type = "response", newdata = newdata))
+    return(design)
   }
   
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
   mod <- lm(y ~ x, data = simdata)
-  expect_message(cov_adj(mod, newdata = simdata),
-                 "Design in call stack.")
-  expect_message(lm(y ~ z, data = simdata, offset = cov_adj(mod)),
-                 "Design in call stack.")
+  expect_true(is.null(cov_adj(mod, newdata = simdata)))
+  mod1 <- lm(y ~ z, data = simdata, offset = cov_adj(mod))
+  expect_true(is.null(mod1$offset))
 })
