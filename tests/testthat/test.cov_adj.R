@@ -9,10 +9,17 @@ test_that("cov_adj basics", {
   cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
 
 
-  ca <- cov_adj(cmod, design = des)
+  ca <- cov_adj(cmod, design = des, newdata = STARdata)
   expect_true(is(ca, "numeric"))
   expect_true(is(ca, "vector"))
-  expect_equal(length(ca), nrow(cmod$model))
+  expect_true(is(ca, "PreSandwichLayer"))
+  expect_equal(length(ca), nrow(STARdata))
+  expect_equal(ca@fitted_covariance_model, cmod)
+  expect_equal(ca@prediction_gradient,
+               stats::model.matrix(as.formula(cmod$call$formula[-2]),
+                                   stats::model.frame(cmod,
+                                                      data = STARdata,
+                                                      na.action = 'na.pass')))
 
   expect_error(cov_adj(cmod), "Unable to locate")
 })
@@ -26,20 +33,50 @@ test_that("cov_adj as offset", {
           weights = ate(des))
   expect_true(is(m$offset, "numeric"))
   expect_true(is(m$offset, "vector"))
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_equal(m$offset, as.numeric(cmod$fitted.values))
 
 
-  data(STARdata)
-  STARdata$id <- seq_len(nrow(STARdata))
-  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
-  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
+  # data(STARdata)
+  # STARdata$id <- seq_len(nrow(STARdata))
+  # des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
+  # cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
 
 
   # This currently errors with
   # Error in model.frame.default(formula = readk ~ birth + lunchk, data =
   #STARdata, : variable lengths differ (found for '(weights)')
-  #mod <- lm(readk ~ birth + lunchk, data = STARdata,
+  # mod <- lm(readk ~ birth + lunchk, data = STARdata,
   #          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
 
+})
+
+test_that("cov_adj needs newdata argument when called outside of lm", {
+  data(STARdata)
+  STARdata$id <- seq_len(nrow(STARdata))
+  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
+  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
+  
+  
+  expect_error(suppressWarnings(cov_adj(cmod, design = des)),
+               "called with a newdata argument")
+})
+
+test_that("cov_adj where cmod data differs from quasiexperimental sample data", {
+  data(STARdata)
+  STARdata$id <- seq_len(nrow(STARdata))
+  Q <- STARdata[STARdata$id <= 1000,]
+  C <- STARdata[STARdata$id > 1000,]
+  
+  des <- rct_design(stark == "small" ~ unitid(id), data = Q)
+  cmod <- lm(readk ~ gender + ethnicity, data = C)
+  m <- lm(readk ~ stark == "small", data = Q, offset = cov_adj(cmod, design = des))
+  
+  expect_true(is(m$offset, "numeric"))
+  expect_true(is(m$offset, "vector"))
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_equal(m$offset,
+               as.numeric(stats::predict(cmod, Q[!is.na(Q$readk) & !is.na(Q$stark),])))
 })
 
 

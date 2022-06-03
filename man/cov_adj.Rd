@@ -7,9 +7,11 @@
 cov_adj(model, newdata = NULL, design = NULL)
 }
 \arguments{
-\item{model}{Any model which supports a \code{predict} function}
+\item{model}{Any model of class \code{glm} or \code{lm} (excluding those from
+the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
+methods}
 
-\item{newdata}{New data}
+\item{newdata}{Optional; a data.frame of new data}
 
 \item{design}{Optional \code{Design}.}
 }
