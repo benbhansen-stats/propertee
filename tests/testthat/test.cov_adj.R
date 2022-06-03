@@ -21,8 +21,6 @@ test_that("cov_adj outside of lm call specifying newdata argument", {
                                    stats::model.frame(cmod,
                                                       data = STARdata,
                                                       na.action = 'na.pass')))
-
-  expect_error(cov_adj(cmod), "Unable to locate")
 })
 
 test_that("cov_adj outside of lm call without specifying newdata argument", {
@@ -45,14 +43,6 @@ test_that("cov_adj outside of lm call without specifying newdata argument", {
                                    stats::model.frame(cmod,
                                                       data = simdata,
                                                       na.action = 'na.pass')))
-})
-
-test_that("cov_adj called without a Design", {
-  data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
-  cmod <- lm(y ~ x, data = simdata)
-  
-  expect_error(cov_adj(cmod), "Unable to locate")
 })
 
 test_that("cov_adj as offset", {

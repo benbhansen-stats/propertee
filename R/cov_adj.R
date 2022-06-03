@@ -11,10 +11,6 @@ NULL
 ##' @export
 ##' @example inst/examples/cov_adj.R
 cov_adj <- function(model, newdata = NULL, design =  NULL) {
-  if (is.null(design)) {
-    design <- .get_design()
-  }
-
   if (is.null(newdata)) {
     form <- model$call$formula
     newdata <- tryCatch(
@@ -27,11 +23,31 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
        })
   }
 
+
   ca_and_grad <- .get_ca_and_prediction_gradient(model, newdata)
   psl <- new("PreSandwichLayer",
              ca_and_grad$ca,
              fitted_covariance_model = model,
              prediction_gradient = ca_and_grad$prediction_gradient)
-  
+
+  if (is.null(design)) {
+    # TODO: replace this with the new .get_design() call
+    design <- tryCatch(
+      error = function(e) {
+        message(paste("Unable to locate Design in call stack, use the `design`",
+                      "argument in `lmitt` or `as.DirectAdjusted` to pass a",
+                      "Design object."))
+      },
+      message = function(m) {
+        NULL
+      },
+      .get_design())
+  }
+
+  # if (is.null(design)) {
+  #   return(psl)
+  # } else {
+  #   return(as.SandwichLayer(psl, design))
+  # }
   return(psl)
 }
