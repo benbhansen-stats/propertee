@@ -35,3 +35,21 @@ test_that(".get_design", {
   mod7 <- lm(y ~ z + offset(cov_adj(mod)), data = simdata, weights = ate(des))
   expect_true(all(mod1$coef == mod7$coef))
 })
+
+test_that(".get_design returns NULL with NULL_on_error = TRUE", {
+  on.exit(cov_adj <- flexida::cov_adj)
+  
+  cov_adj <- function(model, newdata = NULL) {
+    design <- .get_design(TRUE)
+    
+    return(stats::predict(model, type = "response", newdata = newdata))
+  }
+  
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  mod <- lm(y ~ x, data = simdata)
+  expect_message(cov_adj(mod, newdata = simdata),
+                 "Design in call stack.")
+  expect_message(lm(y ~ z, data = simdata, offset = cov_adj(mod)),
+                 "Design in call stack.")
+})
