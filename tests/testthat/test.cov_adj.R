@@ -2,7 +2,7 @@ old_opt <- options()
 on.exit(options(old_opt))
 options(flexida_warn_on_conditional_treatment = FALSE)
 
-test_that("cov_adj basics", {
+test_that("cov_adj outside of lm call specifying newdata argument", {
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
   des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
@@ -14,6 +14,7 @@ test_that("cov_adj basics", {
   expect_true(is(ca, "vector"))
   expect_true(is(ca, "PreSandwichLayer"))
   expect_equal(length(ca), nrow(STARdata))
+  expect_equal(ca@.Data, as.numeric(stats::predict(cmod, STARdata)))
   expect_equal(ca@fitted_covariance_model, cmod)
   expect_equal(ca@prediction_gradient,
                stats::model.matrix(as.formula(cmod$call$formula[-2]),
@@ -21,6 +22,36 @@ test_that("cov_adj basics", {
                                                       data = STARdata,
                                                       na.action = 'na.pass')))
 
+  expect_error(cov_adj(cmod), "Unable to locate")
+})
+
+test_that("cov_adj outside of lm call without specifying newdata argument", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  
+  w <- capture_warnings(cov_adj(cmod, design = des))
+  expect_equal(any(vapply(w, function(x) grepl("quasiexperimental data", x), TRUE)),
+               TRUE)
+  ca <- suppressWarnings(cov_adj(cmod, design = des))
+  expect_true(is(ca, "numeric"))
+  expect_true(is(ca, "vector"))
+  expect_true(is(ca, "PreSandwichLayer"))
+  expect_equal(length(ca), nrow(simdata))
+  expect_equal(ca@.Data, as.numeric(stats::predict(cmod, simdata)))
+  expect_equal(ca@fitted_covariance_model, cmod)
+  expect_equal(ca@prediction_gradient,
+               stats::model.matrix(as.formula(cmod$call$formula[-2]),
+                                   stats::model.frame(cmod,
+                                                      data = simdata,
+                                                      na.action = 'na.pass')))
+})
+
+test_that("cov_adj called without a Design", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  
   expect_error(cov_adj(cmod), "Unable to locate")
 })
 
@@ -49,17 +80,6 @@ test_that("cov_adj as offset", {
   # mod <- lm(readk ~ birth + lunchk, data = STARdata,
   #          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
 
-})
-
-test_that("cov_adj needs newdata argument when called outside of lm", {
-  data(STARdata)
-  STARdata$id <- seq_len(nrow(STARdata))
-  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
-  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
-  
-  
-  expect_error(suppressWarnings(cov_adj(cmod, design = des)),
-               "called with a newdata argument")
 })
 
 test_that("cov_adj where cmod data differs from quasiexperimental sample data", {

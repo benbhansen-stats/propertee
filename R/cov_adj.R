@@ -20,10 +20,13 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
     newdata <- tryCatch(
       .get_data_from_model("weights", form),
        error = function(e) {
-         stop(paste("cov_adj must be called with a newdata argument if not called",
-                    "as an offset argument"))
+         warning(paste("Could not find quasiexperimental data in the call stack,",
+                       "using the covariance model data to generate the covariance",
+                       "adjustments"))
+         stats::model.frame(model)
        })
   }
+
   ca_and_grad <- .get_ca_and_prediction_gradient(model, newdata)
   psl <- new("PreSandwichLayer",
              ca_and_grad$ca,
