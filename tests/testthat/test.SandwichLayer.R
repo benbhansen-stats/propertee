@@ -153,7 +153,7 @@ test_that("as.SandwichLayer missing desvar columns from covariance model data", 
              fitted_covariance_model = new_cmod,
              prediction_gradient = pred_gradient)
   expect_error(as.SandwichLayer(psl, des),
-               "columns \"uoa1\", \"uoa2\" are missing")
+               "columns uoa1, uoa2 are missing")
 })
 
 test_that("as.SandwichLayer used correctly", {

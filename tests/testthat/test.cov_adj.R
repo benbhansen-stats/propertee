@@ -9,10 +9,12 @@ test_that("cov_adj outside of lm call specifying newdata argument", {
   cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
 
 
-  ca <- cov_adj(cmod, design = des, newdata = STARdata)
+  expect_warning(cov_adj(cmod, design = des, newdata = STARdata),
+                 "Offset has NA values")
+  ca <- suppressWarnings(cov_adj(cmod, design = des, newdata = STARdata))
   expect_true(is(ca, "numeric"))
   expect_true(is(ca, "vector"))
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(is(ca, "SandwichLayer"))
   expect_equal(length(ca), nrow(STARdata))
   expect_equal(ca@.Data, as.numeric(stats::predict(cmod, STARdata)))
   expect_equal(ca@fitted_covariance_model, cmod)
@@ -34,7 +36,7 @@ test_that("cov_adj outside of lm call without specifying newdata argument", {
   ca <- suppressWarnings(cov_adj(cmod, design = des))
   expect_true(is(ca, "numeric"))
   expect_true(is(ca, "vector"))
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(is(ca, "SandwichLayer"))
   expect_equal(length(ca), nrow(simdata))
   expect_equal(ca@.Data, as.numeric(stats::predict(cmod, simdata)))
   expect_equal(ca@fitted_covariance_model, cmod)
@@ -54,7 +56,7 @@ test_that("cov_adj as offset", {
           weights = ate(des))
   expect_true(is(m$offset, "numeric"))
   expect_true(is(m$offset, "vector"))
-  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
   expect_equal(m$offset, as.numeric(cmod$fitted.values))
 
 
@@ -72,6 +74,17 @@ test_that("cov_adj as offset", {
 
 })
 
+test_that("cov_adj returns PreSandwichLayer when Design isn't found", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  m <- lm(y ~ z, data = simdata, offset = cov_adj(cmod))
+  
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_equal(m$offset, as.numeric(cmod$fitted.values))
+  
+})
+
 test_that("cov_adj where cmod data differs from quasiexperimental sample data", {
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
@@ -80,18 +93,16 @@ test_that("cov_adj where cmod data differs from quasiexperimental sample data", 
 
   des <- rct_design(stark == "small" ~ unitid(id), data = Q)
   cmod <- lm(readk ~ gender + ethnicity, data = C)
-  m <- lm(readk ~ stark == "small", data = Q, offset = cov_adj(cmod, design = des))
+  m <- suppressWarnings(
+    lm(readk ~ stark == "small", data = Q, offset = cov_adj(cmod, design = des))
+  )
 
   expect_true(is(m$offset, "numeric"))
   expect_true(is(m$offset, "vector"))
-  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
   expect_equal(m$offset,
                as.numeric(stats::predict(cmod, Q[!is.na(Q$readk) & !is.na(Q$stark),])))
 })
-
-
-
-
 
 ## ## Stop tidyverse from spamming the test output display
 ## options(tidyverse.quiet = TRUE)

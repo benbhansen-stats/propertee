@@ -134,21 +134,12 @@ setMethod("show", "SandwichLayer", show_layer)
 ##' @return a \code{SandwichLayer} object
 ##' @export
 as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
-  check_desvar_cols <- function(cols, cov_mod) {
-    missing_desvar_cols <- setdiff(cols,
-                                   colnames(eval(cov_mod[["call"]][["data"]],
-                                                 envir = envir)))
-    if (length(missing_desvar_cols) > 0) {
-      stop(paste0("The ", gsub("_", " ", design@unit_of_assignment_type),
-                  " columns \"", paste(missing_desvar_cols, collapse = "\", \""),
-                  "\" are missing from the covariance model dataset"))
-    }
-  }
-
   if (!is(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
-  if (is.null(x@fitted_covariance_model[["call"]][["data"]])) {
+  
+  data_call <- x@fitted_covariance_model$call$data
+  if (is.null(data_call)) {
     stop("The fitted covariance model for x must be fit using a `data` argument")
   }
 
@@ -161,14 +152,22 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
     }
   }
 
-  check_desvar_cols(by, x@fitted_covariance_model)
-  wide_frame <- stats::expand.model.frame(x@fitted_covariance_model,
-                                          by,
-                                          na.expand = T)[by]
-  wide_frame$idx <- 1:nrow(wide_frame)  # add idx to keep merge results in place
+  wide_frame <- tryCatch(
+    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = T)[by],
+    error = function(e) {
+      data <- eval(x@fitted_covariance_model$call$data,
+                   envir = environment(formula(x@fitted_covariance_model)))
+      stop(paste("The",
+                 gsub("_", " ", design@unit_of_assignment_type),
+                 "columns",
+                 paste(setdiff(by, colnames(data)), collapse = ", "),
+                 "are missing from the covariance model dataset"),
+           call. = FALSE)
+    })
+  wide_frame$.idx <- 1:nrow(wide_frame)  # add idx to keep merge results in place
   keys <- merge(wide_frame, design@structure, all.x = T)
   keys[is.na(keys[, var_names(design, "t")]), by] <- NA
-  keys <- keys[order(keys$idx), by]
+  keys <- keys[order(keys$.idx),][by] # need this way to prevent one `by` col being converted to a vector
   colnames(keys) <- desvars
   row.names(keys) <- wide_frame$idx
   

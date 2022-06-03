@@ -31,23 +31,12 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
              prediction_gradient = ca_and_grad$prediction_gradient)
 
   if (is.null(design)) {
-    # TODO: replace this with the new .get_design() call
-    design <- tryCatch(
-      error = function(e) {
-        message(paste("Unable to locate Design in call stack, use the `design`",
-                      "argument in `lmitt` or `as.DirectAdjusted` to pass a",
-                      "Design object."))
-      },
-      message = function(m) {
-        NULL
-      },
-      .get_design())
+    design <- .get_design(NULL_on_error = TRUE)
   }
 
-  # if (is.null(design)) {
-  #   return(psl)
-  # } else {
-  #   return(as.SandwichLayer(psl, design))
-  # }
-  return(psl)
+  if (is.null(design)) {
+    return(psl)
+  } else {
+    return(as.SandwichLayer(psl, design))
+  }
 }

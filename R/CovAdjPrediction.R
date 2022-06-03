@@ -1,23 +1,5 @@
 #' @include Design.R
 NULL
-# The above ensures that `Design` is defined prior to `CovAdjPrediction`
-
-setClass("CovAdjPrediction",
-         contains = "numeric",
-         slots = c(Design = "Design"))
-
-setValidity("CovAdjPrediction", function(object) {
-  TRUE
-})
-
-##' @title Show a CovAdjPrediction
-##' @param object CovAdjPredictionDesign object
-##' @return an invisible copy of `object`
-##' @export
-setMethod("show", "CovAdjPrediction", function(object) {
-  print(object@.Data)
-  invisible(object)
-})
 
 # (Internal) Extract SandwichLayer from model. Can exist in two places,
 # depending on whether model was called as `lm(y ~ z, offset = cov_adj(des))` or
@@ -27,14 +9,19 @@ setMethod("show", "CovAdjPrediction", function(object) {
   # Look for an `offset = ` argument
   offset_from_arg <- x$model$"(offset)"
 
-  if (is(offset_from_arg, "PreSandwichLayer")) {
+  if (is(offset_from_arg, "PreSandwichLayer") ||
+      is(offset_from_arg, "SandwichLayer")) {
     return(offset_from_arg)
   }
 
   # Look for a `+ offset(` term in the formula
   offset_col <- x$model[grepl("offset\\(", names(x$model))]
 
-  which_are_SL <- vapply(offset_col, is, logical(1), "PreSandwichLayer")
+  which_are_SL <- vapply(offset_col,
+                         function(x) {
+                           is(x, "PreSandwichLayer") || is(x, "SandwichLayer")
+                          },
+                         logical(1))
 
   if (sum(which_are_SL) == 1) {
     # Most of the time there will only be one offset, so return it
