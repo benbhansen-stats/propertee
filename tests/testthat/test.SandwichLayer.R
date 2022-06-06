@@ -72,7 +72,7 @@ test_that("SandwichLayer prediction gradient has invalid number of columns", {
                            offset, cmod, pred_gradient, keys)
 })
 
-test_that("SandwichLayer prediction gradient has NA's", {
+test_that("SandwichLayer has NA's", {
   on.exit(offset <- stats::predict(cmod, xstar))
 
   offset <- c(offset[1:99], NA_real_)
