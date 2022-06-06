@@ -4,7 +4,7 @@
 \alias{as.SandwichLayer}
 \title{Convert a PreSandwichLayer to a SandwichLayer via a Design Object}
 \usage{
-as.SandwichLayer(x, design, by = NULL, envir = parent.frame())
+as.SandwichLayer(x, design, by = NULL)
 }
 \arguments{
 \item{x}{a \code{PreSandwichLayer} object.}
@@ -16,9 +16,6 @@ as.SandwichLayer(x, design, by = NULL, envir = parent.frame())
 assignment variables in \code{design} to cluster/unit of assignment
 variables in \code{data}. Names represent variables in the Design; values
 represent variables in the data. Only needed if variable names differ.}
-
-\item{envir}{an \code{Environment} object. The environment in which to find
-the covariance model data to instantiate. By default, \code{parent.frame()}.}
 }
 \value{
 a \code{SandwichLayer} object

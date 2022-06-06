@@ -15,7 +15,6 @@ xstar <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                     "cat_x" = rbinom(100, 2, 0.2))
 
 des <- rct_design(t ~ uoa(uoa1, uoa2), data = x)
-by <- c("teacher" = "uoa1", "student" = "uoa2")
 cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
 offset <- stats::predict(cmod, xstar)
 pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), xstar)
@@ -129,16 +128,15 @@ test_that("as.SandwichLayer not fit with a data argument", {
 })
 
 test_that("as.SandwichLayer `by` is not a named vector", {
-  on.exit(by <- c("uoa1" = "teacher", "uoa2" = "student"))
   on.exit(rm(psl))
 
-  by <- c("teacher", "student")
+  by <- c("uoa1", "uoa2")
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   expect_error(as.SandwichLayer(psl, des, by),
-               "must be a named vector")
+               "must be named vector")
 })
 
 test_that("as.SandwichLayer missing desvar columns from covariance model data", {
@@ -173,13 +171,25 @@ test_that("as.SandwichLayer used correctly", {
 })
 
 test_that("as.SandwichLayer used correctly with `by`", {
+  on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
+                          "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
+                          "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
+                          "cont_x" = cont_x,
+                          "cat_x" = cat_x,
+                          "y" = y))
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
+
+  colnames(x) <- c("school", "teacher", colnames(x)[-(1:2)])
+  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x)
+  by <- c("uoa1" = "school", "uoa2" = "teacher")
+
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   sl <- as.SandwichLayer(psl, des, by)
   expect_true(is(sl, "SandwichLayer"))
-  expect_equal(colnames(sl@keys), names(by))
+  expect_equal(colnames(sl@keys), as.character(by))
 })
 
 test_that("as.SandwichLayer produces NA rows in `keys` for non-NA uoa values", {

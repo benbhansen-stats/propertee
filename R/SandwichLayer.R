@@ -129,11 +129,9 @@ setMethod("show", "SandwichLayer", show_layer)
 ##' assignment variables in \code{design} to cluster/unit of assignment
 ##' variables in \code{data}. Names represent variables in the Design; values
 ##' represent variables in the data. Only needed if variable names differ.
-##' @param envir an \code{Environment} object. The environment in which to find
-##' the covariance model data to instantiate. By default, \code{parent.frame()}.
 ##' @return a \code{SandwichLayer} object
 ##' @export
-as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
+as.SandwichLayer <- function(x, design, by = NULL) {
   if (!is(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
@@ -143,33 +141,28 @@ as.SandwichLayer <- function(x, design, by = NULL, envir = parent.frame()) {
     stop("The fitted covariance model for x must be fit using a `data` argument")
   }
 
-  if (is.null(by)) {
-    by <- desvars <- var_names(design, "u")
-  } else {
-    desvars <- names(by)
-    if (is.null(desvars)) {
-      stop("`by` must be a named vector")
-    }
+  covmoddata <- eval(data_call,
+                     envir = environment(formula(x@fitted_covariance_model)))
+
+  if (!is.null(by)) {
+    # .update_by handles checking input
+    design <- .update_by(design, covmoddata, by)
   }
 
+  desvars <- var_names(design, "u")
   wide_frame <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = T)[by],
+    stats::expand.model.frame(x@fitted_covariance_model, desvars, na.expand = T)[desvars],
     error = function(e) {
-      data <- eval(x@fitted_covariance_model$call$data,
-                   envir = environment(formula(x@fitted_covariance_model)))
       stop(paste("The",
                  gsub("_", " ", design@unit_of_assignment_type),
                  "columns",
-                 paste(setdiff(by, colnames(data)), collapse = ", "),
+                 paste(setdiff(desvars, colnames(covmoddata)), collapse = ", "),
                  "are missing from the covariance model dataset"),
            call. = FALSE)
     })
-  wide_frame$.idx <- 1:nrow(wide_frame)  # add idx to keep merge results in place
-  keys <- merge(wide_frame, design@structure, all.x = T)
-  keys[is.na(keys[, var_names(design, "t")]), by] <- NA
-  keys <- keys[order(keys$.idx),][by] # need this way to prevent one `by` col being converted to a vector
-  colnames(keys) <- desvars
-  row.names(keys) <- wide_frame$idx
+  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = T)
+  keys[is.na(keys[, var_names(design, "t")]), desvars] <- NA
+  keys <- keys[, desvars, drop = FALSE]
   
   return(new("SandwichLayer",
              x@.Data,
