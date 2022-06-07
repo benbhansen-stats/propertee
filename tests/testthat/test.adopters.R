@@ -25,3 +25,15 @@ test_that("with dichotomy", {
 
   expect_true(all(m1$model$`adopters()` %in% 0:1))
 })
+
+test_that("Missing data", {
+
+  data(simdata)
+  simdata$z[1:4] <- NA
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  expect_equal(length(adopters(des, data = simdata)),
+               nrow(simdata))
+
+
+})

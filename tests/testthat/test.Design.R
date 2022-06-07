@@ -282,6 +282,18 @@ test_that("unit of assignment differs from unit of analysis", {
                              "must be constant"),
                 "...")
 
+  data(simdata)
+  simdata$z[1] <- 1
+  expect_output(expect_error(rct_design(z ~ cluster(cid1, cid2),
+                                        data = simdata),
+                             "must be constant"),
+                "cid1")
+
+  simdata$z[1] <- NA
+  expect_output(expect_error(rct_design(z ~ cluster(cid1, cid2),
+                                        data = simdata),
+                             "must be constant"),
+                "cid1")
 })
 
 test_that("Design printing", {
