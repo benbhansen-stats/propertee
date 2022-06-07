@@ -20,9 +20,12 @@
 ##'   identified in the model (usually because neither weights (\code{ate()} or
 ##'   \code{ett()}) nor a covariate adjustment model (\code{cov_adj()}) are
 ##'   found), the \code{Design} can be passed diretly.
+##' @param data Optional data set. By default `adopters()` will attempt to
+##'   identify the appropriate data, if this fails (or you want to overwrite
+##'   it), you can pass the data here.
 ##' @return The treatment variable to be placed in the regression formula.
 ##' @export
-adopters <- function(design = NULL) {
+adopters <- function(design = NULL, data = NULL) {
   if (is.null(design)) {
     design <- .get_design()
   }
@@ -31,11 +34,12 @@ adopters <- function(design = NULL) {
   form <- as.formula(paste("~", paste(var_names(design, "u"),
                                       collapse = "+")))
 
-  data <- .get_data_from_model("adopters", form)
-
+  if (is.null(data)) {
+    data <- .get_data_from_model("adopters", form)
+  }
 
   # Extract treatment and unitofassignment variables from the Design
-  treatment_uoa <- cbind(treatment(design),
+  treatment_uoa <- cbind(treatment(design, binary = TRUE),
                          design@structure[, var_names(design, "u"),
                                              drop = FALSE])
 
@@ -44,14 +48,19 @@ adopters <- function(design = NULL) {
   treatment_data <- .merge_preserve_order(data, treatment_uoa,
                                           by = var_names(design, "u"))
 
-  treatment <- tryCatch(treatment_data[, var_names(design, "t")],
+  if (is_dichotomized(design)) {
+    txtname <- "z__"
+  } else {
+    txtname <- var_names(design, "t")
+  }
+  treatment <- tryCatch(treatment_data[, txtname],
                         error = function(e) {
                           # if treatment variable already exists in data, there
                           # will be a .x and .y version; e.g. z.x and z.y, so
                           # we'll extract the ".y" version (the second one)
                           # since the merge above has the treatment from the
                           # Design second.
-                          treatment_data[, paste0(var_names(design, "t"), ".y")]
+                          treatment_data[, paste0(txtname, ".y")]
                         })
 
   return(treatment)

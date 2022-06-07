@@ -15,3 +15,13 @@ test_that("basic adopters", {
   mod6 <- lm(y ~ adopters(), weights = ate(des), offset = cov_adj(mod1),
              data = simdata)
 })
+
+test_that("with dichotomy", {
+
+  data(simdata)
+  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
+                    dichotomy = dose < 250 ~ .)
+  m1 <- lm(y ~ adopters(), data = simdata, weights = ate(des))
+
+  expect_true(all(m1$model$`adopters()` %in% 0:1))
+})

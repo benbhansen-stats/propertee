@@ -4,13 +4,17 @@
 \alias{adopters}
 \title{Obtain Treatment from Design}
 \usage{
-adopters(design = NULL)
+adopters(design = NULL, data = NULL)
 }
 \arguments{
 \item{design}{Optional \code{Design}. If the \code{Design} can't be
 identified in the model (usually because neither weights (\code{ate()} or
 \code{ett()}) nor a covariate adjustment model (\code{cov_adj()}) are
 found), the \code{Design} can be passed diretly.}
+
+\item{data}{Optional data set. By default \code{adopters()} will attempt to
+identify the appropriate data, if this fails (or you want to overwrite
+it), you can pass the data here.}
 }
 \value{
 The treatment variable to be placed in the regression formula.
