@@ -28,7 +28,7 @@
     stop("At least one side for dichotomy formula must not be `.`")
   }
 
-  m <- model.frame(dichot, trt)
+  m <- model.frame(dichot, trt, na.action = na.pass)
 
   if (lhs_dot) {
     return(as.numeric(!m[,1]))

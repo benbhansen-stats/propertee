@@ -35,5 +35,19 @@ test_that("Missing data", {
   expect_equal(length(adopters(des, data = simdata)),
                nrow(simdata))
 
+  simdata$dose[1:4] <- NA
+  des <- rct_design(dose ~ uoa(cid1, cid2), data = simdata,
+                    dichotomy = dose > 250 ~ .)
+  expect_equal(length(adopters(des, data = simdata)),
+               nrow(simdata))
+
+
+  data(STARdata)
+  STARdata$id <- seq_len(nrow(STARdata))
+  STARdata$stark <- as.character(STARdata$stark)
+  des <- rct_design(stark ~ unitid(id), data = STARdata,
+                    dichotomy = stark == "small" ~ .)
+  mod <- lm(readk ~ birth + lunchk + adopters(), data = STARdata,
+          weights = ate(des))
 
 })
