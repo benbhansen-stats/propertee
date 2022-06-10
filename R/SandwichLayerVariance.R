@@ -1,25 +1,16 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-# (Internal) Ensure `keys` in a SandwichLayer has NA's for rows where units of
-# assignment don't appear in the quasiexperimental sample
-.update_keys <- function(x, design) {
-  uoanames <- var_names(design, "u")
-  zname <- var_names(design, "t")
-  check <- .merge_preserve_order(x@keys, design@structure, all.x = TRUE, sort = FALSE)
-  convert_na_idx <- which(!is.na(check[, uoanames[1]]) & is.na(check[, zname]))
-  x@keys[convert_na_idx, ] <- NA
-  return(x)
-}
-
 #' @title Generate Cluster-level Estimating Equations Covariance Matrix
 #' for Overlapping Rows in Experimental and Covariance Model Data
 #' @description `get_overlap_vcov_matrix` returns the covariance matrix of the
 #' cluster-level estimating equations for rows that appear in both the experimental
 #' and covariance model data
 #' @param x DirectAdjusted
-#' @return matrix of dim (p+1) x t where p is the number of covariates in the
-#' covariance model and t is the number of treatment levels
+#' @return outer product of cluster-level estimating equations for the covariance model
+#' and the treatment, matrix should have dimension p x k where p is the column
+#' count in the covariance model matrix and k is the column count in the treatment
+#' model
 #' @export
 get_overlap_vcov_matrix <- function(x) {
   sl <- x$model$`(offset)`
@@ -31,8 +22,6 @@ get_overlap_vcov_matrix <- function(x) {
   uoanames <- var_names(x@Design, "u")
   zname <- var_names(x@Design, "t")
 
-  .update_keys(sl, x@Design)
-  
   # Sum est eqns to cluster level; since non-overlapping rows are NA they are
   # excluded automatically in `by` call
   cmod_eqns <- Reduce(
@@ -41,24 +30,18 @@ get_overlap_vcov_matrix <- function(x) {
        lapply(uoanames, function(col) sl@keys[, col]),
        colSums))
   
-  # look for uoa columns in as.DirectAdjusted data and Design data
-  .data <- eval(x@Design@call$data, envir = environment(formula(x@Design@call$formula)))
-  # .data <- NULL
-  # for (i in seq_len(sys.nframe())) {
-  #   try({
-  #     .data <- get(x@Design@call$data, sys.frame(i))
-  #   }, silent = TRUE)
-  #   if (!is.null(.data)) break
-  # }
-  
-  if (is.null(.data)) {
-    stop("Could not get quasiexperimental sample from Design")
+  # cmod_eqns will be NULL if there's no overlap, so no need to continue
+  if (is.null(cmod_eqns)) {
+    return(matrix(0,
+                  nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
+                  ncol = dim(stats::model.matrix(x))[2]))
   }
-
+  
   # get overlapping rows from experimental data joining with `keys`
+  .data <- stats::expand.model.frame(x, uoanames)
   dmod_data <- .merge_preserve_order(
     .data,
-    merge(unique(sl@keys), x@Design@structure),
+    merge(unique(sl@keys), x@Design@structure), # merge here to use txt col for finding NA's
     by = uoanames,
     all.x = TRUE,
     sort = FALSE)

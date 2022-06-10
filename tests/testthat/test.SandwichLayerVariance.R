@@ -1,40 +1,7 @@
-set.seed(20)
-cont_x <- rnorm(100)
-cat_x <- rbinom(100, 2, 0.2)
-y <- cont_x - cat_x + rnorm(100)
-C_individ <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
-                        "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
-                        "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                        "cont_x" = cont_x,
-                        "cat_x" = cat_x,
-                        "y" = y)
-C_cluster_ids <- data.frame(Reduce(
-  rbind,
-  lapply(
-    split(C_individ, list(C_individ$uoa1, C_individ$uoa2)),
-    function(x) unique(x[, c("uoa1", "uoa2")]))),
-  row.names = NULL)
-C_cluster <- cbind(
-  C_cluster_ids,
-  data.frame(Reduce(
-    rbind,
-    by(C_individ,
-       list(C_individ$uoa1, C_individ$uoa2),
-       function(x) {colMeans(x[, c("cont_x", "y")])}),
-  ),
-  row.names = NULL)) # cat variable doesn't make sense to include for cluster-level cmod
-Q <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
-                "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
-                "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                "cont_x" = rnorm(100),
-                "cat_x" = rbinom(100, 2, 0.2))
-des <- rct_design(t ~ uoa(uoa1, uoa2), data = Q)
-uoanames <- var_names(des, "u")
-zname <- var_names(des, "t")
-
-test_correct_b12 <- function(m,
-                             uoanames,
-                             zname) {
+test_correct_b12 <- function(m) {
+  uoanames <- var_names(m@Design, "u")
+  zname <- var_names(m@Design, "t")
+  
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
   cmod_eqns <- Reduce(
@@ -43,15 +10,13 @@ test_correct_b12 <- function(m,
        lapply(uoanames, function(col) m$model$`(offset)`@keys[,col]),
        colSums))
 
-  Q <- eval(m$call$data)
-  Q_ <- .merge_preserve_order(
+  Q <- stats::expand.model.frame(m, uoanames)
+  msk <- !is.na(.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
     all.x = TRUE,
-    sort = FALSE)
-
-  msk <- !is.na(Q_[, paste0(zname, ".y")])
+    sort = FALSE)[paste0(zname, ".y")])
   m_eqns <- Reduce(
     rbind,
     by((m$weights * m$residuals * model.matrix(m))[msk, ],
@@ -63,94 +28,101 @@ test_correct_b12 <- function(m,
 }
 
 test_that("get_overlap_vcov_matrix used with DA model without SandwichLayer offset", {
-  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = C_individ)
-  offset <- stats::predict(cmod, Q)
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  offset <- stats::predict(cmod, simdata)
   m <- as.DirectAdjusted(
-    lm(y ~ t, data = Q, weights = ate(des), offset = offset)
+    lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
   expect_error(get_overlap_vcov_matrix(m),
                "must have an offset of class")
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for indivividual-level",
-                "cov model data with full overlap"), {
-  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = C_individ)
-  pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), Q)
-  sl <- as.SandwichLayer(
-   new("PreSandwichLayer",
-       stats::predict(cmod, Q),
-       fitted_covariance_model = cmod,
-       prediction_gradient = pred_gradient),
-   des)
+test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-level",
+                "experimental data identical to cov model data"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
   m <- as.DirectAdjusted(
-   lm(y ~ t, data = Q, weights = ate(des), offset = sl)
+   lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
 
-  test_correct_b12(m, uoanames, zname)
+  test_correct_b12(m)
 })
 
 test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level",
-                "cov model data with full overlap"), {
-  cmod <- lm(y ~ cont_x, data = C_cluster)
-  keys <- C_cluster[, c("uoa1", "uoa2")]
-  pred_gradient <- model.matrix(~ cont_x, Q)
-  slayer <- as.SandwichLayer(
-   new("PreSandwichLayer",
-       stats::predict(cmod, Q),
-       fitted_covariance_model = cmod,
-       prediction_gradient = pred_gradient),
-   des)
+                "experimental data whose rows fully overlap with cov model data"), {
+  data(simdata)
+  cluster_ids <- unique(simdata[, c("cid1", "cid2")])
+  Q_cluster <- data.frame(Reduce(
+    rbind,
+    by(simdata,
+       list(simdata$cid1, simdata$cid2),
+       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+  ), row.names = NULL)
+  
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster)
+
   m <- as.DirectAdjusted(
-   lm(y ~ t, data = Q, weights = ate(des), offset = slayer)
+   lm(y ~ z, data = Q_cluster, weights = ate(des), offset = cov_adj(cmod))
   )
 
-  test_correct_b12(m, uoanames, zname)
+  test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for indivividual-level",
-                "cov model data with partial overlap (cov data missing experiment",
-                "rows)"), {
-  on.exit(C_individ <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
-                                  "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
-                                  "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                                  "cont_x" = cont_x,
-                                  "cat_x" = cat_x,
-                                  "y" = y))
-  C_individ[C_individ$uoa1 == 1 & C_individ$uoa2 == 1, c("uoa1", "uoa2")] <- NA
-  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = C_individ)
-  pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), Q)
-  slayer <- as.SandwichLayer(
-   new("PreSandwichLayer",
-       stats::predict(cmod, Q),
-       fitted_covariance_model = cmod,
-       prediction_gradient = pred_gradient),
-   des)
+test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-level",
+                "experimental data that is a subset of cov model data)"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
   m <- as.DirectAdjusted(
-   lm(y ~ t, data = Q, weights = ate(des), offset = slayer)
+   lm(y ~ z, data = simdata[simdata$cid2 == 1,],
+      weights = weighted_design, offset = cov_adj(cmod))
   )
 
-  test_correct_b12(m, uoanames, zname)
+  test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for indivividual-level",
-                "cov model data with partial overlap (experimental data is subset of",
-                "cov model data)"), {
-  on.exit(des <- rct_design(t ~ uoa(uoa1, uoa2), data = Q), add = TRUE)
+test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level",
+                "experimental data that is a subset of cov model data"), {
+  data(simdata)
+  subset_cluster_ids <- unique(simdata[simdata$cid2 == 1, c("cid1", "cid2")])
+  Q_cluster_subset <- data.frame(Reduce(
+    rbind,
+    by(simdata,
+       list(simdata$cid1, simdata$cid2),
+       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+  ), row.names = NULL)
   
-  cmod <- lm(y ~ cont_x + as.factor(cat_x), data = C_individ)
-  des <- rct_design(t ~ uoa(uoa1, uoa2), data = Q, subset = Q$uoa1 == 1)
-  pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), Q[Q$uoa1 == 1,])
-  slayer <- as.SandwichLayer(
-   new("PreSandwichLayer",
-       stats::predict(cmod, Q[Q$uoa1 == 1,]),
-       fitted_covariance_model = cmod,
-       prediction_gradient = pred_gradient),
-   des)
-  weighted_design <- ate(des, data = Q[Q$uoa1 == 1,])
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster_subset)
+  weighted_design <- ate(des, data = Q_cluster_subset)
+  
   m <- as.DirectAdjusted(
-   lm(y ~ t, data = Q[Q$uoa1 == 1,], weights = weighted_design, offset = slayer)
+    lm(y ~ z, data = Q_cluster_subset,
+       weights = weighted_design, offset = cov_adj(cmod))
   )
   
-  test_correct_b12(m, uoanames, zname)
+  test_correct_b12(m)
+})
+
+test_that(paste("get_overlap_vcov_matrix returns expected B_12 for experimental",
+                "data that has no overlap with cov model data"), {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  C_no_cluster_ids <- simdata
+  C_no_cluster_ids[, var_names(des, "u")] <- NA
+  cmod <- lm(y ~ x, data = C_no_cluster_ids)
+
+  m <- as.DirectAdjusted(
+    lm(y ~ z + force, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  expect_equal(dim(get_overlap_vcov_matrix(m)), c(2, 3))
+  expect_true(all(get_overlap_vcov_matrix(m) == 0))
 })
