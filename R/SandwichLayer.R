@@ -151,7 +151,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
 
   desvars <- var_names(design, "u")
   wide_frame <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, desvars, na.expand = T)[desvars],
+    stats::expand.model.frame(x@fitted_covariance_model, desvars, na.expand = TRUE)[desvars],
     error = function(e) {
       stop(paste("The",
                  gsub("_", " ", design@unit_of_assignment_type),
@@ -160,7 +160,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
                  "are missing from the covariance model dataset"),
            call. = FALSE)
     })
-  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = T, sort = FALSE)
+  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = TRUE, sort = FALSE)
   keys[is.na(keys[, var_names(design, "t")]), desvars] <- NA
   keys <- keys[, desvars, drop = FALSE]
   
