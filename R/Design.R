@@ -105,7 +105,9 @@ new_Design <- function(form,
   # is called
   form <- .update_form_to_unit_of_assignment(form)
 
-  m <- do.call(data.frame, c(model.frame(form, data), check.names = FALSE))
+  m <- do.call(data.frame,
+               c(model.frame(form, data, na.action = na.pass),
+                 check.names = FALSE))
 
   cd <- .rename_model_frame_columns(m)
   m <- cd[["renamedModelFrame"]]
