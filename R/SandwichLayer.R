@@ -160,7 +160,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
                  "are missing from the covariance model dataset"),
            call. = FALSE)
     })
-  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = T)
+  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = T, sort = FALSE)
   keys[is.na(keys[, var_names(design, "t")]), desvars] <- NA
   keys <- keys[, desvars, drop = FALSE]
   
