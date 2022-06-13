@@ -23,7 +23,12 @@ setValidity("PreSandwichLayer", function(object) {
     return("Prediction gradient must be a numeric matrix")
   }
   if (dim(object@prediction_gradient)[1] != length(object)) {
-    return("Prediction gradient does not have the same number of rows as the offset")
+    msg <- paste0("Prediction gradient matrix (",
+                  paste(dim(object@prediction_gradient), collapse = ", "),
+                  ") does not have the same dimension along axis 1 as the ",
+                  "covariance adjustment vector (",
+                  length(object))
+    return(msg)
   }
   if (dim(object@prediction_gradient)[2] != length(object@fitted_covariance_model$coefficients)) {
     return(paste0("Prediction gradient does not have the same number of columns as ",
@@ -52,8 +57,9 @@ setValidity("SandwichLayer", function(object) {
   }
 
   if (any(is.na(object))) {
-    warning(paste0("Offset has NA values; be careful of dropping these observations ",
-                   "when fitting the design model"))
+    msg <- paste("Some covariance adjustments are NA; be careful of dropping",
+                 "these observations when fitting the design model")
+    warning(msg)
   }
   TRUE
 })
@@ -75,14 +81,15 @@ setMethod("show", "PreSandwichLayer", show_layer)
 ##' @export
 setMethod("show", "SandwichLayer", show_layer)
 
-##' (Internal) Get the a vector of "response" predictions from a covariance model
-##' and its gradient with respect to the fitted coefficients
+##' (Internal) Get a vector of "response" predictions from a covariance model
+##' for a certain dataframe and its gradient with respect to the parameters of
+##' the covariance model
 ##' @param model Any model of class \code{glm} or \code{lm} (excluding those from
 ##' the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
 ##' methods
 ##' @param newdata Optional; a data.frame of new data
-##' @return Covariate adjusted outcomes and their prediction gradient (a list of
-##' a numeric vector and a matrix)
+##' @return Covariate adjusted outcomes and their gradient with respect to the
+##' parameters of the covariance model (a list of a numeric vector and a matrix)
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
   if (!is.null(newdata) & !is.data.frame(newdata)) {
     stop("If supplied, `newdata` must be a dataframe")

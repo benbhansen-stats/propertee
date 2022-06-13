@@ -54,4 +54,4 @@ get_overlap_vcov_matrix <- function(x) {
        colSums))
 
   return(t(cmod_eqns) %*% dmod_eqns)
-} 
+}

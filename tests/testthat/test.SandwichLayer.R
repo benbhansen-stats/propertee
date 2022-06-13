@@ -59,7 +59,7 @@ test_that("SandwichLayer prediction gradient has invalid number of rows", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
   pred_gradient <- as.matrix(cbind(cont_x, cat_x)[2:100,])
-  expectSandwichLayerError("same number of rows",
+  expectSandwichLayerError("matrix \\(99, 2\\) does not have the same dimension",
                            offset, cmod, pred_gradient, keys)
 })
 
@@ -80,7 +80,7 @@ test_that("SandwichLayer has NA's", {
                      fitted_covariance_model = cmod,
                      prediction_gradient = pred_gradient,
                      keys = keys),
-                 "has NA values")
+                 "adjustments are NA")
 })
 
 test_that("SandwichLayer keys doesn't have the same row count as covariance model data", {
