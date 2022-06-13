@@ -11,8 +11,10 @@ get_overlap_vcov_matrix(x)
 \item{x}{DirectAdjusted}
 }
 \value{
-matrix of dim (p+1) x t where p is the number of covariates in the
-covariance model and t is the number of treatment levels
+outer product of cluster-level estimating equations for the covariance model
+and the treatment, matrix should have dimension p x k where p is the column
+count in the covariance model matrix and k is the column count in the treatment
+model
 }
 \description{
 \code{get_overlap_vcov_matrix} returns the covariance matrix of the

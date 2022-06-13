@@ -75,7 +75,7 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level
 })
 
 test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-level",
-                "experimental data that is a subset of cov model data)"), {
+                "experimental data that is a subset of cov model data"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
