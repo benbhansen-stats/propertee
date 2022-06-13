@@ -70,7 +70,7 @@ setMethod("treatment<-", "Design", function(x, value) {
 .bin_txt <- function(des) {
   if (!is_dichotomized(des)) {
     tt <- treatment(des, binary = FALSE)[, 1]
-    if (!all(tt %in% 0:1)) {
+    if (!all(tt %in% c(0:1, NA))) {
       stop("binary treatment cannot be obtained")
     }
     return(tt)

@@ -647,3 +647,31 @@ test_that("Updating call works", {
 
 
 })
+
+test_that("treatment extraction with NA", {
+  data(simdata)
+  simdata$z[1:4] <- NA
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  expect_identical(.bin_txt(des), des@structure$z)
+  expect_identical(.bin_txt(des), treatment(des)[, 1])
+  expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
+
+
+
+  simdata$dose[1:4] <- NA
+  des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  expect_error(.bin_txt(des), "cannot be obtained")
+  o <- treatment(des)[, 1]
+  expect_true(is.na(o[1]))
+  expect_true(all(!is.na(o[-1])))
+
+
+  dichotomy(des) <- dose >= 250 ~ .
+  z <- .bin_txt(des)
+  expect_true(is.na(z[1]))
+  expect_true(all(z[-1] %in% 0:1))
+  expect_identical(z, treatment(des, binary = TRUE)[, 1])
+  expect_identical(o, treatment(des, binary = FALSE)[, 1])
+
+
+})
