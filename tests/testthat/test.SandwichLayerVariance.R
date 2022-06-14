@@ -126,3 +126,39 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for experimental"
   expect_equal(dim(get_overlap_vcov_matrix(m)), c(2, 3))
   expect_true(all(get_overlap_vcov_matrix(m) == 0))
 })
+
+test_that("get_da_bread used without a DirectAdjusted model", {
+  data(simdata)
+  cmod <- lm(y ~ z, data = simdata)
+  
+  expect_error(get_da_bread(cmod), "must be a DirectAdjusted")
+})
+
+test_that("get_da_bread returns correct value for `lm` object", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_equal(get_da_bread(m),
+               1 / sum(m$weights * simdata$z))
+})
+
+test_that("get_da_bread returns correct value for `glm` object", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson())
+  )
+  mm <- stats::model.matrix(m)
+  
+  expect_equal(get_da_bread(m),
+               1 / sum(m$weights * simdata$z *
+                         m$family$mu.eta(mm %*% m$coefficients + m$offset)))
+})

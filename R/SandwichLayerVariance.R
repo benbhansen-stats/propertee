@@ -55,3 +55,26 @@ get_overlap_vcov_matrix <- function(x) {
 
   return(t(cmod_eqns) %*% dmod_eqns)
 }
+
+#' @title Get the "bread" matrix for the Direct Adjustment Model
+#' @description The "bread" matrix of the direct adjustment model is the inverse
+#' of the model's Fisher information matrix when the gradient is taken with
+#' respect to the treatment variable
+#' @param x DirectAdjusted
+#' @return scalar
+#' @export
+get_da_bread <- function(x) {
+  if (!is(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+
+  zname <- var_names(x@Design, "t")
+
+  if ("glm" %in% x@.S3Class) {
+    eqns <- x$family$mu.eta(x$linear.predictors) * x$weights * x$model[, zname]
+  } else {
+    eqns <- x$weights * x$model[, zname] # for lm's
+  }
+
+  return(1 / sum(eqns))
+}
