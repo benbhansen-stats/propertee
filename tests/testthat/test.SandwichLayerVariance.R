@@ -136,29 +136,82 @@ test_that("get_da_bread used without a DirectAdjusted model", {
 
 test_that("get_da_bread returns correct value for `lm` object", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  # cluster_data <- data.frame(Reduce(
+  #   rbind,
+  #   by(simdata[, c("cid1", "cid2", "z", "x", "y")],
+  #      lapply(c("cid1", "cid2"), function(col) simdata[, col]),
+  #      colMeans)), row.names = NULL)
+
   cmod <- lm(y ~ x, data = simdata)
-  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  uoanames <- var_names(des, "u")
+  zname <- var_names(des, "t")
+  # des2 <- rct_design(z ~ cluster(cid1, cid2), data = cluster_data)
+
   m <- as.DirectAdjusted(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
+  # m2 <- as.DirectAdjusted(
+  #   lm(y ~ z, data = cluster_data, weights = ate(des2), offset = cov_adj(cmod))
+  # )
   
-  expect_equal(get_da_bread(m),
-               1 / sum(m$weights * simdata$z))
+
+  mm <- stats::model.matrix(m)
+  eqns <- Reduce(
+    rbind,
+    by(m$residuals * m$weights * mm,
+       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
+       colSums))
+  fim <- t(eqns) %*% eqns
+  
+  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
+  # expect_equal(get_da_bread(m2), fim[zname, zname, drop = FALSE])
 })
 
-test_that("get_da_bread returns correct value for `glm` object", {
+test_that("get_da_bread returns correct value for Poisson `glm` object", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  cmod <- lm(y ~ x, data = simdata)
+  uoanames <- var_names(des, "u")
+  zname <- var_names(des, "t")
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
   
   m <- as.DirectAdjusted(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
         family = stats::poisson())
   )
   mm <- stats::model.matrix(m)
+  eqns <- Reduce(
+    rbind,
+    by(m$residuals * m$weights * exp(m$linear.predictors) / exp(m$linear.predictors) * mm,
+       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
+       colSums))
+  fim <- t(eqns) %*% eqns
   
-  expect_equal(get_da_bread(m),
-               1 / sum(m$weights * simdata$z *
-                         m$family$mu.eta(mm %*% m$coefficients + m$offset)))
+  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
+})
+
+test_that("get_da_bread returns correct value for Binomial `glm` object", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  uoanames <- var_names(des, "u")
+  zname <- var_names(des, "t")
+  cmod <- suppressWarnings(
+    glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
+  )
+  
+  m <- suppressWarnings(
+    as.DirectAdjusted(
+      glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata,
+          weights = ate(des), offset = cov_adj(cmod), family = stats::binomial())
+  ))
+  mm <- stats::model.matrix(m)
+  p <- exp(m$linear.predictors) / (1 + exp(m$linear.predictors))
+  eqns <- Reduce(
+    rbind,
+    by(m$residuals * m$weights * p * (1-p) / (p * (1-p)) * mm,
+       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
+       colSums))
+  fim <- t(eqns) %*% eqns
+  
+  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
 })

@@ -10,10 +10,10 @@ get_da_bread(x)
 \item{x}{DirectAdjusted}
 }
 \value{
-scalar
+1x1 matrix. We follow Carroll et al.'s formulation (2006, pp. 373) of
+this matrix, which is the sum of the gradients of the direct adjustment
+model's estimating equations taken with respect to the treatment variable.
 }
 \description{
-The "bread" matrix of the direct adjustment model is the inverse
-of the model's Fisher information matrix when the gradient is taken with
-respect to the treatment variable
+Get the "bread" matrix for the Direct Adjustment Model
 }
