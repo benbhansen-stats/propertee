@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_design.R
 \name{.get_design}
 \alias{.get_design}
-\title{Locate a \code{Design} in the call stack}
+\title{(Internal) Locate a \code{Design} in the call stack}
 \usage{
 .get_design(NULL_on_error = FALSE)
 }

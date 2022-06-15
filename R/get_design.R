@@ -15,7 +15,7 @@
 ##' \code{lm(y ~ adopters(des), weights = ate(), offest = cov_adj(mod1))}
 ##'
 ##' will fail.
-##' @title Locate a \code{Design} in the call stack
+##' @title (Internal) Locate a \code{Design} in the call stack
 ##' @param NULL_on_error if \code{TRUE}, returns \code{NULL} if a \code{Design}
 ##'   object is not found rather than throwing an error.
 ##' @return A \code{Design}, or \code{NULL} if \code{NULL_on_error} is
