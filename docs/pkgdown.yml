@@ -1,0 +1,15 @@
+pandoc: 2.11.3.2
+pkgdown: 2.0.4
+pkgdown_sha: ~
+articles:
+  CovarianceAdjustment: CovarianceAdjustment.html
+  LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
+  RDD: RDD.html
+  design_based_SEs: design_based_SEs.html
+  non-binary-weights: not-for-cran/non-binary-weights.html
+  sandwich_infrastructure: sandwich_infrastructure.html
+last_built: 2022-06-15T19:25Z
+urls:
+  reference: www.github.com/reference
+  article: www.github.com/articles
+
