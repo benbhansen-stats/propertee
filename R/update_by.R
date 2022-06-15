@@ -7,7 +7,7 @@
 ##' @param by named vector or list connecting names of cluster/unit of
 ##'   assignment variables in \code{design} to cluster/unit of assignment
 ##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data. Only needed if variable names differ.
+##'   represent variables in the data.
 ##' @return A \code{Design} with updated variable names
 ##' @keywords internal
 .update_by <- function(design, data, by) {
