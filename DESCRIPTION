@@ -38,7 +38,6 @@ Collate:
     'DesignUtilities.R'
     'DirectAdjusted.R'
     'adopters.R'
-    'binarize_treatment.R'
     'cov_adj.R'
     'data.R'
     'flexida_package.R'
