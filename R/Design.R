@@ -73,7 +73,7 @@ setValidity("Design", function(object) {
 ##' @return A new Design object
 ##' @importFrom stats formula
 ##' @keywords internal
-new_Design <- function(form,
+.new_Design <- function(form,
                        data,
                        type,
                        subset = NULL,
@@ -82,9 +82,9 @@ new_Design <- function(form,
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
-    warning(paste("Invalid call passed to `new_Design`, using default.",
+    warning(paste("Invalid call passed to `.new_Design`, using default.",
                   "Please use rd_design, rct_design, or obs_design instead ",
-                  "of `new_Design` directly."))
+                  "of `.new_Design` directly."))
   }
 
   if (!is.null(subset)) {
@@ -276,7 +276,7 @@ new_Design <- function(form,
 rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  new_Design(form = formula,
+  .new_Design(form = formula,
              data = data,
              type = "RCT",
              subset = subset,
@@ -289,7 +289,7 @@ rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
-  new_Design(form = formula,
+  .new_Design(form = formula,
              data = data,
              type = "RD",
              subset = subset,
@@ -302,7 +302,7 @@ rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  new_Design(form = formula,
+  .new_Design(form = formula,
              data = data,
              type = "Obs",
              subset = subset,

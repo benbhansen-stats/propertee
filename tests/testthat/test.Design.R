@@ -162,7 +162,7 @@ test_that("Design creation", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11), ]
 
-  d_rct <- new_Design(vs ~ cluster(qsec), data = mtcars,
+  d_rct <- .new_Design(vs ~ cluster(qsec), data = mtcars,
                       type = "RCT", call = fc, dichotomy = NULL)
 
   expect_s4_class(d_rct, "Design")
@@ -186,7 +186,7 @@ test_that("Design creation", {
 
   # subset
 
-  d_obs <- new_Design(vs ~ cluster(qsec), data = mtcars, type = "Obs",
+  d_obs <- .new_Design(vs ~ cluster(qsec), data = mtcars, type = "Obs",
                   subset = mtcars$mpg > 17, call = fc)
 
   expect_equal(dim(d_obs@structure), c(sum(mtcars$mpg >  17), 2))
@@ -202,7 +202,7 @@ test_that("Design creation", {
   expect_equal(d_obs@type, "Obs")
 
   ### Complex design
-  d_rd <- new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+  d_rd <- .new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
                        cluster(mpg, qsec),
                   data = mtcars, type = "RD", call = fc)
 
@@ -216,7 +216,7 @@ test_that("Design creation", {
   expect_equal(d_rd@type, "RD")
 
   ### Complex design with unitid
-  d_rd2 <- new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+  d_rd2 <- .new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
                         unitid(mpg, qsec),
                   data = mtcars, type = "RD", call = fc)
 
@@ -248,15 +248,15 @@ test_that("Design creation", {
 
   # Missing call
 
-  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars,
+  expect_warning(des <- .new_Design(vs ~ cluster(qsec), data = mtcars,
                                    type = "RCT"),
                  "Invalid call")
-  expect_identical(des@call[[1]], as.name("new_Design"))
+  expect_identical(des@call[[1]], as.name(".new_Design"))
 
-  expect_warning(des <- new_Design(vs ~ cluster(qsec), data = mtcars,
+  expect_warning(des <- .new_Design(vs ~ cluster(qsec), data = mtcars,
                                    type = "RCT", call = 1),
                  "Invalid call")
-  expect_identical(des@call[[1]], as.name("new_Design"))
+  expect_identical(des@call[[1]], as.name(".new_Design"))
 })
 
 test_that("unit of assignment differs from unit of analysis", {
