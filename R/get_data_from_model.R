@@ -1,10 +1,20 @@
-# (Internal) Whenever a function in a model (ate/ett/cov_adj/adopters) is called
-# without an explicit `data` argument, this will attempt to extract the data
-# from the model itself.
-# @param which_fn = "weights" or "adopters", helps separate logic for the two
-# functions.
-# @param form = formula passed to model.frame.
-# @param by = translation of cluster ID names, passed down from weights.
+##' Whenever a function in a model
+##' (\code{ate()}/\code{ett()}/\code{cov_adj()}/\code{adopters()}) is called
+##' without an explicit \code{data=} argument, this will attempt to extract the
+##' data from the model itself.
+##'
+##' The \code{form} specifies what columns of the data are needed. For current
+##' use cases (\code{ate()}/\code{ett()} and \code{adopters()}), this will be
+##' only the unit of assignment variables, so e.g. \code{form = ~ clustervar},
+##' to enable merging of UOA level variables to the model data. However, this
+##' can easily be expanded if other variables are needed.
+##' @title (Internal) Locate data in call stack
+##' @param which_fn Identify calling function, "weights" or "adopters", helps
+##'   separate logic for the two functions.
+##' @param form Formula on which to apply \code{model.frame()}. See details
+##' @param by translation of cluster ID names, passed down from weights.
+##' @return \code{data.frame}
+##' @keywords internal
 .get_data_from_model <- function(which_fn,
                                  form = NULL,
                                  by = NULL) {
