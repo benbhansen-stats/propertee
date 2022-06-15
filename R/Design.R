@@ -61,7 +61,18 @@ setValidity("Design", function(object) {
   TRUE
 })
 
+
+##' @title Create a new \code{Design} object.
+##' @param form Formula to create Design, see help for \code{rcr_design()},
+##'   \code{rd_design()} or \code{obs_design()} for details.
+##' @param data The data set
+##' @param type One of "RCT", "RD", or "Obs"
+##' @param subset Any subset information
+##' @param call The call generating the \code{Design}.
+##' @param dichotomy If present, the dichotomization formula
+##' @return A new Design object
 ##' @importFrom stats formula
+##' @keywords internal
 new_Design <- function(form,
                        data,
                        type,
@@ -197,8 +208,6 @@ new_Design <- function(form,
       dichotomy = dichotomy)
 }
 
-##' Generates a Design object with the given specifications.
-##'
 ##' Generates a randomized control treatment Design (\code{rct_design()}), or an
 ##' observational Design (\code{obs_design()}), or a regression discontinuity
 ##' Design (\code{rd_design()}).
@@ -254,10 +263,11 @@ new_Design <- function(form,
 ##' instead of simply using \code{dichotomy(design) <-} or passing
 ##' \code{dichotomy} to \code{ate()} or \code{ett()}.
 ##'
-##' @title Specify Design
-##' @param formula defines the Design components
+##' @title Generates a \code{Design} object with the given specifications.
+##' @param formula defines the \code{Design} components
 ##' @param data the data set.
-##' @param subset optionally subset the data before creating the Design object
+##' @param subset optionally subset the data before creating the \code{Design}
+##'   object
 ##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @return a Design object of the requested type for use in further analysis
