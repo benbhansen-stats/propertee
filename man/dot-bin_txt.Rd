@@ -2,8 +2,8 @@
 % Please edit documentation in R/DesignAccessors.R
 \name{.bin_txt}
 \alias{.bin_txt}
-\title{(Internal) Extracts treatment as binary vector if possible or else
-errors.}
+\title{(Internal) Extracts treatment as binary \code{vector} if possible or
+else errors.}
 \usage{
 .bin_txt(des)
 }
@@ -11,11 +11,11 @@ errors.}
 \item{des}{A \code{Design}}
 }
 \value{
-A vector of binary treatments
+A \code{vector} of binary treatments
 }
 \description{
-If the \code{Design} has a dichotomy, or has a treatment variable consisting
-only of 0/1 or \code{NA}, then returns the binary treatment. Otherwise (it
-has a non-binary treatment and lacks a dichotomy) it errors.
+If the \code{Design} has a \code{@dichotomy}, or has a treatment variable
+consisting only of 0/1 or \code{NA}, then returns the binary treatment.
+Otherwise (it has a non-binary treatment and lacks a dichotomy) it errors.
 }
 \keyword{internal}

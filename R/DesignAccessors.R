@@ -17,7 +17,7 @@ setGeneric("treatment", function(x, ...) {
 ##' The one-column \code{data.frame} returned by \code{treatment()} is named as
 ##' entered in the \code{Design} creation, but if a \code{dichotomy} is in the
 ##' \code{Design}, the column name is \code{"__z"}.
-##' @title Accessors for Design
+##' @title Accessors and Replacers for \code{Design} objects
 ##' @param x \code{Design} object
 ##' @param binary Logical; if \code{FALSE} (default), return a \code{data.frame}
 ##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
@@ -25,7 +25,7 @@ setGeneric("treatment", function(x, ...) {
 ##'   binary treatment variable with the name \code{"z__"}. Errors on
 ##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .
 ##' @param ... Ignored.
-##' @return data.frame containing treatment variable
+##' @return \code{data.frame} containing treatment variable
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
@@ -51,8 +51,9 @@ setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
 ##' @rdname Design_extractreplace
 setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 
-##' @param value Replacement. Either a vector/matrix of appropriate dimension,
-##'   or a named data.frame if renaming variable as well.
+##' @param value Replacement. Either a \code{vector}/\code{matrix} of
+##'   appropriate dimension, or a named \code{data.frame} if renaming variable
+##'   as well.
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
@@ -65,13 +66,13 @@ setMethod("treatment<-", "Design", function(x, value) {
   x
 })
 
-##' If the \code{Design} has a dichotomy, or has a treatment variable consisting
-##' only of 0/1 or \code{NA}, then returns the binary treatment. Otherwise (it
-##' has a non-binary treatment and lacks a dichotomy) it errors.
-##' @title (Internal) Extracts treatment as binary vector if possible or else
-##'   errors.
+##' If the \code{Design} has a \code{@dichotomy}, or has a treatment variable
+##' consisting only of 0/1 or \code{NA}, then returns the binary treatment.
+##' Otherwise (it has a non-binary treatment and lacks a dichotomy) it errors.
+##' @title (Internal) Extracts treatment as binary \code{vector} if possible or
+##'   else errors.
 ##' @param des A \code{Design}
-##' @return A vector of binary treatments
+##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .bin_txt <- function(des) {
   if (!is_dichotomized(des)) {
@@ -91,7 +92,7 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##'   treatment, such as that produed by `treatment(mydesign)`.
 ##' @param dichot A dichotomization formula. See the details in the Details for
 ##'   the help of \code{rct_design()}.
-##' @return A vector of binary treatments
+##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .binarize_treatment <- function(trt, dichot) {
 
@@ -350,8 +351,8 @@ setMethod("forcings<-", "Design", function(x, value) {
 ############### dichotomy
 
 ##' Extract or replace dichotomy
-##' @param x Design object
-##' @param value Replacement dichotomy formula, or \code{NULL} to remove
+##' @param x \code{Design} object
+##' @param value Replacement \code{dichotomy} formula, or \code{NULL} to remove
 ##' @return Dichomization formula
 ##' @export
 ##' @rdname Design_extract_dichotomy

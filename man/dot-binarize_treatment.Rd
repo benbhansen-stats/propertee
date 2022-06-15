@@ -14,7 +14,7 @@ treatment, such as that produed by \code{treatment(mydesign)}.}
 the help of \code{rct_design()}.}
 }
 \value{
-A vector of binary treatments
+A \code{vector} of binary treatments
 }
 \description{
 (Internal) Uses a \code{@dichotomy} to create a binary version of the
