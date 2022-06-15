@@ -112,5 +112,33 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   .join_design_weights(weights, design, target = target,
-                       clusterdata = clusterdata)
+                       data = clusterdata)
+}
+
+##' Helper function called during creation of the weights via \code{ate()} or
+##' \code{ett()}
+##' @title (Internal) Expand unit of assignment level weights to the level of
+##'   the data
+##' @param weights a vector of weights sorted according to the \code{Design}
+##' @param design a \code{Design}
+##' @param target One of "ate" or "ett"
+##' @param data New data
+##' @return a \code{WeightedDesign}
+##' @keywords internal
+.join_design_weights <- function(weights, design, target, data) {
+
+  uoanames <- var_names(design, "u")
+
+  # Merge uoa data with weights at uoa level
+  uoadata <- design@structure[, uoanames, drop = FALSE]
+  uoadata$design_weights <- weights
+
+  # Merge with data to expand weights to unit of analysis level
+  weights <- .merge_preserve_order(data, uoadata,
+                                   by = uoanames)$design_weights
+
+  new("WeightedDesign",
+      weights,
+      Design = design,
+      target = target)
 }

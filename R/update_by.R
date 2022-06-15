@@ -1,32 +1,15 @@
-# (Internal) Expand uoa-level weights to the level of the data
-.join_design_weights <- function(weights, design, target, clusterdata = NULL) {
-
-  uoanames <- var_names(design, "u")
-
-  # Merge uoa data with weights at uoa level
-  uoadata <- design@structure[, uoanames, drop = FALSE]
-  uoadata$design_weights <- weights
-
-  # Merge with data to expand weights to unit of analysis level
-  weights <- .merge_preserve_order(clusterdata, uoadata,
-                                   by = uoanames)$design_weights
-
-  new("WeightedDesign",
-      weights,
-      Design = design,
-      target = target)
-}
-
-# (Internal) Merge data.frames ensuring order of first data.frame is maintained
-.merge_preserve_order <- function(x, ...) {
-  x$..orig_ordering.. <- seq_len(nrow(x))
-  x <- merge(x, ...)
-  x <- x[order(x$..orig_ordering..), ]
-  x$..orig_ordering.. <- NULL
-  return(x)
-}
-
-# (Internal) Use by to update the design with new variable names
+##' Helper function used to update the variable names of a \code{Design} when
+##' user passes a \code{by=} argument to align variable names between data sets.
+##' @title (Internal) Use \code{by} to update \code{Design} with new variable
+##'   names
+##' @param design A \code{Design}
+##' @param data \code{Data set}
+##' @param by named vector or list connecting names of cluster/unit of
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
+##' @return A \code{Design} with updated variable names
+##' @keywords internal
 .update_by <- function(design, data, by) {
   .check_by(by)
 

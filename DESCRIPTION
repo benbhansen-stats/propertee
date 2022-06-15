@@ -45,6 +45,7 @@ Collate:
     'get_data_from_model.R'
     'get_design.R'
     'lmitt.R'
+    'merge_preserve_order.R'
     'summary.Design.R'
+    'update_by.R'
     'weights.R'
-    'weightsUtilities.R'
