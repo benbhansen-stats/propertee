@@ -2,7 +2,7 @@ test_that("internal weight function", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ate",
+  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -15,7 +15,7 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ett",
+  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -28,15 +28,15 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+  expect_error(.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
                "Invalid weight target")
 
-  expect_error(.weights_calc(des, clusterdata = 1, by = NULL, target = "ate",
+  expect_error(.weights_calc(des, data = 1, by = NULL, target = "ate",
                              dichotomy = NULL),
                "`data` must be")
 
-  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+  expect_error(.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = 1),
                "`dichotomy` must be")
 
@@ -47,13 +47,13 @@ test_that("dichotomy issues", {
   data(simdata)
   des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  expect_error(.weights_calc(des, clusterdata = simdata, by = NULL,
+  expect_error(.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
                "must have a dichotomy")
 
   dichotomy(des) <- . ~ dose > 150
 
-  wdes <- .weights_calc(des, clusterdata = simdata, by = NULL, target = "ate",
+  wdes <- .weights_calc(des, data = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -66,7 +66,7 @@ test_that("dichotomy issues", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_warning(wdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
+  expect_warning(wdes <- .weights_calc(des, data = simdata, by = NULL,
                                        target = "ate",
                                        dichotomy = dose > 200 ~ .),
                  "over-writing")
@@ -78,12 +78,12 @@ test_that("internal and external weight function agreement", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  iwdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
+  iwdes <- .weights_calc(des, data = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
   ewdes <- ate(des, data = simdata)
   expect_identical(iwdes, ewdes)
 
-  iwdes <- .weights_calc(des, clusterdata = simdata, by = NULL,
+  iwdes <- .weights_calc(des, data = simdata, by = NULL,
                          target = "ett", dichotomy = NULL)
   ewdes <- ett(des, data = simdata)
   expect_identical(iwdes, ewdes)

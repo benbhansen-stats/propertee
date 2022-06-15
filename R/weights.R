@@ -11,7 +11,7 @@
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
-##' @return a WeightedDesign object
+##' @return a \code{WeightedDesign} object
 ##' @export
 ##' @rdname WeightCreators
 ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
@@ -19,7 +19,7 @@ ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                 target = "ett",
                 dichotomy = dichotomy,
                 by = by,
-                clusterdata = data)
+                data = data)
 }
 
 ##' @export
@@ -29,11 +29,28 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                 target = "ate",
                 dichotomy = dichotomy,
                 by = by,
-                clusterdata = data)
+                data = data)
 }
 
-# (Internal) Calculates weights
-.weights_calc <- function(design, target, dichotomy, by, clusterdata) {
+##' Called from \code{ate()} or \code{ett()}.
+##' @title (Internal) Worker function for weight calculation
+##' @param design a \code{Design} object created by one of \code{rct_design()},
+##'   \code{rd_design()}, or \code{obs_design()}.
+##' @param dichotomy optional; a formula defining the dichotomy of the treatment
+##'   variable if it isn't already \code{0}/\code{1}. See details of help for
+##'   \code{rct_design()} e.g. for details.
+##' @param target One of "ate" or "ett"; \code{ate()} and \code{ett()} chooses
+##'   these automatically.
+##' @param by optional; named vector or list connecting names of cluster/unit of
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
+##' @param data optionally the data for the analysis to be performed on. May be
+##'   excluded if these functions are included as the \code{weights} argument of
+##'   a model.
+##' @return a \code{WeightedDesign} object
+##' @author Josh Errickson
+.weights_calc <- function(design, target, dichotomy, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
@@ -53,19 +70,19 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     design <- .get_design()
   }
 
-  if (is.null(clusterdata)) {
+  if (is.null(data)) {
     # Only thing we need from the data is cluster info to enable later merge
     form <- as.formula(paste("~", paste(var_names(design, "u"),
                                         collapse = "+")))
 
-    clusterdata <- .get_data_from_model("weights", form, by)
-  } else if (!is.data.frame(clusterdata)) {
+    data <- .get_data_from_model("weights", form, by)
+  } else if (!is.data.frame(data)) {
     stop("`data` must be `data.frame`")
   }
 
   if (!is.null(by)) {
     # .update_by handles checking input
-    design <- .update_by(design, clusterdata, by)
+    design <- .update_by(design, data, by)
   }
 
   # Ensure treatment is binary
@@ -112,7 +129,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   .join_design_weights(weights, design, target = target,
-                       data = clusterdata)
+                       data = data)
 }
 
 ##' Helper function called during creation of the weights via \code{ate()} or
