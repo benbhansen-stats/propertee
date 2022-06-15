@@ -381,9 +381,20 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 
 ############### Helper Functions
 
-# (Internal) Takes in a replacement item and a design, and if replacement isn't
-# a data.frame already, converts it to a data.frame, extracting names from the
-# design if original value isn't already named
+##' Helper function for \code{Design} replacers.
+##'
+##' When given a replacement set of values (either a \code{vector} or a
+##' \code{data.frame}), this ensures that the replacement is a
+##' \code{data.frame}.
+##'
+##' Additionally ensures proper names for replacement
+##' @title (Internal) Ensures replacement column for \code{Design} is a
+##'   \code{data.frame}.
+##' @param value A \code{vector} or \code{data.frame} containing a replacement.
+##' @param design A \code{Design}
+##' @param type One of "t", "f", "u" or "b"
+##' @return \code{data.frame} containing named column(s)
+##' @keywords internal
 .convert_to_data.frame <- function(value, design, type) {
   if (!is(value, "data.frame")) {
     if (is.null(colnames(value))) {
@@ -411,8 +422,16 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   value
 }
 
-# (Internal) Replaces `type` columns in `design` with `new`. Assumes
-# `.convert_to_data.frame` has already been called on `new`
+##' Assumes \code{.convert_to_data.frame()} has already been called on
+##' \code{new}
+##' @title (Internal) Replaces \code{type} columns in \code{design} with
+##'   \code{new}
+##' @param design A \code{Design}
+##' @param new A named \code{data.frame} with the replacement, should be the
+##'   output of \code{.convert_to_data.frame()}.
+##' @param type One of "t", "f", "u" or "b\".
+##' @return The updated \code{Design}
+##' @keywords internal
 .update_structure <- function(design, new, type) {
   design@structure <-
     cbind.data.frame(design@structure[design@column_index != type], new)
@@ -424,33 +443,15 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   return(design)
   }
 
-# (Internal) Updates `des@call`'s formula with the currently defined variable
-# names. Returns the updated formula, should be stuck into the design via
-# `des@call$formula <- .update_call_formula(des)`
-.update_call_formula <- function(design) {
-
-  .collapse <- function(d, type) {
-    paste(var_names(d, type), collapse = ",")
-  }
-
-  # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
-                 "(", .collapse(design, "u"), ")")
-
-  # Get block if included
-  if (length(var_names(design, "b")) > 0) {
-    form <- paste0(form, "+ block(", .collapse(design, "b"), ")")
-  }
-
-  if (design@type == "RD") {
-    form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
-  }
-  form <- formula(form)
-}
-
-# (Internal) Updates `des@call`'s formula with the currently defined variable
-# names. Returns the updated formula, should be stuck into the design via
-# `des@call$formula <- .update_call_formula(des)`
+##' Helper function to update the \code{call} with the appropriate variable names after they've been modified. Called within \code{Design} replacers.
+##'
+##' It's return should be stuck into the design via \code{des@call$formula <-
+##' .update_call_formula(des)}
+##' @title (Internal) Updates `des@call`'s formula with the currently defined
+##'   variable names.
+##' @param design A \code{Design}
+##' @return An updated formula
+##' @keywords internal
 .update_call_formula <- function(design) {
 
   .collapse <- function(d, type) {
