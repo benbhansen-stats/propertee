@@ -121,8 +121,6 @@
     stop("Could not determine appropriate data")
   }
 
-  data <- .rename_model_frame_columns(data)[["renamedModelFrame"]]
-
   return(data)
 }
 
