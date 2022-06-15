@@ -16,3 +16,5 @@ README.md
 coverage.html
 lib/*
 vignettes/fails_check/*
+_pkgdown.yml
+docs
