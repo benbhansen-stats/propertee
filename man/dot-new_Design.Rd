@@ -2,7 +2,7 @@
 % Please edit documentation in R/Design.R
 \name{.new_Design}
 \alias{.new_Design}
-\title{Create a new \code{Design} object.}
+\title{(Internal) Create a new \code{Design} object.}
 \usage{
 .new_Design(
   form,
@@ -31,6 +31,7 @@
 A new Design object
 }
 \description{
-Create a new \code{Design} object.
+Helper function to create a new \code{Design}. Called internally from
+\code{rct_design()}, \code{rd_design()} or \code{obs_design()}.
 }
 \keyword{internal}

@@ -62,7 +62,9 @@ setValidity("Design", function(object) {
 })
 
 
-##' @title Create a new \code{Design} object.
+##' Helper function to create a new \code{Design}. Called internally from
+##' \code{rct_design()}, \code{rd_design()} or \code{obs_design()}.
+##' @title (Internal) Create a new \code{Design} object.
 ##' @param form Formula to create Design, see help for \code{rcr_design()},
 ##'   \code{rd_design()} or \code{obs_design()} for details.
 ##' @param data The data set
