@@ -359,8 +359,14 @@ var_names <- function(x, type) {
   names(x@structure)[x@column_index == type]
 }
 
-# Internal to properly rename columns to strip unit_of_assignment(), block(),
-# etc
+##' After calling \code{model.frame()} on the formula input to
+##' \code{.new_Design()}, the names of the columns will include functino names,
+##' e.g. "cluster(clustvar)". This function strips all these.
+##'
+##' @title (Internal) Rename columns to strip function calls
+##' @param modframe A \code{data.frame}.
+##' @return The \code{data.frame} with function calls removed
+##' @keywords internal
 .rename_model_frame_columns <- function(modframe) {
 
   index <- rep("t", ncol(modframe))
