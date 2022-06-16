@@ -95,7 +95,7 @@
 <p>You may use RStudio to develop for flexida, by opening the <code>flexida.Rproj</code> file. We suggest you ensure all required dependencies are installed by running</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>We prefer changes that include unit tests demonstrating the problem or showing how the new feature should be added. The test suite uses the <a href="https://github.com/hadley/test_that" class="external-link">testthat</a> package to write and run tests. (Please ensure you have the latest version of testthat (or at least v0.11.0), as older versions stored the tests in a different directory, and may not test properly.) See the <code>tests/testthat</code> directory for examples. You can run the test suite via Build -&gt; Test Package.</p>
-<p>New features should include inline <a href="http://roxygen.org/" class="external-link">Roxygen</a> documentation. You can generate all <code>.Rd</code> documents from the <code>Roxygen</code> code using Build -&gt; Document.</p>
+<p>New features should include inline <a href="http://roxygen.org/" class="external-link">Roxygen</a> documentation. You can generate all <code>.Rd</code> documents from the <code>Roxygen</code> code using Build -&gt; Document, or using Make as describe below.</p>
 <p>Finally, you can use Build -&gt; Build and Reload or Build -&gt; Clean and Rebuild to load an updated version of <code>flexida</code> in your current RStudio session. Alternatively, to install the developed version permanently, use Build -&gt; Build Binary Version, followed by</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"../flexida_VERSION.tgz"</span>, <span class="at">repo=</span><span class="cn">NULL</span>)</span></code></pre></div>
 <p>You can revert back to the current CRAN version by</p>
@@ -116,7 +116,7 @@
 <li>
 <code>make vignette</code>: Builds any vignettes in <code>vignettes/</code> directory</li>
 <li>
-<code>make clean</code>: Removes files built by <code>make vignette</code>, <code>make document</code> or <code>make check</code>. Should not be generally necessary, but can be useful for debugging.</li>
+<code>make clean</code>: Removes files built by <code>make vignette</code>, <code>make document</code> or <code>make    check</code>. Should not be generally necessary, but can be useful for debugging.</li>
 </ul>
 <p>When your change is ready, make a pull request on github.</p>
 <div class="section level3">
@@ -133,6 +133,12 @@
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">                             (delete-trailing-whitespace)))</span></span></code></pre></div>
 <p>To remove trailing lines when saving, you can also add this:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(setq delete<span class="sc">-</span>trailing<span class="sc">-</span>lines t)</span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="internal-functions">Internal functions<a class="anchor" aria-label="anchor" href="#internal-functions"></a>
+</h3>
+<p>Any internal functions (for our use only) should be prefaced with a “<code>.</code>” (e.g. <code>.myfunc &lt;- function()</code>). Internal functions should be documented using roxygen as described above, and given the <code>@keywords internal</code> tag to ensure they do not get indexed. (Generally internally functions should not be <code>@export</code>’d but exceptions may arise.)</p>
+<p>During this period of development, after documenting an internal function, add it to the "_pkgdown.yml" file in the appropriate category. Once flexida goes public, we will remove those.</p>
 </div>
 </div>
 
