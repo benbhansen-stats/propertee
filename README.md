@@ -55,7 +55,7 @@ suite via Build -> Test Package.
 
 New features should include inline [Roxygen](http://roxygen.org/) documentation.
 You can generate all `.Rd` documents from the `Roxygen` code using Build ->
-Document.
+Document, or using Make as describe below.
 
 Finally, you can use Build -> Build and Reload or Build -> Clean and Rebuild to
 load an updated version of `flexida` in your current RStudio session.
@@ -78,8 +78,8 @@ If you prefer not to use RStudio, you can develop using Make.
 - `make check`: Run `R CMD check` on the package
 - `make build`: Build a binary package.
 - `make vignette`: Builds any vignettes in `vignettes/` directory
-- `make clean`: Removes files built by `make vignette`, `make document` or `make check`.
-   Should not be generally necessary, but can be useful for debugging.
+- `make clean`: Removes files built by `make vignette`, `make document` or `make
+   check`. Should not be generally necessary, but can be useful for debugging.
 
 When your change is ready, make a pull request on github.
 
@@ -104,3 +104,15 @@ following to your init file:
 To remove trailing lines when saving, you can also add this:
 
     (setq delete-trailing-lines t)
+
+### Internal functions
+
+Any internal functions (for our use only) should be prefaced with a "`.`" (e.g.
+`.myfunc <- function()`). Internal functions should be documented using roxygen
+as described above, and given the `@keywords internal` tag to ensure they do not
+get indexed. (Generally internally functions should not be `@export`'d but
+exceptions may arise.)
+
+During this period of development, after documenting an internal function, add
+it to the "_pkgdown.yml" file in the appropriate category. Once flexida goes
+public, we will remove those.
