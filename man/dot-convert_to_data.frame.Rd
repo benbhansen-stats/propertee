@@ -18,13 +18,20 @@
 \code{data.frame} containing named column(s)
 }
 \description{
-Helper function for \code{Design} replacers.
+Helper function for \code{Design} replacers to ensure replacement is a
+properly named \code{data.frame}
 }
 \details{
-When given a replacement set of values (either a \code{vector} or a
-\code{data.frame}), this ensures that the replacement is a
-\code{data.frame}.
+When given a replacement set of values (e.g \code{vector} or \code{matrix}),
+this ensures that the replacement is a named \code{data.frame}.
 
-Additionally ensures proper names for replacement
+Input \code{vector}: Since it cannot be named, a vector can only be used to
+replace an existing component. If the existing component has more than 1
+column, uses the name of the first column.
+
+Input \code{matrix} or \code{data.frame}: If unnamed and replacing existing
+component, must have no more columns than original component. (If less
+columns, uses the name of the first few columns.) If named, can replace any
+number of columns.
 }
 \keyword{internal}

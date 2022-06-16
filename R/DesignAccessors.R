@@ -382,13 +382,21 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 
 ############### Helper Functions
 
-##' Helper function for \code{Design} replacers.
+##' Helper function for \code{Design} replacers to ensure replacement is a
+##' properly named \code{data.frame}
 ##'
-##' When given a replacement set of values (either a \code{vector} or a
-##' \code{data.frame}), this ensures that the replacement is a
-##' \code{data.frame}.
+##' When given a replacement set of values (e.g \code{vector} or \code{matrix}),
+##' this ensures that the replacement is a named \code{data.frame}.
 ##'
-##' Additionally ensures proper names for replacement
+##' Input \code{vector}: Since it cannot be named, a vector can only be used to
+##' replace an existing component. If the existing component has more than 1
+##' column, uses the name of the first column.
+##'
+##' Input \code{matrix} or \code{data.frame}: If unnamed and replacing existing
+##' component, must have no more columns than original component. (If less
+##' columns, uses the name of the first few columns.) If named, can replace any
+##' number of columns.
+##'
 ##' @title (Internal) Ensures replacement column for \code{Design} is a
 ##'   \code{data.frame}.
 ##' @param value A \code{vector} or \code{data.frame} containing a replacement.
@@ -397,30 +405,48 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 ##' @return \code{data.frame} containing named column(s)
 ##' @keywords internal
 .convert_to_data.frame <- function(value, design, type) {
-  if (!is(value, "data.frame")) {
-    if (is.null(colnames(value))) {
-      null_name <- TRUE
-    } else {
-      null_name <- FALSE
-    }
-    value <- as.data.frame(value)
-    if (nrow(design@structure) != nrow(value)) {
-      stop("replacement entries do not have same number of rows as current")
-    }
-    if (null_name) {
-      old_names <- var_names(design, type)
-      if (length(old_names) > ncol(value)) {
-        old_names <- old_names[seq_len(ncol(value))]
-      } else if (length(old_names) < ncol(value)) {
-        stop("additional variables must be named")
-      }
-      colnames(value) <- old_names
-    }
+  if (!type %in% c("t", "f", "u", "b")) {
+    stop("Invalid type argument")
   }
+
+  # colnames(value) will return NULL if passed a vector, or a matrix/df without
+  # names
+  if (is.null(colnames(value))) {
+    null_name <- TRUE
+  } else {
+    null_name <- FALSE
+  }
+
+  if (!is(value, "data.frame")) {
+    # Gives a nice error (cannot convert class to data.frame) so no need for
+    # tryCatch here
+    value <- as.data.frame(value)
+  }
+
   if (nrow(design@structure) != nrow(value)) {
     stop("replacement entries do not have same number of rows as current")
   }
-  value
+
+  if (null_name) {
+    old_names <- var_names(design, type)
+    if (length(old_names) > ncol(value)) {
+      # If replacement has less columns, and we need to rename, take the first
+      # few names from the original component.
+      old_names <- old_names[seq_len(ncol(value))]
+    } else if (length(old_names) < ncol(value)) {
+      if (length(old_names) == 0) {
+        # No original component in design
+        stop("Adding a new component requires a named `data.frame`")
+      } else {
+        # Original component is shorter
+        stop(paste("Replacement component has more columns than original,",
+                   "replacement must be named"))
+      }
+    }
+    colnames(value) <- old_names
+  }
+
+  return(value)
 }
 
 ##' Assumes \code{.convert_to_data.frame()} has already been called on

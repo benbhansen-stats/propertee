@@ -148,7 +148,7 @@ test_that("Accessing and replacing unit of assignment", {
   m <- matrix(1:40, ncol = 4)
   des2 <- des
   expect_error(units_of_assignment(des2) <- m,
-               "be named")
+               "must be named")
   colnames(m) <- letters[1:4]
   units_of_assignment(des2) <- m
   expect_identical(var_names(des2, "u"), colnames(m))
@@ -231,7 +231,7 @@ test_that("Accessing and replacing clusters", {
   m <- matrix(1:40, ncol = 4)
   des2 <- des
   expect_error(clusters(des2) <- m,
-               "be named")
+               "must be named")
   colnames(m) <- letters[1:4]
   clusters(des2) <- m
   expect_identical(var_names(des2, "u"), colnames(m))
@@ -308,7 +308,7 @@ test_that("Accessing and replacing unitids", {
   m <- matrix(1:40, ncol = 4)
   des2 <- des
   expect_error(unitids(des2) <- m,
-               "be named")
+               "must be named")
   colnames(m) <- letters[1:4]
   unitids(des2) <- m
   expect_identical(var_names(des2, "u"), colnames(m))
@@ -674,4 +674,134 @@ test_that("treatment extraction with NA", {
   expect_identical(o, treatment(des, binary = FALSE)[, 1])
 
 
+})
+
+test_that("convert_to_data.frame add'l testing", {
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  ##### Replacing existing component
+  # vector
+  cdf <- .convert_to_data.frame(1:10, des, "t")
+  expect_s3_class(cdf, "data.frame")
+  expect_equal(dim(cdf), c(10, 1))
+  expect_equal(names(cdf), "z")
+
+  # unnamed matrix
+  cdf <- .convert_to_data.frame(matrix(1:10, nrow = 10), des, "t")
+  expect_equal(names(cdf), "z")
+
+  # named matrix
+  mm <- matrix(1:10, nrow = 10)
+  colnames(mm) <- "w"
+  cdf <- .convert_to_data.frame(mm, des, "t")
+  expect_equal(names(cdf), "w")
+
+  # unnamed data.frame
+  df <- data.frame(1:10)
+  colnames(df) <- NULL
+  cdf <- .convert_to_data.frame(df, des, "t")
+  expect_equal(names(cdf), "z")
+
+  # named data.frame
+  cdf <- .convert_to_data.frame(data.frame(a = 1:10), des, "t")
+  expect_equal(names(cdf), "a")
+
+  ##### Entering new components
+  # vector
+  expect_error(.convert_to_data.frame(1:10, des, "b"),
+               "requires a named")
+
+  # unnamed matrix
+  expect_error(.convert_to_data.frame(matrix(1:10, nrow = 10), des, "b"),
+               "requires a named")
+
+  # named matrix
+  mm <- matrix(1:10, nrow = 10)
+  colnames(mm) <- "w"
+  cdf <- .convert_to_data.frame(mm, des, "b")
+  expect_equal(names(cdf), "w")
+
+  # unnamed data.frame
+  df <- data.frame(1:10)
+  colnames(df) <- NULL
+  expect_error(.convert_to_data.frame(df, des, "b"),
+               "requires a named")
+
+  # named data.frame
+  cdf <- .convert_to_data.frame(data.frame(a = 1:10), des, "b")
+  expect_equal(names(cdf), "a")
+
+  ##### Multiple columns
+
+  # Matrix
+  mm <- matrix(1:20, nrow = 10)
+  cdf <- .convert_to_data.frame(mm, des, "u")
+  expect_s3_class(cdf, "data.frame")
+  expect_equal(dim(cdf), c(10, 2))
+  expect_equal(names(cdf), c("cid1", "cid2"))
+
+  expect_error(.convert_to_data.frame(mm, des, "b"),
+               "requires a named")
+
+  colnames(mm) <- c("a", "b")
+  cdf <- .convert_to_data.frame(mm, des, "u")
+  expect_equal(names(cdf), c("a", "b"))
+  cdf <- .convert_to_data.frame(mm, des, "b")
+  expect_equal(names(cdf), c("a", "b"))
+
+  # data.frame
+  df <- data.frame(a = 1:10, b = 1:10)
+  cdf <- .convert_to_data.frame(df, des, "u")
+  expect_s3_class(cdf, "data.frame")
+  expect_equal(dim(cdf), c(10, 2))
+  expect_equal(names(cdf), c("a", "b"))
+  cdf <- .convert_to_data.frame(df, des, "b")
+  expect_equal(names(cdf), c("a", "b"))
+
+  colnames(df) <- NULL
+  cdf <- .convert_to_data.frame(df, des, "u")
+  expect_equal(names(cdf), c("cid1", "cid2"))
+
+  expect_error(.convert_to_data.frame(df, des, "b"),
+               "requires a named")
+
+
+  ##### Extra columns
+
+  # Matrix
+  mm <- matrix(1:30, nrow = 10)
+  expect_error(.convert_to_data.frame(mm, des, "u"),
+               "must be named")
+
+  expect_error(.convert_to_data.frame(mm, des, "b"),
+               "requires a named")
+
+  colnames(mm) <- c("a", "b", "c")
+  cdf <- .convert_to_data.frame(mm, des, "u")
+  expect_s3_class(cdf, "data.frame")
+  expect_equal(dim(cdf), c(10, 3))
+  expect_equal(names(cdf), c("a", "b", "c"))
+  cdf <- .convert_to_data.frame(mm, des, "b")
+  expect_equal(names(cdf), c("a", "b", "c"))
+
+  # data.frame
+  df <- data.frame(a = 1:10, b = 1:10, c = 1:10)
+  cdf <- .convert_to_data.frame(df, des, "u")
+  expect_equal(names(cdf), c("a", "b", "c"))
+  cdf <- .convert_to_data.frame(df, des, "b")
+  expect_equal(names(cdf), c("a", "b", "c"))
+
+  colnames(df) <- NULL
+  expect_error(.convert_to_data.frame(df, des, "u"),
+               "must be named")
+  expect_error(.convert_to_data.frame(df, des, "b"),
+               "requires a named")
+
+
+
+  expect_error(.convert_to_data.frame(1:10, des, "q"),
+               "Invalid type")
+
+  expect_error(.convert_to_data.frame(lm(1~1), des, "u"))
 })
