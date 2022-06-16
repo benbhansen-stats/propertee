@@ -17,7 +17,7 @@ reference:
 - contents:
     - treatment
     - .bin_txt
-    - .binarize_treatment
+    - .apply_dichotomy
     - .convert_to_data.frame
     - .update_structure
     - .update_call_formula

@@ -82,47 +82,50 @@ setMethod("treatment<-", "Design", function(x, value) {
     }
     return(tt)
   }
-  .binarize_treatment(treatment(des, binary = FALSE),
-                      des@dichotomy)
+  return(.apply_dichotomy(treatment(des, binary = FALSE),
+                          des@dichotomy))
 }
 
-##' @title (Internal) Uses a \code{@dichotomy} to create a binary version of the
-# treatment variable.
-##' @param trt A named \code{data.frame} containing a single column of the
+##' Given a treatment variable (passed as a named \code{data.frame}) and a
+##' dichotomy formula (see help on \code{rct_design()} for details on
+##' specification), returns \code{vector} containing only \code{0}, \code{1}, or
+##' \code{NA}.
+##' @title (Internal) Applies dichotomy to treatment
+##' @param txt A named \code{data.frame} containing a single column of the
 ##'   treatment, such as that produed by `treatment(mydesign)`.
-##' @param dichot A dichotomization formula. See the details in the Details for
-##'   the help of \code{rct_design()}.
+##' @param dichotomy A dichotomization formula. See the details in the Details
+##'   for the help of \code{rct_design()}.
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
-.binarize_treatment <- function(trt, dichot) {
+.apply_dichotomy <- function(txt, dichotomy) {
 
-  if (!is(dichot, "formula")) {
+  if (!is(dichotomy, "formula")) {
     stop("`dichotomy` must be formula")
   }
 
-  if (!is.data.frame(trt)) {
-    stop(paste("`trt` is expected to be a named `data.frame`",
+  if (!is.data.frame(txt)) {
+    stop(paste("`txt` is expected to be a named `data.frame`",
                "(e.g. from `treatment(des)`)"))
   }
 
   lhs_dot <- rhs_dot <- FALSE
-  if (dichot[[3]] == ".") {
+  if (dichotomy[[3]] == ".") {
     # control group is .
     # control goes first since txt switches LHS and RHS
-    dichot[[3]] <- 1
+    dichotomy[[3]] <- 1
     rhs_dot <- TRUE
   }
-  if (dichot[[2]] == ".") {
+  if (dichotomy[[2]] == ".") {
     # treatment group is .
-    dichot[[2]] <- dichot[[3]]
-    dichot[[3]] <- 1
+    dichotomy[[2]] <- dichotomy[[3]]
+    dichotomy[[3]] <- 1
     lhs_dot <- TRUE
   }
   if (lhs_dot & rhs_dot) {
     stop("At least one side for dichotomy formula must not be `.`")
   }
 
-  m <- model.frame(dichot, trt, na.action = na.pass)
+  m <- model.frame(dichotomy, txt, na.action = na.pass)
 
   if (lhs_dot) {
     return(as.numeric(!m[,1]))
