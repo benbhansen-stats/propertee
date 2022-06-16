@@ -15,21 +15,21 @@
 ##' @export
 ##' @rdname WeightCreators
 ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
-  .weights_calc(design = design,
-                target = "ett",
-                dichotomy = dichotomy,
-                by = by,
-                data = data)
+  return(.weights_calc(design = design,
+                       target = "ett",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
 }
 
 ##' @export
 ##' @rdname WeightCreators
 ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
-  .weights_calc(design = design,
-                target = "ate",
-                dichotomy = dichotomy,
-                by = by,
-                data = data)
+  return(.weights_calc(design = design,
+                       target = "ate",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
 }
 
 ##' Called from \code{ate()} or \code{ett()}.
@@ -128,8 +128,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     }
   }
 
-  .join_design_weights(weights, design, target = target,
-                       data = data)
+  return(.join_design_weights(weights, design, target = target, data = data))
 }
 
 ##' Helper function called during creation of the weights via \code{ate()} or
@@ -154,8 +153,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   weights <- .merge_preserve_order(data, uoadata,
                                    by = uoanames)$design_weights
 
-  new("WeightedDesign",
-      weights,
-      Design = design,
-      target = target)
+  return(new("WeightedDesign",
+             weights,
+             Design = design,
+             target = target))
 }

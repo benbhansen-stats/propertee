@@ -17,7 +17,7 @@
 ##' @rdname DesignSpecials
 unit_of_assignment <- function(...) {
   allf <- list(...)
-  do.call(cbind, allf)
+  return(do.call(cbind, allf))
 }
 
 ##' @rdname DesignSpecials
@@ -107,7 +107,7 @@ forcing <- unit_of_assignment
     stop("Specify only one forcing() (forcing() can take multiple variables).")
   }
 
-  TRUE
+  invisible(TRUE)
 }
 
 
@@ -119,10 +119,10 @@ forcing <- unit_of_assignment
 ##'   "unit_of_assignment"
 ##' @keywords internal
 .update_form_to_unit_of_assignment <- function(form) {
-    rename_list <- list("cluster" = as.name("unit_of_assignment"),
-                        "uoa" = as.name("unit_of_assignment"),
-                        "unitid" = as.name("unit_of_assignment"))
-    as.formula(do.call("substitute", list(form, rename_list)))
+  rename_list <- list("cluster" = as.name("unit_of_assignment"),
+                      "uoa" = as.name("unit_of_assignment"),
+                      "unitid" = as.name("unit_of_assignment"))
+  return(as.formula(do.call("substitute", list(form, rename_list))))
 }
 
 ##' Check if \code{Design} has access to a binary treatment

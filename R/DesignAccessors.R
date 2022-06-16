@@ -63,7 +63,7 @@ setMethod("treatment<-", "Design", function(x, value) {
   names(x@structure)[x@column_index == "t"] <- colnames(value)
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ##' If the \code{Design} has a \code{@dichotomy}, or has a treatment variable
@@ -159,7 +159,7 @@ setMethod("units_of_assignment", "Design", function(x) {
   if (x@unit_of_assignment_type == "cluster") {
     stop("Design specified with `cluster()`, not `unit_of_assignment()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -191,7 +191,7 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Cluster
@@ -209,7 +209,7 @@ setMethod("clusters", "Design", function(x) {
   if (x@unit_of_assignment_type == "unit_of_assignment") {
     stop("Design specified with `unit_of_assignment()`, not `cluster()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -239,7 +239,7 @@ setMethod("clusters<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Unitid
@@ -257,7 +257,7 @@ setMethod("unitids", "Design", function(x) {
   if (x@unit_of_assignment_type == "unit_of_assignment") {
     stop("Design specified with `unit_of_assignment()`, not `unitid()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -287,7 +287,7 @@ setMethod("unitids<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Blocks
@@ -299,7 +299,7 @@ setGeneric("blocks", function(x) standardGeneric("blocks"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("blocks", "Design", function(x) {
-  x@structure[x@column_index == "b"]
+  return(x@structure[x@column_index == "b"])
 })
 
 ##' @export
@@ -314,7 +314,7 @@ setMethod("blocks<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "b")
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Forcing
@@ -329,7 +329,7 @@ setMethod("forcings", "Design", function(x) {
   if (x@type != "RD") {
     stop("Forcing variable only used in RD designs")
   }
-  x@structure[x@column_index == "f"]
+  return(x@structure[x@column_index == "f"])
 })
 
 ##' @export
@@ -348,7 +348,7 @@ setMethod("forcings<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "f")
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### dichotomy
@@ -364,7 +364,7 @@ setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))
 ##' @export
 ##' @rdname Design_extract_dichotomy
 setMethod("dichotomy", "Design", function(x) {
-  x@dichotomy
+  return(x@dichotomy)
 })
 
 ##' @export
@@ -379,7 +379,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
   x@dichotomy <- value
   validObject(x)
-  x
+  return(x)
 })
 
 
@@ -500,5 +500,5 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   if (design@type == "RD") {
     form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
   }
-  form <- formula(form)
+  return(formula(form))
 }

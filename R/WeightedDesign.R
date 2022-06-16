@@ -22,7 +22,7 @@ setValidity("WeightedDesign", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
-  TRUE
+  return(TRUE)
 })
 
 ##' @title Show a WeightedDesign
@@ -88,7 +88,7 @@ setMethod("*", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) {
             e1@.Data <- e1@.Data * e2
             validObject(e1)
-            e1
+            return(e1)
           })
 
 ##' @rdname WeightedDesignOps
@@ -97,7 +97,7 @@ setMethod("*", signature(e1 = "numeric", e2 = "WeightedDesign"),
           function(e1, e2) {
             e2@.Data <- e1 * e2@.Data
             validObject(e2)
-            e2
+            return(e2)
           })
 
 ##' @rdname WeightedDesignOps
@@ -106,7 +106,7 @@ setMethod("/", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) {
             e1@.Data <- e1@.Data/e2
             validObject(e1)
-            e1
+            return(e1)
           })
 
 ##' @rdname WeightedDesignOps
@@ -115,7 +115,7 @@ setMethod("/", signature(e1 = "numeric", e2 = "WeightedDesign"),
           function(e1, e2) {
             e2@.Data <- e1/e2@.Data
             validObject(e2)
-            e2
+            return(e2)
           })
 
 addsubtracterror <- function() {
@@ -131,5 +131,5 @@ setGeneric("weights")
 ##' @return vector of weights
 ##' @export
 setMethod("weights", "WeightedDesign", function(object, ...) {
-  as.numeric(object)
+  return(as.numeric(object))
 })

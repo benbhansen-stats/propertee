@@ -58,7 +58,7 @@ setValidity("Design", function(object) {
   if (!length(object@dichotomy) %in% c(0, 3)) {
     return("@dichotomy invalid")
   }
-  TRUE
+  return(TRUE)
 })
 
 
@@ -201,13 +201,13 @@ setValidity("Design", function(object) {
                "constant within unit of assignment."))
   }
 
-  new("Design",
-      structure = m_collapse,
-      column_index = index,
-      type = type,
-      unit_of_assignment_type = autype,
-      call = call,
-      dichotomy = dichotomy)
+  return(new("Design",
+             structure = m_collapse,
+             column_index = index,
+             type = type,
+             unit_of_assignment_type = autype,
+             call = call,
+             dichotomy = dichotomy))
 }
 
 ##' Generates a randomized control treatment Design (\code{rct_design()}), or an
@@ -278,12 +278,12 @@ setValidity("Design", function(object) {
 rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  .new_Design(form = formula,
-             data = data,
-             type = "RCT",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "RCT",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @export
@@ -291,12 +291,12 @@ rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
-  .new_Design(form = formula,
-             data = data,
-             type = "RD",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "RD",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @export
@@ -304,12 +304,12 @@ rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  .new_Design(form = formula,
-             data = data,
-             type = "Obs",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "Obs",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @title Show a Design
@@ -361,7 +361,7 @@ var_names <- function(x, type) {
   stopifnot(class(x) == "Design")
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "u", "b", "f"))
-  names(x@structure)[x@column_index == type]
+  return(names(x@structure)[x@column_index == type])
 }
 
 ##' After calling \code{model.frame()} on the formula input to

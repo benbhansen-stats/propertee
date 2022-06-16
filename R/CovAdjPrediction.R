@@ -7,7 +7,7 @@ setClass("CovAdjPrediction",
          slots = c(Design = "Design"))
 
 setValidity("CovAdjPrediction", function(object) {
-  TRUE
+  return(TRUE)
 })
 
 ##' @title Show a CovAdjPrediction

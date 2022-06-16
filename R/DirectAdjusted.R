@@ -19,7 +19,7 @@ setValidity("DirectAdjusted", function(object) {
   if (!treatment(object) %in% names(object$coefficients)) {
     return("treatment not found in model")
   }
-  TRUE
+  return(TRUE)
 })
 
 ##' @title Show an DirectAdjusted
@@ -86,10 +86,10 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
                '("ate" or "ett")'))
   }
 
-  new("DirectAdjusted",
-      x,
-      Design = design,
-      target = target)
+  return(new("DirectAdjusted",
+             x,
+             Design = design,
+             target = target))
 }
 
 setGeneric("vcov")
@@ -100,7 +100,7 @@ setGeneric("vcov")
 ##' @return Variance-Covariance matrix
 ##' @export
 setMethod("vcov", "DirectAdjusted", function(object, ...) {
-  vcov(as(object, "lm"), ...)
+  return(vcov(as(object, "lm"), ...))
 })
 
 
@@ -117,7 +117,7 @@ setGeneric("confint")
 ##' @export
 setMethod("confint", "DirectAdjusted",
           function(object, parm, level = 0.95, ...) {
-  confint(as(object, "lm"), parm, level = level, ...)
+  return(confint(as(object, "lm"), parm, level = level, ...))
 })
 
 ##' Identify treatment variable in \code{DirectAdjusted} object

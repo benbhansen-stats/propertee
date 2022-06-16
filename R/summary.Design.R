@@ -8,7 +8,7 @@ summary.Design <- function(object, ...) {
   out$Design <- object
   out$treatment_table <- treatment_table(object)
   class(out) <- "summary.Design"
-  out
+  return(out)
 }
 
 ##' @title Print summary of \code{Design} object
