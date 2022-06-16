@@ -31,8 +31,8 @@ setMethod("show", "DirectAdjusted", function(object) {
   invisible(object)
 })
 
-##' @title Convert lm object into DirectAdjusted
-##' @param x lm object with weights containing a WeightedDesign
+##' @title Convert \code{lm} object into \code{DirectAdjusted}
+##' @param x \code{lm} object with weights containing a \code{WeightedDesign}
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
@@ -44,7 +44,7 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
 ##'   ("ate") or ETT ("ett"). (If weights are specified, this argument is
 ##'   ignored.)
-##' @return DirectAdjusted
+##' @return \code{DirectAdjusted} object
 ##' @export
 as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
   if (!is(x, "lm")) {

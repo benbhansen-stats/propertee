@@ -10,7 +10,7 @@
 ##' \code{Design}. The choice of which to use will have no impact on any
 ##' analysis, only on some output display.
 ##'
-##' @title Special terms in \code{Design}
+##' @title Special terms in \code{Design} creation formula
 ##' @param ... any number of variables of the same length.
 ##' @return the variables with appropriate labels
 ##' @export

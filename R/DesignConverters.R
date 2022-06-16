@@ -1,5 +1,9 @@
-##' Converts between \code{Design} types
-##' @title Design conversion
+##' These functions convert a \code{Design} between RD, RCT and Obs types.
+##' Converting to RD requires the addition of a forcing variable (see
+##' \code{forcing=} argument), while converting from RD requires consenting to
+##' dropping the forcing variable (see \code{loseforcing=} argument).
+##'
+##' @title Convert \code{Design} between types
 ##' @param Design \code{Design} to convert
 ##' @param data Converting to an RD requires adding a \code{forcing} variable,
 ##'   which requires access to the original data.
@@ -15,6 +19,15 @@
 ##' @export
 ##' @importFrom stats as.formula update
 ##' @rdname designconversion
+##' @examples
+##' des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+##' des
+##' as_obs_design(des)
+##' as_rd_design(des, simdata, forcing = ~ . + forcing(force))
+##' des2 <- rd_design(o ~ unitid(cid1, cid2) + forcing(force), data = simdata)
+##' des2
+##' # as_rct_design(des2) # this will produce an error
+##' as_rct_design(des2, loseforcing = TRUE)
 as_rct_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {

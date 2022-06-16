@@ -2,12 +2,12 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{as.DirectAdjusted}
 \alias{as.DirectAdjusted}
-\title{Convert lm object into DirectAdjusted}
+\title{Convert \code{lm} object into \code{DirectAdjusted}}
 \usage{
 as.DirectAdjusted(x, design = NULL, target = NULL)
 }
 \arguments{
-\item{x}{lm object with weights containing a WeightedDesign}
+\item{x}{\code{lm} object with weights containing a \code{WeightedDesign}}
 
 \item{design}{Optional, explicitly specify the \code{Design} to be used. If
 the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
@@ -23,8 +23,8 @@ argument is ignored.)}
 ignored.)}
 }
 \value{
-DirectAdjusted
+\code{DirectAdjusted} object
 }
 \description{
-Convert lm object into DirectAdjusted
+Convert \code{lm} object into \code{DirectAdjusted}
 }

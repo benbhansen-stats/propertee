@@ -98,7 +98,7 @@ unit_of_assignment for internal consistency</dd>
           
           <code><a href="DesignSpecials.html">unit_of_assignment()</a></code> <code><a href="DesignSpecials.html">unitid()</a></code> <code><a href="DesignSpecials.html">cluster()</a></code> <code><a href="DesignSpecials.html">uoa()</a></code> <code><a href="DesignSpecials.html">block()</a></code> <code><a href="DesignSpecials.html">forcing()</a></code> 
         </dt>
-        <dd>Special terms in <code>Design</code></dd>
+        <dd>Special terms in <code>Design</code> creation formula</dd>
       </dl></div><div class="section level2">
       
       <h3 id="accessors-replacers-for-design">Accessors/Replacers for Design<a class="anchor" aria-label="anchor" href="#accessors-replacers-for-design"></a></h3>
@@ -164,22 +164,23 @@ variable names.</dd>
           
           <code><a href="var_names.html">var_names()</a></code> 
         </dt>
-        <dd>Extract names of Design variables</dd>
+        <dd>Return names of variables defining the <code>Design</code></dd>
       </dl><dl><dt>
           
           <code><a href="var_table.html">var_table()</a></code> 
         </dt>
-        <dd>variable identification table</dd>
+        <dd>Table of variables identifying a <code>Design</code></dd>
       </dl><dl><dt>
           
           <code><a href="treatment_table.html">treatment_table()</a></code> 
         </dt>
-        <dd>treatment group table</dd>
+        <dd>Generate table of number of units/clusters within each treatment
+level</dd>
       </dl><dl><dt>
           
           <code><a href="design_data_concordance.html">design_data_concordance()</a></code> 
         </dt>
-        <dd>Checks for variable agreement within units of assignment</dd>
+        <dd>Check for variable agreement within units of assignment</dd>
       </dl><dl><dt>
           
           <code><a href="design_treatment_status.html">is_dichotomized()</a></code> <code><a href="design_treatment_status.html">has_binary_treatment()</a></code> <code><a href="design_treatment_status.html">is_binary_or_dichotomized()</a></code> 
@@ -200,7 +201,7 @@ variable names.</dd>
           
           <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code> 
         </dt>
-        <dd>Design conversion</dd>
+        <dd>Convert <code>Design</code> between types</dd>
       </dl><dl><dt>
           
           <code><a href="dot-remove_forcing.html">.remove_forcing()</a></code> 
@@ -219,19 +220,19 @@ variable names.</dd>
 
       <dl><dt>
           
+          <code><a href="show-Design-method.html">show(<i>&lt;Design&gt;</i>)</a></code> 
+        </dt>
+        <dd>Show a Design</dd>
+      </dl><dl><dt>
+          
           <code><a href="summary.Design.html">summary(<i>&lt;Design&gt;</i>)</a></code> 
         </dt>
-        <dd>Summary of <code>Design</code> object</dd>
+        <dd>Create summary of <code>Design</code> object</dd>
       </dl><dl><dt>
           
           <code><a href="print.summary.Design.html">print(<i>&lt;summary.Design&gt;</i>)</a></code> 
         </dt>
-        <dd>Print summary object</dd>
-      </dl><dl><dt>
-          
-          <code><a href="show-Design-method.html">show(<i>&lt;Design&gt;</i>)</a></code> 
-        </dt>
-        <dd>Show a Design</dd>
+        <dd>Print summary of <code>Design</code> object</dd>
       </dl></div><div class="section level2">
       <h2 id="weights">Weights<a class="anchor" aria-label="anchor" href="#weights"></a></h2>
       
@@ -310,7 +311,7 @@ the data</dd>
           
           <code><a href="as.DirectAdjusted.html">as.DirectAdjusted()</a></code> 
         </dt>
-        <dd>Convert lm object into DirectAdjusted</dd>
+        <dd>Convert <code>lm</code> object into <code>DirectAdjusted</code></dd>
       </dl><dl><dt>
           
           <code><a href="lmitt.html">lmitt()</a></code> 

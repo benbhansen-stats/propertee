@@ -1,4 +1,4 @@
-##' @title Summary of \code{Design} object
+##' @title Create summary of \code{Design} object
 ##' @param object Design object
 ##' @param ... Other args
 ##' @return object of class \code{summary.Design}
@@ -11,7 +11,7 @@ summary.Design <- function(object, ...) {
   out
 }
 
-##' @title Print summary object
+##' @title Print summary of \code{Design} object
 ##' @param x \code{summary.Design} object
 ##' @param ... Other args
 ##' @param max_unit_print Maximum number of treatment levels to print in
