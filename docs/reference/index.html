@@ -99,11 +99,6 @@ unit_of_assignment for internal consistency</dd>
           <code><a href="DesignSpecials.html">unit_of_assignment()</a></code> <code><a href="DesignSpecials.html">unitid()</a></code> <code><a href="DesignSpecials.html">cluster()</a></code> <code><a href="DesignSpecials.html">uoa()</a></code> <code><a href="DesignSpecials.html">block()</a></code> <code><a href="DesignSpecials.html">forcing()</a></code> 
         </dt>
         <dd>Special terms in <code>Design</code></dd>
-      </dl><dl><dt>
-          
-          <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code> 
-        </dt>
-        <dd>Design conversion</dd>
       </dl></div><div class="section level2">
       
       <h3 id="accessors-replacers-for-design">Accessors/Replacers for Design<a class="anchor" aria-label="anchor" href="#accessors-replacers-for-design"></a></h3>
@@ -190,6 +185,27 @@ variable names.</dd>
           <code><a href="design_treatment_status.html">is_dichotomized()</a></code> <code><a href="design_treatment_status.html">has_binary_treatment()</a></code> <code><a href="design_treatment_status.html">is_binary_or_dichotomized()</a></code> 
         </dt>
         <dd>Check if <code>Design</code> has access to a binary treatment</dd>
+      </dl></div><div class="section level2">
+      
+      <h3 id="conversion-between-design-types">Conversion between Design types<a class="anchor" aria-label="anchor" href="#conversion-between-design-types"></a></h3>
+      
+
+      
+    </div><div id="" class="section level2">
+      
+      
+      
+
+      <dl><dt>
+          
+          <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code> 
+        </dt>
+        <dd>Design conversion</dd>
+      </dl><dl><dt>
+          
+          <code><a href="dot-remove_forcing.html">.remove_forcing()</a></code> 
+        </dt>
+        <dd>(Internal) Removes the forcing column entirely from a <code>Design</code></dd>
       </dl></div><div class="section level2">
       
       <h3 id="summary-and-print-methods">Summary and print methods<a class="anchor" aria-label="anchor" href="#summary-and-print-methods"></a></h3>
@@ -369,6 +385,12 @@ the data</dd>
         <dd>(Internal) Locate data in call stack</dd>
       </dl><dl><dt>
           
+          <code><a href="dot-fallback_data_search.html">.fallback_data_search()</a></code> 
+        </dt>
+        <dd>(Internal) Fallback brute force method to locate <code>data</code> in the
+call stack.</dd>
+      </dl><dl><dt>
+          
           <code><a href="dot-get_design.html">.get_design()</a></code> 
         </dt>
         <dd>(Internal) Locate a <code>Design</code> in the call stack</dd>
@@ -384,6 +406,11 @@ the data</dd>
         </dt>
         <dd>(Internal) Use <code>by</code> to update <code>Design</code> with new variable
 names</dd>
+      </dl><dl><dt>
+          
+          <code><a href="dot-check_by.html">.check_by()</a></code> 
+        </dt>
+        <dd>(Internal) A few checks to ensure <code>by=</code> is valid</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>

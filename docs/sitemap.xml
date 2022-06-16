@@ -85,10 +85,16 @@
     <loc>www.github.com/reference/dot-binarize_treatment.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/dot-check_by.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/dot-check_design_formula.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-convert_to_data.frame.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/dot-fallback_data_search.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-get_data_from_model.html</loc>
@@ -104,6 +110,9 @@
   </url>
   <url>
     <loc>www.github.com/reference/dot-new_Design.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/dot-remove_forcing.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-rename_model_frame_columns.html</loc>

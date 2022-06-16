@@ -135,9 +135,13 @@
 }
 
 
-# (Internal) We try to be intelligent about finding the appropriate data. If
-# this fails, we may have need for a brute force method that just loops through
-# frames and looks for a `data` object.
+##' We try to be intelligent about finding the appropriate data. If this fails,
+##' we may have need for a brute force method that just loops through frames and
+##' looks for a `data` object.
+##' @title (Internal) Fallback brute force method to locate \code{data} in the
+##'   call stack.
+##' @return If found, the data.
+##' @keywords internal
 .fallback_data_search <- function() {
   for (i in seq_len(sys.nframe())) {
     try({

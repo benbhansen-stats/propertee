@@ -42,7 +42,16 @@
   return(design)
 }
 
-# Internal function to throw errors is `by` is inappropriate.
+##' Thie ensures that the \code{by=} argument is of the proper type, is named,
+##' and consists of only unique entries.
+##'
+##' @title (Internal) A few checks to ensure \code{by=} is valid
+##' @param by named vector or list connecting names of cluster/unit of
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data.
+##' @return \code{NULL} if no errors are found
+##' @keywords internal
 .check_by <- function(by) {
   if (!(is.vector(by) || is.list(by)) ||
         is.null(names(by)) ||
@@ -52,5 +61,5 @@
   if (any(duplicated(names(by))) || any(duplicated(by))) {
     stop("all entries in 'by' must be unique")
   }
-  NULL
+  invisible(NULL)
 }
