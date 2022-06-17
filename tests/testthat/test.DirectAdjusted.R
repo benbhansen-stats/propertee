@@ -26,15 +26,17 @@ test_that("DA ensure treatment is found", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
-  dalm2 <- lmitt(y ~ z, data = simdata, weights = ate(des))
 
-  expect_type(treatment(dalm), "character")
-  expect_length(treatment(dalm), 1)
-  expect_identical(treatment(dalm), var_names(des, "t"))
-  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+  expect_type(treatment_name(dalm), "character")
+  expect_length(treatment_name(dalm), 1)
+  expect_identical(treatment_name(dalm), var_names(des, "t"))
+  expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
 
-  dalm2 <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
-  expect_true(all.equal(dalm$coefficients, dalm2$coefficients))
+  dalm2 <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
+                                weights = ate(des)))
+  expect_true(all.equal(dalm$coefficients,
+                        dalm2$coefficients,
+                        check.names = FALSE))
 
   # two identical adopters works silently
   dalm3 <- as.DirectAdjusted(lm(y ~ adopters() + adopters(), data = simdata,
@@ -42,12 +44,6 @@ test_that("DA ensure treatment is found", {
   expect_true(all.equal(dalm$coefficients,
                         dalm3$coefficients,
                         check.names = FALSE))
-
-  # two different adopters fails
-
-  expect_error(as.DirectAdjusted(lm(y ~ adopters(des) + adopters(),
-                                    data = simdata, weights = ate(des))),
-               "Multiple adopters")
 
   # No treatment
   expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
@@ -62,10 +58,10 @@ test_that("DA ensure treatment is found", {
   dalm <- as.DirectAdjusted(lm(y ~ adopters(), data = sd2,
                                weights = ate(des)))
 
-  expect_type(treatment(dalm), "character")
-  expect_length(treatment(dalm), 1)
-  expect_identical(treatment(dalm), "adopters()")
-  expect_true(!is.na(coef(dalm)[treatment(dalm)]))
+  expect_type(treatment_name(dalm), "character")
+  expect_length(treatment_name(dalm), 1)
+  expect_identical(treatment_name(dalm), "adopters()")
+  expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
 
   des2 <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata,
                      dichotomy = o > 2 ~ . )
@@ -73,10 +69,10 @@ test_that("DA ensure treatment is found", {
   dalm2 <- as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
                                 weights = ate(des2)))
 
-  expect_type(treatment(dalm2), "character")
-  expect_length(treatment(dalm2), 1)
-  expect_identical(treatment(dalm2), "adopters()")
-  expect_true(!is.na(coef(dalm2)[treatment(dalm2)]))
+  expect_type(treatment_name(dalm2), "character")
+  expect_length(treatment_name(dalm2), 1)
+  expect_identical(treatment_name(dalm2), "adopters()")
+  expect_true(!is.na(coef(dalm2)[treatment_name(dalm2)]))
 
   expect_error(as.DirectAdjusted(lm(y ~ o, data = simdata,
                                     weights = ate(des2))),
@@ -85,11 +81,11 @@ test_that("DA ensure treatment is found", {
 
   dalm_direct <- lmitt(y ~ adopters(), data = simdata, weights = ate(des2))
 
-  expect_type(treatment(dalm_direct), "character")
-  expect_length(treatment(dalm_direct), 1)
-  expect_identical(treatment(dalm_direct), "adopters()")
+  expect_type(treatment_name(dalm_direct), "character")
+  expect_length(treatment_name(dalm_direct), 1)
+  expect_identical(treatment_name(dalm_direct), "adopters()")
   # internal name used in ittestimate
-  expect_true(!is.na(coef(dalm_direct)[treatment(dalm_direct)]))
+  expect_true(!is.na(coef(dalm_direct)[treatment_name(dalm_direct)]))
 })
 
 test_that("DirectAdjusted print/show", {

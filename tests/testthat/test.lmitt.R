@@ -4,7 +4,7 @@ test_that("lmitt", {
   des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
-  da <- lmitt(y ~ z + x, weights = ate(des), data = simdata)
+  da <- lmitt(y ~ dose + x, weights = ate(des), data = simdata)
 
   expect_s4_class(da, "DirectAdjusted")
   expect_true(is(da, "lm"))

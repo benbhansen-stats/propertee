@@ -54,6 +54,7 @@
 
   weight_design <- NULL
   covadj_design <- NULL
+  lmitt_design <- NULL
   # This avoids infinite recursion; if we're in weights or in cov_adj, don't
   # look for it again. Only adopters will look for both.
   if (sys.call(-1)[[1]] != ".weights_calc") {
@@ -62,11 +63,25 @@
   if (sys.call(-1)[[1]] != "cov_adj") {
     covadj_design <- .find.design("offset")
   }
+  found_lmitt <- grepl("^lmitt$", lapply(sys.calls(), "[[", 1))
+  if (any(found_lmitt)) {
+    lmitt_design <- get("design", sys.frame(which(found_lmitt)[1]))
+    # If its not a real design, return NULL
+    if (!is(lmitt_design, "Design")) {
+      lmitt_design <- NULL
+    }
+  }
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
-  # .find.design())
+  # .find.design() and the special lmitt case)
 
-  if (is.null(weight_design) && is.null(covadj_design)) {
+  potential_designs <- list(weight_design,
+                            covadj_design,
+                            lmitt_design)
+
+  found_designs <- !vapply(potential_designs, is.null, logical(1))
+
+  if (!any(found_designs)) {
     # Found nothing
     if (NULL_on_error) {
       return(NULL)
@@ -74,21 +89,14 @@
     stop(paste("Unable to locate Design in call stack, please use the",
                " `design` argument to pass a Design object."))
   }
-  if (is(weight_design, "Design") && is(covadj_design, "Design")) {
-    # Found both; ensure its the same Design
-    if (!identical(weight_design, covadj_design)) {
-      stop("`Design`s foundn in both `cov_adj` and weights but differ")
+  if (sum(found_designs) > 1) {
+    # Found multiple Designs; ensure they're all the same
+    if (!Reduce(identical, potential_designs[found_designs])) {
+      stop("Multiple differing `Design` found")
     }
-    return(weight_design)
   }
-
-  # Since we know they're not both NULL, and not both Designs, and they have to
-  # be one or the other, the only possible scenario is that one is NULL and one
-  # is a Design, so return the Design.
-  if (is.null(weight_design)) {
-    return(covadj_design)
-  } else {
-    return(weight_design)
-  }
+  # At this point, we know at least one design is non-NULL, and if there are
+  # multiple, they're duplicates, so just take the first real Design.
+  return(potential_designs[found_designs][[1]])
 
 }

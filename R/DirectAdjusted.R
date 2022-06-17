@@ -16,7 +16,11 @@ setValidity("DirectAdjusted", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
-  if (!treatment(object) %in% names(object$coefficients)) {
+  if (!treatment_name(object) %in%
+        rownames(attr(terms(object), "factors"))[-1]) {
+    # Ensures that treatment variable appears somewhere in RHS (-1 removes
+    # outcome) of formula. If created by `lmitt()`, treatment will be
+    # "adopters()"; but if passed from lm to as.DA, it could be a variable name.
     return("treatment not found in model")
   }
   return(TRUE)
@@ -123,34 +127,36 @@ setMethod("confint", "DirectAdjusted",
 ##' Identify treatment variable in \code{DirectAdjusted} object
 ##'
 ##' @param x \code{DirectAdjusted} model
-##' @param ... Ignored
 ##' @return Name of treatment in model.
+##' @export
 ##' @examples
 ##' data(simdata)
 ##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
 ##' mod <- lm(y ~ z, data = simdata, weights = ett(des))
 ##' damod <- as.DirectAdjusted(mod)
-##' damod$coef[treatment(damod)]
+##' damod$coef[treatment_name(damod)]
 ##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
 ##'                    dichotomy = dose > 200 ~ . )
 ##' mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
 ##' damod2 <- as.DirectAdjusted(mod2)
-##' damod2$coef[treatment(damod2)]
-setMethod("treatment", "DirectAdjusted", function(x, ...) {
+##' damod2$coef[treatment_name(damod2)]
+treatment_name <- function(x) {
 
+  cnames <- names(x$coefficients)
   adopters_regexp <- "adopters\\([^)]*\\)"
-  adopters_found <- which(grepl(adopters_regexp, names(x$coefficients)))
-  if (length(adopters_found) == 1) {
-    return(names(x$coefficients)[adopters_found])
+  adopters_match <- regmatches(cnames, regexpr(adopters_regexp, cnames))
+  if (length(unique(adopters_match)) > 1) {
+    stop(paste("Differing `adopters()` calls found;",
+               " all `adopters()` in formula must be identical."))
   }
-  if (length(adopters_found) > 1) {
-    stop("Multiple adopters() found in model formula")
+  if (length(adopters_match) > 0) {
+    return(adopters_match[1])
   }
 
   if (has_binary_treatment(x@Design)) {
     # Only if Design has a truly binary treatment variable...
     zname <- var_names(x@Design, "t")
-    if (zname %in% names(x$coefficients)) {
+    if (zname %in% cnames) {
       # If treatment variable name is found in coefficients, return it
       return(zname)
     }
@@ -159,5 +165,4 @@ setMethod("treatment", "DirectAdjusted", function(x, ...) {
   # If we hit this point, there's no adopter and non-binary treatment, so we
   # must have non-binary treatment specified
   stop("With non-binary treatment, `adopters()` must be found in formula")
-
-})
+}
