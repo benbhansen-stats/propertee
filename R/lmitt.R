@@ -38,12 +38,21 @@ lmitt <- function(formula,
       des_call <- "obs_design"
     }
 
-    new_d_call <- call(des_call,
-                       form = design,
-                       data = mf$data,
-                       subset = mf$subset,
-                       dichotomy = mf$dichotomy)
-    design <- eval(new_d_call)
+    # Build new call. All calls must include formula and data
+    new_d_call <- paste0(des_call, "(",
+                         "formula = ", deparse(design),
+                         ", data = ", deparse(mf$data))
+    # If user passed subset or dichotomy, include those. We do this so the
+    # `design@call` will be in agreement.
+#    if (!is.null(mf$subset)) {
+#      new_d_call <- paste0(new_d_call, ", subset = ", deparse(mf$subset))
+#    }
+    if (!is.null(mf$dichotomy)) {
+      new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(mf$dichotomy))
+    }
+    new_d_call <- paste0(new_d_call, ")")
+    # str2lang converts character into call
+    design <- eval(str2lang(new_d_call))
   }
 
 
