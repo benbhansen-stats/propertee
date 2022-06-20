@@ -46,6 +46,7 @@ reference:
     - .join_design_weights
     - +,WeightedDesign,numeric-method
     - weights,WeightedDesign-method
+    - subset,WeightedDesign-method
     - show,WeightedDesign-method
 - title: Covariance Adjustment
 - contents:
@@ -59,7 +60,7 @@ reference:
     - adopters
     - confint,DirectAdjusted-method
     - show,DirectAdjusted-method
-    - treatment,DirectAdjusted-method
+    - treatment_name
     - vcov,DirectAdjusted-method
 - title: Data
 - contents:
