@@ -75,13 +75,13 @@ test_that("Design argument", {
 
   mod1 <- lmitt(y ~ z, data = simdata, design = des3, target = "ate",
                 subset = simdata$dose < 300)
-  #mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des3),
-  #              subset = simdata$dose < 300)
+  mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des3),
+                subset = simdata$dose < 300)
   mod3 <- lmitt(y ~ z, data = simdata,
                 design = z ~ cluster(cid1, cid2) + block(bid),
                 target = "ate", subset = simdata$dose < 300)
   expect_true(mod3@Design@type == "Obs")
-  #expect_identical(mod1@Design, mod2@Design)
+  expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
 })

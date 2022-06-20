@@ -122,7 +122,6 @@ addsubtracterror <- function() {
   stop("Cannot perform addition or subtraction on WeightedDesigns")
 }
 
-
 setGeneric("weights")
 
 ##' @title Extract Weights from \code{WeightedDesign}
@@ -133,3 +132,32 @@ setGeneric("weights")
 setMethod("weights", "WeightedDesign", function(object, ...) {
   return(as.numeric(object))
 })
+
+setGeneric("subset")
+
+##' @title \code{WeightedDesign} subsetting
+##' @param subset Logical vector identifying values to keep or drop
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @rdname WeightedDesign.subset
+setMethod("subset", "WeightedDesign", function(x, subset) {
+  x@.Data <- subset(x@.Data, subset = subset)
+  return(x)
+})
+
+setGeneric("[")
+
+##' @param x \code{WeightedDesign} object
+##' @param i indices specifying elements to extract or replace. See
+##'   \code{help("[")} for further details.
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @importFrom methods callNextMethod
+##' @rdname WeightedDesign.subset
+setMethod("[", "WeightedDesign",
+          function(x, i) {
+            dat <- methods::callNextMethod()
+            x@.Data <- dat
+            return(x)
+
+          })

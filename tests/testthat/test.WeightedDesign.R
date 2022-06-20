@@ -493,3 +493,15 @@ test_that("Passing previously created formula", {
   mod1$call <- mod2$call <- call("ls")
   expect_identical(mod1, mod2)
 })
+
+test_that("subsetting of WeightedDesign", {
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  ww <- ate(des, data = simdata)
+
+  expect_identical(subset(ww, rep(TRUE, 50)), ww)
+  expect_identical(subset(ww, c(rep(TRUE, 10), rep(FALSE, 40)))@.Data,
+                   ww@.Data[1:10])
+
+  expect_identical(ww[], ww)
+  expect_identical(ww[1:10]@.Data, ww@.Data[1:10])
+})
