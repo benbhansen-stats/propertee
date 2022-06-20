@@ -65,11 +65,13 @@
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>model</dt>
-<dd><p>Any model which supports a <code>predict</code> function</p></dd>
+<dd><p>Any model of class <code>glm</code> or <code>lm</code> (excluding those from
+the <a href="https://CRAN.R-project.org/package=gam" class="external-link"><span class="pkg">gam</span></a> package) that supports <code>predict</code> and <code>model.matrix</code>
+methods</p></dd>
 
 
 <dt>newdata</dt>
-<dd><p>New data</p></dd>
+<dd><p>Optional; a data.frame of new data</p></dd>
 
 
 <dt>design</dt>
@@ -90,7 +92,7 @@
 <span class="r-in"><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span class="r-in"><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-in"></span>
-<span class="r-in"><span class="va">covariance_y0_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">birth</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span>
+<span class="r-in"><span class="va">covariance_y0_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span>
 <span class="r-in">                                 <span class="va">ladderk</span> <span class="op">+</span> <span class="va">experiencek</span> <span class="op">+</span> <span class="va">tethnicityk</span>,</span>
 <span class="r-in">                         data <span class="op">=</span> <span class="va">STARdata</span>, subset <span class="op">=</span> <span class="op">!</span><span class="va">treatment</span><span class="op">)</span></span>
 <span class="r-in"></span>
@@ -102,35 +104,38 @@
 <span class="r-in">               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span>
 <span class="r-in">               data <span class="op">=</span> <span class="va">STARdata</span>,</span>
 <span class="r-in">               weights <span class="op">=</span> <span class="va">STARdata_ett</span><span class="op">)</span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Offset has NA values; be careful of dropping these observations when fitting the design model</span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ett_read</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -3.473751e-11  5.513068e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -2.003983e-12  5.554179e+00 </span>
 <span class="r-in"></span>
 <span class="r-in"><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span>,</span>
 <span class="r-in">               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span>
 <span class="r-in">               data <span class="op">=</span> <span class="va">STARdata</span>,</span>
 <span class="r-in">               weights <span class="op">=</span> <span class="va">STARdata_ate</span><span class="op">)</span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Offset has NA values; be careful of dropping these observations when fitting the design model</span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -3.473803e-11  5.513068e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -1.983940e-12  5.554179e+00 </span>
 <span class="r-in"></span>
 <span class="r-in"><span class="va">ate_read_eth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span> <span class="op">*</span> <span class="va">ethnicity</span>,</span>
 <span class="r-in">                   offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span>
 <span class="r-in">                   data <span class="op">=</span> <span class="va">STARdata</span>,</span>
 <span class="r-in">                   weights <span class="op">=</span> <span class="va">STARdata_ate</span><span class="op">)</span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Offset has NA values; be careful of dropping these observations when fitting the design model</span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read_eth</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     (Intercept)                   treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -3.431666e-11                    5.888199e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.945133e-12                    5.901494e+00 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                   ethnicityafam                  ethnicityasian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.399297e-12                    8.518803e-13 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.441592e-13                   -8.113289e-13 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               ethnicityhispanic               ethnicityamindian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    9.588446e-12                   -3.814778e-12 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    2.223058e-12                    3.822258e-12 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  ethnicityother     treatmentTRUE:ethnicityafam </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    9.000381e-13                   -1.371646e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -4.934694e-13                   -1.289929e+00 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    treatmentTRUE:ethnicityasian treatmentTRUE:ethnicityhispanic </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -2.494636e+01                    3.315535e+01 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -2.494972e+01                    3.214437e+01 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> treatmentTRUE:ethnicityamindian    treatmentTRUE:ethnicityother </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    5.413922e+00                    2.776175e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    1.391799e+01                    3.202748e+00 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

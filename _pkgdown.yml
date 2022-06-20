@@ -48,10 +48,13 @@ reference:
     - weights,WeightedDesign-method
     - subset,WeightedDesign-method
     - show,WeightedDesign-method
-- title: Covariance Adjustment
+- title: Covariance Adjustment & SandwichLayer
 - contents:
     - cov_adj
-    - show,CovAdjPrediction-method
+    - as.SandwichLayer
+    - .get_ca_and_prediction_gradient
+    - show,PreSandwichLayer-method
+    - show,SandwichLayer-method
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
