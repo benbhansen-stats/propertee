@@ -55,6 +55,7 @@ reference:
     - .get_ca_and_prediction_gradient
     - show,PreSandwichLayer-method
     - show,SandwichLayer-method
+    - .show_layer
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
