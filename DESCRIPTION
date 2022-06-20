@@ -5,8 +5,7 @@ Authors@R:
     person(given = "First",
            family = "Last",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           email = "jerrick@umich.edu")
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -28,7 +27,7 @@ Depends:
 VignetteBuilder: knitr
 URL: https://github.com/benbhansen-stats/flexida
 BugReports: https://github.com/benbhansen-stats/flexida/issues
-Collate: 
+Collate:
     'Design.R'
     'WeightedDesign.R'
     'CombinedWeightedDesign.R'
