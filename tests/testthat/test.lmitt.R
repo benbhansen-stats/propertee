@@ -43,7 +43,7 @@ test_that("covariate adjustment", {
 
   da <- lmitt(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(camod))
   expect_true(!is.null(da$model$"(offset)"))
-  expect_true(is(da$model$"(offset)", "CovAdjPrediction"))
+  expect_true(is(da$model$"(offset)", "SandwichLayer"))
 
 })
 

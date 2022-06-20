@@ -39,7 +39,7 @@
     for (i in which(keyframes)) {
       possible_design_holder <- get(type, sys.frame(i))
       if (is(possible_design_holder, "WeightedDesign") ||
-          is(possible_design_holder, "CovAdjPrediction")) {
+          is(possible_design_holder, "SandwichLayer")) {
         # If we have a WeightedDesign, save it and break
         design <- possible_design_holder@Design
         break()

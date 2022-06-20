@@ -2,51 +2,186 @@ old_opt <- options()
 on.exit(options(old_opt))
 options(flexida_warn_on_conditional_treatment = FALSE)
 
-test_that("cov_adj basics", {
-  data(STARdata)
-  STARdata$id <- seq_len(nrow(STARdata))
-  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
-  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
+data(simdata)
+data(STARdata)
+STARdata$id <- seq_len(nrow(STARdata))
+Q_wo_nulls <- simdata
+Q_w_nulls <- STARdata
+Q_partial_overlap <- simdata[simdata$bid == 3,]
 
-
-  ca <- cov_adj(cmod, design = des)
+# test whether the values are the same as calling predict on the quasiexperimental
+# data if called outside of `lm`
+test_ca <- function(ca, cov_mod,  Q_) {
   expect_true(is(ca, "numeric"))
   expect_true(is(ca, "vector"))
-  expect_equal(length(ca), nrow(cmod$model))
+  expect_equal(ca@.Data, as.numeric(stats::predict(cov_mod, Q_)))
+  expect_equal(ca@fitted_covariance_model, cov_mod)
+  return(NULL)
+}
 
-  expect_error(cov_adj(cmod), "Unable to locate")
+test_that("cov_adj outside of lm call specifying newdata and design, data has NULLs", {
+  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
 
-  expect_error(cov_adj(1, design = des), "must support predict")
+  expect_warning(cov_adj(cmod, design = des, newdata = Q_w_nulls),
+                 "Offset has NA values")
+  ca <- suppressWarnings(cov_adj(cmod, design = des, newdata = Q_w_nulls))
+  test_ca(ca, cmod, Q_w_nulls)
+  expect_true(is(ca, "SandwichLayer"))
 })
 
-test_that("cov_adj as offset", {
-  data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
-  cmod <- lm(y ~ x, data = simdata)
-  m <- lm(y ~ z, data = simdata,
-          offset = cov_adj(cmod),
-          weights = ate(des))
-  expect_true(is(m$offset, "numeric"))
-  expect_true(is(m$offset, "vector"))
-
-
-  data(STARdata)
-  STARdata$id <- seq_len(nrow(STARdata))
-  des <- rct_design(stark == "small" ~ unitid(id), data = STARdata)
-  cmod <- lm(readk ~ gender + ethnicity, data = STARdata)
-
-
-  # This currently errors with
-  # Error in model.frame.default(formula = readk ~ birth + lunchk, data =
-  #STARdata, : variable lengths differ (found for '(weights)')
-  #mod <- lm(readk ~ birth + lunchk, data = STARdata,
-  #          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
-
+test_that("cov_adj outside of lm call specifying newdata and design, data has no NULLs", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  ca <- cov_adj(cmod, design = des, newdata = Q_wo_nulls)
+  test_ca(ca, cmod, Q_wo_nulls)
+  expect_true(is(ca, "SandwichLayer"))
 })
 
+test_that("cov_adj outside of lm call specifying newdata and design, data has partial overlap", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  ca <- cov_adj(cmod, design = des, newdata = Q_partial_overlap)
+  test_ca(ca, cmod, Q_partial_overlap)
+  expect_true(is(ca, "SandwichLayer"))
+})
 
+test_that("cov_adj outside of lm call specifying newdata but no design, data has NULLs", {
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+  ca <- cov_adj(cmod, newdata = Q_w_nulls)
+  test_ca(ca, cmod, Q_w_nulls)
+  expect_true(is(ca, "PreSandwichLayer"))
+})
 
+test_that("cov_adj outside of lm call specifying newdata but no design, data has no NULLs", {
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  ca <- cov_adj(cmod, newdata = Q_wo_nulls)
+  test_ca(ca, cmod, Q_wo_nulls)
+  expect_true(is(ca, "PreSandwichLayer"))
+})
 
+test_that("cov_adj outside of lm call specifying newdata but no design, data has partial overlap", {
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  ca <- cov_adj(cmod, newdata = Q_partial_overlap)
+  test_ca(ca, cmod, Q_partial_overlap)
+  expect_true(is(ca, "PreSandwichLayer"))
+})
+
+test_that("cov_adj outside of lm call not specifying newdata or design, data has NULLs", {
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+  w <- capture_warnings(cov_adj(cmod))
+  expect_true(any(vapply(w, grepl, logical(1),
+                         pattern = "quasiexperimental data in the call stack")))
+  ca <- suppressWarnings(cov_adj(cmod))
+  pred_idx <- !is.na(Q_w_nulls$readk) & !is.na(Q_w_nulls$gender) & !is.na(Q_w_nulls$ethnicity)
+  test_ca(ca, cmod, Q_w_nulls[pred_idx, ])
+  expect_true(is(ca, "PreSandwichLayer"))
+})
+
+test_that("cov_adj outside of lm call not specifying newdata or design, data has no NULLs", {
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  w <- capture_warnings(cov_adj(cmod))
+  expect_true(any(vapply(w, grepl, logical(1),
+                         pattern = "quasiexperimental data in the call stack")))
+  ca <- suppressWarnings(cov_adj(cmod))
+  test_ca(ca, cmod, Q_wo_nulls)
+  expect_true(is(ca, "PreSandwichLayer"))
+})
+
+test_that("cov_adj outside of lm call not specifying newdata or design, data has partial overlap", {
+  cmod <- lm(y ~ x, data = Q_partial_overlap)
+  w <- capture_warnings(cov_adj(cmod))
+  expect_true(any(vapply(w, grepl, logical(1),
+                         pattern = "quasiexperimental data in the call stack")))
+  ca <- suppressWarnings(cov_adj(cmod))
+  test_ca(ca, cmod, Q_partial_overlap)
+  expect_true(is(ca, "PreSandwichLayer"))
+})
+
+# test_that("cov_adj as offset with weights, data has NULLs", {
+#   # notrun right now due to bug in `ate`
+#   des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+#   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+#   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
+#                     offset = cov_adj(cmod), weights = ate(des)),
+#                  "Offset has NA values")
+#   m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
+#                            offset = cov_adj(cmod), weights = ate(des)))
+#   test_ca(m$model$`(offset)`, cmod, Q_w_nulls)
+#   expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+# })
+
+test_that("cov_adj as offset with weights, data has no NULLs", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod), weights = ate(des))
+  test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
+
+test_that("cov_adj as offset with weights, data has partial overlap", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  cmod <- lm(y ~ x, data = Q_partial_overlap)
+  m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod), weights = ate(des))
+  test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ newdata and design, no weights, data has NULLs", {
+  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+  expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
+                    offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)),
+                 "Offset has NA values")
+  m <- suppressWarnings(
+    lm(readk ~ stark == "small", data = Q_w_nulls,
+       offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)))
+  all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
+  keep_idx <- apply(is.na(Q_w_nulls[, all_vars]), 1, sum) == 0
+  test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ newdata and design, no weights, data has no NULLs", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  m <- lm(y ~ z, data = Q_wo_nulls,
+          offset = cov_adj(cmod, newdata = Q_wo_nulls, design = des))
+  test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ newdata and design, no weights, data has partial overlap", {
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  m <- lm(y ~ z, data = Q_partial_overlap,
+          offset = cov_adj(cmod, newdata = Q_partial_overlap, design = des))
+  test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has NULLs", {
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+  m <- lm(readk ~ stark == "small", data = Q_w_nulls, offset = cov_adj(cmod))
+  all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
+  keep_idx <- apply(is.na(Q_w_nulls[, all_vars]), 1, sum) == 0
+  test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has no NULLs", {
+  cmod <- lm(y ~ x, data = Q_wo_nulls)
+  m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod))
+  test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+})
+
+test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has partial overlap", {
+  cmod <- lm(y ~ x, data = Q_partial_overlap)
+  m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod))
+  test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
+  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+})
 
 ## ## Stop tidyverse from spamming the test output display
 ## options(tidyverse.quiet = TRUE)
@@ -327,3 +462,9 @@ test_that("cov_adj variance estimates for correlated predictors", {
 })
 
 options(old_opt)
+
+# This currently errors with
+# Error in model.frame.default(formula = readk ~ birth + lunchk, data =
+#STARdata, : variable lengths differ (found for '(weights)')
+# mod <- lm(readk ~ birth + lunchk, data = STARdata,
+#          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))

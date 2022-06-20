@@ -36,6 +36,7 @@ Collate:
     'DesignConverters.R'
     'DesignUtilities.R'
     'DirectAdjusted.R'
+    'SandwichLayer.R'
     'adopters.R'
     'cov_adj.R'
     'data.R'

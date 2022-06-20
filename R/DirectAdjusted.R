@@ -63,7 +63,7 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
     found_design <- x$model$"(weights)"@Design
   } else {
     capred <- .get_cov_adj(x)
-    if (is(capred, "CovAdjPrediction")) {
+    if (is(capred, "SandwichLayer")) {
       found_design <- capred@Design
     }
   }

@@ -1,20 +1,3 @@
-test_that("Showing CovAdjPrediction objects", {
-  data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-
-  ca <- lm(y ~ x, data = simdata)
-
-  cap <- cov_adj(ca, design = des)
-
-  # First expect_output silences results
-  expect_output(expect_identical(cap, show(cap)))
-
-  out   <- capture.output(show(as.vector(cap)))
-  caout <- capture.output(show(cap))
-  expect_identical(out, caout)
-
-})
-
 test_that("Finding cov_adj in model", {
 
   data(simdata)
@@ -22,7 +5,7 @@ test_that("Finding cov_adj in model", {
 
   ca <- lm(y ~ x, data = simdata)
 
-  cap <- cov_adj(ca, design = des)
+  cap <- cov_adj(ca, newdata = simdata, design = des)
 
   mod1 <- lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(ca))
   expect_identical(.get_cov_adj(mod1), cap)
