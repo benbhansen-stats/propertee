@@ -2,7 +2,7 @@
 % Please edit documentation in R/Design.R
 \name{design_data_concordance}
 \alias{design_data_concordance}
-\title{Checks for variable agreement within units of assignment}
+\title{Check for variable agreement within units of assignment}
 \usage{
 design_data_concordance(design, data, by = NULL, warn_on_nonexistence = TRUE)
 }

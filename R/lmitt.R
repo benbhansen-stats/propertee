@@ -11,45 +11,58 @@
 ##'   the \code{target]} will be found automatically. Otherwise, specify whether
 ##'   the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
 ##'   specified, this argument is ignored.)
-##' @param data See \code{lm()}
-##' @param subset See \code{lm()}
-##' @param weights See \code{lm()}
-##' @param na.action See \code{lm()}
-##' @param method See \code{lm()}
-##' @param model See \code{lm()}
-##' @param x See \code{lm()}
-##' @param y See \code{lm()}
-##' @param qr See \code{lm()}
-##' @param singular.ok See \code{lm()}
-##' @param contrasts See \code{lm()}
-##' @param offset See \code{lm()}
-##' @param ... See \code{lm()}
+##' @param ... Additional arguments passed to \code{lm()}.
 ##' @return \code{DirectAdjusted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
 lmitt <- function(formula,
                  design = NULL,
                  target = NULL,
-                 data,
-                 subset,
-                 weights,
-                 na.action,
-                 method = "qr",
-                 model = TRUE,
-                 x = FALSE,
-                 y = FALSE,
-                 qr = TRUE,
-                 singular.ok = TRUE,
-                 contrasts = NULL,
-                 offset,
                  ...) {
 
-  mf <- match.call(expand.dots = FALSE)
+  mf <- match.call()
+
+  no_adopters <- is.null(attr(terms(formula, specials = "adopters"),
+                                "specials")$adopters)
+  if (no_adopters) {
+    formula <- update(formula, . ~ . : adopters())
+  }
+
+  if (is(design, "formula")) {
+    # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
+    # must create Design manually.
+    if (!is.null(attr(terms(design, specials = "forcing"),
+                      "specials")$forcing)) {
+      des_call <- "rd_design"
+    } else {
+      des_call <- "obs_design"
+    }
+
+    # Build new call. All calls must include formula and data
+    new_d_call <- paste0(des_call, "(",
+                         "formula = ", deparse(design),
+                         ", data = ", deparse(mf$data))
+    # If user passed subset or dichotomy, include those. We do this so the
+    # `design@call` will be in agreement.
+#    if (!is.null(mf$subset)) {
+#      new_d_call <- paste0(new_d_call, ", subset = ", deparse(mf$subset))
+#    }
+    if (!is.null(mf$dichotomy)) {
+      new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(mf$dichotomy))
+    }
+    new_d_call <- paste0(new_d_call, ")")
+    # str2lang converts character into call
+    design <- eval(str2lang(new_d_call))
+  }
+
+
+  mf <- match.call()
   m <- match(c("formula", "data", "subset", "weights", "na.action",
                "method", "model", "x", "y", "qr", "singular.ok",
                "contrasts", "offset"), names(mf), 0L)
   mf <- mf[c(1L, m)]
   mf[[1L]] <- quote(stats::lm)
+  mf[[2L]] <- formula
   model <- eval(mf, parent.frame())
 
   model$call[[1]] <- as.name("lmitt")

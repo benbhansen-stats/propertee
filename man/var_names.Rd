@@ -2,7 +2,7 @@
 % Please edit documentation in R/Design.R
 \name{var_names}
 \alias{var_names}
-\title{Extract names of Design variables}
+\title{Return names of variables defining the \code{Design}}
 \usage{
 var_names(x, type)
 }
@@ -16,5 +16,11 @@ var_names(x, type)
 character vector of variable names of the given type
 }
 \description{
-Extract names of Design variables
+Return names of variables defining the \code{Design}
+}
+\examples{
+des <- obs_design(o ~ unitid(cid1, cid2), data = simdata)
+var_names(des, "t")
+var_names(des, "u")
+var_names(des, "b")
 }

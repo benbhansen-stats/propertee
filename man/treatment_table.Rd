@@ -2,7 +2,8 @@
 % Please edit documentation in R/Design.R
 \name{treatment_table}
 \alias{treatment_table}
-\title{treatment group table}
+\title{Generate table of number of units/clusters within each treatment
+level}
 \usage{
 treatment_table(design, ...)
 }
@@ -17,4 +18,8 @@ a table of treatment by units
 \description{
 Returns a table of number of units of assignment in each treatment group,
 sorted by the size of the groups
+}
+\examples{
+des <- rd_design(z ~ uoa(cid1, cid2) + forcing(force), data = simdata)
+treatment_table(des)
 }

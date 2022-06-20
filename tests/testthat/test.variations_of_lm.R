@@ -14,7 +14,8 @@ test_that("binary treatment, in all data", {
   camod <- lm(y ~ x, data = simdata)
 
   # Weight alone
-  expect_silent(as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des))))
+  expect_silent(as.DirectAdjusted(lm(y ~ z, data = simdata,
+                                     weights = ate(des))))
 
   # Adopters alone
   expect_silent(a <- lm(y ~ adopters(des), data = simdata))
@@ -24,14 +25,16 @@ test_that("binary treatment, in all data", {
   # cov_adj alone
   expect_silent(as.DirectAdjusted(lm(y ~ z, data = simdata,
                    offset = cov_adj(camod, design = des)), target = "ate"))
-  expect_silent(as.DirectAdjusted(lm(y ~ z + offset(cov_adj(camod, design = des)),
+  expect_silent(as.DirectAdjusted(lm(y ~ z + offset(cov_adj(camod,
+                                                            design = des)),
                    data = simdata), target = "ate"))
 
 
   # Weight + adopters
   expect_silent(as.DirectAdjusted(lm(y ~ adopters(), data = simdata,
                                      weights = ett(des))))
-  expect_silent(as.DirectAdjusted(lm(y ~ adopters(des), data = simdata, weights = ett(des))))
+  expect_silent(as.DirectAdjusted(lm(y ~ adopters(des), data = simdata,
+                                     weights = ett(des))))
 
 
   # weight + cov_adj

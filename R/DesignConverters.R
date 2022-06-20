@@ -1,5 +1,9 @@
-##' Converts between \code{Design} types
-##' @title Design conversion
+##' These functions convert a \code{Design} between RD, RCT and Obs types.
+##' Converting to RD requires the addition of a forcing variable (see
+##' \code{forcing=} argument), while converting from RD requires consenting to
+##' dropping the forcing variable (see \code{loseforcing=} argument).
+##'
+##' @title Convert \code{Design} between types
 ##' @param Design \code{Design} to convert
 ##' @param data Converting to an RD requires adding a \code{forcing} variable,
 ##'   which requires access to the original data.
@@ -15,6 +19,15 @@
 ##' @export
 ##' @importFrom stats as.formula update
 ##' @rdname designconversion
+##' @examples
+##' des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+##' des
+##' as_obs_design(des)
+##' as_rd_design(des, simdata, forcing = ~ . + forcing(force))
+##' des2 <- rd_design(o ~ unitid(cid1, cid2) + forcing(force), data = simdata)
+##' des2
+##' # as_rct_design(des2) # this will produce an error
+##' as_rct_design(des2, loseforcing = TRUE)
 as_rct_design <- function(Design, ..., loseforcing = FALSE) {
   if (Design@type == "RD") {
     if (!loseforcing) {
@@ -70,13 +83,25 @@ as_rd_design <- function(Design, data, ..., forcing) {
   return(Design)
 }
 
-# (Internal) Removes the forcing column to prepare conversion from RD to another
-# type.
-.remove_forcing <- function(d) {
-  d@structure <- d@structure[, d@column_index != "f"]
-  d@column_index <- d@column_index[d@column_index != "f"]
+##' In preparation for converting an RD \code{Design} to another \code{Design},
+##' this will strip the forcing variable entirely. It is removed from the data
+##' (both \code{@structure} and \code{@column_index}), as well as from the
+##' formula stored in \code{@call}.
+##'
+##' Note that the output \code{Design} will fail a validity check (with
+##' \code{validObject()}) due to an RD \code{Design} requiring a forcing
+##' variable, so change the \code{@type} immediately.
+##'
+##' @title (Internal) Removes the forcing column entirely from a \code{Design}
+##' @param des A \code{Design}
+##' @return The \code{Design} without any forcing variable
+##' @keywords internal
+.remove_forcing <- function(des) {
+  des@structure <- des@structure[, des@column_index != "f"]
+  des@column_index <- des@column_index[des@column_index != "f"]
 
-  # Remove the "forcing" element from the formula
-  d@call[[2]][[3]] <- d@call[[2]][[3]][!grepl("forcing", d@call[[2]][[3]])]
-  return(d)
+  # Remove the "forcing" element from the call formula
+  des@call[[2]][[3]] <- des@call[[2]][[3]][!grepl("forcing",
+                                                  des@call[[2]][[3]])]
+  return(des)
 }

@@ -4,24 +4,7 @@
 \alias{lmitt}
 \title{Linear Model for Intention To Treat}
 \usage{
-lmitt(
-  formula,
-  design = NULL,
-  target = NULL,
-  data,
-  subset,
-  weights,
-  na.action,
-  method = "qr",
-  model = TRUE,
-  x = FALSE,
-  y = FALSE,
-  qr = TRUE,
-  singular.ok = TRUE,
-  contrasts = NULL,
-  offset,
-  ...
-)
+lmitt(formula, design = NULL, target = NULL, ...)
 }
 \arguments{
 \item{formula}{See \code{lm()}}
@@ -39,31 +22,7 @@ the \code{target]} will be found automatically. Otherwise, specify whether
 the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
 specified, this argument is ignored.)}
 
-\item{data}{See \code{lm()}}
-
-\item{subset}{See \code{lm()}}
-
-\item{weights}{See \code{lm()}}
-
-\item{na.action}{See \code{lm()}}
-
-\item{method}{See \code{lm()}}
-
-\item{model}{See \code{lm()}}
-
-\item{x}{See \code{lm()}}
-
-\item{y}{See \code{lm()}}
-
-\item{qr}{See \code{lm()}}
-
-\item{singular.ok}{See \code{lm()}}
-
-\item{contrasts}{See \code{lm()}}
-
-\item{offset}{See \code{lm()}}
-
-\item{...}{See \code{lm()}}
+\item{...}{Additional arguments passed to \code{lm()}.}
 }
 \value{
 \code{DirectAdjusted} model.

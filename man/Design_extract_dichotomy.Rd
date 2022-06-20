@@ -16,9 +16,9 @@ dichotomy(x) <- value
 \S4method{dichotomy}{Design}(x) <- value
 }
 \arguments{
-\item{x}{Design object}
+\item{x}{\code{Design} object}
 
-\item{value}{Replacement dichotomy formula, or \code{NULL} to remove}
+\item{value}{Replacement \code{dichotomy} formula, or \code{NULL} to remove}
 }
 \value{
 Dichomization formula

@@ -27,7 +27,7 @@ excluded if these functions are included as the \code{weights} argument of
 a model.}
 }
 \value{
-a WeightedDesign object
+a \code{WeightedDesign} object
 }
 \description{
 Generate Direct Adjusted Weights

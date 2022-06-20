@@ -2,7 +2,7 @@
 % Please edit documentation in R/Design.R
 \name{var_table}
 \alias{var_table}
-\title{variable identification table}
+\title{Table of variables identifying a \code{Design}}
 \usage{
 var_table(design, compress = TRUE, report_all = FALSE)
 }
@@ -33,4 +33,9 @@ rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
 \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
 rows (treatment and cluster/unitid/unif of assignment), with additional rows
 for blocks and forcing if included in the \code{Design}.
+}
+\examples{
+des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+var_table(des)
+var_table(des, compress = FALSE)
 }

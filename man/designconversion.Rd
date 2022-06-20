@@ -4,7 +4,7 @@
 \alias{as_rct_design}
 \alias{as_obs_design}
 \alias{as_rd_design}
-\title{Design conversion}
+\title{Convert \code{Design} between types}
 \usage{
 as_rct_design(Design, ..., loseforcing = FALSE)
 
@@ -33,5 +33,18 @@ variable. This should be entered as the update to a formula, e.g.
 \code{Design} of the updated type
 }
 \description{
-Converts between \code{Design} types
+These functions convert a \code{Design} between RD, RCT and Obs types.
+Converting to RD requires the addition of a forcing variable (see
+\code{forcing=} argument), while converting from RD requires consenting to
+dropping the forcing variable (see \code{loseforcing=} argument).
+}
+\examples{
+des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+des
+as_obs_design(des)
+as_rd_design(des, simdata, forcing = ~ . + forcing(force))
+des2 <- rd_design(o ~ unitid(cid1, cid2) + forcing(force), data = simdata)
+des2
+# as_rct_design(des2) # this will produce an error
+as_rct_design(des2, loseforcing = TRUE)
 }

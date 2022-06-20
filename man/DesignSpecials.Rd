@@ -7,7 +7,7 @@
 \alias{uoa}
 \alias{block}
 \alias{forcing}
-\title{Special terms in \code{Design}}
+\title{Special terms in \code{Design} creation formula}
 \usage{
 unit_of_assignment(...)
 
