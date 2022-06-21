@@ -56,28 +56,84 @@ get_overlap_vcov_matrix <- function(x) {
   return(t(cmod_eqns) %*% dmod_eqns)
 }
 
-#' @title Get the "bread" matrix for the Direct Adjustment Model
-#' @param x DirectAdjusted
-#' @return 1x1 matrix. We follow Carroll et al.'s formulation (2006, pp. 373) of
-#' this matrix, which is the sum of the gradients of the direct adjustment
-#' model's estimating equations taken with respect to the treatment variable.
-#' @export
-get_da_bread <- function(x) {
+#' @title (Internal) Get the inverse of the A22 block of the sandwich variance estimator
+#' @param x A DirectAdjusted model object
+#' @details This block is the diagonal element of the inverse expected Fisher
+#' Information matrix corresponding to the treatment estimate. As shown in the
+#' Details of \code{\link{.get_b22}}, the estimating equations for a generalized
+#' linear model can be written as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i}
+#' / \phi} The information matrix A22 is then the negative
+#' Jacobian of \eqn{\psi_{i}}: \deqn{A_{22} = \partial\psi_{i}/\partial\beta =
+#' -w_{i}(d\mu(x_{i}\beta)/dx_{i}\beta)x_{i}x_{i}' / \phi} In
+#' matrix form, this can be expressed as \eqn{-X'WX}, where W is a diagonal
+#' matrix of the vector of elementwise products of the terms not
+#' found in the model matrix.
+#' @return A 1x1 matrix
+#' @keywords internal
+.get_a22_inverse <- function(x) {
   if (!is(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
 
-  uoanames <- var_names(x@Design, "u")
+  # Get Fisher information matrix
+  if ("glm" %in% x@.S3Class) {
+    dispersion <- stats::summary.glm(x)$dispersion
+    mu.eta <- x$family$mu.eta(x$linear.predictors)
+  } else {
+    dispersion <- 1
+    mu.eta <- rep(1, length(x$fitted.values))
+  }
+
+  W <- diag(as.numeric(-x$weights * mu.eta / dispersion))
+
+  fim <- -(t(stats::model.matrix(x)) %*% W %*% stats::model.matrix(x))
   zname <- var_names(x@Design, "t")
+  return(solve(fim)[zname, zname, drop = FALSE])
+}
 
-  # Get cluster-level Fisher information matrix for DA model then subset to txt
-  # sandwich's estfun = resids * wts * mu.eta(linear_predictors) / v(lin_predictors) * X
-  eqns <- Reduce(
-    rbind,
-    by(sandwich::estfun(x),
-       lapply(uoanames, function(col) stats::expand.model.frame(x, col)[, col]),
-       colSums))
-  fim <- t(eqns) %*% eqns
+#' @title (Internal) Get the B22 block of the sandwich variance estimator
+#' @param x A DirectAdjusted model object
+#' @details This block refers to the treatment assignment-level variance estimate
+#' of the treatment effect. The \code{stats} package offers family objects with
+#' canonical link functions, so the log-likelihood for a generalized linear model
+#' can be written in terms of the linear predictor as \deqn{L(y_{i}, \beta, \phi,
+#' w_{i}) = w_{i}(y_{i}\beta'x_{i} - b(\beta'x_{i})) / \phi + h(y_{i}; \phi)}
+#' The estimating equations \eqn{\psi_{i}} given by the score function can then be
+#' expressed as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i} / \phi}
+#' 
+#' Where J is the number of units at the level where the treatment was assigned
+#' in the experimental design, a matrix C of dimension nxJ is formed to indicate
+#' which unit each subject in the design belongs to. The treatment assignment-
+#' level estimating equations are then obtained via \eqn{C'\psi}, where \eqn{\psi}
+#' is the matrix of estimating equations at the subject level.
+#' @return A (p+1)x(p+1) matrix where the dimensions are given by the number of
+#' terms in the treatment model (p) and an Intercept term. Typically, this should
+#' be a 2x2 matrix given the dichotomous handling of treatment variables in this
+#' package and the use of the covariance model to offer the covariance adjustment. 
+#' @keywords internal
+.get_b22 <- function(x) {
+  if (!is(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
 
-  return(fim[zname, zname, drop = FALSE])
+  # Get wide table of unit of assignment indicators
+  uoanames <- var_names(x@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(x, uoanames)[, uoanames])
+  
+  # Get unit of assignment-level est. eqns
+  # The sandwich package uses a different dispersion calculation from the stats
+  # package, so to keep in line with the stats package, we use mostly the same
+  # code as sandwich::estfun but swap the dispersion calculation
+  if ("glm" %in% x@.S3Class) {
+    eqns <- x$weights * x$residuals * stats::model.matrix(x) / stats::summary.glm(x)$dispersion
+  } else {
+    eqns <- x$weights * x$residuals * stats::model.matrix(x)
+  }
+  
+  cluster_eqns <- crossprod(uoa_matrix, eqns)
+  vcov <- crossprod(cluster_eqns)
+  zname <- var_names(x@Design, "t")
+  return(vcov[zname, zname, drop = FALSE])
 }

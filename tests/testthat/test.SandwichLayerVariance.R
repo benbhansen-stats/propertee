@@ -127,91 +127,179 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for experimental"
   expect_true(all(get_overlap_vcov_matrix(m) == 0))
 })
 
-test_that("get_da_bread used without a DirectAdjusted model", {
+test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
   
-  expect_error(get_da_bread(cmod), "must be a DirectAdjusted")
+  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(.get_b22(cmod), "must be a DirectAdjusted")
+  expect_error(.get_a11(cmod), "must be a DirectAdjusted")
 })
 
-test_that("get_da_bread returns correct value for `lm` object", {
+test_that(".get_a22_inverse returns correct value for lm", {
   data(simdata)
-  # cluster_data <- data.frame(Reduce(
-  #   rbind,
-  #   by(simdata[, c("cid1", "cid2", "z", "x", "y")],
-  #      lapply(c("cid1", "cid2"), function(col) simdata[, col]),
-  #      colMeans)), row.names = NULL)
-
-  cmod <- lm(y ~ x, data = simdata)
+  
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  uoanames <- var_names(des, "u")
+  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  
+  fim <- crossprod(sqrt(m$weights) * stats::model.matrix(m))
   zname <- var_names(des, "t")
-  # des2 <- rct_design(z ~ cluster(cid1, cid2), data = cluster_data)
-
-  m <- as.DirectAdjusted(
-    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
-  )
-  # m2 <- as.DirectAdjusted(
-  #   lm(y ~ z, data = cluster_data, weights = ate(des2), offset = cov_adj(cmod))
-  # )
-  
-
-  mm <- stats::model.matrix(m)
-  eqns <- Reduce(
-    rbind,
-    by(m$residuals * m$weights * mm,
-       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
-       colSums))
-  fim <- t(eqns) %*% eqns
-  
-  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
-  # expect_equal(get_da_bread(m2), fim[zname, zname, drop = FALSE])
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
 })
 
-test_that("get_da_bread returns correct value for Poisson `glm` object", {
+test_that(".get_a22_inverse returns correct value for glm fit with Gaussian family", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  uoanames <- var_names(des, "u")
-  zname <- var_names(des, "t")
-  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
   
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.DirectAdjusted(glm(y ~ z, data = simdata, weights = ate(des)))
+  
+  dispersion <- sum(m$weights * m$residuals^2) / m$df.residual
+  fim <- crossprod(sqrt(m$weights / dispersion) * stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_a22_inverse returns correct value for glm fit with poisson family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.DirectAdjusted(
-    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::poisson())
   )
-  mm <- stats::model.matrix(m)
-  eqns <- Reduce(
-    rbind,
-    by(m$residuals * m$weights * exp(m$linear.predictors) / exp(m$linear.predictors) * mm,
-       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
-       colSums))
-  fim <- t(eqns) %*% eqns
   
-  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
+  fim <- crossprod(sqrt(m$weights * m$family$mu.eta(m$linear.predictors)) *
+                     stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
 })
 
-test_that("get_da_bread returns correct value for Binomial `glm` object", {
+test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson family", {
   data(simdata)
+  
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  uoanames <- var_names(des, "u")
-  zname <- var_names(des, "t")
-  cmod <- suppressWarnings(
-    glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::quasipoisson())
   )
   
-  m <- suppressWarnings(
-    as.DirectAdjusted(
-      glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata,
-          weights = ate(des), offset = cov_adj(cmod), family = stats::binomial())
-  ))
-  mm <- stats::model.matrix(m)
-  p <- exp(m$linear.predictors) / (1 + exp(m$linear.predictors))
+  dispersion <- sum(m$weights * m$residuals^2) / m$df.residual
+  fim <- crossprod(sqrt(m$weights * m$family$mu.eta(m$linear.predictors) / dispersion) *
+                     stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for lm object", {
+  data(simdata)
+
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+
   eqns <- Reduce(
     rbind,
-    by(m$residuals * m$weights * p * (1-p) / (p * (1-p)) * mm,
-       lapply(uoanames, function(col) stats::expand.model.frame(m, col)[, col]),
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m)),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
        colSums))
-  fim <- t(eqns) %*% eqns
+  vcov <- crossprod(eqns)
   
-  expect_equal(get_da_bread(m), fim[zname, zname, drop = FALSE])
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
+})
+
+test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.DirectAdjusted(glm(y ~ z, data = simdata, weights = ate(des)))
+  
+  dispersion <- sum(m$weights * m$residuals^2) / m$df.residual
+  eqns <- Reduce(
+    rbind,
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m) / dispersion),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
+       colSums))
+  vcov <- crossprod(eqns)
+  
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for poisson glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::poisson())
+  )
+  
+  # dispersion = 1 for poisson family
+  eqns <- Reduce(
+    rbind,
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m)),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
+       colSums))
+  vcov <- crossprod(eqns)
+  
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for quasi-poisson glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::quasipoisson())
+  )
+  
+  dispersion <- sum(m$weights * m$residuals^2) / m$df.residual
+  eqns <- Reduce(
+    rbind,
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m) / dispersion),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
+       colSums))
+  vcov <- crossprod(eqns)
+  
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for binomial glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- suppressWarnings(
+    as.DirectAdjusted(
+      glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
+          family = stats::binomial())
+  ))
+
+  eqns <- Reduce(
+    rbind,
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m)),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
+       colSums))
+  vcov <- t(eqns) %*% eqns
+  
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for quasibinomial glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- suppressWarnings(
+    as.DirectAdjusted(
+      glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
+          family = stats::quasibinomial())
+    ))
+  
+  dispersion <- sum(m$weights * m$residuals^2) / m$df.residual
+  eqns <- Reduce(
+    rbind,
+    by(data.frame(m$weights * m$residuals * stats::model.matrix(m) / dispersion),
+       lapply(var_names(des, "u"), function(col) simdata[, col]),
+       colSums))
+  vcov <- crossprod(eqns)
+  
+  expect_equal(.get_b22(m), vcov["z", "z", drop = FALSE])
 })
