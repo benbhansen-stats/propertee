@@ -72,6 +72,12 @@ test_that("DA ensure treatment is found", {
                         dalm3$coefficients,
                         check.names = FALSE))
 
+  # two different adopters fails
+  expect_error(as.DirectAdjusted(lm(y ~ adopters(des) + adopters(),
+                                    data = simdata,
+                                    weights = ate(des),
+                                    offset = cov_adj(cmod))),
+               "Differing `adopters")
   # No treatment
   expect_error(as.DirectAdjusted(lm(y ~ x, data = simdata, weights = ate(des))),
                "Treatment z")

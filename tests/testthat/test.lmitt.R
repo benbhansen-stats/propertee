@@ -85,3 +85,20 @@ test_that("Design argument", {
   expect_identical(mod1@Design, mod3@Design)
 
 })
+
+test_that("Dichotomy option in Design creation", {
+
+  data(simdata)
+  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
+                    dichotomy = dose > 200 ~ .)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, target = "ate", design = des)
+  mod2 <- lmitt(y ~ adopters(), data = simdata,
+                design = dose ~ cluster(cid1, cid2),
+                dichotomy = dose > 200 ~ .,
+                target = "ate")
+  expect_identical(mod1@Design, mod2@Design)
+  expect_true(all.equal(mod1$coefficients, mod2$coefficients,
+                        check.attributes =  FALSE))
+
+
+})
