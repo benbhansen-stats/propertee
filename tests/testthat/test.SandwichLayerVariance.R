@@ -23,11 +23,11 @@ test_correct_b12 <- function(m) {
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_equal(get_overlap_vcov_matrix(m),
+  expect_equal(.get_b12(m),
                t(cmod_eqns) %*% m_eqns)
 }
 
-test_that("get_overlap_vcov_matrix used with DA model without SandwichLayer offset", {
+test_that(".get_b12 used with DA model without SandwichLayer offset", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
@@ -36,11 +36,11 @@ test_that("get_overlap_vcov_matrix used with DA model without SandwichLayer offs
     lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(get_overlap_vcov_matrix(m),
+  expect_error(.get_b12(m),
                "must have an offset of class")
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-level",
+test_that(paste(".get_b12 returns expected B_12 for individual-level",
                 "experimental data identical to cov model data"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -53,7 +53,7 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-le
   test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level",
+test_that(paste(".get_b12 returns expected B_12 for cluster-level",
                 "experimental data whose rows fully overlap with cov model data"), {
   data(simdata)
   cluster_ids <- unique(simdata[, c("cid1", "cid2")])
@@ -74,7 +74,7 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level
   test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-level",
+test_that(paste(".get_b12 returns expected B_12 for individual-level",
                 "experimental data that is a subset of cov model data"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -88,7 +88,7 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for individual-le
   test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level",
+test_that(paste(".get_b12 returns expected B_12 for cluster-level",
                 "experimental data that is a subset of cov model data"), {
   data(simdata)
   subset_cluster_ids <- unique(simdata[simdata$cid2 == 1, c("cid1", "cid2")])
@@ -111,7 +111,7 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for cluster-level
   test_correct_b12(m)
 })
 
-test_that(paste("get_overlap_vcov_matrix returns expected B_12 for experimental",
+test_that(paste(".get_b12 returns expected B_12 for experimental",
                 "data that has no overlap with cov model data"), {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
@@ -123,8 +123,8 @@ test_that(paste("get_overlap_vcov_matrix returns expected B_12 for experimental"
     lm(y ~ z + force, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
 
-  expect_equal(dim(get_overlap_vcov_matrix(m)), c(2, 3))
-  expect_true(all(get_overlap_vcov_matrix(m) == 0))
+  expect_equal(dim(.get_b12(m)), c(2, 3))
+  expect_true(all(.get_b12(m) == 0))
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
@@ -133,7 +133,6 @@ test_that("variance helper functions fail without a DirectAdjusted model", {
   
   expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
   expect_error(.get_b22(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a11(cmod), "must be a DirectAdjusted")
 })
 
 test_that(".get_a22_inverse returns correct value for lm", {

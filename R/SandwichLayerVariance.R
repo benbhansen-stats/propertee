@@ -1,18 +1,19 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Generate Cluster-level Estimating Equations Covariance Matrix
-#' for Overlapping Rows in Experimental and Covariance Model Data
-#' @description `get_overlap_vcov_matrix` returns the covariance matrix of the
-#' cluster-level estimating equations for rows that appear in both the experimental
-#' and covariance model data
-#' @param x DirectAdjusted
-#' @return outer product of cluster-level estimating equations for the covariance model
-#' and the treatment, matrix should have dimension p x k where p is the column
-#' count in the covariance model matrix and k is the column count in the treatment
-#' model
-#' @export
-get_overlap_vcov_matrix <- function(x) {
+#' @title (Internal) Get the B12 block of the sandwich variance estimator
+#' @details This block is the covariance matrix of the cluster-level estimating
+#' equations for the covariance and direct adjustment models. It has a row for
+#' each term in the covariance model and a column for each term in the direct
+#' adjustment model. For any row that does not appear in both the experimental
+#' design and the covariance model data, its contribution to this matrix will be
+#' 0. Thus, if there is no overlap between the two datasets, this will return a
+#' matrix of 0's.
+#' @param x A DirectAdjusted model object
+#' @return A pxk matrix where p is the column count in the covariance model
+#' matrix and k is the column count in the treatment model matrix
+#' @keywords internal
+.get_b12 <- function(x) {
   sl <- x$model$`(offset)`
   if (class(sl) != "SandwichLayer") {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
