@@ -245,3 +245,27 @@ test_that("vcov, confint, etc", {
 
 
 })
+
+test_that("subsetting model with weights and/or cov_adj", {
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  mod1 <- lm(y ~ adopters(),
+             data = simdata,
+             weights = ate(des),
+             offset = cov_adj(lm(y ~ x, data = simdata)))
+
+  expect_true(is(mod1$model$`(weights)`, "WeightedDesign"))
+  expect_true(is(mod1$model$`(offset)`, "SandwichLayer"))
+
+  # add subsetting
+  mod2 <- lm(y ~ adopters(),
+             data = simdata,
+             weights = ate(des),
+             offset = cov_adj(lm(y ~ x, data = simdata)),
+             subset = simdata$dose < 300)
+
+  expect_true(is(mod2$model$`(weights)`, "WeightedDesign"))
+#  expect_true(is(mod2$model$`(offset)`, "SandwichLayer"))
+
+})
