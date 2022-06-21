@@ -4,7 +4,7 @@
 \alias{rct_design}
 \alias{rd_design}
 \alias{obs_design}
-\title{Specify Design}
+\title{Generates a \code{Design} object with the given specifications.}
 \usage{
 rct_design(formula, data, subset = NULL, dichotomy = NULL)
 
@@ -13,11 +13,12 @@ rd_design(formula, data, subset = NULL, dichotomy = NULL)
 obs_design(formula, data, subset = NULL, dichotomy = NULL)
 }
 \arguments{
-\item{formula}{defines the Design components}
+\item{formula}{defines the \code{Design} components}
 
 \item{data}{the data set.}
 
-\item{subset}{optionally subset the data before creating the Design object}
+\item{subset}{optionally subset the data before creating the \code{Design}
+object}
 
 \item{dichotomy}{optionally, a formula defining the dichotomy of the
 treatment variable if it isn't already 0/1 or \code{logical}. See details.}
@@ -26,13 +27,11 @@ treatment variable if it isn't already 0/1 or \code{logical}. See details.}
 a Design object of the requested type for use in further analysis
 }
 \description{
-Generates a Design object with the given specifications.
-}
-\details{
 Generates a randomized control treatment Design (\code{rct_design()}), or an
 observational Design (\code{obs_design()}), or a regression discontinuity
 Design (\code{rd_design()}).
-
+}
+\details{
 The formula must include exactly one of \code{unit_of_assignment()},
 \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
 assignment (one or more variables). If defining an rd_design, the formula

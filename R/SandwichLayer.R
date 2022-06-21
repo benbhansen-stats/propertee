@@ -10,7 +10,7 @@ setValidity("PreSandwichLayer", function(object) {
   if (!("terms" %in% attr(object@fitted_covariance_model, "names"))) {
     return("Fitted covariance model must have a 'terms' attribute")
   }
-  
+
   tryCatch({
     sandwich::bread(object@fitted_covariance_model)
     sandwich::estfun(object@fitted_covariance_model)
@@ -18,7 +18,7 @@ setValidity("PreSandwichLayer", function(object) {
       stop(paste("Functions for extracting vcov elements not applicable to",
                  "fitted covariance model"))
   })
-  
+
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
@@ -50,7 +50,7 @@ setValidity("SandwichLayer", function(object) {
              fitted_covariance_model = object@fitted_covariance_model,
              prediction_gradient = object@prediction_gradient)
   validObject(psl)
-  
+
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return(paste0("Keys does not have the same number of rows as the dataset used ",
                   "to fit the covariance model"))
@@ -64,7 +64,12 @@ setValidity("SandwichLayer", function(object) {
   TRUE
 })
 
-show_layer <- function(object) {
+##' @title (Internal) \code{show} helper for
+##'   \code{PreSandwichLayer}/\code{SandwichLayer}
+##' @param object \code{PreSandwichLayer} or \code{SandwichLayer}
+##' @return \code{object}, invisibly
+##' @keywords internal
+.show_layer <- function(object) {
   print(object@.Data)
   invisible(object)
 }
@@ -73,13 +78,13 @@ show_layer <- function(object) {
 ##' @param object PreSandwichLayer object
 ##' @return an invisible copy of `object`
 ##' @export
-setMethod("show", "PreSandwichLayer", show_layer)
+setMethod("show", "PreSandwichLayer", .show_layer)
 
 ##' @title Show a SandwichLayer
 ##' @param object SandwichLayer object
 ##' @return an invisible copy of `object`
 ##' @export
-setMethod("show", "SandwichLayer", show_layer)
+setMethod("show", "SandwichLayer", .show_layer)
 
 ##' (Internal) Get a vector of "response" predictions from a covariance model
 ##' for a certain dataframe and its gradient with respect to the parameters of
@@ -94,7 +99,7 @@ setMethod("show", "SandwichLayer", show_layer)
   if (!is.null(newdata) & !is.data.frame(newdata)) {
     stop("If supplied, `newdata` must be a dataframe")
   }
-  
+
   X <- tryCatch(
     if (is.null(newdata)) {
       stats::model.matrix(model)
@@ -105,14 +110,14 @@ setMethod("show", "SandwichLayer", show_layer)
     }, error = function(e) {
       stop("`model` must have a `call` object and `model.matrix` method")
     })
-  
+
   # TODO: support predict(..., type = "response"/"link"/other?)
   ca <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
                  error = function(e) {
                    stop(paste("covariate adjustment model",
                               "must support predict function"))
                  })
-  
+
   # this branch applies to `glm`, `surveyglm`, `robustbase::glmrob` models
   if (is(model, "glm") & !is(model, "gam")) {
     pred_gradient <- model$family$mu.eta(ca) * X
@@ -122,7 +127,7 @@ setMethod("show", "SandwichLayer", show_layer)
   } else {
     stop("`model` must be a `glm` or `lm` object (and not a `gam` object)")
   }
-  
+
   return(list("ca" = ca,
               "prediction_gradient" = pred_gradient))
 }
@@ -142,7 +147,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   if (!is(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
-  
+
   data_call <- x@fitted_covariance_model$call$data
   if (is.null(data_call)) {
     stop("The fitted covariance model for x must be fit using a `data` argument")
@@ -170,7 +175,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   keys <- .merge_preserve_order(wide_frame, design@structure, all.x = TRUE, sort = FALSE)
   keys[is.na(keys[, var_names(design, "t")]), desvars] <- NA
   keys <- keys[, desvars, drop = FALSE]
-  
+
   return(new("SandwichLayer",
              x@.Data,
              fitted_covariance_model = x@fitted_covariance_model,

@@ -25,7 +25,7 @@
 \alias{forcings,Design-method}
 \alias{forcings<-}
 \alias{forcings<-,Design-method}
-\title{Accessors for Design}
+\title{Accessors and Replacers for \code{Design} objects}
 \usage{
 treatment(x, ...)
 
@@ -86,11 +86,12 @@ formula in \code{@dichotomy}, return a \code{data.frame} containing a
 binary treatment variable with the name \code{"z__"}. Errors on
 \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .}
 
-\item{value}{Replacement. Either a vector/matrix of appropriate dimension,
-or a named data.frame if renaming variable as well.}
+\item{value}{Replacement. Either a \code{vector}/\code{matrix} of
+appropriate dimension, or a named \code{data.frame} if renaming variable
+as well.}
 }
 \value{
-data.frame containing treatment variable
+\code{data.frame} containing treatment variable
 }
 \description{
 For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the

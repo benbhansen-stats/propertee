@@ -22,7 +22,7 @@ setValidity("WeightedDesign", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
-  TRUE
+  return(TRUE)
 })
 
 ##' @title Show a WeightedDesign
@@ -88,7 +88,7 @@ setMethod("*", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) {
             e1@.Data <- e1@.Data * e2
             validObject(e1)
-            e1
+            return(e1)
           })
 
 ##' @rdname WeightedDesignOps
@@ -97,7 +97,7 @@ setMethod("*", signature(e1 = "numeric", e2 = "WeightedDesign"),
           function(e1, e2) {
             e2@.Data <- e1 * e2@.Data
             validObject(e2)
-            e2
+            return(e2)
           })
 
 ##' @rdname WeightedDesignOps
@@ -106,7 +106,7 @@ setMethod("/", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) {
             e1@.Data <- e1@.Data/e2
             validObject(e1)
-            e1
+            return(e1)
           })
 
 ##' @rdname WeightedDesignOps
@@ -115,13 +115,12 @@ setMethod("/", signature(e1 = "numeric", e2 = "WeightedDesign"),
           function(e1, e2) {
             e2@.Data <- e1/e2@.Data
             validObject(e2)
-            e2
+            return(e2)
           })
 
 addsubtracterror <- function() {
   stop("Cannot perform addition or subtraction on WeightedDesigns")
 }
-
 
 setGeneric("weights")
 
@@ -131,5 +130,34 @@ setGeneric("weights")
 ##' @return vector of weights
 ##' @export
 setMethod("weights", "WeightedDesign", function(object, ...) {
-  as.numeric(object)
+  return(as.numeric(object))
 })
+
+setGeneric("subset")
+
+##' @title \code{WeightedDesign} subsetting
+##' @param subset Logical vector identifying values to keep or drop
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @rdname WeightedDesign.subset
+setMethod("subset", "WeightedDesign", function(x, subset) {
+  x@.Data <- subset(x@.Data, subset = subset)
+  return(x)
+})
+
+setGeneric("[")
+
+##' @param x \code{WeightedDesign} object
+##' @param i indices specifying elements to extract or replace. See
+##'   \code{help("[")} for further details.
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @importFrom methods callNextMethod
+##' @rdname WeightedDesign.subset
+setMethod("[", "WeightedDesign",
+          function(x, i) {
+            dat <- methods::callNextMethod()
+            x@.Data <- dat
+            return(x)
+
+          })

@@ -12,7 +12,7 @@ setValidity("CombinedWeightedDesign", function(object) {
   if (length(object@dichotomies) != length(object@keys)) {
     return("discrepancy between length of @dichotomies and @keys")
   }
-  TRUE
+  return(TRUE)
 })
 
 ##' @rdname WeightedDesignOps

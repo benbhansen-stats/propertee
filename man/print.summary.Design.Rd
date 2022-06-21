@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary.Design.R
 \name{print.summary.Design}
 \alias{print.summary.Design}
-\title{Print summary object}
+\title{Print summary of \code{Design} object}
 \usage{
 \method{print}{summary.Design}(x, ..., max_unit_print = 3)
 }
@@ -18,5 +18,5 @@ treatment table}
 object, invisibly
 }
 \description{
-Print summary object
+Print summary of \code{Design} object
 }

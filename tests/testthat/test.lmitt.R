@@ -4,7 +4,7 @@ test_that("lmitt", {
   des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
-  da <- lmitt(y ~ z + x, weights = ate(des), data = simdata)
+  da <- lmitt(y ~ dose + x, weights = ate(des), data = simdata)
 
   expect_s4_class(da, "DirectAdjusted")
   expect_true(is(da, "lm"))
@@ -44,5 +44,61 @@ test_that("covariate adjustment", {
   da <- lmitt(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(camod))
   expect_true(!is.null(da$model$"(offset)"))
   expect_true(is(da$model$"(offset)", "SandwichLayer"))
+
+})
+
+
+test_that("Design argument", {
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  mod1 <- lmitt(y ~ z, data = simdata, design = des, target = "ate")
+  mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des))
+  mod3 <- lmitt(y ~ z, data = simdata, design = z ~ cluster(cid1, cid2),
+                target = "ate")
+  expect_true(mod3@Design@type == "Obs")
+  expect_identical(mod1@Design, mod2@Design)
+  expect_identical(mod1@Design, mod3@Design)
+
+  des2 <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), data = simdata)
+
+  mod1 <- lmitt(y ~ z, data = simdata, design = des2, target = "ate")
+  mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des2))
+  mod3 <- lmitt(y ~ z, data = simdata,
+                design = z ~ cluster(cid1, cid2) + forcing(force),
+                target = "ate")
+  expect_true(mod3@Design@type == "RD")
+  expect_identical(mod1@Design, mod2@Design)
+  expect_identical(mod1@Design, mod3@Design)
+
+  des3 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  mod1 <- lmitt(y ~ z, data = simdata, design = des3, target = "ate",
+                subset = simdata$dose < 300)
+  mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des3),
+                subset = simdata$dose < 300)
+  mod3 <- lmitt(y ~ z, data = simdata,
+                design = z ~ cluster(cid1, cid2) + block(bid),
+                target = "ate", subset = simdata$dose < 300)
+  expect_true(mod3@Design@type == "Obs")
+  expect_identical(mod1@Design, mod2@Design)
+  expect_identical(mod1@Design, mod3@Design)
+
+})
+
+test_that("Dichotomy option in Design creation", {
+
+  data(simdata)
+  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
+                    dichotomy = dose > 200 ~ .)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, target = "ate", design = des)
+  mod2 <- lmitt(y ~ adopters(), data = simdata,
+                design = dose ~ cluster(cid1, cid2),
+                dichotomy = dose > 200 ~ .,
+                target = "ate")
+  expect_identical(mod1@Design, mod2@Design)
+  expect_true(all.equal(mod1$coefficients, mod2$coefficients,
+                        check.attributes =  FALSE))
+
 
 })

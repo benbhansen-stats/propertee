@@ -1,18 +1,26 @@
-# (Internal) Adopters/weights/cov_adj all need the Designs to operate. If any
-# are called in the model without a Design, this function sees if it can find
-# the Design in another of these functions.
-#
-# Note that it will never look inside adopters (gets complicated in formulas),
-# only in weights or cov_adj. E.g.
-#   lm(y ~ adopters, weights = ate(des), offest = cov_adj(mod1))
-#   lm(y ~ adopters, weights = ate(), offest = cov_adj(mod1, design = des))
-# will both work, but
-#   lm(y ~ adopters(des), weights = ate(), offest = cov_adj(mod1))
-# will fail.
-# @param NULL_on_error if `TRUE`, returns `NULL` if a Design object is not found
-# rather than an exception
-# @return a \code{Design} object if one can be found in the call stack,
-# otherwise an error or `NULL` depending on `NULL_on_error`
+##' \code{adopters()}/\code{ate()}/\code{ett()}/\code{cov_adj()} all need the
+##' \code{Design} to operate. If any are called in the model without a
+##' \code{design=} argument, this function sees if it can find the \code{Design}
+##' in another of these functions.
+##'
+##' Note that it will never look inside \code{adopters()} (gets complicated in
+##' formulas), only in weights or \code{cov_adj()}. E.g.
+##'
+##' \code{lm(y ~ adopters(), weights = ate(des), offest = cov_adj(mod1))}
+##'
+##' \code{lm(y ~ adopters(), weights = ate(), offest = cov_adj(mod1, design = des))}
+##'
+##' will both work, but
+##'
+##' \code{lm(y ~ adopters(des), weights = ate(), offest = cov_adj(mod1))}
+##'
+##' will fail.
+##' @title (Internal) Locate a \code{Design} in the call stack
+##' @param NULL_on_error if \code{TRUE}, returns \code{NULL} if a \code{Design}
+##'   object is not found rather than throwing an error.
+##' @return A \code{Design}, or \code{NULL} if \code{NULL_on_error} is
+##'   \code{TRUE} and the \code{Design} can't be found.
+##' @keywords internal
 .get_design <- function(NULL_on_error = FALSE) {
   design <- NULL
 
@@ -46,6 +54,7 @@
 
   weight_design <- NULL
   covadj_design <- NULL
+  lmitt_design <- NULL
   # This avoids infinite recursion; if we're in weights or in cov_adj, don't
   # look for it again. Only adopters will look for both.
   if (sys.call(-1)[[1]] != ".weights_calc") {
@@ -54,11 +63,25 @@
   if (sys.call(-1)[[1]] != "cov_adj") {
     covadj_design <- .find.design("offset")
   }
+  found_lmitt <- grepl("^lmitt$", lapply(sys.calls(), "[[", 1))
+  if (any(found_lmitt)) {
+    lmitt_design <- get("design", sys.frame(which(found_lmitt)[1]))
+    # If its not a real design, return NULL
+    if (!is(lmitt_design, "Design")) {
+      lmitt_design <- NULL
+    }
+  }
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
-  # .find.design())
+  # .find.design() and the special lmitt case)
 
-  if (is.null(weight_design) && is.null(covadj_design)) {
+  potential_designs <- list(weight_design,
+                            covadj_design,
+                            lmitt_design)
+
+  found_designs <- !vapply(potential_designs, is.null, logical(1))
+
+  if (!any(found_designs)) {
     # Found nothing
     if (NULL_on_error) {
       return(NULL)
@@ -66,21 +89,14 @@
     stop(paste("Unable to locate Design in call stack, please use the",
                " `design` argument to pass a Design object."))
   }
-  if (is(weight_design, "Design") && is(covadj_design, "Design")) {
-    # Found both; ensure its the same Design
-    if (!identical(weight_design, covadj_design)) {
-      stop("`Design`s foundn in both `cov_adj` and weights but differ")
+  if (sum(found_designs) > 1) {
+    # Found multiple Designs; ensure they're all the same
+    if (!Reduce(identical, potential_designs[found_designs])) {
+      stop("Multiple differing `Design` found")
     }
-    return(weight_design)
   }
-
-  # Since we know they're not both NULL, and not both Designs, and they have to
-  # be one or the other, the only possible scenario is that one is NULL and one
-  # is a Design, so return the Design.
-  if (is.null(weight_design)) {
-    return(covadj_design)
-  } else {
-    return(weight_design)
-  }
+  # At this point, we know at least one design is non-NULL, and if there are
+  # multiple, they're duplicates, so just take the first real Design.
+  return(potential_designs[found_designs][[1]])
 
 }

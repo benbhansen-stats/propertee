@@ -5,8 +5,7 @@ Authors@R:
     person(given = "First",
            family = "Last",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           email = "jerrick@umich.edu")
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -32,7 +31,6 @@ Collate:
     'Design.R'
     'WeightedDesign.R'
     'CombinedWeightedDesign.R'
-    'CovAdjPrediction.R'
     'DesignAccessors.R'
     'DesignConverters.R'
     'DesignUtilities.R'
@@ -40,13 +38,14 @@ Collate:
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
     'adopters.R'
-    'binarize_treatment.R'
     'cov_adj.R'
     'data.R'
     'flexida_package.R'
+    'get_cov_adj.R'
     'get_data_from_model.R'
     'get_design.R'
     'lmitt.R'
+    'merge_preserve_order.R'
     'summary.Design.R'
+    'update_by.R'
     'weights.R'
-    'weightsUtilities.R'

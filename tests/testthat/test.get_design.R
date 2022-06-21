@@ -26,7 +26,7 @@ test_that(".get_design", {
 
   expect_error(lm(y ~ adopters(), data = simdata, weights = ate(des),
                   offset = cov_adj(mod, design = des2)),
-               "but differ")
+               "differing `Design`")
 
   expect_error(lm( y ~ adopters(), data = simdata),
                "Unable to locate")

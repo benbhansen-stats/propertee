@@ -58,11 +58,24 @@ setValidity("Design", function(object) {
   if (!length(object@dichotomy) %in% c(0, 3)) {
     return("@dichotomy invalid")
   }
-  TRUE
+  return(TRUE)
 })
 
+
+##' Helper function to create a new \code{Design}. Called internally from
+##' \code{rct_design()}, \code{rd_design()} or \code{obs_design()}.
+##' @title (Internal) Create a new \code{Design} object.
+##' @param form Formula to create Design, see help for \code{rcr_design()},
+##'   \code{rd_design()} or \code{obs_design()} for details.
+##' @param data The data set
+##' @param type One of "RCT", "RD", or "Obs"
+##' @param subset Any subset information
+##' @param call The call generating the \code{Design}.
+##' @param dichotomy If present, the dichotomization formula
+##' @return A new Design object
 ##' @importFrom stats formula
-new_Design <- function(form,
+##' @keywords internal
+.new_Design <- function(form,
                        data,
                        type,
                        subset = NULL,
@@ -71,9 +84,9 @@ new_Design <- function(form,
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
-    warning(paste("Invalid call passed to `new_Design`, using default.",
+    warning(paste("Invalid call passed to `.new_Design`, using default.",
                   "Please use rd_design, rct_design, or obs_design instead ",
-                  "of `new_Design` directly."))
+                  "of `.new_Design` directly."))
   }
 
   if (!is.null(subset)) {
@@ -188,17 +201,15 @@ new_Design <- function(form,
                "constant within unit of assignment."))
   }
 
-  new("Design",
-      structure = m_collapse,
-      column_index = index,
-      type = type,
-      unit_of_assignment_type = autype,
-      call = call,
-      dichotomy = dichotomy)
+  return(new("Design",
+             structure = m_collapse,
+             column_index = index,
+             type = type,
+             unit_of_assignment_type = autype,
+             call = call,
+             dichotomy = dichotomy))
 }
 
-##' Generates a Design object with the given specifications.
-##'
 ##' Generates a randomized control treatment Design (\code{rct_design()}), or an
 ##' observational Design (\code{obs_design()}), or a regression discontinuity
 ##' Design (\code{rd_design()}).
@@ -254,10 +265,11 @@ new_Design <- function(form,
 ##' instead of simply using \code{dichotomy(design) <-} or passing
 ##' \code{dichotomy} to \code{ate()} or \code{ett()}.
 ##'
-##' @title Specify Design
-##' @param formula defines the Design components
+##' @title Generates a \code{Design} object with the given specifications.
+##' @param formula defines the \code{Design} components
 ##' @param data the data set.
-##' @param subset optionally subset the data before creating the Design object
+##' @param subset optionally subset the data before creating the \code{Design}
+##'   object
 ##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @return a Design object of the requested type for use in further analysis
@@ -266,12 +278,12 @@ new_Design <- function(form,
 rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  new_Design(form = formula,
-             data = data,
-             type = "RCT",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "RCT",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @export
@@ -279,12 +291,12 @@ rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
-  new_Design(form = formula,
-             data = data,
-             type = "RD",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "RD",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @export
@@ -292,12 +304,12 @@ rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
 obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
   .check_design_formula(formula)
 
-  new_Design(form = formula,
-             data = data,
-             type = "Obs",
-             subset = subset,
-             call = match.call(),
-             dichotomy = dichotomy)
+  return(.new_Design(form = formula,
+                     data = data,
+                     type = "Obs",
+                     subset = subset,
+                     call = match.call(),
+                     dichotomy = dichotomy))
 }
 
 ##' @title Show a Design
@@ -334,21 +346,32 @@ setMethod("show", "Design", function(object) {
   invisible(object)
 })
 
-##' @title Extract names of Design variables
+##' @title Return names of variables defining the \code{Design}
 ##' @param x Design x
 ##' @param type one of "t", "u", "b", "f"; for "treatment",
 ##'   "unit_of_assignment", "block", and "forcing"
 ##' @return character vector of variable names of the given type
 ##' @export
+##' @examples
+##' des <- obs_design(o ~ unitid(cid1, cid2), data = simdata)
+##' var_names(des, "t")
+##' var_names(des, "u")
+##' var_names(des, "b")
 var_names <- function(x, type) {
   stopifnot(class(x) == "Design")
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "u", "b", "f"))
-  names(x@structure)[x@column_index == type]
+  return(names(x@structure)[x@column_index == type])
 }
 
-# Internal to properly rename columns to strip unit_of_assignment(), block(),
-# etc
+##' After calling \code{model.frame()} on the formula input to
+##' \code{.new_Design()}, the names of the columns will include functino names,
+##' e.g. "cluster(clustvar)". This function strips all these.
+##'
+##' @title (Internal) Rename columns to strip function calls
+##' @param modframe A \code{data.frame}.
+##' @return The \code{data.frame} with function calls removed
+##' @keywords internal
 .rename_model_frame_columns <- function(modframe) {
 
   index <- rep("t", ncol(modframe))
@@ -390,11 +413,15 @@ var_names <- function(x, type) {
 ##' Returns a table of number of units of assignment in each treatment group,
 ##' sorted by the size of the groups
 ##'
-##' @title treatment group table
+##' @title Generate table of number of units/clusters within each treatment
+##'   level
 ##' @param design A Design object
 ##' @param ... add'l optional arguments to \code{table}
 ##' @return a table of treatment by units
 ##' @export
+##' @examples
+##' des <- rd_design(z ~ uoa(cid1, cid2) + forcing(force), data = simdata)
+##' treatment_table(des)
 treatment_table <- function(design, ...) {
   tab <- table(design@structure[var_names(design, "t")], ...)
   tab <- sort(tab, decreasing = TRUE)
@@ -414,7 +441,7 @@ treatment_table <- function(design, ...) {
 ##' \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
 ##' rows (treatment and cluster/unitid/unif of assignment), with additional rows
 ##' for blocks and forcing if included in the \code{Design}.
-##' @title variable identification table
+##' @title Table of variables identifying a \code{Design}
 ##' @param design A Design object
 ##' @param compress Should multiple variables be compressed into a
 ##'   comma-separated string? Default \code{TRUE}.
@@ -422,6 +449,10 @@ treatment_table <- function(design, ...) {
 ##'   don't exist in the Design? Default \code{FALSE}.
 ##' @return a \code{matrix} of variables in the Design structure
 ##' @export
+##' @examples
+##' des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+##' var_table(des)
+##' var_table(des, compress = FALSE)
 var_table <- function(design, compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
                     "unit_of_assignment" = "Unit of Assignment",
@@ -502,7 +533,7 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
 ##' both "data1" (used in the creation of the \code{Design}) and "data2" (some
 ##' new dataset passed to \code{design_data_concordance()}) have any
 ##' inconsistencies.
-##' @title Checks for variable agreement within units of assignment
+##' @title Check for variable agreement within units of assignment
 ##' @param design A Design object
 ##' @param data Data set, presumably not the same used to create \code{design}.
 ##' @param by optional; named vector or list connecting names of variables in

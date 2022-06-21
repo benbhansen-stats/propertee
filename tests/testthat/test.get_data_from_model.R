@@ -44,4 +44,20 @@ test_that("Obtaining data for weights", {
 
   expect_error(.get_data_from_model("weights", 1),
                "must be a formula")
+
+  expect_error(.get_data_from_model("abc", 1))
+
+  # This will error in a nonstandard way; just want to ensure it fails
+  f <- function() {
+    frm <- y ~ x
+    .get_data_from_model("weights", str2lang("frm"))
+  }
+  capture_warnings(expect_error(f()))
+
+  f2 <- function() {
+    frm <- 1
+    .get_data_from_model("weights", str2lang("frm"))
+  }
+  expect_error(f2(), "unable to convert")
+
 })

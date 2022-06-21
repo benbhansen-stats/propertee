@@ -10,14 +10,14 @@
 ##' \code{Design}. The choice of which to use will have no impact on any
 ##' analysis, only on some output display.
 ##'
-##' @title Special terms in \code{Design}
+##' @title Special terms in \code{Design} creation formula
 ##' @param ... any number of variables of the same length.
 ##' @return the variables with appropriate labels
 ##' @export
 ##' @rdname DesignSpecials
 unit_of_assignment <- function(...) {
   allf <- list(...)
-  do.call(cbind, allf)
+  return(do.call(cbind, allf))
 }
 
 ##' @rdname DesignSpecials
@@ -40,12 +40,19 @@ block <- unit_of_assignment
 ##' @export
 forcing <- unit_of_assignment
 
-# (Internal) Perform checks on formula for creation of Design.
-# Checks performed:
-# - Ensure presence of exactly one of unit_of_assignment(), cluster() or
-#   unitid()
-# - Disallow multiple block(), or forcing() terms
-# - Disallow forcing() unless in RDD
+#
+##' Checks performed:
+##' * Ensure presence of exactly one of \code{unit_of_assignment()},
+##'   \code{cluster()} or \code{unitid()}.
+##' * Disallow multiple \code{block()} or multiple \code{forcing()} terms.
+##' * Disallow \code{forcing()} unless in RDD.
+##'
+##' @title (Internal) Perform checks on formula for creation of Design.
+##' @param form A formula passed to \code{.new_Design()}
+##' @param allow_forcing Binary whether \code{forcing()} is allowed (\code{TRUE}
+##'   for RDD, \code{FALSE} for RCT and Obs).
+##' @return \code{TRUE} if all checks pass, otherwise errors.
+##' @keywords internal
 .check_design_formula <- function(form, allow_forcing = FALSE) {
   tt <- terms(form, c("unit_of_assignment", "uoa", "cluster",
                       "unitid", "block", "forcing"))
@@ -100,16 +107,22 @@ forcing <- unit_of_assignment
     stop("Specify only one forcing() (forcing() can take multiple variables).")
   }
 
-  TRUE
+  invisible(TRUE)
 }
 
-# (Internal) Rename cluster/unitid/uoa in a formula to unit_of_assignment for
-# internal consistency
+
+##' Internally, we always refer to cluster/unitid/uoa as "unit_of_assignment"
+##' @title (Internal) Rename cluster/unitid/uoa in a formula to
+##'   unit_of_assignment for internal consistency
+##' @param form A formula passed to \code{.new_Design()}
+##' @return The formula with "cluster"/"unitid"/"uoa" replace with
+##'   "unit_of_assignment"
+##' @keywords internal
 .update_form_to_unit_of_assignment <- function(form) {
-    rename_list <- list("cluster" = as.name("unit_of_assignment"),
-                        "uoa" = as.name("unit_of_assignment"),
-                        "unitid" = as.name("unit_of_assignment"))
-    as.formula(do.call("substitute", list(form, rename_list)))
+  rename_list <- list("cluster" = as.name("unit_of_assignment"),
+                      "uoa" = as.name("unit_of_assignment"),
+                      "unitid" = as.name("unit_of_assignment"))
+  return(as.formula(do.call("substitute", list(form, rename_list))))
 }
 
 ##' Check if \code{Design} has access to a binary treatment

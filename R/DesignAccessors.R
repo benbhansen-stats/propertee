@@ -17,7 +17,7 @@ setGeneric("treatment", function(x, ...) {
 ##' The one-column \code{data.frame} returned by \code{treatment()} is named as
 ##' entered in the \code{Design} creation, but if a \code{dichotomy} is in the
 ##' \code{Design}, the column name is \code{"__z"}.
-##' @title Accessors for Design
+##' @title Accessors and Replacers for \code{Design} objects
 ##' @param x \code{Design} object
 ##' @param binary Logical; if \code{FALSE} (default), return a \code{data.frame}
 ##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
@@ -25,7 +25,7 @@ setGeneric("treatment", function(x, ...) {
 ##'   binary treatment variable with the name \code{"z__"}. Errors on
 ##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .
 ##' @param ... Ignored.
-##' @return data.frame containing treatment variable
+##' @return \code{data.frame} containing treatment variable
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
@@ -51,8 +51,9 @@ setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
 ##' @rdname Design_extractreplace
 setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 
-##' @param value Replacement. Either a vector/matrix of appropriate dimension,
-##'   or a named data.frame if renaming variable as well.
+##' @param value Replacement. Either a \code{vector}/\code{matrix} of
+##'   appropriate dimension, or a named \code{data.frame} if renaming variable
+##'   as well.
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
@@ -62,21 +63,83 @@ setMethod("treatment<-", "Design", function(x, value) {
   names(x@structure)[x@column_index == "t"] <- colnames(value)
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
-# (Internal) Extracts treatment as binary vector if possible (if design has
-# dichotomy, or if treatment is 0/1), or else errors.
+##' If the \code{Design} has a \code{@dichotomy}, or has a treatment variable
+##' consisting only of 0/1 or \code{NA}, then returns the binary treatment.
+##' Otherwise (it has a non-binary treatment and lacks a dichotomy) it errors.
+##' @title (Internal) Extracts treatment as binary \code{vector} if possible or
+##'   else errors.
+##' @param des A \code{Design}
+##' @return A \code{vector} of binary treatments
+##' @keywords internal
 .bin_txt <- function(des) {
   if (!is_dichotomized(des)) {
     tt <- treatment(des, binary = FALSE)[, 1]
-    if (!all(tt %in% 0:1)) {
+    if (!all(tt %in% c(0:1, NA))) {
       stop("binary treatment cannot be obtained")
     }
     return(tt)
   }
-  .binarize_treatment(treatment(des, binary = FALSE),
-                      des@dichotomy)
+  return(.apply_dichotomy(treatment(des, binary = FALSE),
+                          des@dichotomy))
+}
+
+##' Given a treatment variable (passed as a named \code{data.frame}) and a
+##' dichotomy formula (see help on \code{rct_design()} for details on
+##' specification), returns \code{vector} containing only \code{0}, \code{1}, or
+##' \code{NA}.
+##' @title (Internal) Applies dichotomy to treatment
+##' @param txt A named \code{data.frame} containing a single column of the
+##'   treatment, such as that produed by `treatment(mydesign)`.
+##' @param dichotomy A dichotomization formula. See the details in the Details
+##'   for the help of \code{rct_design()}.
+##' @return A \code{vector} of binary treatments
+##' @keywords internal
+.apply_dichotomy <- function(txt, dichotomy) {
+
+  if (!is(dichotomy, "formula")) {
+    stop("`dichotomy` must be formula")
+  }
+
+  if (!is.data.frame(txt)) {
+    stop(paste("`txt` is expected to be a named `data.frame`",
+               "(e.g. from `treatment(des)`)"))
+  }
+
+  lhs_dot <- rhs_dot <- FALSE
+  if (dichotomy[[3]] == ".") {
+    # control group is .
+    # control goes first since txt switches LHS and RHS
+    dichotomy[[3]] <- 1
+    rhs_dot <- TRUE
+  }
+  if (dichotomy[[2]] == ".") {
+    # treatment group is .
+    dichotomy[[2]] <- dichotomy[[3]]
+    dichotomy[[3]] <- 1
+    lhs_dot <- TRUE
+  }
+  if (lhs_dot & rhs_dot) {
+    stop("At least one side for dichotomy formula must not be `.`")
+  }
+
+  m <- model.frame(dichotomy, txt, na.action = na.pass)
+
+  if (lhs_dot) {
+    return(as.numeric(!m[,1]))
+  } else if (rhs_dot) {
+    return(as.numeric(m[,1]))
+  } else {
+    ditxt <- m[,2] + 2*m[,1] - 1
+    ditxt[ditxt == -1] <- NA
+    if (any(!is.na(ditxt) & ditxt > 1)) {
+      stop("treatment dichotomy overlaps")
+    }
+    return(ditxt)
+  }
+
 }
 
 ############### Units of Assignment
@@ -96,7 +159,7 @@ setMethod("units_of_assignment", "Design", function(x) {
   if (x@unit_of_assignment_type == "cluster") {
     stop("Design specified with `cluster()`, not `unit_of_assignment()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -128,7 +191,7 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Cluster
@@ -146,7 +209,7 @@ setMethod("clusters", "Design", function(x) {
   if (x@unit_of_assignment_type == "unit_of_assignment") {
     stop("Design specified with `unit_of_assignment()`, not `cluster()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -176,7 +239,7 @@ setMethod("clusters<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Unitid
@@ -194,7 +257,7 @@ setMethod("unitids", "Design", function(x) {
   if (x@unit_of_assignment_type == "unit_of_assignment") {
     stop("Design specified with `unit_of_assignment()`, not `unitid()`")
   }
-  x@structure[x@column_index == "u"]
+  return(x@structure[x@column_index == "u"])
 })
 
 ##' @export
@@ -224,7 +287,7 @@ setMethod("unitids<-", "Design", function(x, value) {
   }
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Blocks
@@ -236,7 +299,7 @@ setGeneric("blocks", function(x) standardGeneric("blocks"))
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("blocks", "Design", function(x) {
-  x@structure[x@column_index == "b"]
+  return(x@structure[x@column_index == "b"])
 })
 
 ##' @export
@@ -251,7 +314,7 @@ setMethod("blocks<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "b")
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### Forcing
@@ -266,7 +329,7 @@ setMethod("forcings", "Design", function(x) {
   if (x@type != "RD") {
     stop("Forcing variable only used in RD designs")
   }
-  x@structure[x@column_index == "f"]
+  return(x@structure[x@column_index == "f"])
 })
 
 ##' @export
@@ -285,14 +348,14 @@ setMethod("forcings<-", "Design", function(x, value) {
   x <- .update_structure(x, value, "f")
   x@call$formula <- .update_call_formula(x)
   validObject(x)
-  x
+  return(x)
 })
 
 ############### dichotomy
 
 ##' Extract or replace dichotomy
-##' @param x Design object
-##' @param value Replacement dichotomy formula, or \code{NULL} to remove
+##' @param x \code{Design} object
+##' @param value Replacement \code{dichotomy} formula, or \code{NULL} to remove
 ##' @return Dichomization formula
 ##' @export
 ##' @rdname Design_extract_dichotomy
@@ -301,7 +364,7 @@ setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))
 ##' @export
 ##' @rdname Design_extract_dichotomy
 setMethod("dichotomy", "Design", function(x) {
-  x@dichotomy
+  return(x@dichotomy)
 })
 
 ##' @export
@@ -316,44 +379,89 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   }
   x@dichotomy <- value
   validObject(x)
-  x
+  return(x)
 })
 
 
 ############### Helper Functions
 
-# (Internal) Takes in a replacement item and a design, and if replacement isn't
-# a data.frame already, converts it to a data.frame, extracting names from the
-# design if original value isn't already named
+##' Helper function for \code{Design} replacers to ensure replacement is a
+##' properly named \code{data.frame}
+##'
+##' When given a replacement set of values (e.g \code{vector} or \code{matrix}),
+##' this ensures that the replacement is a named \code{data.frame}.
+##'
+##' Input \code{vector}: Since it cannot be named, a vector can only be used to
+##' replace an existing component. If the existing component has more than 1
+##' column, uses the name of the first column.
+##'
+##' Input \code{matrix} or \code{data.frame}: If unnamed and replacing existing
+##' component, must have no more columns than original component. (If less
+##' columns, uses the name of the first few columns.) If named, can replace any
+##' number of columns.
+##'
+##' @title (Internal) Ensures replacement column for \code{Design} is a
+##'   \code{data.frame}.
+##' @param value A \code{vector} or \code{data.frame} containing a replacement.
+##' @param design A \code{Design}
+##' @param type One of "t", "f", "u" or "b"
+##' @return \code{data.frame} containing named column(s)
+##' @keywords internal
 .convert_to_data.frame <- function(value, design, type) {
-  if (!is(value, "data.frame")) {
-    if (is.null(colnames(value))) {
-      null_name <- TRUE
-    } else {
-      null_name <- FALSE
-    }
-    value <- as.data.frame(value)
-    if (nrow(design@structure) != nrow(value)) {
-      stop("replacement entries do not have same number of rows as current")
-    }
-    if (null_name) {
-      old_names <- var_names(design, type)
-      if (length(old_names) > ncol(value)) {
-        old_names <- old_names[seq_len(ncol(value))]
-      } else if (length(old_names) < ncol(value)) {
-        stop("additional variables must be named")
-      }
-      colnames(value) <- old_names
-    }
+  if (!type %in% c("t", "f", "u", "b")) {
+    stop("Invalid type argument")
   }
+
+  # colnames(value) will return NULL if passed a vector, or a matrix/df without
+  # names
+  if (is.null(colnames(value))) {
+    null_name <- TRUE
+  } else {
+    null_name <- FALSE
+  }
+
+  if (!is(value, "data.frame")) {
+    # Gives a nice error (cannot convert class to data.frame) so no need for
+    # tryCatch here
+    value <- as.data.frame(value)
+  }
+
   if (nrow(design@structure) != nrow(value)) {
     stop("replacement entries do not have same number of rows as current")
   }
-  value
+
+  if (null_name) {
+    old_names <- var_names(design, type)
+    if (length(old_names) > ncol(value)) {
+      # If replacement has less columns, and we need to rename, take the first
+      # few names from the original component.
+      old_names <- old_names[seq_len(ncol(value))]
+    } else if (length(old_names) < ncol(value)) {
+      if (length(old_names) == 0) {
+        # No original component in design
+        stop("Adding a new component requires a named `data.frame`")
+      } else {
+        # Original component is shorter
+        stop(paste("Replacement component has more columns than original,",
+                   "replacement must be named"))
+      }
+    }
+    colnames(value) <- old_names
+  }
+
+  return(value)
 }
 
-# (Internal) Replaces `type` columns in `design` with `new`. Assumes
-# `.convert_to_data.frame` has already been called on `new`
+##' Assumes \code{.convert_to_data.frame()} has already been called on
+##' \code{new}
+##' @title (Internal) Replaces \code{type} columns in \code{design} with
+##'   \code{new}
+##' @param design A \code{Design}
+##' @param new A named \code{data.frame} with the replacement, should be the
+##'   output of \code{.convert_to_data.frame()}.
+##' @param type One of "t", "f", "u" or "b\".
+##' @return The updated \code{Design}
+##' @keywords internal
 .update_structure <- function(design, new, type) {
   design@structure <-
     cbind.data.frame(design@structure[design@column_index != type], new)
@@ -365,9 +473,15 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   return(design)
   }
 
-# (Internal) Updates `des@call`'s formula with the currently defined variable
-# names. Returns the updated formula, should be stuck into the design via
-# `des@call$formula <- .update_call_formula(des)`
+##' Helper function to update the \code{call} with the appropriate variable names after they've been modified. Called within \code{Design} replacers.
+##'
+##' It's return should be stuck into the design via \code{des@call$formula <-
+##' .update_call_formula(des)}
+##' @title (Internal) Updates `des@call`'s formula with the currently defined
+##'   variable names.
+##' @param design A \code{Design}
+##' @return An updated formula
+##' @keywords internal
 .update_call_formula <- function(design) {
 
   .collapse <- function(d, type) {
@@ -386,29 +500,5 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   if (design@type == "RD") {
     form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
   }
-  form <- formula(form)
-}
-
-# (Internal) Updates `des@call`'s formula with the currently defined variable
-# names. Returns the updated formula, should be stuck into the design via
-# `des@call$formula <- .update_call_formula(des)`
-.update_call_formula <- function(design) {
-
-  .collapse <- function(d, type) {
-    paste(var_names(d, type), collapse = ",")
-  }
-
-  # Get treatment, ~, and uoa/cluster
-  form <- paste0(var_names(design, "t"), "~", design@unit_of_assignment_type,
-                 "(", .collapse(design, "u"), ")")
-
-  # Get block if included
-  if (length(var_names(design, "b")) > 0) {
-    form <- paste0(form, "+ block(", .collapse(design, "b"), ")")
-  }
-
-  if (design@type == "RD") {
-    form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
-  }
-  form <- formula(form)
+  return(formula(form))
 }

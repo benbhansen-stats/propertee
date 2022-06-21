@@ -59,7 +59,11 @@ check_win_dev: FUNC=check_win_devel    # ... on win-builder dev
 check_rhub: FUNC=check_rhub
 check_rhub: DEVTOOLSARG=interactive=FALSE
 
-dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old check_rhub: .devtools
+.PHONY:build_site
+build_site: FUNC=build_site
+build_site: DEVTOOLSARG=quiet=FALSE
+
+dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old check_rhub build_site: .devtools
 
 .PHONY:clean
 clean: clean-vignette
