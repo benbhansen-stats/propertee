@@ -33,19 +33,11 @@ setValidity("PreSandwichLayer", function(object) {
 })
 
 setClass("SandwichLayer",
-         contains = "numeric",
-         slots = c(fitted_covariance_model = "ANY",
-                   prediction_gradient = "matrix",
-                   keys = "data.frame",
+         contains = "PreSandwichLayer",
+         slots = c(keys = "data.frame",
                    Design = "Design"))
 
 setValidity("SandwichLayer", function(object) {
-  psl <- new("PreSandwichLayer",
-             object@.Data,
-             fitted_covariance_model = object@fitted_covariance_model,
-             prediction_gradient = object@prediction_gradient)
-  validObject(psl)
-
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return(paste0("Keys does not have the same number of rows as the dataset used ",
                   "to fit the covariance model"))
@@ -68,17 +60,41 @@ setValidity("SandwichLayer", function(object) {
   invisible(object)
 }
 
-##' @title Show a PreSandwichLayer
+##' @title Show a PreSandwichLayer or SandwichLayer
 ##' @param object PreSandwichLayer object
 ##' @return an invisible copy of `object`
 ##' @export
+##' @rdname PreSandwichLayer.show
 setMethod("show", "PreSandwichLayer", .show_layer)
 
-##' @title Show a SandwichLayer
-##' @param object SandwichLayer object
-##' @return an invisible copy of `object`
+setGeneric("subset")
+
+##' @title PreSandwichLayer and SandwichLayer subsetting
+##' @param subset Logical vector identifying values to keep or drop
+##' @return \code{x} subset by \code{i}
 ##' @export
-setMethod("show", "SandwichLayer", .show_layer)
+##' @rdname PreSandwichLayer.subset
+setMethod("subset", "PreSandwichLayer", function(x, subset) {
+  x@.Data <- subset(x@.Data, subset = subset)
+  return(x)
+})
+
+setGeneric("[")
+
+##' @param x \code{PreSandwichLayer} object
+##' @param i indices specifying elements to extract or replace. See
+##'   \code{help("[")} for further details.
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @importFrom methods callNextMethod
+##' @rdname PreSandwichLayer.subset
+setMethod("[", "PreSandwichLayer",
+          function(x, i) {
+            dat <- methods::callNextMethod()
+            x@.Data <- dat
+            return(x)
+            
+          })
 
 ##' (Internal) Get the a vector of "response" predictions from a covariance model
 ##' and its gradient with respect to the fitted coefficients
@@ -170,9 +186,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   keys <- keys[, desvars, drop = FALSE]
 
   return(new("SandwichLayer",
-             x@.Data,
-             fitted_covariance_model = x@fitted_covariance_model,
-             prediction_gradient = x@prediction_gradient,
+             x,
              keys = keys,
              Design = design))
 }

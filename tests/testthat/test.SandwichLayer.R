@@ -21,91 +21,116 @@ pred_gradient <- model.matrix(~ cont_x + as.factor(cat_x), xstar)
 keys <- xstar[, c("uoa1", "uoa2")]
 invalid_cmod <- list("a" = c(1, 2, 3))
 
-expectSandwichLayerError <- function(err_msg,
-                                     offset,
-                                     fitted_covariance_model,
-                                     prediction_gradient,
-                                     keys) {
-  expect_error(new("SandwichLayer",
+expect_layer_error <- function(layer_class = c("PreSandwichLayer", "SandwichLayer"),
+                               err_msg,
+                               offset,
+                               ...) {
+  expect_error(new(layer_class,
                    offset,
-                   fitted_covariance_model = fitted_covariance_model,
-                   prediction_gradient = prediction_gradient,
-                   keys = keys),
+                   ...),
                err_msg)
 }
 
-test_that("SandwichLayer covariance model incompatible with model.matrix", {
-  expectSandwichLayerError("must have a 'terms' attribute",
-                           offset, invalid_cmod, pred_gradient, keys)
+test_that("PreSandwichLayer covariance model incompatible with model.matrix", {
+  expect_layer_error("PreSandwichLayer",
+                     "must have a 'terms' attribute",
+                     offset,
+                     fitted_covariance_model = invalid_cmod,
+                     prediction_gradient = pred_gradient)
 })
 
-test_that("SandwichLayer covariance model incompatible with sandwich package", {
+test_that("PreSandwichLayer covariance model incompatible with sandwich package", {
   on.exit(invalid_cmod <- list("a", "b", "c"))
 
   invalid_cmod$terms <- cmod$terms
-  expectSandwichLayerError("extracting vcov elements not applicable",
-                           offset, invalid_cmod, pred_gradient, keys)
+  expect_layer_error("PreSandwichLayer",
+                     "extracting vcov elements not applicable",
+                     offset,
+                     fitted_covariance_model = invalid_cmod,
+                     prediction_gradient = pred_gradient)
 })
   
-test_that("SandwichLayer prediction gradient is not a numeric matrix", {
+test_that("PreSandwichLayer prediction gradient is not a numeric matrix", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
   pred_gradient <- matrix(as.character(cbind(cont_x, cat_x)), ncol = 2)
-  expectSandwichLayerError("must be a numeric matrix",
-                           offset, cmod, pred_gradient, keys)
+  expect_layer_error("PreSandwichLayer",
+                     "must be a numeric matrix",
+                     offset,
+                     fitted_covariance_model = cmod,
+                     prediction_gradient = pred_gradient)
 })
 
-test_that("SandwichLayer prediction gradient has invalid number of rows", {
+test_that("PreSandwichLayer prediction gradient has invalid number of rows", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
   pred_gradient <- as.matrix(cbind(cont_x, cat_x)[2:100,])
-  expectSandwichLayerError("same number of rows",
-                           offset, cmod, pred_gradient, keys)
+  expect_layer_error("PreSandwichLayer",
+                     "same number of rows",
+                     offset,
+                     fitted_covariance_model = cmod,
+                     prediction_gradient = pred_gradient)
 })
 
-test_that("SandwichLayer prediction gradient has invalid number of columns", {
+test_that("PreSandwichLayer prediction gradient has invalid number of columns", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
   pred_gradient <- as.matrix(cont_x)
-  expectSandwichLayerError("same number of columns",
-                           offset, cmod, pred_gradient, keys)
+  expect_layer_error("PreSandwichLayer",
+                     "same number of columns",
+                     offset,
+                     fitted_covariance_model = cmod,
+                     prediction_gradient = pred_gradient)
 })
 
 test_that("SandwichLayer has NA's", {
   on.exit(offset <- stats::predict(cmod, xstar))
 
   offset <- c(offset[1:99], NA_real_)
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
   expect_warning(new("SandwichLayer",
-                     offset,
-                     fitted_covariance_model = cmod,
-                     prediction_gradient = pred_gradient,
-                     keys = keys),
+                     psl,
+                     keys = keys,
+                     Design = des),
                  "has NA values")
 })
 
 test_that("SandwichLayer keys doesn't have the same row count as covariance model data", {
   on.exit(keys <- xstar[, c("uoa1", "uoa2", "t")])
   
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
   keys <- keys[1:99,]
-  expectSandwichLayerError("to fit the covariance model",
-                           offset, cmod, pred_gradient, keys)
+  expect_layer_error("SandwichLayer",
+                     "to fit the covariance model",
+                     psl,
+                     keys = keys,
+                     Design = des)
 })
 
 test_that("SandwichLayer created correctly", {
   on.exit(keys <- xstar[, c("uoa1", "uoa2", "t")])
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
   expect_true(is(new("SandwichLayer",
-                     offset,
-                     fitted_covariance_model = cmod,
-                     prediction_gradient = pred_gradient,
-                     keys = keys),
+                     psl,
+                     keys = keys,
+                     Design = des),
                  "SandwichLayer"))
   
   keys[100,] <- rep(NA_integer_, ncol(keys))
   expect_true(is(new("SandwichLayer",
-                     offset,
-                     fitted_covariance_model = cmod,
-                     prediction_gradient = pred_gradient,
-                     keys = keys),
+                     psl,
+                     keys = keys,
+                     Design = des),
                  "SandwichLayer"))
 })
 
@@ -260,6 +285,57 @@ test_that("show_sandwich_layer works", {
   expect_identical(out, caout)
   
   
+})
+
+test_that("subsetting PreSandwich and SandwichLayer works", {
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- new("SandwichLayer",
+            psl,
+            keys = keys,
+            Design = des)
+  
+  no_subset_psl <- subset(psl, rep(TRUE, length(offset)))
+  no_subset_sl <- subset(sl, rep(TRUE, length(offset)))
+  expect_identical(no_subset_psl, psl)
+  expect_identical(no_subset_sl, sl)
+  
+  expect_true(is(no_subset_psl, "PreSandwichLayer"))
+  expect_true(is(no_subset_sl, "SandwichLayer"))
+  
+  expect_identical(capture_output(str(no_subset_psl)),
+                   capture_output(str(psl)))
+  expect_identical(capture_output(str(no_subset_sl)),
+                   capture_output(str(sl)))
+  
+  subset_length <- floor(length(offset) / 2)
+  subset_psl <- subset(psl, c(rep(TRUE, subset_length),
+                              rep(FALSE, length(offset) - subset_length)))
+  subset_sl <- subset(sl, c(rep(TRUE, subset_length),
+                            rep(FALSE, length(offset) - subset_length)))
+  expect_identical(subset_psl@.Data, psl@.Data[1:subset_length])
+  expect_identical(subset_sl@.Data, sl@.Data[1:subset_length])
+  
+  expect_true(is(subset_psl, "PreSandwichLayer"))
+  expect_true(is(subset_sl, "SandwichLayer"))
+  
+  expect_identical(subset_psl@fitted_covariance_model, psl@fitted_covariance_model)
+  expect_identical(subset_psl@prediction_gradient, psl@prediction_gradient)
+  expect_identical(subset_sl@keys, sl@keys)
+  expect_identical(subset_sl@Design, sl@Design)
+  
+  no_subset_psl <- psl[]
+  no_subset_sl <- sl[]
+  expect_identical(no_subset_psl, psl)
+  expect_identical(no_subset_sl, sl)
+  
+  expect_true(is(no_subset_psl, "PreSandwichLayer"))
+  expect_true(is(no_subset_sl, "SandwichLayer"))
+  
+  expect_identical(psl[1:10]@.Data, psl@.Data[1:10])
+  expect_identical(sl[1:10]@.Data, sl@.Data[1:10])
 })
 
 test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
