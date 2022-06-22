@@ -2,9 +2,8 @@
 NULL
 
 ##' @title Covariance Adjustment for Treatment Estimation
-##' @param model Any model of class \code{glm} or \code{lm} (excluding those from
-##' the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
-##' methods
+##' @param model Any model that inherits from a \code{glm}, \code{lm}, or \code{
+##' robustbase::lmrob} object
 ##' @param newdata Optional; a data.frame of new data
 ##' @param design Optional \code{Design}.
 ##' @return Covariate adjusted outcomes
