@@ -33,19 +33,11 @@ setValidity("PreSandwichLayer", function(object) {
 })
 
 setClass("SandwichLayer",
-         contains = "numeric",
-         slots = c(fitted_covariance_model = "ANY",
-                   prediction_gradient = "matrix",
-                   keys = "data.frame",
+         contains = "PreSandwichLayer",
+         slots = c(keys = "data.frame",
                    Design = "Design"))
 
 setValidity("SandwichLayer", function(object) {
-  psl <- new("PreSandwichLayer",
-             object@.Data,
-             fitted_covariance_model = object@fitted_covariance_model,
-             prediction_gradient = object@prediction_gradient)
-  validObject(psl)
-
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return(paste0("Keys does not have the same number of rows as the dataset used ",
                   "to fit the covariance model"))
@@ -73,12 +65,6 @@ setValidity("SandwichLayer", function(object) {
 ##' @return an invisible copy of `object`
 ##' @export
 setMethod("show", "PreSandwichLayer", .show_layer)
-
-##' @title Show a SandwichLayer
-##' @param object SandwichLayer object
-##' @return an invisible copy of `object`
-##' @export
-setMethod("show", "SandwichLayer", .show_layer)
 
 ##' (Internal) Get the a vector of "response" predictions from a covariance model
 ##' and its gradient with respect to the fitted coefficients
@@ -170,9 +156,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   keys <- keys[, desvars, drop = FALSE]
 
   return(new("SandwichLayer",
-             x@.Data,
-             fitted_covariance_model = x@fitted_covariance_model,
-             prediction_gradient = x@prediction_gradient,
+             x,
              keys = keys,
              Design = design))
 }
