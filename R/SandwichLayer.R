@@ -82,9 +82,8 @@ setMethod("show", "SandwichLayer", .show_layer)
 
 ##' (Internal) Get the a vector of "response" predictions from a covariance model
 ##' and its gradient with respect to the fitted coefficients
-##' @param model Any model of class \code{glm} or \code{lm} (excluding those from
-##' the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
-##' methods
+##' @param model Any model that inherits from a \code{glm}, \code{lm}, or \code{
+##' robustbase::lmrob} object
 ##' @param newdata Optional; a data.frame of new data
 ##' @return Covariate adjusted outcomes and their prediction gradient (a list of
 ##' a numeric vector and a matrix)
@@ -111,14 +110,15 @@ setMethod("show", "SandwichLayer", .show_layer)
                               "must support predict function"))
                  })
 
-  # this branch applies to `glm`, `surveyglm`, `robustbase::glmrob` models
-  if (is(model, "glm") & !is(model, "gam")) {
+  # this branch applies to (at least) `glm`, `survey::surveyglm`,
+  # `robustbase::glmrob` and `gam` models
+  if (is(model, "glm")) {
     pred_gradient <- model$family$mu.eta(ca) * X
   } else if (is(model, "lm") | is(model, "lmrob")) {
     # `lm` doesn't have a `family` object, but we know its prediction gradient
     pred_gradient <- X
   } else {
-    stop("`model` must be a `glm` or `lm` object (and not a `gam` object)")
+    stop("`model` must inherit from a `glm`, `lm`, or `lmrob` object")
   }
 
   return(list("ca" = ca,
