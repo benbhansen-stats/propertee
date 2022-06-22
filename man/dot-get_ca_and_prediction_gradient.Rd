@@ -9,9 +9,8 @@ the covariance model}
 .get_ca_and_prediction_gradient(model, newdata = NULL)
 }
 \arguments{
-\item{model}{Any model of class \code{glm} or \code{lm} (excluding those from
-the \CRANpkg{gam} package) that supports \code{predict} and \code{model.matrix}
-methods}
+\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or \code{
+robustbase::lmrob} object}
 
 \item{newdata}{Optional; a data.frame of new data}
 }
