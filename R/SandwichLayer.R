@@ -66,6 +66,35 @@ setValidity("SandwichLayer", function(object) {
 ##' @export
 setMethod("show", "PreSandwichLayer", .show_layer)
 
+setGeneric("subset")
+
+##' @title \code{PreSandwichLayer} subsetting
+##' @param subset Logical vector identifying values to keep or drop
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @rdname PreSandwichLayer.subset
+setMethod("subset", "PreSandwichLayer", function(x, subset) {
+  x@.Data <- subset(x@.Data, subset = subset)
+  return(x)
+})
+
+setGeneric("[")
+
+##' @param x \code{PreSandwichLayer} object
+##' @param i indices specifying elements to extract or replace. See
+##'   \code{help("[")} for further details.
+##' @return \code{x} subset by \code{i}
+##' @export
+##' @importFrom methods callNextMethod
+##' @rdname PreSandwichLayer.subset
+setMethod("[", "PreSandwichLayer",
+          function(x, i) {
+            dat <- methods::callNextMethod()
+            x@.Data <- dat
+            return(x)
+            
+          })
+
 ##' (Internal) Get the a vector of "response" predictions from a covariance model
 ##' and its gradient with respect to the fitted coefficients
 ##' @param model Any model of class \code{glm} or \code{lm} (excluding those from

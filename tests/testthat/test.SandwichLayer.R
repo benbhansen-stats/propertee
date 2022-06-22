@@ -287,6 +287,57 @@ test_that("show_sandwich_layer works", {
   
 })
 
+test_that("subsetting PreSandwich and SandwichLayer works", {
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- new("SandwichLayer",
+            psl,
+            keys = keys,
+            Design = des)
+  
+  no_subset_psl <- subset(psl, rep(TRUE, length(offset)))
+  no_subset_sl <- subset(sl, rep(TRUE, length(offset)))
+  expect_identical(no_subset_psl, psl)
+  expect_identical(no_subset_sl, sl)
+  
+  expect_true(is(no_subset_psl, "PreSandwichLayer"))
+  expect_true(is(no_subset_sl, "SandwichLayer"))
+  
+  expect_identical(capture_output(str(no_subset_psl)),
+                   capture_output(str(psl)))
+  expect_identical(capture_output(str(no_subset_sl)),
+                   capture_output(str(sl)))
+  
+  subset_length <- floor(length(offset) / 2)
+  subset_psl <- subset(psl, c(rep(TRUE, subset_length),
+                              rep(FALSE, length(offset) - subset_length)))
+  subset_sl <- subset(sl, c(rep(TRUE, subset_length),
+                            rep(FALSE, length(offset) - subset_length)))
+  expect_identical(subset_psl@.Data, psl@.Data[1:subset_length])
+  expect_identical(subset_sl@.Data, sl@.Data[1:subset_length])
+  
+  expect_true(is(subset_psl, "PreSandwichLayer"))
+  expect_true(is(subset_sl, "SandwichLayer"))
+  
+  expect_identical(subset_psl@fitted_covariance_model, psl@fitted_covariance_model)
+  expect_identical(subset_psl@prediction_gradient, psl@prediction_gradient)
+  expect_identical(subset_sl@keys, sl@keys)
+  expect_identical(subset_sl@Design, sl@Design)
+  
+  no_subset_psl <- psl[]
+  no_subset_sl <- sl[]
+  expect_identical(no_subset_psl, psl)
+  expect_identical(no_subset_sl, sl)
+  
+  expect_true(is(no_subset_psl, "PreSandwichLayer"))
+  expect_true(is(no_subset_sl, "SandwichLayer"))
+  
+  expect_identical(psl[1:10]@.Data, psl@.Data[1:10])
+  expect_identical(sl[1:10]@.Data, sl@.Data[1:10])
+})
+
 test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
   expect_error(.get_ca_and_prediction_gradient(cmod, as.matrix(xstar)),
                "must be a dataframe")
