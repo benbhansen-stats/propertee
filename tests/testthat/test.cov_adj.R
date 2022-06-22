@@ -98,18 +98,22 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   expect_true(is(ca, "PreSandwichLayer"))
 })
 
-# test_that("cov_adj as offset with weights, data has NULLs", {
-#   # notrun right now due to bug in `ate`
-#   des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
-#   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
-#   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
-#                     offset = cov_adj(cmod), weights = ate(des)),
-#                  "Offset has NA values")
-#   m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
-#                            offset = cov_adj(cmod), weights = ate(des)))
-#   test_ca(m$model$`(offset)`, cmod, Q_w_nulls)
-#   expect_true(is(m$model$`(offset)`, "SandwichLayer"))
-# })
+test_that("cov_adj as offset with weights, data has NULLs", {
+  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+  cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
+  expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
+                    offset = cov_adj(cmod), weights = ate(des)),
+                 "Offset has NA values")
+  m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
+                           offset = cov_adj(cmod), weights = ate(des)))
+
+  form <- paste("~", paste(unique(c(all.vars(formula(cmod)), all.vars(formula(m)))),
+                           collapse = "+"))
+  test_ca(m$model$`(offset)`,
+          cmod,
+          stats::model.frame(as.formula(form), data = Q_w_nulls))
+  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+})
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
