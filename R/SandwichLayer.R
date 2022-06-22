@@ -60,15 +60,16 @@ setValidity("SandwichLayer", function(object) {
   invisible(object)
 }
 
-##' @title Show a PreSandwichLayer
+##' @title Show a PreSandwichLayer or SandwichLayer
 ##' @param object PreSandwichLayer object
 ##' @return an invisible copy of `object`
 ##' @export
+##' @rdname PreSandwichLayer.show
 setMethod("show", "PreSandwichLayer", .show_layer)
 
 setGeneric("subset")
 
-##' @title \code{PreSandwichLayer} subsetting
+##' @title PreSandwichLayer and SandwichLayer subsetting
 ##' @param subset Logical vector identifying values to keep or drop
 ##' @return \code{x} subset by \code{i}
 ##' @export

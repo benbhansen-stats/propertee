@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{show,PreSandwichLayer-method}
 \alias{show,PreSandwichLayer-method}
-\title{Show a PreSandwichLayer}
+\title{Show a PreSandwichLayer or SandwichLayer}
 \usage{
 \S4method{show}{PreSandwichLayer}(object)
 }
@@ -13,5 +13,5 @@
 an invisible copy of \code{object}
 }
 \description{
-Show a PreSandwichLayer
+Show a PreSandwichLayer or SandwichLayer
 }

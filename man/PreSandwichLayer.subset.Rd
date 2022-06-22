@@ -3,7 +3,7 @@
 \name{subset,PreSandwichLayer-method}
 \alias{subset,PreSandwichLayer-method}
 \alias{[,PreSandwichLayer,ANY,ANY,ANY-method}
-\title{\code{PreSandwichLayer} subsetting}
+\title{PreSandwichLayer and SandwichLayer subsetting}
 \usage{
 \S4method{subset}{PreSandwichLayer}(x, subset)
 
@@ -23,5 +23,5 @@
 \code{x} subset by \code{i}
 }
 \description{
-\code{PreSandwichLayer} subsetting
+PreSandwichLayer and SandwichLayer subsetting
 }
