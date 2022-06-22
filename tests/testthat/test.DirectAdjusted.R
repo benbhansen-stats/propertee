@@ -266,6 +266,6 @@ test_that("subsetting model with weights and/or cov_adj", {
              subset = simdata$dose < 300)
 
   expect_true(is(mod2$model$`(weights)`, "WeightedDesign"))
-#  expect_true(is(mod2$model$`(offset)`, "SandwichLayer"))
+  expect_true(is(mod2$model$`(offset)`, "SandwichLayer"))
 
 })
