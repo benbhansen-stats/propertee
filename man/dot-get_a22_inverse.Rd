@@ -19,12 +19,13 @@ A 1x1 matrix
 This block is the diagonal element of the inverse expected Fisher
 Information matrix corresponding to the treatment estimate. As shown in the
 Details of \code{\link{.get_b22}}, the estimating equations for a generalized
-linear model can be written as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i}
-/ \phi} The information matrix A22 is then the negative
-Jacobian of \eqn{\psi_{i}}: \deqn{A_{22} = \partial\psi_{i}/\partial\beta =
--w_{i}(d\mu(x_{i}\beta)/dx_{i}\beta)x_{i}x_{i}' / \phi} In
-matrix form, this can be expressed as \eqn{-X'WX}, where W is a diagonal
-matrix of the vector of elementwise products of the terms not
-found in the model matrix.
+linear model with a canonical link function can be written as
+\deqn{\psii = (ri / Var(yi)) * (d\mui/d\etai) * xi}
+The expected information matrix A22 is then the negative Jacobian of \eqn{\psii},
+which by likelihood theory is the variance-covariance matrix of \eqn{\psii}:
+\deqn{\psi_{i}\psi_{i}^{T} = E[(ri / Var(yi) * (d\mui/d\etai))^{2}] * xixi' =
+(d\mui/d\etai)^{2} / Var(yi) * xixi'} Considering the whole sample, this can be
+expressed in matrix form as \eqn{X'WX}. The output of this function is the
+inverse of the diagonal element corresponding to the treatment estimate.
 }
 \keyword{internal}

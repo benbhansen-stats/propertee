@@ -2,9 +2,8 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.get_ca_and_prediction_gradient}
 \alias{.get_ca_and_prediction_gradient}
-\title{(Internal) Get a vector of "response" predictions from a covariance model
-for a certain dataframe and its gradient with respect to the parameters of
-the covariance model}
+\title{(Internal) Get the a vector of "response" predictions from a covariance model
+and its gradient with respect to the fitted coefficients}
 \usage{
 .get_ca_and_prediction_gradient(model, newdata = NULL)
 }
@@ -19,7 +18,6 @@ Covariate adjusted outcomes and their gradient with respect to the
 parameters of the covariance model (a list of a numeric vector and a matrix)
 }
 \description{
-(Internal) Get a vector of "response" predictions from a covariance model
-for a certain dataframe and its gradient with respect to the parameters of
-the covariance model
+(Internal) Get the a vector of "response" predictions from a covariance model
+and its gradient with respect to the fitted coefficients
 }

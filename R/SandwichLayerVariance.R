@@ -62,13 +62,14 @@ NULL
 #' @details This block is the diagonal element of the inverse expected Fisher
 #' Information matrix corresponding to the treatment estimate. As shown in the
 #' Details of \code{\link{.get_b22}}, the estimating equations for a generalized
-#' linear model can be written as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i}
-#' / \phi} The information matrix A22 is then the negative
-#' Jacobian of \eqn{\psi_{i}}: \deqn{A_{22} = \partial\psi_{i}/\partial\beta =
-#' -w_{i}(d\mu(x_{i}\beta)/dx_{i}\beta)x_{i}x_{i}' / \phi} In
-#' matrix form, this can be expressed as \eqn{-X'WX}, where W is a diagonal
-#' matrix of the vector of elementwise products of the terms not
-#' found in the model matrix.
+#' linear model with a canonical link function can be written as
+#' \deqn{\psii = (ri / Var(yi)) * (d\mui/d\etai) * xi}
+#' The expected information matrix A22 is then the negative Jacobian of \eqn{\psii},
+#' which by likelihood theory is the variance-covariance matrix of \eqn{\psii}:
+#' \deqn{\psi_{i}\psi_{i}^{T} = E[(ri / Var(yi) * (d\mui/d\etai))^{2}] * xixi' =
+#' (d\mui/d\etai)^{2} / Var(yi) * xixi'} Considering the whole sample, this can be
+#' expressed in matrix form as \eqn{X'WX}. The output of this function is the
+#' inverse of the diagonal element corresponding to the treatment estimate.
 #' @return A 1x1 matrix
 #' @keywords internal
 .get_a22_inverse <- function(x) {
@@ -76,37 +77,45 @@ NULL
     stop("x must be a DirectAdjusted model")
   }
 
-  # Get Fisher information matrix
+  # Get expected information per sandwich_infrastructure vignette
   if ("glm" %in% x@.S3Class) {
-    dispersion <- stats::summary.glm(x)$dispersion
-    mu.eta <- x$family$mu.eta(x$linear.predictors)
+    varys <- x$family$variance(x$fitted.values)
+    if (substr(x$family$family, 1, 5) == "quasi") {
+      varys <- summary.glm(x)$dispersion * varys
+    }
+    W <- x$family$mu.eta(x$linear.predictors)^2 / varys
   } else {
-    dispersion <- 1
-    mu.eta <- rep(1, length(x$fitted.values))
+    W <- rep(1, length(x$fitted.values))
   }
-
-  W <- diag(as.numeric(-x$weights * mu.eta / dispersion))
-
-  fim <- -(t(stats::model.matrix(x)) %*% W %*% stats::model.matrix(x))
+  
+  fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
   zname <- var_names(x@Design, "t")
+  
   return(solve(fim)[zname, zname, drop = FALSE])
 }
 
 #' @title (Internal) Get the B22 block of the sandwich variance estimator
 #' @param x A DirectAdjusted model object
-#' @details This block refers to the treatment assignment-level variance estimate
-#' of the treatment effect. The \code{stats} package offers family objects with
+#' @details This block refers to a clustered variance estimate of the treatment
+#' effect estimate. The \code{stats} package offers family objects with
 #' canonical link functions, so the log-likelihood for a generalized linear model
-#' can be written in terms of the linear predictor as \deqn{L(y_{i}, \beta, \phi,
-#' w_{i}) = w_{i}(y_{i}\beta'x_{i} - b(\beta'x_{i})) / \phi + h(y_{i}; \phi)}
-#' The estimating equations \eqn{\psi_{i}} given by the score function can then be
-#' expressed as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i} / \phi}
+#' can be written in terms of the linear predictor as \deqn{L(yi, \beta, \phi, wi)
+#' = wi * (yi * \beta'xi - b(\beta'xi)) / \phi + h(yi; \phi)} The estimating equations
+#' \eqn{\psii} given by the score function can then be expressed as
+#' \deqn{\psii = E[wi * (yi - \mu(\beta'xi)) * xi / \phi]}
+#' In section 4.4 of the second edition of Categorical Data Analysis, Agresti
+#' shows the derivative of the mean function with respect to the linear predictor
+#' is equivalent to the weighted variance for an observation divided by the estimate
+#' of the dispersion parameter. Thus, the above estimating equations can also be
+#' written as \deqn{\psii = (ri / Var(yi)) * (d\mui/d\etai) * xi}
 #' 
-#' Where J is the number of units at the level where the treatment was assigned
-#' in the experimental design, a matrix C of dimension nxJ is formed to indicate
-#' which unit each subject in the design belongs to. The treatment assignment-
-#' level estimating equations are then obtained via \eqn{C'\psi}, where \eqn{\psi}
-#' is the matrix of estimating equations at the subject level.
+#' A matrix C of dimension nxJ is formed to indicate which unit each subject in
+#' the design belongs to, where J is the number of units at the level of treatment
+#' assignment. The treatment assignment-level estimating equations are then obtained
+#' via \eqn{C'\psi}, where \eqn{\psi} is the matrix of estimating equations at the
+#' subject level.
+#' @references Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
+#' https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
 #' @return A (p+1)x(p+1) matrix where the dimensions are given by the number of
 #' terms in the treatment model (p) and an Intercept term. Typically, this should
 #' be a 2x2 matrix given the dichotomous handling of treatment variables in this
@@ -124,17 +133,19 @@ NULL
                                     stats::expand.model.frame(x, uoanames)[, uoanames])
   
   # Get unit of assignment-level est. eqns
-  # The sandwich package uses a different dispersion calculation from the stats
-  # package, so to keep in line with the stats package, we use mostly the same
-  # code as sandwich::estfun but swap the dispersion calculation
   if ("glm" %in% x@.S3Class) {
-    eqns <- x$weights * x$residuals * stats::model.matrix(x) / stats::summary.glm(x)$dispersion
+    varys <- x$family$variance(x$fitted.values)
+    if (substr(x$family$family, 1, 5) == "quasi") {
+      varys <- summary.glm(x)$dispersion * varys
+    }
+    W <- x$residuals * x$family$mu.eta(x$linear.predictors) / varys
   } else {
-    eqns <- x$weights * x$residuals * stats::model.matrix(x)
+    W <- x$residuals
   }
   
-  cluster_eqns <- crossprod(uoa_matrix, eqns)
-  vcov <- crossprod(cluster_eqns)
+  uoa_eqns <- crossprod(uoa_matrix, W * stats::model.matrix(x))
+  vmat <- crossprod(uoa_eqns)
   zname <- var_names(x@Design, "t")
-  return(vcov[zname, zname, drop = FALSE])
+
+  return(vmat[zname, zname, drop = FALSE])
 }

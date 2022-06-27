@@ -19,18 +19,27 @@ package and the use of the covariance model to offer the covariance adjustment.
 (Internal) Get the B22 block of the sandwich variance estimator
 }
 \details{
-This block refers to the treatment assignment-level variance estimate
-of the treatment effect. The \code{stats} package offers family objects with
+This block refers to a clustered variance estimate of the treatment
+effect estimate. The \code{stats} package offers family objects with
 canonical link functions, so the log-likelihood for a generalized linear model
-can be written in terms of the linear predictor as \deqn{L(y_{i}, \beta, \phi,
-w_{i}) = w_{i}(y_{i}\beta'x_{i} - b(\beta'x_{i})) / \phi + h(y_{i}; \phi)}
-The estimating equations \eqn{\psi_{i}} given by the score function can then be
-expressed as \deqn{\psi_{i} = w_{i}(y_{i} - \mu(\beta'x_{i}))x_{i} / \phi}
+can be written in terms of the linear predictor as \deqn{L(yi, \beta, \phi, wi)
+= wi * (yi * \beta'xi - b(\beta'xi)) / \phi + h(yi; \phi)} The estimating equations
+\eqn{\psii} given by the score function can then be expressed as
+\deqn{\psii = E[wi * (yi - \mu(\beta'xi)) * xi / \phi]}
+In section 4.4 of the second edition of Categorical Data Analysis, Agresti
+shows the derivative of the mean function with respect to the linear predictor
+is equivalent to the weighted variance for an observation divided by the estimate
+of the dispersion parameter. Thus, the above estimating equations can also be
+written as \deqn{\psii = (ri / Var(yi)) * (d\mui/d\etai) * xi}
 
-Where J is the number of units at the level where the treatment was assigned
-in the experimental design, a matrix C of dimension nxJ is formed to indicate
-which unit each subject in the design belongs to. The treatment assignment-
-level estimating equations are then obtained via \eqn{C'\psi}, where \eqn{\psi}
-is the matrix of estimating equations at the subject level.
+A matrix C of dimension nxJ is formed to indicate which unit each subject in
+the design belongs to, where J is the number of units at the level of treatment
+assignment. The treatment assignment-level estimating equations are then obtained
+via \eqn{C'\psi}, where \eqn{\psi} is the matrix of estimating equations at the
+subject level.
+}
+\references{
+Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
+https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
 }
 \keyword{internal}
