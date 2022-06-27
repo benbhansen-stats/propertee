@@ -33,9 +33,10 @@ test_that("variance helper functions fail without a DirectAdjusted model", {
   
   expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
   expect_error(.get_b22(cmod), "must be a DirectAdjusted")
+  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
 })
 
-test_that(".get_b12 used with DA model without SandwichLayer offset", {
+test_that(".get_b12, .get_a11_inverse used with DA model without SandwichLayer offset", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
@@ -44,8 +45,8 @@ test_that(".get_b12 used with DA model without SandwichLayer offset", {
     lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(.get_b12(m),
-               "must have an offset of class")
+  expect_error(.get_b12(m), "must have an offset of class")
+  expect_error(.get_a11_inverse(m), "must have an offset of class")
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -282,3 +283,79 @@ test_that(".get_b22 returns correct value for binomial glm", {
   
   expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
 })
+
+test_that(".get_a11_inverse returns correct value for lm cmod", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  fim <- crossprod(stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim))
+})
+
+test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
+  data(simdata)
+  cmod <- glm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
+  fim <- crossprod(stats::model.matrix(cmod), stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), dispersion * solve(fim))
+})
+
+test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson())
+  )
+  
+  fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+})
+
+test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::quasipoisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson())
+  )
+  
+  dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
+  fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), dispersion * solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+})
+
+test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
+  data(simdata)
+  cmod <- suppressWarnings(
+    glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
+  )
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- suppressWarnings(as.DirectAdjusted(
+    glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
+        offset = cov_adj(cmod), family = stats::binomial())
+  ))
+  
+  fim <- crossprod(stats::model.matrix(cmod) * cmod$fitted.values * (1 - cmod$fitted.values),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
+})
+

@@ -149,3 +149,30 @@ NULL
 
   return(vmat[zname, zname, drop = FALSE])
 }
+
+#' @title (Internal) Get the inverse of the A11 block of the sandwich variance estimator
+#' @param x A DirectAdjusted model object
+#' @details This block is the pxp matrix corresponding to the unscaled
+#' inverse of the observed Fisher information of the covariance model. The
+#' observed information is given by the estimate of the negative Jacobian of the
+#' model's estimating equations. The unscaled version provided here divides by
+#' the number of observations used to fit the covariance model.
+#' @return a (p+1)x(p+1) matrix where the dimensions are given by the number of
+#' terms in the covariance model (p) and an Intercept term.
+#' @keywords internal
+.get_a11_inverse <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  cmod <- x$model$`(offset)`@fitted_covariance_model
+  nc <- sum(summary(cmod)$df[1L:2L])
+
+  return(sandwich::bread(cmod) / nc)
+}
