@@ -75,7 +75,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Non-Binary Treatment</h1>
             
-            <h4 data-toc-skip class="date">2022-06-23</h4>
+            <h4 data-toc-skip class="date">2022-06-28</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/vignettes/not-for-cran/non-binary-weights.Rmd" class="external-link"><code>vignettes/not-for-cran/non-binary-weights.Rmd</code></a></small>
       <div class="d-none name"><code>non-binary-weights.Rmd</code></div>
@@ -85,137 +85,137 @@
     
 <p>Binary treatments are straightforward:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span>
-<span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">##  [9] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000</span>
-<span class="co">## [17] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [25] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000</span>
-<span class="co">## [33] 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [41] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [49] 2.500000 2.500000</span></code></pre>
+<code class="sourceCode R"><span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">##  [9] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000</span></span>
+<span><span class="co">## [17] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [25] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000</span></span>
+<span><span class="co">## [33] 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [41] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [49] 2.500000 2.500000</span></span></code></pre>
 <p>We now allow non-binary treatment as well:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">simdata</span><span class="op">$</span><span class="va">dose</span></code></pre></div>
-<pre><code><span class="co">##  [1]  50  50  50  50 250 250 250 250 250 250 100 100 100 100 200 200 200 200 200</span>
-<span class="co">## [20] 200 300 300 300 300  50  50  50  50  50  50 250 250 250 250 100 100 100 100</span>
-<span class="co">## [39] 100 100 200 200 200 200 300 300 300 300 300 300</span></code></pre>
+<code class="sourceCode R"><span><span class="va">simdata</span><span class="op">$</span><span class="va">dose</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1]  50  50  50  50 250 250 250 250 250 250 100 100 100 100 200 200 200 200 200</span></span>
+<span><span class="co">## [20] 200 300 300 300 300  50  50  50  50  50  50 250 250 250 250 100 100 100 100</span></span>
+<span><span class="co">## [39] 100 100 200 200 200 200 300 300 300 300 300 300</span></span></code></pre>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
 <p>Proceeding with this treatment will cause an error:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">## Error in .weights_calc(design = design, target = "ate", dichotomy = dichotomy, : To calculate weights, treatment must either be 0/1 binary,</span>
-<span class="co">##  or the Design must have a dichotomy.</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Error in .weights_calc(design = design, target = "ate", dichotomy = dichotomy, : To calculate weights, treatment must either be 0/1 binary,</span></span>
+<span><span class="co">##  or the Design must have a dichotomy.</span></span></code></pre>
 <p>Instead, we pass a <code>dichotomy</code> argument:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,
-    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">##  [9] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span>
-<span class="co">## [17] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [25] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span>
-<span class="co">## [33] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [41] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [49] 1.666667 1.666667</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">##  [9] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span></span>
+<span><span class="co">## [17] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [25] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span></span>
+<span><span class="co">## [33] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [41] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [49] 1.666667 1.666667</span></span></code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,
-    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;</span> <span class="fl">200</span> <span class="op">|</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span> <span class="op">~</span> <span class="va">.</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">##  [9] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [17] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [25] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [33] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [41] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [49] 1.666667 1.666667</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;</span> <span class="fl">200</span> <span class="op">|</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span> <span class="op">~</span> <span class="va">.</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">##  [9] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [17] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [25] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [33] 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [41] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [49] 1.666667 1.666667</span></span></code></pre>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,
-    dichotomy <span class="op">=</span> <span class="va">.</span> <span class="op">~</span> <span class="va">dose</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">##  [9] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [17] 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [25] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span>
-<span class="co">## [33] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span>
-<span class="co">## [41] 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000</span>
-<span class="co">## [49] 2.500000 2.500000</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>    dichotomy <span class="op">=</span> <span class="va">.</span> <span class="op">~</span> <span class="va">dose</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">##  [9] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [17] 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [25] 2.500000 2.500000 2.500000 2.500000 2.500000 2.500000 1.666667 1.666667</span></span>
+<span><span class="co">## [33] 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667 1.666667</span></span>
+<span><span class="co">## [41] 1.666667 1.666667 1.666667 1.666667 2.500000 2.500000 2.500000 2.500000</span></span>
+<span><span class="co">## [49] 2.500000 2.500000</span></span></code></pre>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,
-    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">==</span> <span class="fl">300</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA  NA 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA</span>
-<span class="co">## [20]  NA 3.0 3.0 3.0 3.0 1.5 1.5 1.5 1.5 1.5 1.5  NA  NA  NA  NA 1.5 1.5 1.5 1.5</span>
-<span class="co">## [39] 1.5 1.5  NA  NA  NA  NA 3.0 3.0 3.0 3.0 3.0 3.0</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>    dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">==</span> <span class="fl">300</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA  NA 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA</span></span>
+<span><span class="co">## [20]  NA 3.0 3.0 3.0 3.0 1.5 1.5 1.5 1.5 1.5 1.5  NA  NA  NA  NA 1.5 1.5 1.5 1.5</span></span>
+<span><span class="co">## [39] 1.5 1.5  NA  NA  NA  NA 3.0 3.0 3.0 3.0 3.0 3.0</span></span></code></pre>
 <p>Alternatively, we could place the dichotomy in the Design instead.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/Design_extract_dichotomy.html">dichotomy</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span>
-<span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">##  [9] 1.333333 1.333333       NA       NA       NA       NA 1.333333 1.333333</span>
-<span class="co">## [17] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">## [25] 4.000000 4.000000 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333</span>
-<span class="co">## [33] 1.333333 1.333333       NA       NA       NA       NA       NA       NA</span>
-<span class="co">## [41] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">## [49] 1.333333 1.333333</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/Design_extract_dichotomy.html">dichotomy</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span></span>
+<span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">##  [9] 1.333333 1.333333       NA       NA       NA       NA 1.333333 1.333333</span></span>
+<span><span class="co">## [17] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">## [25] 4.000000 4.000000 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333</span></span>
+<span><span class="co">## [33] 1.333333 1.333333       NA       NA       NA       NA       NA       NA</span></span>
+<span><span class="co">## [41] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">## [49] 1.333333 1.333333</span></span></code></pre>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">des3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>,
-                   dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span><span class="op">)</span>
-<span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des3</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1] 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">##  [9] 1.333333 1.333333       NA       NA       NA       NA 1.333333 1.333333</span>
-<span class="co">## [17] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">## [25] 4.000000 4.000000 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333</span>
-<span class="co">## [33] 1.333333 1.333333       NA       NA       NA       NA       NA       NA</span>
-<span class="co">## [41] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span>
-<span class="co">## [49] 1.333333 1.333333</span></code></pre>
+<code class="sourceCode R"><span><span class="va">des3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<span>                   dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des3</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">##  [9] 1.333333 1.333333       NA       NA       NA       NA 1.333333 1.333333</span></span>
+<span><span class="co">## [17] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">## [25] 4.000000 4.000000 4.000000 4.000000 4.000000 4.000000 1.333333 1.333333</span></span>
+<span><span class="co">## [33] 1.333333 1.333333       NA       NA       NA       NA       NA       NA</span></span>
+<span><span class="co">## [41] 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333 1.333333</span></span>
+<span><span class="co">## [49] 1.333333 1.333333</span></span></code></pre>
 <div class="section level2">
 <h2 id="storage-of-non-binary-treatment">Storage of non-binary treatment<a class="anchor" aria-label="anchor" href="#storage-of-non-binary-treatment"></a>
 </h2>
 <p>When a design’s treatment is dichotomized, we keep the orignal treatment in place, but add a slot for the dichotomy</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">des2</span><span class="op">@</span><span class="va">structure</span></code></pre></div>
-<pre><code><span class="co">##    dose cid1 cid2</span>
-<span class="co">## 1    50    1    1</span>
-<span class="co">## 2   250    1    2</span>
-<span class="co">## 3   100    2    1</span>
-<span class="co">## 4   200    2    2</span>
-<span class="co">## 5   300    3    1</span>
-<span class="co">## 6    50    3    2</span>
-<span class="co">## 7   250    4    1</span>
-<span class="co">## 8   100    4    2</span>
-<span class="co">## 9   200    5    1</span>
-<span class="co">## 10  300    5    2</span></code></pre>
+<code class="sourceCode R"><span><span class="va">des2</span><span class="op">@</span><span class="va">structure</span></span></code></pre></div>
+<pre><code><span><span class="co">##    dose cid1 cid2</span></span>
+<span><span class="co">## 1    50    1    1</span></span>
+<span><span class="co">## 2   250    1    2</span></span>
+<span><span class="co">## 3   100    2    1</span></span>
+<span><span class="co">## 4   200    2    2</span></span>
+<span><span class="co">## 5   300    3    1</span></span>
+<span><span class="co">## 6    50    3    2</span></span>
+<span><span class="co">## 7   250    4    1</span></span>
+<span><span class="co">## 8   100    4    2</span></span>
+<span><span class="co">## 9   200    5    1</span></span>
+<span><span class="co">## 10  300    5    2</span></span></code></pre>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">des2</span><span class="op">@</span><span class="va">dichotomy</span></code></pre></div>
-<pre><code><span class="co">## dose &gt;= 200 ~ dose &lt; 100</span></code></pre>
+<code class="sourceCode R"><span><span class="va">des2</span><span class="op">@</span><span class="va">dichotomy</span></span></code></pre></div>
+<pre><code><span><span class="co">## dose &gt;= 200 ~ dose &lt; 100</span></span></code></pre>
 <p>We can then evaluate this dichotomy with either of the two functions (<code><a href="../../reference/Design_extractreplace.html">treatment()</a></code> being user-facing, <code><a href="../../reference/dot-bin_txt.html">.bin_txt()</a></code> being internal)</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/Design_extractreplace.html">treatment</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##    dose</span>
-<span class="co">## 1    50</span>
-<span class="co">## 2   250</span>
-<span class="co">## 3   100</span>
-<span class="co">## 4   200</span>
-<span class="co">## 5   300</span>
-<span class="co">## 6    50</span>
-<span class="co">## 7   250</span>
-<span class="co">## 8   100</span>
-<span class="co">## 9   200</span>
-<span class="co">## 10  300</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/Design_extractreplace.html">treatment</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##    dose</span></span>
+<span><span class="co">## 1    50</span></span>
+<span><span class="co">## 2   250</span></span>
+<span><span class="co">## 3   100</span></span>
+<span><span class="co">## 4   200</span></span>
+<span><span class="co">## 5   300</span></span>
+<span><span class="co">## 6    50</span></span>
+<span><span class="co">## 7   250</span></span>
+<span><span class="co">## 8   100</span></span>
+<span><span class="co">## 9   200</span></span>
+<span><span class="co">## 10  300</span></span></code></pre>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/Design_extractreplace.html">treatment</a></span><span class="op">(</span><span class="va">des2</span>, binary <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##    z__</span>
-<span class="co">## 1    0</span>
-<span class="co">## 2    1</span>
-<span class="co">## 3   NA</span>
-<span class="co">## 4    1</span>
-<span class="co">## 5    1</span>
-<span class="co">## 6    0</span>
-<span class="co">## 7    1</span>
-<span class="co">## 8   NA</span>
-<span class="co">## 9    1</span>
-<span class="co">## 10   1</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/Design_extractreplace.html">treatment</a></span><span class="op">(</span><span class="va">des2</span>, binary <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##    z__</span></span>
+<span><span class="co">## 1    0</span></span>
+<span><span class="co">## 2    1</span></span>
+<span><span class="co">## 3   NA</span></span>
+<span><span class="co">## 4    1</span></span>
+<span><span class="co">## 5    1</span></span>
+<span><span class="co">## 6    0</span></span>
+<span><span class="co">## 7    1</span></span>
+<span><span class="co">## 8   NA</span></span>
+<span><span class="co">## 9    1</span></span>
+<span><span class="co">## 10   1</span></span></code></pre>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/dot-bin_txt.html">.bin_txt</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1]  0  1 NA  1  1  0  1 NA  1  1</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/dot-bin_txt.html">.bin_txt</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1]  0  1 NA  1  1  0  1 NA  1  1</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="weighteddesign">
@@ -223,22 +223,22 @@
 </h2>
 <p>This ensures that the <code>@Design</code> slot inside a <code>WeightedDesign</code> object has a binary 0/1 treatment either through a direct 0/1 treatment, or the presence of a <code>dichotomy</code> slot.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">wght</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span>
-<span class="fu"><a href="../../reference/dot-bin_txt.html">.bin_txt</a></span><span class="op">(</span><span class="va">wght</span><span class="op">@</span><span class="va">Design</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">##  [1]  0  1 NA  1  1  0  1 NA  1  1</span></code></pre>
+<code class="sourceCode R"><span><span class="va">wght</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../../reference/dot-bin_txt.html">.bin_txt</a></span><span class="op">(</span><span class="va">wght</span><span class="op">@</span><span class="va">Design</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1]  0  1 NA  1  1  0  1 NA  1  1</span></span></code></pre>
 <p>There are two helper functions to check this:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/design_treatment_status.html">is_dichotomized</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">## [1] FALSE</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/design_treatment_status.html">is_dichotomized</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] FALSE</span></span></code></pre>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/design_treatment_status.html">has_binary_treatment</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">## [1] TRUE</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/design_treatment_status.html">has_binary_treatment</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] TRUE</span></span></code></pre>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/design_treatment_status.html">is_dichotomized</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">## [1] TRUE</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/design_treatment_status.html">is_dichotomized</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] TRUE</span></span></code></pre>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../../reference/design_treatment_status.html">has_binary_treatment</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></code></pre></div>
-<pre><code><span class="co">## [1] FALSE</span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="../../reference/design_treatment_status.html">has_binary_treatment</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] FALSE</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>
@@ -253,7 +253,7 @@
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer>

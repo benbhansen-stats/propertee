@@ -1,5 +1,5 @@
 pandoc: 2.11.3.2
-pkgdown: 2.0.4
+pkgdown: 2.0.5
 pkgdown_sha: ~
 articles:
   CovarianceAdjustment: CovarianceAdjustment.html
@@ -8,7 +8,7 @@ articles:
   design_based_SEs: design_based_SEs.html
   non-binary-weights: not-for-cran/non-binary-weights.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2022-06-23T13:40Z
+last_built: 2022-06-28T17:50Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
