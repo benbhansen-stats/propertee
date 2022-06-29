@@ -173,6 +173,7 @@ NULL
 
 #' (Internal) Get the B11 block of the sandwich variance estimator
 #' @param x A DirectAdjusted model object
+#' @param ... Arguments to be passed to sandwich::meatCL
 #' @details This is the block of the sandwich variance estimator corresponding to
 #' the variance-covariance matrix of the covariance model coefficient estimates.
 #' The estimates returned here are potentially clustered (by the clustering in the
@@ -182,7 +183,7 @@ NULL
 #' @return A (p+1)x(p+1) matrix the dimensions are given by the number of
 #' terms in the covariance model (p) and an Intercept term
 #' @keywords internal
-.get_b11 <- function(x) {
+.get_b11 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -197,7 +198,6 @@ NULL
   nc <- sum(summary(cmod)$df[1L:2L])
 
   # Get units of assignment for clustering
-  cadjust <- TRUE
   if (ncol(sl@keys) == 1) {
     uoas <- sl@keys[,1]
   } else {
@@ -210,10 +210,5 @@ NULL
   uoas <- factor(uoas)
   nuoas <- length(levels(uoas))
 
-  if (nuoas == nc) {
-    # return nonclustered estimate if there's no overlap between design and covariance model data
-    cadjust <- FALSE
-  }
-  
-  return(sandwich::meatCL(cmod, cluster = uoas, cadjust = cadjust) * nc)
+  return(sandwich::meatCL(cmod, cluster = uoas, ...) * nc)
 }

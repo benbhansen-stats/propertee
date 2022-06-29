@@ -559,5 +559,5 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   # no adjustment for cases where each row is its own cluster
   expected <- crossprod(sandwich::estfun(cmod)) * (nc - 1L) / (nc - 2L)
   
-  expect_equal(.get_b11(m), expected)
+  expect_equal(.get_b11(m, cadjust = FALSE), expected)
 })
