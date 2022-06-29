@@ -9,14 +9,14 @@ NULL
 #' design and the covariance model data, its contribution to this matrix will be
 #' 0. Thus, if there is no overlap between the two datasets, this will return a
 #' matrix of 0's.
-#' @param x A DirectAdjusted model object
-#' @return A pxk matrix where p is the column count in the covariance model
-#' matrix and k is the column count in the treatment model matrix
+#' @param x A \code{Lmitted} model
+#' @return A pxk matrix where p is the number of terms in the covariance model
+#' and k is the number of terms in the \code{Lmitted} model
 #' @keywords internal
 .get_b12 <- function(x) {
   sl <- x$model$`(offset)`
   if (class(sl) != "SandwichLayer") {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -58,7 +58,7 @@ NULL
 }
 
 #' @title (Internal) Get the inverse of the A22 block of the sandwich variance estimator
-#' @param x A DirectAdjusted model object
+#' @param x A \code{Lmitted} model
 #' @details This block is the diagonal element of the inverse expected Fisher
 #' Information matrix corresponding to the treatment estimate. As shown in the
 #' Details of \code{\link{.get_b22}}, the estimating equations for a generalized
@@ -73,8 +73,8 @@ NULL
 #' @return A 1x1 matrix
 #' @keywords internal
 .get_a22_inverse <- function(x) {
-  if (!is(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!is(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
   }
 
   # Get expected information per sandwich_infrastructure vignette
@@ -95,7 +95,7 @@ NULL
 }
 
 #' @title (Internal) Get the B22 block of the sandwich variance estimator
-#' @param x A DirectAdjusted model object
+#' @param x A \code{Lmitted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
 #' @details This block refers to a clustered variance estimate of the treatment
 #' effect estimate. The \code{stats} package offers family objects with
@@ -118,13 +118,13 @@ NULL
 #' @references Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
 #' https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
 #' @return A (p+1)x(p+1) matrix where the dimensions are given by the number of
-#' terms in the treatment model (p) and an Intercept term. Typically, this should
+#' terms in the \code{Lmitted} model (p) and an Intercept term. Typically, this should
 #' be a 2x2 matrix given the dichotomous handling of treatment variables in this
 #' package and the use of the covariance model to offer the covariance adjustment. 
 #' @keywords internal
 .get_b22 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
   }
   
   nq <- sum(summary(x)$df[1L:2L])
@@ -145,7 +145,7 @@ NULL
 }
 
 #' @title (Internal) Get the inverse of the A11 block of the sandwich variance estimator
-#' @param x A DirectAdjusted model object
+#' @param x A \code{Lmitted} model
 #' @details This block is the pxp matrix corresponding to the unscaled
 #' inverse of the observed Fisher information of the covariance model. The
 #' observed information is given by the estimate of the negative Jacobian of the
@@ -155,13 +155,13 @@ NULL
 #' terms in the covariance model (p) and an Intercept term.
 #' @keywords internal
 .get_a11_inverse <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
   }
   
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -172,7 +172,7 @@ NULL
 }
 
 #' (Internal) Get the B11 block of the sandwich variance estimator
-#' @param x A DirectAdjusted model object
+#' @param x A \code{Lmitted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
 #' @details This is the block of the sandwich variance estimator corresponding to
 #' the variance-covariance matrix of the covariance model coefficient estimates.
@@ -184,13 +184,13 @@ NULL
 #' terms in the covariance model (p) and an Intercept term
 #' @keywords internal
 .get_b11 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
   }
   
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   

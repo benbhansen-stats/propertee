@@ -7,7 +7,7 @@
 .get_a22_inverse(x)
 }
 \arguments{
-\item{x}{A DirectAdjusted model object}
+\item{x}{A \code{Lmitted} model}
 }
 \value{
 A 1x1 matrix

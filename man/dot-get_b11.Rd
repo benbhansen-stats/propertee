@@ -7,7 +7,7 @@
 .get_b11(x, ...)
 }
 \arguments{
-\item{x}{A DirectAdjusted model object}
+\item{x}{A \code{Lmitted} model}
 
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }

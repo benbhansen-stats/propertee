@@ -2,12 +2,12 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{subset,PreSandwichLayer-method}
 \alias{subset,PreSandwichLayer-method}
-\alias{[,PreSandwichLayer-method}
+\alias{[,PreSandwichLayer,ANY,ANY,ANY-method}
 \title{PreSandwichLayer and SandwichLayer subsetting}
 \usage{
 \S4method{subset}{PreSandwichLayer}(x, subset)
 
-\S4method{[}{PreSandwichLayer}(x, i)
+\S4method{[}{PreSandwichLayer,ANY,ANY,ANY}(x, i)
 }
 \arguments{
 \item{x}{\code{PreSandwichLayer} object}

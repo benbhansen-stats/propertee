@@ -7,7 +7,7 @@
 .get_a11_inverse(x)
 }
 \arguments{
-\item{x}{A DirectAdjusted model object}
+\item{x}{A \code{Lmitted} model}
 }
 \value{
 a (p+1)x(p+1) matrix where the dimensions are given by the number of

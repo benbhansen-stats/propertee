@@ -7,13 +7,13 @@
 .get_b22(x, ...)
 }
 \arguments{
-\item{x}{A DirectAdjusted model object}
+\item{x}{A \code{Lmitted} model}
 
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
 A (p+1)x(p+1) matrix where the dimensions are given by the number of
-terms in the treatment model (p) and an Intercept term. Typically, this should
+terms in the \code{Lmitted} model (p) and an Intercept term. Typically, this should
 be a 2x2 matrix given the dichotomous handling of treatment variables in this
 package and the use of the covariance model to offer the covariance adjustment.
 }

@@ -7,11 +7,11 @@
 .get_b12(x)
 }
 \arguments{
-\item{x}{A DirectAdjusted model object}
+\item{x}{A \code{Lmitted} model}
 }
 \value{
-A pxk matrix where p is the column count in the covariance model
-matrix and k is the column count in the treatment model matrix
+A pxk matrix where p is the number of terms in the covariance model
+and k is the number of terms in the \code{Lmitted} model
 }
 \description{
 (Internal) Get the B12 block of the sandwich variance estimator

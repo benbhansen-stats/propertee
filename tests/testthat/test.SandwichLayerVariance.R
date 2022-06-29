@@ -27,23 +27,24 @@ test_correct_b12 <- function(m) {
                t(cmod_eqns) %*% m_eqns)
 }
 
-test_that("variance helper functions fail without a DirectAdjusted model", {
+test_that("variance helper functions fail without a Lmitted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
   
-  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_b22(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a11_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_b11(cmod), "must be a DirectAdjusted")
+  expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_b22(cmod), "must be a Lmitted")
+  expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_a11_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_b11(cmod), "must be a Lmitted")
 })
 
-test_that(".get_b12, .get_a11_inverse, .get_b11 used with DA model without SandwichLayer offset", {
+test_that(paste(".get_b12, .get_a11_inverse, .get_b11 used with Lmitted model",
+                "without SandwichLayer offset"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   offset <- stats::predict(cmod, simdata)
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
@@ -58,7 +59,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
 
@@ -79,7 +80,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster)
 
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
    lm(y ~ z, data = Q_cluster, weights = ate(des), offset = cov_adj(cmod))
   )
 
@@ -92,7 +93,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
   weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
    lm(y ~ z, data = simdata[simdata$cid2 == 1,],
       weights = weighted_design, offset = cov_adj(cmod))
   )
@@ -115,7 +116,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster_subset)
   weighted_design <- ate(des, data = Q_cluster_subset)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = Q_cluster_subset,
        weights = weighted_design, offset = cov_adj(cmod))
   )
@@ -131,7 +132,7 @@ test_that(paste(".get_b12 returns expected B_12 for experimental",
   C_no_cluster_ids[, var_names(des, "u")] <- NA
   cmod <- lm(y ~ x, data = C_no_cluster_ids)
 
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z + force, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
 
@@ -143,7 +144,7 @@ test_that(".get_a22_inverse returns correct value for lm", {
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
   fim <- crossprod(stats::model.matrix(m))
   zname <- var_names(des, "t")
@@ -154,7 +155,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with Gaussian fami
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.DirectAdjusted(glm(y ~ z, data = simdata, weights = ate(des)))
+  m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
   
   fim <- crossprod(stats::model.matrix(m))
   zname <- var_names(des, "t")
@@ -165,7 +166,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with poisson famil
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::poisson())
   )
@@ -180,7 +181,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::quasipoisson())
   )
@@ -198,7 +199,7 @@ test_that(".get_b22 returns correct value for lm object w/o offset", {
   nuoas <- nrow(des@structure)
   zname <- var_names(des, "t")
   
-  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   nq <- sum(summary(m)$df[1L:2L])
   WX <- m$weights * m$residuals * stats::model.matrix(m)
   
@@ -223,7 +224,7 @@ test_that(".get_b22 returns correct value for lm object w offset", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   nq <- sum(summary(m)$df[1L:2L])
@@ -250,7 +251,7 @@ test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
   
-  m <- as.DirectAdjusted(glm(y ~ z, data = simdata, weights = ate(des)))
+  m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
   nq <- sum(summary(m)$df[1L:2L])
   WX <- m$weights * m$residuals * stats::model.matrix(m)
   
@@ -273,7 +274,7 @@ test_that(".get_b22 returns correct value for poisson glm", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::poisson())
   )
@@ -299,7 +300,7 @@ test_that(".get_b22 returns correct value for quasipoisson glm", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::quasipoisson())
   )
@@ -326,7 +327,7 @@ test_that(".get_b22 returns correct value for binomial glm", {
   nuoas <- nrow(des@structure)
   
   m <- suppressWarnings(
-    as.DirectAdjusted(
+    as.lmitt(
       glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
           family = stats::binomial())
   ))
@@ -352,7 +353,7 @@ test_that(".get_a11_inverse returns correct value for lm cmod", {
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
@@ -365,7 +366,7 @@ test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
   cmod <- glm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
@@ -379,7 +380,7 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
         family = stats::poisson())
   )
@@ -394,7 +395,7 @@ test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::quasipoisson())
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
         family = stats::poisson())
   )
@@ -412,7 +413,7 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
   )
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- suppressWarnings(as.DirectAdjusted(
+  m <- suppressWarnings(as.lmitt(
     glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
         offset = cov_adj(cmod), family = stats::binomial())
   ))
@@ -430,7 +431,7 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ uoa(cid1), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
   
   uoas <- factor(simdata$cid1)
@@ -450,7 +451,7 @@ test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
   
   uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
@@ -470,7 +471,7 @@ test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
   
   uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
@@ -490,7 +491,7 @@ test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
         family = stats::poisson()))
   
@@ -514,7 +515,7 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
 
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
   weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata[simdata$cid2 == 1,],
        weights = weighted_design, offset = cov_adj(cmod))
   )
@@ -545,7 +546,7 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   cmod <- lm(y ~ x, data = C_no_cluster_ids)
   nc <- sum(summary(cmod)$df[1L:2L])
   
-  m <- as.DirectAdjusted(
+  m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
