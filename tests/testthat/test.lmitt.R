@@ -6,7 +6,7 @@ test_that("lmitt", {
 
   da <- lmitt(y ~ dose + x, weights = ate(des), data = simdata)
 
-  expect_s4_class(da, "DirectAdjusted")
+  expect_s4_class(da, "Lmitted")
   expect_true(is(da, "lm"))
   expect_equal(da@target, "ate")
 

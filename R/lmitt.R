@@ -12,7 +12,7 @@
 ##'   the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
 ##'   specified, this argument is ignored.)
 ##' @param ... Additional arguments passed to \code{lm()}.
-##' @return \code{DirectAdjusted} model.
+##' @return \code{Lmitted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
 lmitt <- function(formula,
@@ -67,6 +67,6 @@ lmitt <- function(formula,
 
   model$call[[1]] <- as.name("lmitt")
 
-  return(as.DirectAdjusted(model, design, target))
+  return(as.lmitt(model, design, target))
 
 }

@@ -25,7 +25,7 @@ specified, this argument is ignored.)}
 \item{...}{Additional arguments passed to \code{lm()}.}
 }
 \value{
-\code{DirectAdjusted} model.
+\code{Lmitted} model.
 }
 \description{
 Linear Model for Intention To Treat

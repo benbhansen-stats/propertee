@@ -3,12 +3,12 @@ NULL
 # The above ensures that `Design` and `WeightedDesign` are defined prior to
 # `DirectAdjusted`
 
-setClass("DirectAdjusted",
+setClass("Lmitted",
          contains = "lm",
          slots = c(Design = "Design",
                    target = "character"))
 
-setValidity("DirectAdjusted", function(object) {
+setValidity("Lmitted", function(object) {
   if (length(object@target) != 1 || !object@target %in% c("ett", "ate")) {
     return(paste("@target must be one of [ett, ate]. unknown @target:",
                  paste(object@target, collapse = " ")))
@@ -26,16 +26,16 @@ setValidity("DirectAdjusted", function(object) {
   return(TRUE)
 })
 
-##' @title Show an DirectAdjusted
-##' @param object DirectAdjusted object
+##' @title Show an Lmitted
+##' @param object Lmitted object
 ##' @return an invisible copy of `object`
 ##' @export
-setMethod("show", "DirectAdjusted", function(object) {
+setMethod("show", "Lmitted", function(object) {
   print(as(object, "lm"))
   invisible(object)
 })
 
-##' @title Convert \code{lm} object into \code{DirectAdjusted}
+##' @title Convert \code{lm} object into \code{Lmitted}
 ##' @param x \code{lm} object with weights containing a \code{WeightedDesign}
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
@@ -48,9 +48,9 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
 ##'   ("ate") or ETT ("ett"). (If weights are specified, this argument is
 ##'   ignored.)
-##' @return \code{DirectAdjusted} object
+##' @return \code{Lmitted} object
 ##' @export
-as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
+as.lmitt <- function(x, design = NULL, target = NULL) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
@@ -90,7 +90,7 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
                '("ate" or "ett")'))
   }
 
-  return(new("DirectAdjusted",
+  return(new("Lmitted",
              x,
              Design = design,
              target = target))
@@ -99,11 +99,11 @@ as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
 setGeneric("vcov")
 
 ##' @title Variance-Covariance matrix
-##' @param object DirectAdjusted
+##' @param object Lmitted
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("vcov", "DirectAdjusted", function(object, ...) {
+setMethod("vcov", "Lmitted", function(object, ...) {
   return(vcov(as(object, "lm"), ...))
 })
 
@@ -111,7 +111,7 @@ setMethod("vcov", "DirectAdjusted", function(object, ...) {
 setGeneric("confint")
 
 ##' @title Variance-Covariance matrix
-##' @param object DirectAdjusted
+##' @param object Lmitted
 ##' @param parm a specification of which parameters are to be given confidence
 ##'   intervals, either a vector of numbers or a vector of names. If missing,
 ##'   all parameters are considered.
@@ -119,26 +119,26 @@ setGeneric("confint")
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("confint", "DirectAdjusted",
+setMethod("confint", "Lmitted",
           function(object, parm, level = 0.95, ...) {
   return(confint(as(object, "lm"), parm, level = level, ...))
 })
 
-##' Identify treatment variable in \code{DirectAdjusted} object
+##' Identify treatment variable in \code{Lmitted} object
 ##'
-##' @param x \code{DirectAdjusted} model
+##' @param x \code{Lmitted} model
 ##' @return Name of treatment in model.
 ##' @export
 ##' @examples
 ##' data(simdata)
 ##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
 ##' mod <- lm(y ~ z, data = simdata, weights = ett(des))
-##' damod <- as.DirectAdjusted(mod)
+##' damod <- as.Lmitted(mod)
 ##' damod$coef[treatment_name(damod)]
 ##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
 ##'                    dichotomy = dose > 200 ~ . )
 ##' mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
-##' damod2 <- as.DirectAdjusted(mod2)
+##' damod2 <- as.lmitt(mod2)
 ##' damod2$coef[treatment_name(damod2)]
 treatment_name <- function(x) {
 

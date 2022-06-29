@@ -459,8 +459,7 @@ test_that("cov_adj variance estimates for correlated predictors", {
   design <- rct_design(z ~ unitid(id), data = df)
   m2ca <- lm(y ~ z - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
 
-  ## TODO: currently causing an error, see issue #35
-  ## m2ca_da <- as.DirectAdjusted(m2ca)
+  m2ca_da <- as.lmitt(m2ca)
 
   ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
 })
