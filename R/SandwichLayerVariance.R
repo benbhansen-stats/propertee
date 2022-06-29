@@ -96,6 +96,7 @@ NULL
 
 #' @title (Internal) Get the B22 block of the sandwich variance estimator
 #' @param x A DirectAdjusted model object
+#' @param ... Arguments to be passed to sandwich::meatCL
 #' @details This block refers to a clustered variance estimate of the treatment
 #' effect estimate. The \code{stats} package offers family objects with
 #' canonical link functions, so the log-likelihood for a generalized linear model
@@ -121,33 +122,26 @@ NULL
 #' be a 2x2 matrix given the dichotomous handling of treatment variables in this
 #' package and the use of the covariance model to offer the covariance adjustment. 
 #' @keywords internal
-.get_b22 <- function(x) {
-  if (!is(x, "DirectAdjusted")) {
+.get_b22 <- function(x, ...) {
+  if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-
-  # Get wide table of unit of assignment indicators
-  uoanames <- var_names(x@Design, "u")
-  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
-  uoa_matrix <- stats::model.matrix(as.formula(form),
-                                    stats::expand.model.frame(x, uoanames)[, uoanames])
   
-  # Get unit of assignment-level est. eqns
-  if ("glm" %in% x@.S3Class) {
-    varys <- x$family$variance(x$fitted.values)
-    if (substr(x$family$family, 1, 5) == "quasi") {
-      varys <- stats::summary.glm(x)$dispersion * varys
-    }
-    W <- x$residuals * x$family$mu.eta(x$linear.predictors) / varys
+  nq <- sum(summary(x)$df[1L:2L])
+  
+  # Get units of assignment for clustering
+  uoanames <- var_names(x@Design, "u")
+  uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
+  if (ncol(uoas) == 1) {
+    uoas <- factor(uoas[,1])
   } else {
-    W <- x$residuals
+    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
   }
   
-  uoa_eqns <- crossprod(uoa_matrix, W * stats::model.matrix(x))
-  vmat <- crossprod(uoa_eqns)
   zname <- var_names(x@Design, "t")
+  out <- sandwich::meatCL(x, cluster = uoas, ...)[zname, zname, drop = FALSE] * nq
 
-  return(vmat[zname, zname, drop = FALSE])
+  return(out)
 }
 
 #' @title (Internal) Get the inverse of the A11 block of the sandwich variance estimator

@@ -191,100 +191,160 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
   expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
 })
 
-test_that(".get_b22 returns correct value for lm object", {
+test_that(".get_b22 returns correct value for lm object w/o offset", {
   data(simdata)
 
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
   zname <- var_names(des, "t")
-  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
-
-  eqns <- Reduce(
-    rbind,
-    by(data.frame(m$residuals * stats::model.matrix(m)),
-       lapply(var_names(des, "u"), function(col) simdata[, col]),
-       colSums))
-  vmat <- crossprod(eqns)
   
-  expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
+  m <- as.DirectAdjusted(lm(y ~ z, data = simdata, weights = ate(des)))
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+  expect_equal(.get_b22(m, type = "HC1"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
+})
+
+test_that(".get_b22 returns correct value for lm object w offset", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+  expect_equal(.get_b22(m, type = "HC1"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
 test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  zname <- var_names(des, "t")
+  nuoas <- nrow(des@structure)
+  
   m <- as.DirectAdjusted(glm(y ~ z, data = simdata, weights = ate(des)))
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
   
-  eqns <- Reduce(
-    rbind,
-    by(data.frame(m$residuals * stats::model.matrix(m)),
-       lapply(var_names(des, "u"), function(col) simdata[, col]),
-       colSums))
-  vmat <- crossprod(eqns)
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
   
-  expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for poisson glm", {
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  zname <- var_names(des, "t")
+  nuoas <- nrow(des@structure)
+  
   m <- as.DirectAdjusted(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::poisson())
   )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
   
-  # dispersion = 1 for poisson family
-  eqns <- Reduce(
-    rbind,
-    by(data.frame(m$residuals * stats::model.matrix(m)),
-       lapply(var_names(des, "u"), function(col) simdata[, col]),
-       colSums))
-  vmat <- crossprod(eqns)
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
   
-  expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for quasipoisson glm", {
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  zname <- var_names(des, "t")
+  nuoas <- nrow(des@structure)
+  
   m <- as.DirectAdjusted(
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::quasipoisson())
   )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
   
-  eqns <- Reduce(
-    rbind,
-    by(data.frame(m$residuals / summary.glm(m)$dispersion * stats::model.matrix(m)),
-       lapply(var_names(des, "u"), function(col) simdata[, col]),
-       colSums))
-  vmat <- crossprod(eqns)
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
   
-  expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for binomial glm", {
   data(simdata)
   
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  zname <- var_names(des, "t")
+  nuoas <- nrow(des@structure)
+  
   m <- suppressWarnings(
     as.DirectAdjusted(
       glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
           family = stats::binomial())
   ))
 
-  eqns <- Reduce(
-    rbind,
-    by(data.frame(m$residuals * stats::model.matrix(m)),
-       lapply(var_names(des, "u"), function(col) simdata[, col]),
-       colSums))
-  vmat <- crossprod(eqns)
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
   
-  expect_equal(.get_b22(m), vmat[zname, zname, drop = FALSE])
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
 })
 
 test_that(".get_a11_inverse returns correct value for lm cmod", {

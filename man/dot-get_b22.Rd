@@ -4,10 +4,12 @@
 \alias{.get_b22}
 \title{(Internal) Get the B22 block of the sandwich variance estimator}
 \usage{
-.get_b22(x)
+.get_b22(x, ...)
 }
 \arguments{
 \item{x}{A DirectAdjusted model object}
+
+\item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
 A (p+1)x(p+1) matrix where the dimensions are given by the number of
