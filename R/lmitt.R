@@ -4,20 +4,15 @@
 ##'   the \code{Design} is specified elsewhere in the model (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 ##'   \code{adopters()}) it will be found automatically and does not need to be
-##'   passed here as well. (If the \code{Design} is found in the model, this
-##'   argument is ignored.)
-##' @param target Optional, explicitly specify the estimand. If the
-##'   \code{weights} are generated using either \code{ate()} or \code{ett()},
-##'   the \code{target]} will be found automatically. Otherwise, specify whether
-##'   the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
-##'   specified, this argument is ignored.)
+##'   passed here as well. (If different \code{Design} objects are passed
+##'   (either through the \code{lm} in weights or covariance adjustment, or
+##'   through this argument), an error will be produced.)
 ##' @param ... Additional arguments passed to \code{lm()}.
-##' @return \code{DirectAdjusted} model.
+##' @return \code{Lmitted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
 lmitt <- function(formula,
                  design = NULL,
-                 target = NULL,
                  ...) {
 
   mf <- match.call()
@@ -67,6 +62,6 @@ lmitt <- function(formula,
 
   model$call[[1]] <- as.name("lmitt")
 
-  return(as.DirectAdjusted(model, design, target))
+  return(as.lmitt(model, design))
 
 }

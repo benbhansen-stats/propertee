@@ -53,19 +53,19 @@ reference:
     - cov_adj
     - as.SandwichLayer
     - .get_ca_and_prediction_gradient
+    - subset,PreSandwichLayer-method
     - show,PreSandwichLayer-method
-    - show,SandwichLayer-method
     - .show_layer
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
-    - as.DirectAdjusted
+    - as.lmitt
     - lmitt
     - adopters
-    - confint,DirectAdjusted-method
-    - show,DirectAdjusted-method
+    - confint,Lmitted-method
+    - show,Lmitted-method
     - treatment_name
-    - vcov,DirectAdjusted-method
+    - vcov,Lmitted-method
 - title: Data
 - contents:
     - STARdata

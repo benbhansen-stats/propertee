@@ -64,15 +64,14 @@ and its gradient with respect to the fitted coefficients</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">.get_ca_and_prediction_gradient</span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.get_ca_and_prediction_gradient</span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>model</dt>
-<dd><p>Any model of class <code>glm</code> or <code>lm</code> (excluding those from
-the <a href="https://CRAN.R-project.org/package=gam" class="external-link"><span class="pkg">gam</span></a> package) that supports <code>predict</code> and <code>model.matrix</code>
-methods</p></dd>
+<dd><p>Any model that inherits from a <code>glm</code>, <code>lm</code>, or <code><a href="https://rdrr.io/pkg/robustbase/man/lmrob.html" class="external-link">
+robustbase::lmrob</a></code> object</p></dd>
 
 
 <dt>newdata</dt>
@@ -96,7 +95,7 @@ a numeric vector and a matrix)</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
     </footer></div>

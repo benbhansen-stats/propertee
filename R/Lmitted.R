@@ -3,16 +3,11 @@ NULL
 # The above ensures that `Design` and `WeightedDesign` are defined prior to
 # `DirectAdjusted`
 
-setClass("DirectAdjusted",
+setClass("Lmitted",
          contains = "lm",
-         slots = c(Design = "Design",
-                   target = "character"))
+         slots = c(Design = "Design"))
 
-setValidity("DirectAdjusted", function(object) {
-  if (length(object@target) != 1 || !object@target %in% c("ett", "ate")) {
-    return(paste("@target must be one of [ett, ate]. unknown @target:",
-                 paste(object@target, collapse = " ")))
-  }
+setValidity("Lmitted", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
@@ -26,84 +21,67 @@ setValidity("DirectAdjusted", function(object) {
   return(TRUE)
 })
 
-##' @title Show an DirectAdjusted
-##' @param object DirectAdjusted object
+##' @title Show an Lmitted
+##' @param object Lmitted object
 ##' @return an invisible copy of `object`
 ##' @export
-setMethod("show", "DirectAdjusted", function(object) {
+setMethod("show", "Lmitted", function(object) {
   print(as(object, "lm"))
   invisible(object)
 })
 
-##' @title Convert \code{lm} object into \code{DirectAdjusted}
+##' @title Convert \code{lm} object into \code{Lmitted}
 ##' @param x \code{lm} object with weights containing a \code{WeightedDesign}
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 ##'   \code{adopters()}) it will be found automatically and does not need to be
-##'   passed here as well. (If the \code{Design} is found in the model, this
-##'   argument is ignored.)
-##' @param target Optional, explicitly specify the estimand. If the model in
-##'   \code{x} does not contain a \code{weights} argument generated using either
-##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
-##'   ("ate") or ETT ("ett"). (If weights are specified, this argument is
-##'   ignored.)
-##' @return \code{DirectAdjusted} object
+##'   passed here as well. (If different \code{Design} objects are passed
+##'   (either through the \code{lm} in weights or covariance adjustment, or
+##'   through this argument), an error will be produced.)
+##' @return \code{Lmitted} object
 ##' @export
-as.DirectAdjusted <- function(x, design = NULL, target = NULL) {
+as.lmitt <- function(x, design = NULL) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
 
-  hasweights <- is(x$model$"(weights)", "WeightedDesign")
-
   # Check if we can find a design in either Weights (preferred) or cov_adj
-  found_design <- NULL
-  if (hasweights) {
-    found_design <- x$model$"(weights)"@Design
+  design_weights <- tryCatch(x$model$"(weights)"@Design,
+                             error = function(e) NULL)
+  design_cov_adj <- tryCatch(.get_cov_adj(x)@Design,
+                             error = function(e) NULL)
+
+  # The list contains all designs possible found (one passed in, and one in each
+  # of weights and cov_adj). Passing `unique` removes any duplicates (since
+  # duplicates are OK).
+  unique_designs <- unique(list(design, design_weights, design_cov_adj))
+  # Drop any designs which aren' `Design`. Mostly NULL hopefully.
+  unique_designs <- unique_designs[vapply(unique_designs,
+                                          is, logical(1), "Design")]
+  # At this point, if the lenght of `unique_designs` is 1, we're done. More than
+  # one is an error.
+  if (length(unique_designs) == 1) {
+    design <- unique_designs[[1]]
+  } else if (length(unique_designs) > 1) {
+    stop("Multiple differing `Design` found in object.")
   } else {
-    capred <- .get_cov_adj(x)
-    if (is(capred, "SandwichLayer")) {
-      found_design <- capred@Design
-    }
+    stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
-  if (is(found_design, "Design")) {
-    design <- found_design
-  }
-  if (!is(design, "Design")) {
-    stop("Cannot locate `Design`, pass via `design=` argument")
-  }
-
-  # Check if we can find "target" in the weights
-  found_target <- NULL
-  if (hasweights) {
-    found_target <- x$model$"(weights)"@target
-  }
-
-  if (!is.null(found_target) && found_target %in% c("ate", "ett")) {
-    target <- found_target
-  }
-
-  if (is.null(target) || !(target %in% c("ate", "ett"))) {
-    stop(paste('Cannot locate `target`, pass via `target=` argument',
-               '("ate" or "ett")'))
-  }
-
-  return(new("DirectAdjusted",
+  return(new("Lmitted",
              x,
-             Design = design,
-             target = target))
+             Design = design))
 }
 
 setGeneric("vcov")
 
 ##' @title Variance-Covariance matrix
-##' @param object DirectAdjusted
+##' @param object Lmitted
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("vcov", "DirectAdjusted", function(object, ...) {
+setMethod("vcov", "Lmitted", function(object, ...) {
   return(vcov(as(object, "lm"), ...))
 })
 
@@ -111,7 +89,7 @@ setMethod("vcov", "DirectAdjusted", function(object, ...) {
 setGeneric("confint")
 
 ##' @title Variance-Covariance matrix
-##' @param object DirectAdjusted
+##' @param object Lmitted
 ##' @param parm a specification of which parameters are to be given confidence
 ##'   intervals, either a vector of numbers or a vector of names. If missing,
 ##'   all parameters are considered.
@@ -119,26 +97,26 @@ setGeneric("confint")
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("confint", "DirectAdjusted",
+setMethod("confint", "Lmitted",
           function(object, parm, level = 0.95, ...) {
   return(confint(as(object, "lm"), parm, level = level, ...))
 })
 
-##' Identify treatment variable in \code{DirectAdjusted} object
+##' Identify treatment variable in \code{Lmitted} object
 ##'
-##' @param x \code{DirectAdjusted} model
+##' @param x \code{Lmitted} model
 ##' @return Name of treatment in model.
 ##' @export
 ##' @examples
 ##' data(simdata)
 ##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
 ##' mod <- lm(y ~ z, data = simdata, weights = ett(des))
-##' damod <- as.DirectAdjusted(mod)
+##' damod <- as.lmitt(mod)
 ##' damod$coef[treatment_name(damod)]
 ##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
 ##'                    dichotomy = dose > 200 ~ . )
 ##' mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
-##' damod2 <- as.DirectAdjusted(mod2)
+##' damod2 <- as.lmitt(mod2)
 ##' damod2$coef[treatment_name(damod2)]
 treatment_name <- function(x) {
 
