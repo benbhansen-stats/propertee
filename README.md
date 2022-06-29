@@ -116,3 +116,11 @@ exceptions may arise.)
 During this period of development, after documenting an internal function, add
 it to the "_pkgdown.yml" file in the appropriate category. Once flexida goes
 public, we will remove those.
+
+### Referring to functions
+
+When documentation refers to another function (internal to the package or
+otherwise), please include the trailing `()`, as that will help **pkgdown**
+provide an appropriate link (see [https://pkgdown.r-lib.org/articles/linking.html](https://pkgdown.r-lib.org/articles/linking.html)).
+
+E.g. `\code{lm()}` or `\code{cov_adj()}` or `\code{lme4::lmer()}`.
