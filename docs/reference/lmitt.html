@@ -59,7 +59,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lmitt</span><span class="op">(</span><span class="va">formula</span>, design <span class="op">=</span> <span class="cn">NULL</span>, target <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lmitt</span><span class="op">(</span><span class="va">formula</span>, design <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -75,14 +75,6 @@ argument to any of <code><a href="WeightCreators.html">ate()</a></code>, <code><
 <code><a href="adopters.html">adopters()</a></code>) it will be found automatically and does not need to be
 passed here as well. (If the <code>Design</code> is found in the model, this
 argument is ignored.)</p></dd>
-
-
-<dt>target</dt>
-<dd><p>Optional, explicitly specify the estimand. If the
-<code>weights</code> are generated using either <code><a href="WeightCreators.html">ate()</a></code> or <code><a href="WeightCreators.html">ett()</a></code>,
-the <code>target]</code> will be found automatically. Otherwise, specify whether
-the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
-specified, this argument is ignored.)</p></dd>
 
 
 <dt>...</dt>
