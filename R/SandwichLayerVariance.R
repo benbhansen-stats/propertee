@@ -21,7 +21,7 @@ NULL
   }
 
   sl <- x$model$`(offset)`
-  if (class(sl) != "SandwichLayer") {
+  if (!is(sl, "SandwichLayer")) {
     stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }

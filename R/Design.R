@@ -358,7 +358,7 @@ setMethod("show", "Design", function(object) {
 ##' var_names(des, "u")
 ##' var_names(des, "b")
 var_names <- function(x, type) {
-  stopifnot(class(x) == "Design")
+  stopifnot(inherits(x, "Design"))
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "u", "b", "f"))
   return(names(x@structure)[x@column_index == type])
