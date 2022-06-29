@@ -73,8 +73,9 @@
 the <code>Design</code> is specified elsewhere in <code>x</code> (e.g. passed as an
 argument to any of <code><a href="WeightCreators.html">ate()</a></code>, <code><a href="WeightCreators.html">ett()</a></code>, <code><a href="cov_adj.html">cov_adj()</a></code> or
 <code><a href="adopters.html">adopters()</a></code>) it will be found automatically and does not need to be
-passed here as well. (If the <code>Design</code> is found in the model, this
-argument is ignored.)</p></dd>
+passed here as well. (If different <code>Design</code> objects are passed
+(either through the <code>lm</code> in weights or covariance adjustment, or
+through this argument), an error will be produced.)</p></dd>
 
 </dl></div>
     <div class="section level2">
