@@ -4,7 +4,7 @@
 \alias{as.lmitt}
 \title{Convert \code{lm} object into \code{Lmitted}}
 \usage{
-as.lmitt(x, design = NULL, target = NULL)
+as.lmitt(x, design = NULL)
 }
 \arguments{
 \item{x}{\code{lm} object with weights containing a \code{WeightedDesign}}
@@ -15,12 +15,6 @@ argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 \code{adopters()}) it will be found automatically and does not need to be
 passed here as well. (If the \code{Design} is found in the model, this
 argument is ignored.)}
-
-\item{target}{Optional, explicitly specify the estimand. If the model in
-\code{x} does not contain a \code{weights} argument generated using either
-\code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
-("ate") or ETT ("ett"). (If weights are specified, this argument is
-ignored.)}
 }
 \value{
 \code{Lmitted} object

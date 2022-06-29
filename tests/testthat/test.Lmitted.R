@@ -1,13 +1,3 @@
-test_that("Lmitted model created with invalid target", {
-  data(simdata)
-  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
-  expect_error(new("Lmitted",
-                   lm(y ~ z, data = simdata, weights = ate(des)),
-                   Design = des, target = "abc"),
-               "must be one of")
-
-})
-
 test_that(paste("Lmitted object created correctly with weights and no",
                 "SandwichLayer in the lm call"), {
 
@@ -16,7 +6,7 @@ test_that(paste("Lmitted object created correctly with weights and no",
 
   dalm <- new("Lmitted",
               lm(y ~ z, data = simdata, weights = ate(des)),
-              Design = des, target = "ett")
+              Design = des)
 
   expect_s4_class(dalm, "Lmitted")
   expect_true(is(dalm, "lm"))
@@ -33,7 +23,7 @@ test_that(paste("Lmitted object created correctly with weights and ",
   dalm <- new("Lmitted",
               lm(y ~ z, data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
-              Design = des, target = "ett")
+              Design = des)
 
   expect_s4_class(dalm, "Lmitted")
   expect_true(is(dalm, "lm"))
@@ -130,7 +120,7 @@ test_that("Lmitted print/show", {
   dalm <- new("Lmitted",
               lm(y ~ z, data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
-              Design = des, target = "ett")
+              Design = des)
 
   aslm <- as(dalm, "lm")
 
@@ -197,38 +187,6 @@ test_that("lm to Lmitted fails without a Design object", {
   expect_error(as.lmitt(lm(y ~ z, data = simdata,
                                     weights = seq_len(nrow(simdata)))),
                "Cannot locate `Design`")
-})
-
-test_that("Conversion from lm to Lmitted fails without a target", {
-  data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-
-  camod <- lm(y ~ x, data = simdata)
-  mod2 <- lm(y ~ z, data = simdata, offset = cov_adj(camod, design = des))
-
-  expect_error(as.lmitt(mod2), "Cannot locate `target`")
-
-  mod3 <- lm(y ~ z + offset(cov_adj(camod, design = des)), data = simdata)
-
-  expect_error(as.lmitt(mod3), "Cannot locate `target`")
-})
-
-test_that("Conversion from lm to Lmitted succeeds with a target", {
-  data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-
-  camod <- lm(y ~ x, data = simdata)
-  mod2 <- lm(y ~ z, data = simdata, offset = cov_adj(camod, design = des))
-
-  damod <- as.lmitt(mod2, target = "ate")
-  expect_true(is(damod, "Lmitted"))
-  expect_identical(damod@target, "ate")
-
-  mod3 <- lm(y ~ z + offset(cov_adj(camod, design = des)), data = simdata)
-
-  damod <- as.lmitt(mod3, target = "ate")
-  expect_true(is(damod, "Lmitted"))
-  expect_identical(damod@target, "ate")
 })
 
 test_that("vcov, confint, etc", {

@@ -8,11 +8,10 @@ test_that("lmitt", {
 
   expect_s4_class(da, "Lmitted")
   expect_true(is(da, "lm"))
-  expect_equal(da@target, "ate")
 
   da_ett <- lmitt(y ~ z + x, weights = ett(des), data = simdata)
 
-  expect_equal(da_ett@target, "ett")
+  expect_s4_class(da_ett, "Lmitted")
 })
 
 test_that("lmitt and lm return the same in simple cases", {
@@ -52,34 +51,32 @@ test_that("Design argument", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  mod1 <- lmitt(y ~ z, data = simdata, design = des, target = "ate")
+  mod1 <- lmitt(y ~ z, data = simdata, design = des)
   mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des))
-  mod3 <- lmitt(y ~ z, data = simdata, design = z ~ cluster(cid1, cid2),
-                target = "ate")
+  mod3 <- lmitt(y ~ z, data = simdata, design = z ~ cluster(cid1, cid2))
   expect_true(mod3@Design@type == "Obs")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
   des2 <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), data = simdata)
 
-  mod1 <- lmitt(y ~ z, data = simdata, design = des2, target = "ate")
+  mod1 <- lmitt(y ~ z, data = simdata, design = des2)
   mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des2))
   mod3 <- lmitt(y ~ z, data = simdata,
-                design = z ~ cluster(cid1, cid2) + forcing(force),
-                target = "ate")
+                design = z ~ cluster(cid1, cid2) + forcing(force))
   expect_true(mod3@Design@type == "RD")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
   des3 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
-  mod1 <- lmitt(y ~ z, data = simdata, design = des3, target = "ate",
+  mod1 <- lmitt(y ~ z, data = simdata, design = des3,
                 subset = simdata$dose < 300)
   mod2 <- lmitt(y ~ z, data = simdata, weights = ate(des3),
                 subset = simdata$dose < 300)
   mod3 <- lmitt(y ~ z, data = simdata,
                 design = z ~ cluster(cid1, cid2) + block(bid),
-                target = "ate", subset = simdata$dose < 300)
+                subset = simdata$dose < 300)
   expect_true(mod3@Design@type == "Obs")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
@@ -91,11 +88,11 @@ test_that("Dichotomy option in Design creation", {
   data(simdata)
   des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
                     dichotomy = dose > 200 ~ .)
-  mod1 <- lmitt(y ~ adopters(), data = simdata, target = "ate", design = des)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
   mod2 <- lmitt(y ~ adopters(), data = simdata,
                 design = dose ~ cluster(cid1, cid2),
                 dichotomy = dose > 200 ~ .,
-                target = "ate")
+                )
   expect_identical(mod1@Design, mod2@Design)
   expect_true(all.equal(mod1$coefficients, mod2$coefficients,
                         check.attributes =  FALSE))

@@ -5,14 +5,9 @@ NULL
 
 setClass("Lmitted",
          contains = "lm",
-         slots = c(Design = "Design",
-                   target = "character"))
+         slots = c(Design = "Design"))
 
 setValidity("Lmitted", function(object) {
-  if (length(object@target) != 1 || !object@target %in% c("ett", "ate")) {
-    return(paste("@target must be one of [ett, ate]. unknown @target:",
-                 paste(object@target, collapse = " ")))
-  }
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
@@ -43,14 +38,9 @@ setMethod("show", "Lmitted", function(object) {
 ##'   \code{adopters()}) it will be found automatically and does not need to be
 ##'   passed here as well. (If the \code{Design} is found in the model, this
 ##'   argument is ignored.)
-##' @param target Optional, explicitly specify the estimand. If the model in
-##'   \code{x} does not contain a \code{weights} argument generated using either
-##'   \code{ate()} or \code{ett()}, specify whether the goal is estimating ATE
-##'   ("ate") or ETT ("ett"). (If weights are specified, this argument is
-##'   ignored.)
 ##' @return \code{Lmitted} object
 ##' @export
-as.lmitt <- function(x, design = NULL, target = NULL) {
+as.lmitt <- function(x, design = NULL) {
   if (!is(x, "lm")) {
     stop("input must be lm object")
   }
@@ -75,25 +65,9 @@ as.lmitt <- function(x, design = NULL, target = NULL) {
     stop("Cannot locate `Design`, pass via `design=` argument")
   }
 
-  # Check if we can find "target" in the weights
-  found_target <- NULL
-  if (hasweights) {
-    found_target <- x$model$"(weights)"@target
-  }
-
-  if (!is.null(found_target) && found_target %in% c("ate", "ett")) {
-    target <- found_target
-  }
-
-  if (is.null(target) || !(target %in% c("ate", "ett"))) {
-    stop(paste('Cannot locate `target`, pass via `target=` argument',
-               '("ate" or "ett")'))
-  }
-
   return(new("Lmitted",
              x,
-             Design = design,
-             target = target))
+             Design = design))
 }
 
 setGeneric("vcov")

@@ -4,7 +4,7 @@
 \alias{lmitt}
 \title{Linear Model for Intention To Treat}
 \usage{
-lmitt(formula, design = NULL, target = NULL, ...)
+lmitt(formula, design = NULL, ...)
 }
 \arguments{
 \item{formula}{See \code{lm()}}
@@ -15,12 +15,6 @@ argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 \code{adopters()}) it will be found automatically and does not need to be
 passed here as well. (If the \code{Design} is found in the model, this
 argument is ignored.)}
-
-\item{target}{Optional, explicitly specify the estimand. If the
-\code{weights} are generated using either \code{ate()} or \code{ett()},
-the \code{target]} will be found automatically. Otherwise, specify whether
-the goal is estimating ATE ("ate") or ETT ("ett"). (If weights are
-specified, this argument is ignored.)}
 
 \item{...}{Additional arguments passed to \code{lm()}.}
 }
