@@ -23,7 +23,7 @@ lmitt <- function(formula,
     formula <- update(formula, . ~ . : adopters())
   }
 
-  if (is(design, "formula")) {
+  if (inherits(design, "formula")) {
     # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
     # must create Design manually.
     if (!is.null(attr(terms(design, specials = "forcing"),

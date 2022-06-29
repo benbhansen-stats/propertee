@@ -573,14 +573,14 @@ test_that("Accessing and replacing dichotomy", {
                     dichotomy = dose >= 250 ~ dose < 100)
 
   dd <- dichotomy(des)
-  expect_true(is(dd, "formula"))
+  expect_true(inherits(dd, "formula"))
   expect_length(dd, 3)
 
   expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
 
   des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
   dd <- dichotomy(des)
-  expect_true(is(dd, "formula"))
+  expect_true(inherits(dd, "formula"))
   expect_length(dd, 0)
 
 
@@ -590,7 +590,7 @@ test_that("Accessing and replacing dichotomy", {
 
   expect_true(is_dichotomized(des))
   dd <- dichotomy(des)
-  expect_true(is(dd, "formula"))
+  expect_true(inherits(dd, "formula"))
   expect_length(dd, 3)
 
   expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
@@ -598,14 +598,14 @@ test_that("Accessing and replacing dichotomy", {
   # remove dichot with `formula()`
   dichotomy(des) <- formula()
   dd <- dichotomy(des)
-  expect_true(is(dd, "formula"))
+  expect_true(inherits(dd, "formula"))
   expect_length(dd, 0)
 
   # remove dichot with `NULL` (after re-adding it)
   dichotomy(des) <- dose >= 250 ~ dose < 100
   dichotomy(des) <- NULL
   dd <- dichotomy(des)
-  expect_true(is(dd, "formula"))
+  expect_true(inherits(dd, "formula"))
   expect_length(dd, 0)
 
 

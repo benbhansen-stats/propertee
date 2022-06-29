@@ -38,14 +38,14 @@
     # Its most likely the first frame, but perhaps not.
     for (i in which(keyframes)) {
       possible_design_holder <- get(type, sys.frame(i))
-      if (is(possible_design_holder, "WeightedDesign") ||
-          is(possible_design_holder, "SandwichLayer")) {
+      if (inherits(possible_design_holder, "WeightedDesign") ||
+          inherits(possible_design_holder, "SandwichLayer")) {
         # If we have a WeightedDesign, save it and break
         design <- possible_design_holder@Design
         break()
       }
     }
-    if (!is(design, "Design")) {
+    if (!inherits(design, "Design")) {
       return(NULL)
     }
     return(design)
@@ -67,7 +67,7 @@
   if (any(found_lmitt)) {
     lmitt_design <- get("design", sys.frame(which(found_lmitt)[1]))
     # If its not a real design, return NULL
-    if (!is(lmitt_design, "Design")) {
+    if (!inherits(lmitt_design, "Design")) {
       lmitt_design <- NULL
     }
   }

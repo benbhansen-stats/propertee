@@ -150,7 +150,7 @@ forcing <- unit_of_assignment
 ##' @export
 ##' @rdname design_treatment_status
 is_dichotomized <- function(des) {
-  if (!is(des, "Design")) {
+  if (!inherits(des, "Design")) {
     stop("des must be a Design object.")
   }
 
@@ -161,7 +161,7 @@ is_dichotomized <- function(des) {
 ##' @export
 ##' @rdname design_treatment_status
 has_binary_treatment <- function(des) {
-  if (!is(des, "Design")) {
+  if (!inherits(des, "Design")) {
     stop("des must be a Design object.")
   }
 
@@ -171,7 +171,7 @@ has_binary_treatment <- function(des) {
 ##' @export
 ##' @rdname design_treatment_status
 is_binary_or_dichotomized <- function(des) {
-  if (!is(des, "Design")) {
+  if (!inherits(des, "Design")) {
     stop("des must be a Design object.")
   }
 

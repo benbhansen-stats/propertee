@@ -259,7 +259,7 @@ test_that("weight function", {
   wdes <- ett(des, data = simdata)
 
   expect_s4_class(wdes, "WeightedDesign")
-  expect_false(is(weights(wdes), "WeightedDesign"))
+  expect_false(inherits(weights(wdes), "WeightedDesign"))
 
   })
 
@@ -443,7 +443,7 @@ test_that("Combining weighted designs", {
   w3 <- ate(des, data = simdata[41:50,])
 
   c_w <- c(w1, w2, w3)
-  expect_true(is(c_w, "WeightedDesign"))
+  expect_true(inherits(c_w, "WeightedDesign"))
   expect_length(c_w, 50)
   expect_identical(c_w, ate(des, data = simdata))
 
@@ -452,7 +452,7 @@ test_that("Combining weighted designs", {
   w3e <- ett(des, data = simdata[41:50,])
 
   c_we <- c(w1e, w2e, w3e)
-  expect_true(is(c_we, "WeightedDesign"))
+  expect_true(inherits(c_we, "WeightedDesign"))
   expect_length(c_we, 50)
   expect_identical(c_we, ett(des, data = simdata))
 
@@ -467,7 +467,7 @@ test_that("Combining weighted designs", {
 
   # if the first argument is compatible with WeightedDesign but isn't one (e.g.
   # numeric vector), c() will return a numeric vector
-  #expect_true(is(c(1:5, w1), "WeightedDesign"))
+  #expect_true(inherits(c(1:5, w1), "WeightedDesign"))
 })
 
 test_that("Combining weighted designs with different dichotomys ", {
@@ -478,7 +478,7 @@ test_that("Combining weighted designs with different dichotomys ", {
   w3 <- ate(des, data = simdata, dichotomy = dose >= 100 ~ .)
 
   c_w <- c(w1, w2, w3)
-  expect_true(is(c_w, "WeightedDesign"))
+  expect_true(inherits(c_w, "WeightedDesign"))
   expect_length(c_w, 150)
 
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),

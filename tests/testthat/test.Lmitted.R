@@ -9,7 +9,7 @@ test_that(paste("Lmitted object created correctly with weights and no",
               Design = des)
 
   expect_s4_class(dalm, "Lmitted")
-  expect_true(is(dalm, "lm"))
+  expect_true(inherits(dalm, "lm"))
 
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
@@ -26,7 +26,7 @@ test_that(paste("Lmitted object created correctly with weights and ",
               Design = des)
 
   expect_s4_class(dalm, "Lmitted")
-  expect_true(is(dalm, "lm"))
+  expect_true(inherits(dalm, "lm"))
 
   expect_equal(dalm$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
   expect_identical(dalm$model$`(offset)`@fitted_covariance_model, cmod)
@@ -141,7 +141,7 @@ test_that("lm to Lmitted succeeds with weights and no SandwichLayer", {
   mod_da <- as.lmitt(mod)
 
   expect_s4_class(mod_da, "Lmitted")
-  expect_true(is(mod_da, "lm"))
+  expect_true(inherits(mod_da, "lm"))
 
   expect_identical(mod_da$model$"(weights)"@Design, des)
 
@@ -161,7 +161,7 @@ test_that("lm to Lmitted with weights and SandwichLayer", {
   mod_da <- as.lmitt(mod)
 
   expect_s4_class(mod_da, "Lmitted")
-  expect_true(is(mod_da, "lm"))
+  expect_true(inherits(mod_da, "lm"))
 
   expect_equal(mod_da$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
   expect_identical(mod_da$model$`(offset)`@fitted_covariance_model, cmod)
@@ -213,8 +213,8 @@ test_that("subsetting model with weights and/or cov_adj", {
              weights = ate(des),
              offset = cov_adj(lm(y ~ x, data = simdata)))
 
-  expect_true(is(mod1$model$`(weights)`, "WeightedDesign"))
-  expect_true(is(mod1$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(mod1$model$`(weights)`, "WeightedDesign"))
+  expect_true(inherits(mod1$model$`(offset)`, "SandwichLayer"))
 
   # add subsetting
   mod2 <- lm(y ~ adopters(),
@@ -223,8 +223,8 @@ test_that("subsetting model with weights and/or cov_adj", {
              offset = cov_adj(lm(y ~ x, data = simdata)),
              subset = simdata$dose < 300)
 
-  expect_true(is(mod2$model$`(weights)`, "WeightedDesign"))
-  expect_true(is(mod2$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(mod2$model$`(weights)`, "WeightedDesign"))
+  expect_true(inherits(mod2$model$`(offset)`, "SandwichLayer"))
 
 })
 

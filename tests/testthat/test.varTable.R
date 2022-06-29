@@ -5,7 +5,7 @@ test_that("var_table", {
 
   tbl <- var_table(des)
 
-  expect_true(is(tbl, "matrix"))
+  expect_true(inherits(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(3, 2))
 
@@ -15,7 +15,7 @@ test_that("var_table", {
   expect_equal(grepl(",", tbl[, 2]), c(FALSE, TRUE, FALSE))
 
   tbl2 <- var_table(des, compress = FALSE)
-  expect_true(is(tbl2, "matrix"))
+  expect_true(inherits(tbl2, "matrix"))
   expect_type(tbl2, "character")
   expect_equal(colnames(tbl2)[-1], c("Variable 1", "Variable 2"))
   expect_equal(dim(tbl2), c(3, 3))
@@ -34,7 +34,7 @@ test_that("var_table", {
 
   tbl <- var_table(des)
 
-  expect_true(is(tbl, "matrix"))
+  expect_true(inherits(tbl, "matrix"))
   expect_type(tbl, "character")
   expect_equal(dim(tbl), c(3, 2))
 
@@ -44,7 +44,7 @@ test_that("var_table", {
   expect_equal(grepl(",", tbl[, 2]), c(FALSE, TRUE, FALSE))
 
   tbl2 <- var_table(des, compress = FALSE)
-  expect_true(is(tbl2, "matrix"))
+  expect_true(inherits(tbl2, "matrix"))
   expect_type(tbl2, "character")
   expect_equal(dim(tbl2), c(3, 3))
   expect_true(is.na(tbl2[1, 3]))
@@ -52,7 +52,7 @@ test_that("var_table", {
   expect_true(is.na(tbl2[3, 3]))
 
   tbl3 <- var_table(des, report_all = TRUE)
-  expect_true(is(tbl3, "matrix"))
+  expect_true(inherits(tbl3, "matrix"))
   expect_type(tbl3, "character")
   expect_equal(dim(tbl3), c(4, 2))
   expect_true(!is.na(tbl3[1, 2]))
@@ -61,7 +61,7 @@ test_that("var_table", {
   expect_true(!is.na(tbl3[4, 2]))
 
   tbl4 <- var_table(des, compress = FALSE, report_all = TRUE)
-  expect_true(is(tbl4, "matrix"))
+  expect_true(inherits(tbl4, "matrix"))
   expect_type(tbl4, "character")
   expect_equal(dim(tbl4), c(4, 3))
   expect_true(!is.na(tbl4[1, 2]))

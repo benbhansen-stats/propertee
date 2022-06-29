@@ -29,7 +29,7 @@ setMethod("c", signature(x = "WeightedDesign"),
   dots <- list(...)
   # x must be a WeightedDesign to get here; ensure all other elements
   # are as well
-  if (any(vapply(dots, function(k) !is(k, "WeightedDesign"), TRUE))) {
+  if (any(vapply(dots, function(k) !inherits(k, "WeightedDesign"), TRUE))) {
     stop("WeightedDesigns can only be combined with other WeightedDesigns")
   }
 

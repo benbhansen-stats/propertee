@@ -99,7 +99,7 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##' @keywords internal
 .apply_dichotomy <- function(txt, dichotomy) {
 
-  if (!is(dichotomy, "formula")) {
+  if (!inherits(dichotomy, "formula")) {
     stop("`dichotomy` must be formula")
   }
 
@@ -420,7 +420,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
     null_name <- FALSE
   }
 
-  if (!is(value, "data.frame")) {
+  if (!inherits(value, "data.frame")) {
     # Gives a nice error (cannot convert class to data.frame) so no need for
     # tryCatch here
     value <- as.data.frame(value)

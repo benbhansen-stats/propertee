@@ -56,7 +56,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   if (!is.null(dichotomy)) {
-    if (!is(dichotomy, "formula")) {
+    if (!inherits(dichotomy, "formula")) {
       stop("`dichotomy` must be a `formula`")
     }
     if (is_dichotomized(design)) {

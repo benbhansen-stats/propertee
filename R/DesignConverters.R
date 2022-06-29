@@ -61,7 +61,7 @@ as_obs_design <- function(Design, ..., loseforcing = FALSE) {
 ##' @export
 ##' @rdname designconversion
 as_rd_design <- function(Design, data, ..., forcing) {
-  if (!is(forcing, "formula")) {
+  if (!inherits(forcing, "formula")) {
     stop('`forcing` must be entered as a formula such as "~ . + forcing(a, b)"')
   }
 

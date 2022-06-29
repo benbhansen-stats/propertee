@@ -42,7 +42,7 @@ setMethod("show", "Lmitted", function(object) {
 ##' @return \code{Lmitted} object
 ##' @export
 as.lmitt <- function(x, design = NULL) {
-  if (!is(x, "lm")) {
+  if (!inherits(x, "lm")) {
     stop("input must be lm object")
   }
 

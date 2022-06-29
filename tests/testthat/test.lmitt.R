@@ -7,7 +7,7 @@ test_that("lmitt", {
   da <- lmitt(y ~ dose + x, weights = ate(des), data = simdata)
 
   expect_s4_class(da, "Lmitted")
-  expect_true(is(da, "lm"))
+  expect_true(inherits(da, "lm"))
 
   da_ett <- lmitt(y ~ z + x, weights = ett(des), data = simdata)
 
@@ -42,7 +42,7 @@ test_that("covariate adjustment", {
 
   da <- lmitt(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(camod))
   expect_true(!is.null(da$model$"(offset)"))
-  expect_true(is(da$model$"(offset)", "SandwichLayer"))
+  expect_true(inherits(da$model$"(offset)", "SandwichLayer"))
 
 })
 

@@ -99,7 +99,7 @@ setMethod("[", "PreSandwichLayer",
             dat <- methods::callNextMethod()
             x@.Data <- dat
             return(x)
-            
+
           })
 
 ##' (Internal) Get the a vector of "response" predictions from a covariance model
@@ -134,9 +134,9 @@ setMethod("[", "PreSandwichLayer",
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models
-  if (is(model, "glm")) {
+  if (inherits(model, "glm")) {
     pred_gradient <- model$family$mu.eta(ca) * X
-  } else if (is(model, "lm") | is(model, "lmrob")) {
+  } else if (inherits(model, "lm") | inherits(model, "lmrob")) {
     # `lm` doesn't have a `family` object, but we know its prediction gradient
     pred_gradient <- X
   } else {
@@ -159,7 +159,7 @@ setMethod("[", "PreSandwichLayer",
 ##' @return a \code{SandwichLayer} object
 ##' @export
 as.SandwichLayer <- function(x, design, by = NULL) {
-  if (!is(x, "PreSandwichLayer")) {
+  if (!inherits(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
 

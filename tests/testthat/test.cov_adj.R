@@ -12,8 +12,8 @@ Q_partial_overlap <- simdata[simdata$bid == 3,]
 # test whether the values are the same as calling predict on the quasiexperimental
 # data if called outside of `lm`
 test_ca <- function(ca, cov_mod,  Q_) {
-  expect_true(is(ca, "numeric"))
-  expect_true(is(ca, "vector"))
+  expect_true(inherits(ca, "numeric"))
+  expect_true(inherits(ca, "vector"))
   expect_equal(ca@.Data, as.numeric(stats::predict(cov_mod, Q_)))
   expect_equal(ca@fitted_covariance_model, cov_mod)
   return(NULL)
@@ -27,7 +27,7 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has NU
                  "adjustments are NA")
   ca <- suppressWarnings(cov_adj(cmod, design = des, newdata = Q_w_nulls))
   test_ca(ca, cmod, Q_w_nulls)
-  expect_true(is(ca, "SandwichLayer"))
+  expect_true(inherits(ca, "SandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call specifying newdata and design, data has no NULLs", {
@@ -35,7 +35,7 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has no
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, design = des, newdata = Q_wo_nulls)
   test_ca(ca, cmod, Q_wo_nulls)
-  expect_true(is(ca, "SandwichLayer"))
+  expect_true(inherits(ca, "SandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call specifying newdata and design, data has partial overlap", {
@@ -43,28 +43,28 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has pa
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, design = des, newdata = Q_partial_overlap)
   test_ca(ca, cmod, Q_partial_overlap)
-  expect_true(is(ca, "SandwichLayer"))
+  expect_true(inherits(ca, "SandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call specifying newdata but no design, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   ca <- cov_adj(cmod, newdata = Q_w_nulls)
   test_ca(ca, cmod, Q_w_nulls)
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call specifying newdata but no design, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, newdata = Q_wo_nulls)
   test_ca(ca, cmod, Q_wo_nulls)
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call specifying newdata but no design, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, newdata = Q_partial_overlap)
   test_ca(ca, cmod, Q_partial_overlap)
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call not specifying newdata or design, data has NULLs", {
@@ -75,7 +75,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   ca <- suppressWarnings(cov_adj(cmod))
   pred_idx <- !is.na(Q_w_nulls$readk) & !is.na(Q_w_nulls$gender) & !is.na(Q_w_nulls$ethnicity)
   test_ca(ca, cmod, Q_w_nulls[pred_idx, ])
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call not specifying newdata or design, data has no NULLs", {
@@ -85,7 +85,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
                          pattern = "quasiexperimental data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
   test_ca(ca, cmod, Q_wo_nulls)
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj outside of lm call not specifying newdata or design, data has partial overlap", {
@@ -95,7 +95,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
                          pattern = "quasiexperimental data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
   test_ca(ca, cmod, Q_partial_overlap)
-  expect_true(is(ca, "PreSandwichLayer"))
+  expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
 test_that("cov_adj as offset with weights, data has NULLs", {
@@ -112,7 +112,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
   test_ca(m$model$`(offset)`,
           cmod,
           stats::model.frame(as.formula(form), data = Q_w_nulls))
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
@@ -120,7 +120,7 @@ test_that("cov_adj as offset with weights, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod), weights = ate(des))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset with weights, data has partial overlap", {
@@ -128,7 +128,7 @@ test_that("cov_adj as offset with weights, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod), weights = ate(des))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ newdata and design, no weights, data has NULLs", {
@@ -143,7 +143,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
   all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
   keep_idx <- apply(is.na(Q_w_nulls[, all_vars]), 1, sum) == 0
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ newdata and design, no weights, data has no NULLs", {
@@ -152,7 +152,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
   m <- lm(y ~ z, data = Q_wo_nulls,
           offset = cov_adj(cmod, newdata = Q_wo_nulls, design = des))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ newdata and design, no weights, data has partial overlap", {
@@ -161,7 +161,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
   m <- lm(y ~ z, data = Q_partial_overlap,
           offset = cov_adj(cmod, newdata = Q_partial_overlap, design = des))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
-  expect_true(is(m$model$`(offset)`, "SandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has NULLs", {
@@ -170,21 +170,21 @@ test_that("cov_adj as offset specified w/ no newdata nor design, no weights, dat
   all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
   keep_idx <- apply(is.na(Q_w_nulls[, all_vars]), 1, sum) == 0
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
-  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
-  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
 test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
-  expect_true(is(m$model$`(offset)`, "PreSandwichLayer"))
+  expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
 ## ## Stop tidyverse from spamming the test output display

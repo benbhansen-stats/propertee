@@ -24,7 +24,7 @@
   }
 
   # Formula should be from a Design; it is used inside `model.frame` below
-  if (!(is.call(form) | is(form, "formula") | is.name(form))) {
+  if (!(is.call(form) | inherits(form, "formula") | is.name(form))) {
     stop("internal error: form must be a formula or name")
   }
 
@@ -40,7 +40,7 @@
     form <- as.formula(form)
   }
   # By this point we should have hit an earlier error
-  if (!is(form, "formula")) {
+  if (!inherits(form, "formula")) {
     stop("internal error: unable to convert form to formula class")
   }
 

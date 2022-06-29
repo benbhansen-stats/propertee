@@ -16,7 +16,7 @@ test_that("Design creation", {
       expect_type(d@type, "character")
       expect_type(d@unit_of_assignment_type, "character")
       expect_type(d@call, "language")
-      expect_true(is(d@call, "call"))
+      expect_true(inherits(d@call, "call"))
 
       expect_equal(ncol(d@structure), length(d@column_index))
       expect_length(d@type, 1)
@@ -171,7 +171,7 @@ test_that("Design creation", {
   expect_type(d_rct@type, "character")
   expect_type(d_rct@unit_of_assignment_type, "character")
   expect_type(d_rct@call, "language")
-  expect_true(is(d_rct@call, "call"))
+  expect_true(inherits(d_rct@call, "call"))
 
   expect_equal(dim(d_rct@structure), c(30, 2))
   expect_length(d_rct@column_index, 2)

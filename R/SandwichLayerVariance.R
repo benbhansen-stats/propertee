@@ -14,16 +14,16 @@ NULL
 #' and k is the number of terms in the \code{Lmitted} model
 #' @keywords internal
 .get_b12 <- function(x) {
-  if (!is(x, "Lmitted")) {
+  if (!inherits(x, "Lmitted")) {
     stop("x must be a Lmitted model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (class(sl) != "SandwichLayer") {
     stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   uoanames <- var_names(x@Design, "u")
   zname <- var_names(x@Design, "t")
 
@@ -34,14 +34,14 @@ NULL
     by(sandwich::estfun(sl@fitted_covariance_model),
        lapply(uoanames, function(col) sl@keys[, col]),
        colSums))
-  
+
   # cmod_eqns will be NULL if there's no overlap, so no need to continue
   if (is.null(cmod_eqns)) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
   }
-  
+
   # get overlapping rows from experimental data joining with `keys`
   lmitt_uoas <- stats::expand.model.frame(x, uoanames)
   lmitt_uoas <- .merge_preserve_order(
@@ -50,7 +50,7 @@ NULL
     by = uoanames,
     all.x = TRUE,
     sort = FALSE)
-  
+
   msk <- !is.na(lmitt_uoas[, paste0(zname, ".y")])
   dmod_eqns <- Reduce(
     rbind,
@@ -77,7 +77,7 @@ NULL
 #' @return A 1x1 matrix
 #' @keywords internal
 .get_a22_inverse <- function(x) {
-  if (!is(x, "Lmitted")) {
+  if (!inherits(x, "Lmitted")) {
     stop("x must be a Lmitted model")
   }
 
@@ -92,11 +92,11 @@ NULL
   } else {
     W <- if (is.null(x$weights)) rep(1, length(x$fitted.values)) else x$weights
   }
-  
+
   fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
   zname <- var_names(x@Design, "t")
   out <- solve(fim)[zname, zname, drop = FALSE]
-  
+
   return(out)
 }
 
@@ -115,7 +115,7 @@ NULL
 #' is equivalent to the weighted variance for an observation divided by the estimate
 #' of the dispersion parameter. Thus, the above estimating equations can also be
 #' written as \deqn{\psii = (ri / Var(yi)) * (d\mui/d\etai) * xi}
-#' 
+#'
 #' A matrix C of dimension nxJ is formed to indicate which unit each subject in
 #' the design belongs to, where J is the number of units at the level of treatment
 #' assignment. The treatment assignment-level estimating equations are then obtained
@@ -126,15 +126,15 @@ NULL
 #' @return A (p+1)x(p+1) matrix where the dimensions are given by the number of
 #' terms in the \code{Lmitted} model (p) and an Intercept term. Typically, this should
 #' be a 2x2 matrix given the dichotomous handling of treatment variables in this
-#' package and the use of the covariance model to offer the covariance adjustment. 
+#' package and the use of the covariance model to offer the covariance adjustment.
 #' @keywords internal
 .get_b22 <- function(x, ...) {
   if (!inherits(x, "Lmitted")) {
     stop("x must be a Lmitted model")
   }
-  
+
   nq <- sum(summary(x)$df[1L:2L])
-  
+
   # Get units of assignment for clustering
   uoanames <- var_names(x@Design, "u")
   uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
@@ -143,7 +143,7 @@ NULL
   } else {
     uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
   }
-  
+
   zname <- var_names(x@Design, "t")
   vmat <- sandwich::meatCL(x, cluster = uoas, ...) * nq
   out <- vmat[zname, zname, drop = FALSE]
@@ -165,13 +165,13 @@ NULL
   if (!inherits(x, "Lmitted")) {
     stop("x must be a Lmitted model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
 
@@ -195,13 +195,13 @@ NULL
   if (!inherits(x, "Lmitted")) {
     stop("x must be a Lmitted model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
 

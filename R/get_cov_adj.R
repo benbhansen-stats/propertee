@@ -9,8 +9,8 @@ NULL
   # Look for an `offset = ` argument
   offset_from_arg <- x$model$"(offset)"
 
-  if (is(offset_from_arg, "PreSandwichLayer") ||
-      is(offset_from_arg, "SandwichLayer")) {
+  if (inherits(offset_from_arg, "PreSandwichLayer") ||
+      inherits(offset_from_arg, "SandwichLayer")) {
     return(offset_from_arg)
   }
 
@@ -19,7 +19,8 @@ NULL
 
   which_are_SL <- vapply(offset_col,
                          function(x) {
-                           is(x, "PreSandwichLayer") || is(x, "SandwichLayer")
+                           inherits(x, "PreSandwichLayer") ||
+                             inherits(x, "SandwichLayer")
                           },
                          logical(1))
 

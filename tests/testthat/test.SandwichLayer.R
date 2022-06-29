@@ -120,14 +120,14 @@ test_that("SandwichLayer created correctly", {
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
-  expect_true(is(new("SandwichLayer",
+  expect_true(inherits(new("SandwichLayer",
                      psl,
                      keys = keys,
                      Design = des),
                  "SandwichLayer"))
 
   keys[100,] <- rep(NA_integer_, ncol(keys))
-  expect_true(is(new("SandwichLayer",
+  expect_true(inherits(new("SandwichLayer",
                      psl,
                      keys = keys,
                      Design = des),
@@ -186,13 +186,13 @@ test_that("as.SandwichLayer used correctly", {
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
-  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
 
   des <- rct_design(t ~ cluster(uoa1, uoa2), data = x)
-  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
 
   des <- rct_design(t ~ unitid(uoa1, uoa2), data = x)
-  expect_true(is(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
 })
 
 test_that("as.SandwichLayer used correctly with `by`", {
@@ -213,7 +213,7 @@ test_that("as.SandwichLayer used correctly with `by`", {
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   sl <- as.SandwichLayer(psl, des, by)
-  expect_true(is(sl, "SandwichLayer"))
+  expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(colnames(sl@keys), as.character(by))
 })
 
@@ -302,8 +302,8 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
   expect_identical(no_subset_psl, psl)
   expect_identical(no_subset_sl, sl)
 
-  expect_true(is(no_subset_psl, "PreSandwichLayer"))
-  expect_true(is(no_subset_sl, "SandwichLayer"))
+  expect_true(inherits(no_subset_psl, "PreSandwichLayer"))
+  expect_true(inherits(no_subset_sl, "SandwichLayer"))
 
   expect_identical(capture_output(str(no_subset_psl)),
                    capture_output(str(psl)))
@@ -318,8 +318,8 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
   expect_identical(subset_psl@.Data, psl@.Data[1:subset_length])
   expect_identical(subset_sl@.Data, sl@.Data[1:subset_length])
 
-  expect_true(is(subset_psl, "PreSandwichLayer"))
-  expect_true(is(subset_sl, "SandwichLayer"))
+  expect_true(inherits(subset_psl, "PreSandwichLayer"))
+  expect_true(inherits(subset_sl, "SandwichLayer"))
 
   expect_identical(subset_psl@fitted_covariance_model, psl@fitted_covariance_model)
   expect_identical(subset_psl@prediction_gradient, psl@prediction_gradient)
@@ -331,8 +331,8 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
   expect_identical(no_subset_psl, psl)
   expect_identical(no_subset_sl, sl)
 
-  expect_true(is(no_subset_psl, "PreSandwichLayer"))
-  expect_true(is(no_subset_sl, "SandwichLayer"))
+  expect_true(inherits(no_subset_psl, "PreSandwichLayer"))
+  expect_true(inherits(no_subset_sl, "SandwichLayer"))
 
   expect_identical(psl[1:10]@.Data, psl@.Data[1:10])
   expect_identical(sl[1:10]@.Data, sl@.Data[1:10])
