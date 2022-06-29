@@ -24,7 +24,7 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has NU
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
 
   expect_warning(cov_adj(cmod, design = des, newdata = Q_w_nulls),
-                 "Offset has NA values")
+                 "adjustments are NA")
   ca <- suppressWarnings(cov_adj(cmod, design = des, newdata = Q_w_nulls))
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(is(ca, "SandwichLayer"))
@@ -103,7 +103,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
                     offset = cov_adj(cmod), weights = ate(des)),
-                 "Offset has NA values")
+                 "adjustments are NA")
   m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
                            offset = cov_adj(cmod), weights = ate(des)))
 
@@ -136,7 +136,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
                     offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)),
-                 "Offset has NA values")
+                 "adjustments are NA")
   m <- suppressWarnings(
     lm(readk ~ stark == "small", data = Q_w_nulls,
        offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)))

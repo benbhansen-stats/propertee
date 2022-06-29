@@ -14,8 +14,8 @@ robustbase::lmrob} object}
 \item{newdata}{Optional; a data.frame of new data}
 }
 \value{
-Covariate adjusted outcomes and their prediction gradient (a list of
-a numeric vector and a matrix)
+Covariate adjusted outcomes and their gradient with respect to the
+parameters of the covariance model (a list of a numeric vector and a matrix)
 }
 \description{
 (Internal) Get the a vector of "response" predictions from a covariance model

@@ -1,0 +1,567 @@
+test_correct_b12 <- function(m) {
+  uoanames <- var_names(m@Design, "u")
+  zname <- var_names(m@Design, "t")
+  
+  # est eqns for lm are wts * resids * dmatrix
+  cmod <- m$model$`(offset)`@fitted_covariance_model
+  cmod_eqns <- Reduce(
+    rbind,
+    by(cmod$residuals * model.matrix(cmod),
+       lapply(uoanames, function(col) m$model$`(offset)`@keys[,col]),
+       colSums))
+
+  Q <- stats::expand.model.frame(m, uoanames)
+  msk <- !is.na(.merge_preserve_order(
+    Q,
+    merge(unique(m$model$`(offset)`@keys), m@Design@structure),
+    by = uoanames,
+    all.x = TRUE,
+    sort = FALSE)[paste0(zname, ".y")])
+  m_eqns <- Reduce(
+    rbind,
+    by((m$weights * m$residuals * model.matrix(m))[msk, ],
+       lapply(uoanames, function(col) Q[msk, col]),
+       colSums))
+
+  expect_equal(.get_b12(m),
+               t(cmod_eqns) %*% m_eqns)
+}
+
+test_that("variance helper functions fail without a Lmitted model", {
+  data(simdata)
+  cmod <- lm(y ~ z, data = simdata)
+  
+  expect_error(.get_b12(cmod), "must be a Lmitted")
+  expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_b22(cmod), "must be a Lmitted")
+  expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_a11_inverse(cmod), "must be a Lmitted")
+  expect_error(.get_b11(cmod), "must be a Lmitted")
+})
+
+test_that(paste(".get_b12, .get_a11_inverse, .get_b11 used with Lmitted model",
+                "without SandwichLayer offset"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  offset <- stats::predict(cmod, simdata)
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
+  )
+
+  expect_error(.get_b12(m), "must have an offset of class")
+  expect_error(.get_a11_inverse(m), "must have an offset of class")
+  expect_error(.get_b11(m), "must have an offset of class")
+})
+
+test_that(paste(".get_b12 returns expected B_12 for individual-level",
+                "experimental data identical to cov model data"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  m <- as.lmitt(
+   lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  test_correct_b12(m)
+})
+
+test_that(paste(".get_b12 returns expected B_12 for cluster-level",
+                "experimental data whose rows fully overlap with cov model data"), {
+  data(simdata)
+  cluster_ids <- unique(simdata[, c("cid1", "cid2")])
+  Q_cluster <- data.frame(Reduce(
+    rbind,
+    by(simdata,
+       list(simdata$cid1, simdata$cid2),
+       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+  ), row.names = NULL)
+  
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster)
+
+  m <- as.lmitt(
+   lm(y ~ z, data = Q_cluster, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  test_correct_b12(m)
+})
+
+test_that(paste(".get_b12 returns expected B_12 for individual-level",
+                "experimental data that is a subset of cov model data"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
+  m <- as.lmitt(
+   lm(y ~ z, data = simdata[simdata$cid2 == 1,],
+      weights = weighted_design, offset = cov_adj(cmod))
+  )
+
+  test_correct_b12(m)
+})
+
+test_that(paste(".get_b12 returns expected B_12 for cluster-level",
+                "experimental data that is a subset of cov model data"), {
+  data(simdata)
+  subset_cluster_ids <- unique(simdata[simdata$cid2 == 1, c("cid1", "cid2")])
+  Q_cluster_subset <- data.frame(Reduce(
+    rbind,
+    by(simdata,
+       list(simdata$cid1, simdata$cid2),
+       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+  ), row.names = NULL)
+  
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster_subset)
+  weighted_design <- ate(des, data = Q_cluster_subset)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = Q_cluster_subset,
+       weights = weighted_design, offset = cov_adj(cmod))
+  )
+  
+  test_correct_b12(m)
+})
+
+test_that(paste(".get_b12 returns expected B_12 for experimental",
+                "data that has no overlap with cov model data"), {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  C_no_cluster_ids <- simdata
+  C_no_cluster_ids[, var_names(des, "u")] <- NA
+  cmod <- lm(y ~ x, data = C_no_cluster_ids)
+
+  m <- as.lmitt(
+    lm(y ~ z + force, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  expect_equal(dim(.get_b12(m)), c(2, 3))
+  expect_true(all(.get_b12(m) == 0))
+})
+
+test_that(".get_a22_inverse returns correct value for lm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  
+  fim <- crossprod(stats::model.matrix(m) * m$weights, stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_a22_inverse returns correct value for glm fit with Gaussian family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
+  
+  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
+  fim <- crossprod(stats::model.matrix(m) * m$weights / dispersion, stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_a22_inverse returns correct value for glm fit with poisson family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::poisson())
+  )
+  
+  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights,
+                   stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::quasipoisson())
+  )
+  
+  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
+  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights / dispersion,
+                   stats::model.matrix(m))
+  zname <- var_names(des, "t")
+  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+})
+
+test_that(".get_b22 returns correct value for lm object w/o offset", {
+  data(simdata)
+
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  zname <- var_names(des, "t")
+  
+  m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+  expect_equal(.get_b22(m, type = "HC1"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
+})
+
+test_that(".get_b22 returns correct value for lm object w offset", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+  expect_equal(.get_b22(m, type = "HC1"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
+})
+
+test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+})
+
+test_that(".get_b22 returns correct value for poisson glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::poisson())
+  )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+})
+
+test_that(".get_b22 returns correct value for quasipoisson glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
+        family = stats::quasipoisson())
+  )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+})
+
+test_that(".get_b22 returns correct value for binomial glm", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- suppressWarnings(
+    as.lmitt(
+      glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
+          family = stats::binomial())
+  ))
+
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  zname <- var_names(des, "t")
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+})
+
+test_that(".get_a11_inverse returns correct value for lm cmod", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  fim <- crossprod(stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim))
+})
+
+test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
+  data(simdata)
+  cmod <- glm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
+  fim <- crossprod(stats::model.matrix(cmod), stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), dispersion * solve(fim))
+})
+
+test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson())
+  )
+  
+  fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+})
+
+test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::quasipoisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson())
+  )
+  
+  dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
+  fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), dispersion * solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+})
+
+test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
+  data(simdata)
+  cmod <- suppressWarnings(
+    glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
+  )
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- suppressWarnings(as.lmitt(
+    glm(round(exp(y) / (1 + exp(y))) ~ z, data = simdata, weights = ate(des),
+        offset = cov_adj(cmod), family = stats::binomial())
+  ))
+  
+  fim <- crossprod(stats::model.matrix(cmod) * cmod$fitted.values * (1 - cmod$fitted.values),
+                   stats::model.matrix(cmod))
+  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
+})
+
+test_that(".get_b11 returns correct B_11 for one cluster column", {
+  data(simdata)
+                  
+  simdata[simdata$cid1 == 4, "z"] <- 0
+  simdata[simdata$cid1 == 2, "z"] <- 1
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(simdata$cid1)
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.lmitt(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson()))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
+                "subset of cov model data"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  nc <- sum(summary(cmod)$df[1L:2L])
+
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata[simdata$cid2 == 1,],
+       weights = weighted_design, offset = cov_adj(cmod))
+  )
+
+  # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
+  uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  nuoas <- length(unique(uoas))
+  nas <- grepl("NA", uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+  nuoas <- length(levels(uoas))
+  
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+
+test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
+                "no overlap with cov model data"), {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  C_no_cluster_ids <- simdata
+  C_no_cluster_ids[, var_names(des, "u")] <- NA
+  cmod <- lm(y ~ x, data = C_no_cluster_ids)
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
+  uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  nuoas <- length(unique(uoas))
+  nas <- grepl("NA", uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+
+  # no adjustment for cases where each row is its own cluster
+  expected <- crossprod(sandwich::estfun(cmod)) * (nc - 1L) / (nc - 2L)
+  
+  expect_equal(.get_b11(m, cadjust = FALSE), expected)
+})
