@@ -70,13 +70,13 @@
     <loc>www.github.com/reference/adopters.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/as.DirectAdjusted.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/reference/as.SandwichLayer.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/confint-DirectAdjusted-method.html</loc>
+    <loc>www.github.com/reference/as.lmitt.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/confint-Lmitted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/cov_adj.html</loc>
@@ -95,9 +95,6 @@
   </url>
   <url>
     <loc>www.github.com/reference/dot-bin_txt.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-binarize_treatment.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-check_by.html</loc>
@@ -163,25 +160,13 @@
     <loc>www.github.com/reference/lsoSynth.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/new_Design.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/reference/print.summary.Design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-CovAdjPrediction-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/show-Design-method.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/show-DirectAdjusted-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-PreSandwichLayer-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-SandwichLayer-method.html</loc>
+    <loc>www.github.com/reference/show-Lmitted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/show-WeightedDesign-method.html</loc>
@@ -191,9 +176,6 @@
   </url>
   <url>
     <loc>www.github.com/reference/summary.Design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/treatment-DirectAdjusted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/treatment_name.html</loc>
@@ -208,7 +190,7 @@
     <loc>www.github.com/reference/var_table.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/vcov-DirectAdjusted-method.html</loc>
+    <loc>www.github.com/reference/vcov-Lmitted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/weights-WeightedDesign-method.html</loc>
