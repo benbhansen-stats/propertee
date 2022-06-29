@@ -14,6 +14,10 @@ NULL
 #' and k is the number of terms in the \code{Lmitted} model
 #' @keywords internal
 .get_b12 <- function(x) {
+  if (!is(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
+  }
+  
   sl <- x$model$`(offset)`
   if (class(sl) != "SandwichLayer") {
     stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
@@ -39,22 +43,22 @@ NULL
   }
   
   # get overlapping rows from experimental data joining with `keys`
-  .data <- stats::expand.model.frame(x, uoanames)
-  dmod_data <- .merge_preserve_order(
-    .data,
+  lmitt_uoas <- stats::expand.model.frame(x, uoanames)
+  lmitt_uoas <- .merge_preserve_order(
+    lmitt_uoas,
     merge(unique(sl@keys), x@Design@structure), # merge here to use txt col for finding NA's
     by = uoanames,
     all.x = TRUE,
     sort = FALSE)
   
-  msk <- !is.na(dmod_data[, paste0(zname, ".y")])
+  msk <- !is.na(lmitt_uoas[, paste0(zname, ".y")])
   dmod_eqns <- Reduce(
     rbind,
     by(sandwich::estfun(x)[msk, ],
-       lapply(uoanames, function(col) dmod_data[msk, col]),
+       lapply(uoanames, function(col) lmitt_uoas[msk, col]),
        colSums))
 
-  return(t(cmod_eqns) %*% dmod_eqns)
+  return(crossprod(cmod_eqns, dmod_eqns))
 }
 
 #' @title (Internal) Get the inverse of the A22 block of the sandwich variance estimator
@@ -79,19 +83,21 @@ NULL
 
   # Get expected information per sandwich_infrastructure vignette
   if ("glm" %in% x@.S3Class) {
-    varys <- x$family$variance(x$fitted.values)
-    if (substr(x$family$family, 1, 5) == "quasi") {
-      varys <- stats::summary.glm(x)$dispersion * varys
+    if (x$family$family %in% c("binomial", "poisson")) {
+      dispersion <- 1
+    } else {
+      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
     }
-    W <- x$family$mu.eta(x$linear.predictors)^2 / varys
+    W <- x$family$mu.eta(x$linear.predictors) * x$weights / dispersion
   } else {
-    W <- rep(1, length(x$fitted.values))
+    W <- if (is.null(x$weights)) rep(1, length(x$fitted.values)) else x$weights
   }
   
   fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
   zname <- var_names(x@Design, "t")
+  out <- solve(fim)[zname, zname, drop = FALSE]
   
-  return(solve(fim)[zname, zname, drop = FALSE])
+  return(out)
 }
 
 #' @title (Internal) Get the B22 block of the sandwich variance estimator
@@ -139,7 +145,8 @@ NULL
   }
   
   zname <- var_names(x@Design, "t")
-  out <- sandwich::meatCL(x, cluster = uoas, ...)[zname, zname, drop = FALSE] * nq
+  vmat <- sandwich::meatCL(x, cluster = uoas, ...) * nq
+  out <- vmat[zname, zname, drop = FALSE]
 
   return(out)
 }
@@ -168,7 +175,8 @@ NULL
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
 
-  return(sandwich::bread(cmod) / nc)
+  out <- sandwich::bread(cmod) / nc
+  return(out)
 }
 
 #' (Internal) Get the B11 block of the sandwich variance estimator
@@ -199,16 +207,17 @@ NULL
 
   # Get units of assignment for clustering
   if (ncol(sl@keys) == 1) {
-    uoas <- sl@keys[,1]
+    uoas <- sl@keys[, 1]
   } else {
     uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
   }
 
+  # Replace NA's for rows not in the experimental design with a unique cluster ID
   nuoas <- length(unique(uoas))
   nas <- grepl("NA", uoas)
   uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
   uoas <- factor(uoas)
-  nuoas <- length(levels(uoas))
 
-  return(sandwich::meatCL(cmod, cluster = uoas, ...) * nc)
+  out <- sandwich::meatCL(cmod, cluster = uoas, ...) * nc
+  return(out)
 }

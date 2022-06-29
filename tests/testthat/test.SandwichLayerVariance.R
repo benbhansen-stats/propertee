@@ -31,6 +31,7 @@ test_that("variance helper functions fail without a Lmitted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
   
+  expect_error(.get_b12(cmod), "must be a Lmitted")
   expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
   expect_error(.get_b22(cmod), "must be a Lmitted")
   expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
@@ -146,7 +147,7 @@ test_that(".get_a22_inverse returns correct value for lm", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
-  fim <- crossprod(stats::model.matrix(m))
+  fim <- crossprod(stats::model.matrix(m) * m$weights, stats::model.matrix(m))
   zname <- var_names(des, "t")
   expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
 })
@@ -157,7 +158,8 @@ test_that(".get_a22_inverse returns correct value for glm fit with Gaussian fami
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
   
-  fim <- crossprod(stats::model.matrix(m))
+  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
+  fim <- crossprod(stats::model.matrix(m) * m$weights / dispersion, stats::model.matrix(m))
   zname <- var_names(des, "t")
   expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
 })
@@ -171,7 +173,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with poisson famil
         family = stats::poisson())
   )
   
-  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors),
+  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights,
                    stats::model.matrix(m))
   zname <- var_names(des, "t")
   expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
@@ -186,7 +188,8 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
         family = stats::quasipoisson())
   )
   
-  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) / summary.glm(m)$dispersion,
+  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
+  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights / dispersion,
                    stats::model.matrix(m))
   zname <- var_names(des, "t")
   expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
