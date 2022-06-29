@@ -56,6 +56,7 @@ reference:
     - subset,PreSandwichLayer-method
     - show,PreSandwichLayer-method
     - .show_layer
+    - .get_b12
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
