@@ -171,8 +171,55 @@ NULL
                "for direct adjustment standard errors"))
   }
   
-  cmod <- x$model$`(offset)`@fitted_covariance_model
+  cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
 
   return(sandwich::bread(cmod) / nc)
+}
+
+#' (Internal) Get the B11 block of the sandwich variance estimator
+#' @param x A DirectAdjusted model object
+#' @details This is the block of the sandwich variance estimator corresponding to
+#' the variance-covariance matrix of the covariance model coefficient estimates.
+#' The estimates returned here are potentially clustered (by the clustering in the
+#' experimental design) if rows in the covariance model data also exist in the
+#' design. If there is no overlap between the two datasets, the variance-covariance
+#' matrix is estimated assuming the observations are independent.
+#' @return A (p+1)x(p+1) matrix the dimensions are given by the number of
+#' terms in the covariance model (p) and an Intercept term
+#' @keywords internal
+.get_b11 <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  cmod <- sl@fitted_covariance_model
+  nc <- sum(summary(cmod)$df[1L:2L])
+
+  # Get units of assignment for clustering
+  cadjust <- TRUE
+  if (ncol(sl@keys) == 1) {
+    uoas <- sl@keys[,1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+  }
+
+  nuoas <- length(unique(uoas))
+  nas <- grepl("NA", uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+  nuoas <- length(levels(uoas))
+
+  if (nuoas == nc) {
+    # return nonclustered estimate if there's no overlap between design and covariance model data
+    cadjust <- FALSE
+  }
+  
+  return(sandwich::meatCL(cmod, cluster = uoas, cadjust = cadjust) * nc)
 }

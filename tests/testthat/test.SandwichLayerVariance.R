@@ -34,9 +34,11 @@ test_that("variance helper functions fail without a DirectAdjusted model", {
   expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
   expect_error(.get_b22(cmod), "must be a DirectAdjusted")
   expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(.get_a11_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(.get_b11(cmod), "must be a DirectAdjusted")
 })
 
-test_that(".get_b12, .get_a11_inverse used with DA model without SandwichLayer offset", {
+test_that(".get_b12, .get_a11_inverse, .get_b11 used with DA model without SandwichLayer offset", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
@@ -47,6 +49,7 @@ test_that(".get_b12, .get_a11_inverse used with DA model without SandwichLayer o
 
   expect_error(.get_b12(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
+  expect_error(.get_b11(m), "must have an offset of class")
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -359,3 +362,142 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
   expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
 })
 
+test_that(".get_b11 returns correct B_11 for one cluster column", {
+  data(simdata)
+                  
+  simdata[simdata$cid1 == 4, "z"] <- 0
+  simdata[simdata$cid1 == 2, "z"] <- 1
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(simdata$cid1)
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
+  data(simdata)
+  cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  m <- as.DirectAdjusted(
+    glm(round(exp(y)) ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod),
+        family = stats::poisson()))
+  
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
+                "subset of cov model data"), {
+  data(simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  nc <- sum(summary(cmod)$df[1L:2L])
+
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata[simdata$cid2 == 1,],
+       weights = weighted_design, offset = cov_adj(cmod))
+  )
+
+  # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
+  uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  nuoas <- length(unique(uoas))
+  nas <- grepl("NA", uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+  nuoas <- length(levels(uoas))
+  
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m), expected)
+})
+
+
+test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
+                "no overlap with cov model data"), {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  C_no_cluster_ids <- simdata
+  C_no_cluster_ids[, var_names(des, "u")] <- NA
+  cmod <- lm(y ~ x, data = C_no_cluster_ids)
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  m <- as.DirectAdjusted(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
+  uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  nuoas <- length(unique(uoas))
+  nas <- grepl("NA", uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+
+  # no adjustment for cases where each row is its own cluster
+  expected <- crossprod(sandwich::estfun(cmod)) * (nc - 1L) / (nc - 2L)
+  
+  expect_equal(.get_b11(m), expected)
+})
