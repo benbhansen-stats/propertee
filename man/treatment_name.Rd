@@ -19,7 +19,7 @@ Identify treatment variable in \code{Lmitted} object
 data(simdata)
 des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
 mod <- lm(y ~ z, data = simdata, weights = ett(des))
-damod <- as.Lmitted(mod)
+damod <- as.lmitt(mod)
 damod$coef[treatment_name(damod)]
 des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
                    dichotomy = dose > 200 ~ . )
