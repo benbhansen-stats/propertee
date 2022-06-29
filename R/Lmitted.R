@@ -36,8 +36,9 @@ setMethod("show", "Lmitted", function(object) {
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 ##'   \code{adopters()}) it will be found automatically and does not need to be
-##'   passed here as well. (If the \code{Design} is found in the model, this
-##'   argument is ignored.)
+##'   passed here as well. (If different \code{Design} objects are passed
+##'   (either through the \code{lm} in weights or covariance adjustment, or
+##'   through this argument), an error will be produced.)
 ##' @return \code{Lmitted} object
 ##' @export
 as.lmitt <- function(x, design = NULL) {
@@ -45,24 +46,27 @@ as.lmitt <- function(x, design = NULL) {
     stop("input must be lm object")
   }
 
-  hasweights <- is(x$model$"(weights)", "WeightedDesign")
-
   # Check if we can find a design in either Weights (preferred) or cov_adj
-  found_design <- NULL
-  if (hasweights) {
-    found_design <- x$model$"(weights)"@Design
-  } else {
-    capred <- .get_cov_adj(x)
-    if (is(capred, "SandwichLayer")) {
-      found_design <- capred@Design
-    }
-  }
+  design_weights <- tryCatch(x$model$"(weights)"@Design,
+                             error = function(e) NULL)
+  design_cov_adj <- tryCatch(.get_cov_adj(x)@Design,
+                             error = function(e) NULL)
 
-  if (is(found_design, "Design")) {
-    design <- found_design
-  }
-  if (!is(design, "Design")) {
-    stop("Cannot locate `Design`, pass via `design=` argument")
+  # The list contains all designs possible found (one passed in, and one in each
+  # of weights and cov_adj). Passing `unique` removes any duplicates (since
+  # duplicates are OK).
+  unique_designs <- unique(list(design, design_weights, design_cov_adj))
+  # Drop any designs which aren' `Design`. Mostly NULL hopefully.
+  unique_designs <- unique_designs[vapply(unique_designs,
+                                          is, logical(1), "Design")]
+  # At this point, if the lenght of `unique_designs` is 1, we're done. More than
+  # one is an error.
+  if (length(unique_designs) == 1) {
+    design <- unique_designs[[1]]
+  } else if (length(unique_designs) > 1) {
+    stop("Multiple differing `Design` found in object.")
+  } else {
+    stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
   return(new("Lmitted",

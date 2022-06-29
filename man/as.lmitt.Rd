@@ -13,8 +13,9 @@ as.lmitt(x, design = NULL)
 the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
 \code{adopters()}) it will be found automatically and does not need to be
-passed here as well. (If the \code{Design} is found in the model, this
-argument is ignored.)}
+passed here as well. (If different \code{Design} objects are passed
+(either through the \code{lm} in weights or covariance adjustment, or
+through this argument), an error will be produced.)}
 }
 \value{
 \code{Lmitted} object

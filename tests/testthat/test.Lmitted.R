@@ -186,7 +186,7 @@ test_that("lm to Lmitted fails without a Design object", {
 
   expect_error(as.lmitt(lm(y ~ z, data = simdata,
                                     weights = seq_len(nrow(simdata)))),
-               "Cannot locate `Design`")
+               "Cannot locate a `Design`")
 })
 
 test_that("vcov, confint, etc", {
@@ -225,5 +225,48 @@ test_that("subsetting model with weights and/or cov_adj", {
 
   expect_true(is(mod2$model$`(weights)`, "WeightedDesign"))
   expect_true(is(mod2$model$`(offset)`, "SandwichLayer"))
+
+})
+
+test_that("Differing designs found", {
+
+  data(simdata)
+  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+  des2 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lm(y ~ z,
+            data = simdata,
+            weights = ate(des),
+            offset = cov_adj(lm(y ~ x, data = simdata),
+                             design = des2))
+  expect_error(as.lmitt(mod), "Multiple differing")
+
+  expect_error(lmitt(y ~ z,
+                     data = simdata,
+                     weights = ate(des),
+                     offset = cov_adj(lm(y ~ x, data = simdata),
+                                      design = des2)))
+
+  mod <- lm(y ~ z, data = simdata,
+            offset = cov_adj(lm(y ~ x, data = simdata),
+                             design = des2))
+
+  expect_error(as.lmitt(mod, design = des), "Multiple differing")
+
+  expect_error(lmitt(y ~ z, data = simdata,
+                     offset = cov_adj(lm(y ~ x, data = simdata),
+                                      design = des2),
+                     design = des),
+               "Multiple differing")
+
+  # Checking that things work when passing multiple of the same designs
+  mod1 <- lmitt(y ~ x, data = simdata, weights = ate(des))
+  mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
+  expect_identical(mod1, mod2)
+
+  mod3 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
+  mod4 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des), design = des)
+  expect_identical(mod3, mod4)
+
 
 })
