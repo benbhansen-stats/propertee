@@ -81,7 +81,7 @@ NULL
   if ("glm" %in% x@.S3Class) {
     varys <- x$family$variance(x$fitted.values)
     if (substr(x$family$family, 1, 5) == "quasi") {
-      varys <- summary.glm(x)$dispersion * varys
+      varys <- stats::summary.glm(x)$dispersion * varys
     }
     W <- x$family$mu.eta(x$linear.predictors)^2 / varys
   } else {
@@ -136,7 +136,7 @@ NULL
   if ("glm" %in% x@.S3Class) {
     varys <- x$family$variance(x$fitted.values)
     if (substr(x$family$family, 1, 5) == "quasi") {
-      varys <- summary.glm(x)$dispersion * varys
+      varys <- stats::summary.glm(x)$dispersion * varys
     }
     W <- x$residuals * x$family$mu.eta(x$linear.predictors) / varys
   } else {
