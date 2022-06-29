@@ -103,7 +103,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
                     offset = cov_adj(cmod), weights = ate(des)),
-                 "Offset has NA values")
+                 "adjustments are NA")
   m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
                            offset = cov_adj(cmod), weights = ate(des)))
 

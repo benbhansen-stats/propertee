@@ -66,7 +66,7 @@ test_that("PreSandwichLayer prediction gradient has invalid number of rows", {
 
   pred_gradient <- as.matrix(cbind(cont_x, cat_x)[2:100,])
   expect_layer_error("PreSandwichLayer",
-                     "same number of rows",
+                     "same dimension along axis 1",
                      offset,
                      fitted_covariance_model = cmod,
                      prediction_gradient = pred_gradient)
@@ -95,7 +95,7 @@ test_that("SandwichLayer has NA's", {
                      psl,
                      keys = keys,
                      Design = des),
-                 "has NA values")
+                 "adjustments are NA")
 })
 
 test_that("SandwichLayer keys doesn't have the same row count as covariance model data", {
