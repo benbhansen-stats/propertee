@@ -224,3 +224,67 @@ NULL
   out <- sandwich::meatCL(cmod, cluster = uoas, ...) * nc
   return(out)
 }
+
+
+#' @details The \bold{A21 block} is the block of the sandwich variance estimator
+#'   corresponding to the gradient of the direct adjustment model with respect to
+#'   the covariates. Some of the information needed for this calculation is
+#'   stored in the \code{Lmitted} object's \code{SandwichLayer} offset. This
+#'   block is the crossproduct of the prediction gradient and the gradient of the
+#'   conditional mean vector for the direct adjustment model summed to the cluster
+#'   level. In other words, we take this matrix to be
+#'   \deqn{\sum(d\psii / d\alpha) = -\sum(wi/\phi) * (d\mu(\etai) / d\etai) * 
+#'   (d\upsilon(\zetai) / d\zetai) * (xi ci)xi'} where \eqn{\mu} and \eqn{\etai} are
+#'   the conditional mean function and linear predictor for the ith cluster in the
+#'   direct adjustment model, and \eqn{\upsilon} and \eqn{\zetai} are the
+#'   conditional mean function and linear predictor for the ith cluster in the
+#'   covariance model.
+#' @return \code{.get_a12()}: A \eqn{(p+1)\times2} matrix where the number of rows
+#'   are given by the number of terms in the covariance model (\eqn{p}) and an
+#'   Intercept term, and the number of columns are given by the treatment and
+#'   intercept terms in the direct adjustment model 
+#' @keywords internal
+#' @rdname sandwich_elements_calc
+.get_a21 <- function(x) {
+  if (!inherits(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+
+  # Get contribution to the estimating equation from the direct adjustment model
+  if ("glm" %in% x@.S3Class) {
+    if (x$family$family %in% c("binomial", "poisson")) {
+      dispersion <- 1
+    } else {
+      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
+    }
+    Qmat <- -x$weights / dispersion * x$family$mu.eta(x$linear.predictors) *
+      stats::model.matrix(x)
+  } else {
+    Qmat <- -x$weights * stats::model.matrix(x)
+  }
+  
+  # Get units of assignment for clustering
+  uoanames <- var_names(x@Design, "u")
+  uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
+  if (ncol(uoas) == 1) {
+    uoas <- factor(uoas[,1])
+  } else {
+    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
+  }
+  
+  if (length(levels(uoas)) == 1) {
+    out <- crossprod(sl@prediction_gradient, Qmat)
+  } else {
+    Qmat_clustered <- Reduce(rbind, by(Qmat, uoas, colSums))
+    Cmat_clustered <- Reduce(rbind, by(sl@prediction_gradient, uoas, colSums))
+    out <- crossprod(Cmat_clustered, Qmat_clustered)
+  }
+
+  return(out)
+}

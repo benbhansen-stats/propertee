@@ -37,9 +37,10 @@ test_that("variance helper functions fail without a Lmitted model", {
   expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
   expect_error(.get_a11_inverse(cmod), "must be a Lmitted")
   expect_error(.get_b11(cmod), "must be a Lmitted")
+  expect_error(.get_a21(cmod), "must be a Lmitted")
 })
 
-test_that(paste(".get_b12, .get_a11_inverse, .get_b11 used with Lmitted model",
+test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Lmitted model",
                 "without SandwichLayer offset"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -52,6 +53,7 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11 used with Lmitted model",
   expect_error(.get_b12(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
   expect_error(.get_b11(m), "must have an offset of class")
+  expect_error(.get_a21(m), "must have an offset of class")
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -558,4 +560,59 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   expected <- crossprod(sandwich::estfun(cmod)) * (nc - 1L) / (nc - 2L)
   
   expect_equal(.get_b11(m, cadjust = FALSE), expected)
+})
+
+test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clustering", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x + force, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  m <- as.lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoanames <- var_names(des, "u")
+  uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
+                        stats::expand.model.frame(m, uoanames)[, uoanames]))
+  
+  Qmat <- Reduce(rbind, by(-m$weights * stats::model.matrix(m), uoas, colSums))
+  Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
+  
+  a21 <- .get_a21(m)
+  expect_equal(dim(a21), c(3, 2))
+  expect_equal(a21, crossprod(Cmat, Qmat))
+})
+
+test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clustering", {
+  data(simdata)
+  
+  simdata$uid <- seq_len(nrow(simdata))
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ unitid(uid), data = simdata)
+  m <- as.lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  a21 <- .get_a21(m)
+  expect_equal(dim(a21), c(2, 2))
+  expect_equal(a21, crossprod(stats::model.matrix(cmod), -m$weights * stats::model.matrix(m)))
+})
+
+test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clustering", {
+  data(simdata)
+  
+  cmod <- lm(round(exp(y) / (1 + exp(y))) ~ x + force, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  m <- suppressWarnings(as.lmitt(
+    glm(round(exp(y) / (1 + exp(y))) ~ z, simdata, weights = ate(des),
+        offset = cov_adj(cmod), family = stats::binomial())
+  ))
+  
+  uoanames <- var_names(des, "u")
+  uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
+                        stats::expand.model.frame(m, uoanames)[, uoanames]))
+  
+  Qmat <- Reduce(rbind, by(-m$weights * m$family$mu.eta(m$linear.predictors) *
+                             stats::model.matrix(m), uoas, colSums))
+  Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
+  
+  a21 <- .get_a21(m)
+  expect_equal(dim(a21), c(3, 2))
+  expect_equal(a21, crossprod(Cmat, Qmat))
 })
