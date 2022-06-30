@@ -148,8 +148,7 @@ NULL
   }
 
   zname <- var_names(x@Design, "t")
-  vmat <- sandwich::meatCL(x, cluster = uoas, ...) * nq
-  out <- vmat[zname, zname, drop = FALSE]
+  out <- sandwich::meatCL(x, cluster = uoas, ...) * nq
 
   return(out)
 }

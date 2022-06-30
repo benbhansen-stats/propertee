@@ -200,8 +200,7 @@ test_that(".get_b22 returns correct value for lm object w/o offset", {
 
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
-  zname <- var_names(des, "t")
-  
+
   m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   nq <- sum(summary(m)$df[1L:2L])
   WX <- m$weights * m$residuals * stats::model.matrix(m)
@@ -215,9 +214,9 @@ test_that(".get_b22 returns correct value for lm object w/o offset", {
   vmat <- crossprod(uoa_eqns)
   
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+               vmat * nuoas / (nuoas - 1L))
   expect_equal(.get_b22(m, type = "HC1"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
+               vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
 test_that(".get_b22 returns correct value for lm object w offset", {
@@ -240,12 +239,11 @@ test_that(".get_b22 returns correct value for lm object w offset", {
   
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  zname <- var_names(des, "t")
-  
+
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L))
+               vmat * nuoas / (nuoas - 1L))
   expect_equal(.get_b22(m, type = "HC1"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
+               vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
 test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
@@ -265,10 +263,9 @@ test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  zname <- var_names(des, "t")
-  
+
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+               vmat * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for poisson glm", {
@@ -291,10 +288,9 @@ test_that(".get_b22 returns correct value for poisson glm", {
   
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  zname <- var_names(des, "t")
-  
+
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+               vmat * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for quasipoisson glm", {
@@ -317,10 +313,9 @@ test_that(".get_b22 returns correct value for quasipoisson glm", {
   
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  zname <- var_names(des, "t")
-  
+
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+               vmat * nuoas / (nuoas - 1))
 })
 
 test_that(".get_b22 returns correct value for binomial glm", {
@@ -345,10 +340,9 @@ test_that(".get_b22 returns correct value for binomial glm", {
   
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  zname <- var_names(des, "t")
-  
+
   expect_equal(.get_b22(m, type = "HC0"),
-               vmat[zname, zname, drop = FALSE] * nuoas / (nuoas - 1))
+               vmat * nuoas / (nuoas - 1))
 })
 
 test_that(".get_a11_inverse returns correct value for lm cmod", {
