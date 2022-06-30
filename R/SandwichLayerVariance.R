@@ -96,8 +96,7 @@ NULL
   }
 
   fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
-  zname <- var_names(x@Design, "t")
-  out <- solve(fim)[zname, zname, drop = FALSE]
+  out <- solve(fim)
 
   return(out)
 }
@@ -147,7 +146,6 @@ NULL
     uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
   }
 
-  zname <- var_names(x@Design, "t")
   out <- sandwich::meatCL(x, cluster = uoas, ...) * nq
 
   return(out)

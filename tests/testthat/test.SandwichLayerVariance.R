@@ -150,8 +150,7 @@ test_that(".get_a22_inverse returns correct value for lm", {
   m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
   fim <- crossprod(stats::model.matrix(m) * m$weights, stats::model.matrix(m))
-  zname <- var_names(des, "t")
-  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+  expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with Gaussian family", {
@@ -162,8 +161,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with Gaussian fami
   
   dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
   fim <- crossprod(stats::model.matrix(m) * m$weights / dispersion, stats::model.matrix(m))
-  zname <- var_names(des, "t")
-  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+  expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with poisson family", {
@@ -177,8 +175,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with poisson famil
   
   fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights,
                    stats::model.matrix(m))
-  zname <- var_names(des, "t")
-  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+  expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson family", {
@@ -193,8 +190,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
   dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
   fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights / dispersion,
                    stats::model.matrix(m))
-  zname <- var_names(des, "t")
-  expect_equal(.get_a22_inverse(m), solve(fim)[zname, zname, drop = FALSE])
+  expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_b22 returns correct value for lm object w/o offset", {
