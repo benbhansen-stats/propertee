@@ -31,6 +31,7 @@ test_that("variance helper functions fail without a Lmitted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
   
+  expect_error(vcovDA(cmod), "must be a Lmitted")
   expect_error(.get_b12(cmod), "must be a Lmitted")
   expect_error(.get_a22_inverse(cmod), "must be a Lmitted")
   expect_error(.get_b22(cmod), "must be a Lmitted")
@@ -50,6 +51,7 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Lmitte
     lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
+  expect_error(vcovDA(m), "must have an offset of class")
   expect_error(.get_b12(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
   expect_error(.get_b11(m), "must have an offset of class")
@@ -244,6 +246,61 @@ test_that(".get_b22 returns correct value for lm object w offset", {
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
+
+test_that(".get_b22 allows custom cluster argument to meatCL", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoanames <- var_names(m@Design, "u")
+  uoas <- Reduce(function(...) paste(..., sep = "_"),
+                 stats::expand.model.frame(m, uoanames)[, uoanames])
+  form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
+  uoa_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, uoanames)[, uoanames])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  
+  expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
+               vmat * nuoas / (nuoas - 1L))
+})
+
+test_that(".get_b22 with one clustering column", {
+  data(simdata)
+  
+  simdata[simdata$cid1 == 4, "z"] <- 0
+  simdata[simdata$cid1 == 2, "z"] <- 1
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(simdata$cid1)
+  nuoas <- length(levels(uoas))
+
+  nq <- sum(summary(m)$df[1L:2L])
+  WX <- m$weights * m$residuals * stats::model.matrix(m)
+  
+  uoa_matrix <- stats::model.matrix(as.formula("~ -1 + as.factor(cid1)"),
+                                    stats::expand.model.frame(m, "cid1")[, "cid1", drop = FALSE])
+  
+  uoa_eqns <- crossprod(uoa_matrix, WX)
+  vmat <- crossprod(uoa_eqns)
+  
+  expect_equal(.get_b22(m, type = "HC0"),
+               vmat * nuoas / (nuoas - 1L))
+})
+
 test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   data(simdata)
   
@@ -343,6 +400,7 @@ test_that(".get_b22 returns correct value for binomial glm", {
                vmat * nuoas / (nuoas - 1))
 })
 
+
 test_that(".get_a11_inverse returns correct value for lm cmod", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -439,6 +497,29 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
   )
   
   expect_equal(.get_b11(m), expected)
+})
+
+test_that(".get_b11 accepts custom cluster argument for meatCL", {
+  data(simdata)
+  
+  simdata[simdata$cid1 == 4, "z"] <- 0
+  simdata[simdata$cid1 == 2, "z"] <- 1
+  cmod <- lm(y ~ x, data = simdata)
+  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  uoas <- factor(simdata$cid1)
+  nuoas <- length(levels(uoas))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
+      nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  
+  expect_equal(.get_b11(m, cluster = uoas), expected)
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
@@ -611,4 +692,15 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(3, 2))
   expect_equal(a21, crossprod(Cmat, Qmat))
+})
+
+test_that("vcovDA returns px2 matrix", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  vmat <- vcovDA(m)
+  expect_equal(dim(vmat), c(2, 2))
 })

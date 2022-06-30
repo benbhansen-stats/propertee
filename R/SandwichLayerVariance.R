@@ -1,6 +1,47 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
+#' @title Compute direct adjustment sandwich variance estimator
+#' @param x A \code{Lmitted} model
+#' @param ... Arguments to be passed to sandwich::meatCL
+#' @details \code{vcovDA()} provides covariance-adjusted cluster-robust variance
+#' estimates for treatment effects.
+#' @return a \eqn{(p+2)\times(p+2)} matrix where the dimensions are given by the
+#' number of terms in the covariance model (p), a treatment term, and an
+#' intercept term
+vcovDA <- function(x, ...) {
+  if (!inherits(x, "Lmitted")) {
+    stop("x must be a Lmitted model")
+  }
+
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  nq <- nrow(x@Design@structure)
+  nc <- dim(stats::model.matrix(sl@fitted_covariance_model))[1]
+  nqc <- max(sum(apply(!is.na(unique(sl@keys)), 1L, any)), 1) # don't divide by 0 if no overlap
+
+  # compute blocks
+  a21 <- .get_a21(x)# / nq
+  a11inv <- .get_a11_inverse(x)
+  b12 <- .get_b12(x)# / nqc
+  
+  a22inv <- .get_a22_inverse(x)
+  b22 <- .get_b22(x, ...)# / nq
+  b11 <- .get_b11(x, ...)# / nc
+  
+  meat <- (
+    b22 - crossprod(a21, a11inv) %*% b12 - t(crossprod(a21, a11inv) %*% b12) + 
+      crossprod(a21, a11inv) %*% b11 %*% t(crossprod(a21, a11inv))
+  )
+  vmat <- a22inv %*% meat %*% a22inv
+  
+  return(vmat)
+}
+
 #' @title (Internal) Compute variance blocks
 #' @details The \bold{B12 block} is the covariance matrix of the cluster-level
 #'   estimating equations for the covariance and direct adjustment models. It
@@ -138,15 +179,20 @@ NULL
   nq <- sum(summary(x)$df[1L:2L])
 
   # Get units of assignment for clustering
-  uoanames <- var_names(x@Design, "u")
-  uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
-  if (ncol(uoas) == 1) {
-    uoas <- factor(uoas[,1])
-  } else {
-    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
+  dots <- list(...)
+  if (is.null(dots$cluster)) {
+    uoanames <- var_names(x@Design, "u")
+    uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
+    if (ncol(uoas) == 1) {
+      uoas <- factor(uoas[,1])
+    } else {
+      uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
+    }
+    dots$cluster <- uoas
   }
+  dots$x <- x
 
-  out <- sandwich::meatCL(x, cluster = uoas, ...) * nq
+  out <- do.call(sandwich::meatCL, dots) * nq
 
   return(out)
 }
@@ -207,19 +253,24 @@ NULL
   nc <- sum(summary(cmod)$df[1L:2L])
 
   # Get units of assignment for clustering
-  if (ncol(sl@keys) == 1) {
-    uoas <- sl@keys[, 1]
-  } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+  dots <- list(...)
+  if (is.null(dots$cluster)) {
+    if (ncol(sl@keys) == 1) {
+      uoas <- sl@keys[, 1]
+    } else {
+      uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+    }
+    
+    # Replace NA's for rows not in the experimental design with a unique cluster ID
+    nuoas <- length(unique(uoas))
+    nas <- grepl("NA", uoas)
+    uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+    uoas <- factor(uoas)
+    dots$cluster <- uoas
   }
+  dots$x <- cmod
 
-  # Replace NA's for rows not in the experimental design with a unique cluster ID
-  nuoas <- length(unique(uoas))
-  nas <- grepl("NA", uoas)
-  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
-  uoas <- factor(uoas)
-
-  out <- sandwich::meatCL(cmod, cluster = uoas, ...) * nc
+  out <- do.call(sandwich::meatCL, dots) * nc
   return(out)
 }
 
