@@ -67,6 +67,7 @@ reference:
     - show,Lmitted-method
     - treatment_name
     - vcov,Lmitted-method
+    - vcovDA
 - title: Data
 - contents:
     - STARdata

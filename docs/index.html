@@ -140,6 +140,12 @@
 <p>Any internal functions (for our use only) should be prefaced with a “<code>.</code>” (e.g. <code>.myfunc &lt;- function()</code>). Internal functions should be documented using roxygen as described above, and given the <code>@keywords internal</code> tag to ensure they do not get indexed. (Generally internally functions should not be <code>@export</code>’d but exceptions may arise.)</p>
 <p>During this period of development, after documenting an internal function, add it to the "_pkgdown.yml" file in the appropriate category. Once flexida goes public, we will remove those.</p>
 </div>
+<div class="section level3">
+<h3 id="referring-to-functions">Referring to functions<a class="anchor" aria-label="anchor" href="#referring-to-functions"></a>
+</h3>
+<p>When documentation refers to another function (internal to the package or otherwise), please include the trailing <code>()</code>, as that will help <strong>pkgdown</strong> provide an appropriate link (see <a href="https://pkgdown.r-lib.org/articles/linking.html" class="external-link">https://pkgdown.r-lib.org/articles/linking.html</a>).</p>
+<p>E.g. <code>\code{lm()}</code> or <code>\code{cov_adj()}</code> or <code>\code{lme4::lmer()}</code>.</p>
+</div>
 </div>
 
   </main><aside class="col-md-3"><div class="links">

@@ -67,7 +67,9 @@
 <span></span>
 <span><span class="fu">.get_a11_inverse</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">.get_b11</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">.get_b11</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">.get_a21</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -107,6 +109,12 @@ dimensions are given by the number of terms in the covariance model
 <p><code>.get_b11()</code>: A \((p+1)\times(p+1)\) matrix the dimensions are
 given by the number of terms in the covariance model (\(p\)) and an
 Intercept term</p>
+
+
+<p><code>.get_a12()</code>: A \((p+1)\times2\) matrix where the number of
+rows are given by the number of terms in the covariance model (\(p\)) and
+an Intercept term, and the number of columns are given by the treatment and
+intercept terms in the direct adjustment model</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -160,6 +168,19 @@ clustered (by the clustering in the experimental design) if rows in the
 covariance model data also exist in the design. If there is no overlap
 between the two datasets, the variance-covariance matrix is estimated
 assuming the observations are independent.</p>
+<p>The <b>A21 block</b> is the block of the sandwich variance estimator
+corresponding to the gradient of the direct adjustment model with respect
+to the covariates. Some of the information needed for this calculation is
+stored in the <code>Lmitted</code> object's <code>SandwichLayer</code> offset. This
+block is the crossproduct of the prediction gradient and the gradient of
+the conditional mean vector for the direct adjustment model summed to the
+cluster level. In other words, we take this matrix to be $$\sum(d\psi_i
+  / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
+  (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'$$ where \(\mu\) and
+\(\eta_i\) are the conditional mean function and linear predictor for the
+ith cluster in the direct adjustment model, and \(\upsilon\) and
+\(\zeta_i\) are the conditional mean function and linear predictor for
+the ith cluster in the covariance model.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
