@@ -23,3 +23,6 @@ Compute direct adjustment sandwich variance estimator
 \code{vcovDA()} provides covariance-adjusted cluster-robust variance
 estimates for treatment effects.
 }
+\examples{
+inst/examples/vcovDA.R
+}
