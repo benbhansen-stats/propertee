@@ -264,7 +264,7 @@ vcovDA <- function(x, ...) {
     
     # Replace NA's for rows not in the experimental design with a unique cluster ID
     nuoas <- length(unique(uoas))
-    nas <- grepl("NA", uoas)
+    nas <- is.na(uoas)
     uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
     uoas <- factor(uoas)
     dots$cluster <- uoas
