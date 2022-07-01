@@ -260,6 +260,7 @@ vcovDA <- function(x, ...) {
       uoas <- sl@keys[, 1]
     } else {
       uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+      uoas[grepl("NA", uoas)] <- NA_integer_
     }
 
     # Replace NA's for rows not in the experimental design with a unique cluster ID

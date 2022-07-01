@@ -598,8 +598,9 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
 
   # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
   uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  uoas[grepl("NA", uoas)] <- NA_integer_
   nuoas <- length(unique(uoas))
-  nas <- grepl("NA", uoas)
+  nas <- is.na(uoas)
   uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
   uoas <- factor(uoas)
   nuoas <- length(levels(uoas))
@@ -628,8 +629,9 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   
   # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
   uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
+  uoas[grepl("NA", uoas)] <- NA_integer_
   nuoas <- length(unique(uoas))
-  nas <- grepl("NA", uoas)
+  nas <- is.na(uoas)
   uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
   uoas <- factor(uoas)
 
