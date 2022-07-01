@@ -38,17 +38,17 @@ m <- as.lmitt(
 
 ## check blocks are what we expect
 a11inv <- solve(crossprod(X))
-expect_equal(a11inv, .get_a11_inverse(m))
+expect_equal(a11inv, flexida:::.get_a11_inverse(m))
 b22 <- 4 * error_sd^2 * crossprod(C) # weights = 2, residuals = error_sd for all
-expect_equal(b22, .get_b22(m, cadjust = FALSE, type = "HC0"))
+expect_equal(b22, flexida:::.get_b22(m, cadjust = FALSE, type = "HC0"))
 a22inv <- solve(crossprod(C * m$weights, C))
-expect_equal(a22inv, .get_a22_inverse(m))
+expect_equal(a22inv, flexida:::.get_a22_inverse(m))
 a21 <- -2 * crossprod(Xstar, C)
-expect_equal(a21, .get_a21(m))
+expect_equal(a21, flexida:::.get_a21(m))
 b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
-expect_equal(b12, .get_b12(m))
+expect_equal(b12, flexida:::.get_b12(m))
 b11 <- error_sd^2 * crossprod(X) # residuals = error_sd for all units
-expect_equal(b11, .get_b11(m, cadjust = FALSE, type = "HC0"))
+expect_equal(b11, flexida:::.get_b11(m, cadjust = FALSE, type = "HC0"))
 
 ## breads are equal
 expect_equal(a22inv, sandwich::bread(m) / n)

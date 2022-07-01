@@ -9,7 +9,7 @@ NULL
 #' @return a \eqn{(p+2)\times(p+2)} matrix where the dimensions are given by the
 #' number of terms in the covariance model (p), a treatment term, and an
 #' intercept term
-#' @examples inst/examples/vcovDA.R
+#' @example inst/examples/vcovDA.R
 #' @export
 vcovDA <- function(x, ...) {
   if (!inherits(x, "Lmitted")) {
