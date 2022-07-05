@@ -745,18 +745,6 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   damod <- as.lmitt(
     lm(y ~ z, data = damod_df, weights = ate(des), offset = cov_adj(cmod))
   )
-
-  ## check vcov w/o cov adjust = sigma_hat^2 * (C'WC)^{-1}(C'W^{2}C)(C'WC)^{-1}
-  expect_equal(vcov(onemod),
-               matrix(
-                 sum(onemod$residuals^2) / (nq - dim(O)[2]) *
-                 solve(crossprod(O * onemod$weights, O)) %*%
-                 crossprod(O * onemod$weights^2, O) %*%
-                   solve(crossprod(O * onemod$weights, O)),
-                 nrow = 4,
-                 byrow = FALSE,
-                 dimnames = list(colnames(vcov(onemod)),
-                                 colnames(vcov(onemod)))))
   
   ## check blocks for our sandwich estimator are what we expect
   a11inv <- solve(crossprod(X))
@@ -791,12 +779,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   # meaning the variance of the trt effect estimate will be the same as that
   # given by the sandwich package
   expect_true(all((a22inv %*% t(a21))[2,] == 0))
-  
-  # accounting for cmod vcov should increase our vcov
-  expect_true(all((nq * b22 +
-                   nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) >
-                  sandwich::meat(damod, adjust = FALSE) * nq))
-  
+
   ## variance of intercept estimate != sandwich package estimate, but variance
   ## of tau_hat == sandwich package estimate
   # confirm matrix multiplication for vcovDA is what we expect
@@ -814,4 +797,96 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   ## DA model should have smaller variances than onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
                   diag(vcov(onemod))[c(1, 4)]))
+})
+
+test_that(paste("HC0 vcovDA lm w/o clustering",
+                "imbalanced grps",
+                "no cmod/damod data overlap", sep = ", "), {
+  set.seed(50)
+  nc <- 60
+  nq <- 16
+  beta <- c(0.5, -0.25)
+  zeta <- c(-3, 2)
+  tau <- -2
+  error_sd <- 0.5
+  
+  cmod_df <- data.frame(
+    "x1" = rep(c(0, 1, 0, 1), each = nc/4),
+    "x2" = rep(c(0, 1), each = nc/2)
+  )
+  cmod_df$y <- as.matrix(cmod_df) %*% beta + error_sd * rnorm(nc)
+  cmod_form <- ~ x1 + x2
+  X <- stats::model.matrix(cmod_form, stats::model.frame(cmod_form, cmod_df))
+  cmod_df$uid <- NA_integer_
+  cmod <- lm(y ~ x1 + x2, cmod_df)
+  
+  damod_df <- data.frame(
+    "x1" = rep(c(0, 1, 0, 1), each = nq/4),
+    "x2" = rep(rep(c(0, 1), 4), each = nq/8)
+  )
+  damod_df$z <- rbinom(nq, 1,
+                       exp(as.matrix(damod_df) %*% zeta) /
+                        (1 + exp(as.matrix(damod_df) %*% zeta)))
+  damod_df$y <- as.matrix(damod_df) %*% c(beta, tau) + error_sd * rnorm(nq)
+  damod_form <- ~ z
+  C <- stats::model.matrix(damod_form, damod_df)
+  Xstar <- stats::model.matrix(cmod_form, damod_df)
+  
+  damod_df$uid <- seq_len(nq)
+  des <- rct_design(z ~ unitid(uid), damod_df)
+  onemod <- lm(y ~ x1 + x2 + z, data = damod_df, weights = ate(des))
+  O <- stats::model.matrix(onemod)
+  
+  damod <- as.lmitt(
+    lm(y ~ z, data = damod_df, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  ## check blocks for our sandwich estimator are what we expect
+  a11inv <- solve(crossprod(X))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
+  b22 <- crossprod(C, diag((damod$weights * damod$residuals)^2)) %*% C
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
+  a22inv <- solve(crossprod(C * damod$weights, C))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
+  a21 <- -crossprod(Xstar * damod$weights, C)
+  expect_equal(a21, flexida:::.get_a21(damod))
+  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  expect_equal(b12, flexida:::.get_b12(damod))
+  b11 <- crossprod(X * cmod$residuals^2, X)
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
+  
+  ## after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(nq * a22inv, sandwich::bread(damod))
+  
+  ## meat is not equivalent to sandwich::meat! since there's no overlap of cmod
+  ## and damod data, cov-adjusted meat term simplifies to:
+  ## b22 + t(a21) %*% a11inv %*% b11 %*% a11inv %*% a21, which is a robust estimate
+  ## of the cmod vcov matrix sandwiched by lm coefs of the covariates in the
+  ## experimental sample on the trt assignment
+  # we can compare to sandwich::meat when there's no clustering
+  expect_equal(sandwich::meat(damod, adjust = FALSE),
+               sandwich::meatCL(damod, cadjust = FALSE, type = "HC0"))
+  
+  expect_equal(b22 / nq, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  
+  # with imperfect group balance, a22inv %*% a21 will not be 0 for the trt row,
+  # so the variance of the trt effect estimate will increase from the sandwich
+  # package's estimate
+  expect_false(all((a22inv %*% t(a21))[2,] == 0))
+
+  ## variance of vcovDA estimates != sandwich package estimates
+  # confirm matrix multiplication for vcovDA is what we expect
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
+               (1 / nq) * a22inv %*%
+                 (nq * b22 + nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*%
+                                     a21)) %*%
+                 a22inv)
+  
+  expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
+                  diag(sandwich::sandwich(damod))))
+  
+  ## DA model should have smaller variances than onemod
+  expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
+                    diag(vcov(onemod))[c(1, 4)]))
 })
