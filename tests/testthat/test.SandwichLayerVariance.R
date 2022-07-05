@@ -890,3 +890,98 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
                     diag(vcov(onemod))[c(1, 4)]))
 })
+
+test_that(paste("HC0 vcovDA lm w/ clustering",
+                "balanced grps",
+                "no cmod/damod data overlap", sep = ", "), {
+  set.seed(50)
+  nc <- 60
+  nq <- 16
+  beta <- c(0.5, -0.25)
+  tau <- -2
+  error_sd <- 0.5
+  
+  cmod_df <- data.frame(
+    "x1" = rep(c(0, 1, 0, 1), each = nc/4),
+    "x2" = rep(c(0, 1), each = nc/2)
+  )
+  cmod_df$y <- as.matrix(cmod_df) %*% beta + error_sd * rnorm(nc)
+  cmod_form <- ~ x1 + x2
+  X <- stats::model.matrix(cmod_form, stats::model.frame(cmod_form, cmod_df))
+  cmod_df$cid <- NA_integer_
+  cmod <- lm(y ~ x1 + x2, cmod_df)
+  
+  damod_df <- data.frame(
+    "x1" = rep(c(0, 1, 0, 1), each = nq/4),
+    "x2" = rep(rep(c(0, 1), 4), each = nq/8),
+    "z" = rep(c(0, 1), each = nq/2)
+  )
+  damod_df$y <- as.matrix(damod_df) %*% c(beta, tau) + error_sd * rnorm(nq)
+  damod_form <- ~ z
+  C <- stats::model.matrix(damod_form, damod_df)
+  Xstar <- stats::model.matrix(cmod_form, damod_df)
+  
+  damod_df$cid <- rep(seq_len(nq/2), each = 2)
+  des <- rct_design(z ~ cluster(cid), damod_df)
+  onemod <- lm(y ~ x1 + x2 + z, data = damod_df, weights = ate(des))
+  O <- stats::model.matrix(onemod)
+  
+  damod <- as.lmitt(
+    lm(y ~ z, data = damod_df, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  ## check blocks for our sandwich estimator are what we expect
+  a11inv <- solve(crossprod(X))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
+  b22 <- crossprod(
+    Reduce(rbind,
+           by(C * damod$weights * damod$residuals, damod_df$cid, colSums))
+  )
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
+  a22inv <- solve(crossprod(C * damod$weights, C))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
+  a21 <- -crossprod(
+    Reduce(rbind, by(Xstar * damod$weights, damod_df$cid, colSums)),
+    Reduce(rbind, by(C, damod_df$cid, colSums))
+  ) 
+  expect_equal(a21, flexida:::.get_a21(damod))
+  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  expect_equal(b12, flexida:::.get_b12(damod))
+  b11 <- crossprod(X * cmod$residuals^2, X)
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
+  
+  ## after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(nq * a22inv, sandwich::bread(damod))
+  
+  ## meat is not equivalent to sandwich::meatCL! since there's no overlap of
+  ## cmod and damod data, cov-adjusted meat term simplifies to:
+  ## b22 + t(a21) %*% a11inv %*% b11 %*% a11inv %*% a21, a robust estimate
+  ## of the cmod vcov matrix sandwiched by lm coefs of the covariates in the
+  ## experimental sample on the trt assignment
+
+  expect_equal(b22 / nq,
+               sandwich::meatCL(damod, cluster = factor(damod_df$cid),
+                                cadjust = FALSE))
+  expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  # with perfect group balance, a22inv %*% a21 will have 0's in the trt row,
+  # meaning the variance of the trt effect estimate will be the same as that
+  # given by the sandwich package
+  expect_true(all((a22inv %*% t(a21))[2,] == 0))
+  
+  ## variance of vcovDA estimates != sandwich package estimates
+  # confirm matrix multiplication for vcovDA is what we expect
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
+               (1 / nq) * a22inv %*%
+                 (nq * b22 + nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*%
+                                     a21)) %*%
+                 a22inv)
+  
+  expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
+                diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
+                                        cluster = factor(damod_df$cid),
+                                        cadjust = FALSE))[1])
+  expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
+               diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
+                                       cluster = factor(damod_df$cid),
+                                       cadjust = FALSE))[2])
+})
