@@ -9,7 +9,6 @@ NULL
 #' @return a \eqn{(p+2)\times(p+2)} matrix where the dimensions are given by the
 #' number of terms in the covariance model (p), a treatment term, and an
 #' intercept term
-#' @example inst/examples/vcovDA.R
 #' @export
 vcovDA <- function(x, ...) {
   if (!inherits(x, "Lmitted")) {
@@ -22,24 +21,26 @@ vcovDA <- function(x, ...) {
                "for direct adjustment standard errors"))
   }
 
-  nq <- nrow(x@Design@structure)
+  nq <- dim(stats::model.matrix(x))[1]
   nc <- dim(stats::model.matrix(sl@fitted_covariance_model))[1]
-  nqc <- max(sum(apply(!is.na(unique(sl@keys)), 1L, any)), 1) # don't divide by 0 if no overlap
+  nqc <- max(sum(apply(!is.na(sl@keys), 1L, any)), 1) # don't divide by 0 if no overlap
 
   # compute blocks
-  a21 <- .get_a21(x)# / nq
+  a21 <- .get_a21(x)
   a11inv <- .get_a11_inverse(x)
-  b12 <- .get_b12(x)# / nqc
+  b12 <- .get_b12(x)
 
   a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, ...)# / nq
-  b11 <- .get_b11(x, ...)# / nc
+  b22 <- .get_b22(x, ...)
+  b11 <- .get_b11(x, ...)
 
   meat <- (
-    b22 - crossprod(a21, a11inv) %*% b12 - t(crossprod(a21, a11inv) %*% b12) +
-      crossprod(a21, a11inv) %*% b11 %*% t(crossprod(a21, a11inv))
+    nq * b22 -
+      nq * nc / nqc * (crossprod(a21, a11inv) %*% b12) -
+      nq * nc / nqc * t(crossprod(a21, a11inv) %*% b12) +
+      nc * (crossprod(a21, a11inv) %*% b11 %*% t(crossprod(a21, a11inv)))
   )
-  vmat <- a22inv %*% meat %*% a22inv
+  vmat <- (1 / nq) * a22inv %*% meat %*% a22inv
 
   return(vmat)
 }
