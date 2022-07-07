@@ -35,12 +35,12 @@ vcovDA <- function(x, ...) {
   b11 <- .get_b11(x, ...)
 
   meat <- (
-    nq * b22 -
-      nq * nc / nqc * (crossprod(a21, a11inv) %*% b12) -
-      nq * nc / nqc * t(crossprod(a21, a11inv) %*% b12) +
-      nc * (crossprod(a21, a11inv) %*% b11 %*% t(crossprod(a21, a11inv)))
+    b22 -
+      (crossprod(a21, a11inv) %*% b12) -
+      (crossprod(b12, a11inv) %*% a21) +
+      (crossprod(a21, a11inv) %*% b11 %*% a11inv %*% a21)
   )
-  vmat <- (1 / nq) * a22inv %*% meat %*% a22inv
+  vmat <- a22inv %*% meat %*% a22inv
 
   return(vmat)
 }

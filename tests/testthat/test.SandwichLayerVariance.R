@@ -784,10 +784,9 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   ## of tau_hat == sandwich package estimate
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / nq) * a22inv %*%
-               (nq * b22 + nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*%
-                a21)) %*%
-               a22inv)
+               a22inv %*%
+                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
+                 a22inv)
 
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
               diag(sandwich::sandwich(damod))[1])
@@ -878,9 +877,8 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / nq) * a22inv %*%
-                 (nq * b22 + nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*%
-                                     a21)) %*%
+               a22inv %*%
+                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
                  a22inv)
   
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
@@ -971,9 +969,8 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / nq) * a22inv %*%
-                 (nq * b22 + nc * (crossprod(a21, a11inv %*% b11 %*% a11inv) %*%
-                                     a21)) %*%
+               a22inv %*%
+                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
                  a22inv)
   
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
