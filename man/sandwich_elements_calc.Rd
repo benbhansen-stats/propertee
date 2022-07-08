@@ -27,30 +27,31 @@
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
-\code{.get_b12()}: A \eqn{p\times k} matrix where \eqn{p} is the
-number of terms in the covariance model and \eqn{k} is the number of terms
-in the \code{Lmitted} model
+\code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
+are given by the number of terms in the covariance model and the number of
+columns correspond to intercept and treatment variable terms in the direct
+adjustment model
 
-\code{.get_a22_inverse()}: A \eqn{1\times1} matrix
+\code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
+dimensions are given by the intercept and treatment variable terms in the
+direct adjustment model
 
-\code{.get_b22()}: A \eqn{(p+1)\times(p+1)} matrix where the
-dimensions are given by the number of terms in the \code{Lmitted} model
-(\eqn{p}) and an Intercept term. This should be a \eqn{2\times2} matrix
-given the dichotomous handling of treatment variables in this package and
-the use of the covariance model to offer the covariance adjustment.
+\code{.get_b22()}: A \eqn{2\times 2} matrix where the
+dimensions are given by the intercept and treatment variable terms in the
+direct adjustment model
 
-\code{.get_a11_inverse()}: A \eqn{(p+1)\times(p+1)} matrix where the
+\code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
 dimensions are given by the number of terms in the covariance model
-(\eqn{p}) and an Intercept term.
+including an intercept
 
-\code{.get_b11()}: A \eqn{(p+1)\times(p+1)} matrix the dimensions are
-given by the number of terms in the covariance model (\eqn{p}) and an
-Intercept term
+\code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
+given by the number of terms in the covariance model including an
+intercept
 
-\code{.get_a12()}: A \eqn{(p+1)\times2} matrix where the number of
-rows are given by the number of terms in the covariance model (\eqn{p}) and
-an Intercept term, and the number of columns are given by the treatment and
-intercept terms in the direct adjustment model
+\code{.get_a12()}: A \eqn{2\times p} matrix where the number of
+rows are given by intercept and treatment variable terms in the direct
+adjusted model, and the number of columns are given by the number of terms
+in the covariance model
 }
 \description{
 (Internal) Compute variance blocks
