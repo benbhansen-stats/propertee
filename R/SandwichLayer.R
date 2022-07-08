@@ -22,17 +22,17 @@ setValidity("PreSandwichLayer", function(object) {
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
-  if (dim(object@prediction_gradient)[1] != length(object)) {
+  if (dim(object@prediction_gradient)[1] != length(object[!is.na(object)])) {
     msg <- paste0("Prediction gradient matrix (",
                   paste(dim(object@prediction_gradient), collapse = ", "),
                   ") does not have the same dimension along axis 1 as the ",
-                  "covariance adjustment vector (",
-                  length(object))
+                  "non-null covariance adjustment vector (", length(object), ")")
     return(msg)
   }
-  if (dim(object@prediction_gradient)[2] != length(object@fitted_covariance_model$coefficients)) {
-    return(paste0("Prediction gradient does not have the same number of columns as ",
-                  "predictors in the covariance model"))
+  if (dim(object@prediction_gradient)[2] !=
+      length(object@fitted_covariance_model$coefficients)) {
+    return(paste("Prediction gradient does not have the same number of columns",
+                 "predictors in the covariance model"))
   }
   TRUE
 })
@@ -44,8 +44,8 @@ setClass("SandwichLayer",
 
 setValidity("SandwichLayer", function(object) {
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
-    return(paste0("Keys does not have the same number of rows as the dataset used ",
-                  "to fit the covariance model"))
+    return(paste("Keys does not have the same number of rows as the dataset",
+                 "used to fit the covariance model"))
   }
 
   if (any(is.na(object))) {
@@ -114,13 +114,25 @@ setMethod("[", "PreSandwichLayer",
     stop("If supplied, `newdata` must be a dataframe")
   }
 
+  form <- tryCatch(
+    paste("~",
+          paste(attr(terms(model), "term.labels"), collapse = "+")),
+    error = function(e) stop("`model` must have `terms` method")
+  )
   X <- tryCatch(
     if (is.null(newdata)) {
-      stats::model.matrix(model)
+      stats::model.matrix(as.formula(form), data = stats::model.frame(model))
     } else {
-      stats::model.matrix(model, data = newdata)
+      stats::model.matrix(as.formula(form), data = newdata)
     }, error = function(e) {
-      stop("`model` must have a `call` object and `model.matrix` method")
+      if (is.null(newdata)) newdata <- stats::model.frame(model)
+      missing_cols <- names(which(
+        !vapply(all.vars(as.formula(form)),
+                function(x) x %in% colnames(newdata),
+                logical(1))))
+      stop(paste0("Could not find cmod columns `",
+                  paste(missing_cols, collapse = "`, `"),
+                  "` in the supplied model frame"))
     })
 
   # TODO: support predict(..., type = "response"/"link"/other?)

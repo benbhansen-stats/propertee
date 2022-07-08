@@ -85,8 +85,12 @@ test_that("PreSandwichLayer prediction gradient has invalid number of columns", 
 
 test_that("SandwichLayer has NA's", {
   on.exit(offset <- stats::predict(cmod, xstar))
+  on.exit(pred_gradient <- model.matrix(cmod), add = TRUE)
+  
 
-  offset <- c(offset[1:99], NA_real_)
+  offset[100] <- NA_real_
+  pred_gradient <- pred_gradient[1:99,]
+  
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
@@ -343,10 +347,16 @@ test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
                "must be a dataframe")
 })
 
-test_that(".get_ca_and_prediction_gradient model doesn't have a model.matrix method", {
+test_that(".get_ca_and_prediction_gradient model doesn't have a terms method", {
   expect_error(.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
                                                xstar),
-               "must have a `call`")
+               "must have `terms`")
+})
+
+test_that(".get_ca_and_prediction_gradient model frame missing cmod columns", {
+  expect_error(.get_ca_and_prediction_gradient(cmod,
+                                               xstar[, "cont_x", drop = FALSE]),
+               "cmod columns `cat_x` in the")
 })
 
 test_that(paste(".get_ca_and_prediction_gradient returns expected output",
