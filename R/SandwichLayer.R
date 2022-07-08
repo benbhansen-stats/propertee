@@ -118,19 +118,13 @@ setMethod("[", "PreSandwichLayer",
     if (is.null(newdata)) {
       stats::model.matrix(model)
     } else {
-      form <- as.formula(model$call$formula[-2])
-      stats::model.matrix(form,
-                          stats::model.frame(form, data = newdata, na.action = 'na.pass'))
+      stats::model.matrix(model, data = newdata)
     }, error = function(e) {
       stop("`model` must have a `call` object and `model.matrix` method")
     })
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  ca <- tryCatch(stats::predict(model, type = "response", newdata = newdata),
-                 error = function(e) {
-                   stop(paste("covariate adjustment model",
-                              "must support predict function"))
-                 })
+  ca <- stats::predict(model, type = "response", newdata = newdata)
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models

@@ -349,30 +349,33 @@ test_that(".get_ca_and_prediction_gradient model doesn't have a model.matrix met
                "must have a `call`")
 })
 
-test_that(".get_ca_and_prediction_gradient model doesn't have a predict method", {
-  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
-  cmod <- cmod$call
-  cmod$call <- cmod
-  expect_error(.get_ca_and_prediction_gradient(cmod, xstar),
-               "must support")
-})
-
-test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
-                 "for `lm` object"), {
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "for `lm` object"), {
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
   expect_equal(ca_and_grad$ca, cmod$fitted.values)
   expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
 })
 
-test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
-                 "for `lm` object with new data"), {
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "for `lm` object with new data"), {
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
   expect_equal(ca_and_grad$ca, offset)
   expect_equal(ca_and_grad$prediction_gradient, pred_gradient)
 })
 
-test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
-                 "for `glm` object"), {
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "when formula is a symbol"), {
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
+
+  cmod_form <- y ~ cont_x + as.factor(cat_x)
+  cmod <- lm(cmod_form, data = x)
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
+  expect_equal(ca_and_grad$ca, cmod$fitted.values)
+  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+})
+
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "for `glm` object"), {
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
 
   cmod <- glm(as.factor(cat_x) ~ cont_x, data = x, family = stats::binomial())
@@ -386,8 +389,8 @@ test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction g
                                         (1 + exp(mm %*% coef(cmod))))) * mm)
 })
 
-test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction gradient ",
-                 "for `glm` object with new data"), {
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "for `glm` object with new data"), {
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
 
   cmod <- glm(as.factor(cat_x) ~ cont_x, data = x, family = stats::binomial())
@@ -401,8 +404,8 @@ test_that(paste0(".get_ca_and_prediction_gradient produces expected prediction g
                                          (1 + exp(mm %*% coef(cmod))))) * mm)
 })
 
-test_that(paste(".get_ca_and_prediction_gradient produces covariance adjustment",
-                "and prediction gradient with expected NA's"), {
+test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
+                "NA's are present"), {
   on.exit(xstar <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                               "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                               "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
@@ -413,6 +416,6 @@ test_that(paste(".get_ca_and_prediction_gradient produces covariance adjustment"
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
   expect_equal(length(ca_and_grad$ca), 100)
   expect_equal(sum(is.na(ca_and_grad$ca)), 1)
-  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient))
+  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient[1:99,]))
   expect_equal(ca_and_grad$prediction_gradient[1:99,], pred_gradient[1:99,])
 })
