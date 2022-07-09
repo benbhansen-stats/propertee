@@ -44,7 +44,7 @@ table(STARdata$treatment)
 To illustrate the workflow of a researcher in the midst of a trial, we split the data into two data sets, one representing student information that might have been known prior or during assignment and a second representing outcome information only available after the intervention had been administered.
 
 ```{r}
-STARdata$studentid <- as.character(1:nrow(STARdata))
+STARdata$studentid <- as.character(seq_len(nrow(STARdata)))
 STAR_pre <- STARdata[, c("studentid", "treatment",
                      "gender", "ethnicity", "birth", "lunchk",  # individual demographics
                      "schoolk", "degreek", "ladderk", "experiencek", "tethnicityk", # school and teacher demographics
@@ -63,13 +63,13 @@ STAR_school <- data.frame(schoolidk = as.numeric(names(table(STAR_pre$schoolidk)
                                             FUN = sum))
 STAR_school$school_n0 <- with(STAR_school, school_n - school_n1)
 STAR_pre <- merge(STAR_pre, STAR_school, by = "schoolidk", all.x = TRUE)
-STAR_pre$E_Z         = with(STAR_pre, school_n1 / school_n)
-STAR_pre$weight_ate  = with(STAR_pre,
-                            treatment / E_Z + (1 - treatment) / (1 - E_Z))
-STAR_pre$weight_ett  = with(STAR_pre,
-                            treatment + (1 - treatment) * E_Z / (1 - E_Z))
-STAR_pre$weight_etc  = with(STAR_pre,
-                            treatment * (1 - E_Z) / E_Z + (1 - treatment))
+STAR_pre$E_Z         <- with(STAR_pre, school_n1 / school_n)
+STAR_pre$weight_ate  <- with(STAR_pre,
+                             treatment / E_Z + (1 - treatment) / (1 - E_Z))
+STAR_pre$weight_ett  <- with(STAR_pre,
+                             treatment + (1 - treatment) * E_Z / (1 - E_Z))
+STAR_pre$weight_etc  <- with(STAR_pre,
+                             treatment * (1 - E_Z) / E_Z + (1 - treatment))
 ```
 
 Post-treatment outcomes include normalized reading and math scores over several years. Missing values are imputed to the within group (treatment/control) mean

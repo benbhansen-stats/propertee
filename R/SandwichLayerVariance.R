@@ -2,7 +2,7 @@
 NULL
 
 #' @title Compute direct adjustment sandwich variance estimator
-#' @param x A \code{Lmitted} model
+#' @param x A \code{DirectAdjusted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
 #' @details \code{vcovDA()} provides covariance-adjusted cluster-robust variance
 #' estimates for treatment effects.
@@ -11,13 +11,13 @@ NULL
 #' intercept term
 #' @export
 vcovDA <- function(x, ...) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
@@ -53,20 +53,20 @@ vcovDA <- function(x, ...) {
 #'   the experimental design and the covariance model data, its contribution to
 #'   this matrix will be 0. Thus, if there is no overlap between the two
 #'   datasets, this will return a matrix of 0's.
-#' @param x A \code{Lmitted} model
+#' @param x A \code{DirectAdjusted} model
 #' @return \code{.get_b12()}: A \eqn{p\times k} matrix where \eqn{p} is the
 #'   number of terms in the covariance model and \eqn{k} is the number of terms
-#'   in the \code{Lmitted} model
+#'   in the \code{DirectAdjusted} model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b12 <- function(x) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   sl <- x$model$`(offset)`
   if (!is(sl, "SandwichLayer")) {
-    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
@@ -123,8 +123,8 @@ vcovDA <- function(x, ...) {
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a22_inverse <- function(x) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   # Get expected information per sandwich_infrastructure vignette
@@ -168,15 +168,15 @@ vcovDA <- function(x, ...) {
 #' @references Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
 #'   https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
 #' @return \code{.get_b22()}: A \eqn{(p+1)\times(p+1)} matrix where the
-#'   dimensions are given by the number of terms in the \code{Lmitted} model
+#'   dimensions are given by the number of terms in the \code{DirectAdjusted} model
 #'   (\eqn{p}) and an Intercept term. This should be a \eqn{2\times2} matrix
 #'   given the dichotomous handling of treatment variables in this package and
 #'   the use of the covariance model to offer the covariance adjustment.
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b22 <- function(x, ...) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   nq <- sum(summary(x)$df[1L:2L])
@@ -212,13 +212,13 @@ vcovDA <- function(x, ...) {
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a11_inverse <- function(x) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
@@ -242,13 +242,13 @@ vcovDA <- function(x, ...) {
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b11 <- function(x, ...) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
@@ -282,7 +282,7 @@ vcovDA <- function(x, ...) {
 #' @details The \bold{A21 block} is the block of the sandwich variance estimator
 #'   corresponding to the gradient of the direct adjustment model with respect
 #'   to the covariates. Some of the information needed for this calculation is
-#'   stored in the \code{Lmitted} object's \code{SandwichLayer} offset. This
+#'   stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
 #'   block is the crossproduct of the prediction gradient and the gradient of
 #'   the conditional mean vector for the direct adjustment model summed to the
 #'   cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
@@ -299,13 +299,13 @@ vcovDA <- function(x, ...) {
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
-  if (!inherits(x, "Lmitted")) {
-    stop("x must be a Lmitted model")
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("Lmitted model must have an offset of class `SandwichLayer`",
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 

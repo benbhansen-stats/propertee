@@ -3,11 +3,11 @@ NULL
 # The above ensures that `Design` and `WeightedDesign` are defined prior to
 # `DirectAdjusted`
 
-setClass("Lmitted",
+setClass("DirectAdjusted",
          contains = "lm",
          slots = c(Design = "Design"))
 
-setValidity("Lmitted", function(object) {
+setValidity("DirectAdjusted", function(object) {
   if (!is_binary_or_dichotomized(object@Design)) {
     return("Treatment must be binary or have a dichotomy.")
   }
@@ -21,16 +21,16 @@ setValidity("Lmitted", function(object) {
   return(TRUE)
 })
 
-##' @title Show an Lmitted
-##' @param object Lmitted object
+##' @title Show an DirectAdjusted
+##' @param object DirectAdjusted object
 ##' @return an invisible copy of `object`
 ##' @export
-setMethod("show", "Lmitted", function(object) {
+setMethod("show", "DirectAdjusted", function(object) {
   print(as(object, "lm"))
   invisible(object)
 })
 
-##' @title Convert \code{lm} object into \code{Lmitted}
+##' @title Convert \code{lm} object into \code{DirectAdjusted}
 ##' @param x \code{lm} object with weights containing a \code{WeightedDesign}
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
@@ -39,7 +39,8 @@ setMethod("show", "Lmitted", function(object) {
 ##'   passed here as well. (If different \code{Design} objects are passed
 ##'   (either through the \code{lm} in weights or covariance adjustment, or
 ##'   through this argument), an error will be produced.)
-##' @return \code{Lmitted} object
+##' @return \code{DirectAdjusted} object
+##' @rdname as_lmitt
 ##' @export
 as.lmitt <- function(x, design = NULL) {
   if (!inherits(x, "lm")) {
@@ -69,19 +70,23 @@ as.lmitt <- function(x, design = NULL) {
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
-  return(new("Lmitted",
+  return(new("DirectAdjusted",
              x,
              Design = design))
 }
 
+##' @rdname as_lmitt
+##' @export
+as.DirectAdjusted <- as.lmitt
+
 setGeneric("vcov")
 
 ##' @title Variance-Covariance matrix
-##' @param object Lmitted
+##' @param object DirectAdjusted
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("vcov", "Lmitted", function(object, ...) {
+setMethod("vcov", "DirectAdjusted", function(object, ...) {
   return(vcov(as(object, "lm"), ...))
 })
 
@@ -89,7 +94,7 @@ setMethod("vcov", "Lmitted", function(object, ...) {
 setGeneric("confint")
 
 ##' @title Variance-Covariance matrix
-##' @param object Lmitted
+##' @param object DirectAdjusted
 ##' @param parm a specification of which parameters are to be given confidence
 ##'   intervals, either a vector of numbers or a vector of names. If missing,
 ##'   all parameters are considered.
@@ -97,14 +102,14 @@ setGeneric("confint")
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @export
-setMethod("confint", "Lmitted",
+setMethod("confint", "DirectAdjusted",
           function(object, parm, level = 0.95, ...) {
   return(confint(as(object, "lm"), parm, level = level, ...))
 })
 
-##' Identify treatment variable in \code{Lmitted} object
+##' Identify treatment variable in \code{DirectAdjusted} object
 ##'
-##' @param x \code{Lmitted} model
+##' @param x \code{DirectAdjusted} model
 ##' @return Name of treatment in model.
 ##' @export
 ##' @examples

@@ -20,7 +20,7 @@ through this argument), an error will be produced.)}
 \item{...}{Additional arguments passed to \code{lm()}.}
 }
 \value{
-\code{Lmitted} model.
+\code{DirectAdjusted} model.
 }
 \description{
 Linear Model for Intention To Treat

@@ -60,13 +60,13 @@ reference:
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
-    - as.lmitt
     - lmitt
     - adopters
-    - confint,Lmitted-method
-    - show,Lmitted-method
+    - as.lmitt
+    - confint,DirectAdjusted-method
+    - show,DirectAdjusted-method
     - treatment_name
-    - vcov,Lmitted-method
+    - vcov,DirectAdjusted-method
     - vcovDA
 - title: Data
 - contents:

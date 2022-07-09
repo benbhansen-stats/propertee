@@ -34,7 +34,7 @@ Collate:
     'DesignAccessors.R'
     'DesignConverters.R'
     'DesignUtilities.R'
-    'Lmitted.R'
+    'DirectAdjusted.R'
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
     'adopters.R'

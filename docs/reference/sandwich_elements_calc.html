@@ -75,7 +75,7 @@
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>x</dt>
-<dd><p>A <code>Lmitted</code> model</p></dd>
+<dd><p>A <code>DirectAdjusted</code> model</p></dd>
 
 
 <dt>...</dt>
@@ -88,14 +88,14 @@
 
 <p><code>.get_b12()</code>: A \(p\times k\) matrix where \(p\) is the
 number of terms in the covariance model and \(k\) is the number of terms
-in the <code>Lmitted</code> model</p>
+in the <code>DirectAdjusted</code> model</p>
 
 
 <p><code>.get_a22_inverse()</code>: A \(1\times1\) matrix</p>
 
 
 <p><code>.get_b22()</code>: A \((p+1)\times(p+1)\) matrix where the
-dimensions are given by the number of terms in the <code>Lmitted</code> model
+dimensions are given by the number of terms in the <code>DirectAdjusted</code> model
 (\(p\)) and an Intercept term. This should be a \(2\times2\) matrix
 given the dichotomous handling of treatment variables in this package and
 the use of the covariance model to offer the covariance adjustment.</p>
@@ -171,7 +171,7 @@ assuming the observations are independent.</p>
 <p>The <b>A21 block</b> is the block of the sandwich variance estimator
 corresponding to the gradient of the direct adjustment model with respect
 to the covariates. Some of the information needed for this calculation is
-stored in the <code>Lmitted</code> object's <code>SandwichLayer</code> offset. This
+stored in the <code>DirectAdjusted</code> object's <code>SandwichLayer</code> offset. This
 block is the crossproduct of the prediction gradient and the gradient of
 the conditional mean vector for the direct adjustment model summed to the
 cluster level. In other words, we take this matrix to be $$\sum(d\psi_i

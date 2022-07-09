@@ -22,19 +22,19 @@
 .get_a21(x)
 }
 \arguments{
-\item{x}{A \code{Lmitted} model}
+\item{x}{A \code{DirectAdjusted} model}
 
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
 \code{.get_b12()}: A \eqn{p\times k} matrix where \eqn{p} is the
 number of terms in the covariance model and \eqn{k} is the number of terms
-in the \code{Lmitted} model
+in the \code{DirectAdjusted} model
 
 \code{.get_a22_inverse()}: A \eqn{1\times1} matrix
 
 \code{.get_b22()}: A \eqn{(p+1)\times(p+1)} matrix where the
-dimensions are given by the number of terms in the \code{Lmitted} model
+dimensions are given by the number of terms in the \code{DirectAdjusted} model
 (\eqn{p}) and an Intercept term. This should be a \eqn{2\times2} matrix
 given the dichotomous handling of treatment variables in this package and
 the use of the covariance model to offer the covariance adjustment.
@@ -115,7 +115,7 @@ assuming the observations are independent.
 The \bold{A21 block} is the block of the sandwich variance estimator
 corresponding to the gradient of the direct adjustment model with respect
 to the covariates. Some of the information needed for this calculation is
-stored in the \code{Lmitted} object's \code{SandwichLayer} offset. This
+stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
 block is the crossproduct of the prediction gradient and the gradient of
 the conditional mean vector for the direct adjustment model summed to the
 cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i

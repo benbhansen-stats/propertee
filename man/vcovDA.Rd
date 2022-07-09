@@ -7,7 +7,7 @@
 vcovDA(x, ...)
 }
 \arguments{
-\item{x}{A \code{Lmitted} model}
+\item{x}{A \code{DirectAdjusted} model}
 
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }

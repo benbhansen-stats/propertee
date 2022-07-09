@@ -1,31 +1,31 @@
-test_that(paste("Lmitted object created correctly with weights and no",
+test_that(paste("DirectAdjusted object created correctly with weights and no",
                 "SandwichLayer in the lm call"), {
 
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- new("Lmitted",
+  dalm <- new("DirectAdjusted",
               lm(y ~ z, data = simdata, weights = ate(des)),
               Design = des)
 
-  expect_s4_class(dalm, "Lmitted")
+  expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
 
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 })
 
-test_that(paste("Lmitted object created correctly with weights and ",
+test_that(paste("DirectAdjusted object created correctly with weights and ",
                 "SandwichLayer in the lm call"), {
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
-  dalm <- new("Lmitted",
+  dalm <- new("DirectAdjusted",
               lm(y ~ z, data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des)
 
-  expect_s4_class(dalm, "Lmitted")
+  expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
 
   expect_equal(dalm$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
@@ -111,13 +111,13 @@ test_that("DA ensure treatment is found", {
   expect_true(!is.na(coef(dalm_direct)[treatment_name(dalm_direct)]))
 })
 
-test_that("Lmitted print/show", {
+test_that("DirectAdjusted print/show", {
 
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  dalm <- new("Lmitted",
+  dalm <- new("DirectAdjusted",
               lm(y ~ z, data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des)
@@ -131,7 +131,7 @@ test_that("Lmitted print/show", {
   expect_output(show(dalm), "Coeff")
 })
 
-test_that("lm to Lmitted succeeds with weights and no SandwichLayer", {
+test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
 
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
@@ -140,7 +140,7 @@ test_that("lm to Lmitted succeeds with weights and no SandwichLayer", {
 
   mod_da <- as.lmitt(mod)
 
-  expect_s4_class(mod_da, "Lmitted")
+  expect_s4_class(mod_da, "DirectAdjusted")
   expect_true(inherits(mod_da, "lm"))
 
   expect_identical(mod_da$model$"(weights)"@Design, des)
@@ -151,7 +151,7 @@ test_that("lm to Lmitted succeeds with weights and no SandwichLayer", {
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
-test_that("lm to Lmitted with weights and SandwichLayer", {
+test_that("lm to DirectAdjusted with weights and SandwichLayer", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -160,7 +160,7 @@ test_that("lm to Lmitted with weights and SandwichLayer", {
 
   mod_da <- as.lmitt(mod)
 
-  expect_s4_class(mod_da, "Lmitted")
+  expect_s4_class(mod_da, "DirectAdjusted")
   expect_true(inherits(mod_da, "lm"))
 
   expect_equal(mod_da$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
@@ -176,12 +176,12 @@ test_that("lm to Lmitted with weights and SandwichLayer", {
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
-test_that("Conversion from lm to Lmitted fails without an lm object", {
+test_that("Conversion from lm to DirectAdjusted fails without an lm object", {
   expect_error(as.lmitt(1),
                "lm object")
 })
 
-test_that("lm to Lmitted fails without a Design object", {
+test_that("lm to DirectAdjusted fails without a Design object", {
   data(simdata)
 
   expect_error(as.lmitt(lm(y ~ z, data = simdata,

@@ -73,10 +73,10 @@
     <loc>www.github.com/reference/as.SandwichLayer.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/as.lmitt.html</loc>
+    <loc>www.github.com/reference/as_lmitt.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/confint-Lmitted-method.html</loc>
+    <loc>www.github.com/reference/confint-DirectAdjusted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/cov_adj.html</loc>
@@ -107,21 +107,6 @@
   </url>
   <url>
     <loc>www.github.com/reference/dot-fallback_data_search.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_a11_inverse.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_a22_inverse.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_b11.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_b12.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_b22.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-get_ca_and_prediction_gradient.html</loc>
@@ -184,7 +169,7 @@
     <loc>www.github.com/reference/show-Design-method.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/show-Lmitted-method.html</loc>
+    <loc>www.github.com/reference/show-DirectAdjusted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/show-WeightedDesign-method.html</loc>
@@ -208,7 +193,7 @@
     <loc>www.github.com/reference/var_table.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/vcov-Lmitted-method.html</loc>
+    <loc>www.github.com/reference/vcov-DirectAdjusted-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/vcovDA.html</loc>

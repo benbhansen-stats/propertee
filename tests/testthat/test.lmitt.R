@@ -6,12 +6,12 @@ test_that("lmitt", {
 
   da <- lmitt(y ~ dose + x, weights = ate(des), data = simdata)
 
-  expect_s4_class(da, "Lmitted")
+  expect_s4_class(da, "DirectAdjusted")
   expect_true(inherits(da, "lm"))
 
   da_ett <- lmitt(y ~ z + x, weights = ett(des), data = simdata)
 
-  expect_s4_class(da_ett, "Lmitted")
+  expect_s4_class(da_ett, "DirectAdjusted")
 })
 
 test_that("lmitt and lm return the same in simple cases", {

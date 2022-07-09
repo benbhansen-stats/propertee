@@ -8,7 +8,7 @@
 ##'   (either through the \code{lm} in weights or covariance adjustment, or
 ##'   through this argument), an error will be produced.)
 ##' @param ... Additional arguments passed to \code{lm()}.
-##' @return \code{Lmitted} model.
+##' @return \code{DirectAdjusted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
 lmitt <- function(formula,
