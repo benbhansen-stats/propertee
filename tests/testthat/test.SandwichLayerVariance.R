@@ -656,8 +656,8 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clusterin
   Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
 
   a21 <- .get_a21(m)
-  expect_equal(dim(a21), c(3, 2))
-  expect_equal(a21, crossprod(Cmat, Qmat))
+  expect_equal(dim(a21), c(2, 3))
+  expect_equal(a21, crossprod(Qmat, Cmat))
 })
 
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clustering", {
@@ -670,7 +670,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clusteri
 
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(2, 2))
-  expect_equal(a21, crossprod(stats::model.matrix(cmod), -m$weights * stats::model.matrix(m)))
+  expect_equal(a21, crossprod(-m$weights * stats::model.matrix(m), stats::model.matrix(cmod)))
 })
 
 test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clustering", {
@@ -692,8 +692,8 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
 
   a21 <- .get_a21(m)
-  expect_equal(dim(a21), c(3, 2))
-  expect_equal(a21, crossprod(Cmat, Qmat))
+  expect_equal(dim(a21), c(2, 3))
+  expect_equal(a21, crossprod(Qmat, Cmat))
 })
 
 test_that("vcovDA returns px2 matrix", {
@@ -753,7 +753,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- -crossprod(Xstar * damod$weights, C)
+  a21 <- -crossprod(C, Xstar * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
@@ -778,14 +778,14 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   # with perfect group balance, a22inv %*% a21 will have 0's in the trt row,
   # meaning the variance of the trt effect estimate will be the same as that
   # given by the sandwich package
-  expect_true(all((a22inv %*% t(a21))[2,] == 0))
+  expect_true(all((a22inv %*% a21)[2,] == 0))
 
   ## variance of intercept estimate != sandwich package estimate, but variance
   ## of tau_hat == sandwich package estimate
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
-                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
+                 (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
@@ -847,7 +847,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- -crossprod(Xstar * damod$weights, C)
+  a21 <- -crossprod(C, Xstar * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
@@ -872,13 +872,13 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   # with imperfect group balance, a22inv %*% a21 will not be 0 for the trt row,
   # so the variance of the trt effect estimate will increase from the sandwich
   # package's estimate
-  expect_false(all((a22inv %*% t(a21))[2,] == 0))
+  expect_false(all((a22inv %*% a21)[2,] == 0))
 
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
-                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
+                 (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
@@ -939,8 +939,8 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
   a21 <- -crossprod(
-    Reduce(rbind, by(Xstar * damod$weights, damod_df$cid, colSums)),
-    Reduce(rbind, by(C, damod_df$cid, colSums))
+    Reduce(rbind, by(C, damod_df$cid, colSums)),
+    Reduce(rbind, by(Xstar * damod$weights, damod_df$cid, colSums))
   )
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
@@ -964,13 +964,12 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   # with perfect group balance, a22inv %*% a21 will have 0's in the trt row,
   # meaning the variance of the trt effect estimate will be the same as that
   # given by the sandwich package
-  expect_true(all((a22inv %*% t(a21))[2,] == 0))
-
+  expect_true(all((a22inv %*% a21)[2,] == 0))
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
-                 (b22 + (crossprod(a21, a11inv %*% b11 %*% a11inv) %*% a21)) %*%
+                 (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >

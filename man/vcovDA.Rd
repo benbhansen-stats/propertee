@@ -12,9 +12,9 @@ vcovDA(x, ...)
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
-a \eqn{(p+2)\times(p+2)} matrix where the dimensions are given by the
-number of terms in the covariance model (p), a treatment term, and an
-intercept term
+\code{vcovDA()}: A \eqn{2\times 2} matrix where the dimensions are
+given by the intercept and treatment variable terms in the direct adjustment
+model
 }
 \description{
 Compute direct adjustment sandwich variance estimator

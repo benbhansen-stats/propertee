@@ -6,9 +6,9 @@ NULL
 #' @param ... Arguments to be passed to sandwich::meatCL
 #' @details \code{vcovDA()} provides covariance-adjusted cluster-robust variance
 #' estimates for treatment effects.
-#' @return a \eqn{(p+2)\times(p+2)} matrix where the dimensions are given by the
-#' number of terms in the covariance model (p), a treatment term, and an
-#' intercept term
+#' @return \code{vcovDA()}: A \eqn{2\times 2} matrix where the dimensions are
+#' given by the intercept and treatment variable terms in the direct adjustment
+#' model
 #' @export
 vcovDA <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
@@ -36,9 +36,9 @@ vcovDA <- function(x, ...) {
 
   meat <- (
     b22 -
-      (crossprod(a21, a11inv) %*% b12) -
-      (crossprod(b12, a11inv) %*% a21) +
-      (crossprod(a21, a11inv) %*% b11 %*% a11inv %*% a21)
+      a21 %*% a11inv %*% b12 -
+      (crossprod(b12, a11inv) %*% t(a21)) +
+      (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
   )
   vmat <- a22inv %*% meat %*% a22inv
 
@@ -54,9 +54,10 @@ vcovDA <- function(x, ...) {
 #'   this matrix will be 0. Thus, if there is no overlap between the two
 #'   datasets, this will return a matrix of 0's.
 #' @param x A \code{DirectAdjusted} model
-#' @return \code{.get_b12()}: A \eqn{p\times k} matrix where \eqn{p} is the
-#'   number of terms in the covariance model and \eqn{k} is the number of terms
-#'   in the \code{DirectAdjusted} model
+#' @return \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
+#'   are given by the number of terms in the covariance model and the number of
+#'   columns correspond to intercept and treatment variable terms in the direct
+#'   adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b12 <- function(x) {
@@ -119,7 +120,9 @@ vcovDA <- function(x, ...) {
 #'   sample, this can be expressed in matrix form as \eqn{X'WX}. The output of
 #'   this function is the inverse of the diagonal element corresponding to the
 #'   treatment estimate.
-#' @return \code{.get_a22_inverse()}: A \eqn{1\times1} matrix
+#' @return \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
+#' dimensions are given by the intercept and treatment variable terms in the
+#' direct adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a22_inverse <- function(x) {
@@ -167,11 +170,9 @@ vcovDA <- function(x, ...) {
 #'   is the matrix of estimating equations at the subject level.
 #' @references Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
 #'   https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
-#' @return \code{.get_b22()}: A \eqn{(p+1)\times(p+1)} matrix where the
-#'   dimensions are given by the number of terms in the \code{DirectAdjusted} model
-#'   (\eqn{p}) and an Intercept term. This should be a \eqn{2\times2} matrix
-#'   given the dichotomous handling of treatment variables in this package and
-#'   the use of the covariance model to offer the covariance adjustment.
+#' @return \code{.get_b22()}: A \eqn{2\times 2} matrix where the
+#'   dimensions are given by the intercept and treatment variable terms in the
+#'   direct adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b22 <- function(x, ...) {
@@ -206,9 +207,9 @@ vcovDA <- function(x, ...) {
 #'   Jacobian of the model's estimating equations. The unscaled version provided
 #'   here divides by the number of observations used to fit the covariance
 #'   model.
-#' @return \code{.get_a11_inverse()}: A \eqn{(p+1)\times(p+1)} matrix where the
+#' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
 #'   dimensions are given by the number of terms in the covariance model
-#'   (\eqn{p}) and an Intercept term.
+#'   including an intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a11_inverse <- function(x) {
@@ -236,9 +237,9 @@ vcovDA <- function(x, ...) {
 #'   covariance model data also exist in the design. If there is no overlap
 #'   between the two datasets, the variance-covariance matrix is estimated
 #'   assuming the observations are independent.
-#' @return \code{.get_b11()}: A \eqn{(p+1)\times(p+1)} matrix the dimensions are
-#'   given by the number of terms in the covariance model (\eqn{p}) and an
-#'   Intercept term
+#' @return \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
+#'   given by the number of terms in the covariance model including an
+#'   intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b11 <- function(x, ...) {
@@ -292,10 +293,10 @@ vcovDA <- function(x, ...) {
 #'   ith cluster in the direct adjustment model, and \eqn{\upsilon} and
 #'   \eqn{\zeta_i} are the conditional mean function and linear predictor for
 #'   the ith cluster in the covariance model.
-#' @return \code{.get_a12()}: A \eqn{(p+1)\times2} matrix where the number of
-#'   rows are given by the number of terms in the covariance model (\eqn{p}) and
-#'   an Intercept term, and the number of columns are given by the treatment and
-#'   intercept terms in the direct adjustment model
+#' @return \code{.get_a12()}: A \eqn{2\times p} matrix where the number of
+#'   rows are given by intercept and treatment variable terms in the direct
+#'   adjusted model, and the number of columns are given by the number of terms
+#'   in the covariance model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
@@ -336,7 +337,7 @@ vcovDA <- function(x, ...) {
   } else {
     Qmat_clustered <- Reduce(rbind, by(Qmat, uoas, colSums))
     Cmat_clustered <- Reduce(rbind, by(sl@prediction_gradient, uoas, colSums))
-    out <- crossprod(Cmat_clustered, Qmat_clustered)
+    out <- crossprod(Qmat_clustered, Cmat_clustered)
   }
 
   return(out)
