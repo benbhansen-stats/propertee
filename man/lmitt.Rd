@@ -60,4 +60,19 @@ in this scenario would be \code{weights=} to pass \code{ate()} or
 Alternatively, \code{obj} can be a pre-created \code{lm} object. No
 modification is made to the formula of the object. See the help for
 \code{as.lmitt()} for details of this conversion.
+
+Note that although the \code{Design} creation functions (e.g.
+\code{rct_design()}) take an optional \code{subset=} argument used in the
+creation of the \code{Design}, this is \bold{not} the same as the
+\code{subset=} argument passed to \code{lm()} or \code{lmitt()}. The
+\code{subset=} argument when creating a \code{Design} restricts the data
+used to generate the \code{Design}, but has no direct impact on the future
+\code{lm()} or \code{lmitt()} calls using that \code{Design}. (It can
+indirectly have an impact by excluding particular clusters/units of
+assignment from recieving a treatment assignment and thus complete case
+analysis removes them from the model.)
+
+On the other hand, the \code{subset=} argument in \code{lm()} or
+\code{lmitt()} refers only to subsetting the \code{data} argument passed
+into \code{lm()} or \code{lmitt()}.
 }

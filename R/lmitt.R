@@ -27,6 +27,20 @@
 ##' modification is made to the formula of the object. See the help for
 ##' \code{as.lmitt()} for details of this conversion.
 ##'
+##' Note that although the \code{Design} creation functions (e.g.
+##' \code{rct_design()}) take an optional \code{subset=} argument used in the
+##' creation of the \code{Design}, this is \bold{not} the same as the
+##' \code{subset=} argument passed to \code{lm()} or \code{lmitt()}. The
+##' \code{subset=} argument when creating a \code{Design} restricts the data
+##' used to generate the \code{Design}, but has no direct impact on the future
+##' \code{lm()} or \code{lmitt()} calls using that \code{Design}. (It can
+##' indirectly have an impact by excluding particular clusters/units of
+##' assignment from recieving a treatment assignment and thus complete case
+##' analysis removes them from the model.)
+##'
+##' On the other hand, the \code{subset=} argument in \code{lm()} or
+##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
+##' into \code{lm()} or \code{lmitt()}.
 ##' @param obj A \code{formula} or a \code{lm} object. See details.
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in the model (e.g. passed as an
@@ -79,11 +93,8 @@ lmitt.formula <- function(obj,
     new_d_call <- paste0(des_call, "(",
                          "formula = ", deparse(design),
                          ", data = ", deparse(mf$data))
-    # If user passed subset or dichotomy, include those. We do this so the
+    # If user passed dichotomy, include it. We do this so the
     # `design@call` will be in agreement.
-#    if (!is.null(mf$subset)) {
-#      new_d_call <- paste0(new_d_call, ", subset = ", deparse(mf$subset))
-#    }
     if (!is.null(mf$dichotomy)) {
       new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(mf$dichotomy))
     }
