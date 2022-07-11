@@ -63,7 +63,9 @@
   if (sys.call(-1)[[1]] != "cov_adj") {
     covadj_design <- .find.design("offset")
   }
-  found_lmitt <- grepl("^lmitt$", lapply(sys.calls(), "[[", 1))
+  # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
+  # will that be converted into an actual design
+  found_lmitt <- grepl("^lmitt\\.formula$", lapply(sys.calls(), "[[", 1))
   if (any(found_lmitt)) {
     lmitt_design <- get("design", sys.frame(which(found_lmitt)[1]))
     # If its not a real design, return NULL
