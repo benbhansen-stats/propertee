@@ -123,6 +123,19 @@ in this scenario would be <code>weights=</code> to pass <code><a href="WeightCre
 <p>Alternatively, <code>obj</code> can be a pre-created <code>lm</code> object. No
 modification is made to the formula of the object. See the help for
 <code><a href="as_lmitt.html">as.lmitt()</a></code> for details of this conversion.</p>
+<p>Note that although the <code>Design</code> creation functions (e.g.
+<code><a href="Design_objects.html">rct_design()</a></code>) take an optional <code>subset=</code> argument used in the
+creation of the <code>Design</code>, this is <b>not</b> the same as the
+<code>subset=</code> argument passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code>. The
+<code>subset=</code> argument when creating a <code>Design</code> restricts the data
+used to generate the <code>Design</code>, but has no direct impact on the future
+<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code> calls using that <code>Design</code>. (It can
+indirectly have an impact by excluding particular clusters/units of
+assignment from recieving a treatment assignment and thus complete case
+analysis removes them from the model.)</p>
+<p>On the other hand, the <code>subset=</code> argument in <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or
+<code>lmitt()</code> refers only to subsetting the <code>data</code> argument passed
+into <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
