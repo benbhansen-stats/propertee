@@ -21,9 +21,12 @@ test_that("lmitt and lm return the same in simple cases", {
 
   ml <- lm(y ~ z, data = simdata, weights = ate(des))
   da <- lmitt(y ~ z, data = simdata, weights = ate(des))
+  ml2da <- lmitt(ml)
 
   expect_true(all(da$coef == ml$coef))
+  expect_true(all(da$coef == ml2da$coef))
   expect_identical(da$model$`(weights)`, ml$model$`(weights)`)
+  expect_identical(da$model$`(weights)`, ml2da$model$`(weights)`)
 
   ml <- lm(y ~ z, data = simdata, weights = ett(des))
   da <- lmitt(y ~ z, data = simdata, weights = ett(des))
