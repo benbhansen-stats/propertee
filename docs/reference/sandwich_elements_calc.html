@@ -86,35 +86,36 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p><code>.get_b12()</code>: A \(p\times k\) matrix where \(p\) is the
-number of terms in the covariance model and \(k\) is the number of terms
-in the <code>DirectAdjusted</code> model</p>
+<p><code>.get_b12()</code>: A \(p\times 2\) matrix where the number of rows
+are given by the number of terms in the covariance model and the number of
+columns correspond to intercept and treatment variable terms in the direct
+adjustment model</p>
 
 
-<p><code>.get_a22_inverse()</code>: A \(1\times1\) matrix</p>
+<p><code>.get_a22_inverse()</code>: A \(2\times 2\) matrix where the
+dimensions are given by the intercept and treatment variable terms in the
+direct adjustment model</p>
 
 
-<p><code>.get_b22()</code>: A \((p+1)\times(p+1)\) matrix where the
-dimensions are given by the number of terms in the <code>DirectAdjusted</code> model
-(\(p\)) and an Intercept term. This should be a \(2\times2\) matrix
-given the dichotomous handling of treatment variables in this package and
-the use of the covariance model to offer the covariance adjustment.</p>
+<p><code>.get_b22()</code>: A \(2\times 2\) matrix where the
+dimensions are given by the intercept and treatment variable terms in the
+direct adjustment model</p>
 
 
-<p><code>.get_a11_inverse()</code>: A \((p+1)\times(p+1)\) matrix where the
+<p><code>.get_a11_inverse()</code>: A \(p\times p\) matrix where the
 dimensions are given by the number of terms in the covariance model
-(\(p\)) and an Intercept term.</p>
+including an intercept</p>
 
 
-<p><code>.get_b11()</code>: A \((p+1)\times(p+1)\) matrix the dimensions are
-given by the number of terms in the covariance model (\(p\)) and an
-Intercept term</p>
+<p><code>.get_b11()</code>: A \(p\times p\) matrix where the dimensions are
+given by the number of terms in the covariance model including an
+intercept</p>
 
 
-<p><code>.get_a12()</code>: A \((p+1)\times2\) matrix where the number of
-rows are given by the number of terms in the covariance model (\(p\)) and
-an Intercept term, and the number of columns are given by the treatment and
-intercept terms in the direct adjustment model</p>
+<p><code>.get_a12()</code>: A \(2\times p\) matrix where the number of
+rows are given by intercept and treatment variable terms in the direct
+adjusted model, and the number of columns are given by the number of terms
+in the covariance model</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

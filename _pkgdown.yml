@@ -8,20 +8,20 @@ reference:
 - subtitle: Functions to create or interact with a Design object
 - contents:
     - rct_design
+    - unitid
     - .new_Design
     - .check_design_formula
     - .update_form_to_unit_of_assignment
     - .rename_model_frame_columns
-    - unitid
 - subtitle: Accessors/Replacers for Design
 - contents:
     - treatment
+    - dichotomy
     - .bin_txt
     - .apply_dichotomy
     - .convert_to_data.frame
     - .update_structure
     - .update_call_formula
-    - dichotomy
 - subtitle: Helper functions for extracting useful information
 - contents:
     - var_names
@@ -29,6 +29,8 @@ reference:
     - treatment_table
     - design_data_concordance
     - is_dichotomized
+    - structure
+    - show,DesignStructure-method
 - subtitle: Conversion between Design types
 - contents:
     - as_rct_design
