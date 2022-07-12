@@ -33,6 +33,7 @@ Collate:
     'CombinedWeightedDesign.R'
     'DesignAccessors.R'
     'DesignConverters.R'
+    'DesignStructure.R'
     'DesignUtilities.R'
     'DirectAdjusted.R'
     'SandwichLayer.R'

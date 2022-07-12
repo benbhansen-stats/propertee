@@ -2,16 +2,16 @@
 % Please edit documentation in R/Design.R
 \name{show,Design-method}
 \alias{show,Design-method}
-\title{Show a Design}
+\title{Show a \code{Design}}
 \usage{
 \S4method{show}{Design}(object)
 }
 \arguments{
-\item{object}{Design object}
+\item{object}{\code{Design} object}
 }
 \value{
 an invisible copy of \code{object}
 }
 \description{
-Show a Design
+Show a \code{Design}
 }

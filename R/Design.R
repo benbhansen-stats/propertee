@@ -312,8 +312,8 @@ obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
                      dichotomy = dichotomy))
 }
 
-##' @title Show a Design
-##' @param object Design object
+##' @title Show a \code{Design}
+##' @param object \code{Design} object
 ##' @return an invisible copy of \code{object}
 ##' @export
 setMethod("show", "Design", function(object) {
