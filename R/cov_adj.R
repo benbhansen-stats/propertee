@@ -22,6 +22,23 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
        })
   }
 
+  if (is.null(design)) { ### I moved this up here
+    design <- .get_design(NULL_on_error = TRUE)
+  }
+
+  if(!is.null(design)) ### added this
+    ##if(design@type=='RD') ## I think we want to set Z=0 for all design types, right?
+  {
+    trt_name <- var_names(design,'t')
+    if(trt_name %in% names(newdata))
+      if(is.numeric(newdata[[trt_name]])){
+        newdata[[trt_name]] <- 0 ## are the scenarios where 0 is not the control value?
+      } else if(is.logical(newdata[[trt_name]])){
+        newdata[[trt_name]] <- FALSE
+      } else warning(paste("The treatment variable is in the covariance adjustment model,",
+                           "and is neither logical or numeric; for now, partial residuals",
+                           "only implemented for logical or numeric treatments"))
+  }
 
   ca_and_grad <- .get_ca_and_prediction_gradient(model, newdata)
   psl <- new("PreSandwichLayer",
@@ -29,9 +46,6 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
              fitted_covariance_model = model,
              prediction_gradient = ca_and_grad$prediction_gradient)
 
-  if (is.null(design)) {
-    design <- .get_design(NULL_on_error = TRUE)
-  }
 
   if (is.null(design)) {
     return(psl)
