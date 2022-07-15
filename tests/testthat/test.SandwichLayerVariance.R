@@ -19,7 +19,7 @@ test_correct_b12 <- function(m) {
     sort = FALSE)[paste0(zname, ".y")])
   m_eqns <- Reduce(
     rbind,
-    by((m$weights * m$residuals * model.matrix(m))[msk, ],
+    by((m$weights * m$residuals * model.matrix(m))[msk, , drop = FALSE],
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
@@ -143,6 +143,36 @@ test_that(paste(".get_b12 returns expected B_12 for experimental",
 
   expect_equal(dim(.get_b12(m)), c(2, 3))
   expect_true(all(.get_b12(m) == 0))
+})
+
+test_that(paste(".get_b12 returns 0 when there's only one cluster overlapping",
+                "between the covariance and direct adjustment model samples"), {
+  data(simdata)
+  cmod <- lm(y ~ x, simdata, subset = cid1 == 1)
+  des <- rct_design(z ~ cluster(cid1), simdata, subset = simdata$cid1 %in% c(1, 5))
+
+  msk <- simdata$cid1 %in% c(1, 5)
+  m <- as.lmitt(
+    lm(y ~ z, simdata[msk,],
+       weights = ate(des, data = simdata[msk,]),
+       offset = cov_adj(cmod, newdata = simdata[msk,]))
+  )
+
+  b12 <- .get_b12(m)
+  expect_equal(dim(b12), c(2, 2))
+  expect_equal(b12, matrix(0, nrow = 2, ncol = 2))
+})
+
+test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
+                "included in the direct adjustment model"), {
+  data(simdata)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+
+  m <- as.lmitt(lm(y ~ z - 1, simdata, weights = ate(des),
+                   offset = cov_adj(cmod)))
+
+  test_correct_b12(m)
 })
 
 test_that(".get_a22_inverse returns correct value for lm", {
@@ -641,6 +671,22 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   expect_equal(.get_b11(m, cadjust = FALSE), expected)
 })
 
+test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
+  data(simdata)
+  cmod <- lm(y ~ x, simdata, subset = cid1 == 1)
+  des <- rct_design(z ~ cluster(cid1), simdata, subset = simdata$cid1 %in% c(1, 5))
+
+  msk <- simdata$cid1 %in% c(1, 5)
+  m <- as.lmitt(
+    lm(y ~ z, simdata[msk,],
+       weights = ate(des, data = simdata[msk,]),
+       offset = cov_adj(cmod, newdata = simdata[msk,]))
+  )
+
+  expect_equal(.get_b11(m, type = "HC0", cadjust = FALSE),
+               crossprod(stats::model.matrix(cmod) * cmod$residuals))
+})
+
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clustering", {
   data(simdata)
 
@@ -652,8 +698,8 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clusterin
   uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
                         stats::expand.model.frame(m, uoanames)[, uoanames]))
 
-  Qmat <- Reduce(rbind, by(-m$weights * stats::model.matrix(m), uoas, colSums))
-  Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
+  Qmat <- m$weights * stats::model.matrix(m)
+  Cmat <- stats::model.matrix(cmod)
 
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(2, 3))
@@ -668,9 +714,12 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clusteri
   des <- rct_design(z ~ unitid(uid), data = simdata)
   m <- as.lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
 
+  Qmat <- m$weights * stats::model.matrix(m)
+  Cmat <- stats::model.matrix(cmod)
+
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(2, 2))
-  expect_equal(a21, crossprod(-m$weights * stats::model.matrix(m), stats::model.matrix(cmod)))
+  expect_equal(a21, crossprod(Qmat, Cmat))
 })
 
 test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clustering", {
@@ -687,9 +736,8 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
                         stats::expand.model.frame(m, uoanames)[, uoanames]))
 
-  Qmat <- Reduce(rbind, by(-m$weights * m$family$mu.eta(m$linear.predictors) *
-                             stats::model.matrix(m), uoas, colSums))
-  Cmat <- Reduce(rbind, by(stats::model.matrix(cmod), uoas, colSums))
+  Qmat <- m$weights * m$family$mu.eta(m$linear.predictors) * stats::model.matrix(m)
+  Cmat <- stats::model.matrix(cmod)
 
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(2, 3))
@@ -753,7 +801,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- -crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(C, Xstar * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
@@ -784,14 +832,14 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   ## of tau_hat == sandwich package estimate
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               a22inv %*%
+               (1 / nq) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
-              diag(sandwich::sandwich(damod))[1])
+              (1 / nq) * diag(sandwich::sandwich(damod))[1])
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               diag(sandwich::sandwich(damod))[2])
+               (1 / nq) * diag(sandwich::sandwich(damod))[2])
 
   ## DA model should have smaller variances than onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
@@ -847,7 +895,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- -crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(C, Xstar * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
@@ -877,12 +925,12 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               a22inv %*%
+               (1 / nq) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
-                  diag(sandwich::sandwich(damod))))
+                  (1 / nq) * diag(sandwich::sandwich(damod))))
 
   ## DA model should have smaller variances than onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
@@ -938,10 +986,7 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(C * damod$weights, C))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- -crossprod(
-    Reduce(rbind, by(C, damod_df$cid, colSums)),
-    Reduce(rbind, by(Xstar * damod$weights, damod_df$cid, colSums))
-  )
+  a21 <- crossprod(C, Xstar * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
@@ -968,16 +1013,16 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   ## variance of vcovDA estimates != sandwich package estimates
   # confirm matrix multiplication for vcovDA is what we expect
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               a22inv %*%
+               (1 / nq) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
-                diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
+                (1 / nq) * diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
                                         cluster = factor(damod_df$cid),
                                         cadjust = FALSE))[1])
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
+               (1 / nq) * diag(sandwich::sandwich(damod, meat. = sandwich::meatCL,
                                        cluster = factor(damod_df$cid),
                                        cadjust = FALSE))[2])
 })

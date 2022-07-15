@@ -40,7 +40,7 @@ vcovDA <- function(x, ...) {
       (crossprod(b12, a11inv) %*% t(a21)) +
       (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
   )
-  vmat <- a22inv %*% meat %*% a22inv
+  vmat <- (1 / nq) * a22inv %*% meat %*% a22inv
 
   return(vmat)
 }
@@ -74,20 +74,30 @@ vcovDA <- function(x, ...) {
   uoanames <- var_names(x@Design, "u")
   zname <- var_names(x@Design, "t")
 
-  # Sum est eqns to cluster level; since non-overlapping rows are NA they are
-  # excluded automatically in `by` call
-  cmod_eqns <- Reduce(
-    rbind,
-    by(sandwich::estfun(sl@fitted_covariance_model),
-       lapply(uoanames, function(col) sl@keys[, col]),
-       colSums))
-
-  # cmod_eqns will be NULL if there's no overlap, so no need to continue
-  if (is.null(cmod_eqns)) {
+  # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0
+  if (ncol(sl@keys) == 1) {
+    uoas <- sl@keys[, 1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+    uoas[grepl("NA", uoas)] <- NA_integer_
+  }
+  
+  nuoas <- length(unique(uoas))
+  if (nuoas == 1) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
   }
+  
+  # Sum est eqns to cluster level; since non-overlapping rows are NA they are
+  # excluded automatically in `by` call
+  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
+  cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
+  cmod_eqns <- Reduce(
+    rbind,
+    by(cmod_estfun,
+       lapply(uoanames, function(col) sl@keys[, col]),
+       cmod_aggfun))
 
   # get overlapping rows from experimental data joining with `keys`
   lmitt_uoas <- stats::expand.model.frame(x, uoanames)
@@ -99,11 +109,13 @@ vcovDA <- function(x, ...) {
     sort = FALSE)
 
   msk <- !is.na(lmitt_uoas[, paste0(zname, ".y")])
+  damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
+  damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
   dmod_eqns <- Reduce(
     rbind,
-    by(sandwich::estfun(x)[msk, ],
+    by(damod_estfun,
        lapply(uoanames, function(col) lmitt_uoas[msk, col]),
-       colSums))
+       damod_aggfun))
 
   return(crossprod(cmod_eqns, dmod_eqns))
 }
@@ -271,6 +283,12 @@ vcovDA <- function(x, ...) {
     nas <- is.na(uoas)
     uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
     uoas <- factor(uoas)
+    nuoas <- length(unique(uoas))
+    
+    # if the covariance model only uses one cluster, treat units as independent
+    if (nuoas == 1) {
+      uoas <- seq_len(length(uoas))
+    }
     dots$cluster <- uoas
   }
   dots$x <- cmod
@@ -317,10 +335,11 @@ vcovDA <- function(x, ...) {
     } else {
       dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
     }
-    Qmat <- -x$weights / dispersion * x$family$mu.eta(x$linear.predictors) *
+    Qmat <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors) *
       stats::model.matrix(x)
   } else {
-    Qmat <- -x$weights * stats::model.matrix(x)
+    wts <- if (is.null(x$weights)) 1 else x$weights
+    Qmat <- wts * stats::model.matrix(x)
   }
 
   # Get units of assignment for clustering
@@ -332,13 +351,8 @@ vcovDA <- function(x, ...) {
     uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
   }
 
-  if (length(levels(uoas)) == 1) {
-    out <- crossprod(sl@prediction_gradient, Qmat)
-  } else {
-    Qmat_clustered <- Reduce(rbind, by(Qmat, uoas, colSums))
-    Cmat_clustered <- Reduce(rbind, by(sl@prediction_gradient, uoas, colSums))
-    out <- crossprod(Qmat_clustered, Cmat_clustered)
-  }
+  nuoas <- length(levels(uoas))
+  out <- crossprod(Qmat, sl@prediction_gradient)
 
   return(out)
 }
