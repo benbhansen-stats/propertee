@@ -1,0 +1,555 @@
+---
+title: "Covariance-adjusted standard errors in a clustered longitudinal setting"
+author: "Josh Wasserman"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Covariance-adjusted standard errors in a clustered longitudinal setting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+date: "July 2022"
+---
+
+```{r setup, echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE}
+library(stats)
+library(testthat)
+library(geex)
+devtools::load_all()
+```
+
+## Covariance-Adjusted Sandwich Variance Estimator with Varying Samples for the Covariance and Direct Adjustment Models
+
+We extend the work of Carroll et al. and Stefanski and Boos to derive the
+covariance-adjusted sandwich variance estimator when two potentially different
+samples are used to fit the covariance and direct adjustment models. We pay
+additional attention here to the setting with clustered longitudinal data.
+
+To refresh the reader of (or introduce them to) the authors' notation,
+$\theta = \begin{pmatrix}\beta\ & \tau\end{pmatrix}$ is a parameter vector
+where $\beta$ is a $p\text{x}1$ vector of nuisance parameters
+associated with factors $\textbf{x}$ known or suspected to co-vary with the potential outcomes,
+and $\tau$ is a $2\text{x}1$ vector of an intercept term for the direct adjustment
+model and the intent-to-treat effect. The covariance model regression solves the set of estimating equations of the form
+specified by $\phi$ for $\beta$, and the direct adjustment regression solves another
+set of estimating equations given by $\psi$ for $\tau$.
+These regressions can be considered as a set of stacked M-estimating equations $G(\theta)$,
+following the notation of Stefanski and Boos.
+
+The data in this clustered longitudinal setting are triple indexed by unit, time
+period and cluster. Units are members of clusters, and at each of $T$ time periods,
+new clusters are introduced to the design, some of which may be exposed to the
+treatment. Clusters then may be viewed as treatment cohorts measured over $T_{i}$ time periods, with the first cohort measured for $T_{1} - T_{n}$ more time periods than
+the $n$th cohort. Since treatment assignment is invariant over time,
+we need not worry about units appearing in both treatment groups and confounding
+fixed effects estimation of the intent-to-treat effect. It is important to note that
+clusters that do not participate in the quasiexperiment
+may still be used to fit the covariance model, so the number of clusters in that
+sample will be denoted $n_{C}$, with each cluster consisting
+of $m_{i}$ units such that $m_{C} = \sum_{i=1}^{n_{C}}T_{i}m_{i}$. The number of
+clusters in the quasiexperiment--and thus used to fit the direct adjustment model--will
+be denoted $n_{Q}$, with each cluster
+consisting of $m_{i}$ units such that $m_{Q} = \sum_{i=1}^{n_{Q}}T_{i}m_{i}$. To provide
+further notational clarity, we denote data points in the covariance model sample
+with an asterisk--this will be most beneficial in the derivation of the variance
+estimator when we will be dealing with the variance-covariance matrix of the two
+sets of estimating equations. Now, we define $G(\theta)$:
+
+$$
+\begin{split}
+G(\theta) &= \begin{pmatrix}
+m_{C}^{-1}\sum_{i=1}^{n_{C}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\phi(y_{ijt}^{*}; \textbf{x}_{ijt}^{*}, \beta) \\
+m_{Q}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\psi(y_{ijt}; \textbf{x}_{ijt}, \textbf{z}_{ijt}, \beta, \tau)
+\end{pmatrix}
+\end{split}
+$$
+
+### Deriving the Scaling Factors for the Components of the Variance Estimator
+
+Stefanski and Boos show the asymptotic variance of $\hat{\theta}$, $\text{Cov}(\hat{\theta})$,
+is $n^{-1}A^{-1}BA^{-T}$, where $A$ is a 2x2 block matrix corresponding to the negative
+Fisher information for the estimating equations, and $B$ is their variance-covariance matrix.
+Carroll et al. derive this estimator in the covariance adjustment setting where a single sample is used to estimate $\theta$. Since we derive the variance estimator for scenarios where this is not the case, we need to determine the scaling factors more carefully.
+In the following derivation, we will not specify regression forms for
+$\phi(y_{ijt}^{*}; \textbf{x}_{ijt}^{*}, \beta)$ and
+$\psi(y_{ijt}; \textbf{x}_{ijt}, \textbf{z}_{ijt}, \beta, \tau)$, and for ease
+of notation, we will shorten them to $\phi_{ijt}$ and $\psi_{ijt}$, respectively.
+Also, in addition to previous notation, let $n_{QC}$ be the number of clusters present in both the covariance model and
+direct adjustment model samples, with $m_{QC} = \sum_{i=1}^{n_{QC}}T_{i}m_{i}$.
+The $A$ and $B$ matrices can then be written as:
+$$
+\begin{split}
+A &= -\frac{\partial}{\partial\theta}G(\theta) \\\\ &=
+-\begin{pmatrix}
+{m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}] &
+0 \\
+{m_{Q}}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\beta^{T}}] &
+{m_{Q}}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]
+\end{pmatrix} \\\\
+B &=
+\text{Cov}(G(\theta)) \\\\ &=
+\begin{pmatrix}
+{m_{C}}^{-1}({m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\phi_{ijt}\phi_{ijt}^{T}) &
+\frac{m_{QC}}{m_{C}m_{Q}}(m_{QC}^{-1}\sum_{i=1}^{n_{QC}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\phi_{ijt}\psi_{ijt}^{T}) \\
+\frac{m_{QC}}{m_{C}m_{Q}}(m_{QC}^{-1}\sum_{i=1}^{n_{QC}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\psi_{ijt}\phi_{ijt}^{T}) &
+{m_{Q}}^{-1}(m_{Q}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\psi_{ijt}\psi_{ijt}^{T})
+\end{pmatrix}
+\end{split}
+$$
+
+Using block matrix inversion, $A^{-1}$ and $A^{-T}$, can be shown to be:
+$$
+\begin{split}
+A^{-1} &=
+\begin{pmatrix}
+-\big{(}{m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}]\big{)}^{-1} & 0 \\
+\big{(}{m_{Q}}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]\big{)}^{-1}
+\big{(}{m_{Q}}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{jjt}}{\partial\beta^{T}}]\big{)}
+\big{(}{m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}]\big{)}^{-1} &
+-\big{(}m_{Q}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]\big{)}^{-1}
+\end{pmatrix} \\\\
+A^{-T} &=
+\begin{pmatrix}
+-\big{(}{m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}]\big{)}^{-1} &
+\big{(}{m_{C}}^{-1}\sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}]\big{)}^{-1}
+\big{(}{m_{Q}}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\beta^{T}}]\big{)}^{T}
+\big{(}m_{Q}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]\big{)}^{-1} \\
+0 &
+-\big{(}m_{Q}^{-1}\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]\big{)}^{-1}
+\end{pmatrix}
+\end{split}
+$$
+
+As mentioned previously, Carroll et al. refer to the elements of the $A$ and $B$
+matrices as sums. For example, their $B_{11} = \sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\phi_{ijt}\phi_{ijt}^{T}$, and
+their $A_{22}^{-1} = (\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\theta^{T}}])^{-1}$.
+`flexida`'s suite of internal functions for computing these elements block matrices follow
+Carroll et al.'s definitions, so the scaling factors need to be properly accounted for in
+the complete calculation of $\text{Cov}(\hat{\theta})$.
+We derive the covariance-adjusted sandwich variance estimate 
+below using those matrix definitions and append the appropriate scaling factors.
+Since the variance of the intent-to-treat effect estimate $\text{Cov}(\hat{\tau})$ can be estimated by
+$\text{Cov}(\hat{\theta})_{22}$, we replace elements of the intermediary matrices that are tangential
+to that calculation with dots:
+$$
+\begin{split}
+\text{Cov}(\hat{\theta}) &=
+m_{Q}^{-1}\begin{pmatrix}
+. & . \\
+m_{C}^{-1}A_{22}^{-1}A_{21}A_{11}^{-1}B_{11} - m_{C}^{-1}A_{22}^{-1}B_{21} &
+m_{Q}^{-1}A_{22}^{-1}A_{21}A_{11}^{-1}B_{12} - m_{Q}^{-1}A_{22}^{-1}B_{22}
+\end{pmatrix}
+\begin{pmatrix}
+. & m_{C}A_{11}^{-1}A_{21}^{T}A_{22}^{-1} \\ . & -m_{Q}A_{22}^{-1}
+\end{pmatrix} \\ &=
+m_{Q}^{-1}\begin{pmatrix}
+. & . \\ . &
+A_{22}^{-1}A_{21}A_{11}^{-1}B_{11}A_{11}^{-1}A_{21}^{T}A_{22}^{-1} - 
+A_{22}^{-1}B_{21}A_{11}^{-1}A_{21}^{T}A_{22}^{-1} -
+A_{22}^{-1}A_{21}A_{11}^{-1}B_{12}A_{22}^{-1} +
+A_{22}^{-1}B_{22}A_{22}^{-1}
+\end{pmatrix} \\\\
+\text{Cov}(\hat{\tau}) &=
+m_{Q}^{-1}A_{22}^{-1}\Big{(}
+B_{22} - 
+B_{21}A_{11}^{-1}A_{21}^{T} -
+A_{21}A_{11}^{-1}B_{12} +
+A_{21}A_{11}^{-1}B_{11}A_{11}^{-1}A_{21}^{T}\Big{)}A_{22}^{-1}
+\end{split}
+$$
+
+### Block Components of the Sandwich Variance Estimator
+
+We now derive the blocks of the $A$ and $B$ matrices in the case where $G(\theta)$
+is solved using two OLS regressions. The direct adjusted model will be fit using weights
+appropriate for the intent-to-treat effect target, and though in practice the covariance
+model may be fit with weights, we complete the derivations without them because the
+decision to include such weights is immaterial to the primary estimation goal.
+$\phi(y_{ijt}^{*}; \textbf{x}_{ijt}^{*}, \beta)$ and
+$\psi(y_{ijt}; \textbf{x}_{ijt}, \textbf{z}_{ijt}, \beta, \tau)$ can be written as:
+$$
+\begin{split}
+\phi(y_{ijt}^{*}; \textbf{x}_{ijt}^{*}, \beta) = \phi_{ijt} &= (y_{ijt}^{*} - \beta^{T}\textbf{x}_{ijt}^{*})\textbf{x}_{ijt}^{*} \\
+\psi(y_{ijt}; \textbf{x}_{ijt}, \textbf{z}_{ijt}, \beta, \tau) = \psi_{ijt} &= w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}
+\end{split}
+$$
+
+Matrices such as the full design matrices for the regressions given by $\phi$ and $\psi$
+will be denoted using capital letters, while vectors will be denoted using bold font.
+We will have need to display cluster-level vectors and matrices that have been
+formed from the appropriate units. These will be indexed by a single letter $i$;
+matrices including either the entire covariance model or direct adjustment model
+sample will have no subscript. With this notation, we derive each block of the
+$A$ and $B$ matrices:
+$$
+\begin{split}
+A_{11}^{-1} &=
+-\Big{(}\sum_{i=1}^{n_{C}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial\phi_{ijt}}{\partial\beta^{T}}]\Big{)}^{-1} \\ &=
+-\Big{(}\sum_{i=1}^{n_{C}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial}{\partial\beta^{T}}(y_{ijt}^{*} - \beta^{T}\textbf{x}_{ijt}^{*})\textbf{x}_{ijt}^{*}]\Big{)}^{-1} \\ &=
+\Big{(}\sum_{i=1}^{n_{C}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\textbf{x}_{ijt}^{*}\textbf{x}_{ijt}^{*T}]\Big{)}^{-1} \\ &=
+(X^{*T}X^{*})^{-1} \\\\
+A_{21} &=
+-\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial\psi_{ijt}}{\partial\beta^{T}}] \\ &=
+-\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial}{\partial\beta^{T}}w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}] \\ &=
+\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[w_{ijt}\textbf{z}_{ijt}\textbf{x}_{ijt}^{T}] \\ &=
+Z^{T}WX \\\\
+A_{22}^{-1} &=
+-\Big{(}\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial\psi_{ijt}}{\partial\tau^{T}}]\Big{)}^{-1} \\ &=
+-\Big{(}\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[\frac{\partial}{\partial\tau^{T}}w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}]\Big{)}^{-1} \\ &=
+\Big{(}\sum_{i=1}^{n_{Q}}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}E[w_{ijt}\textbf{z}_{ijt}\textbf{z}_{ijt}^{T}]\Big{)}^{-1} \\ &=
+(Z^{T}WZ)^{-1} \\\\
+B_{11} &=
+\sum_{i=1}^{n_{C}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\phi_{ijt}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T}\phi_{ijt}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{C}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}(y_{ijt}^{*} - \beta^{T}\textbf{x}_{ijt}^{*})\textbf{x}_{ijt}^{*}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}(y_{ijt}^{*} - \beta^{T}\textbf{x}_{ijt}^{*})\textbf{x}_{ijt}^{*}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{C}}X_{i}^{T}(\textbf{y}_{i} - X_{i}\beta)(\textbf{y}_{i} - X_{i}\beta)^{T}X_{i} \\\\
+B_{12} &=
+\sum_{i=1}^{n_{QC}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\phi_{ijt}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\psi_{ijt}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{QC}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T}(y_{ijt} - \beta^{T}\textbf{x}_{ijt})\textbf{x}_{ijt}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{QC}}X_{i}^{T}(\textbf{y}_{i} - X_{i}\beta)(\textbf{w}_{i} \cdot (\textbf{y}_{i} - X_{i}\beta - Z_{i}\tau))^{T}Z_{i} \\\\
+B_{22} &=
+\sum_{i=1}^{n_{Q}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\psi_{ijt}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}\psi_{ijt}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{Q}}\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}\Big{)}
+\Big{(}\sum_{j=1}^{m_{i}}\sum_{t=1}^{T_{i}}w_{ijt}(y_{ijt} - \beta^{T}\textbf{x}_{ijt} - \tau^{T}\textbf{z}_{ijt})\textbf{z}_{ijt}\Big{)}^{T} \\ &=
+\sum_{i=1}^{n_{Q}}Z_{i}^{T}(\textbf{w}_{i} \cdot (\textbf{y}_{i} - X_{i}\beta - Z_{i}\tau))(\textbf{w}_{i} \cdot (\textbf{y}_{i} - X_{i}\beta - Z_{i}\tau))^{T}Z_{i}
+\end{split}
+$$
+
+### Validating the `flexida` Variance Estimates
+This section aims to validate `flexida`'s machinery for computing $\text{Cov}(\hat{\tau})$.
+
+#### Data Simulation and Model Fitting
+Suppose we have unit-level data for 4 evenly-sized clusters that comprise 2 identically matched pairs,
+one that is observed for 2 time periods and the other for only 1 time period:
+```{r data_simulation, echo = TRUE, eval = TRUE}
+set.seed(50)
+nc <- 4
+mi <- 20
+TT <- 2
+df <- rbind(
+  # matched pair 1
+  data.frame(
+    "cid" = rep(seq_len(2), each = mi * TT),
+    "uid" = rep(seq_len(mi), 2 * TT),
+    "z" = rep(c(0, 1), each = mi * TT),
+    "t" = rep(rep(seq_len(TT), each = mi), 2),
+    "x1" = rep(c(rep(0, mi * 0.8), rep(1, mi * 0.2)), nc / 2 * TT),
+    "x2" = rep(c(rep(0, mi * 0.5), rep(1, mi * 0.5)), nc / 2 * TT)),
+  # matched pair 2
+  data.frame(
+    "cid" = rep(seq_len(2) + 2, each = mi * (TT - 1)),
+    "uid" = rep(seq_len(mi), 2 * (TT - 1)),
+    "z" = rep(c(0, 1), each = mi * (TT - 1)),
+    "t" = rep(rep(seq_len(TT - 1) + 1, each = mi), 2),
+    "x1" = rep(c(rep(0, mi * 0.4), rep(1, mi * 0.6)), nc / 2 * (TT - 1)),
+    "x2" = rep(c(rep(0, mi * 0.6), rep(1, mi * 0.4)), nc / 2 * (TT - 1)))
+)
+print(table(paste0("cluster_", df$cid), paste0("x1_", df$x1)))
+print(table(paste0("cluster_", df$cid), paste0("x2_", df$x2)))
+```
+
+We generate $y$ such that it does not depend on $t$, but only depends on the covariates
+and the treatment assignment (which is orthogonal to the covariates). Thus, the error
+terms are uncorrelated within each unit, correlated but homoskedastic within each cluster
+and uncorrelated but heteroskedastic across cluster:
+```{r generate_y, echo = T, eval = T}
+theta <- c(75, 7.5, -1, 2.5)
+error_sd <- round(runif(nc, 1, 3), 1)
+icc <- 0.2
+eps <- rnorm(nrow(df))
+Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
+for (i in (seq_len(nc) - 1)) {
+  msk <- df$cid == (i + 1)
+  Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = sum(msk)) + icc
+}
+A <- chol(Sigma)
+eps <- t(A) %*% eps
+df$y <- model.matrix(~ x1 + x2 + z, df) %*% theta + eps
+```
+
+One way we might consider implementing covariance adjustment is by fitting the
+covariance model only to the control observations of the quasiexperimental
+sample:
+```{r fit_models, echo = TRUE, eval = TRUE}
+cmod_form <- y ~ x1 + x2
+damod_form <- y ~ z
+ctrl_idx <- df$z == 0
+
+cmod <- lm(cmod_form, df[ctrl_idx,])
+des <- rct_design(z ~ cluster(cid), df)
+damod <- as.lmitt(
+  lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
+)
+```
+
+#### Verifying `flexida`'s Block Matrix Outputs with Expected Outputs
+We derived the forms of the covariance-adjusted sandwich variance estimate matrix
+components previously, so we verify the outputs of `flexida`'s internal functions
+match those:
+```{r verify, echo = TRUE, eval = TRUE}
+Xstar <- model.matrix(cmod)
+X <- model.matrix(cmod_form, df)
+Z <- model.matrix(damod)
+mQ <- dim(Z)[1]
+
+a11inv <- solve(crossprod(Xstar, Xstar))
+a21 <- crossprod(Z * damod$weights, X)
+a22inv <- solve(crossprod(Z * damod$weights, Z))
+b11 <- crossprod(
+  Reduce(rbind, by(Xstar * cmod$residuals, df$cid[ctrl_idx], colSums))
+)
+b12 <- crossprod(
+  Reduce(rbind, by(Xstar * cmod$residuals, df$cid[ctrl_idx], colSums)),
+  Reduce(rbind,
+         by(Z[ctrl_idx,] * damod$residuals[ctrl_idx] * damod$weights[ctrl_idx],
+            df$cid[ctrl_idx],
+            colSums))
+)
+b22 <- crossprod(
+  Reduce(rbind, by(Z * damod$weights * damod$residuals, df$cid, colSums))
+)
+
+test_that("sandwich components match derivations", {
+  expect_equal(a11inv, .get_a11_inverse(damod))
+  
+  expect_equal(a21, .get_a21(damod))
+  
+  expect_equal(a22inv, .get_a22_inverse(damod))
+  
+  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  
+  expect_equal(b12, .get_b12(damod))
+
+  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+})
+```
+
+#### Verifying `flexida`'s Block Matrix Outputs to the `sandwich` Package
+We also verify our calculations with the `sandwich` package in the following
+three places:
+
+1. `sandwich::bread(damod)` returns $m_{Q}\cdot(ZWZ)^{-1}$, so we confirm
+$A_{22}^{-1}$ is equivalent to `sandwich::bread(damod) / m_{Q}`.
+2. `.get_b22(damod, ...)` is a wrapper around `sandwich::meatCL(damod, ...)` but
+automatically generates the appropriate `cluster` argument based on the `Design`
+object. Thus, we somewhat trivially confirm `B_{22}` is equivalent to `sandwich::meatCL(damod, cluster = df$cid) * m_{Q}`.
+3. We can test the above two points for the covariance model as well, using `sandwich::sandwich(cmod)` to validate $A_{11}^{-1}B_{11}A_{11}^{-1}$.
+
+```{r sandwich_verify, echo = TRUE, eval = TRUE}
+test_that("compare with sandwich components", {
+  expect_equal(a22inv, sandwich::bread(damod) / mQ)
+
+  expect_equal(b22,
+               sandwich::meatCL(damod, cluster = factor(df$cid),
+                                cadjust = FALSE,
+                                type = "HC0") * mQ)
+
+  expect_equal(a11inv %*% b11 %*% a11inv,
+               sandwich::sandwich(cmod,
+                                  meat. = sandwich::meatCL,
+                                  cluster = df$cid[ctrl_idx],
+                                  cadjust = FALSE,
+                                  type = "HC0"))
+})
+```
+
+#### Verifying `flexida`'s Variance Estimate to `geex`
+The `geex` package, developed by [Bradley Saul](https://bsaul.github.io/geex/),
+provides an interface for numerically approximating M-estimates and their
+variance-covariance matrices. This offers an apples-to-apples comparison to
+`flexida`'s variance estimates; we just need to define the estimating functions
+for the given setting as the `geex` package requires. Since the intercept terms
+in the covariance and direct adjustment models have perfect collinearity (and
+moreover, at the time of this writing a desirable analytical method for handling
+this is not clear), we fit the covariance model with an intercept but exclude
+one from the direct adjustment model:
+
+```{r geex_comparison, eval = TRUE, echo = TRUE}
+estFunc <- function(data, cmod_form, damod_form){
+  function(theta) {
+    # covariance model eqns for ctrl obs only
+    Xstar <- model.matrix(cmod_form, data)
+    p <- dim(Xstar)[2]
+    if (all(data$z == 0)) {
+      cmod_agg_func <- ifelse(p > 1, colSums, sum)
+      cmod_eqns <- cmod_agg_func(drop(data$y - Xstar %*% theta[1:p]) * Xstar)
+    } else {
+      cmod_eqns <- rep(0, p)
+    }
+    
+    # direct adjustment model eqns for full dataset
+    X <- model.matrix(cmod_form, data)
+    Z <- model.matrix(damod_form, data)
+    q <- dim(Z)[2]
+    damod_agg_func <- ifelse(q > 1, colSums, sum)
+    damod_eqns <- damod_agg_func(
+      drop(data$weight * (data$y - X %*% theta[1:p] - Z * theta[(p+1):(p+q)]))
+      * Z
+    )
+    
+    out <- c(cmod_eqns, damod_eqns)
+    return(out)
+  }
+}
+  
+geex_cmod_form <- y ~ x1 + x2
+p <- dim(model.matrix(geex_cmod_form, df))[2]
+geex_damod_form <- y ~ z - 1
+q <- dim(model.matrix(geex_damod_form, df))[2]
+geexRes <- geex::m_estimate(
+  estFunc,
+  data = cbind(df, "weight" = damod$weights),
+  units = "cid",
+  root_control = geex::setup_root_control(start = rep(0.1, p + q)),
+  outer_args = list(cmod_form = geex_cmod_form,
+                    damod_form = geex_damod_form)
+)
+
+test_that("compare with geex", {
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2] * mQ,
+               geexRes@vcov[4, 4])
+})
+```
+
+#### Heuristic Checks
+We now make heuristic checks of `flexida`'s covariance-adjusted variance
+estimates. The covariance-adjusted estimate changes the sandwich variance
+estimate of the direct adjustment model parameters by three terms that include
+$A_{22}^{-1}A_{21}$, which can be viewed as linear regression coefficients of
+the treatment assignment variable on the covariates in the direct adjustment
+sample. When the treatment assignment is perfectly balanced within each covariate,
+the covariance between the treatment variable and the covariates will be 0,
+resulting in zero regression adjustment to the variance estimate of the
+treatment effect estimate. Intuitively, the variance that may arise in the observed
+outcomes due to differences in the composition of the treatment and control groups
+is eliminated when the treatment is assigned in such a way that there *are* no
+compositional differences between the groups. Thus, in these scenarios, further
+covariance adjustment is unnecessary. The data we have simulated here represent
+one such scenario, since the clusters in the each matched pair are identical.
+As a result, `flexida`'s variance estimate for the treatment effect and the
+`sandwich` package's estimate should be equivalent:
+
+```{r no_change_reg_adjust, echo = TRUE, eval = TRUE}
+test_that("treatment effect variance unchanged by regression adjustment", {
+  expect_equal(
+    (a22inv %*% (
+      -t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
+        a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
+     ) %*% a22inv)[2, 2],
+    0)
+  
+  expect_equal(
+    (1 / mQ) * a22inv %*% (
+      b22 - t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
+        a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
+    ) %*% a22inv,
+    vcovDA(damod, cadjust = FALSE, type = "HC0")
+  )
+
+  expect_equal(
+    vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2],
+    (1 / mQ) * sandwich::sandwich(damod,
+                       meat = sandwich::meatCL,
+                       cluster = factor(df$cid),
+                       cadjust = FALSE,
+                       type = "HC0")[2, 2]
+  )
+})
+```
+
+Still, since we've generated $y$ such that there are no heterogeneous effects,
+then asymptotically (and, barring an unlikely sample of enough data points, in a
+simulated finite sample), covariance adjustment obtained from a model fit to
+only the control observations should reduce the unexplained variation to the
+same degree as a model that simultaneously estimates the effects of the
+treatment and covariates. Then, covariance adjustment's increase of the
+available degrees of freedom for variance estimation should result in a smaller
+variance estimate for the treatment effect than that from the larger model:
+
+```{r flexida_better, echo = TRUE, eval = TRUE}
+test_that("flexida has smaller variance estimate than big model", {
+  onemod <- lm(y ~ (x1 + x2)*z, data = df, weights = ate(des))
+
+  expect_true(sandwich::sandwich(onemod,
+                                 meat = sandwich::meatCL,
+                                 cluster = factor(df$cid),
+                                 cadjust = FALSE,
+                                 type = "HC0")[4, 4] >
+                vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2])
+})
+```
+
+#### Validation When Matched Pairs Are Not Identical
+Now, suppose we have data where matched pairs are not comprised of identical
+clusters. Note that we change the covariate values of a single data point in
+each treated cluster so the coefficients estimated by the covariance model
+remain the same as before. As a result, we would only expect modifications to
+$A_{21}$, and $B_{22}$ in `flexida` (and `geex`'s) variance
+calculation:
+
+```{r inexact_matched_pairs, echo = TRUE, eval = TRUE}
+df[df$cid == 2 & df$uid == 1, c("x1", "x2")] <- c(1, 1)
+df[df$cid == 4 & df$uid == 1, c("x1", "x2")] <- c(1, 1)
+df$y <- model.matrix(~ x1 + x2 + z, df) %*% theta + eps
+print(table(paste0("cluster_", df$cid), paste0("x1_", df$x1)))
+print(table(paste0("cluster_", df$cid), paste0("x2_", df$x2)))
+
+cmod <- lm(cmod_form, df[ctrl_idx,])
+des <- rct_design(z ~ cluster(cid), df)
+damod <- as.lmitt(
+  lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
+)
+mQ <- nrow(df)
+onemod <- lm(y ~ (x1 + x2)*z, data = df, weights = ate(des))
+
+test_that("only A21 and B22 change from before", {
+  expect_equal(.get_a11_inverse(damod), a11inv)
+  expect_equal(dim(.get_a21(damod)), dim(a21))
+  expect_true(any(.get_a21(damod) != a21))
+  expect_equal(.get_a22_inverse(damod), a22inv)
+  expect_equal(.get_b11(damod, type = "HC0", cadjust = FALSE), b11)
+  expect_equal(.get_b12(damod), b12)
+  expect_equal(dim(.get_b22(damod, type = "HC0", cadjust = FALSE)), dim(b22))
+  expect_true(any(.get_b22(damod, type = "HC0", cadjust = FALSE) != b22))
+})
+```
+
+`flexida`'s estimated variance of the treatment effect estimate should be larger
+than the `sandwich` package's, since $A_{22}^{-1}A_{21} \neq 0$ in this case.
+It should still be equivalent to the `geex` package, however, and the comparison
+to the larger model mentioned in the previous section should, in all likelihood,
+hold:
+
+```{r change_reg_adjust, echo = TRUE, eval = TRUE}
+test_that("regression adjustment increases estimated variance", {
+  expect_true(
+    (vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2] * mQ) >
+      sandwich::sandwich(damod,
+                         meat = sandwich::meatCL,
+                         cluster = factor(df$cid),
+                         cadjust = FALSE,
+                         type = "HC0")[2, 2]
+  )
+  
+  geexRes <- geex::m_estimate(
+    estFunc,
+    data = cbind(df, "weight" = damod$weights),
+    units = "cid",
+    root_control = geex::setup_root_control(start = rep(0.1, p + q)),
+    outer_args = list(cmod_form = geex_cmod_form,
+                      damod_form = geex_damod_form)
+  )
+
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2] * mQ,
+               geexRes@vcov[4, 4])
+
+  expect_true(sandwich::sandwich(onemod,
+                                 meat = sandwich::meatCL,
+                                 cluster = factor(df$cid),
+                                 cadjust = FALSE,
+                                 type = "HC0")[4, 4] >
+                vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2] * mQ)
+})
+```
