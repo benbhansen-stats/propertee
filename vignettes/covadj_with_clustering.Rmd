@@ -12,7 +12,7 @@ date: "July 2022"
 ```{r setup, echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE}
 library(stats)
 library(testthat)
-library(geex)
+devtools::install_github("bsaul/geex")
 devtools::load_all()
 ```
 
