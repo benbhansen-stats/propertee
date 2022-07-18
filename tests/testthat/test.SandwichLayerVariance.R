@@ -1055,3 +1055,105 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
                                        cluster = factor(df$cid[!is.na(df$cid)]),
                                        cadjust = FALSE))[2])
 })
+
+test_that(paste("HC0 vcovDA lm w/ clustering",
+                "imbalanced grps",
+                "no cmod/damod data overlap", sep = ", "), {
+  ## CLUSTERED DATA SIMULATION
+  set.seed(50)
+  nc <- nq <- 4
+  mi <- 16
+  
+  # generate one categorical and one continuous covariate
+  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
+  
+  df <- data.frame(
+    "cid" = c(rep(NA_integer_, nc * mi), rep(seq_len(nq), each = mi)),
+    "uid" = c(rep(NA_integer_, nc * mi), rep(seq_len(mi), nq)),
+    "z" = c(rep(0, nc * mi), rep(c(0, 1), each = mi, nq / 2)),
+    "x1" = c(mapply(function(x) c(rbinom(mi, 1, x), rbinom(mi, 1, x)), px1)),
+    "x2" = c(Reduce(cbind, Map(function(x) stats::rgamma(mi * 2, x), mux2)))
+  )
+
+  # generate clustered errors 
+  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
+  icc <- 0.2
+  eps <- stats::rnorm(nrow(df))
+  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
+  for (i in (seq_len(nc + nq) - 1)) {
+    msk <- (1 + i * mi):((i + 1) * mi)
+    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
+  }
+  A <- chol(Sigma)
+  eps <- t(A) %*% eps
+  
+  # generate y
+  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  cmod_form <- y ~ x1 + x2
+  damod_form <- y ~ z
+  
+  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[is.na(df$cid),])
+  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
+  C <- stats::model.matrix(as.formula(damod_form[-2]), df[!is.na(df$cid),])
+  
+  df$y <- c(
+    X %*% theta[-length(theta)] + eps[is.na(df$cid)], # cmod sample y
+    Xstar %*% theta[-length(theta)] + C[,2] * theta[length(theta)] +
+      eps[!is.na(df$cid)] # damod sample y
+  )
+  cmod <- lm(cmod_form, df[is.na(df$cid),])
+  des <- rct_design(z ~ cluster(cid), df[!is.na(df$cid),])
+  damod <- as.lmitt(
+    lm(damod_form, data = df[!is.na(df$cid),], weights = ate(des),
+       offset = cov_adj(cmod))
+  )
+  
+  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
+  a11inv <- solve(crossprod(X))
+  expect_equal(a11inv, .get_a11_inverse(damod))
+  b22 <- crossprod(
+    Reduce(rbind,
+           by(C * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
+              colSums))
+  )
+  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  a22inv <- solve(crossprod(C * damod$weights, C))
+  expect_equal(a22inv, .get_a22_inverse(damod))
+  a21 <- crossprod(C, Xstar * damod$weights)
+  expect_equal(a21, .get_a21(damod))
+  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  expect_equal(b12, .get_b12(damod))
+  b11 <- crossprod(X * cmod$residuals^2, X)
+  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  
+  ## COMPARE OUTPUTS TO SANDWICH
+  # after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(nq * mi * a22inv, sandwich::bread(damod))
+  
+  # after scaling, b22 is equivalent to sandwich::meatCL
+  expect_equal(b22 / (nq * mi),
+               sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
+                                cadjust = FALSE))
+  # check the cmod sandwich
+  expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  
+  ## HEURISTIC CHECKS
+  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
+  expect_false(all((a22inv %*% a21)[2,] == 0))
+  
+  # check vcovDA matches manual matrix multiplication
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
+               (1 / (nq * mi)) * a22inv %*%
+                 (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
+                 a22inv)
+  
+  # check that, since (a22inv %*% a21)["z",] != 0, flexida's var_hat(z) should
+  # be greater than that given by sandwich
+  expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
+               (1 / (nq * mi)) * diag(sandwich::sandwich(
+                 damod,
+                 meat. = sandwich::meatCL,
+                 cluster = factor(df$cid[!is.na(df$cid)]),
+                 cadjust = FALSE))[2])
+})
