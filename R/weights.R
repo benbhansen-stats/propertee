@@ -151,7 +151,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
   # Merge with data to expand weights to unit of analysis level
   weights <- .merge_preserve_order(data, uoadata,
-                                   by = uoanames)$design_weights
+                                   by = uoanames,
+                                   all.x = TRUE)$design_weights
 
   return(new("WeightedDesign",
              weights,

@@ -46,7 +46,8 @@ adopters <- function(design = NULL, data = NULL) {
   # Merge the extracted pieces from the Design with the data being used to build
   # the model.
   treatment_data <- .merge_preserve_order(data, treatment_uoa,
-                                          by = var_names(design, "u"))
+                                          by = var_names(design, "u"),
+                                          all.x = TRUE)
 
   if (is_dichotomized(design)) {
     txtname <- "z__"
