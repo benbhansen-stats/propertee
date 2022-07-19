@@ -22,11 +22,11 @@ setValidity("PreSandwichLayer", function(object) {
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
-  if (dim(object@prediction_gradient)[1] != length(object[!is.na(object)])) {
+  if (dim(object@prediction_gradient)[1] != length(object)) {
     msg <- paste0("Prediction gradient matrix (",
                   paste(dim(object@prediction_gradient), collapse = ", "),
                   ") does not have the same dimension along axis 1 as the ",
-                  "non-null covariance adjustment vector (", length(object), ")")
+                  "covariance adjustment vector (", length(object), ")")
     return(msg)
   }
   if (dim(object@prediction_gradient)[2] !=
@@ -82,6 +82,7 @@ setGeneric("subset")
 ##' @rdname PreSandwichLayer.subset
 setMethod("subset", "PreSandwichLayer", function(x, subset) {
   x@.Data <- subset(x@.Data, subset = subset)
+  x@prediction_gradient <- subset(x@prediction_gradient, subset = subset)
   return(x)
 })
 
@@ -96,8 +97,11 @@ setGeneric("[")
 ##' @rdname PreSandwichLayer.subset
 setMethod("[", "PreSandwichLayer",
           function(x, i) {
+            idx <- rep(FALSE, length(x@.Data))
+            idx[i] <- TRUE
             dat <- methods::callNextMethod()
             x@.Data <- dat
+            x@prediction_gradient <- subset(x@prediction_gradient, idx)
             return(x)
 
           })
@@ -115,15 +119,17 @@ setMethod("[", "PreSandwichLayer",
   }
 
   form <- tryCatch(
-    paste("~",
-          paste(attr(terms(model), "term.labels"), collapse = "+")),
+    as.formula(paste("~",
+               paste(attr(terms(model), "term.labels"), collapse = "+"))),
     error = function(e) stop("`model` must have `terms` method")
   )
   X <- tryCatch(
     if (is.null(newdata)) {
-      stats::model.matrix(as.formula(form), data = stats::model.frame(model))
+      stats::model.matrix(form, data = stats::model.frame(model))
     } else {
-      stats::model.matrix(as.formula(form), data = newdata)
+      stats::model.matrix(form,
+                          stats::model.frame(form, data = newdata,
+                                             na.action = 'na.pass'))
     }, error = function(e) {
       if (is.null(newdata)) newdata <- stats::model.frame(model)
       missing_cols <- names(which(

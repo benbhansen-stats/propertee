@@ -1102,10 +1102,10 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
     Xstar %*% theta[-length(theta)] + C[,2] * theta[length(theta)] +
       eps[!is.na(df$cid)] # damod sample y
   )
-  cmod <- lm(cmod_form, df[is.na(df$cid),])
-  des <- rct_design(z ~ cluster(cid), df[!is.na(df$cid),])
+  cmod <- lm(cmod_form, df, subset = is.na(cid))
+  des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
   damod <- as.lmitt(
-    lm(damod_form, data = df[!is.na(df$cid),], weights = ate(des),
+    lm(damod_form, data = df, subset = !is.na(cid), weights = ate(des),
        offset = cov_adj(cmod))
   )
   

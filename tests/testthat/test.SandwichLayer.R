@@ -89,7 +89,7 @@ test_that("SandwichLayer has NA's", {
   
 
   offset[100] <- NA_real_
-  pred_gradient <- pred_gradient[1:99,]
+  pred_gradient[100,] <- NA
   
   psl <- new("PreSandwichLayer",
              offset,
@@ -303,16 +303,20 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
 
   no_subset_psl <- subset(psl, rep(TRUE, length(offset)))
   no_subset_sl <- subset(sl, rep(TRUE, length(offset)))
-  expect_identical(no_subset_psl, psl)
-  expect_identical(no_subset_sl, sl)
+  expect_identical(no_subset_psl@.Data, psl@.Data)
+  expect_identical(no_subset_psl@prediction_gradient,
+                   psl@prediction_gradient[1:100,])
+  expect_identical(no_subset_sl@.Data, sl@.Data)
+  expect_identical(no_subset_sl@prediction_gradient,
+                   sl@prediction_gradient[1:100,])
 
   expect_true(inherits(no_subset_psl, "PreSandwichLayer"))
   expect_true(inherits(no_subset_sl, "SandwichLayer"))
 
-  expect_identical(capture_output(str(no_subset_psl)),
-                   capture_output(str(psl)))
-  expect_identical(capture_output(str(no_subset_sl)),
-                   capture_output(str(sl)))
+  expect_identical(no_subset_psl@fitted_covariance_model,
+                   psl@fitted_covariance_model)
+  expect_identical(no_subset_sl@fitted_covariance_model,
+                   sl@fitted_covariance_model)
 
   subset_length <- floor(length(offset) / 2)
   subset_psl <- subset(psl, c(rep(TRUE, subset_length),
@@ -325,21 +329,27 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
   expect_true(inherits(subset_psl, "PreSandwichLayer"))
   expect_true(inherits(subset_sl, "SandwichLayer"))
 
-  expect_identical(subset_psl@fitted_covariance_model, psl@fitted_covariance_model)
-  expect_identical(subset_psl@prediction_gradient, psl@prediction_gradient)
+  expect_identical(subset_psl@fitted_covariance_model,
+                   psl@fitted_covariance_model)
+  expect_identical(subset_psl@prediction_gradient,
+                   psl@prediction_gradient[1:subset_length,])
   expect_identical(subset_sl@keys, sl@keys)
   expect_identical(subset_sl@Design, sl@Design)
 
   no_subset_psl <- psl[]
   no_subset_sl <- sl[]
-  expect_identical(no_subset_psl, psl)
-  expect_identical(no_subset_sl, sl)
+  expect_identical(no_subset_psl@.Data, psl@.Data)
+  expect_identical(no_subset_sl@.Data, sl@.Data)
 
   expect_true(inherits(no_subset_psl, "PreSandwichLayer"))
   expect_true(inherits(no_subset_sl, "SandwichLayer"))
 
   expect_identical(psl[1:10]@.Data, psl@.Data[1:10])
   expect_identical(sl[1:10]@.Data, sl@.Data[1:10])
+  expect_identical(psl[1:10]@prediction_gradient,
+                   psl@prediction_gradient[1:10,])
+  expect_identical(sl[1:10]@prediction_gradient,
+                   sl@prediction_gradient[1:10,])
 })
 
 test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
@@ -426,6 +436,6 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod, xstar)
   expect_equal(length(ca_and_grad$ca), 100)
   expect_equal(sum(is.na(ca_and_grad$ca)), 1)
-  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient[1:99,]))
+  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient))
   expect_equal(ca_and_grad$prediction_gradient[1:99,], pred_gradient[1:99,])
 })
