@@ -1,3 +1,93 @@
+# constants
+N <- 60 # sample size for generated non-clustered data
+NC <- NQ <- 4 # number of clusters for generated clustered data
+MI <- 16 # number of units per cluster for generated clustered data
+
+# helper functions
+generate_nonclustered_data <- function(n, balance) {
+  set.seed(50)
+
+  # trt variable
+  z <- rep(c(0, 1), n / 2)
+  
+  # p and mu for one categorical and one continuous cov
+  px1 <- round(stats::runif(1, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif(1, 55, 90))
+  
+  if (balance) {
+    x1 <- rep(c(0, 1), each = n / 2)
+    v <- stats::rgamma(n, 50) # simulate dirichlet to balance continuous cov
+    x2 <- c(t(
+      Reduce(cbind, by(v, z, function(vc) vc / sum(vc) * mux2 * n / 2))
+    ))
+  } else {
+    x1 <- rbinom(n, 1, px1)
+    x2 <- stats::rgamma(n, mux2)
+  }
+  
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2, "uid" = seq_len(n))
+  
+  # generate y
+  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + rnorm(n)
+  
+  return(df)
+}
+
+generate_clustered_data <- function(nc, nq, mi, balance) {
+  set.seed(50)
+  
+  # trt variable
+  z <- c(rep(rep(c(0, 1), each = mi), nc / 2),
+         rep(rep(c(0, 1), each = mi), nq / 2))
+
+  # p and mu for each matched pair's categorical and continuous cov
+  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
+  
+  if (balance) {
+    x1 <- c(
+      mapply(function(x) {
+        rep(c(rep(0, round(mi * x)), rep(1, round(mi * (1 - x)))), 2)
+      }, px1)
+    )
+    x2 <- c(
+      Reduce(
+        cbind,
+        Map(function(x) {
+          # simulate dirichlet to balance continuous cov
+          v <- stats::rgamma(mi * 2, 50)
+          Reduce(cbind, by(v, rep(seq_len(2), each = mi),
+                           function(vc) vc / sum(vc) * x * mi))
+        }, mux2)
+      )
+    )
+  } else {
+    x1 <- c(mapply(function(x) c(rbinom(mi, 1, x), rbinom(mi, 1, x)), px1))
+    x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(mi * 2, x), mux2)))    
+  }
+
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
+
+  # generate clustered errors 
+  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
+  icc <- 0.2
+  eps <- stats::rnorm(nrow(df))
+  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
+  for (i in (seq_len(nc + nq) - 1)) {
+    msk <- (1 + i * mi):((i + 1) * mi)
+    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
+  }
+  A <- chol(Sigma)
+  eps <- t(A) %*% eps
+  
+  # generate y
+  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + eps
+  
+  return(df)
+}
+
 test_correct_b12 <- function(m) {
   uoanames <- var_names(m@Design, "u")
   zname <- var_names(m@Design, "t")
@@ -27,6 +117,7 @@ test_correct_b12 <- function(m) {
                t(cmod_eqns) %*% m_eqns)
 }
 
+# tests
 test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
@@ -756,92 +847,67 @@ test_that("vcovDA returns px2 matrix", {
 })
 
 test_that(paste("HC0 vcovDA lm w/o clustering",
-                "no grp imbalance",
+                "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
-  set.seed(50)
-  nc <- 60
-  nq <- 16
-  beta <- c(0.5, -0.25)
-  tau <- -2
-  error_sd <- 0.5
-
-  cmod_df <- data.frame(
-    "x1" = rep(c(0, 1, 0, 1), each = nc/4),
-    "x2" = rep(c(0, 1), each = nc/2)
-  )
-  cmod_df$y <- as.matrix(cmod_df) %*% beta + error_sd * rnorm(nc)
-  cmod_form <- ~ x1 + x2
-  X <- stats::model.matrix(cmod_form, stats::model.frame(cmod_form, cmod_df))
-  cmod_df$uid <- NA_integer_
-  cmod <- lm(y ~ x1 + x2, cmod_df)
-
-  damod_df <- data.frame(
-    "x1" = rep(c(0, 1, 0, 1), each = nq/4),
-    "x2" = rep(rep(c(0, 1), 4), each = nq/8),
-    "z" = rep(c(0, 1), each = nq/2)
-  )
-  damod_df$y <- as.matrix(damod_df) %*% c(beta, tau) + error_sd * rnorm(nq)
-  damod_form <- ~ z
-  C <- stats::model.matrix(damod_form, damod_df)
-  Xstar <- stats::model.matrix(cmod_form, damod_df)
-
-  damod_df$uid <- seq_len(nq)
-  des <- rct_design(z ~ unitid(uid), damod_df)
-  onemod <- lm(y ~ x1 + x2 + z, data = damod_df, weights = ate(des))
-  O <- stats::model.matrix(onemod)
-
+  df1 <- df2 <- generate_nonclustered_data(N, balance = TRUE)
+  df2$uid <- NA_integer_
+  df <- rbind(df1, df2)
+  
+  cmod_form <- y ~ x1 + x2
+  damod_form <- y ~ z
+  cmod <- lm(cmod_form, df, subset = is.na(uid))
+  des <- rct_design(z ~ uoa(uid), df, subset = !is.na(df$uid))
   damod <- as.lmitt(
-    lm(y ~ z, data = damod_df, weights = ate(des), offset = cov_adj(cmod))
+    lm(damod_form, data = df, subset = !is.na(uid), weights = ate(des),
+       offset = cov_adj(cmod))
   )
+  onemod <- lm(y ~ x1 + x2 + z, data = df, subset = !is.na(uid),
+               weights = ate(des))
+  
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(cmod_form, df[!is.na(df$uid),])
 
-  ## check blocks for our sandwich estimator are what we expect
-  a11inv <- solve(crossprod(X))
+  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
+  a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
-  b22 <- crossprod(C, diag((damod$weights * damod$residuals)^2)) %*% C
+  b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
-  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
-  b11 <- crossprod(X * cmod$residuals^2, X)
+  b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
   expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
-
-  ## after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * a22inv, sandwich::bread(damod))
-
-  ## meat is not equivalent to sandwich::meat! since there's no overlap of cmod
-  ## and damod data, cov-adjusted meat term simplifies to:
-  ## b22 + t(a21) %*% a11inv %*% b11 %*% a11inv %*% a21, which is a robust estimate
-  ## of the cmod vcov matrix sandwiched by lm coefs of the covariates in the
-  ## experimental sample on the trt assignment
-  # we can compare to sandwich::meat when there's no clustering
-  expect_equal(sandwich::meat(damod, adjust = FALSE),
-               sandwich::meatCL(damod, cadjust = FALSE, type = "HC0"))
-
-  expect_equal(b22 / nq, sandwich::meat(damod, adjust = FALSE))
+  
+  ## COMPARE OUTPUTS TO SANDWICH
+  # after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(N * a22inv, sandwich::bread(damod))
+  
+  # after scaling, b22 is equivalent to sandwich::meat
+  expect_equal(b22 / N, sandwich::meat(damod, adjust = FALSE))
+  
+  # check the cmod sandwich
   expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
-
-  # with perfect group balance, a22inv %*% a21 will have 0's in the trt row,
-  # meaning the variance of the trt effect estimate will be the same as that
-  # given by the sandwich package
-  expect_true(all((a22inv %*% a21)[2,] == 0))
-
-  ## variance of intercept estimate != sandwich package estimate, but variance
-  ## of tau_hat == sandwich package estimate
-  # confirm matrix multiplication for vcovDA is what we expect
+  
+  ## HEURISTIC CHECKS
+  # with perfect group balance, a22inv %*% a21 should be 0 for the trt row
+  expect_equal((a22inv %*% a21)[2,],
+               setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  
+  # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / nq) * a22inv %*%
+               (1 / N) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
-
-  expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[1] >
-              (1 / nq) * diag(sandwich::sandwich(damod))[1])
+  
+  # var_hat(z) should be equal to than that given by sandwich
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               (1 / nq) * diag(sandwich::sandwich(damod))[2])
+               (1 / N) * diag(sandwich::sandwich(damod))[2])
 
-  ## DA model should have smaller variances than onemod
+  # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
                   diag(vcov(onemod))[c(1, 4)]))
 })
@@ -849,90 +915,62 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
 test_that(paste("HC0 vcovDA lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
-  set.seed(50)
-  nc <- 60
-  nq <- 16
-  beta <- c(0.5, -0.25)
-  zeta <- c(-3, 2)
-  tau <- -2
-  error_sd <- 0.5
+  df <- generate_nonclustered_data(N, balance = FALSE)
+  df$uid[31:60] <- NA_integer_
 
-  cmod_df <- data.frame(
-    "x1" = rep(c(0, 1, 0, 1), each = nc/4),
-    "x2" = rep(c(0, 1), each = nc/2)
-  )
-  cmod_df$y <- as.matrix(cmod_df) %*% beta + error_sd * rnorm(nc)
-  cmod_form <- ~ x1 + x2
-  X <- stats::model.matrix(cmod_form, stats::model.frame(cmod_form, cmod_df))
-  cmod_df$uid <- NA_integer_
-  cmod <- lm(y ~ x1 + x2, cmod_df)
-
-  damod_df <- data.frame(
-    "x1" = rep(c(0, 1, 0, 1), each = nq/4),
-    "x2" = rep(rep(c(0, 1), 4), each = nq/8)
-  )
-  damod_df$z <- rbinom(nq, 1,
-                       exp(as.matrix(damod_df) %*% zeta) /
-                        (1 + exp(as.matrix(damod_df) %*% zeta)))
-  damod_df$y <- as.matrix(damod_df) %*% c(beta, tau) + error_sd * rnorm(nq)
-  damod_form <- ~ z
-  C <- stats::model.matrix(damod_form, damod_df)
-  Xstar <- stats::model.matrix(cmod_form, damod_df)
-
-  damod_df$uid <- seq_len(nq)
-  des <- rct_design(z ~ unitid(uid), damod_df)
-  onemod <- lm(y ~ x1 + x2 + z, data = damod_df, weights = ate(des))
-  O <- stats::model.matrix(onemod)
-
+  cmod_form <- y ~ x1 + x2
+  damod_form <- y ~ z
+  cmod <- lm(cmod_form, df, subset = is.na(uid))
+  des <- rct_design(z ~ uoa(uid), df, subset = !is.na(df$uid))
   damod <- as.lmitt(
-    lm(y ~ z, data = damod_df, weights = ate(des), offset = cov_adj(cmod))
+    lm(damod_form, data = df, subset = !is.na(uid), weights = ate(des),
+       offset = cov_adj(cmod))
   )
+  onemod <- lm(y ~ x1 + x2 + z, data = df, subset = !is.na(uid),
+               weights = ate(des))
 
-  ## check blocks for our sandwich estimator are what we expect
-  a11inv <- solve(crossprod(X))
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(cmod_form, df[!is.na(df$uid),])
+
+  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
+  a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
-  b22 <- crossprod(C, diag((damod$weights * damod$residuals)^2)) %*% C
+  b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
-  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
   expect_equal(b12, flexida:::.get_b12(damod))
-  b11 <- crossprod(X * cmod$residuals^2, X)
+  b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
   expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
 
-  ## after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * a22inv, sandwich::bread(damod))
-
-  ## meat is not equivalent to sandwich::meat! since there's no overlap of cmod
-  ## and damod data, cov-adjusted meat term simplifies to:
-  ## b22 + t(a21) %*% a11inv %*% b11 %*% a11inv %*% a21, which is a robust estimate
-  ## of the cmod vcov matrix sandwiched by lm coefs of the covariates in the
-  ## experimental sample on the trt assignment
-  # we can compare to sandwich::meat when there's no clustering
-  expect_equal(sandwich::meat(damod, adjust = FALSE),
-               sandwich::meatCL(damod, cadjust = FALSE, type = "HC0"))
-
-  expect_equal(b22 / nq, sandwich::meat(damod, adjust = FALSE))
+  ## COMPARE OUTPUTS TO SANDWICH
+  # after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(N / 2 * a22inv, sandwich::bread(damod))
+  
+  # after scaling, b22 is equivalent to sandwich::meat
+  expect_equal(b22 / (N / 2), sandwich::meat(damod, adjust = FALSE))
+  
+  # check the cmod sandwich
   expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
 
-  # with imperfect group balance, a22inv %*% a21 will not be 0 for the trt row,
-  # so the variance of the trt effect estimate will increase from the sandwich
-  # package's estimate
+  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  ## variance of vcovDA estimates != sandwich package estimates
-  # confirm matrix multiplication for vcovDA is what we expect
+  # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / nq) * a22inv %*%
+               (1 / (N / 2)) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
+  # var_hat(z) should be greater than that given by sandwich
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
-                  (1 / nq) * diag(sandwich::sandwich(damod))))
+                  (1 / (N / 2)) * diag(sandwich::sandwich(damod))))
 
-  ## DA model should have smaller variances than onemod
+  # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
                     diag(vcov(onemod))[c(1, 4)]))
 })
@@ -940,96 +978,48 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
 test_that(paste("HC0 vcovDA lm w/ clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
-  ## CLUSTERED DATA SIMULATION
-  set.seed(50)
-  nc <- nq <- 4
-  mi <- 16
+  df <- generate_clustered_data(nc = NC, nq = NQ, mi = MI, balance = TRUE)
+  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
 
-  # generate one categorical and one continuous covariate
-  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
-
-  df <- data.frame(
-    "cid" = c(rep(NA_integer_, nc * mi), rep(seq_len(nq), each = mi)),
-    "uid" = c(rep(NA_integer_, nc * mi), rep(seq_len(mi), nq)),
-    "z" = c(rep(0, nc * mi), rep(c(0, 1), each = mi, nq / 2)),
-    "x1" = c(
-      mapply(function(x) {
-        # perfectly balance categorical covariate within matched pairs
-        rep(c(rep(0, round(mi * x)), rep(1, round(mi * (1 - x)))), 2)
-      }, px1)
-    ),
-    "x2" = c(
-      Reduce(
-        cbind,
-        Map(function(x) {
-          # simulate dirichlet to perfectly balance continuous covariate
-          # within matched pairs
-          v <- stats::rgamma(mi * 2, 50)
-          Reduce(cbind, by(v, rep(seq_len(2), each = mi),
-                           function(vc) vc / sum(vc) * x * mi))
-        }, mux2)
-      )
-    )
-  )
-
-  # generate clustered errors 
-  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(nc + nq) - 1)) {
-    msk <- (1 + i * mi):((i + 1) * mi)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-  
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
   
-  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[is.na(df$cid),])
-  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
-  C <- stats::model.matrix(as.formula(damod_form[-2]), df[!is.na(df$cid),])
-  
-  df$y <- c(
-    X %*% theta[-length(theta)] + eps[is.na(df$cid)], # cmod sample y
-    Xstar %*% theta[-length(theta)] + C[,2] * theta[length(theta)] +
-      eps[!is.na(df$cid)] # damod sample y
-  )
-  cmod <- lm(cmod_form, df[is.na(df$cid),])
-  des <- rct_design(z ~ cluster(cid), df[!is.na(df$cid),])
+  cmod <- lm(cmod_form, df, subset = is.na(cid))
+  des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
   damod <- as.lmitt(
-    lm(damod_form, data = df[!is.na(df$cid),], weights = ate(des),
+    lm(damod_form, data = df, subset = !is.na(cid), weights = ate(des),
        offset = cov_adj(cmod))
-  )
+  ) 
+  
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(cmod_form, df[!is.na(df$cid),])
+
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  a11inv <- solve(crossprod(X))
+  a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, .get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
-           by(C * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
+           by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
   expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, .get_a22_inverse(damod))
-  a21 <- crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, .get_a21(damod))
-  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
   expect_equal(b12, .get_b12(damod))
-  b11 <- crossprod(X * cmod$residuals^2, X)
+  b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
   expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * mi * a22inv, sandwich::bread(damod))
+  expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
 
   # after scaling, b22 is equivalent to sandwich::meatCL
-  expect_equal(b22 / (nq * mi),
+  expect_equal(b22 / (NQ * MI),
                sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
                                 cadjust = FALSE))
   # check the cmod sandwich
@@ -1042,14 +1032,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
 
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (nq * mi)) * a22inv %*%
+               (1 / (NQ * MI)) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
-  # check that, since (a22inv %*% a21)["z",] == 0, flexida's var_hat(z) is the
-  # same as that given by sandwich
+  # var_hat(z) should be equal to that given by sandwich
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               (1 / (nq * mi)) * diag(sandwich::sandwich(
+               (1 / (NQ * MI)) * diag(sandwich::sandwich(
                                        damod,
                                        meat. = sandwich::meatCL,
                                        cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1059,49 +1048,12 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
 test_that(paste("HC0 vcovDA lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
-  ## CLUSTERED DATA SIMULATION
-  set.seed(50)
-  nc <- nq <- 4
-  mi <- 16
-  
-  # generate one categorical and one continuous covariate
-  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
-  
-  df <- data.frame(
-    "cid" = c(rep(NA_integer_, nc * mi), rep(seq_len(nq), each = mi)),
-    "uid" = c(rep(NA_integer_, nc * mi), rep(seq_len(mi), nq)),
-    "z" = c(rep(0, nc * mi), rep(c(0, 1), each = mi, nq / 2)),
-    "x1" = c(mapply(function(x) c(rbinom(mi, 1, x), rbinom(mi, 1, x)), px1)),
-    "x2" = c(Reduce(cbind, Map(function(x) stats::rgamma(mi * 2, x), mux2)))
-  )
+  df <- generate_clustered_data(nc = NC, nq = NQ, mi = MI, balance = FALSE)
+  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
 
-  # generate clustered errors 
-  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(nc + nq) - 1)) {
-    msk <- (1 + i * mi):((i + 1) * mi)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-  
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
-  
-  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[is.na(df$cid),])
-  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
-  C <- stats::model.matrix(as.formula(damod_form[-2]), df[!is.na(df$cid),])
-  
-  df$y <- c(
-    X %*% theta[-length(theta)] + eps[is.na(df$cid)], # cmod sample y
-    Xstar %*% theta[-length(theta)] + C[,2] * theta[length(theta)] +
-      eps[!is.na(df$cid)] # damod sample y
-  )
+
   cmod <- lm(cmod_form, df, subset = is.na(cid))
   des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
   damod <- as.lmitt(
@@ -1109,30 +1061,35 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
        offset = cov_adj(cmod))
   )
   
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(cmod_form, df[!is.na(df$cid),])
+  
+  
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  a11inv <- solve(crossprod(X))
+  a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, .get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
-           by(C * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
+           by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
   expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, .get_a22_inverse(damod))
-  a21 <- crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, .get_a21(damod))
-  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
   expect_equal(b12, .get_b12(damod))
-  b11 <- crossprod(X * cmod$residuals^2, X)
+  b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
   expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
   
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * mi * a22inv, sandwich::bread(damod))
+  expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
   
   # after scaling, b22 is equivalent to sandwich::meatCL
-  expect_equal(b22 / (nq * mi),
+  expect_equal(b22 / (NQ * MI),
                sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
                                 cadjust = FALSE))
   # check the cmod sandwich
@@ -1144,14 +1101,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (nq * mi)) * a22inv %*%
+               (1 / (NQ * MI)) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
-  # check that, since (a22inv %*% a21)["z",] != 0, flexida's var_hat(z) should
-  # be greater than that given by sandwich
+  # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-               (1 / (nq * mi)) * diag(sandwich::sandwich(
+               (1 / (NQ * MI)) * diag(sandwich::sandwich(
                  damod,
                  meat. = sandwich::meatCL,
                  cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1161,25 +1117,7 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
 test_that(paste("HC0 vcovDA lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
-  ## NO CLUSTERING DATA SIMULATION
-  set.seed(50)
-  nq <- 60
-  pz <- 0.5
-
-  # generate one categorical and one continuous covariate
-  px1 <- round(stats::runif(1, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif(1, 55, 90))
-  
-  df <- data.frame(
-    "uid" = seq_len(nq),
-    "z" = c(rep(0, round(nq * pz)), rep(1, nq - round(nq * pz))),
-    "x1" = rbinom(nq, 1, px1),
-    "x2" = stats::rgamma(nq, mux2)
-  )
-  
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
-  df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + rnorm(nq)
+  df <- generate_nonclustered_data(N, balance = FALSE)
   
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
@@ -1191,22 +1129,22 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   )
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[cmod_idx,])
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
   X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
-  C <- stats::model.matrix(as.formula(damod_form[-2]), df)
 
   a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
-  b22 <- crossprod(C, diag((damod$weights * damod$residuals)^2)) %*% C
+  b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- crossprod(C, X * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- crossprod(
     Reduce(rbind, by(Xstar * cmod$residuals, df$uid[cmod_idx], colSums)),
     Reduce(rbind,
-           by(C[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
+           by(Z[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
               df$uid[cmod_idx],
               colSums))
   )
@@ -1216,12 +1154,12 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * a22inv, sandwich::bread(damod))
+  expect_equal(N * a22inv, sandwich::bread(damod))
   
   # after scaling, b22 is equivalent to sandwich::meat
   expect_equal(sandwich::meat(damod, adjust = FALSE),
                sandwich::meatCL(damod, cadjust = FALSE, type = "HC0"))
-  expect_equal(b22 / nq, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(b22 / N, sandwich::meat(damod, adjust = FALSE))
   
   # check the cmod sandwich
   expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
@@ -1232,64 +1170,25 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               1 / nq * a22inv %*%
+               1 / N * a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
-  # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                1 / nq * diag(sandwich::sandwich(damod, adjust = FALSE))[2])
+                1 / N * diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
-
 
 test_that(paste("HC0 vcovDA lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
-  ## CLUSTERED DATA SIMULATION
-  set.seed(50)
-  nc <- nq <- 4
-  mi <- 16
-  
-  # generate one categorical and one continuous covariate
-  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
-  
-  df <- data.frame(
-    "cid" = c(rep(NA_integer_, nc * mi), rep(seq_len(nq), each = mi)),
-    "uid" = c(rep(NA_integer_, nc * mi), rep(seq_len(mi), nq)),
-    "z" = c(rep(0, nc * mi), rep(c(0, 1), each = mi, nq / 2)),
-    "x1" = c(mapply(function(x) c(rbinom(mi, 1, x), rbinom(mi, 1, x)), px1)),
-    "x2" = c(Reduce(cbind, Map(function(x) stats::rgamma(mi * 2, x), mux2)))
-  )
-  
-  # generate clustered errors 
-  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(nc + nq) - 1)) {
-    msk <- (1 + i * mi):((i + 1) * mi)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-  
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  df <- generate_clustered_data(nc = NC, nq = NQ, mi = MI, balance = FALSE)
+  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
+
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
-  
-  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[is.na(df$cid),])
-  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
-  C <- stats::model.matrix(as.formula(damod_form[-2]), df[!is.na(df$cid),])
-  
-  df$y <- c(
-    X %*% theta[-length(theta)] + eps[is.na(df$cid)], # cmod sample y
-    Xstar %*% theta[-length(theta)] + C[,2] * theta[length(theta)] +
-      eps[!is.na(df$cid)] # damod sample y
-  )
+
   cmod <- lm(cmod_form, df, subset = is.na(cid))
   des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
   damod <- as.lmitt(
@@ -1297,30 +1196,34 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
        offset = cov_adj(cmod))
   )
   
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
+  
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  a11inv <- solve(crossprod(X))
+  a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, .get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
-           by(C * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
+           by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
   expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, .get_a22_inverse(damod))
-  a21 <- crossprod(C, Xstar * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, .get_a21(damod))
-  b12 <- matrix(0, nrow = dim(X)[2], ncol = dim(C)[2])
+  b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
   expect_equal(b12, .get_b12(damod))
-  b11 <- crossprod(X * cmod$residuals^2, X)
+  b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
   expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
   
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(nq * mi * a22inv, sandwich::bread(damod))
+  expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
   
   # after scaling, b22 is equivalent to sandwich::meatCL
-  expect_equal(b22 / (nq * mi),
+  expect_equal(b22 / (NQ * MI),
                sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
                                 cadjust = FALSE))
   # check the cmod sandwich
@@ -1332,14 +1235,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (nq * mi)) * a22inv %*%
+               (1 / (NQ * MI)) * a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
-  # check that, since (a22inv %*% a21)["z",] != 0, flexida's var_hat(z) should
-  # be greater than that given by sandwich
+  # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                (1 / (nq * mi)) * diag(sandwich::sandwich(
+                (1 / (NQ * MI)) * diag(sandwich::sandwich(
                   damod,
                   meat. = sandwich::meatCL,
                   cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1349,50 +1251,12 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
 test_that(paste("HC0 vcovDA lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
-  ## CLUSTERED DATA SIMULATION
-  set.seed(50)
-  nc <- nq <- 4
-  mi <- 16
-  
-  # generate one categorical and one continuous covariate
-  px1 <- round(stats::runif((nc + nq) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((nc + nq) / 2, 55, 90))
-  
-  df <- data.frame(
-    "cid" = rep(seq_len(nc + nq), each = mi),
-    "uid" = rep(seq_len(mi), nc + nq),
-    "z" = c(rep(0, nc * mi), rep(1, nq * mi)),
-    "x1" = c(mapply(function(x) c(rbinom(mi, 1, x), rbinom(mi, 1, x)), px1)),
-    "x2" = c(Reduce(cbind, Map(function(x) stats::rgamma(mi * 2, x), mux2)))
-  )
-  
-  # generate clustered errors 
-  error_sd <- round(stats::runif(nc + nq, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(nc + nq) - 1)) {
-    msk <- (1 + i * mi):((i + 1) * mi)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = mi) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-  
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  df <- generate_clustered_data(nc = NC, nq = NQ, mi = MI, balance = FALSE)
+  df$cid <- rep(seq_len(NC + NQ), each = MI)
+
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
   cmod_idx <- df$z == 0
-  
-  Xstar <- stats::model.matrix(as.formula(cmod_form[-2]), df[cmod_idx,])
-  X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
-  C <- stats::model.matrix(as.formula(damod_form[-2]), df)
-  
-  df$y <- c(
-    Xstar %*% theta[-length(theta)] + eps[cmod_idx], # cmod sample y
-    X[!cmod_idx,] %*% theta[-length(theta)] +
-      C[!cmod_idx, 2] * theta[length(theta)] + eps[!cmod_idx] # damod sample y
-  )
 
   cmod <- lm(cmod_form, df[cmod_idx,])
   des <- rct_design(z ~ cluster(cid), df)
@@ -1400,22 +1264,26 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
     lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
   )
   
+  Xstar <- stats::model.matrix(cmod)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
+  
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   a11inv <- solve(crossprod(Xstar))
   expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
-           by(C * damod$weights * damod$residuals, df$cid, colSums))
+           by(Z * damod$weights * damod$residuals, df$cid, colSums))
   )
   expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  a22inv <- solve(crossprod(C * damod$weights, C))
+  a22inv <- solve(crossprod(Z * damod$weights, Z))
   expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
-  a21 <- crossprod(C, X * damod$weights)
+  a21 <- crossprod(Z, X * damod$weights)
   expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- crossprod(
     Reduce(rbind, by(Xstar * cmod$residuals, df$cid[cmod_idx], colSums)),
     Reduce(rbind,
-           by(C[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
+           by(Z[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
               df$cid[cmod_idx],
               colSums))
   )
@@ -1427,10 +1295,10 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal((nc + nq) * mi * a22inv, sandwich::bread(damod))
+  expect_equal((NC + NQ) * MI * a22inv, sandwich::bread(damod))
   
   # after scaling, b22 is equivalent to sandwich::meatCL
-  expect_equal(b22 / ((nc + nq) * mi),
+  expect_equal(b22 / ((NC + NQ) * MI),
                sandwich::meatCL(damod, cluster = factor(df$cid),
                                 cadjust = FALSE))
   # check the cmod sandwich
@@ -1447,7 +1315,7 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               1 / ((nc + nq) * mi) * a22inv %*%
+               1 / ((NC + NQ) * MI) * a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
@@ -1455,6 +1323,6 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                1 / ((nc + nq) * mi) *
+                1 / ((NC + NQ) * MI) *
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
