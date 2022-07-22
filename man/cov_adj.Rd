@@ -7,8 +7,8 @@
 cov_adj(model, newdata = NULL, design = NULL)
 }
 \arguments{
-\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or \code{
-robustbase::lmrob} object}
+\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or
+\code{robustbase::lmrob} object}
 
 \item{newdata}{Optional; a data.frame of new data}
 
@@ -18,7 +18,13 @@ robustbase::lmrob} object}
 Covariate adjusted outcomes
 }
 \description{
-Covariance Adjustment for Treatment Estimation
+Prior to obtaining predicted values, \code{cov_adj()} tries to identify the
+treatment variable (as specified in the \code{design}) and replace it with
+the reference level. If the treatment is binary, this is \code{FALSE}. If
+treatment is numeric, it is the smallest non-negative value (note that this
+means for 0/1 binary, it uses a 0). Factor treatments are not currently
+supported, but if we add them, it will use the first \code{level()} of the
+factor, you may change this by using \code{relevel()} to adjust.
 }
 \examples{
 data(STARdata)

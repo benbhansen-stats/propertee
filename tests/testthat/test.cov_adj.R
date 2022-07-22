@@ -471,3 +471,50 @@ options(old_opt)
 #STARdata, : variable lengths differ (found for '(weights)')
 # mod <- lm(readk ~ birth + lunchk, data = STARdata,
 #          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
+
+
+
+test_that("Basics of replacing treatment variable with reference level", {
+  data(simdata)
+
+  # Binary treatment
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  camod <- lm(y ~ x + z, data = simdata)
+  ca <- cov_adj(camod, newdata = simdata, design = des)
+
+  simdata2 <- simdata
+  simdata2$z <- 0
+
+  manual <- predict(camod, newdata = simdata2)
+  expect_true(all(manual == ca))
+
+  ### Let's just make sure we're not getting spurious positive results
+  simdata2 <- simdata
+  manual <- predict(camod, newdata = simdata2)
+  expect_false(all(manual == ca))
+
+  # Numeric treatment
+  des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  camod <- lm(y ~ x + dose, data = simdata)
+  ca <- cov_adj(camod, newdata = simdata, design = des)
+
+  simdata2 <- simdata
+  simdata2$dose <- 50
+
+  manual <- predict(camod, newdata = simdata2)
+  expect_true(all(manual == ca))
+
+  # Factor treatment
+  ## simdata$dose <- as.factor(simdata$dose)
+  ## des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  ## camod <- lm(y ~ x + dose, data = simdata)
+  ## ca <- cov_adj(camod, newdata = simdata, design = des)
+
+  ## simdata2 <- simdata
+  ## simdata2$dose <- levels(simdata2$dose)[1]
+
+  ## manual <- predict(camod, newdata = simdata2)
+  ## expect_true(all(manual == ca))
+  # Current build does NOT allow factor treatment so this will fail
+
+})
