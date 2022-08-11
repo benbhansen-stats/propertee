@@ -188,20 +188,20 @@ as.SandwichLayer <- function(x, design, by = NULL) {
     design <- .update_by(design, covmoddata, by)
   }
 
-  desvars <- var_names(design, "u")
+  uoanames <- var_names(design, "u")
   wide_frame <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, desvars, na.expand = TRUE)[desvars],
+    stats::expand.model.frame(x@fitted_covariance_model, uoanames, na.expand = TRUE)[uoanames],
     error = function(e) {
       stop(paste("The",
                  gsub("_", " ", design@unit_of_assignment_type),
                  "columns",
-                 paste(setdiff(desvars, colnames(covmoddata)), collapse = ", "),
+                 paste(setdiff(uoanames, colnames(covmoddata)), collapse = ", "),
                  "are missing from the covariance model dataset"),
            call. = FALSE)
     })
   keys <- .merge_preserve_order(wide_frame, design@structure, all.x = TRUE, sort = FALSE)
-  keys[is.na(keys[, var_names(design, "t")]), desvars] <- NA
-  keys <- keys[, desvars, drop = FALSE]
+  keys[is.na(keys[, var_names(design, "t")]), uoanames] <- NA
+  keys <- keys[, uoanames, drop = FALSE]
 
   return(new("SandwichLayer",
              x,
