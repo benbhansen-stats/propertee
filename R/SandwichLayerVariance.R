@@ -364,7 +364,7 @@ vcovDA <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
-##' @export
+##' @exportS3Method
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
   if (!inherits(ctrl, "list")) {
@@ -397,7 +397,7 @@ estfun.lmrob <- function(x, ...) {
   rval <- cbind("sigma" = Usigma, Ubeta)
   attr(rval, "assign") <- NULL
   attr(rval, "contrasts") <- NULL
-  
+
   return(rval)
 }
 
@@ -414,7 +414,7 @@ estfun.lmrob <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
-##' @export
+##' @exportS3Method
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control
   if (!inherits(ctrl, "list")) {
