@@ -236,8 +236,9 @@ test_that(paste(".get_b12 returns expected B_12 for experimental",
   expect_true(all(.get_b12(m) == 0))
 })
 
-test_that(paste(".get_b12 returns 0 when there's only one cluster overlapping",
-                "between the covariance and direct adjustment model samples"), {
+test_that(paste(".get_b12 returns B_12 with correct dimensions when only one",
+                "cluster overlapps between the covariance and direct adjustment",
+                "samples"), {
   data(simdata)
   cmod <- lm(y ~ x, simdata, subset = cid1 == 1)
   des <- rct_design(z ~ cluster(cid1), simdata, subset = simdata$cid1 %in% c(1, 5))

@@ -82,8 +82,8 @@ vcovDA <- function(x, ...) {
     keys[grepl("NA", keys)] <- NA_integer_
   }
   
-  multiple_uoas_overlap <- length(unique(keys)) > 1
-  if (!multiple_uoas_overlap) {
+  no_uoas_overlap <- all(is.na(unique(keys)))
+  if (no_uoas_overlap) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
@@ -104,12 +104,13 @@ vcovDA <- function(x, ...) {
     Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
   }
 
-  msk <- Q_uoas %in% keys
+  msk <- Q_uoas %in% unique(keys[!is.na(keys)])
   damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
   damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
 
-  return(crossprod(cmod_eqns, damod_eqns))
+  matmul_func <- if (length(unique(keys[!is.na(keys)])) == 1) tcrossprod else crossprod
+  return(matmul_func(cmod_eqns, damod_eqns))
 }
 
 #' @details The \bold{A22 block} is the diagonal element of the inverse expected
