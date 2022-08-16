@@ -73,8 +73,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   expect_true(any(vapply(w, grepl, logical(1),
                          pattern = "quasiexperimental data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
-  pred_idx <- !is.na(Q_w_nulls$readk) & !is.na(Q_w_nulls$gender) & !is.na(Q_w_nulls$ethnicity)
-  test_ca(ca, cmod, Q_w_nulls[pred_idx, ])
+  test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
