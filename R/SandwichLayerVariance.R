@@ -37,8 +37,8 @@ vcovDA <- function(x, ...) {
   meat <- (
     b22 -
       a21 %*% a11inv %*% b12 -
-      (crossprod(b12, a11inv) %*% t(a21)) +
-      (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
+      t(b12) %*% t(a11inv) %*% t(a21) +
+      a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
   )
   vmat <- (1 / nq) * a22inv %*% meat %*% a22inv
 
@@ -384,10 +384,11 @@ estfun.lmrob <- function(x, ...) {
   r0.s <- r0 / scale
   w0 <- robustbase::Mchi(r0.s, cc = c.chi, psi = chi)
   Usigma <- scale(w0, center=TRUE, scale=FALSE)
+  colnames(Usigma) <- "sigma"
   r.s <- r / scale
   w <- robustbase::Mpsi(r.s, cc = c.psi, psi = psi)
   Ubeta <- w * xmat
-  rval <- cbind("sigma" = Usigma, Ubeta)
+  rval <- cbind(Usigma, Ubeta)
   attr(rval, "assign") <- NULL
   attr(rval, "contrasts") <- NULL
 
