@@ -76,14 +76,14 @@ vcovDA <- function(x, ...) {
 
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0
   if (ncol(sl@keys) == 1) {
-    uoas <- sl@keys[, 1]
+    keys <- sl@keys[, 1]
   } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
-    uoas[grepl("NA", uoas)] <- NA_integer_
+    keys <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
+    keys[grepl("NA", keys)] <- NA_integer_
   }
   
-  nuoas <- length(unique(uoas))
-  if (nuoas == 1) {
+  no_uoas_overlap <- all(is.na(unique(keys)))
+  if (no_uoas_overlap) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
@@ -93,31 +93,24 @@ vcovDA <- function(x, ...) {
   # excluded automatically in `by` call
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
-  cmod_eqns <- Reduce(
-    rbind,
-    by(cmod_estfun,
-       lapply(uoanames, function(col) sl@keys[, col]),
-       cmod_aggfun))
+  cmod_eqns <- Reduce(rbind, by(cmod_estfun, keys, cmod_aggfun))
 
-  # get overlapping rows from experimental data joining with `keys`
-  lmitt_uoas <- stats::expand.model.frame(x, uoanames)
-  lmitt_uoas <- .merge_preserve_order(
-    lmitt_uoas,
-    merge(unique(sl@keys), x@Design@structure), # merge here to use txt col for finding NA's
-    by = uoanames,
-    all.x = TRUE,
-    sort = FALSE)
+  # get rows from overlapping clusters in experimental data
+  Q_uoas <- stats::expand.model.frame(x, uoanames)[uoanames]
+  if (ncol(Q_uoas) == 1) {
+    Q_uoas <- Q_uoas[, 1]
+  } else {
+    Q_uoas <- Reduce(function(...) paste(..., sep = "_"), Q_uoas)
+    Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
+  }
 
-  msk <- !is.na(lmitt_uoas[, paste0(zname, ".y")])
+  msk <- Q_uoas %in% unique(keys[!is.na(keys)])
   damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
-  dmod_eqns <- Reduce(
-    rbind,
-    by(damod_estfun,
-       lapply(uoanames, function(col) lmitt_uoas[msk, col]),
-       damod_aggfun))
+  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
 
-  return(crossprod(cmod_eqns, dmod_eqns))
+  matmul_func <- if (length(unique(keys[!is.na(keys)])) == 1) tcrossprod else crossprod
+  return(matmul_func(cmod_eqns, damod_eqns))
 }
 
 #' @details The \bold{A22 block} is the diagonal element of the inverse expected
