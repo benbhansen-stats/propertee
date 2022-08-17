@@ -111,11 +111,9 @@
     # Regenerate the model.frame with the appropriate data
     environment(form) <-
       environment(get("formula", sys.frame(mf_pos)))
-    try(data <- do.call(data.frame,
-                        c(model.frame(form,
-                                      data = get("data", sys.frame(mf_pos)),
-                                      na.action = na.pass),
-                          check.names = FALSE)),
+    try(data <- model.frame(form,
+                            data = get("data", sys.frame(mf_pos)),
+                            na.action = na.pass),
         silent = TRUE)
   }
 
