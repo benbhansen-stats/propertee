@@ -1,13 +1,10 @@
 set.seed(20)
-cont_x <- rnorm(100)
-cat_x <- rbinom(100, 2, 0.2)
-y <- cont_x - cat_x + rnorm(100)
 x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                 "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                 "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                "cont_x" = cont_x,
-                "cat_x" = cat_x,
-                "y" = y)
+                "cont_x" = rnorm(100),
+                "cat_x" = rbinom(100, 2, 0.2))
+x$y <- x$cont_x - x$cat_x + rnorm(100)
 xstar <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                     "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                     "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
@@ -53,7 +50,7 @@ test_that("PreSandwichLayer covariance model incompatible with sandwich package"
 test_that("PreSandwichLayer prediction gradient is not a numeric matrix", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
-  pred_gradient <- matrix(as.character(cbind(cont_x, cat_x)), ncol = 2)
+  pred_gradient <- matrix(as.character(cbind(x$cont_x, x$cat_x)), ncol = 2)
   expect_layer_error("PreSandwichLayer",
                      "must be a numeric matrix",
                      offset,
@@ -64,7 +61,7 @@ test_that("PreSandwichLayer prediction gradient is not a numeric matrix", {
 test_that("PreSandwichLayer prediction gradient has invalid number of rows", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
-  pred_gradient <- as.matrix(cbind(cont_x, cat_x)[2:100,])
+  pred_gradient <- as.matrix(cbind(x$cont_x, x$cat_x)[2:100,])
   expect_layer_error("PreSandwichLayer",
                      "same dimension along axis 1",
                      offset,
@@ -75,7 +72,7 @@ test_that("PreSandwichLayer prediction gradient has invalid number of rows", {
 test_that("PreSandwichLayer prediction gradient has invalid number of columns", {
   on.exit(pred_gradient <- model.matrix(cmod))
 
-  pred_gradient <- as.matrix(cont_x)
+  pred_gradient <- as.matrix(x$cont_x)
   expect_layer_error("PreSandwichLayer",
                      "same number of columns",
                      offset,
@@ -144,9 +141,13 @@ test_that("as.SandwichLayer not called with a PreSandwichLayer", {
 })
 
 test_that("as.SandwichLayer not fit with a data argument", {
-  on.exit(rm(psl))
-  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
-
+  on.exit(rm(y))
+  on.exit(rm(cont_x), add = TRUE)
+  on.exit(rm(cat_x), add = TRUE)
+  
+  y <- rnorm(100)
+  cont_x <- rnorm(100)
+  cat_x <- rbinom(100, 2, 0.5)
   cmod <- lm(y ~ cont_x + as.factor(cat_x))
   psl <- new("PreSandwichLayer",
              offset,
@@ -203,9 +204,9 @@ test_that("as.SandwichLayer used correctly with `by`", {
   on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                           "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                           "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                          "cont_x" = cont_x,
-                          "cat_x" = cat_x,
-                          "y" = y))
+                          "cont_x" = x$cont_x,
+                          "cat_x" = x$cat_x,
+                          "y" = x$y))
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
 
   colnames(x) <- c("school", "teacher", colnames(x)[-(1:2)])
@@ -225,9 +226,9 @@ test_that("as.SandwichLayer produces NA rows in `keys` for non-NA uoa values", {
   on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                           "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                           "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                          "cont_x" = cont_x,
-                          "cat_x" = cat_x,
-                          "y" = y))
+                          "cont_x" = x$cont_x,
+                          "cat_x" = x$cat_x,
+                          "y" = x$y))
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
 
   x[x$uoa1 == 1 & x$uoa2 == 1, c("uoa1", "uoa2")] <- c(0, 0)
@@ -251,9 +252,9 @@ test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
   on.exit(x <- data.frame("uoa1" = c(rep(1, 50), rep(2, 50)),
                           "uoa2" = rep(c(rep(1, 25), rep(2, 25)), 2),
                           "t" = c(rep(1, 25), rep(0, 50), rep(1, 25)),
-                          "cont_x" = cont_x,
-                          "cat_x" = cat_x,
-                          "y" = y))
+                          "cont_x" = x$cont_x,
+                          "cat_x" = x$cat_x,
+                          "y" = x$y))
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x), add = TRUE)
 
   x[x$uoa1 == 1 & x$uoa2 == 1, c("uoa1", "uoa2")] <- c(NA, NA)
@@ -366,7 +367,7 @@ test_that(".get_ca_and_prediction_gradient model doesn't have a terms method", {
 test_that(".get_ca_and_prediction_gradient model frame missing cmod columns", {
   expect_error(.get_ca_and_prediction_gradient(cmod,
                                                xstar[, "cont_x", drop = FALSE]),
-               "cmod columns `cat_x` in the")
+               "'cat_x' not found")
 })
 
 test_that(paste(".get_ca_and_prediction_gradient returns expected output",
@@ -388,6 +389,17 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
 
   cmod_form <- y ~ cont_x + as.factor(cat_x)
+  cmod <- lm(cmod_form, data = x)
+  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
+  expect_equal(ca_and_grad$ca, cmod$fitted.values)
+  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+})
+
+test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+                "when variables are modified in the formula"), {
+  on.exit(cmod <- lm(y ~ cont_x + as.factor(cat_x), data = x))
+  
+  cmod_form <- y ~ stats::poly(cont_x, 3) + cat_x^2
   cmod <- lm(cmod_form, data = x)
   ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
   expect_equal(ca_and_grad$ca, cmod$fitted.values)

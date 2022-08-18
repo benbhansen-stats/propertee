@@ -114,39 +114,35 @@ setMethod("[", "PreSandwichLayer",
 ##' @return Covariate adjusted outcomes and their gradient with respect to the
 ##' parameters of the covariance model (a list of a numeric vector and a matrix)
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
-  if (!is.null(newdata) & !is.data.frame(newdata)) {
+  if (is.null(newdata)) {
+    newdata <- stats::model.frame(model)
+  }
+
+  if (!is.data.frame(newdata)) {
     stop("If supplied, `newdata` must be a dataframe")
   }
 
-  form <- tryCatch(
-    as.formula(paste("~",
-               paste(attr(terms(model), "term.labels"), collapse = "+"))),
-    error = function(e) stop("`model` must have `terms` method")
+  model_terms <- tryCatch(
+    terms(model),
+    error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
-  X <- tryCatch(
-    if (is.null(newdata)) {
-      stats::model.matrix(form, data = stats::model.frame(model))
-    } else {
-      stats::model.matrix(form,
-                          stats::model.frame(form, data = newdata,
-                                             na.action = 'na.pass'))
+  newdata <- tryCatch({
+    try_terms <- terms(newdata) # terms will be the same if newdata generated with model's model.frame
+    if (!is.null(try_terms)) newdata
     }, error = function(e) {
-      if (is.null(newdata)) newdata <- stats::model.frame(model)
-      missing_cols <- names(which(
-        !vapply(all.vars(as.formula(form)),
-                function(x) x %in% colnames(newdata),
-                logical(1))))
-      stop(paste0("Could not find cmod columns `",
-                  paste(missing_cols, collapse = "`, `"),
-                  "` in the supplied model frame"))
-    })
+      stats::model.frame(stats::delete.response(model_terms),
+                         data = newdata,
+                         na.action = na.pass)
+  })
+  X <- stats::model.matrix(stats::delete.response(model_terms), data = newdata)
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  ca <- stats::predict(model, type = "response", newdata = newdata)
+  ca <- drop(X %*% model$coefficients)
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models
   if (inherits(model, "glm")) {
+    ca <- model$family$linkinv(ca)
     pred_gradient <- model$family$mu.eta(ca) * X
   } else if (inherits(model, "lm") | inherits(model, "lmrob")) {
     # `lm` doesn't have a `family` object, but we know its prediction gradient
