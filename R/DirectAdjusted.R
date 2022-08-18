@@ -70,11 +70,12 @@ as.lmitt <- function(x, design = NULL) {
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
-  eval_env <- new.env()
-  data <- eval(x$call$data, environment(formula(x)))
+  eval_env <- new.env(parent = environment(formula(x)))
+  data <- eval(x$call$data, eval_env)
   data$`adopters()` <- adopters(design, data)
-  assign(deparse(x$call$data), data, envir = eval_env)
-  environment(x$terms) <- eval_env
+  x$call$data <- quote(data)
+  assign("data", data, envir = eval_env)
+  x$formula <- as.formula(x, env = eval_env)
 
   return(new("DirectAdjusted",
              x,
