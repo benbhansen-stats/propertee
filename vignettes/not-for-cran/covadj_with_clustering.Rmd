@@ -413,7 +413,7 @@ geexRes <- geex::m_estimate(
 )
 
 test_that("compare with geex", {
-  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2] * mQ,
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2],
                geexRes@vcov[4, 4])
 })
 ```
@@ -446,7 +446,7 @@ test_that("treatment effect variance unchanged by regression adjustment", {
     0)
   
   expect_equal(
-    (1 / mQ) * a22inv %*% (
+    a22inv %*% (
       b22 - t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
         a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
     ) %*% a22inv,
@@ -455,7 +455,7 @@ test_that("treatment effect variance unchanged by regression adjustment", {
 
   expect_equal(
     vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2],
-    (1 / mQ) * sandwich::sandwich(damod,
+    sandwich::sandwich(damod,
                        meat = sandwich::meatCL,
                        cluster = factor(df$cid),
                        cadjust = FALSE,
@@ -530,7 +530,7 @@ hold:
 ```{r change_reg_adjust, echo = TRUE, eval = TRUE}
 test_that("regression adjustment increases estimated variance", {
   expect_true(
-    (vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2] * mQ) >
+    vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2] >
       sandwich::sandwich(damod,
                          meat = sandwich::meatCL,
                          cluster = factor(df$cid),
@@ -547,7 +547,7 @@ test_that("regression adjustment increases estimated variance", {
                       damod_form = geex_damod_form)
   )
 
-  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2] * mQ,
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE)[2, 2],
                geexRes@vcov[4, 4])
 
   expect_true(sandwich::sandwich(onemod,
@@ -555,6 +555,6 @@ test_that("regression adjustment increases estimated variance", {
                                  cluster = factor(df$cid),
                                  cadjust = FALSE,
                                  type = "HC0")[4, 4] >
-                vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2] * mQ)
+                vcovDA(damod, cadjust = FALSE, type = "HC0")[2, 2])
 })
 ```

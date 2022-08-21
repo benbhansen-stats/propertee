@@ -21,10 +21,6 @@ vcovDA <- function(x, ...) {
                "for direct adjustment standard errors"))
   }
 
-  nq <- dim(stats::model.matrix(x))[1]
-  nc <- dim(stats::model.matrix(sl@fitted_covariance_model))[1]
-  nqc <- max(sum(apply(!is.na(sl@keys), 1L, any)), 1) # don't divide by 0 if no overlap
-
   # compute blocks
   a21 <- .get_a21(x)
   a11inv <- .get_a11_inverse(x)
@@ -40,7 +36,7 @@ vcovDA <- function(x, ...) {
       (crossprod(b12, a11inv) %*% t(a21)) +
       (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
   )
-  vmat <- (1 / nq) * a22inv %*% meat %*% a22inv
+  vmat <- a22inv %*% meat %*% a22inv
 
   return(vmat)
 }
