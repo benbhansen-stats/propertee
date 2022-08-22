@@ -62,7 +62,7 @@ geexRes@vcov[4,4]
 print("multiplying flexida internal matrices manually returns cov_hat(tau_hat):")
 a22inv %*% flexida_meat %*% a22inv
 print("flexida vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
-vcovDA(damod, type = "HC0", cadjust = FALSE) * dim(model.matrix(damod))[1]
+vcovDA(damod, type = "HC0", cadjust = FALSE)
 print("sandwich::sandwich (no clustering) returns cov_hat(tau_hat):")
 sandwich::sandwich(damod, type = "HC0", cadjust = FALSE)
 
@@ -153,7 +153,7 @@ geexRes@vcov[4,4]
 print("multiplying flexida internal matrices manually returns cov_hat(tau_hat):")
 a22inv %*% flexida_meat %*% a22inv
 print("flexida vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
-vcovDA(damod, type = "HC0", cadjust = FALSE) * dim(model.matrix(damod))[1]
+vcovDA(damod, type = "HC0", cadjust = FALSE)
 print("sandwich::sandwich (no clustering) returns cov_hat(tau_hat):")
 sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = df$cid,
                    type = "HC0", cadjust = FALSE)

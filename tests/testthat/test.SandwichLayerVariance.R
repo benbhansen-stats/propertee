@@ -900,13 +900,13 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / N) * a22inv %*%
+               a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be equal to than that given by sandwich
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               (1 / N) * diag(sandwich::sandwich(damod))[2])
+               diag(sandwich::sandwich(damod))[2])
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
@@ -917,7 +917,7 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   df <- generate_nonclustered_data(N, balance = FALSE)
-  df$uid[31:60] <- NA_integer_
+  df$uid[seq_len(3 * N / 4)] <- NA_integer_
 
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ z
@@ -950,10 +950,10 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
-  expect_equal(N / 2 * a22inv, sandwich::bread(damod))
+  expect_equal(N / 4 * a22inv, sandwich::bread(damod))
   
   # after scaling, b22 is equivalent to sandwich::meat
-  expect_equal(b22 / (N / 2), sandwich::meat(damod, adjust = FALSE))
+  expect_equal(b22 / (N / 4), sandwich::meat(damod, adjust = FALSE))
   
   # check the cmod sandwich
   expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
@@ -963,13 +963,13 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
 
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (N / 2)) * a22inv %*%
+               a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be greater than that given by sandwich
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) >
-                  (1 / (N / 2)) * diag(sandwich::sandwich(damod))))
+                  diag(sandwich::sandwich(damod))))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vcovDA(damod, type = "HC0", cadjust = FALSE)) <
@@ -1033,14 +1033,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
 
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (NQ * MI)) * a22inv %*%
+               a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be equal to that given by sandwich
   expect_equal(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2],
-               (1 / (NQ * MI)) * diag(sandwich::sandwich(
-                                       damod,
+               diag(sandwich::sandwich(damod,
                                        meat. = sandwich::meatCL,
                                        cluster = factor(df$cid[!is.na(df$cid)]),
                                        cadjust = FALSE))[2])
@@ -1102,13 +1101,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (NQ * MI)) * a22inv %*%
+               a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-               (1 / (NQ * MI)) * diag(sandwich::sandwich(
+               diag(sandwich::sandwich(
                  damod,
                  meat. = sandwich::meatCL,
                  cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1171,14 +1170,14 @@ test_that(paste("HC0 vcovDA lm w/o clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               1 / N * a22inv %*%
+               a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                1 / N * diag(sandwich::sandwich(damod, adjust = FALSE))[2])
+                diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
 
 test_that(paste("HC0 vcovDA lm w/ clustering",
@@ -1236,13 +1235,13 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               (1 / (NQ * MI)) * a22inv %*%
+               a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                (1 / (NQ * MI)) * diag(sandwich::sandwich(
+                diag(sandwich::sandwich(
                   damod,
                   meat. = sandwich::meatCL,
                   cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1316,7 +1315,7 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   
   # check vcovDA matches manual matrix multiplication
   expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
-               1 / ((NC + NQ) * MI) * a22inv %*%
+               a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
@@ -1324,6 +1323,5 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
-                1 / ((NC + NQ) * MI) *
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
