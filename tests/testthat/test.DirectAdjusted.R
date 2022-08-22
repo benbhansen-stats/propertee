@@ -281,6 +281,7 @@ test_that("DirectAdjusted object has its own evaluation environment", {
   expect_false(identical(environment(), environment(formula(mod1))))
   expect_false(identical(environment(), environment(formula(mod2))))
   expect_false(identical(environment(), environment(formula(mod3))))
+  expect_equal(environment(formula(mod1))$data, simdata)
   expect_equal(environment(formula(mod1))$data, environment(formula(mod2))$data)
   expect_equal(environment(formula(mod1))$data, environment(formula(mod3))$data)
 })

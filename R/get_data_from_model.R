@@ -18,7 +18,6 @@
 .get_data_from_model <- function(which_fn,
                                  form = NULL,
                                  by = NULL) {
-
   if (!which_fn %in% c("weights", "adopters")) {
     stop(paste("Internal error: which_fn is invalid,", which_fn))
   }
@@ -63,9 +62,8 @@
   # Obtain the names of all functions in the callstack
   fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
-  # Identify all frames which have `model.frame.default` called (or
-  # `ittestimate`)
-  mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
+  # Identify all frames which have `model.frame.default` called
+  mf_pos <- which(fns_called == "model.frame.default")
 
   # identify whether we're looking inside weights or adopters
   if (which_fn == "weights") {
@@ -115,6 +113,22 @@
                             data = get("data", sys.frame(mf_pos)),
                             na.action = na.pass),
         silent = TRUE)
+  }
+
+  # search for a DirectAdjusted object in the base function's execution environment 
+  if (is.null(data) || !is.data.frame(data)) {
+    for (i in seq_len(sys.nframe() - 1)) {
+      objs <- sapply(ls.str(parent.frame(i)), get, envir = parent.frame(i))
+      damods <- sapply(objs, inherits, "DirectAdjusted")
+      if (length(damods) > 0 && sum(damods) == 1) { # ensure only one DirectAdjusted object exists in the environment
+        damod <- objs[[which(damods)]]
+        try(data <- get("data", envir = environment(formula(damod))),
+            silent = TRUE)
+      }
+      if (!is.null(data) && is.data.frame(data)) {
+        break()
+      }
+    }
   }
 
   # Ensure data is actually data at this point - if not, try fallback method
