@@ -67,7 +67,7 @@ flexPoly <- function(dat,deg){
   x <- lm(Y ~ Z, data = dat, offset = cov_adj(covMod, design = des))
   res <- lmitt(x)
   
-  setNames(c(sqrt(vcovDA(res)[2,2] * nrow(dat)),res$coefficients[2]),
+  setNames(c(sqrt(vcovDA(res)[2,2]),res$coefficients[2]),
            paste0(c('flex.se.','flex.est.'),deg))
 }
 
