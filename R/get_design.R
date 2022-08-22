@@ -64,14 +64,26 @@
     covadj_design <- .find.design("offset")
   }
   # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
-  # will that be converted into an actual design
-  found_lmitt <- grepl("^lmitt\\.formula$", lapply(sys.calls(), "[[", 1))
+  # will that be converted into an actual design, and `expand.model.frame` may
+  # have a DirectAdjusted object from which we can extract the design object
+  found_lmitt <- grepl("(^lmitt\\.formula$|expand\\.model\\.frame$)",
+                       lapply(sys.calls(), "[[", 1),
+                       perl = TRUE)
   if (any(found_lmitt)) {
-    lmitt_design <- get("design", sys.frame(which(found_lmitt)[1]))
-    # If its not a real design, return NULL
-    if (!inherits(lmitt_design, "Design")) {
-      lmitt_design <- NULL
-    }
+    mf <- which(found_lmitt)[1]
+    lmitt_design <- tryCatch(
+      get("design", sys.frame(mf)),
+      error = function(e1) {
+        tryCatch(
+          get("model", sys.frame(mf))@Design,
+          error = function(e2) {
+            NULL
+          })
+      })
+  }
+  # If its not a real design, return NULL
+  if (!inherits(lmitt_design, "Design")) {
+    lmitt_design <- NULL
   }
 
   # At this point, each *_design is either NULL, or a Design (as enforced by

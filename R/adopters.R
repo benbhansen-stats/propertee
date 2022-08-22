@@ -26,14 +26,6 @@
 ##' @return The treatment variable to be placed in the regression formula.
 ##' @export
 adopters <- function(design = NULL, data = NULL) {
-  treatment <- try(
-    get("data", envir = parent.frame())$`adopters()`,
-    silent = TRUE
-  )
-  if (is.numeric(treatment) | is.logical(treatment)) {
-    return(treatment)
-  }
-
   if (is.null(design)) {
     design <- .get_design()
   }
