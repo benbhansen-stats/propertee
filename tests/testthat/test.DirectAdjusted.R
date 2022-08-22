@@ -270,3 +270,27 @@ test_that("Differing designs found", {
 
 
 })
+
+test_that("DirectAdjusted summary provides vcovDA SE's", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+                    offset = cov_adj(cmod)))
+  
+  s <- summary(damod)
+  expect_equal(s$coefficients[, 2L], sqrt(diag(vcovDA(damod))))
+  expect_equal(s$coefficients[, 3L],
+               damod$coefficients / sqrt(diag(vcovDA(damod))))
+  expect_equal(s$coefficients[, 4L],
+               2 * pt(abs(damod$coefficients / sqrt(diag(vcovDA(damod)))),
+                      damod$df.residual,
+                      lower.tail = FALSE))
+  
+  simdata[simdata$cid1 == 1, "z"] <- NA_integer_
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+                    offset = cov_adj(cmod)))
+  vcovDA(damod)
+})

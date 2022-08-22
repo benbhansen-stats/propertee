@@ -1,7 +1,7 @@
-#' @include Design.R WeightedDesign.R DesignAccessors.R
+#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
 NULL
-# The above ensures that `Design` and `WeightedDesign` are defined prior to
-# `DirectAdjusted`
+# The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
+# prior to `DirectAdjusted`
 
 setClass("DirectAdjusted",
          contains = "lm",
@@ -78,6 +78,25 @@ as.lmitt <- function(x, design = NULL) {
 ##' @rdname as_lmitt
 ##' @export
 as.DirectAdjusted <- as.lmitt
+
+setGeneric("summary")
+
+##' @title Summary of \code{DirectAdjusted} object
+##' @details The usual \code{stats::summary.lm()} output is enhanced by
+##' covariance-adjusted sandwich standard errors, with t-test values
+##' recalculated to reflect this adjustment.
+##' @param object DirectAdjusted
+##' @parm ... Add'l aguments
+##' @return summary object based from \code{stats::summary.lm()}
+##' @export
+setMethod("summary", "DirectAdjusted", function(object, ...) {
+  ans <- summary(as(object, "lm"))
+  ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+  ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
+  ans$coefficients[, 4L] <- 2*pt(abs(ans$coefficients[, 3L]), ans$df[2L],
+                                 lower.tail = FALSE)
+  return(ans)
+})
 
 setGeneric("vcov")
 

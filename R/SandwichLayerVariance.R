@@ -189,7 +189,7 @@ vcovDA <- function(x, type = c("CR1"), ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  nq <- sum(summary(x)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(x))
 
   # Get units of assignment for clustering
   dots <- list(...)
