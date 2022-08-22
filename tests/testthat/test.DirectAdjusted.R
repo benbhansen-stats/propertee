@@ -262,11 +262,25 @@ test_that("Differing designs found", {
   # Checking that things work when passing multiple of the same designs
   mod1 <- lmitt(y ~ x, data = simdata, weights = ate(des))
   mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
-  expect_identical(mod1, mod2)
+  expect_equal(mod1$coefficients, mod2$coefficients)
 
   mod3 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
   mod4 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des), design = des)
-  expect_identical(mod3, mod4)
+  expect_equal(mod3$coefficients, mod4$coefficients)
 
 
+})
+
+test_that("DirectAdjusted object has its own evaluation environment", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
+  mod2 <- lmitt(lm(y ~ adopters(), simdata, weights = ate(des)))
+  mod3 <- lmitt(y ~ z, data = simdata, design = des)
+  
+  expect_false(identical(environment(), environment(formula(mod1))))
+  expect_false(identical(environment(), environment(formula(mod2))))
+  expect_false(identical(environment(), environment(formula(mod3))))
+  expect_equal(environment(formula(mod1))$data, environment(formula(mod2))$data)
+  expect_equal(environment(formula(mod1))$data, environment(formula(mod3))$data)
 })
