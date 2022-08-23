@@ -19,7 +19,7 @@ NULL
 ##' @example inst/examples/cov_adj.R
 cov_adj <- function(model, newdata = NULL, design =  NULL) {
   if (is.null(newdata)) {
-    form <- model$call$formula
+    form <- formula(model)
     newdata <- tryCatch(
       .get_data_from_model("weights", form),
        error = function(e) {

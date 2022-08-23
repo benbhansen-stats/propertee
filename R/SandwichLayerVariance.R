@@ -85,14 +85,14 @@ vcovDA <- function(x, ...) {
                   ncol = dim(stats::model.matrix(x))[2]))
   }
   
-  # Sum est eqns to cluster level; since non-overlapping rows are NA they are
-  # excluded automatically in `by` call
+  # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
+  # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, keys, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, uoanames)[uoanames]
+  Q_uoas <- stats::expand.model.frame(x, uoanames, na.expand = TRUE)[uoanames]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
   } else {
@@ -324,24 +324,18 @@ vcovDA <- function(x, ...) {
     } else {
       dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
     }
-    Qmat <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors) *
-      stats::model.matrix(x)
+    wt_diag <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors)
   } else {
-    wts <- if (is.null(x$weights)) 1 else x$weights
-    Qmat <- wts * stats::model.matrix(x)
+    wt_diag <- if (is.null(x$weights)) 1 else x$weights
   }
 
-  # Get units of assignment for clustering
-  uoanames <- var_names(x@Design, "u")
-  uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
-  if (ncol(uoas) == 1) {
-    uoas <- factor(uoas[,1])
-  } else {
-    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
-  }
-
-  nuoas <- length(levels(uoas))
-  out <- crossprod(Qmat, sl@prediction_gradient)
+  damod_mm <- stats::model.matrix(formula(x),
+                                  stats::model.frame(x, na.action = na.pass))
+  msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
+            apply(!is.na(damod_mm), 1, all))
+  
+  out <- crossprod(damod_mm[msk, , drop = FALSE] * wt_diag,
+                   sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
 }
