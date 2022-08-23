@@ -2,18 +2,24 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{vcov,DirectAdjusted-method}
 \alias{vcov,DirectAdjusted-method}
-\title{Variance-Covariance matrix}
+\title{Variance-Covariance matrix of \code{DirectAdjusted} object}
 \usage{
 \S4method{vcov}{DirectAdjusted}(object, ...)
 }
 \arguments{
 \item{object}{DirectAdjusted}
 
-\item{...}{Add'l arguments}
+\item{...}{Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.}
 }
 \value{
 Variance-Covariance matrix
 }
 \description{
-Variance-Covariance matrix
+Variance-Covariance matrix of \code{DirectAdjusted} object
+}
+\details{
+If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
+offset, then its \code{vcov()} method provides a sandwich estimate of the
+covariance-adjusted variance-covariance matrix. Otherwise, it provides
+the default OLS estimate of the matrix.
 }

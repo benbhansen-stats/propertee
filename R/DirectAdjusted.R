@@ -82,12 +82,14 @@ as.DirectAdjusted <- as.lmitt
 setGeneric("summary")
 
 ##' @title Summary of \code{DirectAdjusted} object
-##' @details The usual \code{stats::summary.lm()} output is enhanced by
-##' covariance-adjusted sandwich standard errors, with t-test values
-##' recalculated to reflect this adjustment.
+##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
+##' offset, then the usual \code{stats::summary.lm()} output is enhanced by
+##' the use of covariance-adjusted sandwich standard errors, with t-test values
+##' recalculated to reflect the new standard errors.
 ##' @param object DirectAdjusted
-##' @parm ... Add'l aguments
-##' @return summary object based from \code{stats::summary.lm()}
+##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
+##' finite sample heteroskedasticity-robust standard error adjustment.
+##' @return summary object based from \code{stats:::summary.lm()}
 ##' @export
 setMethod("summary", "DirectAdjusted", function(object, ...) {
   ans <- summary(as(object, "lm"))
@@ -103,13 +105,21 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
 
 setGeneric("vcov")
 
-##' @title Variance-Covariance matrix
+##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
+##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
+##' offset, then its \code{vcov()} method provides a sandwich estimate of the
+##' covariance-adjusted variance-covariance matrix. Otherwise, it provides
+##' the default OLS estimate of the matrix.
 ##' @param object DirectAdjusted
-##' @param ... Add'l arguments
+##' @param ... Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.
 ##' @return Variance-Covariance matrix
 ##' @export
 setMethod("vcov", "DirectAdjusted", function(object, ...) {
-  return(vcov(as(object, "lm"), ...))
+  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    return(vcovDA(object, ...))
+  } else {
+    return(stats:::vcov.lm(object, ...))
+  }
 })
 
 
