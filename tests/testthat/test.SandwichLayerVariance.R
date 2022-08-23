@@ -383,7 +383,7 @@ test_that(".get_b22 returns correct value for lm object w/o offset", {
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
-  nq <- sum(summary(m)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(m))
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
@@ -489,7 +489,7 @@ test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
-  nq <- sum(summary(m)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(m))
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
@@ -514,7 +514,7 @@ test_that(".get_b22 returns correct value for poisson glm", {
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::poisson())
   )
-  nq <- sum(summary(m)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(m))
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
@@ -539,7 +539,7 @@ test_that(".get_b22 returns correct value for quasipoisson glm", {
     glm(round(exp(y)) ~ z, data = simdata, weights = ate(des),
         family = stats::quasipoisson())
   )
-  nq <- sum(summary(m)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(m))
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
@@ -566,7 +566,7 @@ test_that(".get_b22 returns correct value for binomial glm", {
           family = stats::binomial())
   ))
 
-  nq <- sum(summary(m)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(m))
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")

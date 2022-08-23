@@ -91,10 +91,13 @@ setGeneric("summary")
 ##' @export
 setMethod("summary", "DirectAdjusted", function(object, ...) {
   ans <- summary(as(object, "lm"))
-  ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
-  ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
-  ans$coefficients[, 4L] <- 2*pt(abs(ans$coefficients[, 3L]), ans$df[2L],
-                                 lower.tail = FALSE)
+  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+    ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
+    ans$coefficients[, 4L] <- 2*pt(abs(ans$coefficients[, 3L]), ans$df[2L],
+                                   lower.tail = FALSE)
+  }
+
   return(ans)
 })
 
