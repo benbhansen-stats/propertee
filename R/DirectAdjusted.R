@@ -103,7 +103,7 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
   return(ans)
 })
 
-setGeneric("vcov")
+# setGeneric("vcov")
 
 ##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
 ##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
@@ -113,17 +113,26 @@ setGeneric("vcov")
 ##' @param object DirectAdjusted
 ##' @param ... Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.
 ##' @return Variance-Covariance matrix
-##' @export
-setMethod("vcov", "DirectAdjusted", function(object, ...) {
+##' @exportS3Method 
+vcov.DirectAdjusted <- function(object, ...) {
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
     return(vcovDA(object, ...))
   } else {
     return(stats:::vcov.lm(object, ...))
   }
-})
+}
+
+# ##' @export
+# setMethod("vcov", "DirectAdjusted", function(object, ...) {
+#   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+#     return(vcovDA(object, ...))
+#   } else {
+#     return(stats:::vcov.lm(object, ...))
+#   }
+# })
 
 
-setGeneric("confint")
+# setGeneric("confint")
 
 ##' @title Variance-Covariance matrix
 ##' @param object DirectAdjusted
@@ -133,11 +142,15 @@ setGeneric("confint")
 ##' @param level the confidence level required.
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
-##' @export
-setMethod("confint", "DirectAdjusted",
-          function(object, parm, level = 0.95, ...) {
-  return(confint(as(object, "lm"), parm, level = level, ...))
-})
+##' @exportS3Method 
+confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
+  return(stats:::confint.lm(object, parm, level = level, ...))
+}
+# ##' @export
+# setMethod("confint", "DirectAdjusted",
+#           function(object, parm, level = 0.95, ...) {
+#   return(stats:::confint.lm(object, parm, level = level, ...))
+# })
 
 ##' Identify treatment variable in \code{DirectAdjusted} object
 ##'

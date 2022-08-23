@@ -327,3 +327,17 @@ test_that("DirectAdjusted w/o SandwichLayer offset vcov uses OLS matrix", {
   
   expect_identical(vcov(damod), stats:::vcov.lm(damod))
 })
+
+test_that("DirectAdjusted with SandwichLayer offset confint uses vcovDA SE's", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+                    offset = cov_adj(cmod)))
+  
+  vcovDA_ci <- damod$coefficients + sqrt(diag(vcovDA(damod))) %o%
+    qt(c(0.05, 0.95), damod$df.residual)
+  ci <- confint(damod, level = 0.9)
+  dimnames(vcovDA_ci) <- dimnames(ci)
+  expect_equal(ci, vcovDA_ci)
+})
