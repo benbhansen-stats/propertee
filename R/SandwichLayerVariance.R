@@ -33,8 +33,8 @@ vcovDA <- function(x, ...) {
   meat <- (
     b22 -
       a21 %*% a11inv %*% b12 -
-      (crossprod(b12, a11inv) %*% t(a21)) +
-      (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
+      t(b12) %*% t(a11inv) %*% t(a21) +
+      a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
   )
   vmat <- a22inv %*% meat %*% a22inv
 
@@ -85,14 +85,14 @@ vcovDA <- function(x, ...) {
                   ncol = dim(stats::model.matrix(x))[2]))
   }
   
-  # Sum est eqns to cluster level; since non-overlapping rows are NA they are
-  # excluded automatically in `by` call
+  # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
+  # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, keys, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, uoanames)[uoanames]
+  Q_uoas <- stats::expand.model.frame(x, uoanames, na.expand = TRUE)[uoanames]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
   } else {
@@ -324,24 +324,128 @@ vcovDA <- function(x, ...) {
     } else {
       dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
     }
-    Qmat <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors) *
-      stats::model.matrix(x)
+    wt_diag <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors)
   } else {
-    wts <- if (is.null(x$weights)) 1 else x$weights
-    Qmat <- wts * stats::model.matrix(x)
+    wt_diag <- if (is.null(x$weights)) 1 else x$weights
   }
 
-  # Get units of assignment for clustering
-  uoanames <- var_names(x@Design, "u")
-  uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
-  if (ncol(uoas) == 1) {
-    uoas <- factor(uoas[,1])
-  } else {
-    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
-  }
-
-  nuoas <- length(levels(uoas))
-  out <- crossprod(Qmat, sl@prediction_gradient)
+  damod_mm <- stats::model.matrix(formula(x),
+                                  stats::model.frame(x, na.action = na.pass))
+  msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
+            apply(!is.na(damod_mm), 1, all))
+  
+  out <- crossprod(damod_mm[msk, , drop = FALSE] * wt_diag,
+                   sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
+}
+
+##' @title Estfun method for lmrob objects
+##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
+##' @param ... Additional arguments to be passed to \code{estfun}
+##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
+##' the scale estimate and the remaining \eqn{p} colums correspond to the
+##' coefficients
+##' @author lrd author 2
+##' @exportS3Method
+estfun.lmrob <- function(x, ...) {
+  ctrl <- x$control
+  if (!inherits(ctrl, "list")) {
+    stop("Model object must have a `control` element of type `list`")
+  }
+  if (!(ctrl$method %in% c("SM", "MM"))) {
+    stop("estfun.lmrob() supports only SM or MM estimates")
+  }
+  if (is.null(ctrl$psi)) {
+    stop("parameter psi is not defined")
+  }
+
+  xmat <- stats::model.matrix(x)
+  xmat <- stats::naresid(x$na.action, xmat)
+  psi <- chi <- ctrl$psi
+  stopifnot(is.numeric(c.chi <- ctrl$tuning.chi),
+            is.numeric(c.psi <- ctrl$tuning.psi))
+  r0 <- x$init$resid
+  r <- x$residuals
+  scale <- x$scale
+  n <- length(r)
+  stopifnot(n == length(r0), is.matrix(xmat), n == nrow(xmat))
+  p <- ncol(xmat)
+  r0.s <- r0 / scale
+  w0 <- robustbase::Mchi(r0.s, cc = c.chi, psi = chi)
+  Usigma <- scale(w0, center=TRUE, scale=FALSE)
+  colnames(Usigma) <- "sigma"
+  r.s <- r / scale
+  w <- robustbase::Mpsi(r.s, cc = c.psi, psi = psi)
+  Ubeta <- w * xmat
+  rval <- cbind(Usigma, Ubeta)
+  attr(rval, "assign") <- NULL
+  attr(rval, "contrasts") <- NULL
+
+  return(rval)
+}
+
+##' @title Bread method for lmrob objects
+##' @details Extract bread matrix from an \code{lmrob} fit
+##'
+##' This is part of a workaround for an issue in the robustbase code
+##' affecting sandwich covariance estimation.
+##' The issue in question is issue #6471, robustbase project on R-Forge.
+##'
+##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
+##' @param ... Additional arguments to be passed to \code{bread}
+##' @return A \eqn{p\times }(p+1) matrix where the first column corresponds to
+##' the scale estimate and the remaining \eqn{p} colums correspond to the
+##' coefficients
+##' @author lrd author 2
+##' @exportS3Method
+bread.lmrob <- function(x, ...) {
+  ctrl <- x$control
+  if (!inherits(ctrl, "list")) {
+    stop("Model object must have a `control` element of type `list`")
+  }
+  if (!(ctrl$method %in% c("SM", "MM"))) {
+    stop("estfun.lmrob() supports only SM or MM estimates")
+  }
+  if (is.null(ctrl$psi)) {
+    stop("parameter psi is not defined")
+  }
+
+  psi <- chi <- ctrl$psi
+  stopifnot(is.numeric(c.chi <- ctrl$tuning.chi),
+            is.numeric(c.psi <- ctrl$tuning.psi))
+  r0 <- x$init$resid
+  r <- x$residuals
+  scale <- x$scale
+  xmat <- stats::model.matrix(x)
+  bb <- 1 / 2
+  n <- length(r)
+  stopifnot(n == length(r0), is.matrix(xmat), n == nrow(xmat))
+  p <- ncol(xmat)
+  r.s <- r / scale
+  r0.s <- r0 / scale
+  w <- robustbase::Mpsi(r.s, cc = c.psi, psi = psi, deriv = 1)
+  w0 <- robustbase::Mchi(r0.s, cc = c.chi, psi = chi, deriv = 1)
+  x.wx <- crossprod(xmat, xmat * w)
+  A <- tryCatch(solve(x.wx) * scale, error = function(e) {
+    tryCatch({
+      out <- solve(x.wx, tol = 0) * scale
+      warning("X'WX is almost singular", call. = FALSE)
+      out
+      }, error = function(e) {
+        stop("X'WX is singular", call. = FALSE)
+    })
+  })
+
+  # At this point A has no sample size scaling, as in robustbase:::.vcov.avar1
+  # The lack of scaling there precisely compensates for the lack of scaling of
+  # the crossproduct
+  a <- A %*% (crossprod(xmat, w * r.s) / mean(w0 * r0.s))
+  colnames(a) <- "sigma"
+
+  # Now we restore sample size scaling to A
+  A <- n * A
+  rval <- cbind(a, A)
+
+  return(rval)
 }

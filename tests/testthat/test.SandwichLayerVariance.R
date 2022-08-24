@@ -255,6 +255,44 @@ test_that(paste(".get_b12 returns B_12 with correct dimensions when only one",
   expect_equal(b12, matrix(0, nrow = 2, ncol = 2))
 })
 
+test_that(paste(".get_b12 returns expected matrix when some rows in cmod data",
+                "have NA values for covariates"), {
+  data(simdata)
+  set.seed(96)
+
+  # random rows in cmod data have NA covariate values
+  rvals <- runif(n = length(which(simdata$cid1 %in% c(2, 4))))
+  names(rvals) <- which(simdata$cid1 %in% c(2, 4))
+  rvals <- sort(rvals)
+  simdata[as.numeric(names(rvals)[seq_len(round(length(rvals) / 4))]),
+          "x"] <- NA_real_
+  
+  cmod <- lm(y ~ x, simdata, subset = cid1 %in% c(2, 4))
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  expect_warning(lmitt(lm(y ~ z, simdata, offset = cov_adj(cmod, design = des))),
+                 "adjustments are NA")
+  m <- suppressWarnings(
+    lmitt(lm(y ~ z, simdata, offset = cov_adj(cmod, design = des)))
+  )
+  
+  cmod_eqns <- Reduce(
+    rbind,
+    by(sandwich::estfun(cmod),
+       list(cid1 = simdata$cid1[!is.na(simdata$x) & simdata$cid1 %in% c(2, 4)],
+            cid2 = simdata$cid2[!is.na(simdata$x) & simdata$cid1 %in% c(2, 4)]),
+       colSums))
+  msk <- which(simdata$cid1[!is.na(simdata$x)] %in% c(2, 4))
+  dmod_eqns <- Reduce(
+    rbind,
+    by(sandwich::estfun(m)[msk, , drop = FALSE],
+       list(cid1 = simdata$cid1[!is.na(simdata$x)][msk],
+            cid2 = simdata$cid2[!is.na(simdata$x)][msk]),
+       colSums))
+  
+  b12 <- .get_b12(m)
+  expect_equal(b12, crossprod(cmod_eqns, dmod_eqns))
+})
+
 test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                 "included in the direct adjustment model"), {
   data(simdata)
@@ -834,6 +872,49 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   a21 <- .get_a21(m)
   expect_equal(dim(a21), c(2, 3))
   expect_equal(a21, crossprod(Qmat, Cmat))
+})
+
+test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
+                "has NA values for some covariate values"), {
+  data(simdata)
+  simdata[simdata$cid1 == 1, "x"] <- NA_real_
+  cmod_data <- subset(simdata, cid1 %in% c(2, 4))
+  m_data <- subset(simdata, cid1 %in% c(1, 3, 5))
+  cmod <- lm(y ~ x, data = cmod_data)
+  des <- rct_design(z ~ cluster(cid1, cid2), m_data)
+
+  expect_warning(
+    lmitt(lm(y ~ z, m_data, offset = cov_adj(cmod, design = des))),
+    "covariance adjustments are NA"
+  )
+  m <- suppressWarnings(
+    lmitt(lm(y ~ z, m_data, weights = ate(des),
+             offset = cov_adj(cmod, design = des)))
+  )
+  
+  damod_mm <- suppressWarnings(
+    m$weights * stats::model.matrix(
+      formula(m), stats::model.frame(m, na.action = na.pass))[!is.na(m_data$x),]
+  )
+  pg <- stats::model.matrix(formula(cmod), m_data)
+  
+  a21 <- suppressWarnings(.get_a21(m))
+  expect_equal(a21, crossprod(damod_mm, pg))
+})
+
+test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
+                NA values for some treatment assignments"), {
+  data(simdata)
+  simdata[simdata$cid1 %in% c(2, 4), "z"] <- NA_integer_
+  cmod <- lm(y ~ x, data = simdata, subset = cid1 %in% c(2, 4))
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  m <- lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  damod_mm <- m$weights * stats::model.matrix(m)
+  pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
+  
+  a21 <- .get_a21(m)
+  expect_equal(a21, crossprod(damod_mm, pg))
 })
 
 test_that("vcovDA returns px2 matrix", {
