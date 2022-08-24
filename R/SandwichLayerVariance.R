@@ -340,13 +340,19 @@ vcovDA <- function(x, ...) {
   return(out)
 }
 
-##' @title Estfun method for lmrob objects
+##' @title Generate matrix of estimating equations for \code{lmrob()} fit
+##' @details This is part of a workaround for an issue in the robustbase code
+##' affecting sandwich covariance estimation. The issue in question is issue
+##' #6471, robustbase project on R-Forge. This function contributes to providing
+##' sandwich estimates of covariance-adjusted standard errors for robust linear
+##' covariance adjustment models.
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{estfun}
 ##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
+##' @rdname sandwich_elements_calc
 ##' @exportS3Method
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
@@ -385,12 +391,12 @@ estfun.lmrob <- function(x, ...) {
   return(rval)
 }
 
-##' @title Bread method for lmrob objects
-##' @details Extract bread matrix from an \code{lmrob} fit
-##'
-##' This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation.
-##' The issue in question is issue #6471, robustbase project on R-Forge.
+##' @title Extract bread matrix from an \code{lmrob()} fit
+##' @details This is part of a workaround for an issue in the robustbase code
+##' affecting sandwich covariance estimation. The issue in question is issue
+##' #6471, robustbase project on R-Forge. This function contributes to providing
+##' sandwich estimates of covariance-adjusted standard errors for robust linear
+##' covariance adjustment models.
 ##'
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{bread}
@@ -398,6 +404,7 @@ estfun.lmrob <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
+##' @rdname sandwich_elements_calc
 ##' @exportS3Method
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control

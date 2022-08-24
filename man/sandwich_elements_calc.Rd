@@ -7,6 +7,8 @@
 \alias{.get_a11_inverse}
 \alias{.get_b11}
 \alias{.get_a21}
+\alias{estfun.lmrob}
+\alias{bread.lmrob}
 \title{(Internal) Compute variance blocks}
 \usage{
 .get_b12(x)
@@ -20,11 +22,15 @@
 .get_b11(x, ...)
 
 .get_a21(x)
+
+\method{estfun}{lmrob}(x, ...)
+
+\method{bread}{lmrob}(x, ...)
 }
 \arguments{
-\item{x}{A \code{DirectAdjusted} model}
+\item{x}{An \code{lmrob} object produced using an MM/SM estimator chain}
 
-\item{...}{Arguments to be passed to sandwich::meatCL}
+\item{...}{Additional arguments to be passed to \code{bread}}
 }
 \value{
 \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
@@ -52,9 +58,21 @@ intercept
 rows are given by intercept and treatment variable terms in the direct
 adjusted model, and the number of columns are given by the number of terms
 in the covariance model
+
+A \eqn{n\times }(p+1) matrix where the first column corresponds to
+the scale estimate and the remaining \eqn{p} colums correspond to the
+coefficients
+
+A \eqn{p\times }(p+1) matrix where the first column corresponds to
+the scale estimate and the remaining \eqn{p} colums correspond to the
+coefficients
 }
 \description{
 (Internal) Compute variance blocks
+
+Generate matrix of estimating equations for \code{lmrob()} fit
+
+Extract bread matrix from an \code{lmrob()} fit
 }
 \details{
 The \bold{B12 block} is the covariance matrix of the cluster-level
@@ -126,9 +144,24 @@ cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
 ith cluster in the direct adjustment model, and \eqn{\upsilon} and
 \eqn{\zeta_i} are the conditional mean function and linear predictor for
 the ith cluster in the covariance model.
+
+This is part of a workaround for an issue in the robustbase code
+affecting sandwich covariance estimation. The issue in question is issue
+#6471, robustbase project on R-Forge. This function contributes to providing
+sandwich estimates of covariance-adjusted standard errors for robust linear
+covariance adjustment models.
+
+This is part of a workaround for an issue in the robustbase code
+affecting sandwich covariance estimation. The issue in question is issue
+#6471, robustbase project on R-Forge. This function contributes to providing
+sandwich estimates of covariance-adjusted standard errors for robust linear
+covariance adjustment models.
 }
 \references{
 Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
 https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
+}
+\author{
+lrd author 2
 }
 \keyword{internal}
