@@ -115,18 +115,18 @@
         silent = TRUE)
   }
 
-  # search for a DirectAdjusted object in the base function's execution environment 
+  # search for a DirectAdjusted object in the call stack
   if (is.null(data) || !is.data.frame(data)) {
-    for (i in seq_len(sys.nframe() - 1)) {
-      objs <- sapply(ls.str(parent.frame(i)), get, envir = parent.frame(i))
-      damods <- sapply(objs, inherits, "DirectAdjusted")
-      if (length(damods) > 0 && sum(damods) == 1) { # ensure only one DirectAdjusted object exists in the environment
-        damod <- objs[[which(damods)]]
-        try(data <- get("data", envir = environment(formula(damod))),
+    for (i in seq_len(sys.nframe())) {
+      if (is.null(sys.call(-i))) break
+
+      objs <- sapply(ls(parent.frame(i)), get, envir = parent.frame(i))
+      lmitts <- sapply(objs, inherits, "DirectAdjusted")
+      if (any(lmitts)) {
+        found_lmitt <- objs[[which(lmitts)]]
+        try(data <- get("data", envir = environment(formula(found_lmitt))),
             silent = TRUE)
-      }
-      if (!is.null(data) && is.data.frame(data)) {
-        break()
+        break
       }
     }
   }
