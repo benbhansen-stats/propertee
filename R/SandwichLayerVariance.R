@@ -352,7 +352,7 @@ vcovDA <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
-##' @rdname sandwich_elements_calc
+##' @rdname lmrob_methods
 ##' @exportS3Method
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
@@ -404,7 +404,7 @@ estfun.lmrob <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
-##' @rdname sandwich_elements_calc
+##' @rdname lmrob_methods
 ##' @exportS3Method
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control

@@ -59,6 +59,7 @@ reference:
     - show,PreSandwichLayer-method
     - .show_layer
     - .get_b12
+    - lmrob_methods
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
