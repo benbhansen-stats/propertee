@@ -341,3 +341,15 @@ test_that("DirectAdjusted with SandwichLayer offset confint uses vcovDA SE's", {
   dimnames(vcovDA_ci) <- dimnames(ci)
   expect_equal(ci, vcovDA_ci)
 })
+
+test_that("DirectAdjusted w/o SandwichLayer offset confint uses OLS SE's", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  
+  vcovlm_ci <- damod$coefficients + sqrt(diag(stats:::vcov.lm(damod))) %o%
+    qt(c(0.05, 0.95), damod$df.residual)
+  ci <- confint(damod, level = 0.9)
+  dimnames(vcovlm_ci) <- dimnames(ci)
+  expect_equal(ci, vcovlm_ci)
+})
