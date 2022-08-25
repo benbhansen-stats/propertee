@@ -18,6 +18,7 @@
 .get_data_from_model <- function(which_fn,
                                  form = NULL,
                                  by = NULL) {
+
   if (!which_fn %in% c("weights", "adopters")) {
     stop(paste("Internal error: which_fn is invalid,", which_fn))
   }
@@ -62,8 +63,9 @@
   # Obtain the names of all functions in the callstack
   fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
-  # Identify all frames which have `model.frame.default` called
-  mf_pos <- which(fns_called == "model.frame.default")
+  # Identify all frames which have `model.frame.default` called (or
+  # `ittestimate`)
+  mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
   # identify whether we're looking inside weights or adopters
   if (which_fn == "weights") {

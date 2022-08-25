@@ -80,11 +80,12 @@
             NULL
           })
       })
+    # If its not a real design, return NULL
+    if (!inherits(lmitt_design, "Design")) {
+      lmitt_design <- NULL
+    }
   }
-  # If its not a real design, return NULL
-  if (!inherits(lmitt_design, "Design")) {
-    lmitt_design <- NULL
-  }
+
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
   # .find.design() and the special lmitt case)
