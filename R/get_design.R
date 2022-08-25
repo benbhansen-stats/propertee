@@ -86,7 +86,6 @@
     }
   }
 
-
   # At this point, each *_design is either NULL, or a Design (as enforced by
   # .find.design() and the special lmitt case)
 
