@@ -7,8 +7,8 @@ setClass("PreSandwichLayer",
                    prediction_gradient = "matrix"))
 
 setValidity("PreSandwichLayer", function(object) {
-  if (!("terms" %in% attr(object@fitted_covariance_model, "names"))) {
-    return("Fitted covariance model must have a 'terms' attribute")
+  if (!inherits(object@fitted_covariance_model$terms, "terms")) {
+    return("Fitted covariance model must have a valid 'terms' attribute")
   }
 
   tryCatch({
