@@ -871,7 +871,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
                         stats::expand.model.frame(m, uoanames)[, uoanames]))
 
-  Qmat <- m$weights * m$family$mu.eta(m$linear.predictors) * stats::model.matrix(m)
+  Qmat <- m$prior.weights * m$family$mu.eta(m$linear.predictors) * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
 
   a21 <- .get_a21(m)

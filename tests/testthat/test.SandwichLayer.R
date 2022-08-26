@@ -509,7 +509,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   expect_equal(ca_and_grad$ca,
               drop(exp(mm %*% cmod$coefficients)))
   expect_equal(ca_and_grad$prediction_gradient,
-              cmod$family$mu.eta(drop(exp(mm %*% cmod$coefficients))) * mm)
+              cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm)
 })
 
 test_that(paste(".get_ca_and_prediction_gradient returns expected output",
@@ -526,7 +526,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   expect_equal(ca_and_grad$ca,
                drop(exp(mm %*% cmod$coefficients)))
   expect_equal(ca_and_grad$prediction_gradient,
-               cmod$family$mu.eta(drop(exp(mm %*% cmod$coefficients))) * mm)
+               cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm)
 })
 
 test_that(paste(".get_ca_and_prediction_gradient returns expected output when",

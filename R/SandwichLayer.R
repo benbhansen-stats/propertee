@@ -137,15 +137,16 @@ setMethod("[", "PreSandwichLayer",
   X <- stats::model.matrix(stats::delete.response(model_terms), data = newdata)
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  ca <- drop(X %*% model$coefficients)
+  xb <- drop(X %*% model$coefficients)
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models
   if (inherits(model, "glm")) {
-    ca <- model$family$linkinv(ca)
-    pred_gradient <- model$family$mu.eta(ca) * X
+    ca <- model$family$linkinv(xb)
+    pred_gradient <- model$family$mu.eta(xb) * X
   } else if (inherits(model, "lm") | inherits(model, "lmrob")) {
     # `lm` doesn't have a `family` object, but we know its prediction gradient
+    ca <- xb
     pred_gradient <- X
   } else {
     stop("`model` must inherit from a `glm`, `lm`, or `lmrob` object")

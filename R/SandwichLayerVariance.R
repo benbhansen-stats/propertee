@@ -324,7 +324,7 @@ vcovDA <- function(x, ...) {
     } else {
       dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
     }
-    wt_diag <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors)
+    wt_diag <- x$prior.weights / dispersion * x$family$mu.eta(x$linear.predictors)
   } else {
     wt_diag <- if (is.null(x$weights)) 1 else x$weights
   }
