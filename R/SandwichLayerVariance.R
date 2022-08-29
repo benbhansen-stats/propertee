@@ -132,19 +132,8 @@ vcovDA <- function(x, ...) {
   }
 
   # Get expected information per sandwich_infrastructure vignette
-  if ("glm" %in% x@.S3Class) {
-    if (x$family$family %in% c("binomial", "poisson")) {
-      dispersion <- 1
-    } else {
-      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
-    }
-    W <- x$family$mu.eta(x$linear.predictors) * x$weights / dispersion
-  } else {
-    W <- if (is.null(x$weights)) rep(1, length(x$fitted.values)) else x$weights
-  }
-
-  fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
-  out <- solve(fim)
+  w <- if (is.null(x$weights)) 1 else x$weights
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
 
   return(out)
 }
@@ -318,23 +307,14 @@ vcovDA <- function(x, ...) {
   }
 
   # Get contribution to the estimating equation from the direct adjustment model
-  if ("glm" %in% x@.S3Class) {
-    if (x$family$family %in% c("binomial", "poisson")) {
-      dispersion <- 1
-    } else {
-      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
-    }
-    wt_diag <- x$prior.weights / dispersion * x$family$mu.eta(x$linear.predictors)
-  } else {
-    wt_diag <- if (is.null(x$weights)) 1 else x$weights
-  }
+  w <- if (is.null(x$weights)) 1 else x$weights
 
   damod_mm <- stats::model.matrix(formula(x),
                                   stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
   
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * wt_diag,
+  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)

@@ -326,8 +326,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with Gaussian fami
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(glm(y ~ z, data = simdata, weights = ate(des)))
 
-  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
-  fim <- crossprod(stats::model.matrix(m) * m$weights / dispersion, stats::model.matrix(m))
+  fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
   expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
@@ -340,8 +339,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with poisson famil
         family = stats::poisson())
   )
 
-  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights,
-                   stats::model.matrix(m))
+  fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
   expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
@@ -355,8 +353,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
   )
 
   dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
-  fim <- crossprod(stats::model.matrix(m) * exp(m$linear.predictors) * m$weights / dispersion,
-                   stats::model.matrix(m))
+  fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
   expect_equal(.get_a22_inverse(m), solve(fim))
 })
 
@@ -1596,4 +1593,83 @@ test_that(paste("HC0 vcovDA lm w/ clustering",
   # var_hat(z) should be greater than that given by sandwich
   expect_true(diag(vcovDA(damod, type = "HC0", cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
+})
+
+
+test_that(paste("HC0 vcovDA binomial glm",
+                "w/o clustering",
+                "imbalanced grps",
+                "cmod is a strict subset of damod data", sep = ", "), {
+  set.seed(50)
+  N <- 60
+
+  # trt variable
+  z <- rep(c(0, 1), N / 2)
+
+  # p and mu for one categorical and one continuous cov
+  px1 <- round(stats::runif(1, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif(1, 55, 90))
+  x1 <- rbinom(N, 1, px1)
+  x2 <- stats::rgamma(N, mux2)
+
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2, "uid" = seq_len(N))
+
+  # generate y
+  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  py <- 1 / (1 + exp(-scale(stats::model.matrix(~ x1 + x2 + z, df),
+                            scale = FALSE) %*% theta))
+  df$y <- rbinom(N, 1, py)
+
+  cmod_form <- y ~ x1 + x2
+  damod_form <- y ~ z
+  cmod <- glm(cmod_form, data = df, subset = z == 0, family = stats::binomial())
+  des <- rct_design(z ~ uoa(uid), df)
+  damod <- lmitt(
+    lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
+  )
+
+  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
+  Xstar <- stats::model.matrix(cmod)
+  fit_wstar <- cmod$weights
+  rstar <- cmod$residuals
+  mu_etastar <- cmod$family$mu.eta(cmod$linear.predictors)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df)
+  w <- damod$weights
+  r <- damod$residuals
+  mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
+
+  a11inv <- solve(crossprod(Xstar * sqrt(fit_wstar)))
+  expect_equal(a11inv, .get_a11_inverse(damod))
+  a21 <- crossprod(Z, X * w * mu_eta)
+  expect_equal(a21, .get_a21(damod))
+  a22inv <- solve(crossprod(Z * w, Z))
+  expect_equal(a22inv, .get_a22_inverse(damod))
+  b11 <- crossprod(Xstar * fit_wstar * rstar)
+  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  b12 <- crossprod(Xstar * rstar * fit_wstar, (Z * w * r)[df$z == 0,])
+  expect_equal(b12, .get_b12(damod))
+  b22 <- crossprod(Z * w * r)
+  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  
+  ## COMPARE OUTPUTS TO SANDWICH
+  # after scaling, a22inv is equivalent to sandwich::bread
+  expect_equal(N * a22inv, sandwich::bread(damod))
+  
+  # after scaling, b22 is equivalent to sandwich::meat
+  expect_equal(b22 / N, sandwich::meat(damod))
+
+  # check the cmod sandwich
+  expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  
+  ## HEURISTIC CHECKS
+  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
+  expect_false(all((a22inv %*% a21)[2,] == 0))
+  
+  # check vcovDA matches manual matrix multiplication
+  expect_equal(vcovDA(damod, type = "HC0", cadjust = FALSE),
+               a22inv %*%
+                 (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
+                    (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
+                 a22inv)
 })
