@@ -1,4 +1,5 @@
 #' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
+#' @importFrom stats confint.lm vcov.lm pt
 NULL
 # The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
 # prior to `DirectAdjusted`
@@ -116,7 +117,7 @@ vcov.DirectAdjusted <- function(object, ...) {
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
     return(vcovDA(object, ...))
   } else {
-    return(stats:::vcov.lm(object, ...))
+    return(vcov.lm(object, ...))
   }
 }
 
@@ -130,7 +131,7 @@ vcov.DirectAdjusted <- function(object, ...) {
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method 
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
-  return(stats:::confint.lm(object, parm, level = level, ...))
+  return(confint.lm(object, parm, level = level, ...))
 }
 
 ##' Identify treatment variable in \code{DirectAdjusted} object
