@@ -1,16 +1,33 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Compute direct adjustment sandwich variance estimator
+#' @title Compute directly adjusted cluster-robust sandwich variance estimates
+#' @param x A \code{DirectAdjusted} model
+#' @param type A string indicating the desired variance estimator. Currently
+#' accepts "CR1"
+#' @param ... Arguments to be passed to the internal variance estimation function
+#' @export
+#' @rdname var_estimators
+vcovDA <- function(x, type = c("CR1"), ...) {
+  var_func <- switch(
+    type,
+    "CR1" = .vcovMB.CR1
+  )
+  
+  est <- var_func(x, ...)
+  return(est)
+}
+
+#' @title Compute directly-adjusted CR1 cluster-robust sandwich variance estimates
+#' under model-based assumptions
 #' @param x A \code{DirectAdjusted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
-#' @details \code{vcovDA()} provides covariance-adjusted cluster-robust variance
-#' estimates for treatment effects.
-#' @return \code{vcovDA()}: A \eqn{2\times 2} matrix where the dimensions are
+#' @return \code{.vcovMB.CR1()}: A \eqn{2\times 2} matrix where the dimensions are
 #' given by the intercept and treatment variable terms in the direct adjustment
 #' model
-#' @export
-vcovDA <- function(x, ...) {
+#' @keywords internal
+#' @rdname var_estimators
+.vcovMB.CR1 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
