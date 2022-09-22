@@ -102,3 +102,24 @@ test_that("Dichotomy option in Design creation", {
 
 
 })
+
+test_that("lmitt finds Design wherever it's stored", {
+  data(simdata)
+  des_form <- z ~ uoa(cid1, cid2) + block(bid)
+  des <- obs_design(des_form, data = simdata)
+  camod <- lm(y ~ x, data = simdata)
+
+  mod1 <- lmitt(y ~ x, data = simdata, weights = ate(des), offset = cov_adj(camod))
+  mod2 <- lmitt(y ~ x, data = simdata, weights = ate(), offset = cov_adj(camod, design = des))
+  mod3 <- lmitt(y ~ x, design = des_form, data = simdata, weights = ate(),
+                offset = cov_adj(camod))
+  mod4 <- lmitt(y ~ x, design = des, data = simdata, weights = ate(),
+                offset = cov_adj(camod))
+  
+  expect_equal(coef(mod1), coef(mod2))
+  expect_equal(coef(mod1), coef(mod3))
+  expect_equal(coef(mod1), coef(mod4))
+  expect_equal(vcovDA(mod1), vcovDA(mod2))
+  expect_equal(vcovDA(mod1), vcovDA(mod3))
+  expect_equal(vcovDA(mod1), vcovDA(mod4))
+})

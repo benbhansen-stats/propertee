@@ -23,6 +23,23 @@
 ##' @keywords internal
 .get_design <- function(NULL_on_error = FALSE) {
   design <- NULL
+  
+  # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
+  # will that be converted into an actual design. Want to return this immediately
+  # to prevent infinite recursion
+  found_lmitt <- grepl("^lmitt\\.formula$",
+                       lapply(sys.calls(), "[[", 1),
+                       perl = TRUE)
+  
+  if (any(found_lmitt)) {
+    design <- get("design", sys.frame(which(found_lmitt)[1]))
+    if (inherits(design, "Design")) {
+      return(design) 
+    } else {
+      design <- NULL
+    }
+  }
+
 
   # Searching for weights or cov_adj is basically the same, except for argument
   # type
@@ -54,7 +71,7 @@
 
   weight_design <- NULL
   covadj_design <- NULL
-  lmitt_design <- NULL
+  mf_design <- NULL
   # This avoids infinite recursion; if we're in weights or in cov_adj, don't
   # look for it again. Only adopters will look for both.
   if (sys.call(-1)[[1]] != ".weights_calc") {
@@ -64,23 +81,18 @@
     covadj_design <- .find.design("offset")
   }
 
-  # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
-  # will that be converted into an actual design, and either `expand.model.frame`
-  # or `model.frame` may have a DirectAdjusted object from which we can extract
-  # the design object
-  search_funcs <- c("^lmitt\\.formula$",
-                    "expand\\.model\\.frame$",
-                    "model.frame$")
-  found_lmitt <- sapply(search_funcs,
-                        function(x) grepl(x, lapply(sys.calls(), "[[", 1), perl = TRUE),
-                        simplify = FALSE)
+  # `expand.model.frame` or `model.frame` may have a DirectAdjusted object from
+  # which we can extract the design object
+  mf_funcs <- c("expand\\.model\\.frame$", "model.frame$")
+  mf_calls <- sapply(mf_funcs,
+                     function(x) grepl(x, lapply(sys.calls(), "[[", 1), perl = TRUE),
+                     simplify = FALSE)
 
-  lmitt_design <- mapply(function(search_func, locs) {
+  mf_design <- mapply(function(search_func, locs) {
     des <- NULL
     if (any(locs)) {
       get_func <- switch(
         search_func,
-        "^lmitt\\.formula$" = function(mf) get("design", sys.frame(mf)),
         "expand\\.model\\.frame$" = function(mf) {
           mod <- get("model", sys.frame(mf))
           if (inherits(mod, "DirectAdjusted")) mod@Design else NULL
@@ -101,11 +113,11 @@
       if (!inherits(des, "Design")) des <- NULL
     }
     des
-  }, names(found_lmitt), found_lmitt, SIMPLIFY = FALSE)
+  }, names(mf_calls), mf_calls, SIMPLIFY = FALSE)
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
   # .find.design() and the special lmitt case)
-  potential_designs <- append(lmitt_design,
+  potential_designs <- append(mf_design,
                               c(weight_design = weight_design,
                                 covadj_design = covadj_design))
 
