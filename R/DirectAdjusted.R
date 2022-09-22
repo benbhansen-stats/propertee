@@ -74,6 +74,7 @@ as.lmitt <- function(x, design = NULL) {
   data <- eval(x$call$data, eval_env)
   x$call$data <- quote(data)
   assign("data", data, envir = eval_env)
+  assign("design", design, envir = eval_env)
   environment(x$terms) <- eval_env
   if (inherits(x, "glm")) {
     x$formula <- as.formula(x, env = eval_env)

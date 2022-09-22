@@ -67,3 +67,19 @@ test_that(".get_design finds design in expand.model.frame call", {
   expect_true(is.data.frame(dat))
   expect_true(all(uoanames %in% colnames(dat)))
 })
+
+test_that(".get_design finds design in model.frame call", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  damod <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
+  
+  mf1 <- stats::model.frame(damod)
+  mf2 <- stats::model.frame(formula(damod), simdata)
+  mf3 <- stats::model.frame(terms(damod), simdata)
+
+  expect_equal(mf2, mf3)
+  expect_equal(mf2@.Data, stats::model.frame(y ~ z, simdata)@.Data)
+  expect_equal(lapply(mf1@.Data, as.numeric),
+               lapply(as.data.frame(cbind(mf2, weights = damod$weights))@.Data,
+                      as.numeric))
+})

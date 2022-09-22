@@ -63,35 +63,51 @@
   if (sys.call(-1)[[1]] != "cov_adj") {
     covadj_design <- .find.design("offset")
   }
+
   # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
-  # will that be converted into an actual design, and `expand.model.frame` may
-  # have a DirectAdjusted object from which we can extract the design object
-  found_lmitt <- grepl("(^lmitt\\.formula$|expand\\.model\\.frame$)",
-                       lapply(sys.calls(), "[[", 1),
-                       perl = TRUE)
-  if (any(found_lmitt)) {
-    mf <- which(found_lmitt)[1]
-    lmitt_design <- tryCatch(
-      get("design", sys.frame(mf)),
-      error = function(e1) {
-        tryCatch(
-          get("model", sys.frame(mf))@Design,
-          error = function(e2) {
+  # will that be converted into an actual design, and either `expand.model.frame`
+  # or `model.frame` may have a DirectAdjusted object from which we can extract
+  # the design object
+  search_funcs <- c("^lmitt\\.formula$",
+                    "expand\\.model\\.frame$",
+                    "model.frame$")
+  found_lmitt <- sapply(search_funcs,
+                        function(x) grepl(x, lapply(sys.calls(), "[[", 1), perl = TRUE),
+                        simplify = FALSE)
+
+  lmitt_design <- mapply(function(search_func, locs) {
+    des <- NULL
+    if (any(locs)) {
+      get_func <- switch(
+        search_func,
+        "^lmitt\\.formula$" = function(mf) get("design", sys.frame(mf)),
+        "expand\\.model\\.frame$" = function(mf) {
+          mod <- get("model", sys.frame(mf))
+          if (inherits(mod, "DirectAdjusted")) mod@Design else NULL
+        },
+        "model.frame$" = function(mf) {
+          form <- get("formula", sys.frame(mf))
+          if (inherits(form, "DirectAdjusted")) {
+            form@Design
+          } else if (inherits(form, "terms") | inherits(form, "formula")) {
+            tryCatch(get("design", environment(form)),
+                     error = function(e) NULL)
+          } else {
             NULL
-          })
-      })
-    # If its not a real design, return NULL
-    if (!inherits(lmitt_design, "Design")) {
-      lmitt_design <- NULL
+          }
+        }
+      )
+      des <- get_func(which(locs)[1])
+      if (!inherits(des, "Design")) des <- NULL
     }
-  }
+    des
+  }, names(found_lmitt), found_lmitt, SIMPLIFY = FALSE)
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
   # .find.design() and the special lmitt case)
-
-  potential_designs <- list(weight_design,
-                            covadj_design,
-                            lmitt_design)
+  potential_designs <- append(lmitt_design,
+                              c(weight_design = weight_design,
+                                covadj_design = covadj_design))
 
   found_designs <- !vapply(potential_designs, is.null, logical(1))
 
