@@ -1,5 +1,5 @@
 #' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
-#' @importFrom stats confint.lm vcov.lm pt
+#' @importFrom stats confint.lm pt
 NULL
 # The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
 # prior to `DirectAdjusted`
@@ -117,7 +117,7 @@ vcov.DirectAdjusted <- function(object, ...) {
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
     return(vcovDA(object, ...))
   } else {
-    return(vcov.lm(object, ...))
+    return(stats:::vcov.lm(object, ...))
   }
 }
 
