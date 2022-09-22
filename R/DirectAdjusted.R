@@ -103,8 +103,6 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
   return(ans)
 })
 
-# setGeneric("vcov")
-
 ##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
 ##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
 ##' offset, then its \code{vcov()} method provides a sandwich estimate of the
@@ -122,18 +120,6 @@ vcov.DirectAdjusted <- function(object, ...) {
   }
 }
 
-# ##' @export
-# setMethod("vcov", "DirectAdjusted", function(object, ...) {
-#   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-#     return(vcovDA(object, ...))
-#   } else {
-#     return(stats:::vcov.lm(object, ...))
-#   }
-# })
-
-
-# setGeneric("confint")
-
 ##' @title Variance-Covariance matrix
 ##' @param object DirectAdjusted
 ##' @param parm a specification of which parameters are to be given confidence
@@ -146,11 +132,6 @@ vcov.DirectAdjusted <- function(object, ...) {
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   return(stats:::confint.lm(object, parm, level = level, ...))
 }
-# ##' @export
-# setMethod("confint", "DirectAdjusted",
-#           function(object, parm, level = 0.95, ...) {
-#   return(stats:::confint.lm(object, parm, level = level, ...))
-# })
 
 ##' Identify treatment variable in \code{DirectAdjusted} object
 ##'
