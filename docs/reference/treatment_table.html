@@ -32,7 +32,9 @@ sorted by the size of the groups"><!-- mathjax --><script src="https://cdnjs.clo
     <a class="dropdown-item" href="../articles/LinearModelVarianceEstimation.html">Variance Estimation Testing Using A Simple Linear Specification</a>
     <a class="dropdown-item" href="../articles/RDD.html">Regression Discontinuity Designs</a>
     <a class="dropdown-item" href="../articles/design_based_SEs.html">Design based sandwich SEs for differences of Hajek estimators</a>
+    <a class="dropdown-item" href="../articles/not-for-cran/covadj_with_clustering.html">Covariance-adjusted standard errors in a clustered longitudinal setting</a>
     <a class="dropdown-item" href="../articles/not-for-cran/non-binary-weights.html">Non-Binary Treatment</a>
+    <a class="dropdown-item" href="../articles/not-for-cran/polynomialSimulation.html">Polynomial Simulation like in LRD paper</a>
     <a class="dropdown-item" href="../articles/sandwich_infrastructure.html">Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model</a>
   </div>
 </li>
@@ -89,7 +91,7 @@ sorted by the size of the groups</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rd_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">forcing</a></span><span class="op">(</span><span class="va">force</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">treatment_table</span><span class="op">(</span><span class="va">des</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> z</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0 1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 4 </span>
 </code></pre></div>

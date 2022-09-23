@@ -1,7 +1,7 @@
-#' @include Design.R WeightedDesign.R DesignAccessors.R
+#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
 NULL
-# The above ensures that `Design` and `WeightedDesign` are defined prior to
-# `DirectAdjusted`
+# The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
+# prior to `DirectAdjusted`
 
 setClass("DirectAdjusted",
          contains = "lm",
@@ -89,19 +89,56 @@ as.lmitt <- function(x, design = NULL) {
 ##' @export
 as.DirectAdjusted <- as.lmitt
 
-setGeneric("vcov")
+setGeneric("summary")
 
-##' @title Variance-Covariance matrix
+##' @title Summary of \code{DirectAdjusted} object
+##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
+##' offset, then the usual \code{stats::summary.lm()} output is enhanced by
+##' the use of covariance-adjusted sandwich standard errors, with t-test values
+##' recalculated to reflect the new standard errors.
 ##' @param object DirectAdjusted
-##' @param ... Add'l arguments
-##' @return Variance-Covariance matrix
+##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
+##' finite sample heteroskedasticity-robust standard error adjustment.
+##' @return summary object based from \code{stats:::summary.lm()}
 ##' @export
-setMethod("vcov", "DirectAdjusted", function(object, ...) {
-  return(vcov(as(object, "lm"), ...))
+setMethod("summary", "DirectAdjusted", function(object, ...) {
+  ans <- summary(as(object, "lm"))
+  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+    ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
+    ans$coefficients[, 4L] <- 2*stats::pt(abs(ans$coefficients[, 3L]), ans$df[2L],
+                                          lower.tail = FALSE)
+  }
+
+  return(ans)
 })
 
+##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
+##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
+##' offset, then its \code{vcov()} method provides a sandwich estimate of the
+##' covariance-adjusted variance-covariance matrix. Otherwise, it provides
+##' the default OLS estimate of the matrix.
+##' @param object DirectAdjusted
+##' @param ... Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.
+##' @return Variance-Covariance matrix
+##' @exportS3Method 
+vcov.DirectAdjusted <- function(object, ...) {
+  call <- match.call()
 
-setGeneric("confint")
+  if (is.null(call[["type"]])) {
+    confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
+    if (any(confint_calls)) {
+      type <- tryCatch(get("call", sys.frame(which(confint_calls)[1]))$type,
+                       error = function(e) NULL)
+      call$type <- type # will not append if type is NULL
+    }
+  }
+
+  call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) vcovDA else getS3method("vcov", "lm")
+  vmat <- eval(call, parent.frame())
+  
+  return(vmat)
+}
 
 ##' @title Variance-Covariance matrix
 ##' @param object DirectAdjusted
@@ -111,11 +148,14 @@ setGeneric("confint")
 ##' @param level the confidence level required.
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
-##' @export
-setMethod("confint", "DirectAdjusted",
-          function(object, parm, level = 0.95, ...) {
-  return(confint(as(object, "lm"), parm, level = level, ...))
-})
+##' @exportS3Method 
+confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
+  call <- match.call()
+  call[[1L]] <- quote(stats::confint.lm)
+
+  ci <- eval(call, parent.frame())
+  return(ci)
+}
 
 ##' Identify treatment variable in \code{DirectAdjusted} object
 ##'

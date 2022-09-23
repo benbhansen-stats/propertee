@@ -1,16 +1,35 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Compute direct adjustment sandwich variance estimator
+#' @title Compute directly adjusted cluster-robust sandwich variance estimates
+#' @param object A \code{DirectAdjusted} model
+#' @param type A string indicating the desired variance estimator. Currently
+#' accepts "CR1"
+#' @param ... Arguments to be passed to the internal variance estimation function
+#' @export
+#' @rdname var_estimators
+vcovDA <- function(object, type = c("CR1"), ...) {
+  type <- match.arg(type)
+
+  var_func <- switch(
+    type,
+    "CR1" = .vcovMB_CR1
+  )
+
+  est <- var_func(object, ...)
+  return(est)
+}
+
+#' @title Compute directly-adjusted CR1 cluster-robust sandwich variance estimates
+#' under model-based assumptions
 #' @param x A \code{DirectAdjusted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
-#' @details \code{vcovDA()} provides covariance-adjusted cluster-robust variance
-#' estimates for treatment effects.
-#' @return \code{vcovDA()}: A \eqn{2\times 2} matrix where the dimensions are
+#' @return \code{.vcovMB_CR1()}: A \eqn{2\times 2} matrix where the dimensions are
 #' given by the intercept and treatment variable terms in the direct adjustment
 #' model
-#' @export
-vcovDA <- function(x, ...) {
+#' @keywords internal
+#' @rdname var_estimators
+.vcovMB_CR1 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -77,14 +96,14 @@ vcovDA <- function(x, ...) {
     keys <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
     keys[grepl("NA", keys)] <- NA_integer_
   }
-  
+
   no_uoas_overlap <- all(is.na(unique(keys)))
   if (no_uoas_overlap) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
   }
-  
+
   # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
   # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
@@ -132,19 +151,8 @@ vcovDA <- function(x, ...) {
   }
 
   # Get expected information per sandwich_infrastructure vignette
-  if ("glm" %in% x@.S3Class) {
-    if (x$family$family %in% c("binomial", "poisson")) {
-      dispersion <- 1
-    } else {
-      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
-    }
-    W <- x$family$mu.eta(x$linear.predictors) * x$weights / dispersion
-  } else {
-    W <- if (is.null(x$weights)) rep(1, length(x$fitted.values)) else x$weights
-  }
-
-  fim <- crossprod(stats::model.matrix(x) * W, stats::model.matrix(x))
-  out <- solve(fim)
+  w <- if (is.null(x$weights)) 1 else x$weights
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
 
   return(out)
 }
@@ -181,7 +189,7 @@ vcovDA <- function(x, ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  nq <- sum(summary(x)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(x))
 
   # Get units of assignment for clustering
   dots <- list(...)
@@ -273,7 +281,7 @@ vcovDA <- function(x, ...) {
     uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
     uoas <- factor(uoas)
     nuoas <- length(unique(uoas))
-    
+
     # if the covariance model only uses one cluster, treat units as independent
     if (nuoas == 1) {
       uoas <- seq_len(length(uoas))
@@ -318,35 +326,32 @@ vcovDA <- function(x, ...) {
   }
 
   # Get contribution to the estimating equation from the direct adjustment model
-  if ("glm" %in% x@.S3Class) {
-    if (x$family$family %in% c("binomial", "poisson")) {
-      dispersion <- 1
-    } else {
-      dispersion <- sum((x$weights * x$residuals)^2) / sum(x$weights)
-    }
-    wt_diag <- x$weights / dispersion * x$family$mu.eta(x$linear.predictors)
-  } else {
-    wt_diag <- if (is.null(x$weights)) 1 else x$weights
-  }
+  w <- if (is.null(x$weights)) 1 else x$weights
 
   damod_mm <- stats::model.matrix(formula(x),
                                   stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
-  
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * wt_diag,
+
+  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
 }
 
-##' @title Estfun method for lmrob objects
+##' @title Generate matrix of estimating equations for \code{lmrob()} fit
+##' @details This is part of a workaround for an issue in the robustbase code
+##' affecting sandwich covariance estimation. The issue in question is issue
+##' #6471, robustbase project on R-Forge. This function contributes to providing
+##' sandwich estimates of covariance-adjusted standard errors for robust linear
+##' covariance adjustment models.
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{estfun}
 ##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
+##' @rdname lmrob_methods
 ##' @exportS3Method
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
@@ -385,12 +390,12 @@ estfun.lmrob <- function(x, ...) {
   return(rval)
 }
 
-##' @title Bread method for lmrob objects
-##' @details Extract bread matrix from an \code{lmrob} fit
-##'
-##' This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation.
-##' The issue in question is issue #6471, robustbase project on R-Forge.
+##' @title Extract bread matrix from an \code{lmrob()} fit
+##' @details This is part of a workaround for an issue in the robustbase code
+##' affecting sandwich covariance estimation. The issue in question is issue
+##' #6471, robustbase project on R-Forge. This function contributes to providing
+##' sandwich estimates of covariance-adjusted standard errors for robust linear
+##' covariance adjustment models.
 ##'
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{bread}
@@ -398,6 +403,7 @@ estfun.lmrob <- function(x, ...) {
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
 ##' @author lrd author 2
+##' @rdname lmrob_methods
 ##' @exportS3Method
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control
