@@ -306,50 +306,82 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses OLS SE's", {
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
   s <- summary(damod)
-  expect_identical(s, stats:::summary.lm(damod))
+  expect_identical(s, do.call(getS3method("summary", "lm"), list(object = damod)))
 })
 
-test_that("DirectAdjusted with SandwichLayer offset vcov uses vcovDA matrix", {
+test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
-                    offset = cov_adj(cmod)))
+  damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod)))
+  damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
-  expect_identical(vcov(damod), vcovDA(damod))
+  vmat1 <- vcov(damod1)
+  vmat2 <- vcov(damod1, type = "CR1")
+  
+  expect_error(vcov(damod, type = "not_a_type"), "should be one of")
+  expect_identical(vmat1, vmat2)
+  expect_identical(vmat1, vcovDA(damod))
+  
+  vmat3 <- vcov(damod2)
+  expect_identical(vmat3, do.call(getS3method("vcov", "lm"), damod2))
 })
 
-test_that("DirectAdjusted w/o SandwichLayer offset vcov uses OLS matrix", {
+test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod)))
+  damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
   
-  expect_identical(vcov(damod), stats:::vcov.lm(damod))
+  expect_error(confint(damod1, type = "not_a_type"), "should be one of")
+  
+  vcovDA_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
+    qt(c(0.025, 0.975), damod1$df.residual)
+  dimnames(vcovDA_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
+  ci1 <- confint(damod1, type = "CR1")
+  ci2 <- confint(damod1)
+  expect_equal(ci1, ci2)
+  expect_equal(ci1, vcovDA_ci.95)
+
+  vcovDA_ci.9 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
+    qt(c(0.05, 0.95), damod1$df.residual)
+  dimnames(vcovDA_ci.9) <- list(names(damod1$coefficients), c("5 %", "95 %"))
+  ci1 <- confint(damod1, level = 0.9)
+  expect_equal(ci1, vcovDA_ci.9)
+  
+  vcovDA_z.95 <- matrix(damod1$coefficients["z"] + sqrt(vcovDA(damod1)["z", "z"]) *
+    qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
+  dimnames(vcovDA_z.95) <- list(c("z"), c("2.5 %", "97.5 %"))
+  ci1 <- confint(damod1, "z")
+  ci2 <- confint(damod1, 2)
+  expect_equal(ci1, ci2)
+  expect_equal(ci1, vcovDA_z.95)
+
+  vcovDA_z.9 <- matrix(damod1$coefficients["z"] + sqrt(vcovDA(damod1)["z", "z"]) *
+    qt(c(0.05, 0.95), damod1$df.residual), nrow = 1)
+  dimnames(vcovDA_z.9) <- list(c("z"), c("5 %", "95 %"))
+  ci1 <- confint(damod1, "z", level = 0.9)
+  ci2 <- confint(damod1, 2, level = 0.9)
+  expect_equal(ci1, ci2)
+  expect_equal(ci1, vcovDA_z.9)
+  
+  vcovlm.9 <- damod2$coefficients + sqrt(diag(do.call(getS3method("vcov", "lm"),
+                                                      list(object = damod2)))) %o%
+    qt(c(0.05, 0.95), damod2$df.residual)
+  dimnames(vcovlm.9) <- list(names(damod2$coefficients), c("5 %", "95 %"))
+  ci1 <- confint(damod2, level = 0.9)
+  expect_equal(ci1, vcovlm.9)
+  
+  vcovlm_z.95 <- matrix(damod2$coefficients["z"] + sqrt(
+    do.call(getS3method("vcov", "lm"), list(object = damod2))["z", "z"]) *
+    qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
+  dimnames(vcovlm_z.95) <- list(c("z"), c("2.5 %", "97.5 %"))
+  ci1 <- confint(damod2, "z")
+  ci2 <- confint(damod2, 2)
+  expect_equal(ci1, ci2)
+  expect_equal(ci1, vcovlm_z.95)
 })
 
-test_that("DirectAdjusted with SandwichLayer offset confint uses vcovDA SE's", {
-  data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
-  cmod <- lm(y ~ x, simdata)
-  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
-                    offset = cov_adj(cmod)))
-  
-  vcovDA_ci <- damod$coefficients + sqrt(diag(vcovDA(damod))) %o%
-    qt(c(0.05, 0.95), damod$df.residual)
-  ci <- confint(damod, level = 0.9)
-  dimnames(vcovDA_ci) <- dimnames(ci)
-  expect_equal(ci, vcovDA_ci)
-})
-
-test_that("DirectAdjusted w/o SandwichLayer offset confint uses OLS SE's", {
-  data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
-  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
-  
-  vcovlm_ci <- damod$coefficients + sqrt(diag(stats:::vcov.lm(damod))) %o%
-    qt(c(0.05, 0.95), damod$df.residual)
-  ci <- confint(damod, level = 0.9)
-  dimnames(vcovlm_ci) <- dimnames(ci)
-  expect_equal(ci, vcovlm_ci)
-})
