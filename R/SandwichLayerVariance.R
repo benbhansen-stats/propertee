@@ -2,21 +2,21 @@
 NULL
 
 #' @title Compute directly adjusted cluster-robust sandwich variance estimates
-#' @param x A \code{DirectAdjusted} model
+#' @param object A \code{DirectAdjusted} model
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR1"
 #' @param ... Arguments to be passed to the internal variance estimation function
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR1"), ...) {
+vcovDA <- function(object, type = c("CR1"), ...) {
   type <- match.arg(type)
 
   var_func <- switch(
     type,
     "CR1" = .vcovMB_CR1
   )
-  
-  est <- var_func(x, ...)
+
+  est <- var_func(object, ...)
   return(est)
 }
 
@@ -96,14 +96,14 @@ vcovDA <- function(x, type = c("CR1"), ...) {
     keys <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
     keys[grepl("NA", keys)] <- NA_integer_
   }
-  
+
   no_uoas_overlap <- all(is.na(unique(keys)))
   if (no_uoas_overlap) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
                   ncol = dim(stats::model.matrix(x))[2]))
   }
-  
+
   # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
   # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
@@ -189,7 +189,7 @@ vcovDA <- function(x, type = c("CR1"), ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  nq <- sum(summary(x)$df[1L:2L])
+  nq <- nrow(sandwich::estfun(x))
 
   # Get units of assignment for clustering
   dots <- list(...)
@@ -281,7 +281,7 @@ vcovDA <- function(x, type = c("CR1"), ...) {
     uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
     uoas <- factor(uoas)
     nuoas <- length(unique(uoas))
-    
+
     # if the covariance model only uses one cluster, treat units as independent
     if (nuoas == 1) {
       uoas <- seq_len(length(uoas))
@@ -332,7 +332,7 @@ vcovDA <- function(x, type = c("CR1"), ...) {
                                   stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
-  
+
   out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
 

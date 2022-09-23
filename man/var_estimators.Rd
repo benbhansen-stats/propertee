@@ -5,17 +5,19 @@
 \alias{.vcovMB_CR1}
 \title{Compute directly adjusted cluster-robust sandwich variance estimates}
 \usage{
-vcovDA(x, type = c("CR1"), ...)
+vcovDA(object, type = c("CR1"), ...)
 
 .vcovMB_CR1(x, ...)
 }
 \arguments{
-\item{x}{A \code{DirectAdjusted} model}
+\item{object}{A \code{DirectAdjusted} model}
 
 \item{type}{A string indicating the desired variance estimator. Currently
 accepts "CR1"}
 
 \item{...}{Arguments to be passed to sandwich::meatCL}
+
+\item{x}{A \code{DirectAdjusted} model}
 }
 \value{
 \code{.vcovMB_CR1()}: A \eqn{2\times 2} matrix where the dimensions are
