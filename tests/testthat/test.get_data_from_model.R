@@ -38,9 +38,11 @@ test_that("Obtaining data for weights", {
 
 
   # Test for fallback if no model.frame call
-
-  expect_warning(expect_warning(with(simdata, ate(des)), "No call"),
-                 "trying fallback")
+  
+  w <- capture_warnings(with(simdata, ate(des)))
+  expect_equal(length(w), 4)
+  expect_true(any(sapply(w, grepl, pattern = "No call")))
+  expect_true(any(sapply(w, grepl, pattern = "trying fallback")))
 
   expect_error(.get_data_from_model("weights", 1),
                "must be a formula")
@@ -60,4 +62,47 @@ test_that("Obtaining data for weights", {
   }
   expect_error(f2(), "unable to convert")
 
+})
+
+test_that("get_data_from_model finds data in lmitt object's eval env", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ adopters(design = des), design = des, data = simdata)
+  
+  lmitt_func <- function(x, ...) {
+    rhs <- formula(x)[[3L]]
+    eval(rhs, environment(formula(x)))
+  }
+  
+  expect_warning(lmitt_func(damod), "No call to `model.frame`")
+  out <- suppressWarnings(lmitt_func(damod))
+  expect_true(is.numeric(out))
+  expect_equal(length(out), nrow(simdata))
+  expect_equal(out, damod$model$`adopters(design = des)`)
+})
+
+test_that(paste("get_data_from_model frame recursion doesn't return",
+                "data from lmitt found in global env"), {
+  rlang_trace_top_env <- getOption("rlang_trace_top_env")
+  on.exit(options(rlang_trace_top_env = rlang_trace_top_env))
+
+  options(rlang_trace_top_env = environment())
+
+  data(simdata)
+  data <- simdata
+  des <- rct_design(z ~ cluster(cid1, cid2), data)
+  damod <- lmitt(y ~ adopters(design = des), design = des, data = data)
+
+  non_lmitt_func <- function(data = NULL) {
+    if (is.null(data)) data <- .get_data_from_model("weights",
+                                                    y ~ adopters(design = des))
+    data$newcol <- 5
+    return(data)
+  }
+
+  expect_warning(expect_warning(non_lmitt_func(),
+                                "No call to `model.frame`"),
+                 "Unable to detect")
+  out <- suppressWarnings(non_lmitt_func())
+  expect_identical(out, cbind(simdata, newcol = 5))
 })

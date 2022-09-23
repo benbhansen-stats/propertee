@@ -117,6 +117,25 @@
         silent = TRUE)
   }
 
+  # search for a DirectAdjusted object in the call stack
+  if (is.null(data) || !is.data.frame(data)) {
+    for (i in seq_len(sys.nframe())) {
+      # recursion stops at the rlang_trace_top_env option if it's been set (i.e.
+      # in test_that), otherwise where the call stack ends
+      if (identical(parent.frame(i), getOption("rlang_trace_top_env")) |
+          is.null(sys.call(-i))) break
+
+      objs <- sapply(ls(parent.frame(i)), get, envir = parent.frame(i))
+      lmitts <- vapply(objs, inherits, logical(1), "DirectAdjusted")
+      if (any(lmitts)) {
+        found_lmitt <- objs[[which(lmitts)]]
+        try(data <- get("data", envir = environment(formula(found_lmitt))),
+            silent = TRUE)
+        break
+      }
+    }
+  }
+
   # Ensure data is actually data at this point - if not, try fallback method
   if (is.null(data) || !is.data.frame(data)) {
     warning(paste("Unable to detect data by normal means,",

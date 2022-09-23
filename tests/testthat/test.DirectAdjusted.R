@@ -262,13 +262,31 @@ test_that("Differing designs found", {
   # Checking that things work when passing multiple of the same designs
   mod1 <- lmitt(y ~ x, data = simdata, weights = ate(des))
   mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
-  expect_identical(mod1, mod2)
+  expect_equal(mod1$coefficients, mod2$coefficients)
 
   mod3 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
   mod4 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des), design = des)
-  expect_identical(mod3, mod4)
+  expect_equal(mod3$coefficients, mod4$coefficients)
 
 
+})
+
+test_that("DirectAdjusted object has its own evaluation environment", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
+  mod2 <- lmitt(lm(y ~ adopters(), simdata, weights = ate(des)))
+  mod3 <- lmitt(y ~ z, data = simdata, design = des)
+
+  expect_false(identical(environment(), environment(formula(mod1))))
+  expect_false(identical(environment(), environment(formula(mod2))))
+  expect_false(identical(environment(), environment(formula(mod3))))
+  expect_equal(environment(formula(mod1))$data, simdata)
+  expect_equal(environment(formula(mod1))$data, environment(formula(mod2))$data)
+  expect_equal(environment(formula(mod1))$data, environment(formula(mod3))$data)
+  expect_equal(environment(formula(mod1))$design, des)
+  expect_equal(environment(formula(mod1))$design, environment(formula(mod2))$design)
+  expect_equal(environment(formula(mod1))$design, environment(formula(mod3))$design)
 })
 
 test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
@@ -277,7 +295,7 @@ test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
   cmod <- lm(y ~ x, simdata)
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
                     offset = cov_adj(cmod)))
-  
+
   s <- summary(damod)
   expect_equal(s$coefficients[, 2L], sqrt(diag(vcovDA(damod))))
   expect_equal(s$coefficients[, 3L],
@@ -286,7 +304,7 @@ test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
                2 * pt(abs(damod$coefficients / sqrt(diag(vcovDA(damod)))),
                       damod$df.residual,
                       lower.tail = FALSE))
-  
+
   cmod <- lm(y ~ x, simdata, subset = z == 0)
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
                     offset = cov_adj(cmod)))
@@ -304,7 +322,7 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses OLS SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
-  
+
   s <- summary(damod)
   expect_identical(s, do.call(getS3method("summary", "lm"), list(object = damod)))
 })
@@ -316,14 +334,14 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
                      offset = cov_adj(cmod)))
   damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
-  
+
   vmat1 <- vcov(damod1)
   vmat2 <- vcov(damod1, type = "CR1")
-  
+
   expect_error(vcov(damod1, type = "not_a_type"), "should be")
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcovDA(damod1))
-  
+
   vmat3 <- vcov(damod2)
   expect_identical(vmat3, do.call(getS3method("vcov", "lm"),
                                   list(object = damod2)))
@@ -336,9 +354,9 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
                      offset = cov_adj(cmod)))
   damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
-  
+
   expect_error(confint(damod1, type = "not_a_type"), "should be")
-  
+
   vcovDA_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
     qt(c(0.025, 0.975), damod1$df.residual)
   dimnames(vcovDA_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
@@ -352,7 +370,7 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   dimnames(vcovDA_ci.9) <- list(names(damod1$coefficients), c("5 %", "95 %"))
   ci1 <- confint(damod1, level = 0.9)
   expect_equal(ci1, vcovDA_ci.9)
-  
+
   vcovDA_z.95 <- matrix(damod1$coefficients["z"] + sqrt(vcovDA(damod1)["z", "z"]) *
     qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
   dimnames(vcovDA_z.95) <- list(c("z"), c("2.5 %", "97.5 %"))
@@ -368,14 +386,14 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci2 <- confint(damod1, 2, level = 0.9)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovDA_z.9)
-  
+
   vcovlm.9 <- damod2$coefficients + sqrt(diag(do.call(getS3method("vcov", "lm"),
                                                       list(object = damod2)))) %o%
     qt(c(0.05, 0.95), damod2$df.residual)
   dimnames(vcovlm.9) <- list(names(damod2$coefficients), c("5 %", "95 %"))
   ci1 <- confint(damod2, level = 0.9)
   expect_equal(ci1, vcovlm.9)
-  
+
   vcovlm_z.95 <- matrix(damod2$coefficients["z"] + sqrt(
     do.call(getS3method("vcov", "lm"), list(object = damod2))["z", "z"]) *
     qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
@@ -385,4 +403,3 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovlm_z.95)
 })
-
