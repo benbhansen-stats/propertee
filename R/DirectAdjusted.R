@@ -1,5 +1,4 @@
 #' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
-#' @importFrom stats confint.lm pt
 NULL
 # The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
 # prior to `DirectAdjusted`
@@ -97,8 +96,8 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
     ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
     ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
-    ans$coefficients[, 4L] <- 2*pt(abs(ans$coefficients[, 3L]), ans$df[2L],
-                                   lower.tail = FALSE)
+    ans$coefficients[, 4L] <- 2*stats::pt(abs(ans$coefficients[, 3L]), ans$df[2L],
+                                          lower.tail = FALSE)
   }
 
   return(ans)
@@ -114,10 +113,20 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method 
 vcov.DirectAdjusted <- function(object, ...) {
+  args <- list(...)
+  args$object <- object
+
+  confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
+  if (any(confint_calls)) {
+    type <- tryCatch(get("type", sys.frame(which(confint_calls)[1])),
+                     error = function(e) NULL)
+    if (!is.null(type)) args$type <- type
+  }
+
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-    return(vcovDA(object, ...))
+    return(do.call(vcovDA, args))
   } else {
-    return(stats:::vcov.lm(object, ...))
+    return(do.call(getS3method("vcov", "lm"), args))
   }
 }
 
@@ -126,12 +135,14 @@ vcov.DirectAdjusted <- function(object, ...) {
 ##' @param parm a specification of which parameters are to be given confidence
 ##'   intervals, either a vector of numbers or a vector of names. If missing,
 ##'   all parameters are considered.
+##' @param type A string indicating the desired variance estimator. Currently
+##'   accepts "CR1".
 ##' @param level the confidence level required.
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method 
-confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
-  return(confint.lm(object, parm, level = level, ...))
+confint.DirectAdjusted <- function(object, parm, type = c("CR1"), level = 0.95, ...) {
+  return(stats::confint.lm(object, parm, type = type, level = level, ...))
 }
 
 ##' Identify treatment variable in \code{DirectAdjusted} object

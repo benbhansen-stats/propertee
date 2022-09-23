@@ -4,7 +4,7 @@
 \alias{confint.DirectAdjusted}
 \title{Variance-Covariance matrix}
 \usage{
-\method{confint}{DirectAdjusted}(object, parm, level = 0.95, ...)
+\method{confint}{DirectAdjusted}(object, parm, type = c("CR1"), level = 0.95, ...)
 }
 \arguments{
 \item{object}{DirectAdjusted}
@@ -12,6 +12,9 @@
 \item{parm}{a specification of which parameters are to be given confidence
 intervals, either a vector of numbers or a vector of names. If missing,
 all parameters are considered.}
+
+\item{type}{A string indicating the desired variance estimator. Currently
+accepts "CR1".}
 
 \item{level}{the confidence level required.}
 
