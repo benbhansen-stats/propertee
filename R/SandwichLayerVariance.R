@@ -9,6 +9,8 @@ NULL
 #' @export
 #' @rdname var_estimators
 vcovDA <- function(x, type = c("CR1"), ...) {
+  type <- match.arg(type)
+
   var_func <- switch(
     type,
     "CR1" = .vcovMB_CR1

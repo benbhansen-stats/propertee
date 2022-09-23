@@ -1,10 +1,19 @@
+test_that("vcovDA errors when provided an invalid type", {
+  data(simdata)
+  cmod <- lm(y ~ z + x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  expect_error(vcovDA(damod, "not_a_type"))
+})
+
 test_that("vcovDA correctly dispatches", {
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
   
-  vmat <- vcovDA(damod)
+  vmat <- vcovDA(damod, type = "CR1")
   expect_equal(vmat, .vcovMB_CR1(damod))
 })
 
