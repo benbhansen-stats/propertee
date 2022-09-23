@@ -8,7 +8,7 @@ NULL
 #' @param ... Arguments to be passed to the internal variance estimation function
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR1"), ...) {
+vcovDA <- function(object, type = c("CR1"), ...) {
   type <- match.arg(type)
 
   var_func <- switch(

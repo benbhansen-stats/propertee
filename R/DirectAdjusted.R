@@ -119,7 +119,7 @@ vcov.DirectAdjusted <- function(object, ...) {
   if (is.null(args$type)) {
     confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
     if (any(confint_calls)) {
-      type <- tryCatch(get("type", sys.frame(which(confint_calls)[1])),
+      type <- tryCatch(get("dots", sys.frame(which(confint_calls)[1]))$type,
                        error = function(e) NULL)
       args$type <- type # will not append if type is NULL
     }
@@ -141,7 +141,8 @@ vcov.DirectAdjusted <- function(object, ...) {
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method 
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
-  return(stats::confint.lm(object, parm, level = level, ...))
+  dots <- list(...)
+  return(stats::confint.lm(object, parm, level = level, dots))
 }
 
 ##' Identify treatment variable in \code{DirectAdjusted} object

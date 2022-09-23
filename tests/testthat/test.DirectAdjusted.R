@@ -320,12 +320,13 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   vmat1 <- vcov(damod1)
   vmat2 <- vcov(damod1, type = "CR1")
   
-  expect_error(vcov(damod, type = "not_a_type"), "should be one of")
+  expect_error(vcov(damod1, type = "not_a_type"), "should be one of")
   expect_identical(vmat1, vmat2)
-  expect_identical(vmat1, vcovDA(damod))
+  expect_identical(vmat1, vcovDA(damod1))
   
   vmat3 <- vcov(damod2)
-  expect_identical(vmat3, do.call(getS3method("vcov", "lm"), damod2))
+  expect_identical(vmat3, do.call(getS3method("vcov", "lm"),
+                                  list(object = damod2)))
 })
 
 test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
