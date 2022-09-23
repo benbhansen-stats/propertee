@@ -5,14 +5,14 @@ test_that("vcovDA correctly dispatches", {
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
   
   vmat <- vcovDA(damod)
-  expect_equal(vmat, .vcovMB.CR1(damod))
+  expect_equal(vmat, .vcovMB_CR1(damod))
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(.vcovMB.CR1(cmod), "must be a DirectAdjusted")
+  expect_error(.vcovMB_CR1(cmod), "must be a DirectAdjusted")
   expect_error(.get_b12(cmod), "must be a DirectAdjusted")
   expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
   expect_error(.get_b22(cmod), "must be a DirectAdjusted")
@@ -32,7 +32,7 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
     lm(y ~ z, data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(.vcovMB.CR1(m), "must have an offset of class")
+  expect_error(.vcovMB_CR1(m), "must have an offset of class")
   expect_error(.get_b12(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
   expect_error(.get_b11(m), "must have an offset of class")
@@ -929,18 +929,18 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
-test_that(".vcovMB.CR1 returns px2 matrix", {
+test_that(".vcovMB_CR1 returns px2 matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ z, simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  vmat <- .vcovMB.CR1(m)
+  vmat <- .vcovMB_CR1(m)
   expect_equal(dim(vmat), c(2, 2))
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1011,22 +1011,22 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
   expect_equal((a22inv %*% a21)[2,],
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be equal to than that given by sandwich
-  expect_equal(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2],
+  expect_equal(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2],
                diag(sandwich::sandwich(damod))[2])
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
-  expect_true(all(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE)) <
+  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) <
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1090,22 +1090,22 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(all(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE)) >
+  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) >
                   diag(sandwich::sandwich(damod))))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
-  expect_true(all(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE)) <
+  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) <
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1204,21 +1204,21 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
   expect_equal((a22inv %*% a21)[2,],
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be equal to that given by sandwich
-  expect_equal(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2],
+  expect_equal(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2],
                diag(sandwich::sandwich(damod,
                                        meat. = sandwich::meatCL,
                                        cluster = factor(df$cid[!is.na(df$cid)]),
                                        cadjust = FALSE))[2])
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1302,14 +1302,14 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
                diag(sandwich::sandwich(
                  damod,
                  meat. = sandwich::meatCL,
@@ -1317,7 +1317,7 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
                  cadjust = FALSE))[2])
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1387,19 +1387,19 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/o clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1482,14 +1482,14 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(
                   damod,
                   meat. = sandwich::meatCL,
@@ -1497,7 +1497,7 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
                   cadjust = FALSE))[2])
 })
 
-test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
+test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1592,8 +1592,8 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1601,12 +1601,12 @@ test_that(paste("HC0 .vcovMB.CR1 lm w/ clustering",
   
   # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
 
 
-test_that(paste("HC0 .vcovMB.CR1 binomial glm",
+test_that(paste("HC0 .vcovMB_CR1 binomial glm",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
@@ -1676,8 +1676,8 @@ test_that(paste("HC0 .vcovMB.CR1 binomial glm",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
-  # check .vcovMB.CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB.CR1(damod, type = "HC0", cadjust = FALSE),
+  # check .vcovMB_CR1 matches manual matrix multiplication
+  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%

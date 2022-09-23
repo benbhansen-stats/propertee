@@ -11,7 +11,7 @@ NULL
 vcovDA <- function(x, type = c("CR1"), ...) {
   var_func <- switch(
     type,
-    "CR1" = .vcovMB.CR1
+    "CR1" = .vcovMB_CR1
   )
   
   est <- var_func(x, ...)
@@ -22,12 +22,12 @@ vcovDA <- function(x, type = c("CR1"), ...) {
 #' under model-based assumptions
 #' @param x A \code{DirectAdjusted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
-#' @return \code{.vcovMB.CR1()}: A \eqn{2\times 2} matrix where the dimensions are
+#' @return \code{.vcovMB_CR1()}: A \eqn{2\times 2} matrix where the dimensions are
 #' given by the intercept and treatment variable terms in the direct adjustment
 #' model
 #' @keywords internal
 #' @rdname var_estimators
-.vcovMB.CR1 <- function(x, ...) {
+.vcovMB_CR1 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }

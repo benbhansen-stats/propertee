@@ -2,12 +2,12 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{vcovDA}
 \alias{vcovDA}
-\alias{.vcovMB.CR1}
+\alias{.vcovMB_CR1}
 \title{Compute directly adjusted cluster-robust sandwich variance estimates}
 \usage{
 vcovDA(x, type = c("CR1"), ...)
 
-.vcovMB.CR1(x, ...)
+.vcovMB_CR1(x, ...)
 }
 \arguments{
 \item{x}{A \code{DirectAdjusted} model}
@@ -18,7 +18,7 @@ accepts "CR1"}
 \item{...}{Arguments to be passed to sandwich::meatCL}
 }
 \value{
-\code{.vcovMB.CR1()}: A \eqn{2\times 2} matrix where the dimensions are
+\code{.vcovMB_CR1()}: A \eqn{2\times 2} matrix where the dimensions are
 given by the intercept and treatment variable terms in the direct adjustment
 model
 }
