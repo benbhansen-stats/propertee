@@ -12,38 +12,78 @@ setGeneric("treatment", function(x, ...) {
 ##' either has a binary treatment variable, or has a \code{dichotomy}, a binary
 ##' one-column \code{data.frame} will be returned. If the \code{Design} does not
 ##' have access to binary treatment (non-binary treatment and no
-##' \code{dichotomy} specified), this will error.
+##' \code{dichotomy} specified), passing \code{binary = TRUE} will error.
+##'
+##' \code{binary = "ifany"} is the most permissible; returning the dichotomized
+##' treatment variable if \code{@dichotomy} exists, otherwise returning the
+##' original treatment without error.
 ##'
 ##' The one-column \code{data.frame} returned by \code{treatment()} is named as
 ##' entered in the \code{Design} creation, but if a \code{dichotomy} is in the
 ##' \code{Design}, the column name is \code{"__z"}.
 ##' @title Accessors and Replacers for \code{Design} objects
 ##' @param x \code{Design} object
-##' @param binary Logical; if \code{FALSE} (default), return a \code{data.frame}
+##' @param binary If \code{FALSE} (default), return a \code{data.frame}
 ##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
 ##'   formula in \code{@dichotomy}, return a \code{data.frame} containing a
 ##'   binary treatment variable with the name \code{"z__"}. Errors on
-##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .
+##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL}.
+##'   If \code{"ifany"}, returns a binary treatment if possible (if treatment is
+##'   already binary, or there's a valid \code{@dichotomy}), otherwise return
+##'   original treatment.
 ##' @param ... Ignored.
 ##' @return \code{data.frame} containing treatment variable
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
-  if (!binary) {
-    # binary = FALSE, always return original treatment
+  binary <- as.character(binary)
+  if (!binary %in% c("TRUE", "FALSE", "ifany")) {
+    stop(paste("Valid input to `binary=` argument include only TRUE, ",
+               "FALSE, and 'ifany'."))
+  }
+
+
+  # Case 1: binary = FALSE
+  if (binary == FALSE) {
+    # Return original treatment
     return(x@structure[x@column_index == "t"])
   }
-  # Below here is only `binary = TRUE`
-  if (has_binary_treatment(x)) {
-    # Treatment is binary, return original treatment
-    return(x@structure[x@column_index == "t"])
+
+  # Case 2: binary = TRUE
+  if (binary == TRUE) {
+
+    # Case 2a: binary = TRUE, treatment is stored as binary
+    if (has_binary_treatment(x)) {
+      # Treatment is binary, return original treatment
+      return(x@structure[x@column_index == "t"])
+    }
+
+    # Case 2b: binary = TRUE, stored treatment is non-binary but has dichotomy
+    if (is_dichotomized(x)) {
+      # Has dichotomization, return that
+      return(data.frame(z__ = .bin_txt(x)))
+    }
+
+    # Case 2c: binary = TRUE, treatment is non-binary and no dichotomy
+    stop(paste("No binary treatment can be produced. Treatment is",
+               "non-binary and `x` does not contain a `@dichotomy`."))
   }
-  if (is_dichotomized(x)) {
-    # Has dichotomization return that
-    return(data.frame(z__ = .bin_txt(x)))
+
+  # Case 3: binary = "ifany"
+  if (binary == "ifany") {
+
+    # Case 3a: binary = "ifany", no dichotomy
+    if (!is_dichotomized(x)) {
+      # Return original treatment
+      return(x@structure[x@column_index == "t"])
+    }
+
+    # Case 3b: binary = "ifany", dichotomy
+    if (is_dichotomized(x)) {
+      # Has dichotomization, return that
+      return(data.frame(z__ = .bin_txt(x)))
+    }
   }
-  stop(paste("No binary treatment can be produced. Treatment is",
-             "non-binary and `x` does not contain a `@dichotomy`."))
 
 })
 

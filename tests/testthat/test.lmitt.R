@@ -103,6 +103,15 @@ test_that("Dichotomy option in Design creation", {
 
 })
 
+test_that("Allow non-binary treatment", {
+
+  data(simdata)
+  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata)
+  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
+  expect_true(any(!model.frame(mod1)$`adopters()` %in% 0:1))
+
+})
+
 test_that("lmitt finds Design wherever it's stored", {
   data(simdata)
   des_form <- z ~ uoa(cid1, cid2) + block(bid)

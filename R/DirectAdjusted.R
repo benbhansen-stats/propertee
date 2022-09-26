@@ -8,10 +8,7 @@ setClass("DirectAdjusted",
          slots = c(Design = "Design"))
 
 setValidity("DirectAdjusted", function(object) {
-  if (!is_binary_or_dichotomized(object@Design)) {
-    return("Treatment must be binary or have a dichotomy.")
-  }
-  if (!treatment_name(object) %in%
+ if (!treatment_name(object) %in%
         rownames(attr(terms(object), "factors"))[-1]) {
     # Ensures that treatment variable appears somewhere in RHS (-1 removes
     # outcome) of formula. If created by `lmitt()`, treatment will be

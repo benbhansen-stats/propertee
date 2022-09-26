@@ -80,11 +80,14 @@ forcings(x) <- value
 
 \item{...}{Ignored.}
 
-\item{binary}{Logical; if \code{FALSE} (default), return a \code{data.frame}
+\item{binary}{If \code{FALSE} (default), return a \code{data.frame}
 containing the named treatment variable. If \code{TRUE} and \code{x} has a
 formula in \code{@dichotomy}, return a \code{data.frame} containing a
 binary treatment variable with the name \code{"z__"}. Errors on
-\code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL} .}
+\code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL}.
+If \code{"ifany"}, returns a binary treatment if possible (if treatment is
+already binary, or there's a valid \code{@dichotomy}), otherwise return
+original treatment.}
 
 \item{value}{Replacement. Either a \code{vector}/\code{matrix} of
 appropriate dimension, or a named \code{data.frame} if renaming variable
@@ -100,9 +103,13 @@ treatment variable passed into the \code{Design} is returned as a one-column
 either has a binary treatment variable, or has a \code{dichotomy}, a binary
 one-column \code{data.frame} will be returned. If the \code{Design} does not
 have access to binary treatment (non-binary treatment and no
-\code{dichotomy} specified), this will error.
+\code{dichotomy} specified), passing \code{binary = TRUE} will error.
 }
 \details{
+\code{binary = "ifany"} is the most permissible; returning the dichotomized
+treatment variable if \code{@dichotomy} exists, otherwise returning the
+original treatment without error.
+
 The one-column \code{data.frame} returned by \code{treatment()} is named as
 entered in the \code{Design} creation, but if a \code{dichotomy} is in the
 \code{Design}, the column name is \code{"__z"}.

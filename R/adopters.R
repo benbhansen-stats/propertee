@@ -39,7 +39,7 @@ adopters <- function(design = NULL, data = NULL) {
   }
 
   # Extract treatment and unitofassignment variables from the Design
-  treatment_uoa <- cbind(treatment(design, binary = TRUE),
+  treatment_uoa <- cbind(treatment(design, binary = "ifany"),
                          design@structure[, var_names(design, "u"),
                                              drop = FALSE])
 

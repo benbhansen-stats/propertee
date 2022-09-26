@@ -39,6 +39,8 @@ test_that("Accessing and replacing treatment", {
 
   expect_error(treatment(des, binary = TRUE), "No binary")
 
+  treatment(des, binary = "ifany")
+
   # Continuous treatment, dichotomy
   des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
                    data = simdata, dichotomy = dose <= 100 ~ dose == 200)
@@ -69,6 +71,33 @@ test_that("Accessing and replacing treatment", {
                    data = simdata)
 
   expect_error(.bin_txt(des), "cannot be obtained")
+
+})
+
+test_that("treatment binary = 'ifany'", {
+  data(simdata)
+
+  # Binary already
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  expect_identical(treatment(des),
+                   treatment(des, binary = "ifany"))
+  expect_identical(treatment(des),
+                   treatment(des, binary = TRUE))
+
+  # No dichotomization
+  des <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
+  expect_error(treatment(des, binary = TRUE))
+  expect_identical(treatment(des, binary = FALSE),
+                   treatment(des, binary = "ifany"))
+
+
+  # Dichotomization
+  dichotomy(des) <- o >= 3 ~ .
+  expect_identical(treatment(des)$o,
+                   des@structure$o)
+  expect_identical(treatment(des, binary = TRUE),
+                   treatment(des, binary = "ifany"))
 
 })
 
