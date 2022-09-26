@@ -4,7 +4,7 @@
 \alias{summary.Design}
 \title{Create summary of \code{Design} object}
 \usage{
-summary.Design(object, ...)
+\method{summary}{Design}(object, ...)
 }
 \arguments{
 \item{object}{Design object}

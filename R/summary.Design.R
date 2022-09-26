@@ -3,6 +3,7 @@
 ##' @param ... Other args
 ##' @return object of class \code{summary.Design}
 ##' @export
+##' @method summary Design
 summary.Design <- function(object, ...) {
   out <- list()
   out$Design <- object
