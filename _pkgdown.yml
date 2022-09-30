@@ -59,17 +59,18 @@ reference:
     - show,PreSandwichLayer-method
     - .show_layer
     - .get_b12
-    - lmrob_methods
+    - estfun.lmrob
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
     - lmitt
     - assigned
     - as.lmitt
-    - confint,DirectAdjusted-method
+    - confint.DirectAdjusted
     - show,DirectAdjusted-method
+    - summary,DirectAdjusted-method
     - treatment_name
-    - vcov,DirectAdjusted-method
+    - vcov.DirectAdjusted
     - vcovDA
 - title: Data
 - contents:

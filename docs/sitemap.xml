@@ -25,6 +25,9 @@
     <loc>www.github.com/articles/index.html</loc>
   </url>
   <url>
+    <loc>www.github.com/articles/not-for-cran/covadj_with_clustering.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/articles/not-for-cran/non-binary-weights.html</loc>
   </url>
   <url>
@@ -35,6 +38,9 @@
   </url>
   <url>
     <loc>www.github.com/index.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/AssignedAliases.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/DesignSpecials.html</loc>
@@ -67,16 +73,13 @@
     <loc>www.github.com/reference/WeightedDesignOps.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/adopters.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/reference/as.SandwichLayer.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/as_lmitt.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/confint-DirectAdjusted-method.html</loc>
+    <loc>www.github.com/reference/confint.DirectAdjusted.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/cov_adj.html</loc>
@@ -157,6 +160,9 @@
     <loc>www.github.com/reference/lmitt.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/lmrob_methods.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/lsoSynth.html</loc>
   </url>
   <url>
@@ -184,6 +190,9 @@
     <loc>www.github.com/reference/structure.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/summary-DirectAdjusted-method.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/summary.Design.html</loc>
   </url>
   <url>
@@ -193,16 +202,16 @@
     <loc>www.github.com/reference/treatment_table.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/var_estimators.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/var_names.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/var_table.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/vcov-DirectAdjusted-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/vcovDA.html</loc>
+    <loc>www.github.com/reference/vcov.DirectAdjusted.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/weights-WeightedDesign-method.html</loc>

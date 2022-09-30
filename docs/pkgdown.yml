@@ -1,5 +1,5 @@
-pandoc: 2.11.4
-pkgdown: 2.0.5
+pandoc: 2.19.2
+pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   CovarianceAdjustment: CovarianceAdjustment.html
@@ -8,9 +8,8 @@ articles:
   design_based_SEs: design_based_SEs.html
   covadj_with_clustering: not-for-cran/covadj_with_clustering.html
   non-binary-weights: not-for-cran/non-binary-weights.html
-  polynomialSimulation: not-for-cran/polynomialSimulation.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2022-08-24T22:20Z
+last_built: 2022-09-30T14:32Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles

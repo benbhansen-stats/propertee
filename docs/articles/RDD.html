@@ -8,8 +8,8 @@
 <meta name="description" content="flexida">
 <title>Regression Discontinuity Designs • flexida</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Regression Discontinuity Designs">
 <meta property="og:description" content="flexida">
@@ -47,7 +47,6 @@
     <a class="dropdown-item" href="../articles/design_based_SEs.html">Design based sandwich SEs for differences of Hajek estimators</a>
     <a class="dropdown-item" href="../articles/not-for-cran/covadj_with_clustering.html">Covariance-adjusted standard errors in a clustered longitudinal setting</a>
     <a class="dropdown-item" href="../articles/not-for-cran/non-binary-weights.html">Non-Binary Treatment</a>
-    <a class="dropdown-item" href="../articles/not-for-cran/polynomialSimulation.html">Polynomial Simulation like in LRD paper</a>
     <a class="dropdown-item" href="../articles/sandwich_infrastructure.html">Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model</a>
   </div>
 </li>
@@ -78,7 +77,7 @@
       <img src="" class="logo" alt=""><h1>Regression Discontinuity Designs</h1>
                         <h4 data-toc-skip class="author">Adam Sales</h4>
             
-            <h4 data-toc-skip class="date">2022-08-24</h4>
+            <h4 data-toc-skip class="date">2022-09-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/vignettes/RDD.Rmd" class="external-link"><code>vignettes/RDD.Rmd</code></a></small>
       <div class="d-none name"><code>RDD.Rmd</code></div>
@@ -98,9 +97,31 @@
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">lsoSynth</span><span class="op">)</span></span></code></pre></div>
-<p>The data for this example were randomly simulated using the <code>synthpop</code> package in <code>R</code> based on data originally collected by <a href="https://www.aeaweb.org/articles?id=10.1257/app.2.2.95" class="external-link">Lindo, Sanders, and Oreopoulos (2010; hereafter LSO)</a>. (The original real data can be found <a href="https://www.openicpsr.org/openicpsr/project/113751/version/V1/view" class="external-link">here</a>; code to simulate the fake data can be found <a href="https://github.com/benbhansen-stats/flexida/blob/main/data-raw/makeRDDdata.r" class="external-link">here</a>.)</p>
-<p>At a major public university, students with a cumulative grade point average (GPA) below a pre-specified cutoff are placed on academic probation (AP). Students on AP are given extra support, and threatened with suspension if their GPAs do not improve. See LSO for details. Along with LSO, we will consider only students at the end of their first year at the university. The university consisted of three campuses, and they AP cutoff varied by campus. To simplify matters, we centered each student’s first year GPA on their campus’s cutoff, creating a new variable <span class="math inline">\(R_i\equiv GPA_i -c_{campus[i]}\)</span>, where <span class="math inline">\(GPA_i\)</span> is student <span class="math inline">\(i\)</span>’s first-year GPA, and <span class="math inline">\(c_{campus[i]}\)</span> is the AP cutoff for student <span class="math inline">\(i\)</span>’s campus. A student <span class="math inline">\(i\)</span> is placed on AP if <span class="math inline">\(R_i&lt;0\)</span> and avoids AP if <span class="math inline">\(R_i\ge 0\)</span>.</p>
-<p>We will attempt to estimate the average effect of AP placement on <code>nextGPA</code>, students’ subsequent GPA (either over the summer or in the following academic semester). This figure plots each the average <code>nextGPA</code> for students with distinct <code>R</code> values (i.e. centered first-year GPA). The cutoff for AP, 0, is denoted with a dotted line. The the sizes of the points are proportional to the natural log of the numbers of students with each unique value of <code>R</code>.</p>
+<p>The data for this example were randomly simulated using the
+<code>synthpop</code> package in <code>R</code> based on data originally
+collected by <a href="https://www.aeaweb.org/articles?id=10.1257/app.2.2.95" class="external-link">Lindo,
+Sanders, and Oreopoulos (2010; hereafter LSO)</a>. (The original real
+data can be found <a href="https://www.openicpsr.org/openicpsr/project/113751/version/V1/view" class="external-link">here</a>;
+code to simulate the fake data can be found <a href="https://github.com/benbhansen-stats/flexida/blob/main/data-raw/makeRDDdata.r" class="external-link">here</a>.)</p>
+<p>At a major public university, students with a cumulative grade point
+average (GPA) below a pre-specified cutoff are placed on academic
+probation (AP). Students on AP are given extra support, and threatened
+with suspension if their GPAs do not improve. See LSO for details. Along
+with LSO, we will consider only students at the end of their first year
+at the university. The university consisted of three campuses, and they
+AP cutoff varied by campus. To simplify matters, we centered each
+student’s first year GPA on their campus’s cutoff, creating a new
+variable <span class="math inline">\(R_i\equiv GPA_i
+-c_{campus[i]}\)</span>, where <span class="math inline">\(GPA_i\)</span> is student <span class="math inline">\(i\)</span>’s first-year GPA, and <span class="math inline">\(c_{campus[i]}\)</span> is the AP cutoff for
+student <span class="math inline">\(i\)</span>’s campus. A student <span class="math inline">\(i\)</span> is placed on AP if <span class="math inline">\(R_i&lt;0\)</span> and avoids AP if <span class="math inline">\(R_i\ge 0\)</span>.</p>
+<p>We will attempt to estimate the average effect of AP placement on
+<code>nextGPA</code>, students’ subsequent GPA (either over the summer
+or in the following academic semester). This figure plots each the
+average <code>nextGPA</code> for students with distinct <code>R</code>
+values (i.e. centered first-year GPA). The cutoff for AP, 0, is denoted
+with a dotted line. The the sizes of the points are proportional to the
+natural log of the numbers of students with each unique value of
+<code>R</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">figDat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">lsoSynth</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'nextGPA'</span>,<span class="st">'lhsgrade_pct'</span><span class="op">)</span><span class="op">]</span>,by<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>R<span class="op">=</span><span class="va">lsoSynth</span><span class="op">$</span><span class="va">R</span><span class="op">)</span>,</span>
@@ -118,29 +139,98 @@
 <div class="section level3">
 <h3 id="regression-discontinuity-designs">Regression Discontinuity Designs<a class="anchor" aria-label="anchor" href="#regression-discontinuity-designs"></a>
 </h3>
-<p>What characterizes discontinuity (RD) designs, including the LSO study, is that treatment is assigned as a function of a numeric “running variable” <span class="math inline">\(R\)</span>, along with a prespecified cutoff value <span class="math inline">\(c\)</span>, so that treatment is assigned to subjects <span class="math inline">\(i\)</span> for whom <span class="math inline">\(R_i&gt;c\)</span>, or for whom <span class="math inline">\(R_i&lt;c\)</span>. If <span class="math inline">\(Z_i\)</span> denote’s <span class="math inline">\(i\)</span>’s treatment assignment, we write <span class="math inline">\(Z_i=\mathbf{1}\{R_i&lt;c\}\)</span> or <span class="math inline">\(\mathbf{1}\{R_i&lt;c\}\)</span>, where <span class="math inline">\(\mathbf{1}\{x\}\)</span> is the indicator function–equal to 1 when <span class="math inline">\(x\)</span> is true and 0 otherwise. In the LSO study, <span class="math inline">\(i\)</span> indexes students, centered first-year GPA $R_i $ is the running variable, and the treatment under study is AP placement. Then $ Z_i={R_i&lt;0} $. (In “fuzzy” RD designs, <span class="math inline">\(R\)</span>’s value relative to <span class="math inline">\(c\)</span> doesn’t completely determine treatment, but merely affects the probability of treatment, so subjects with, say, <span class="math inline">\(R_i&gt;c\)</span> are more likely to be treated than those with <span class="math inline">\(R_i&lt;c\)</span>; in fuzzy RD designs, <span class="math inline">\(Z_i=\mathbf{1}\{R_i&gt;c\}\)</span> is typically modeled as an instrument for treatment receipt.)</p>
-<p>RD designs hold a privileged place in causal inference, because unlike most other observational study designs, the mechanism for treatment assignment is known. That is, <span class="math inline">\(R\)</span> is the only confounder. On the other hand, since <span class="math inline">\(Z\)</span> is completely determined by <span class="math inline">\(R\)</span>, there are no subjects with the same values for <span class="math inline">\(R\)</span> but different values for <span class="math inline">\(Z\)</span>, so common observational study techniques, such as matching on <span class="math inline">\(R\)</span>, are impossible. Instead, it is necessary to adjust for <span class="math inline">\(R\)</span> with modeling–typically regression.</p>
+<p>What characterizes discontinuity (RD) designs, including the LSO
+study, is that treatment is assigned as a function of a numeric “running
+variable” <span class="math inline">\(R\)</span>, along with a
+prespecified cutoff value <span class="math inline">\(c\)</span>, so
+that treatment is assigned to subjects <span class="math inline">\(i\)</span> for whom <span class="math inline">\(R_i&gt;c\)</span>, or for whom <span class="math inline">\(R_i&lt;c\)</span>. If <span class="math inline">\(Z_i\)</span> denote’s <span class="math inline">\(i\)</span>’s treatment assignment, we write <span class="math inline">\(Z_i=\mathbf{1}\{R_i&lt;c\}\)</span> or <span class="math inline">\(\mathbf{1}\{R_i&lt;c\}\)</span>, where <span class="math inline">\(\mathbf{1}\{x\}\)</span> is the indicator
+function–equal to 1 when <span class="math inline">\(x\)</span> is true
+and 0 otherwise. In the LSO study, <span class="math inline">\(i\)</span> indexes students, centered first-year
+GPA $R_i $ is the running variable, and the treatment under study is AP
+placement. Then $ Z_i={R_i&lt;0} $. (In “fuzzy” RD designs, <span class="math inline">\(R\)</span>’s value relative to <span class="math inline">\(c\)</span> doesn’t completely determine treatment,
+but merely affects the probability of treatment, so subjects with, say,
+<span class="math inline">\(R_i&gt;c\)</span> are more likely to be
+treated than those with <span class="math inline">\(R_i&lt;c\)</span>;
+in fuzzy RD designs, <span class="math inline">\(Z_i=\mathbf{1}\{R_i&gt;c\}\)</span> is typically
+modeled as an instrument for treatment receipt.)</p>
+<p>RD designs hold a privileged place in causal inference, because
+unlike most other observational study designs, the mechanism for
+treatment assignment is known. That is, <span class="math inline">\(R\)</span> is the only confounder. On the other
+hand, since <span class="math inline">\(Z\)</span> is completely
+determined by <span class="math inline">\(R\)</span>, there are no
+subjects with the same values for <span class="math inline">\(R\)</span>
+but different values for <span class="math inline">\(Z\)</span>, so
+common observational study techniques, such as matching on <span class="math inline">\(R\)</span>, are impossible. Instead, it is
+necessary to adjust for <span class="math inline">\(R\)</span> with
+modeling–typically regression.</p>
 </div>
 <div class="section level3">
 <h3 id="analyzing-rd-designs-with-ancova">Analyzing RD Designs with ANCOVA<a class="anchor" aria-label="anchor" href="#analyzing-rd-designs-with-ancova"></a>
 </h3>
-<p>Traditionally, the typical way to analyze data from RD designs is with ANCOVA, by fitting a regression model such as <span class="math display">\[Y_i=\beta_0+\beta_1R_i+\beta_2Z_i+\epsilon_i\]</span> where <span class="math inline">\(Y_i\)</span> is the outcome of interest measured for subject <span class="math inline">\(i\)</span> (in our example <code>nextGPA</code>), and <span class="math inline">\(\epsilon_i\)</span> is a random regression error. Then, the regression coefficient for <span class="math inline">\(Z\)</span>, <span class="math inline">\(\beta_2\)</span>, is taken as an estimate of the treatment effect. Common methodological updates to the ANCOVA approach include an interaction term between <span class="math inline">\(Z_i\)</span> and <span class="math inline">\(R_i\)</span>, and the substitution semi-parametric regression, such as local linear or polynomial models, for linear ordinary least squares.</p>
-<p>Under suitable conditions, the ANCOVA model is said to estimate a “Local Average Treatment Effect” (LATE). If <span class="math inline">\(Y_1\)</span> and <span class="math inline">\(Y_0\)</span> are the potential outcomes for <span class="math inline">\(Y\)</span>, then the LATE is defined as <span class="math display">\[\displaystyle\lim_{r\rightarrow c^+} E(Y_1|R=r)-\displaystyle\lim_{r\rightarrow c^-} E(Y_0|R=r)\]</span> or equivalently <span class="math display">\[\displaystyle\lim_{\Delta\rightarrow 0^+} E(Y_1-Y_0 |R\in (c-\Delta,c+\Delta))\]</span> where <span class="math inline">\(E\)</span> denotes expectation–that is, the LATE is the limit of average treatment effects for subjects with <span class="math inline">\(R\)</span> in ever-shrinking regions around <span class="math inline">\(c\)</span>.</p>
-<p>Among other considerations, the LATE target suggests that data analysts restrict their attention to subjects with <span class="math inline">\(R\)</span> falling within a bandwidth <span class="math inline">\(b&gt;0\)</span> of <span class="math inline">\(c\)</span>, e.g. only fitting the model to subjects <span class="math inline">\(i\)</span> with within a “window of analysis” <span class="math inline">\(\mathcal{W}=\{i:R_i\in (c-b,c+b)\}\)</span>. A number of methods have been proposed to select <span class="math inline">\(b\)</span>, including cross validation, non-parametric modeling of the second derivative of <span class="math inline">\(f(r)=E(Y|R=r)\)</span>, and specification tests.</p>
+<p>Traditionally, the typical way to analyze data from RD designs is
+with ANCOVA, by fitting a regression model such as <span class="math display">\[Y_i=\beta_0+\beta_1R_i+\beta_2Z_i+\epsilon_i\]</span>
+where <span class="math inline">\(Y_i\)</span> is the outcome of
+interest measured for subject <span class="math inline">\(i\)</span> (in
+our example <code>nextGPA</code>), and <span class="math inline">\(\epsilon_i\)</span> is a random regression error.
+Then, the regression coefficient for <span class="math inline">\(Z\)</span>, <span class="math inline">\(\beta_2\)</span>, is taken as an estimate of the
+treatment effect. Common methodological updates to the ANCOVA approach
+include an interaction term between <span class="math inline">\(Z_i\)</span> and <span class="math inline">\(R_i\)</span>, and the substitution semi-parametric
+regression, such as local linear or polynomial models, for linear
+ordinary least squares.</p>
+<p>Under suitable conditions, the ANCOVA model is said to estimate a
+“Local Average Treatment Effect” (LATE). If <span class="math inline">\(Y_1\)</span> and <span class="math inline">\(Y_0\)</span> are the potential outcomes for <span class="math inline">\(Y\)</span>, then the LATE is defined as <span class="math display">\[\displaystyle\lim_{r\rightarrow c^+}
+E(Y_1|R=r)-\displaystyle\lim_{r\rightarrow c^-} E(Y_0|R=r)\]</span> or
+equivalently <span class="math display">\[\displaystyle\lim_{\Delta\rightarrow 0^+}
+E(Y_1-Y_0 |R\in (c-\Delta,c+\Delta))\]</span> where <span class="math inline">\(E\)</span> denotes expectation–that is, the LATE
+is the limit of average treatment effects for subjects with <span class="math inline">\(R\)</span> in ever-shrinking regions around <span class="math inline">\(c\)</span>.</p>
+<p>Among other considerations, the LATE target suggests that data
+analysts restrict their attention to subjects with <span class="math inline">\(R\)</span> falling within a bandwidth <span class="math inline">\(b&gt;0\)</span> of <span class="math inline">\(c\)</span>, e.g. only fitting the model to
+subjects <span class="math inline">\(i\)</span> with within a “window of
+analysis” <span class="math inline">\(\mathcal{W}=\{i:R_i\in
+(c-b,c+b)\}\)</span>. A number of methods have been proposed to select
+<span class="math inline">\(b\)</span>, including cross validation,
+non-parametric modeling of the second derivative of <span class="math inline">\(f(r)=E(Y|R=r)\)</span>, and specification
+tests.</p>
 </div>
 <div class="section level3">
 <h3 id="the-flexida-approach-to-rd-designs">The <code>flexida</code> Approach to RD Designs<a class="anchor" aria-label="anchor" href="#the-flexida-approach-to-rd-designs"></a>
 </h3>
-<p>The <code>flexida</code> approach to RD designs breaks the data analysis into three steps:</p>
+<p>The <code>flexida</code> approach to RD designs breaks the data
+analysis into three steps:</p>
 <ol style="list-style-type: decimal">
-<li>Conduct specification tests and choose a bandwidth <span class="math inline">\(b&gt;0\)</span>, along with, possibly, other data exclusions, resulting in an analysis sample <span class="math inline">\(W\)</span>.</li>
-<li>Fit a covariance model <span class="math inline">\(Y_{i0}=g(R_i,x_i;\beta)\)</span>, modeling <span class="math inline">\(Y_{i0}\)</span> as a function of running variable <span class="math inline">\(R_i\)</span> and (optionally) other covariates <span class="math inline">\(\mathbf{x}_i\)</span>. Fitting a covariance model to only the control subjects, as in other designs, would entail extrapolation of a model fit to subjects with <span class="math inline">\(R_i\in (c-b,c)\)</span> to subjects with <span class="math inline">\(R_i\in (c,c+b)\)</span>, or vice-versa, which is undesirable. Instead, we fit the covariance model to the full analysis sample <span class="math inline">\(\mathcal{W}\)</span>, including both treated and untreated subjects. However, since we are interested in modeling <span class="math inline">\(Y_0\)</span>, and not <span class="math inline">\(Y_1\)</span> or <span class="math inline">\(Y\)</span>, so rather than fitting <span class="math inline">\(g(\cdot)\)</span>, we fit an extended model <span class="math display">\[\tilde{g}(R_i,x_i,Z_i;\beta,\gamma)=g(R_i,x_i;\beta)+\gamma Z_i\]</span> including a term for treatment assignment. The estimate for <span class="math inline">\(\gamma\)</span> is, in essence, a provisional estimate of the treatment effect.</li>
-<li>Let <span class="math inline">\(\widehat{Y}_{i0}=g(R_i,x_i;\hat{\beta})\)</span>, using only the model for <span class="math inline">\(Y_0\)</span>—not including the term for <span class="math inline">\(Z\)</span>—along with <span class="math inline">\(\hat{\beta}\)</span> estimated in step 2. Then estimate the average treatment effect for subjects in <span class="math inline">\(W\)</span> using the difference in means estimator: <span class="math display">\[
-d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_i}-\frac{\sum_{i\in W} (1-Z_i)(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} (1-Z_i)}
+<li>Conduct specification tests and choose a bandwidth <span class="math inline">\(b&gt;0\)</span>, along with, possibly, other data
+exclusions, resulting in an analysis sample <span class="math inline">\(W\)</span>.</li>
+<li>Fit a covariance model <span class="math inline">\(Y_{i0}=g(R_i,x_i;\beta)\)</span>, modeling <span class="math inline">\(Y_{i0}\)</span> as a function of running variable
+<span class="math inline">\(R_i\)</span> and (optionally) other
+covariates <span class="math inline">\(\mathbf{x}_i\)</span>. Fitting a
+covariance model to only the control subjects, as in other designs,
+would entail extrapolation of a model fit to subjects with <span class="math inline">\(R_i\in (c-b,c)\)</span> to subjects with <span class="math inline">\(R_i\in (c,c+b)\)</span>, or vice-versa, which is
+undesirable. Instead, we fit the covariance model to the full analysis
+sample <span class="math inline">\(\mathcal{W}\)</span>, including both
+treated and untreated subjects. However, since we are interested in
+modeling <span class="math inline">\(Y_0\)</span>, and not <span class="math inline">\(Y_1\)</span> or <span class="math inline">\(Y\)</span>, so rather than fitting <span class="math inline">\(g(\cdot)\)</span>, we fit an extended model <span class="math display">\[\tilde{g}(R_i,x_i,Z_i;\beta,\gamma)=g(R_i,x_i;\beta)+\gamma
+Z_i\]</span> including a term for treatment assignment. The estimate for
+<span class="math inline">\(\gamma\)</span> is, in essence, a
+provisional estimate of the treatment effect.</li>
+<li>Let <span class="math inline">\(\widehat{Y}_{i0}=g(R_i,x_i;\hat{\beta})\)</span>,
+using only the model for <span class="math inline">\(Y_0\)</span>—not
+including the term for <span class="math inline">\(Z\)</span>—along with
+<span class="math inline">\(\hat{\beta}\)</span> estimated in step 2.
+Then estimate the average treatment effect for subjects in <span class="math inline">\(W\)</span> using the difference in means
+estimator: <span class="math display">\[
+d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i
+\in W} Z_i}-\frac{\sum_{i\in W} (1-Z_i)(Y_i-\widehat{Y}_{i0})}{\sum_{i
+\in W} (1-Z_i)}
 \]</span>
 </li>
 </ol>
-<p>The estimator <span class="math inline">\(d_{\hat{\beta}}\)</span> will be consistent if the model <span class="math inline">\(g(R_i,x_i;\beta_0)\)</span>, with <span class="math inline">\(\beta_0\)</span> as the probability limit for <span class="math inline">\(\hat{\beta}\)</span>, successfully removes all confounding due to <span class="math inline">\(R\)</span>, i.e. <span class="math inline">\(Y_0-g(R_i,x_i;\beta_0) \perp \!\!\! \perp Z\)</span> for <span class="math inline">\(i\in \mathcal{W}\)</span>.</p>
+<p>The estimator <span class="math inline">\(d_{\hat{\beta}}\)</span>
+will be consistent if the model <span class="math inline">\(g(R_i,x_i;\beta_0)\)</span>, with <span class="math inline">\(\beta_0\)</span> as the probability limit for
+<span class="math inline">\(\hat{\beta}\)</span>, successfully removes
+all confounding due to <span class="math inline">\(R\)</span>,
+i.e. <span class="math inline">\(Y_0-g(R_i,x_i;\beta_0) \perp \!\!\!
+\perp Z\)</span> for <span class="math inline">\(i\in
+\mathcal{W}\)</span>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -149,15 +239,32 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 <div class="section level3">
 <h3 id="determining-the-window-of-analysis">Determining the window of analysis<a class="anchor" aria-label="anchor" href="#determining-the-window-of-analysis"></a>
 </h3>
-<p>There is an extensive literature on determining the appropriate window of analysis for an RD design. See, for instance, Imbens and Kalyanaraman (2012) and Sales and Hansen (2020). This stage of the analysis is beyond the scope of this vignette, and does not require the flexida package. For the purpose of this example, we will focus our analysis on <span class="math inline">\(\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}\)</span>.</p>
+<p>There is an extensive literature on determining the appropriate
+window of analysis for an RD design. See, for instance, Imbens and
+Kalyanaraman (2012) and Sales and Hansen (2020). This stage of the
+analysis is beyond the scope of this vignette, and does not require the
+flexida package. For the purpose of this example, we will focus our
+analysis on <span class="math inline">\(\mathcal{W}=\{i:R_i\in
+[-0.5,0.5]\}\)</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="initializing-the-rd-design-object">Initializing the RD Design Object<a class="anchor" aria-label="anchor" href="#initializing-the-rd-design-object"></a>
 </h3>
-<p>In general, <code>flexida</code> design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment–in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. In <code>lsoSynth</code>, there are no clusters, and individual students are assigned to academic probation on an individual basis. The dataset does not include an ID variable, but any variable that takes a unique value for each row will do. We will use row-names.</p>
+<p>In general, <code>flexida</code> design objects require users to
+specify a unit- or cluster-id variable, that corresponds to the level of
+treatment assignment–in other words, which units were assigned between
+conditions. This is necessary both for combining results across
+different models or datasets, and for estimating correct design-based
+standard errors. In <code>lsoSynth</code>, there are no clusters, and
+individual students are assigned to academic probation on an individual
+basis. The dataset does not include an ID variable, but any variable
+that takes a unique value for each row will do. We will use
+row-names.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lsoSynth</span><span class="op">$</span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">lsoSynth</span><span class="op">)</span></span></code></pre></div>
-<p>Defining an RD design requires, at minimum, identifying the running variable(s) <span class="math inline">\(R\)</span>, as well as how <span class="math inline">\(R\)</span> determines treatment assignment. In our example,</p>
+<p>Defining an RD design requires, at minimum, identifying the running
+variable(s) <span class="math inline">\(R\)</span>, as well as how <span class="math inline">\(R\)</span> determines treatment assignment. In our
+example,</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lsoSynth</span><span class="op">$</span><span class="va">Z</span> <span class="op">&lt;-</span> <span class="va">lsoSynth</span><span class="op">$</span><span class="va">R</span><span class="op">&lt;</span><span class="fl">0</span></span>
 <span></span>
@@ -167,7 +274,8 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 <span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rd_design</a></span><span class="op">(</span><span class="va">Z</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">forcing</a></span><span class="op">(</span><span class="va">R</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/DesignSpecials.html">unitid</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span>, data<span class="op">=</span><span class="va">lsoSynth</span>, subset<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">lsoSynth</span><span class="op">$</span><span class="va">R</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="modeling-y_c-as-a-function-of-r">Modeling <span class="math inline">\(Y_C\)</span> as a function of <span class="math inline">\(R\)</span><a class="anchor" aria-label="anchor" href="#modeling-y_c-as-a-function-of-r"></a>
+<h3 id="modeling-y_c-as-a-function-of-r">Modeling <span class="math inline">\(Y_C\)</span> as a function of
+<span class="math inline">\(R\)</span><a class="anchor" aria-label="anchor" href="#modeling-y_c-as-a-function-of-r"></a>
 </h3>
 <p>We will consider two potential models <span class="math inline">\(\tilde{g}(\cdot)\)</span> of <span class="math inline">\(Y_C\)</span> as a function of <span class="math inline">\(R\)</span>. First, the standard OLS model:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">### this doesn't work:</span></span>
@@ -175,7 +283,8 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">##this works, but it's annoying to enter in the subset expression a 2nd time:</span></span>
 <span><span class="va">g1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">nextGPA</span> <span class="op">~</span> <span class="va">R</span> <span class="op">+</span> <span class="va">Z</span>, data <span class="op">=</span> <span class="va">lsoSynth</span>, subset <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">R</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<p>The second is a bounded-influence polynomial model of the type recommended in Sales &amp; Hansen (2020):</p>
+<p>The second is a bounded-influence polynomial model of the type
+recommended in Sales &amp; Hansen (2020):</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">g2</span> <span class="op">&lt;-</span></span>
 <span><span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"robustbase"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
@@ -230,7 +339,7 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
     </footer>
