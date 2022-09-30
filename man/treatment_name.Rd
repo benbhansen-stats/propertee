@@ -23,7 +23,7 @@ damod <- as.lmitt(mod)
 damod$coef[treatment_name(damod)]
 des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
                    dichotomy = dose > 200 ~ . )
-mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
+mod2 <- lm(y ~ assigned(), data = simdata, weights = ett(des2))
 damod2 <- as.lmitt(mod2)
 damod2$coef[treatment_name(damod2)]
 }

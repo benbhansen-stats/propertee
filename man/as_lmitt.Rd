@@ -15,7 +15,7 @@ as.DirectAdjusted(x, design = NULL)
 \item{design}{Optional, explicitly specify the \code{Design} to be used. If
 the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-\code{adopters()}) it will be found automatically and does not need to be
+\code{assigned()}) it will be found automatically and does not need to be
 passed here as well. (If different \code{Design} objects are passed
 (either through the \code{lm} in weights or covariance adjustment, or
 through this argument), an error will be produced.)}

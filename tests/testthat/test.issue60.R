@@ -6,8 +6,8 @@ test_that("issue 60", {
                     subset = 1:50 <= 47)
   expect_equal(nrow(structure(des)), 10)
   # By passing the subset
-  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
-  expect_true("adopters()" %in% names(coef(mod1)))
+  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
+  expect_true("assigned()" %in% names(coef(mod1)))
 
 
   # Now, subset that excludes clusters
@@ -19,7 +19,7 @@ test_that("issue 60", {
                nrow(structure(des)))
 
   # The model should use all rows related to those 7 clusters, which is 34.
-  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
+  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
 
   # This counts the number of rows in simdata whose clusters are found in the
   # design. (Instead of hardcoding the number, in case simdata changes)

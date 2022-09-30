@@ -64,7 +64,7 @@ reference:
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:
     - lmitt
-    - adopters
+    - assigned
     - as.lmitt
     - confint,DirectAdjusted-method
     - show,DirectAdjusted-method

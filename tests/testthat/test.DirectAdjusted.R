@@ -41,12 +41,12 @@ test_that("DA ensure treatment is found", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
-  dalm <- lmitt(y ~ adopters(), data = simdata, weights = ate(des),
+  dalm <- lmitt(y ~ assigned(), data = simdata, weights = ate(des),
                 offset = cov_adj(cmod))
 
   expect_type(treatment_name(dalm), "character")
   expect_length(treatment_name(dalm), 1)
-  expect_identical(treatment_name(dalm), "adopters()")
+  expect_identical(treatment_name(dalm), "assigned()")
   expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
 
   dalm2 <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des),
@@ -55,19 +55,19 @@ test_that("DA ensure treatment is found", {
                         dalm2$coefficients,
                         check.attributes = FALSE))
 
-  # two identical adopters works silently
-  dalm3 <- as.lmitt(lm(y ~ adopters() + adopters(), data = simdata,
+  # two identical assigned works silently
+  dalm3 <- as.lmitt(lm(y ~ assigned() + assigned(), data = simdata,
                                 weights = ate(des), offset = cov_adj(cmod)))
   expect_true(all.equal(dalm$coefficients,
                         dalm3$coefficients,
                         check.names = FALSE))
 
-  # two different adopters fails
-  expect_error(as.lmitt(lm(y ~ adopters(des) + adopters(),
+  # two different assigned fails
+  expect_error(as.lmitt(lm(y ~ assigned(des) + assigned(),
                                     data = simdata,
                                     weights = ate(des),
                                     offset = cov_adj(cmod))),
-               "Differing `adopters")
+               "Differing `assigned")
   # No treatment
   expect_error(as.lmitt(lm(y ~ x, data = simdata, weights = ate(des))),
                "Treatment z")
@@ -78,23 +78,23 @@ test_that("DA ensure treatment is found", {
   expect_error(as.lmitt(lm(y ~ z, data = sd2,
                                     weights = ate(des))),
                "'z' not found")
-  dalm <- as.lmitt(lm(y ~ adopters(), data = sd2,
+  dalm <- as.lmitt(lm(y ~ assigned(), data = sd2,
                                weights = ate(des)))
 
   expect_type(treatment_name(dalm), "character")
   expect_length(treatment_name(dalm), 1)
-  expect_identical(treatment_name(dalm), "adopters()")
+  expect_identical(treatment_name(dalm), "assigned()")
   expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
 
   des2 <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata,
                      dichotomy = o > 2 ~ . )
 
-  dalm2 <- as.lmitt(lm(y ~ adopters(), data = simdata,
+  dalm2 <- as.lmitt(lm(y ~ assigned(), data = simdata,
                                 weights = ate(des2)))
 
   expect_type(treatment_name(dalm2), "character")
   expect_length(treatment_name(dalm2), 1)
-  expect_identical(treatment_name(dalm2), "adopters()")
+  expect_identical(treatment_name(dalm2), "assigned()")
   expect_true(!is.na(coef(dalm2)[treatment_name(dalm2)]))
 
   expect_error(as.lmitt(lm(y ~ o, data = simdata,
@@ -102,11 +102,11 @@ test_that("DA ensure treatment is found", {
                "non-binary treatment")
 
 
-  dalm_direct <- lmitt(y ~ adopters(), data = simdata, weights = ate(des2))
+  dalm_direct <- lmitt(y ~ assigned(), data = simdata, weights = ate(des2))
 
   expect_type(treatment_name(dalm_direct), "character")
   expect_length(treatment_name(dalm_direct), 1)
-  expect_identical(treatment_name(dalm_direct), "adopters()")
+  expect_identical(treatment_name(dalm_direct), "assigned()")
   # internal name used in ittestimate
   expect_true(!is.na(coef(dalm_direct)[treatment_name(dalm_direct)]))
 })
@@ -208,7 +208,7 @@ test_that("subsetting model with weights and/or cov_adj", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  mod1 <- lm(y ~ adopters(),
+  mod1 <- lm(y ~ assigned(),
              data = simdata,
              weights = ate(des),
              offset = cov_adj(lm(y ~ x, data = simdata)))
@@ -217,7 +217,7 @@ test_that("subsetting model with weights and/or cov_adj", {
   expect_true(inherits(mod1$model$`(offset)`, "SandwichLayer"))
 
   # add subsetting
-  mod2 <- lm(y ~ adopters(),
+  mod2 <- lm(y ~ assigned(),
              data = simdata,
              weights = ate(des),
              offset = cov_adj(lm(y ~ x, data = simdata)),
@@ -264,8 +264,8 @@ test_that("Differing designs found", {
   mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
   expect_equal(mod1$coefficients, mod2$coefficients)
 
-  mod3 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
-  mod4 <- lmitt(y ~ adopters(), data = simdata, weights = ate(des), design = des)
+  mod3 <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
+  mod4 <- lmitt(y ~ assigned(), data = simdata, weights = ate(des), design = des)
   expect_equal(mod3$coefficients, mod4$coefficients)
 
 
@@ -274,8 +274,8 @@ test_that("Differing designs found", {
 test_that("DirectAdjusted object has its own evaluation environment", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  mod1 <- lmitt(y ~ adopters(), data = simdata, design = des)
-  mod2 <- lmitt(lm(y ~ adopters(), simdata, weights = ate(des)))
+  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
+  mod2 <- lmitt(lm(y ~ assigned(), simdata, weights = ate(des)))
   mod3 <- lmitt(y ~ z, data = simdata, design = des)
 
   expect_false(identical(environment(), environment(formula(mod1))))

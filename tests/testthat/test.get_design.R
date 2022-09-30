@@ -10,11 +10,11 @@ test_that(".get_design", {
              offset = cov_adj(mod, design = des))
   mod3 <- lm(y ~ z, data = simdata, weights = ate(des),
              offset = cov_adj(mod, design = des))
-  mod4 <- lm(y ~ adopters(), data = simdata, weights = ate(des),
+  mod4 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
              offset = cov_adj(mod))
-  mod5 <- lm(y ~ adopters(), data = simdata, weights = ate(),
+  mod5 <- lm(y ~ assigned(), data = simdata, weights = ate(),
              offset = cov_adj(mod, design = des))
-  mod6 <- lm(y ~ adopters(), data = simdata, weights = ate(des),
+  mod6 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
              offset = cov_adj(mod, design = des))
   expect_true(all(mod1$coef == mod2$coef))
   expect_true(all(mod1$coef == mod3$coef))
@@ -24,11 +24,11 @@ test_that(".get_design", {
 
   des2 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  expect_error(lm(y ~ adopters(), data = simdata, weights = ate(des),
+  expect_error(lm(y ~ assigned(), data = simdata, weights = ate(des),
                   offset = cov_adj(mod, design = des2)),
                "differing `Design`")
 
-  expect_error(lm( y ~ adopters(), data = simdata),
+  expect_error(lm( y ~ assigned(), data = simdata),
                "Unable to locate")
 
   # #37 offset in formula isntead of argument
@@ -56,7 +56,7 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
 test_that(".get_design finds design in expand.model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
+  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
   
   # ensure we're taking the Design object from the model not the existing object
   # in the environment
@@ -71,7 +71,7 @@ test_that(".get_design finds design in expand.model.frame call", {
 test_that(".get_design finds design in model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ adopters(), data = simdata, weights = ate(des))
+  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
   
   mf1 <- stats::model.frame(damod)
   mf2 <- stats::model.frame(formula(damod), simdata)

@@ -15,7 +15,7 @@ setValidity("DirectAdjusted", function(object) {
         rownames(attr(terms(object), "factors"))[-1]) {
     # Ensures that treatment variable appears somewhere in RHS (-1 removes
     # outcome) of formula. If created by `lmitt()`, treatment will be
-    # "adopters()"; but if passed from lm to as.DA, it could be a variable name.
+    # "assigned()"; but if passed from lm to as.DA, it could be a variable name.
     return("treatment not found in model")
   }
   return(TRUE)
@@ -35,7 +35,7 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-##'   \code{adopters()}) it will be found automatically and does not need to be
+##'   \code{assigned()}) it will be found automatically and does not need to be
 ##'   passed here as well. (If different \code{Design} objects are passed
 ##'   (either through the \code{lm} in weights or covariance adjustment, or
 ##'   through this argument), an error will be produced.)
@@ -170,20 +170,20 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' damod$coef[treatment_name(damod)]
 ##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
 ##'                    dichotomy = dose > 200 ~ . )
-##' mod2 <- lm(y ~ adopters(), data = simdata, weights = ett(des2))
+##' mod2 <- lm(y ~ assigned(), data = simdata, weights = ett(des2))
 ##' damod2 <- as.lmitt(mod2)
 ##' damod2$coef[treatment_name(damod2)]
 treatment_name <- function(x) {
 
   cnames <- names(x$coefficients)
-  adopters_regexp <- "adopters\\([^)]*\\)"
-  adopters_match <- regmatches(cnames, regexpr(adopters_regexp, cnames))
-  if (length(unique(adopters_match)) > 1) {
-    stop(paste("Differing `adopters()` calls found;",
-               " all `adopters()` in formula must be identical."))
+  assigned_regexp <- "assigned\\([^)]*\\)"
+  assigned_match <- regmatches(cnames, regexpr(assigned_regexp, cnames))
+  if (length(unique(assigned_match)) > 1) {
+    stop(paste("Differing `assigned()` calls found;",
+               " all `assigned()` in formula must be identical."))
   }
-  if (length(adopters_match) > 0) {
-    return(adopters_match[1])
+  if (length(assigned_match) > 0) {
+    return(assigned_match[1])
   }
 
   if (has_binary_treatment(x@Design)) {
@@ -193,9 +193,9 @@ treatment_name <- function(x) {
       # If treatment variable name is found in coefficients, return it
       return(zname)
     }
-    stop(paste("Treatment", zname, "or `adopters()` must be found in formula"))
+    stop(paste("Treatment", zname, "or `assigned()` must be found in formula"))
   }
   # If we hit this point, there's no adopter and non-binary treatment, so we
   # must have non-binary treatment specified
-  stop("With non-binary treatment, `adopters()` must be found in formula")
+  stop("With non-binary treatment, `assigned()` must be found in formula")
 }
