@@ -67,7 +67,7 @@ test_that("Obtaining data for weights", {
 test_that("get_data_from_model finds data in lmitt object's eval env", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  damod <- lmitt(y ~ adopters(design = des), design = des, data = simdata)
+  damod <- lmitt(y ~ assigned(design = des), design = des, data = simdata)
   
   lmitt_func <- function(x, ...) {
     rhs <- formula(x)[[3L]]
@@ -78,7 +78,7 @@ test_that("get_data_from_model finds data in lmitt object's eval env", {
   out <- suppressWarnings(lmitt_func(damod))
   expect_true(is.numeric(out))
   expect_equal(length(out), nrow(simdata))
-  expect_equal(out, damod$model$`adopters(design = des)`)
+  expect_equal(out, damod$model$`assigned(design = des)`)
 })
 
 test_that(paste("get_data_from_model frame recursion doesn't return",
@@ -91,11 +91,11 @@ test_that(paste("get_data_from_model frame recursion doesn't return",
   data(simdata)
   data <- simdata
   des <- rct_design(z ~ cluster(cid1, cid2), data)
-  damod <- lmitt(y ~ adopters(design = des), design = des, data = data)
+  damod <- lmitt(y ~ assigned(design = des), design = des, data = data)
 
   non_lmitt_func <- function(data = NULL) {
     if (is.null(data)) data <- .get_data_from_model("weights",
-                                                    y ~ adopters(design = des))
+                                                    y ~ assigned(design = des))
     data$newcol <- 5
     return(data)
   }

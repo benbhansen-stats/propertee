@@ -1,15 +1,15 @@
 ##' Whenever a function in a model
-##' (\code{ate()}/\code{ett()}/\code{cov_adj()}/\code{adopters()}) is called
+##' (\code{ate()}/\code{ett()}/\code{cov_adj()}/\code{assigned()}) is called
 ##' without an explicit \code{data=} argument, this will attempt to extract the
 ##' data from the model itself.
 ##'
 ##' The \code{form} specifies what columns of the data are needed. For current
-##' use cases (\code{ate()}/\code{ett()} and \code{adopters()}), this will be
+##' use cases (\code{ate()}/\code{ett()} and \code{assigned()}), this will be
 ##' only the unit of assignment variables, so e.g. \code{form = ~ clustervar},
 ##' to enable merging of UOA level variables to the model data. However, this
 ##' can easily be expanded if other variables are needed.
 ##' @title (Internal) Locate data in call stack
-##' @param which_fn Identify calling function, "weights" or "adopters", helps
+##' @param which_fn Identify calling function, "weights" or "assigned", helps
 ##'   separate logic for the two functions.
 ##' @param form Formula on which to apply \code{model.frame()}. See details
 ##' @param by translation of cluster ID names, passed down from weights.
@@ -19,7 +19,7 @@
                                  form = NULL,
                                  by = NULL) {
 
-  if (!which_fn %in% c("weights", "adopters")) {
+  if (!which_fn %in% c("weights", "assigned")) {
     stop(paste("Internal error: which_fn is invalid,", which_fn))
   }
 
@@ -67,7 +67,7 @@
   # `ittestimate`)
   mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
 
-  # identify whether we're looking inside weights or adopters
+  # identify whether we're looking inside weights or assigned
   if (which_fn == "weights") {
     # Find all frames with `weights` argument
     weights_args <- lapply(sys.calls(), `[[`, "weights")
@@ -82,13 +82,13 @@
                       function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
 
     fn_pos <- which(ate_pos | ett_pos)
-  } else if (which_fn == "adopters") {
+  } else if (which_fn == "assigned") {
     # Find all frames with `formula`
     adopter_args <- lapply(sys.calls(), `[[`, "formula")
 
-    # Search these formula for "adopters(", ensuring that the previous character
-    # is not a letter, in case there are functions like customadopters().
-    fn_pos <- which(grepl("[^a-zA-Z]?adopters\\(",
+    # Search these formula for "assigned(", ensuring that the previous character
+    # is not a letter, in case there are functions like customassigned().
+    fn_pos <- which(grepl("[^a-zA-Z]?assigned\\(",
                                 lapply(adopter_args, deparse)))
   }
 
@@ -100,7 +100,7 @@
   } else {
     # We've identified at least one model.frame.default
     if (length(mf_pos) > 1) {
-      # If we have more than one, pick the one that has weights/adopters.
+      # If we have more than one, pick the one that has weights/assigned.
       mf_pos <- mf_pos[mf_pos %in% fn_pos]
       if (length(mf_pos) > 1) {
         # still multiple; too confusing!

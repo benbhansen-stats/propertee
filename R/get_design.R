@@ -1,18 +1,18 @@
-##' \code{adopters()}/\code{ate()}/\code{ett()}/\code{cov_adj()} all need the
+##' \code{assigned()}/\code{ate()}/\code{ett()}/\code{cov_adj()} all need the
 ##' \code{Design} to operate. If any are called in the model without a
 ##' \code{design=} argument, this function sees if it can find the \code{Design}
 ##' in another of these functions.
 ##'
-##' Note that it will never look inside \code{adopters()} (gets complicated in
+##' Note that it will never look inside \code{assigned()} (gets complicated in
 ##' formulas), only in weights or \code{cov_adj()}. E.g.
 ##'
-##' \code{lm(y ~ adopters(), weights = ate(des), offest = cov_adj(mod1))}
+##' \code{lm(y ~ assigned(), weights = ate(des), offest = cov_adj(mod1))}
 ##'
-##' \code{lm(y ~ adopters(), weights = ate(), offest = cov_adj(mod1, design = des))}
+##' \code{lm(y ~ assigned(), weights = ate(), offest = cov_adj(mod1, design = des))}
 ##'
 ##' will both work, but
 ##'
-##' \code{lm(y ~ adopters(des), weights = ate(), offest = cov_adj(mod1))}
+##' \code{lm(y ~ assigned(des), weights = ate(), offest = cov_adj(mod1))}
 ##'
 ##' will fail.
 ##' @title (Internal) Locate a \code{Design} in the call stack
@@ -73,7 +73,7 @@
   covadj_design <- NULL
   mf_design <- NULL
   # This avoids infinite recursion; if we're in weights or in cov_adj, don't
-  # look for it again. Only adopters will look for both.
+  # look for it again. Only assigned will look for both.
   if (sys.call(-1)[[1]] != ".weights_calc") {
     weight_design <- .find.design("weights")
   }

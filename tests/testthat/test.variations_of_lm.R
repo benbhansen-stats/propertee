@@ -17,8 +17,8 @@ test_that("binary treatment, in all data", {
   expect_silent(as.lmitt(lm(y ~ z, data = simdata, weights = ate(des))))
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
-  # DA doesnt look in adopters for Design
+  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  # DA doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # cov_adj alone
@@ -28,10 +28,10 @@ test_that("binary treatment, in all data", {
                             data = simdata)))
 
 
-  # Weight + adopters
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # Weight + assigned
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             weights = ett(des))))
 
 
@@ -52,30 +52,30 @@ test_that("binary treatment, in all data", {
   expect_silent(as.lmitt(lm(y ~ z + offset(cov_adj(camod, design = des)),
                             data = simdata, weights = ett(des))))
 
-  # adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             offset = cov_adj(camod, design = des))))
 
-  # weights + adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # weights + assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(),
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod)),
+  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
                             data = simdata, weights = ett(des))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
-  #expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ adopters() +
+  expect_silent(as.lmitt(lm(y ~ assigned() +
                               offset(cov_adj(camod, design = des)),
                             data = simdata, weights = ett(des))))
 
@@ -90,40 +90,40 @@ test_that("binary treatment, not in data2", {
   simdata$z <- NULL
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
-  # DA doesnt look in adopters for Design
+  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  # DA doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
-  # Weight + adopters
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # Weight + assigned
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             weights = ett(des))))
 
-  # adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             offset = cov_adj(camod, design = des))))
 
-  # weights + adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # weights + assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                                      weights = ett(des),
                                      offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                                      weights = ett(),
                                      offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                                      weights = ett(des),
                                      offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod)),
+  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
                                      data = simdata, weights = ett(des))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
-  #expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ adopters() +
+  expect_silent(as.lmitt(lm(y ~ assigned() +
                                        offset(cov_adj(camod, design = des)),
                    data = simdata, weights = ett(des))))
 
@@ -141,40 +141,40 @@ test_that("non-binary treatment, in all data, dichotomization in design", {
 
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
-  # DA doesnt look in adopters for Design
+  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  # DA doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
-  # Weight + adopters
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # Weight + assigned
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                                      weights = ett(des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                                      weights = ett(des))))
 
-  # adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             offset = cov_adj(camod, design = des))))
 
-  # weights + adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # weights + assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(),
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod)),
+  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
                             data = simdata, weights = ett(des))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
-  #expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ adopters() +
+  expect_silent(as.lmitt(lm(y ~ assigned() +
                               offset(cov_adj(camod, design = des)),
                             data = simdata, weights = ett(des))))
 
@@ -193,40 +193,40 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
 
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ adopters(des), data = simdata))
-  # DA doesnt look in adopters for Design
+  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  # DA doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
-  # Weight + adopters
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # Weight + assigned
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                             weights = ett(des))))
 
-  # adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                    offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
                    offset = cov_adj(camod, design = des))))
 
-  # weights + adopters + cov_adj
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  # weights + assigned + cov_adj
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(),
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod)),
+  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
                             data = simdata, weights = ett(des))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
-  #expect_silent(as.lmitt(lm(y ~ adopters() + offset(cov_adj(camod, design = des)),
+  #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ adopters() +
+  expect_silent(as.lmitt(lm(y ~ assigned() +
                               offset(cov_adj(camod, design = des)),
                             data = simdata, weights = ett(des))))
 

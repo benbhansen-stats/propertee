@@ -4,14 +4,14 @@
 ##' \code{offset=} argument) are included, this will extract the treatment
 ##' variable from the \code{Design}.
 ##'
-##' While \code{adopters()} can be used in any situation, it is most useful for
+##' While \code{assigned()} can be used in any situation, it is most useful for
 ##' scenarios where the treatment variable is non-binary and the \code{Design}
 ##' contains a \code{Dichotomy}. For example, say \code{q} is a 3-level ordinal
 ##' treatment variable, and the binary comparison of interest is captured in
 ##' \code{dichotomy = q == 3 ~ q < 3}. If you were to fit a model including
 ##' \code{q} as a predictor, e.g. \code{lm(y ~ q, ...)}, \code{lm} would treat
 ##' \code{q} as the full ordinal variable. On the other hand, by calling
-##' \code{lm(y ~ adopters(), weights = ate(des), ...)}, \code{adopters()} will
+##' \code{lm(y ~ assigned(), weights = ate(des), ...)}, \code{assigned()} will
 ##' generate the appropriate binary variable to allow estimation of treatment
 ##' effects.
 ##'
@@ -20,12 +20,13 @@
 ##'   identified in the model (usually because neither weights (\code{ate()} or
 ##'   \code{ett()}) nor a covariate adjustment model (\code{cov_adj()}) are
 ##'   found), the \code{Design} can be passed diretly.
-##' @param data Optional data set. By default `adopters()` will attempt to
+##' @param data Optional data set. By default `assigned()` will attempt to
 ##'   identify the appropriate data, if this fails (or you want to overwrite
 ##'   it), you can pass the data here.
 ##' @return The treatment variable to be placed in the regression formula.
+##' @rdname AssignedAliases
 ##' @export
-adopters <- function(design = NULL, data = NULL) {
+assigned <- function(design = NULL, data = NULL) {
   if (is.null(design)) {
     design <- .get_design()
   }
@@ -35,7 +36,7 @@ adopters <- function(design = NULL, data = NULL) {
                                       collapse = "+")))
 
   if (is.null(data)) {
-    data <- .get_data_from_model("adopters", form)
+    data <- .get_data_from_model("assigned", form)
   }
 
   # Extract treatment and unitofassignment variables from the Design
@@ -66,3 +67,15 @@ adopters <- function(design = NULL, data = NULL) {
 
   return(treatment)
 }
+
+##' @rdname AssignedAliases
+##' @export
+adopters <- assigned
+
+##' @rdname AssignedAliases
+##' @export
+a. <- assigned
+
+##' @rdname AssignedAliases
+##' @export
+z. <- assigned

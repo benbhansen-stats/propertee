@@ -6,16 +6,16 @@
 ##' The first argument to \code{lmitt}, \code{obj}, specifies a linear
 ##' regression model. The formula is specified exactly how it would be in
 ##' \code{lm()}, with one deviation. Rather than including the treatment
-##' variable by name, the helper function \code{adopters()} should be used in
+##' variable by name, the helper function \code{assigned()} should be used in
 ##' its place. For example, if your outcome is \code{y}, you could call
-##' \code{lmitt(y ~ adopters(), design = ...)}.
+##' \code{lmitt(y ~ assigned(), design = ...)}.
 ##'
-##' If the formula does \emph{not} contain at least one \code{adopters()}, the
+##' If the formula does \emph{not} contain at least one \code{assigned()}, the
 ##' right hand side of the formula will be treated as a series of
 ##' strataification variables. This means that a formula such as \code{y ~ x +
-##' q} will be replaced with \code{y ~ x:adopters() + q:adopters()} such that
+##' q} will be replaced with \code{y ~ x:assigned() + q:assigned()} such that
 ##' \code{lmitt} will estimate the treatment effect within each level of both
-##' \code{x} and \code{q}. If \code{adopters()} is found anywhere on the right
+##' \code{x} and \code{q}. If \code{assigned()} is found anywhere on the right
 ##' hand side of \code{obj}, this modification is \emph{not} made.
 ##'
 ##' Any additional arguments to \code{lm()} can be passed into \code{...}. See
@@ -45,7 +45,7 @@
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in the model (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-##'   \code{adopters()}) it will be found automatically and does not need to be
+##'   \code{assigned()}) it will be found automatically and does not need to be
 ##'   passed here as well. (If different \code{Design} objects are passed
 ##'   (either through the \code{lm} in weights or covariance adjustment, or
 ##'   through this argument), an error will be produced.) Alternatively, a
@@ -71,12 +71,12 @@ lmitt.formula <- function(obj,
                           ...) {
   mf <- match.call()
 
-  # If there are no adopters() in the formula, assume all RHS variables are
-  # stratified and add interaction with `adopters()`
-  no_adopters <- is.null(attr(terms(obj, specials = "adopters"),
-                              "specials")$adopters)
-  if (no_adopters) {
-      obj <- update(obj, . ~ . : adopters())
+  # If there are no assigned() in the formula, assume all RHS variables are
+  # stratified and add interaction with `assigned()`
+  no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
+                              "specials")$assigned)
+  if (no_assigned) {
+      obj <- update(obj, . ~ . : assigned())
   }
 
   if (inherits(design, "formula")) {
@@ -111,7 +111,7 @@ lmitt.formula <- function(obj,
 
   # Reset the formula  for the `lm`, giving  it a proper name (since  we take in
   # the  generic "obj"  name), and  replacing it  with the  updated `obj`  if we
-  # modified it above due to lack of `adopters()
+  # modified it above due to lack of `assigned()
   names(mf)[2] <- "formula"
   mf[[2L]] <- obj
 

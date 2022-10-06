@@ -61,7 +61,7 @@ flexPoly <- function(dat,deg){
   
   covMod <- robustbase::lmrob(covForm,data=dat,method='MM')
   
-  # res <- lmitt(Y~adopters(),design=des,offset=cov_adj(covMod),data=dat)|>
+  # res <- lmitt(Y~assigned(),design=des,offset=cov_adj(covMod),data=dat)|>
   #   summary()|>
   #   getElement('coefficients')
   x <- lm(Y ~ Z, data = dat, offset = cov_adj(covMod, design = des))

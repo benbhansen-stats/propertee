@@ -8,8 +8,8 @@
 <meta name="description" content="flexida">
 <title>Covariance Adjustment for Randomized Trials • flexida</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Covariance Adjustment for Randomized Trials">
 <meta property="og:description" content="flexida">
@@ -47,7 +47,6 @@
     <a class="dropdown-item" href="../articles/design_based_SEs.html">Design based sandwich SEs for differences of Hajek estimators</a>
     <a class="dropdown-item" href="../articles/not-for-cran/covadj_with_clustering.html">Covariance-adjusted standard errors in a clustered longitudinal setting</a>
     <a class="dropdown-item" href="../articles/not-for-cran/non-binary-weights.html">Non-Binary Treatment</a>
-    <a class="dropdown-item" href="../articles/not-for-cran/polynomialSimulation.html">Polynomial Simulation like in LRD paper</a>
     <a class="dropdown-item" href="../articles/sandwich_infrastructure.html">Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model</a>
   </div>
 </li>
@@ -76,9 +75,10 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Covariance Adjustment for Randomized Trials</h1>
-                        <h4 data-toc-skip class="author">Mark Fredrickson</h4>
+                        <h4 data-toc-skip class="author">Mark
+Fredrickson</h4>
             
-            <h4 data-toc-skip class="date">2022-08-24</h4>
+            <h4 data-toc-skip class="date">2022-09-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/vignettes/CovarianceAdjustment.Rmd" class="external-link"><code>vignettes/CovarianceAdjustment.Rmd</code></a></small>
       <div class="d-none name"><code>CovarianceAdjustment.Rmd</code></div>
@@ -96,7 +96,12 @@
 <div class="section level2">
 <h2 id="data-and-design">Data and Design<a class="anchor" aria-label="anchor" href="#data-and-design"></a>
 </h2>
-<p>The data come from the state of Tennessee’s Student-Teacher Achievement Ratio (STAR) experiment. Students were randomly assigned to three possible classroom conditions: small (13 to 17 students per teacher), regular class (22 to 25 students per teacher), and regular-with-aide class (22 to 25 students with a full-time teacher’s aide).</p>
+<p>The data come from the state of Tennessee’s Student-Teacher
+Achievement Ratio (STAR) experiment. Students were randomly assigned to
+three possible classroom conditions: small (13 to 17 students per
+teacher), regular class (22 to 25 students per teacher), and
+regular-with-aide class (22 to 25 students with a full-time teacher’s
+aide).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></code></pre></div>
 <p>Student compliance was not constant over years:</p>
@@ -113,7 +118,12 @@
 <span><span class="co">#&gt;   regular         1485   167          152</span></span>
 <span><span class="co">#&gt;   small             37  1564           35</span></span>
 <span><span class="co">#&gt;   regular+aide      76    40         1858</span></span></code></pre></div>
-<p>Taking that kindergarten treatment as the intended treatment, we proceed with an intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3. Additionally, we collapse the <code>regular</code> and <code>regular+aide</code> categories into a single category to compare the effect of small classrooms against regular classrooms, including those with teacher’s aides.</p>
+<p>Taking that kindergarten treatment as the intended treatment, we
+proceed with an intent-to-treat analysis, ignoring actual classroom
+attendance in grades 1 to 3. Additionally, we collapse the
+<code>regular</code> and <code>regular+aide</code> categories into a
+single category to compare the effect of small classrooms against
+regular classrooms, including those with teacher’s aides.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span> <span class="op">&lt;-</span> <span class="va">STARdata</span><span class="op">$</span><span class="va">stark</span> <span class="op">==</span> <span class="st">"small"</span></span>
 <span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
@@ -121,7 +131,11 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; FALSE  TRUE </span></span>
 <span><span class="co">#&gt;  9698  1900</span></span></code></pre></div>
-<p>To illustrate the workflow of a researcher in the midst of a trial, we split the data into two data sets, one representing student information that might have been known prior or during assignment and a second representing outcome information only available after the intervention had been administered.</p>
+<p>To illustrate the workflow of a researcher in the midst of a trial,
+we split the data into two data sets, one representing student
+information that might have been known prior or during assignment and a
+second representing outcome information only available after the
+intervention had been administered.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">STAR_pre</span> <span class="op">&lt;-</span> <span class="va">STARdata</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"studentid"</span>, <span class="st">"treatment"</span>,</span>
@@ -129,7 +143,9 @@
 <span>                     <span class="st">"schoolk"</span>, <span class="st">"degreek"</span>, <span class="st">"ladderk"</span>, <span class="st">"experiencek"</span>, <span class="st">"tethnicityk"</span>, <span class="co"># school and teacher demographics</span></span>
 <span>                     <span class="st">"systemk"</span>, <span class="st">"schoolidk"</span> <span class="co"># school ID information</span></span>
 <span>                     <span class="op">)</span><span class="op">]</span></span></code></pre></div>
-<p>As students were blocked into schools, and then randomized within school, we establish the design based on those stratifications. Including a set of weights that we will use later.</p>
+<p>As students were blocked into schools, and then randomized within
+school, we establish the design based on those stratifications.
+Including a set of weights that we will use later.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STAR_school</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>schoolidk <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STAR_pre</span><span class="op">$</span><span class="va">schoolidk</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                          school_n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tapply.html" class="external-link">tapply</a></span><span class="op">(</span><span class="va">STAR_pre</span><span class="op">$</span><span class="va">treatment</span>,</span>
@@ -147,7 +163,9 @@
 <span>                             <span class="va">treatment</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">treatment</span><span class="op">)</span> <span class="op">*</span> <span class="va">E_Z</span> <span class="op">/</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">E_Z</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">STAR_pre</span><span class="op">$</span><span class="va">weight_etc</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">STAR_pre</span>,</span>
 <span>                             <span class="va">treatment</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">E_Z</span><span class="op">)</span> <span class="op">/</span> <span class="va">E_Z</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">treatment</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Post-treatment outcomes include normalized reading and math scores over several years. Missing values are imputed to the within group (treatment/control) mean</p>
+<p>Post-treatment outcomes include normalized reading and math scores
+over several years. Missing values are imputed to the within group
+(treatment/control) mean</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">STAR_post</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
@@ -158,11 +176,14 @@
 <span></span>
 <span><span class="co">## imputation to within group means</span></span>
 <span><span class="va">STAR_pre_post</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">STAR_pre</span>, <span class="va">STAR_post</span>, by <span class="op">=</span> <span class="st">"studentid"</span>, all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>While students were grouped within classrooms with the same teacher, the assignment to classroom type was performed at the individual level within schools.</p>
+<p>While students were grouped within classrooms with the same teacher,
+the assignment to classroom type was performed at the individual level
+within schools.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## STAR_design &lt;- rct_design(treatment ~ cluster(studentid) + strata(schoolidk), data = STAR_pre)</span></span>
 <span><span class="va">STAR_design</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">treatment</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">cluster</a></span><span class="op">(</span><span class="va">studentid</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">STAR_pre</span><span class="op">)</span></span></code></pre></div>
-<p>We are interested in the treatment effects for the the different ethnicities composing the study population.</p>
+<p>We are interested in the treatment effects for the the different
+ethnicities composing the study population.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#ggplot(STAR_pre_post, aes(x = read, group = treatment)) + geom_boxplot() + facet_wrap(~ ethnicity)</span></span></code></pre></div>
 </div>
@@ -184,32 +205,64 @@
 <div class="section level2">
 <h2 id="outcome-analysis">Outcome Analysis<a class="anchor" aria-label="anchor" href="#outcome-analysis"></a>
 </h2>
-<p>Let <span class="math inline">\(y_1\)</span> and <span class="math inline">\(y_0\)</span> be the potential outcomes, let <span class="math inline">\(Z\)</span> be a binary treatment indicator, and posit that the Stable Unit Treatment Value assumption holds such that <span class="math inline">\(Y = Z y_1 - (1 - Z) y_0\)</span>. For a finite population of <span class="math inline">\(n\)</span> units, define the <em>average treament effect</em> as <span class="math display">\[\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0}.\]</span></p>
-<p>Suppose we have a model <span class="math inline">\(y_{i0} = g(x_i ; \beta_0)\)</span>. After fitting parameters <span class="math inline">\(\hat \beta_0\)</span>, let <span class="math inline">\(\hat y_{i0} = g(x_i ; \hat \beta_0)\)</span>. Adding and subtracting the estimated potential outcomes does not changing the average treatment effect:</p>
-<p><span class="math display">\[\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} - y_{i0} + \hat y_{i0} - \hat y_{i0} = \frac{1}{n} \sum_{i=1}^n (y_{i1} - \hat y_{i0})  - \frac{1}{n} \sum_{i=1}^n (y_{i0} - \hat y_{i0}).\]</span></p>
-<p>Additionally, for any binary treatment vector <span class="math inline">\(Z\)</span>, we can decompose the average treatment effect as the effect on the treated group (i.e., <span class="math inline">\(Z = 1\)</span>) and the effect on the control group (i.e., <span class="math inline">\(Z = 0\)</span>): <span class="math display">\[
+<p>Let <span class="math inline">\(y_1\)</span> and <span class="math inline">\(y_0\)</span> be the potential outcomes, let <span class="math inline">\(Z\)</span> be a binary treatment indicator, and
+posit that the Stable Unit Treatment Value assumption holds such that
+<span class="math inline">\(Y = Z y_1 - (1 - Z) y_0\)</span>. For a
+finite population of <span class="math inline">\(n\)</span> units,
+define the <em>average treament effect</em> as <span class="math display">\[\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1} -
+y_{i0}.\]</span></p>
+<p>Suppose we have a model <span class="math inline">\(y_{i0} = g(x_i ;
+\beta_0)\)</span>. After fitting parameters <span class="math inline">\(\hat \beta_0\)</span>, let <span class="math inline">\(\hat y_{i0} = g(x_i ; \hat \beta_0)\)</span>.
+Adding and subtracting the estimated potential outcomes does not
+changing the average treatment effect:</p>
+<p><span class="math display">\[\Delta = \frac{1}{n} \sum_{i=1}^n y_{i1}
+- y_{i0} + \hat y_{i0} - \hat y_{i0} = \frac{1}{n} \sum_{i=1}^n (y_{i1}
+- \hat y_{i0})  - \frac{1}{n} \sum_{i=1}^n (y_{i0} - \hat
+y_{i0}).\]</span></p>
+<p>Additionally, for any binary treatment vector <span class="math inline">\(Z\)</span>, we can decompose the average treatment
+effect as the effect on the treated group (i.e., <span class="math inline">\(Z = 1\)</span>) and the effect on the control
+group (i.e., <span class="math inline">\(Z = 0\)</span>): <span class="math display">\[
 \begin{aligned}
-\Delta &amp;= \frac{1}{n} \sum_{i=1}^n Z_i\left[(y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i0})\right] + \\
- &amp; \quad  \frac{1}{n} \sum_{i=1}^n (1 - Z_i) \left[(y_{i1} - \hat y_{i0})  - (y_{i0} - \hat y_{i0})\right]  \\
- &amp;= \frac{n_1}{n} \delta(Z) + \frac{n_0}{n} \delta(1 - Z),
+\Delta &amp;= \frac{1}{n} \sum_{i=1}^n Z_i\left[(y_{i1} - \hat
+y_{i0})  - (y_{i0} - \hat y_{i0})\right] + \\
+&amp; \quad  \frac{1}{n} \sum_{i=1}^n (1 - Z_i) \left[(y_{i1} - \hat
+y_{i0})  - (y_{i0} - \hat y_{i0})\right]  \\
+&amp;= \frac{n_1}{n} \delta(Z) + \frac{n_0}{n} \delta(1 - Z),
 \end{aligned}
-\]</span> where <span class="math inline">\(n_1 = \sum_{i=1}^n Z_i\)</span> and <span class="math inline">\(n_0 = \sum_{i=1}^n 1 - Z_i\)</span>. As <span class="math inline">\(Z\)</span> represents a random vector, taking expectation yields the expected treatment effect for the treated units <span class="math display">\[
+\]</span> where <span class="math inline">\(n_1 = \sum_{i=1}^n
+Z_i\)</span> and <span class="math inline">\(n_0 = \sum_{i=1}^n 1 -
+Z_i\)</span>. As <span class="math inline">\(Z\)</span> represents a
+random vector, taking expectation yields the expected treatment effect
+for the treated units <span class="math display">\[
 \begin{aligned}
-\delta_1 &amp;= E(\delta(Z)) =  \frac{1}{n_1} \sum_{i=1}^n E(Z_i) \left[(y_{i1} - \hat y_{i0}) - (y_{i0} - \hat y_{i0})\right]\\
-&amp;= \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1} E(Z_i)\right] (y_{i1} - \hat y_{i0}) - \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1} E(Z_i)\right] (y_{i10} - \hat y_{i0}) ,
+\delta_1 &amp;= E(\delta(Z)) =  \frac{1}{n_1} \sum_{i=1}^n E(Z_i)
+\left[(y_{i1} - \hat y_{i0}) - (y_{i0} - \hat y_{i0})\right]\\
+&amp;= \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1} E(Z_i)\right]
+(y_{i1} - \hat y_{i0}) - \frac{1}{n} \sum_{i=1}^n \left[\frac{n}{n_1}
+E(Z_i)\right] (y_{i10} - \hat y_{i0}) ,
 \end{aligned}
-\]</span> and the expected treatment effect for the control units <span class="math inline">\(\delta_0 = E(\delta(1 - Z))\)</span>, analogously.</p>
-<p>To estimate <span class="math inline">\(\Delta\)</span>, <span class="math inline">\(\delta_1\)</span>, and <span class="math inline">\(\delta_0\)</span>, we introduce a difference of Hajek estimators, <span class="math display">\[
-d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
-\frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i (1 - Z_i)}.
+\]</span> and the expected treatment effect for the control units <span class="math inline">\(\delta_0 = E(\delta(1 - Z))\)</span>,
+analogously.</p>
+<p>To estimate <span class="math inline">\(\Delta\)</span>, <span class="math inline">\(\delta_1\)</span>, and <span class="math inline">\(\delta_0\)</span>, we introduce a difference of
+Hajek estimators, <span class="math display">\[
+d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i
+Z_i} -
+\frac{\sum_{i=1} w_i (1 - Z_i) (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i (1
+- Z_i)}.
 \]</span></p>
 <ul>
-<li>For <span class="math inline">\(\Delta\)</span>: <span class="math inline">\(w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)\)</span>. In the case of completely randomized designs, <span class="math inline">\(E(Z_i) = n_1/n\)</span>, <span class="math inline">\(E(1 - Z_i) = n_0/n\)</span>, and the estimator reduces to the well known difference of means estimator.</li>
-<li>For <span class="math inline">\(\delta_1\)</span>: <span class="math inline">\(w_i = Z_i + (1 - Z_i) E(Z_i) / E(1 - Z_i)\)</span>.</li>
-<li>For <span class="math inline">\(\delta_0\)</span>: <span class="math inline">\(w_i = Z_i E(1 - Z_i) / E(Z_i) + (1 - Z_i)\)</span>.</li>
+<li>For <span class="math inline">\(\Delta\)</span>: <span class="math inline">\(w_i = Z_i/E(Z_i) + (1 - Z)/E(1 - Z_i)\)</span>. In
+the case of completely randomized designs, <span class="math inline">\(E(Z_i) = n_1/n\)</span>, <span class="math inline">\(E(1 - Z_i) = n_0/n\)</span>, and the estimator
+reduces to the well known difference of means estimator.</li>
+<li>For <span class="math inline">\(\delta_1\)</span>: <span class="math inline">\(w_i = Z_i + (1 - Z_i) E(Z_i) / E(1 -
+Z_i)\)</span>.</li>
+<li>For <span class="math inline">\(\delta_0\)</span>: <span class="math inline">\(w_i = Z_i E(1 - Z_i) / E(Z_i) + (1 -
+Z_i)\)</span>.</li>
 </ul>
-<p>The weights may also include case weights or be multiplied by subgroup indicators to estimate subgroup specific effects.</p>
-<p>To demonstrate this function, we implement the estimator directly and also show how it can be estimated using our suite of tools.</p>
+<p>The weights may also include case weights or be multiplied by
+subgroup indicators to estimate subgroup specific effects.</p>
+<p>To demonstrate this function, we implement the estimator directly and
+also show how it can be estimated using our suite of tools.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dw</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">w</span>, <span class="va">z</span>, <span class="va">y</span>, <span class="va">y0_hat</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">w</span>, <span class="va">z</span>, <span class="va">y</span>, <span class="va">y0_hat</span><span class="op">)</span><span class="op">)</span></span>
@@ -218,7 +271,8 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">w</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">z</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">y0_hat</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">w</span> <span class="op">*</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">z</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p>We begin with using the various covariance models to impute the missing potential outcomes and individual treatment effects.</p>
+<p>We begin with using the various covariance models to impute the
+missing potential outcomes and individual treatment effects.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STAR_pre_post_k</span> <span class="op">&lt;-</span> <span class="va">STAR_pre_post</span><span class="op">[</span><span class="va">STAR_pre_post</span><span class="op">$</span><span class="va">year</span> <span class="op">==</span> <span class="st">"k"</span>,<span class="op">]</span></span>
 <span></span>
@@ -236,7 +290,8 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 <div class="section level4">
 <h4 id="reading-scores">Reading Scores<a class="anchor" aria-label="anchor" href="#reading-scores"></a>
 </h4>
-<p>For each of the treatment effects, we compute the point estimates using both the <code>lm</code> function and direct calculation.</p>
+<p>For each of the treatment effects, we compute the point estimates
+using both the <code>lm</code> function and direct calculation.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## overall treatment effects on the treated</span></span>
 <span><span class="va">ett_read_lm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">read</span> <span class="op">~</span> <span class="va">treatment</span>,</span>
@@ -277,7 +332,8 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 <span><span class="co">#&gt; 4 hispanic  42.501192</span></span>
 <span><span class="co">#&gt; 5 amindian  22.944953</span></span>
 <span><span class="co">#&gt; 6    other   8.497310</span></span></code></pre></div>
-<p>The following is not currently implemented, but represents expected interface.</p>
+<p>The following is not currently implemented, but represents expected
+interface.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STAR_ett</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STAR_design</span><span class="op">)</span></span>
 <span><span class="co">## notice the formula does not mention the blocking factor</span></span>
@@ -331,7 +387,8 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 <span><span class="co">#&gt; 4 hispanic  46.511727</span></span>
 <span><span class="co">#&gt; 5 amindian  22.944953</span></span>
 <span><span class="co">#&gt; 6    other   9.965636</span></span></code></pre></div>
-<p>The following is not currently implemented, but represents expected interface.</p>
+<p>The following is not currently implemented, but represents expected
+interface.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STAR_ate</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">STAR_design</span><span class="op">)</span></span>
 <span><span class="co">## notice the formula does not mention the blocking factor</span></span>
@@ -353,7 +410,7 @@ d(w) =\frac{\sum_{i=1} w_i Z_i (Y_i - \hat y_{i0})}{\sum_{i=1}^n w_i Z_i} -
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
     </footer>

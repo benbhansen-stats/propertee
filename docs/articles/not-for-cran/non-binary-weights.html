@@ -8,8 +8,8 @@
 <meta name="description" content="flexida">
 <title>Non-Binary Treatment • flexida</title>
 <script src="../../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../../deps/bootstrap-5.1.0/bootstrap.min.css" rel="stylesheet">
-<script src="../../deps/bootstrap-5.1.0/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
+<script src="../../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../../pkgdown.js"></script><meta property="og:title" content="Non-Binary Treatment">
 <meta property="og:description" content="flexida">
@@ -45,6 +45,7 @@
     <a class="dropdown-item" href="../../articles/LinearModelVarianceEstimation.html">Variance Estimation Testing Using A Simple Linear Specification</a>
     <a class="dropdown-item" href="../../articles/RDD.html">Regression Discontinuity Designs</a>
     <a class="dropdown-item" href="../../articles/design_based_SEs.html">Design based sandwich SEs for differences of Hajek estimators</a>
+    <a class="dropdown-item" href="../../articles/not-for-cran/covadj_with_clustering.html">Covariance-adjusted standard errors in a clustered longitudinal setting</a>
     <a class="dropdown-item" href="../../articles/not-for-cran/non-binary-weights.html">Non-Binary Treatment</a>
     <a class="dropdown-item" href="../../articles/sandwich_infrastructure.html">Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model</a>
   </div>
@@ -75,7 +76,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Non-Binary Treatment</h1>
             
-            <h4 data-toc-skip class="date">2022-07-12</h4>
+            <h4 data-toc-skip class="date">2022-09-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/vignettes/not-for-cran/non-binary-weights.Rmd" class="external-link"><code>vignettes/not-for-cran/non-binary-weights.Rmd</code></a></small>
       <div class="d-none name"><code>non-binary-weights.Rmd</code></div>
@@ -144,7 +145,8 @@
 <pre><code><span><span class="co">##  [1] 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA  NA 1.5 1.5 1.5 1.5  NA  NA  NA  NA  NA</span></span>
 <span><span class="co">## [20]  NA 3.0 3.0 3.0 3.0 1.5 1.5 1.5 1.5 1.5 1.5  NA  NA  NA  NA 1.5 1.5 1.5 1.5</span></span>
 <span><span class="co">## [39] 1.5 1.5  NA  NA  NA  NA 3.0 3.0 3.0 3.0 3.0 3.0</span></span></code></pre>
-<p>Alternatively, we could place the dichotomy in the Design instead.</p>
+<p>Alternatively, we could place the dichotomy in the Design
+instead.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../../reference/Design_extract_dichotomy.html">dichotomy</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;</span> <span class="fl">100</span></span>
 <span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></code></pre></div>
@@ -169,7 +171,8 @@
 <div class="section level2">
 <h2 id="storage-of-non-binary-treatment">Storage of non-binary treatment<a class="anchor" aria-label="anchor" href="#storage-of-non-binary-treatment"></a>
 </h2>
-<p>When a design’s treatment is dichotomized, we keep the orignal treatment in place, but add a slot for the dichotomy</p>
+<p>When a design’s treatment is dichotomized, we keep the orignal
+treatment in place, but add a slot for the dichotomy</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">des2</span><span class="op">@</span><span class="va">structure</span></span></code></pre></div>
 <pre><code><span><span class="co">##    dose cid1 cid2</span></span>
@@ -186,7 +189,9 @@
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">des2</span><span class="op">@</span><span class="va">dichotomy</span></span></code></pre></div>
 <pre><code><span><span class="co">## dose &gt;= 200 ~ dose &lt; 100</span></span></code></pre>
-<p>We can then evaluate this dichotomy with either of the two functions (<code><a href="../../reference/Design_extractreplace.html">treatment()</a></code> being user-facing, <code><a href="../../reference/dot-bin_txt.html">.bin_txt()</a></code> being internal)</p>
+<p>We can then evaluate this dichotomy with either of the two functions
+(<code><a href="../../reference/Design_extractreplace.html">treatment()</a></code> being user-facing, <code><a href="../../reference/dot-bin_txt.html">.bin_txt()</a></code>
+being internal)</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../../reference/Design_extractreplace.html">treatment</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##    dose</span></span>
@@ -221,7 +226,10 @@
 <h2 id="weighteddesign">
 <code>WeightedDesign</code><a class="anchor" aria-label="anchor" href="#weighteddesign"></a>
 </h2>
-<p>This ensures that the <code>@Design</code> slot inside a <code>WeightedDesign</code> object has a binary 0/1 treatment either through a direct 0/1 treatment, or the presence of a <code>dichotomy</code> slot.</p>
+<p>This ensures that the <code>@Design</code> slot inside a
+<code>WeightedDesign</code> object has a binary 0/1 treatment either
+through a direct 0/1 treatment, or the presence of a
+<code>dichotomy</code> slot.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wght</span> <span class="op">&lt;-</span> <span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../../reference/dot-bin_txt.html">.bin_txt</a></span><span class="op">(</span><span class="va">wght</span><span class="op">@</span><span class="va">Design</span><span class="op">)</span></span></code></pre></div>
@@ -253,7 +261,7 @@
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
     </footer>
