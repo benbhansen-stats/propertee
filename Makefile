@@ -53,17 +53,17 @@ check_win_old: FUNC=check_win_oldrelease # Check & build on win-builder old rele
 check_win: FUNC=check_win_release        # ... on win-builder release
 
 .PHONY:check_win_dev
-check_win_dev: FUNC=check_win_devel    # ... on win-builder dev
+check_win_dev: FUNC=check_win_devel      # ... on win-builder dev
 
 .PHONY:check_rhub
 check_rhub: FUNC=check_rhub
 check_rhub: DEVTOOLSARG=interactive=FALSE
 
 .PHONY:build_site
-build_site: FUNC=build_site
-build_site: DEVTOOLSARG=quiet=FALSE
+build_site: document
+	@$(RCMD) "devtools:::build_site(quiet=FALSE)"
 
-dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old check_rhub build_site: .devtools
+dependencies test check document vignette clean-vignette build check_win check_win_dev check_win_old check_rhub: .devtools
 
 .PHONY:clean
 clean: clean-vignette
