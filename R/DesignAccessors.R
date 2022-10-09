@@ -6,6 +6,9 @@ setGeneric("treatment", function(x, ...) {
   standardGeneric("treatment")
 })
 
+##' Allows access to the elements which define a \code{Design}, enabling their
+##' extraction or replacement.
+##'
 ##' For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the
 ##' treatment variable passed into the \code{Design} is returned as a one-column
 ##' \code{data.frame}. If \code{binary = TRUE} is passed, and the \code{Design}

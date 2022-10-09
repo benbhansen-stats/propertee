@@ -97,6 +97,10 @@ as well.}
 \code{data.frame} containing treatment variable
 }
 \description{
+Allows access to the elements which define a \code{Design}, enabling their
+extraction or replacement.
+}
+\details{
 For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the
 treatment variable passed into the \code{Design} is returned as a one-column
 \code{data.frame}. If \code{binary = TRUE} is passed, and the \code{Design}
@@ -104,8 +108,7 @@ either has a binary treatment variable, or has a \code{dichotomy}, a binary
 one-column \code{data.frame} will be returned. If the \code{Design} does not
 have access to binary treatment (non-binary treatment and no
 \code{dichotomy} specified), passing \code{binary = TRUE} will error.
-}
-\details{
+
 \code{binary = "ifany"} is the most permissible; returning the dichotomized
 treatment variable if \code{@dichotomy} exists, otherwise returning the
 original treatment without error.
