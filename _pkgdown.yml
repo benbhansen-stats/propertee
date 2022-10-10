@@ -29,7 +29,7 @@ reference:
     - treatment_table
     - design_data_concordance
     - is_dichotomized
-    - structure
+    - get_structure
     - show,DesignStructure-method
 - subtitle: Conversion between Design types
 - contents:
@@ -47,6 +47,7 @@ reference:
     - .weights_calc
     - .join_design_weights
     - +,WeightedDesign,numeric-method
+    - c,WeightedDesign-method
     - weights,WeightedDesign-method
     - subset,WeightedDesign-method
     - show,WeightedDesign-method

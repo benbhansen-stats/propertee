@@ -4,7 +4,7 @@ test_that("issue 60", {
   # First, subset that does NOT exclude any clusters
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata,
                     subset = 1:50 <= 47)
-  expect_equal(nrow(structure(des)), 10)
+  expect_equal(nrow(get_structure(des)), 10)
   # By passing the subset
   mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
   expect_true("assigned()" %in% names(coef(mod1)))
@@ -16,7 +16,7 @@ test_that("issue 60", {
   # This removes 3 complete clusters, and 1 row from a clsuter that remains,
   # leaving 33 rows of data with information about 7 clusters
   expect_equal(nrow(unique(simdata[1:50 <= 33, c("cid1", "cid2")])),
-               nrow(structure(des)))
+               nrow(get_structure(des)))
 
   # The model should use all rows related to those 7 clusters, which is 34.
   mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)

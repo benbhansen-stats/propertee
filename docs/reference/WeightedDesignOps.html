@@ -52,7 +52,7 @@ support all other reasonable operations."><!-- mathjax --><script src="https://c
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1><code>WeightedDesign</code> Ops</h1>
-      <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/R/WeightedDesign.R" class="external-link"><code>R/WeightedDesign.R</code></a>, <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/R/CombinedWeightedDesign.R" class="external-link"><code>R/CombinedWeightedDesign.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/R/WeightedDesign.R" class="external-link"><code>R/WeightedDesign.R</code></a></small>
       <div class="d-none name"><code>WeightedDesignOps.Rd</code></div>
     </div>
 
@@ -85,10 +85,7 @@ support all other reasonable operations.</p>
 /(e1, e2)
 
 # S4 method for numeric,WeightedDesign
-/(e1, e2)
-
-# S4 method for WeightedDesign
-c(x, ..., force_dichotomy_equal = FALSE)</code></pre></div>
+/(e1, e2)</code></pre></div>
     </div>
 
     <div class="section level2">
@@ -100,38 +97,7 @@ c(x, ..., force_dichotomy_equal = FALSE)</code></pre></div>
 <dt>e2</dt>
 <dd><p><code>numeric</code> or <code>WeightedDesign</code></p></dd>
 
-
-<dt>x</dt>
-<dd><p><code>WeightedDesign</code></p></dd>
-
-
-<dt>...</dt>
-<dd><p>any number of <code>WeightedDesign</code> objects with equivalent
-<code>Design</code>.</p></dd>
-
-
-<dt>force_dichotomy_equal</dt>
-<dd><p>if <code>FALSE</code> (default), <code>Design</code>s are
-considered equivalent even if their <code>dichotomy</code> differs. If
-<code>TRUE</code>, <code>@dichotomy</code> must also be equal.</p></dd>
-
 </dl></div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Concatenating <code>WeightedDesign</code>s with <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> requires both
-individual <code>WeightedDesign</code>s to come from the same <code>Design</code>
-(except <code>dichotomy</code>, see below) and have the target (e.g all created
-with <code><a href="WeightCreators.html">ate()</a></code> or all created with <code><a href="WeightCreators.html">ett()</a></code>, no mixing-and-matching).
-All arguments to <code><a href="https://rdrr.io/r/base/c.html" class="external-link">c()</a></code> must be <code>WeightedDesign</code>.</p>
-<p>One exception is when concatenting <code>WeightedDesign</code>s with the same
-<code>Design</code> but different dichotomies. There may be cases where the
-treatment is continuous or has multiple levels, and there is a need to
-combine the weights from the same general design, but with different
-dichotomys. Therefore multiple <code>WeightedDesign</code>s can be combined if
-they are identical except for their <code>@dichotomy</code> slots. The resulting
-object will be a <code>CombinedWeightedDesign</code> which tracks all individual
-<code>dichotomy</code>.</p>
-    </div>
 
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>

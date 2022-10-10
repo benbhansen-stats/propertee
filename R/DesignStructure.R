@@ -24,7 +24,7 @@ setValidity("DesignStructure", function(object) {
 ##'   representation. Has no effect if \code{design} is not dichotomized.
 ##' @return A \code{data.frame} containing the structure of the \code{design}.
 ##' @export
-structure <- function(design, binary = FALSE) {
+get_structure <- function(design, binary = FALSE) {
 
   struct <- design@structure
   struct[, design@column_index == "t"] <-
