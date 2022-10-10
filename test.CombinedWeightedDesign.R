@@ -38,13 +38,13 @@ test_that("Combining weighted designs", {
 test_that("Combining weighted designs with different dichotomys ", {
   des <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
 
-  w1 <- ate(des, data = simdata, dichotomy = dose >= 300 ~ .)
-  w2 <- ate(des, data = simdata, dichotomy = dose >= 200 ~ .)
-  w3 <- ate(des, data = simdata, dichotomy = dose >= 100 ~ .)
+  w1 <- ate(des, data = simdata[1:10, ], dichotomy = dose >= 300 ~ .)
+  w2 <- ate(des, data = simdata[11:30, ], dichotomy = dose >= 200 ~ .)
+  w3 <- ate(des, data = simdata[31:50, ], dichotomy = dose >= 100 ~ .)
 
   c_w <- c(w1, w2, w3)
   expect_true(inherits(c_w, "WeightedDesign"))
-  expect_length(c_w, 150)
+  expect_length(c_w, 50)
 
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
                "must be identical")
