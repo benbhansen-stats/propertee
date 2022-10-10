@@ -97,10 +97,10 @@ test_that("DA ensure treatment is found", {
   expect_identical(treatment_name(dalm2), "assigned()")
   expect_true(!is.na(coef(dalm2)[treatment_name(dalm2)]))
 
-  expect_error(as.lmitt(lm(y ~ o, data = simdata,
-                                    weights = ate(des2))),
-               "non-binary treatment")
-
+  # Non-binary treatment passed as name works
+  expect_identical(
+    treatment_name(as.lmitt(lm(y ~ o, data = simdata), design = des2)),
+    "o")
 
   dalm_direct <- lmitt(y ~ assigned(), data = simdata, weights = ate(des2))
 

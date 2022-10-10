@@ -118,7 +118,7 @@ setMethod("summary", "DirectAdjusted", function(object, ...) {
 ##' @param object DirectAdjusted
 ##' @param ... Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.
 ##' @return Variance-Covariance matrix
-##' @exportS3Method 
+##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
   call <- match.call()
 
@@ -133,7 +133,7 @@ vcov.DirectAdjusted <- function(object, ...) {
 
   call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) vcovDA else getS3method("vcov", "lm")
   vmat <- eval(call, parent.frame())
-  
+
   return(vmat)
 }
 
@@ -145,7 +145,7 @@ vcov.DirectAdjusted <- function(object, ...) {
 ##' @param level the confidence level required.
 ##' @param ... Add'l arguments
 ##' @return Variance-Covariance matrix
-##' @exportS3Method 
+##' @exportS3Method
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   call <- match.call()
   call[[1L]] <- quote(stats::confint.lm)
@@ -183,16 +183,10 @@ treatment_name <- function(x) {
     return(assigned_match[1])
   }
 
-  if (has_binary_treatment(x@Design)) {
-    # Only if Design has a truly binary treatment variable...
-    zname <- var_names(x@Design, "t")
-    if (zname %in% cnames) {
+  zname <- var_names(x@Design, "t")
+  if (zname %in% cnames) {
       # If treatment variable name is found in coefficients, return it
       return(zname)
     }
-    stop(paste("Treatment", zname, "or `assigned()` must be found in formula"))
-  }
-  # If we hit this point, there's no adopter and non-binary treatment, so we
-  # must have non-binary treatment specified
-  stop("With non-binary treatment, `assigned()` must be found in formula")
+  stop(paste("Treatment", zname, "or `assigned()` must be found in formula"))
 }
