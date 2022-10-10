@@ -38,21 +38,6 @@ setMethod("show", "WeightedDesign", function(object) {
 ##' \code{WeightedDesign}s do not support addition or subtraction, but do
 ##' support all other reasonable operations.
 ##'
-##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
-##' individual \code{WeightedDesign}s to come from the same \code{Design}
-##' (except \code{dichotomy}, see below) and have the target (e.g all created
-##' with \code{ate()} or all created with \code{ett()}, no mixing-and-matching).
-##' All arguments to \code{c()} must be \code{WeightedDesign}.
-##'
-##' One exception is when concatenting \code{WeightedDesign}s with the same
-##' \code{Design} but different dichotomies. There may be cases where the
-##' treatment is continuous or has multiple levels, and there is a need to
-##' combine the weights from the same general design, but with different
-##' dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
-##' they are identical except for their \code{@dichotomy} slots. The resulting
-##' object will be a \code{CombinedWeightedDesign} which tracks all individual
-##' \code{dichotomy}.
-##'
 ##' @title \code{WeightedDesign} Ops
 ##' @param e1 \code{WeightedDesign} or \code{numeric}
 ##' @param e2 \code{numeric} or \code{WeightedDesign}

@@ -15,7 +15,25 @@ setValidity("CombinedWeightedDesign", function(object) {
   return(TRUE)
 })
 
-##' @rdname WeightedDesignOps
+##' Given several variations of weights generated from a single \code{Design},
+##' combine into a single weight.
+##'
+##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
+##' individual \code{WeightedDesign}s to come from the same \code{Design}
+##' (except \code{dichotomy}, see below) and have the target (e.g all created
+##' with \code{ate()} or all created with \code{ett()}, no mixing-and-matching).
+##' All arguments to \code{c()} must be \code{WeightedDesign}.
+##'
+##' One exception is when concatenting \code{WeightedDesign}s with the same
+##' \code{Design} but different dichotomies. There may be cases where the
+##' treatment is continuous or has multiple levels, and there is a need to
+##' combine the weights from the same general design, but with different
+##' dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
+##' they are identical except for their \code{@dichotomy} slots. The resulting
+##' object will be a \code{CombinedWeightedDesign} which tracks all individual
+##' \code{dichotomy}.
+##'
+##' @title Concatenate weights
 ##' @param ... any number of \code{WeightedDesign} objects with equivalent
 ##'   \code{Design}.
 ##' @param force_dichotomy_equal if \code{FALSE} (default), \code{Design}s are
@@ -79,6 +97,7 @@ setMethod("c", signature(x = "WeightedDesign"),
   # Now that we've made it this far, we've ensured that all designs
   # are identical except dichotomies.
 
+  # Store dichotomies and keys in case they're needed later
   lengths <- c(length(x), vapply(dots, length, 1))
   keys <- lapply(lengths, seq_len)
 

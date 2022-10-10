@@ -1,4 +1,3 @@
-
 test_that("Combining weighted designs", {
   data(simdata)
 
