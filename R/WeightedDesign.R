@@ -41,8 +41,6 @@ setMethod("show", "WeightedDesign", function(object) {
 ##' @title \code{WeightedDesign} Ops
 ##' @param e1 \code{WeightedDesign} or \code{numeric}
 ##' @param e2 \code{numeric} or \code{WeightedDesign}
-##' @param x \code{WeightedDesign}
-##' @param ... additional \code{WeightedDesign}sx
 ##' @rdname WeightedDesignOps
 ##' @export
 setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),

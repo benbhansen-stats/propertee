@@ -34,8 +34,10 @@ setValidity("CombinedWeightedDesign", function(object) {
 ##' \code{dichotomy}.
 ##'
 ##' @title Concatenate weights
+##' @param x A \code{WeightedDesign} object with equivalent \code{Design} to
+##'   those in \code{...}.
 ##' @param ... any number of \code{WeightedDesign} objects with equivalent
-##'   \code{Design}.
+##'   \code{Design} to each other and \code{x}.
 ##' @param force_dichotomy_equal if \code{FALSE} (default), \code{Design}s are
 ##'   considered equivalent even if their \code{dichotomy} differs. If
 ##'   \code{TRUE}, \code{@dichotomy} must also be equal.

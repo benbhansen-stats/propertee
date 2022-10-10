@@ -31,10 +31,6 @@
 \item{e1}{\code{WeightedDesign} or \code{numeric}}
 
 \item{e2}{\code{numeric} or \code{WeightedDesign}}
-
-\item{x}{\code{WeightedDesign}}
-
-\item{...}{additional \code{WeightedDesign}sx}
 }
 \description{
 \code{WeightedDesign}s do not support addition or subtraction, but do

@@ -7,8 +7,11 @@
 \S4method{c}{WeightedDesign}(x, ..., force_dichotomy_equal = FALSE)
 }
 \arguments{
+\item{x}{A \code{WeightedDesign} object with equivalent \code{Design} to
+those in \code{...}.}
+
 \item{...}{any number of \code{WeightedDesign} objects with equivalent
-\code{Design}.}
+\code{Design} to each other and \code{x}.}
 
 \item{force_dichotomy_equal}{if \code{FALSE} (default), \code{Design}s are
 considered equivalent even if their \code{dichotomy} differs. If
