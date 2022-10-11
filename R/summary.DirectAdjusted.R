@@ -15,7 +15,8 @@ summary.DirectAdjusted <- function(object, ...) {
   if (inherits(object$model$`(offset)`, "SandwichLayer")) {
     out$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
     out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
-    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]), object$df[2L],
+    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
+                                          object$df.residual,
                                           lower.tail = FALSE)
   }
   class(out) <- "summary.DirectAdjusted"
