@@ -4,15 +4,22 @@
 \alias{print.summary.DirectAdjusted}
 \title{Print summary of \code{DirectAdjusted} object}
 \usage{
-\method{print}{summary.DirectAdjusted}(x, ..., max_unit_print = 3)
+\method{print}{summary.DirectAdjusted}(
+  x,
+  digits = max(3L, getOption("digits") - 3L),
+  signif.stars = getOption("show.signif.stars"),
+  ...
+)
 }
 \arguments{
 \item{x}{\code{summary.DirectAdjusted} object}
 
-\item{...}{Other args}
+\item{digits}{the number of significant digits to use when printing.}
 
-\item{max_unit_print}{Maximum number of treatment levels to print in
-treatment table}
+\item{signif.stars}{logical. If ‘TRUE’, ‘significance stars’ are printed for
+each coefficient.}
+
+\item{...}{Other args}
 }
 \value{
 object, invisibly

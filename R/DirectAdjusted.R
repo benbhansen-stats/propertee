@@ -89,30 +89,6 @@ as.lmitt <- function(x, design = NULL) {
 ##' @export
 as.DirectAdjusted <- as.lmitt
 
-setGeneric("summary")
-
-##' @title Summary of \code{DirectAdjusted} object
-##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
-##' offset, then the usual \code{stats::summary.lm()} output is enhanced by
-##' the use of covariance-adjusted sandwich standard errors, with t-test values
-##' recalculated to reflect the new standard errors.
-##' @param object DirectAdjusted
-##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
-##' finite sample heteroskedasticity-robust standard error adjustment.
-##' @return summary object based from \code{stats:::summary.lm()}
-##' @export
-setMethod("summary", "DirectAdjusted", function(object, ...) {
-  ans <- summary(as(object, "lm"))
-  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-    ans$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
-    ans$coefficients[, 3L] <- ans$coefficients[, 1L] / ans$coefficients[, 2L]
-    ans$coefficients[, 4L] <- 2*stats::pt(abs(ans$coefficients[, 3L]), ans$df[2L],
-                                          lower.tail = FALSE)
-  }
-
-  return(ans)
-})
-
 ##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
 ##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
 ##' offset, then its \code{vcov()} method provides a sandwich estimate of the

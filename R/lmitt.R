@@ -92,10 +92,9 @@ lmitt.formula <- function(obj,
   }
 
   if (absorb) {
-    uoa_names <- paste(var_names(obj, "u"), collapse = "*")
+    uoa_names <- paste(var_names(design, "u"), collapse = "*")
     obj <- update(obj, paste0(". ~ . + .absorbed(",
-                              uoa_names,
-                              ")"))
+                              uoa_names, ")"))
   }
 
   if (inherits(design, "formula")) {
@@ -108,7 +107,7 @@ lmitt.formula <- function(obj,
       des_call <- "obs_design"
     }
 
-    # Build new call. All calls must include x and data
+    # Build new call. All calls must include obj and data
     new_d_call <- paste0(des_call, "(",
                          "formula = ", deparse(design),
                          ", data = ", deparse(mf$data))

@@ -9,11 +9,15 @@
 \arguments{
 \item{object}{DirectAdjusted object}
 
-\item{...}{Other args}
+\item{...}{Additional arguments to \code{vcovDA()}, such as the desired
+finite sample heteroskedasticity-robust standard error adjustment.}
 }
 \value{
 object of class \code{summary.DirectAdjusted}
 }
 \description{
-Create summary of \code{DirectAdjusted} object
+If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer} offset,
+then the usual \code{stats::summary.lm()} output is enhanced by the use of
+covariance-adjusted sandwich standard errors, with t-test values
+recalculated to reflect the new standard errors.
 }

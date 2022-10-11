@@ -1,11 +1,23 @@
+##' If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer} offset,
+##' then the usual \code{stats::summary.lm()} output is enhanced by the use of
+##' covariance-adjusted sandwich standard errors, with t-test values
+##' recalculated to reflect the new standard errors.
+##'
 ##' @title Create summary of \code{DirectAdjusted} object
 ##' @param object DirectAdjusted object
-##' @param ... Other args
+##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
+##' finite sample heteroskedasticity-robust standard error adjustment.
 ##' @return object of class \code{summary.DirectAdjusted}
 ##' @export
 ##' @method summary DirectAdjusted
 summary.DirectAdjusted <- function(object, ...) {
-  out <- object
+  out <- summary(as(object, "lm"))
+  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    out$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+    out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
+    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]), object$df[2L],
+                                          lower.tail = FALSE)
+  }
   class(out) <- "summary.DirectAdjusted"
   return(out)
 }
@@ -13,22 +25,21 @@ summary.DirectAdjusted <- function(object, ...) {
 
 ##' @title Print summary of \code{DirectAdjusted} object
 ##' @param x \code{summary.DirectAdjusted} object
+##' @param digits the number of significant digits to use when printing.
+##' @param signif.stars logical. If ‘TRUE’, ‘significance stars’ are printed for
+##'   each coefficient.
 ##' @param ... Other args
-##' @param max_unit_print Maximum number of treatment levels to print in
-##'   treatment table
 ##' @return object, invisibly
 ##' @importFrom stats pt printCoefmat
 ##' @export
-print.summary.DirectAdjusted <- function(x, ..., max_unit_print = 3) {
-  # temporary code - produces an annoying warning. Eventually to
-  # be replaced with manual calculations
-  cf <- x$coefficients[!grepl("^\\.absorbed\\(", names(x$coefficients))]
-  se <- sqrt(diag(vcov(x)))
-  se <- se[!grepl("^\\.absorbed\\(", names(se))]
-  tv <- cf/se
-  pv <- 2 * stats::pt(abs(tv), x$df.residual, lower.tail = FALSE)
+print.summary.DirectAdjusted <-
+  function(x,
+           digits = max(3L, getOption("digits") - 3L),
+           signif.stars = getOption("show.signif.stars"),
+           ...) {
 
-  to_report <- cbind(cf, se, tv, pv)
-  stats::printCoefmat(to_report, digits = 3)
+  to_report <- x$coefficients
+  to_report <- to_report[!grepl("^\\.absorbed\\(", rownames(to_report)), ]
+  stats::printCoefmat(to_report, digits = digits)
   invisible(x)
 }
