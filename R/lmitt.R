@@ -52,6 +52,9 @@
 ##'   formula creating a design (of the type of that would be passed as the
 ##'   first argument to \code{rd_design()}, \code{rct_design()}, or
 ##'   \code{obs_design()}.
+##' @param absorb If \code{TRUE}, fixed effects are included for units of
+##'   assignemnt/clusters identified in the \code{Design}. Excluded in
+##'   \code{FALSE}. Default is \code{FALSE}.
 ##' @param ... Additional arguments passed to \code{lm()}. Ignored if \code{obj}
 ##'   is already an \code{lm} object.
 ##' @return \code{DirectAdjusted} model.
@@ -60,6 +63,7 @@
 ##' @rdname lmitt
 lmitt <- function(obj,
                   design = NULL,
+                  absorb = FALSE,
                   ...) {
   UseMethod("lmitt")
 }
@@ -68,8 +72,16 @@ lmitt <- function(obj,
 ##' @rdname lmitt
 lmitt.formula <- function(obj,
                           design = NULL,
+                          absorb = FALSE,
                           ...) {
   mf <- match.call()
+
+  if (!is.null(attr(terms(obj, specials = ".absorbed"),
+                    "specials")$.absorbed)) {
+    stop(paste("`.absorbed()` is an internal function",
+               "and should not be used by end-users"))
+  }
+
 
   # If there are no assigned() in the formula, assume all RHS variables are
   # stratified and add interaction with `assigned()`
@@ -77,6 +89,12 @@ lmitt.formula <- function(obj,
                               "specials")$assigned)
   if (no_assigned) {
       obj <- update(obj, . ~ . : assigned())
+  }
+
+  if (absorb) {
+    uoa_names <- paste(var_names(design, "u"), collapse = "*")
+    obj <- update(obj, paste0(". ~ . + .absorbed(",
+                              uoa_names, ")"))
   }
 
   if (inherits(design, "formula")) {
@@ -89,7 +107,7 @@ lmitt.formula <- function(obj,
       des_call <- "obs_design"
     }
 
-    # Build new call. All calls must include x and data
+    # Build new call. All calls must include obj and data
     new_d_call <- paste0(des_call, "(",
                          "formula = ", deparse(design),
                          ", data = ", deparse(mf$data))
@@ -130,3 +148,5 @@ lmitt.lm <- function(obj,
                      ...) {
   return(as.lmitt(obj, design))
 }
+
+.absorbed <- as.factor
