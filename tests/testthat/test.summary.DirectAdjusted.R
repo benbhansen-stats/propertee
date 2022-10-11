@@ -1,4 +1,3 @@
-
 test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
@@ -34,5 +33,7 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses OLS SE's", {
   damod <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
 
   s <- summary(damod)
-  expect_identical(s, do.call(getS3method("summary", "lm"), list(object = damod)))
+  expect_identical(s$coefficients[, 2],
+                   do.call(getS3method("summary", "lm"),
+                           list(object = damod))$coefficients[, 2])
 })
