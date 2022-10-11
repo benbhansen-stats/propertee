@@ -1,3 +1,20 @@
+test_that("summary.DirectAdjusted basics", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  da <- lmitt(y ~ assigned(), data = simdata, design = des)
+  sda <- summary(da)
+  expect_s3_class(sda, "summary.DirectAdjusted")
+
+  out <- capture_output(print(sda))
+
+  expect_match(out, "assigned()")
+
+  expect_no_match(out, "Residuals")
+  expect_no_match(out, "R-squared")
+
+})
+
+
 test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
