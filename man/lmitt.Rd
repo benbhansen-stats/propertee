@@ -6,9 +6,9 @@
 \alias{lmitt.lm}
 \title{Linear Model for Intention To Treat}
 \usage{
-lmitt(obj, design = NULL, ...)
+lmitt(obj, design = NULL, absorb = FALSE, ...)
 
-\method{lmitt}{formula}(obj, design = NULL, ...)
+\method{lmitt}{formula}(obj, design = NULL, absorb = FALSE, ...)
 
 \method{lmitt}{lm}(obj, design = NULL, ...)
 }
@@ -25,6 +25,10 @@ through this argument), an error will be produced.) Alternatively, a
 formula creating a design (of the type of that would be passed as the
 first argument to \code{rd_design()}, \code{rct_design()}, or
 \code{obs_design()}.}
+
+\item{absorb}{If \code{TRUE}, fixed effects are included for units of
+assignemnt/clusters identified in the \code{Design}. Excluded in
+\code{FALSE}. Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{lm()}. Ignored if \code{obj}
 is already an \code{lm} object.}

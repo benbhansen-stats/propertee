@@ -52,6 +52,9 @@
 ##'   formula creating a design (of the type of that would be passed as the
 ##'   first argument to \code{rd_design()}, \code{rct_design()}, or
 ##'   \code{obs_design()}.
+##' @param absorb If \code{TRUE}, fixed effects are included for units of
+##'   assignemnt/clusters identified in the \code{Design}. Excluded in
+##'   \code{FALSE}. Default is \code{FALSE}.
 ##' @param ... Additional arguments passed to \code{lm()}. Ignored if \code{obj}
 ##'   is already an \code{lm} object.
 ##' @return \code{DirectAdjusted} model.
@@ -60,6 +63,7 @@
 ##' @rdname lmitt
 lmitt <- function(obj,
                   design = NULL,
+                  absorb = FALSE,
                   ...) {
   UseMethod("lmitt")
 }
@@ -68,6 +72,7 @@ lmitt <- function(obj,
 ##' @rdname lmitt
 lmitt.formula <- function(obj,
                           design = NULL,
+                          absorb = FALSE,
                           ...) {
   mf <- match.call()
 
@@ -77,6 +82,13 @@ lmitt.formula <- function(obj,
                               "specials")$assigned)
   if (no_assigned) {
       obj <- update(obj, . ~ . : assigned())
+  }
+
+  if (absorb) {
+    uoa_names <- paste(var_names(obj, "u"), collapse = "*")
+    obj <- update(obj, paste0(". ~ . + .absorbed(",
+                              uoa_names,
+                              ")"))
   }
 
   if (inherits(design, "formula")) {
@@ -130,3 +142,5 @@ lmitt.lm <- function(obj,
                      ...) {
   return(as.lmitt(obj, design))
 }
+
+.absorbed <- as.factor

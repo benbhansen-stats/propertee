@@ -48,5 +48,6 @@ Collate:
     'lmitt.R'
     'merge_preserve_order.R'
     'summary.Design.R'
+    'summary.DirectAdjusted.R'
     'update_by.R'
     'weights.R'

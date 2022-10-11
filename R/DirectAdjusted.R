@@ -23,7 +23,10 @@ setValidity("DirectAdjusted", function(object) {
 ##' @return an invisible copy of `object`
 ##' @export
 setMethod("show", "DirectAdjusted", function(object) {
-  print(as(object, "lm"))
+  coeffs <- object$coefficients
+  # This catches uses of `.absorbed`
+  to_report <- coeffs[!grepl("^\\.absorbed\\(", names(coeffs))]
+  print(to_report)
   invisible(object)
 })
 
