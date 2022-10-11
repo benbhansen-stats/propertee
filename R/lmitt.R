@@ -76,6 +76,13 @@ lmitt.formula <- function(obj,
                           ...) {
   mf <- match.call()
 
+  if (!is.null(attr(terms(obj, specials = ".absorbed"),
+                    "specials")$.absorbed)) {
+    stop(paste("`.absorbed()` is an internal function",
+               "and should not be used by end-users"))
+  }
+
+
   # If there are no assigned() in the formula, assume all RHS variables are
   # stratified and add interaction with `assigned()`
   no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
