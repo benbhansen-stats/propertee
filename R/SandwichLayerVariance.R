@@ -39,6 +39,12 @@ vcovDA <- function(object, type = c("CR1"), ...) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
+  
+  m <- match.call()
+  if ("type" %in% names(m) | "cluster" %in% names(m)) {
+    stop(paste("Cannot override the `type` or `cluster` arguments for meat",
+               "matrix computations"))
+  }
 
   # compute blocks
   a21 <- .get_a21(x)
@@ -46,8 +52,8 @@ vcovDA <- function(object, type = c("CR1"), ...) {
   b12 <- .get_b12(x)
 
   a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, ...)
-  b11 <- .get_b11(x, ...)
+  b22 <- .get_b22(x, type = "HC0", ...)
+  b11 <- .get_b11(x,  type = "HC0", ...)
 
   meat <- (
     b22 -

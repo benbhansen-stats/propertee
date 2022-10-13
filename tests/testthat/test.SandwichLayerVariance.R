@@ -1021,17 +1021,17 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be equal to than that given by sandwich
-  expect_equal(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2],
+  expect_equal(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2],
                diag(sandwich::sandwich(damod))[2])
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
-  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) <
+  expect_true(all(diag(.vcovMB_CR1(damod, cadjust = FALSE)) <
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
@@ -1100,17 +1100,17 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) >
+  expect_true(all(diag(.vcovMB_CR1(damod, cadjust = FALSE)) >
                   diag(sandwich::sandwich(damod))))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
-  expect_true(all(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE)) <
+  expect_true(all(diag(.vcovMB_CR1(damod, cadjust = FALSE)) <
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
@@ -1214,13 +1214,13 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
 
   # var_hat(z) should be equal to that given by sandwich
-  expect_equal(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2],
+  expect_equal(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2],
                diag(sandwich::sandwich(damod,
                                        meat. = sandwich::meatCL,
                                        cluster = factor(df$cid[!is.na(df$cid)]),
@@ -1312,13 +1312,13 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2] >
                diag(sandwich::sandwich(
                  damod,
                  meat. = sandwich::meatCL,
@@ -1397,14 +1397,14 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
 
@@ -1492,13 +1492,13 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
                  a22inv)
   
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(
                   damod,
                   meat. = sandwich::meatCL,
@@ -1602,7 +1602,7 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1610,7 +1610,7 @@ test_that(paste("HC0 .vcovMB_CR1 lm w/ clustering",
   
   # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # var_hat(z) should be greater than that given by sandwich
-  expect_true(diag(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE))[2] >
+  expect_true(diag(.vcovMB_CR1(damod, cadjust = FALSE))[2] >
                 diag(sandwich::sandwich(damod, adjust = FALSE))[2])
 })
 
@@ -1686,7 +1686,7 @@ test_that(paste("HC0 .vcovMB_CR1 binomial glm",
   expect_false(all((a22inv %*% a21)[2,] == 0))
   
   # check .vcovMB_CR1 matches manual matrix multiplication
-  expect_equal(.vcovMB_CR1(damod, type = "HC0", cadjust = FALSE),
+  expect_equal(.vcovMB_CR1(damod, cadjust = FALSE),
                a22inv %*%
                  (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                     (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%

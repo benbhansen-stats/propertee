@@ -445,13 +445,13 @@ test_that("treatment effect variance unchanged by regression adjustment", {
      ) %*% a22inv)[2, 2],
     0)
 
-  ## expect_equal(
-  ##   a22inv %*% (
-  ##     b22 - t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
-  ##       a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
-  ##   ) %*% a22inv,
-  ##   vcovDA(damod, cadjust = FALSE, type = "CR1")
-  ## )
+  expect_equal(
+    a22inv %*% (
+      b22 - t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
+        a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
+    ) %*% a22inv,
+    vcovDA(damod, cadjust = FALSE, type = "CR1")
+  )
 
   expect_equal(
     vcovDA(damod, cadjust = FALSE, type = "CR1")[2, 2],
