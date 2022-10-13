@@ -149,7 +149,11 @@ lmitt.lm <- function(obj,
   return(as.lmitt(obj, design))
 }
 
-##' For internal use only
+##' (Internal) Include blocks as absorbed effects
+##'
+##' Not to be used interactively. Alias for \code{as.factor()} to identify fixed
+##' effects generated through the \code{absorb=TRUE} option to \code{lmitt()}.
+##' @param x Block variables
+##' @return Identifies block variables as categorical for the model.
 ##' @export
-##' @param x x
 .absorbed <- as.factor

@@ -2,13 +2,17 @@
 % Please edit documentation in R/lmitt.R
 \name{.absorbed}
 \alias{.absorbed}
-\title{For internal use only}
+\title{(Internal) Include blocks as absorbed effects}
 \usage{
 .absorbed(x)
 }
 \arguments{
-\item{x}{x}
+\item{x}{Block variables}
+}
+\value{
+Identifies block variables as categorical for the model.
 }
 \description{
-For internal use only
+Not to be used interactively. Alias for \code{as.factor()} to identify fixed
+effects generated through the \code{absorb=TRUE} option to \code{lmitt()}.
 }

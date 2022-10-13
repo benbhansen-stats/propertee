@@ -69,10 +69,12 @@ reference:
     - as.lmitt
     - confint.DirectAdjusted
     - show,DirectAdjusted-method
-    - summary,DirectAdjusted-method
+    - summary.DirectAdjusted
+    - print.summary.DirectAdjusted
     - treatment_name
     - vcov.DirectAdjusted
     - vcovDA
+    - .absorbed
 - title: Data
 - contents:
     - STARdata

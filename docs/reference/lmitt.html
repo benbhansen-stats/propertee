@@ -63,10 +63,10 @@ accounting for the study design.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, absorb <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for formula</span></span>
-<span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, absorb <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for lm</span></span>
 <span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -89,6 +89,12 @@ through this argument), an error will be produced.) Alternatively, a
 formula creating a design (of the type of that would be passed as the
 first argument to <code><a href="Design_objects.html">rd_design()</a></code>, <code><a href="Design_objects.html">rct_design()</a></code>, or
 <code><a href="Design_objects.html">obs_design()</a></code>.</p></dd>
+
+
+<dt>absorb</dt>
+<dd><p>If <code>TRUE</code>, fixed effects are included for units of
+assignemnt/clusters identified in the <code>Design</code>. Excluded in
+<code>FALSE</code>. Default is <code>FALSE</code>.</p></dd>
 
 
 <dt>...</dt>
