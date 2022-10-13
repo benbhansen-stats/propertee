@@ -92,9 +92,9 @@ lmitt.formula <- function(obj,
   }
 
   if (absorb) {
-    uoa_names <- paste(var_names(design, "u"), collapse = "*")
-    obj <- update(obj, paste0(". ~ . + .absorbed(",
-                              uoa_names, ")"))
+    fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
+                          collapse = "*")
+    obj <- update(obj, paste0(". ~ . + ", fixed_eff_term))
   }
 
   if (inherits(design, "formula")) {
@@ -149,4 +149,7 @@ lmitt.lm <- function(obj,
   return(as.lmitt(obj, design))
 }
 
+##' For internal use only
+##' @export
+##' @param x x
 .absorbed <- as.factor
