@@ -547,8 +547,8 @@ test_that("regression adjustment increases estimated variance", {
                       damod_form = geex_damod_form)
   )
 
-#  expect_equal(vcovDA(damod, type = "CR0", cadjust = FALSE)[2, 2],
-#               geexRes@vcov[4, 4])
+ expect_equal(vcovDA(damod, type = "CR0", cadjust = FALSE)[2, 2],
+              geexRes@vcov[4, 4])
 
   expect_true(sandwich::sandwich(onemod,
                                  meat = sandwich::meatCL,
