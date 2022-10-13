@@ -413,7 +413,7 @@ geexRes <- geex::m_estimate(
 )
 
 test_that("compare with geex", {
-  expect_equal(vcovDA(damod, type = "CR1", cadjust = FALSE)[2, 2],
+  expect_equal(vcovDA(damod, type = "CR0", cadjust = FALSE)[2, 2],
                geexRes@vcov[4, 4])
 })
 ```
@@ -450,11 +450,11 @@ test_that("treatment effect variance unchanged by regression adjustment", {
       b22 - t(a21 %*% a11inv %*% b12) - (a21 %*% a11inv %*% b12) +
         a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21)
     ) %*% a22inv,
-    vcovDA(damod, cadjust = FALSE, type = "CR1")
+    vcovDA(damod, cadjust = FALSE, type = "CR0")
   )
 
   expect_equal(
-    vcovDA(damod, cadjust = FALSE, type = "CR1")[2, 2],
+    vcovDA(damod, cadjust = FALSE, type = "CR0")[2, 2],
     sandwich::sandwich(damod,
                        meat = sandwich::meatCL,
                        cluster = factor(df$cid),
@@ -482,7 +482,7 @@ test_that("flexida has smaller variance estimate than big model", {
                                  cluster = factor(df$cid),
                                  cadjust = FALSE,
                                  type = "HC0")[4, 4] >
-                vcovDA(damod, cadjust = FALSE, type = "CR1")[2, 2])
+                vcovDA(damod, cadjust = FALSE, type = "CR0")[2, 2])
 })
 ```
 
@@ -530,7 +530,7 @@ hold:
 ```{r change_reg_adjust, echo = TRUE, eval = TRUE}
 test_that("regression adjustment increases estimated variance", {
   expect_true(
-    vcovDA(damod, cadjust = FALSE, type = "CR1")[2, 2] >
+    vcovDA(damod, cadjust = FALSE, type = "CR0")[2, 2] >
       sandwich::sandwich(damod,
                          meat = sandwich::meatCL,
                          cluster = factor(df$cid),
@@ -547,7 +547,7 @@ test_that("regression adjustment increases estimated variance", {
                       damod_form = geex_damod_form)
   )
 
-#  expect_equal(vcovDA(damod, type = "CR1", cadjust = FALSE)[2, 2],
+#  expect_equal(vcovDA(damod, type = "CR0", cadjust = FALSE)[2, 2],
 #               geexRes@vcov[4, 4])
 
   expect_true(sandwich::sandwich(onemod,
@@ -555,6 +555,6 @@ test_that("regression adjustment increases estimated variance", {
                                  cluster = factor(df$cid),
                                  cadjust = FALSE,
                                  type = "HC0")[4, 4] >
-                vcovDA(damod, cadjust = FALSE, type = "CR1")[2, 2])
+                vcovDA(damod, cadjust = FALSE, type = "CR0")[2, 2])
 })
 ```
