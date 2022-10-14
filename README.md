@@ -125,7 +125,7 @@ provide an appropriate link (see [https://pkgdown.r-lib.org/articles/linking.htm
 
 E.g. `\code{lm()}` or `\code{cov_adj()}` or `\code{lme4::lmer()}`.
 
-### Vignettes and/so simulations
+### Vignettes or simulations
 
 Vignettes and simulations should go in the
 [/vignettes/](https://github.com/benbhansen-stats/flexida/tree/main/vignettes)
