@@ -124,3 +124,20 @@ otherwise), please include the trailing `()`, as that will help **pkgdown**
 provide an appropriate link (see [https://pkgdown.r-lib.org/articles/linking.html](https://pkgdown.r-lib.org/articles/linking.html)).
 
 E.g. `\code{lm()}` or `\code{cov_adj()}` or `\code{lme4::lmer()}`.
+
+### Vignettes and/so simulations
+
+Vignettes and simulations should go in the
+[/vignettes/](https://github.com/benbhansen-stats/flexida/tree/main/vignettes)
+folder. Anything that should not be built by R check (especially anything that
+builds very slowly, or introduces dependencies not specified in
+[DESCRIPTION](https://github.com/benbhansen-stats/flexida/blob/main/DESCRIPTION))
+should go in the
+[/vignettes/not-for-cran](https://github.com/benbhansen-stats/flexida/tree/main/vignettes/not-for-cran).
+(The not-for-cran folder is in the
+[.Rbuildignore](https://github.com/benbhansen-stats/flexida/blob/main/.Rbuildignore)
+file.)
+
+Note that ALL .Rmd files in /vignettes/ get built during building of the
+reference site. To exclude a .Rmd file, it needs to start with "_". E.g.
+`myslowvignette.Rmd` -> `_myslowvignette.Rmd`.
