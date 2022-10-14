@@ -9,7 +9,7 @@ articles:
   covadj_with_clustering: not-for-cran/covadj_with_clustering.html
   non-binary-weights: not-for-cran/non-binary-weights.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2022-10-13T18:10Z
+last_built: 2022-10-14T18:34Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
