@@ -17,6 +17,7 @@ General dependencies.
 ```{r}
 library('knitr')
 library('kableExtra')
+library('testthat')
 source('displaySim.r')
 devtools::load_all("../..")
 ```
@@ -25,7 +26,7 @@ The following gives the results in Table 4 of the paper, in addition
 to the break-down of RMSE into bias and variance, and analogous
 results for normally-distributed errors.
 
-```{r}
+```{r make table}
 load("totalPolySim.Rdata")
 tab <- prntTab(totalPoly,5,full=TRUE)
 #rownames(tab) <- rep(c('level','RMSE','bias','sd'),6)
@@ -43,8 +44,29 @@ kable(tab,format='html',caption='Full results for polynomial simulation',digits=
   group_rows('sine',11,15) #%>% group_rows("linear",13,16)%>%group_rows('antiSym',17,20)%>%group_rows('oneSide',21,24)
 ```
 
+```{r coverage bound}
+N_PAPER_SIMS <- 5000
+MIN_PAPER_COVERAGE <- 0.93
+N_TEST_SIMS <- ncol(totalPoly[[1]])
+MIN_COVERAGE_BOUND <- MIN_PAPER_COVERAGE - 2 * sqrt(0.95 * 0.05 / N_PAPER_SIMS) -
+  2 * sqrt(0.95 * 0.05 / N_TEST_SIMS)
+MIN_COVERAGE_BOUND
+```
+
+```{r run tests}
+testthat::expect_true(all(rownames(tab)[c(5, 10, 15)] == "ciCover"))
+testthat::expect_true(
+  all(tab[5, 1:5] > MIN_COVERAGE_BOUND)
+)
+testthat::expect_true(
+  all(tab[10, 3:5] > MIN_COVERAGE_BOUND)
+)
+testthat::expect_true(
+  all(tab[15, 3:5] > MIN_COVERAGE_BOUND)
+)
+```
 
 Session information
-```{r}
+```{r session}
 sessionInfo()
 ```
