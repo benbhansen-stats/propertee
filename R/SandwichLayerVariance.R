@@ -4,32 +4,32 @@ NULL
 #' @title Compute directly adjusted cluster-robust sandwich variance estimates
 #' @param object A \code{DirectAdjusted} model
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "CR1"
+#' accepts "CR0"
 #' @param ... Arguments to be passed to the internal variance estimation function
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(object, type = c("CR1"), ...) {
+vcovDA <- function(object, type = c("CR0"), ...) {
   type <- match.arg(type)
 
   var_func <- switch(
     type,
-    "CR1" = .vcovMB_CR1
+    "CR0" = .vcovMB_CR0
   )
 
   est <- var_func(object, ...)
   return(est)
 }
 
-#' @title Compute directly-adjusted CR1 cluster-robust sandwich variance estimates
+#' @title Compute directly-adjusted CR0 cluster-robust sandwich variance estimates
 #' under model-based assumptions
 #' @param x A \code{DirectAdjusted} model
 #' @param ... Arguments to be passed to sandwich::meatCL
-#' @return \code{.vcovMB_CR1()}: A \eqn{2\times 2} matrix where the dimensions are
+#' @return \code{.vcovMB_CR0()}: A \eqn{2\times 2} matrix where the dimensions are
 #' given by the intercept and treatment variable terms in the direct adjustment
 #' model
 #' @keywords internal
 #' @rdname var_estimators
-.vcovMB_CR1 <- function(x, ...) {
+.vcovMB_CR0 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -39,6 +39,12 @@ vcovDA <- function(object, type = c("CR1"), ...) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
+  
+  m <- match.call()
+  if ("type" %in% names(m) | "cluster" %in% names(m)) {
+    stop(paste("Cannot override the `type` or `cluster` arguments for meat",
+               "matrix computations"))
+  }
 
   # compute blocks
   a21 <- .get_a21(x)
@@ -46,8 +52,8 @@ vcovDA <- function(object, type = c("CR1"), ...) {
   b12 <- .get_b12(x)
 
   a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, ...)
-  b11 <- .get_b11(x, ...)
+  b22 <- .get_b22(x, type = "HC0", ...)
+  b11 <- .get_b11(x,  type = "HC0", ...)
 
   meat <- (
     b22 -
