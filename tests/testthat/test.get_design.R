@@ -38,13 +38,13 @@ test_that(".get_design", {
 
 test_that(".get_design returns NULL with NULL_on_error = TRUE", {
   on.exit(cov_adj <- flexida::cov_adj)
-  
+
   cov_adj <- function(model, newdata = NULL) {
     design <- .get_design(TRUE)
-    
+
     return(design)
   }
-  
+
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
   mod <- lm(y ~ x, data = simdata)
@@ -56,8 +56,8 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
 test_that(".get_design finds design in expand.model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
-  
+  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
+
   # ensure we're taking the Design object from the model not the existing object
   # in the environment
   uoanames <- var_names(des, "u")
@@ -71,8 +71,8 @@ test_that(".get_design finds design in expand.model.frame call", {
 test_that(".get_design finds design in model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
-  
+  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
+
   mf1 <- stats::model.frame(damod)
   mf2 <- stats::model.frame(formula(damod), simdata)
   mf3 <- stats::model.frame(terms(damod), simdata)

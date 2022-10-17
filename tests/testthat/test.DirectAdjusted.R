@@ -41,8 +41,8 @@ test_that("DA ensure treatment is found", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
-  dalm <- lmitt(y ~ assigned(), data = simdata, weights = ate(des),
-                offset = cov_adj(cmod))
+  dalm <- lmitt(y ~ assigned(), data = simdata, weights = ate(),
+                offset = cov_adj(cmod), design = des)
 
   expect_type(treatment_name(dalm), "character")
   expect_length(treatment_name(dalm), 1)
@@ -50,7 +50,7 @@ test_that("DA ensure treatment is found", {
   expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
 
   dalm2 <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des),
-                                offset = cov_adj(cmod)))
+                       offset = cov_adj(cmod)))
   expect_true(all.equal(dalm$coefficients,
                         dalm2$coefficients,
                         check.attributes = FALSE))
@@ -102,7 +102,8 @@ test_that("DA ensure treatment is found", {
     treatment_name(as.lmitt(lm(y ~ o, data = simdata), design = des2)),
     "o")
 
-  dalm_direct <- lmitt(y ~ assigned(), data = simdata, weights = ate(des2))
+  dalm_direct <- lmitt(y ~ assigned(), data = simdata,
+                       weights = ate(), design = des2)
 
   expect_type(treatment_name(dalm_direct), "character")
   expect_length(treatment_name(dalm_direct), 1)
@@ -146,7 +147,7 @@ test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
 
   expect_identical(mod_da$model$"(weights)"@Design, des)
 
-  mod_lmitt <- lmitt(y ~ z, data = simdata, weights = ate(des))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   expect_true(all(mod_da$coef == mod_lmitt$coef))
   expect_identical(mod_da@Design, mod_lmitt@Design)
@@ -170,8 +171,8 @@ test_that("lm to DirectAdjusted with weights and SandwichLayer", {
                stats::model.matrix(cmod))
   expect_identical(mod_da$model$`(offset)`@keys, simdata[,var_names(des, "u")])
 
-  mod_lmitt <- lmitt(y ~ z, data = simdata, weights = ate(des),
-                     offset = cov_adj(cmod))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(),
+                     offset = cov_adj(cmod), design = des)
 
   expect_true(all(mod_da$coef == mod_lmitt$coef))
   expect_identical(mod_da@Design, mod_lmitt@Design)
@@ -242,8 +243,9 @@ test_that("Differing designs found", {
                              design = des2))
   expect_error(as.lmitt(mod), "Multiple differing")
 
-  expect_error(lmitt(y ~ z,
+  expect_error(lmitt(y ~ 1,
                      data = simdata,
+                     design = des,
                      weights = ate(des),
                      offset = cov_adj(lm(y ~ x, data = simdata),
                                       design = des2)))
@@ -254,18 +256,18 @@ test_that("Differing designs found", {
 
   expect_error(as.lmitt(mod, design = des), "Multiple differing")
 
-  expect_error(lmitt(y ~ z, data = simdata,
+  expect_error(lmitt(y ~ 1, data = simdata,
                      offset = cov_adj(lm(y ~ x, data = simdata),
                                       design = des2),
                      design = des),
                "Multiple differing")
 
   # Checking that things work when passing multiple of the same designs
-  mod1 <- lmitt(y ~ x, data = simdata, weights = ate(des))
+  mod1 <- lmitt(y ~ x, data = simdata, weights = ate(), design = des)
   mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
   expect_equal(mod1$coefficients, mod2$coefficients)
 
-  mod3 <- lmitt(y ~ assigned(), data = simdata, weights = ate(des))
+  mod3 <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
   mod4 <- lmitt(y ~ assigned(), data = simdata, weights = ate(des), design = des)
   expect_equal(mod3$coefficients, mod4$coefficients)
 
@@ -277,7 +279,7 @@ test_that("DirectAdjusted object has its own evaluation environment", {
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
   mod2 <- lmitt(lm(y ~ assigned(), simdata, weights = ate(des)))
-  mod3 <- lmitt(y ~ z, data = simdata, design = des)
+  mod3 <- lmitt(y ~ 1, data = simdata, design = des)
 
   expect_false(identical(environment(), environment(formula(mod1))))
   expect_false(identical(environment(), environment(formula(mod2))))
@@ -296,7 +298,7 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   cmod <- lm(y ~ x, simdata)
   damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
                      offset = cov_adj(cmod)))
-  damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  damod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   vmat1 <- vcov(damod1)
   vmat2 <- vcov(damod1, type = "CR0")
@@ -314,9 +316,9 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
-                     offset = cov_adj(cmod)))
-  damod2 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  damod1 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des,
+                     offset = cov_adj(cmod))
+  damod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   expect_error(confint(damod1, type = "not_a_type"), "should be")
 
@@ -334,18 +336,20 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod1, level = 0.9)
   expect_equal(ci1, vcovDA_ci.9)
 
-  vcovDA_z.95 <- matrix(damod1$coefficients["z"] + sqrt(vcovDA(damod1)["z", "z"]) *
-    qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
-  dimnames(vcovDA_z.95) <- list(c("z"), c("2.5 %", "97.5 %"))
-  ci1 <- confint(damod1, "z")
+  vcovDA_z.95 <- matrix(damod1$coefficients["assigned()"] +
+                          sqrt(vcovDA(damod1)["assigned()", "assigned()"]) *
+                          qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
+  dimnames(vcovDA_z.95) <- list(c("assigned()"), c("2.5 %", "97.5 %"))
+  ci1 <- confint(damod1, "assigned()")
   ci2 <- confint(damod1, 2)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovDA_z.95)
 
-  vcovDA_z.9 <- matrix(damod1$coefficients["z"] + sqrt(vcovDA(damod1)["z", "z"]) *
-    qt(c(0.05, 0.95), damod1$df.residual), nrow = 1)
-  dimnames(vcovDA_z.9) <- list(c("z"), c("5 %", "95 %"))
-  ci1 <- confint(damod1, "z", level = 0.9)
+  vcovDA_z.9 <- matrix(damod1$coefficients["assigned()"] +
+                         sqrt(vcovDA(damod1)["assigned()", "assigned()"]) *
+                         qt(c(0.05, 0.95), damod1$df.residual), nrow = 1)
+  dimnames(vcovDA_z.9) <- list(c("assigned()"), c("5 %", "95 %"))
+  ci1 <- confint(damod1, "assigned()", level = 0.9)
   ci2 <- confint(damod1, 2, level = 0.9)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovDA_z.9)
@@ -357,11 +361,12 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod2, level = 0.9)
   expect_equal(ci1, vcovlm.9)
 
-  vcovlm_z.95 <- matrix(damod2$coefficients["z"] + sqrt(
-    do.call(getS3method("vcov", "lm"), list(object = damod2))["z", "z"]) *
-    qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
-  dimnames(vcovlm_z.95) <- list(c("z"), c("2.5 %", "97.5 %"))
-  ci1 <- confint(damod2, "z")
+  vcovlm_z.95 <- matrix(damod2$coefficients["assigned()"] +
+                          sqrt(do.call(getS3method("vcov", "lm"),
+                                       list(object = damod2))["assigned()", "assigned()"]) *
+                          qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
+  dimnames(vcovlm_z.95) <- list(c("assigned()"), c("2.5 %", "97.5 %"))
+  ci1 <- confint(damod2, "assigned()")
   ci2 <- confint(damod2, 2)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovlm_z.95)
