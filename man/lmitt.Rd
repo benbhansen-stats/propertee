@@ -6,7 +6,7 @@
 \alias{lmitt.lm}
 \title{Linear Model for Intention To Treat}
 \usage{
-lmitt(obj, design = NULL, absorb = FALSE, ...)
+lmitt(obj, design, absorb = FALSE, ...)
 
 \method{lmitt}{formula}(obj, design = NULL, absorb = FALSE, ...)
 

@@ -62,7 +62,7 @@
 ##' @importFrom stats lm predict weights
 ##' @rdname lmitt
 lmitt <- function(obj,
-                  design = NULL,
+                  design,
                   absorb = FALSE,
                   ...) {
   UseMethod("lmitt")
@@ -82,21 +82,8 @@ lmitt.formula <- function(obj,
                "and should not be used by end-users"))
   }
 
-
-  # If there are no assigned() in the formula, assume all RHS variables are
-  # stratified and add interaction with `assigned()`
-  no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
-                              "specials")$assigned)
-  if (no_assigned) {
-      obj <- update(obj, . ~ . : assigned())
-  }
-
-  if (absorb) {
-    fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
-                          collapse = "*")
-    obj <- update(obj, paste0(". ~ . + ", fixed_eff_term))
-  }
-
+  # First, make sure we have a valid `design=` - if given a formula, make a new
+  # `Design`, otherwise ensure `design=` is `Design` class.
   if (inherits(design, "formula")) {
     # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
     # must create Design manually.
@@ -119,7 +106,76 @@ lmitt.formula <- function(obj,
     new_d_call <- paste0(new_d_call, ")")
     # str2lang converts character into call
     design <- eval(str2lang(new_d_call))
+  } else if (!is(design, "Design")) {
+    stop(paste("`design=` must be an object created by `*_design`",
+               "function, or a formula specifying such a design"))
   }
+
+  ### Next, update main formula
+
+
+  # Try to ensure proper formula. Valid forms are:
+  # ~ 1
+  # ~ sbgrp
+  # ~ 1 + sbgrp <- NYI, same as ~ sbgrp right now
+  rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
+  rhs <- rhs[rhs != "+"]
+  if (length(rhs) > 2) {
+    stop("Invalid formula, please see help")
+  }
+  if ("0" %in% rhs) {
+    stop("Invalid formula, please see help")
+  }
+  if (length(rhs[rhs != "1"]) > 1) {
+    stop("Invalid formula, please see help")
+  }
+  if (var_names(design, "t") %in% rhs) {
+    stop(paste("Treatment variable cannot be entered by name.",
+               "To include treatment manually, use `1` or `assigned()`"))
+  }
+
+  # About the modify the formula; doing so strips off envir, so saving to
+  # restore below.
+  saveenv <- environment(obj)
+
+  # Replace alises for assigned with assigned
+  obj <- formula(gsub("adopters(", "assigned(", deparse(obj), fixed = TRUE))
+  obj <- formula(gsub("a.(",       "assigned(", deparse(obj), fixed = TRUE))
+  obj <- formula(gsub("z.(",       "assigned(", deparse(obj), fixed = TRUE))
+  # Only using opening parans to catch things like `a.(des)`.
+  environment(obj) <- saveenv
+
+
+  # If there are no assigned() in the formula, assume all RHS variables are
+  # stratified and add interaction with `assigned()`
+
+
+  no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
+                              "specials")$assigned)
+  if (no_assigned) {
+    if (length(attr(terms(obj), "term.labels")) == 0) {
+      # If user passes `y ~ 1`, there will be no `terms`, and `1:assigned`
+      # is ignored, so add it instead
+      obj <- update(obj, . ~ . + assigned())
+    } else {
+      # There's a sbgrp (as checked above) so interact it with assigned
+      obj <- update(obj, . ~ . : assigned())
+    }
+  }
+
+
+
+
+
+
+
+  # Handle the `absorb=` argument
+  if (absorb) {
+    fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
+                          collapse = "*")
+    obj <- update(obj, paste0(". ~ . + ", fixed_eff_term))
+  }
+
 
   m <- match(c("obj", "data", "subset", "weights", "na.action",
                "method", "model", "x", "y", "qr", "singular.ok",
