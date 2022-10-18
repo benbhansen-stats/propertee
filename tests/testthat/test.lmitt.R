@@ -174,3 +174,23 @@ test_that("Allowed inputs to lmitt #73", {
   #expect_identical(l3$coeff, l4$coeff)
 
 })
+
+test_that("weights argument can be string", {
+
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  l1 <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
+  l2 <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate")
+
+  l3 <- lmitt(y ~ 1, design = des, data = simdata, weights = ett())
+  l4 <- lmitt(y ~ 1, design = des, data = simdata, weights = "ett")
+
+  expect_true(all.equal(l1, l2))
+  expect_true(all.equal(l3, l4))
+
+  # all.equal returns strings detailing differences
+  expect_true(is.character(all.equal(l1, l3)))
+
+
+})

@@ -31,7 +31,10 @@ assignemnt/clusters identified in the \code{Design}. Excluded in
 \code{FALSE}. Default is \code{FALSE}.}
 
 \item{...}{Additional arguments passed to \code{lm()}. Ignored if \code{obj}
-is already an \code{lm} object.}
+is already an \code{lm} object. If \code{weights=} is passed, it can be
+either a call to \code{ate()} or \code{ett()}, or if no additional
+arguments or manipulations of those weights are needed, the strings
+\code{"ate"} or \code{"ett"}.}
 }
 \value{
 \code{DirectAdjusted} model.

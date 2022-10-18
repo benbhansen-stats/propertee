@@ -56,7 +56,10 @@
 ##'   assignemnt/clusters identified in the \code{Design}. Excluded in
 ##'   \code{FALSE}. Default is \code{FALSE}.
 ##' @param ... Additional arguments passed to \code{lm()}. Ignored if \code{obj}
-##'   is already an \code{lm} object.
+##'   is already an \code{lm} object. If \code{weights=} is passed, it can be
+##'   either a call to \code{ate()} or \code{ett()}, or if no additional
+##'   arguments or manipulations of those weights are needed, the strings
+##'   \code{"ate"} or \code{"ett"}.
 ##' @return \code{DirectAdjusted} model.
 ##' @export
 ##' @importFrom stats lm predict weights
@@ -168,12 +171,6 @@ lmitt.formula <- function(obj,
     }
   }
 
-
-
-
-
-
-
   # Handle the `absorb=` argument
   if (absorb) {
     fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
@@ -187,6 +184,19 @@ lmitt.formula <- function(obj,
                "contrasts", "offset"), names(mf), 0L)
   mf <- mf[c(1L, m)]
   mf[[1L]] <- quote(stats::lm)
+
+  ### Allow users to pass in "ate" and "ett" rather than functions if they have
+  ### no special modifications/additional arguments
+  wt <- substitute(list(...))$weights
+  if (is(wt, "character")) {
+    if (tolower(wt) == "ate") {
+      mf$weights <- quote(ate())
+    } else if (tolower(wt) == "ett") {
+      mf$weights <- quote(ett())
+    } else {
+      stop("Invalid weights= argument")
+    }
+  }
 
   # Reset the formula  for the `lm`, giving  it a proper name (since  we take in
   # the  generic "obj"  name), and  replacing it  with the  updated `obj`  if we
