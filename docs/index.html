@@ -148,6 +148,12 @@
 <p>When documentation refers to another function (internal to the package or otherwise), please include the trailing <code>()</code>, as that will help <strong>pkgdown</strong> provide an appropriate link (see <a href="https://pkgdown.r-lib.org/articles/linking.html" class="external-link">https://pkgdown.r-lib.org/articles/linking.html</a>).</p>
 <p>E.g. <code>\code{lm()}</code> or <code>\code{cov_adj()}</code> or <code>\code{lme4::lmer()}</code>.</p>
 </div>
+<div class="section level3">
+<h3 id="vignettes-or-simulations">Vignettes or simulations<a class="anchor" aria-label="anchor" href="#vignettes-or-simulations"></a>
+</h3>
+<p>Vignettes and simulations should go in the <a href="https://github.com/benbhansen-stats/flexida/tree/main/vignettes" class="external-link">/vignettes/</a> folder. Anything that should not be built by R check (especially anything that builds very slowly, or introduces dependencies not specified in <a href="https://github.com/benbhansen-stats/flexida/blob/main/DESCRIPTION" class="external-link">DESCRIPTION</a>) should go in the <a href="https://github.com/benbhansen-stats/flexida/tree/main/vignettes/not-for-cran" class="external-link">/vignettes/not-for-cran</a>. (The not-for-cran folder is in the <a href="https://github.com/benbhansen-stats/flexida/blob/main/.Rbuildignore" class="external-link">.Rbuildignore</a> file.)</p>
+<p>Note that ALL .Rmd files in /vignettes/ get built during building of the reference site. To exclude a .Rmd file, it needs to start with “_“. E.g. <code>myslowvignette.Rmd</code> -&gt; <code>_myslowvignette.Rmd</code>.</p>
+</div>
 </div>
 
   </main><aside class="col-md-3"><div class="links">
