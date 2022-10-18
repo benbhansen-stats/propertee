@@ -134,11 +134,17 @@ lmitt.formula <- function(obj,
                "To include treatment manually, use `1` or `assigned()`"))
   }
 
+  # About the modify the formula; doing so strips off envir, so saving to
+  # restore below.
+  saveenv <- environment(obj)
+
   # Replace alises for assigned with assigned
   obj <- formula(gsub("adopters(", "assigned(", deparse(obj), fixed = TRUE))
   obj <- formula(gsub("a.(",       "assigned(", deparse(obj), fixed = TRUE))
   obj <- formula(gsub("z.(",       "assigned(", deparse(obj), fixed = TRUE))
   # Only using opening parans to catch things like `a.(des)`.
+  environment(obj) <- saveenv
+
 
   # If there are no assigned() in the formula, assume all RHS variables are
   # stratified and add interaction with `assigned()`
