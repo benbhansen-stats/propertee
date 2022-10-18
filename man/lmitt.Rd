@@ -8,7 +8,7 @@
 \usage{
 lmitt(obj, design, absorb = FALSE, ...)
 
-\method{lmitt}{formula}(obj, design = NULL, absorb = FALSE, ...)
+\method{lmitt}{formula}(obj, design, absorb = FALSE, ...)
 
 \method{lmitt}{lm}(obj, design = NULL, ...)
 }

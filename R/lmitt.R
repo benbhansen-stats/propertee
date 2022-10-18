@@ -71,7 +71,7 @@ lmitt <- function(obj,
 ##' @export
 ##' @rdname lmitt
 lmitt.formula <- function(obj,
-                          design = NULL,
+                          design,
                           absorb = FALSE,
                           ...) {
   mf <- match.call()
