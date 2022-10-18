@@ -153,13 +153,6 @@ test_that("Allowed inputs to lmitt #73", {
 
   expect_no_error(l1 <- lmitt(y ~ 1, design = des, data = simdata))
   expect_no_error(l2 <- lmitt(y ~ dose, design = des, data = simdata))
-  expect_no_error(l3 <- lmitt(y ~ 1 + dose, design = des, data = simdata))
-  expect_no_error(l4 <- lmitt(y ~ dose + 1, design = des, data = simdata))
-
-  ### equality of allowed versions
-
-  expect_identical(l2$coeff, l3$coeff)
-  expect_identical(l2$coeff, l4$coeff)
 
   ### Disallowed versions
 
@@ -172,6 +165,12 @@ test_that("Allowed inputs to lmitt #73", {
   expect_error(lmitt(y ~ z, design = des, data = simdata))
   expect_error(lmitt(y ~ z + 1, design = des, data = simdata))
 
+  ### Main + Subgroup effects.
+  ### NYI - see #73
 
+  #expect_no_error(l3 <- lmitt(y ~ 1 + dose, design = des, data = simdata))
+  #expect_no_error(l4 <- lmitt(y ~ dose + 1, design = des, data = simdata))
+
+  #expect_identical(l3$coeff, l4$coeff)
 
 })

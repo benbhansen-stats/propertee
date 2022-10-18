@@ -113,7 +113,6 @@ lmitt.formula <- function(obj,
 
   ### Next, update main formula
 
-
   # Try to ensure proper formula. Valid forms are:
   # ~ 1
   # ~ sbgrp
@@ -121,17 +120,23 @@ lmitt.formula <- function(obj,
   rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
   rhs <- rhs[rhs != "+"]
   if (length(rhs) > 2) {
-    stop("Invalid formula, please see help")
+    stop("Too many terms on right hand side")
   }
   if ("0" %in% rhs) {
-    stop("Invalid formula, please see help")
+    stop("'0' is not a valid entry on right hand side")
   }
   if (length(rhs[rhs != "1"]) > 1) {
-    stop("Invalid formula, please see help")
+    stop("Too many variable on right hand ide")
   }
   if (var_names(design, "t") %in% rhs) {
-    stop(paste("Treatment variable cannot be entered by name.",
-               "To include treatment manually, use `1` or `assigned()`"))
+    stop("Treatment variable should not be manually entered.")
+  }
+
+  #### This blocks on `~ 1 + sbgrp` and `~ sbgrp + 1`. When we eventually
+  #### enable this functionality, remove this block
+  #### See #73
+  if (length(rhs) == 2) {
+    stop("To estimate subgroup effects, do not include '1'")
   }
 
   # About the modify the formula; doing so strips off envir, so saving to
