@@ -99,6 +99,8 @@ test_that("treatment binary = 'ifany'", {
   expect_identical(treatment(des, binary = TRUE),
                    treatment(des, binary = "ifany"))
 
+  expect_error(treatment(des, binary = "cat"), "Valid input")
+
 })
 
 test_that("Accessing and replacing unit of assignment", {

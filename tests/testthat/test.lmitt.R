@@ -85,6 +85,9 @@ test_that("Design argument", {
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
+  expect_error(lmitt(y ~ 1, data = simdata, design = 4),
+               "formula specifying such a design")
+
 })
 
 test_that("Dichotomy option in Design creation", {
@@ -167,6 +170,8 @@ test_that("Allowed inputs to lmitt #73", {
 
   ### Main + Subgroup effects.
   ### NYI - see #73
+  expect_error(lmitt(y ~ 1 + dose, design = des, data = simdata),
+               "To estimate subgroup effects") # Remove this once #73 is fixed
 
   #expect_no_error(l3 <- lmitt(y ~ 1 + dose, design = des, data = simdata))
   #expect_no_error(l4 <- lmitt(y ~ dose + 1, design = des, data = simdata))
@@ -192,5 +197,7 @@ test_that("weights argument can be string", {
   # all.equal returns strings detailing differences
   expect_true(is.character(all.equal(l1, l3)))
 
+  expect_error(lmitt(y ~ 1, design = des, data =simdata,
+                     weights = "abc"), "Invalid weights")
 
 })
