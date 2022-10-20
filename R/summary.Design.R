@@ -7,7 +7,7 @@
 summary.Design <- function(object, ...) {
   out <- list()
   out$Design <- object
-  out$treatment_table <- treatment_table(object)
+  out$treatment_table <- dtable(object, "treatment")
   class(out) <- "summary.Design"
   return(out)
 }
@@ -43,7 +43,7 @@ print.summary.Design <- function(x, ..., max_unit_print = 3) {
     }
     cat(paste0(length(tt) - max_print_table, " smaller treatment ",
                group, " excluded.\n"))
-    cat("Use `treatment_table` function to view full results.")
+    cat("Use `dtable` function to view full results.")
   }
   cat("\n")
   invisible(x)

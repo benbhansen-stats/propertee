@@ -410,24 +410,6 @@ var_names <- function(x, type) {
               index = index))
 }
 
-##' Returns a table of number of units of assignment in each treatment group,
-##' sorted by the size of the groups
-##'
-##' @title Generate table of number of units/clusters within each treatment
-##'   level
-##' @param design A Design object
-##' @param ... add'l optional arguments to \code{table}
-##' @return a table of treatment by units
-##' @export
-##' @examples
-##' des <- rd_design(z ~ uoa(cid1, cid2) + forcing(force), data = simdata)
-##' treatment_table(des)
-treatment_table <- function(design, ...) {
-  tab <- table(design@structure[var_names(design, "t")], ...)
-  tab <- sort(tab, decreasing = TRUE)
-  return(tab)
-}
-
 ##' Returns a table containing the variables identified in each structure
 ##'
 ##' When \code{compress} is \code{TRUE}, the result will always have two

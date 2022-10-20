@@ -42,6 +42,7 @@ Collate:
     'assigned.R'
     'cov_adj.R'
     'data.R'
+    'dtable.R'
     'flexida_package.R'
     'get_cov_adj.R'
     'get_data_from_model.R'
