@@ -19,6 +19,17 @@ as.lmitt <- function(x, design = NULL) {
     stop("input must be lm object")
   }
 
+  # Ensure `design=` is a proper object
+  if (!is.null(design) & !is(design, "Design")) {
+    # Allow WeightedDesign just in case
+    if (is(design, "WeightedDesign")) {
+      design <- design@Design
+    } else {
+      stop(paste("If provided, `design` must be a `Design` or",
+                 "`WeightedDesign` object"))
+    }
+  }
+
   # Check if we can find a design in either Weights (preferred) or cov_adj
   design_weights <- tryCatch(x$model$"(weights)"@Design,
                              error = function(e) NULL)
@@ -29,10 +40,10 @@ as.lmitt <- function(x, design = NULL) {
   # of weights and cov_adj). Passing `unique` removes any duplicates (since
   # duplicates are OK).
   unique_designs <- unique(list(design, design_weights, design_cov_adj))
-  # Drop any designs which aren' `Design`. Mostly NULL hopefully.
-  unique_designs <- unique_designs[vapply(unique_designs,
-                                          is, logical(1), "Design")]
-  # At this point, if the lenght of `unique_designs` is 1, we're done. More than
+  # Drop any NULL designs
+  unique_designs <- unique_designs[!vapply(unique_designs,
+                                           is.null, logical(1))]
+  # At this point, if the length of `unique_designs` is 1, we're done. More than
   # one is an error.
   if (length(unique_designs) == 1) {
     design <- unique_designs[[1]]
