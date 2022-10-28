@@ -211,8 +211,6 @@ lmitt.formula <- function(obj,
 
   model <- eval(mf, parent.frame())
 
-  model$call[[1]] <- as.name("lmitt")
-
   return(as.lmitt(model, design))
 
 }
