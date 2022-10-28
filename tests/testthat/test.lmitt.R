@@ -197,7 +197,19 @@ test_that("weights argument can be string", {
   # all.equal returns strings detailing differences
   expect_true(is.character(all.equal(l1, l3)))
 
-  expect_error(lmitt(y ~ 1, design = des, data =simdata,
-                     weights = "abc"), "Invalid weights")
+  # Passing a different string warns users, but allows `lm()` to error
+  # in case user is trying to pass something to someplace else
+  expect_error(expect_warning(lmitt(y ~ 1, design = des, data =simdata,
+                                    weights = "abc"), "other than \"ate\""))
+
+})
+
+test_that("Regular weights can still be used", {
+
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lmitt(y ~ 1, design = des, weights = simdata$dose, data = simdata)
+  expect_true(is(mod, "DirectAdjusted"))
 
 })
