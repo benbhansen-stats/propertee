@@ -5,7 +5,7 @@ test_that(paste("DirectAdjusted object created correctly with weights and no",
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
   dalm <- new("DirectAdjusted",
-              lm(y ~ z, data = simdata, weights = ate(des)),
+              lm(y ~ assigned(), data = simdata, weights = ate(des)),
               Design = des)
 
   expect_s4_class(dalm, "DirectAdjusted")
@@ -21,7 +21,7 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
   dalm <- new("DirectAdjusted",
-              lm(y ~ z, data = simdata, weights = ate(des),
+              lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des)
 
@@ -35,83 +35,6 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
   expect_identical(dalm$model$`(offset)`@keys, simdata[,var_names(des, "u")])
 })
 
-test_that("DA ensure treatment is found", {
-
-  data(simdata)
-  des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
-  cmod <- lm(y ~ x, data = simdata)
-
-  dalm <- lmitt(y ~ assigned(), data = simdata, weights = ate(),
-                offset = cov_adj(cmod), design = des)
-
-  expect_type(treatment_name(dalm), "character")
-  expect_length(treatment_name(dalm), 1)
-  expect_identical(treatment_name(dalm), "assigned()")
-  expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
-
-  dalm2 <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des),
-                       offset = cov_adj(cmod)))
-  expect_true(all.equal(dalm$coefficients,
-                        dalm2$coefficients,
-                        check.attributes = FALSE))
-
-  # two identical assigned works silently
-  dalm3 <- as.lmitt(lm(y ~ assigned() + assigned(), data = simdata,
-                                weights = ate(des), offset = cov_adj(cmod)))
-  expect_true(all.equal(dalm$coefficients,
-                        dalm3$coefficients,
-                        check.names = FALSE))
-
-  # two different assigned fails
-  expect_error(as.lmitt(lm(y ~ assigned(des) + assigned(),
-                                    data = simdata,
-                                    weights = ate(des),
-                                    offset = cov_adj(cmod))),
-               "Differing `assigned")
-  # No treatment
-  expect_error(as.lmitt(lm(y ~ x, data = simdata, weights = ate(des))),
-               "Treatment z")
-
-  sd2 <- simdata
-  sd2$z <- NULL
-
-  expect_error(as.lmitt(lm(y ~ z, data = sd2,
-                                    weights = ate(des))),
-               "'z' not found")
-  dalm <- as.lmitt(lm(y ~ assigned(), data = sd2,
-                               weights = ate(des)))
-
-  expect_type(treatment_name(dalm), "character")
-  expect_length(treatment_name(dalm), 1)
-  expect_identical(treatment_name(dalm), "assigned()")
-  expect_true(!is.na(coef(dalm)[treatment_name(dalm)]))
-
-  des2 <- obs_design(o ~ cluster(cid2, cid1) + block(bid), data = simdata,
-                     dichotomy = o > 2 ~ . )
-
-  dalm2 <- as.lmitt(lm(y ~ assigned(), data = simdata,
-                                weights = ate(des2)))
-
-  expect_type(treatment_name(dalm2), "character")
-  expect_length(treatment_name(dalm2), 1)
-  expect_identical(treatment_name(dalm2), "assigned()")
-  expect_true(!is.na(coef(dalm2)[treatment_name(dalm2)]))
-
-  # Non-binary treatment passed as name works
-  expect_identical(
-    treatment_name(as.lmitt(lm(y ~ o, data = simdata), design = des2)),
-    "o")
-
-  dalm_direct <- lmitt(y ~ assigned(), data = simdata,
-                       weights = ate(), design = des2)
-
-  expect_type(treatment_name(dalm_direct), "character")
-  expect_length(treatment_name(dalm_direct), 1)
-  expect_identical(treatment_name(dalm_direct), "assigned()")
-  # internal name used in ittestimate
-  expect_true(!is.na(coef(dalm_direct)[treatment_name(dalm_direct)]))
-})
-
 test_that("DirectAdjusted print/show", {
 
   data(simdata)
@@ -119,7 +42,7 @@ test_that("DirectAdjusted print/show", {
   cmod <- lm(y ~ z, data = simdata)
 
   dalm <- new("DirectAdjusted",
-              lm(y ~ z, data = simdata, weights = ate(des),
+              lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des)
 
@@ -128,9 +51,9 @@ test_that("DirectAdjusted print/show", {
   expect_silent(invisible(capture.output(expect_identical(print(dalm), dalm))))
   expect_silent(invisible(capture.output(expect_identical(show(dalm), dalm))))
 
-  # Expect "z" since it is treatment variable
-  expect_output(print(dalm), "z")
-  expect_output(show(dalm), "z")
+  # Expect "assigned()"
+  expect_output(print(dalm), "assigned()")
+  expect_output(show(dalm), "assigned()")
 })
 
 test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
@@ -138,7 +61,7 @@ test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  mod <- lm(y ~ z, data = simdata, weights = ate(des))
+  mod <- lm(y ~ assigned(), data = simdata, weights = ate(des))
 
   mod_da <- as.lmitt(mod)
 
@@ -158,7 +81,7 @@ test_that("lm to DirectAdjusted with weights and SandwichLayer", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
-  mod <- lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  mod <- lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
 
   mod_da <- as.lmitt(mod)
 
@@ -186,16 +109,16 @@ test_that("Conversion from lm to DirectAdjusted fails without an lm object", {
 test_that("lm to DirectAdjusted fails without a Design object", {
   data(simdata)
 
-  expect_error(as.lmitt(lm(y ~ z, data = simdata,
+  expect_error(as.lmitt(lm(y ~ assigned(), data = simdata,
                                     weights = seq_len(nrow(simdata)))),
-               "Cannot locate a `Design`")
+               "Unable to locate Design")
 })
 
 test_that("vcov, confint, etc", {
   data(simdata)
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
 
-  dalm <- as.lmitt(lm(y ~ z, data = simdata, weights = ate(des)))
+  dalm <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
 
   expect_true(is.matrix(vcov(dalm)))
   expect_equal(dim(vcov(dalm)), c(2, 2))
@@ -236,12 +159,12 @@ test_that("Differing designs found", {
   des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
   des2 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
 
-  mod <- lm(y ~ z,
-            data = simdata,
-            weights = ate(des),
-            offset = cov_adj(lm(y ~ x, data = simdata),
-                             design = des2))
-  expect_error(as.lmitt(mod), "Multiple differing")
+  expect_error(lm(y ~ assigned(),
+                  data = simdata,
+                  weights = ate(des),
+                  offset = cov_adj(lm(y ~ x, data = simdata),
+                                   design = des2)),
+               "Multiple differing")
 
   expect_error(lmitt(y ~ 1,
                      data = simdata,
@@ -250,7 +173,7 @@ test_that("Differing designs found", {
                      offset = cov_adj(lm(y ~ x, data = simdata),
                                       design = des2)))
 
-  mod <- lm(y ~ z, data = simdata,
+  mod <- lm(y ~ assigned(), data = simdata,
             offset = cov_adj(lm(y ~ x, data = simdata),
                              design = des2))
 
@@ -296,7 +219,7 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  damod1 <- lmitt(lm(y ~ z, data = simdata, weights = ate(des),
+  damod1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des),
                      offset = cov_adj(cmod)))
   damod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
@@ -370,4 +293,65 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci2 <- confint(damod2, 2)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovlm_z.95)
+})
+
+test_that(".txt_fn for identifying treatment identifying function", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+
+  m1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
+  expect_identical(.txt_fn(m1), "assigned()")
+
+  m2 <- lmitt(lm(y ~ assigned() + assigned():dose, data = simdata,
+                 weights = ate(des)))
+  expect_identical(.txt_fn(m2), "assigned()")
+
+  m1 <- lmitt(lm(y ~ a.(), data = simdata, weights = ate(des)))
+  expect_identical(.txt_fn(m1), "a.()")
+
+  m2 <- lmitt(lm(y ~ a.() + a.():dose, data = simdata,
+                 weights = ate(des)))
+  expect_identical(.txt_fn(m2), "a.()")
+
+  m1 <- lmitt(lm(y ~ z.(), data = simdata, weights = ate(des)))
+  expect_identical(.txt_fn(m1), "z.()")
+
+  m2 <- lmitt(lm(y ~ z.() + z.():dose, data = simdata,
+                 weights = ate(des)))
+  expect_identical(.txt_fn(m2), "z.()")
+
+  m1 <- lmitt(lm(y ~ assigned(des), data = simdata), design = des)
+  expect_identical(.txt_fn(m1), "assigned(des)")
+
+  m2 <- lmitt(lm(y ~ assigned(des) + assigned(des):dose, data = simdata),
+              design = des)
+  expect_identical(.txt_fn(m2), "assigned(des)")
+
+  m1 <- lmitt(lm(y ~ a.(des), data = simdata), design = des)
+  expect_identical(.txt_fn(m1), "a.(des)")
+
+  m2 <- lmitt(lm(y ~ a.(des) + a.(des):dose, data = simdata),
+              design = des)
+  expect_identical(.txt_fn(m2), "a.(des)")
+
+  m1 <- lmitt(lm(y ~ z.(des), data = simdata), design = des)
+  expect_identical(.txt_fn(m1), "z.(des)")
+
+  m2 <- lmitt(lm(y ~ z.(des) + z.(des):dose, data = simdata),
+              design = des)
+  expect_identical(.txt_fn(m2), "z.(des)")
+
+
+  # Failing
+
+  m1 <- lm(y ~ assigned() + a.():dose, data = simdata, weights = ate(des))
+  expect_error(lmitt(m1), "Differing treatment")
+
+
+  m1 <- lm(y ~ assigned() + assigned(des):dose, data = simdata, weights = ate(des))
+  expect_error(lmitt(m1), "Differing forms")
+  m1 <- lm(y ~ a.() + a.(des):dose, data = simdata, weights = ate(des))
+  expect_error(lmitt(m1), "Differing forms")
+  m1 <- lm(y ~ z.() + z.(des):dose, data = simdata, weights = ate(des))
+  expect_error(lmitt(m1), "Differing forms")
 })

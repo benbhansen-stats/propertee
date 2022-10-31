@@ -13,6 +13,7 @@ NULL
 ##'   through this argument), an error will be produced.)
 ##' @return \code{DirectAdjusted} object
 ##' @rdname as_lmitt
+##' @importFrom stats formula
 ##' @export
 as.lmitt <- function(x, design = NULL) {
   if (!inherits(x, "lm")) {
@@ -52,6 +53,39 @@ as.lmitt <- function(x, design = NULL) {
   } else {
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
+
+  ### 10/31/22 JE - The below causes a ton of errors in the test suite that do
+  ### NOT show up interactively and thuis are extremely challenging to debug. It
+  ### is supposed to replace the treatment variable name with `assigned()` and
+  ### refit the model. I've spent a few days trying to debug this and failing,
+  ### so going to leave it as unfixable for the moment, and instead simply erro
+  ### if the user does not include `assigned()` in the `lm`.
+  ## # Update formula to use `assigned()` if needed
+  ## ff <- stats::formula(x)
+  ## newff <- formula(gsub(var_names(design, "t"), "assigned()", deparse(ff)))
+  ## environment(newff) <- environment(ff)
+
+  ## # Ensure updated model will be the same.
+
+  ## newx <- update(x, newff)
+  ## if (!isTRUE(all.equal(newx$coefficients, x$coefficients,
+  ##                       check.attributes = FALSE))) {
+  ##   stop(paste("Treatment variable found in model formula.",
+  ##              "Updating model to use `assigned()` instead produces",
+  ##              "different results. Please refit original model using",
+  ##              "`assigned()` in place of treatment variable name."))
+  ## }
+  ## x <- newx
+
+  tt <- terms(stats::formula(x), specials = c("assigned", "a.", "z."))
+
+  if (all(vapply(attr(tt, "specials"), is.null, logical(1)))) {
+    stop(paste("`assigned()` or its aliases are not found in the model formula.",
+               "`assigned()` needs to be found in place of the treatment",
+               "variable name. The `lmitt()` function may be used to",
+               "avoid explicitly indicating `assigned()`."))
+  }
+
 
   eval_env <- new.env(parent = environment(formula(x)))
   data <- eval(x$call$data, eval_env)

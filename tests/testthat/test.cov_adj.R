@@ -456,7 +456,7 @@ test_that("cov_adj variance estimates for correlated predictors", {
 
   # now repeat with cov_adj
   design <- rct_design(z ~ unitid(id), data = df)
-  m2ca <- lm(y ~ z - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
+  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
 
   m2ca_da <- as.lmitt(m2ca)
 
