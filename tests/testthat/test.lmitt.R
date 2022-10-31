@@ -19,7 +19,7 @@ test_that("lmitt and lm return the same in simple cases", {
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid),
                    data = simdata)
 
-  ml <- lm(y ~ z, data = simdata, weights = ate(des))
+  ml <- lm(y ~ assigned(), data = simdata, weights = ate(des))
   da <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
   ml2da <- lmitt(ml)
 

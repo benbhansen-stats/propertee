@@ -71,7 +71,7 @@ reference:
     - show,DirectAdjusted-method
     - summary.DirectAdjusted
     - print.summary.DirectAdjusted
-    - treatment_name
+    - .txt_fn
     - vcov.DirectAdjusted
     - vcovDA
     - .absorbed

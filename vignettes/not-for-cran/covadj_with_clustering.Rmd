@@ -279,7 +279,7 @@ covariance model only to the control observations of the quasiexperimental
 sample:
 ```{r fit_models, echo = TRUE, eval = TRUE}
 cmod_form <- y ~ x1 + x2
-damod_form <- y ~ z
+damod_form <- y ~ assigned()
 ctrl_idx <- df$z == 0
 
 cmod <- lm(cmod_form, df[ctrl_idx,])

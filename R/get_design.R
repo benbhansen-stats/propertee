@@ -23,18 +23,18 @@
 ##' @keywords internal
 .get_design <- function(NULL_on_error = FALSE) {
   design <- NULL
-  
+
   # The plain `lmitt` call may contain a design formula, only in `lmitt.formula`
   # will that be converted into an actual design. Want to return this immediately
   # to prevent infinite recursion
   found_lmitt <- grepl("^lmitt\\.formula$",
                        lapply(sys.calls(), "[[", 1),
                        perl = TRUE)
-  
+
   if (any(found_lmitt)) {
     design <- get("design", sys.frame(which(found_lmitt)[1]))
     if (inherits(design, "Design")) {
-      return(design) 
+      return(design)
     } else {
       design <- NULL
     }
@@ -133,7 +133,7 @@
   }
   if (sum(found_designs) > 1) {
     # Found multiple Designs; ensure they're all the same
-    if (!Reduce(identical, potential_designs[found_designs])) {
+    if (sum(!duplicated(potential_designs[found_designs])) > 1) {
       stop("Multiple differing `Design` found")
     }
   }
