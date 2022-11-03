@@ -1,0 +1,177 @@
+---
+title: "Introduction to the 'flexida' package"
+author: "flexida authors"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to the 'flexida' package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(flexida)
+```
+
+```{r}
+library(flexida)
+```
+
+# Main Features
+
+The `{flexida}` package offers a two step approach to treatment effect
+estimation.
+
+1. Generate a `Design` object which encodes the study design, including the unit
+   of assignment, treatment status, and optionally block information.
+2. Estimate a treatment effect, accounting for the design information.
+
+The treatment effect estimation can optionally include proper weighting (for
+either average treatment effect or effect of the treatment on the treated), or
+can include a externally fit covariance adjustment model.
+
+While both the weights and and covariance adjustment can be used in a stock R
+model (e.g. `lm()`), `{flexida}` offers the `lmitt()` function which can be used
+to directly estimate the desired treatment effect, along with properly
+calculated standard errors accounting for the design features and covariance
+adjustment first stage model.
+
+# Example Data
+
+The example dataset comes from the state of Tennessee's Student-Teacher
+Achievement Ratio (STAR) experiment. Students were randomly assigned to three
+possible classroom conditions: small (13 to 17 students per teacher), regular
+class (22 to 25 students per teacher), and regular-with-aide class (22 to 25
+students with a full-time teacher's aide).
+
+```{r}
+data(STARdata)
+```
+Student compliance was not constant over years:
+
+```{r}
+table(STARdata$stark, STARdata$star1, useNA = "always")
+table(STARdata$star2, STARdata$star3, useNA = "always")
+```
+
+Taking that kindergarten treatment as the intended treatment, we proceed with an
+intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3.
+
+```{r}
+table(STARdata$stark)
+```
+
+For simplicity for this first example, we will examine a single binary
+treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
+
+```{r}
+STARdata$starkbinary <- STARdata$stark == "small"
+table(STARdata$starkbinary)
+```
+After this basic example, we will see how `{flexida}` makes it easy to handle non-binary treatment variables by introducing `dichotomy`s.
+
+The students were blocked into schools via the `schoolidk` variable:
+
+```{r}
+length(unique(STARdata$schoolidk))
+head(table(STARdata$schoolidk))
+```
+
+Students were the assigned units, so we need a unique identifier per student. If
+this does not currently exist, it can easily be generated:
+
+```{r}
+STARdata$studentid <- seq_len(nrow(STARdata))
+head(STARdata$studentid)
+```
+
+# A Basic Example
+
+## Defining the Design
+
+The three `_design` functions (`rct_design()`, `obj_design()`, and
+`rd_design()`) operate very similarly. The first argument is the most important,
+and encodes all the design information through the use of a formula. The
+left-hand side of the formula identifies the treatment variable. The right-hand
+side of the formula consists of the following potential pieces of information:
+
+1. `unit_of_assignment()`: This identifies the variable(s) which indicate the
+   units of assignment. This is required for all designs. The alias `uoa()` can
+   be used in its place.
+2. `block()`: The identifies the variable(s) which contain block information.
+   Optional.
+3. `forcing()`: In regression discontinuity designs (`rd_design()`), this
+   identifies the variable(s) which contain forcing information.
+
+Let's see how to define the design object.
+
+```{r}
+des <- obs_design(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
+                  data = STARdata)
+summary(des)
+```
+
+Should more than one variable be needed to identify the unit of assignment,
+block, or forcing, they can be included. For example, perhaps `schoolidk` may be
+unique within district, but potentially not unique across districts. Then we'd
+use something like `block(districtid, schoolidk)` in the `_design` function.
+
+## Estimating the treatment effect
+
+The main function for estimating treatment effects is the `lmitt()` function.
+
+# Non-binary treatment variables
+
+The `des` `Design` object we defined above contains the 3-level treatment
+variable `stark`. While the software can generally handle non-binary treatment,
+some features (notably weight generation and proper covariance estimates) are
+not fully supported in those cases. Since we want to estimate several different
+binary comparisons among those three levels, rather than doing this manually, we
+can use the `dichotomy` feature to inform the `Design` about the current binary
+comparison we are examing.
+
+A `dichotomy` is given as a formula object, where the left hand side evaluates
+to a logical statement about the treatment variable identifying the "treated"
+group, and the right hand side evaluates to a logical statement identifying the
+"control" group. For example, one of the treatment effects we want to estimate
+is "small" versus "regular". The following `dichotomy` would provide this
+information:
+
+```r
+stark == "small" ~ stark == "regular"
+```
+
+The "small" versus pooled "regular"/"regular+aide" can be expressed in several
+ways:
+
+```r
+stark == "small" ~ stark == "regular" | stark == "regular+aide"
+stark == "small" ~ stark != "small"
+stark == "small" ~ .
+. ~ stark == "regular" | stark == "regular+aide"
+
+```
+
+The "`.`" can be used in exactly one side, and implies that that group is
+defined as all units not assigned to the other group.
+
+You can attach a `dichotomy` to a `Design` with the `dichotomy()` function:
+
+```r
+des2 <- des
+dichotomy(des2) <- stark == "small" ~ .
+des2
+```
+
+Once a `dichotomy` is attached to a `Design`, its equivalent for all intents and
+purposes to if you had used a binary treatment variable when creating the
+`Design`. (The `*_design` functions take a `dichotomy=` argument so you can
+create a `Design` and attach a `dichotomy in one step.)
+
+Alternatively, the `ate()` and `ett()` functions, for generating average
+treatment effect weights and effect of the treatment on the treated weights
+respectively, take an optional `dichotomy=`
