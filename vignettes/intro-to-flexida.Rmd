@@ -17,10 +17,6 @@ knitr::opts_chunk$set(
 library(flexida)
 ```
 
-```{r}
-library(flexida)
-```
-
 # Main Features
 
 The `{flexida}` package offers a two step approach to treatment effect
@@ -50,18 +46,6 @@ students with a full-time teacher's aide).
 
 ```{r}
 data(STARdata)
-```
-Student compliance was not constant over years:
-
-```{r}
-table(STARdata$stark, STARdata$star1, useNA = "always")
-table(STARdata$star2, STARdata$star3, useNA = "always")
-```
-
-Taking that kindergarten treatment as the intended treatment, we proceed with an
-intent-to-treat analysis, ignoring actual classroom attendance in grades 1 to 3.
-
-```{r}
 table(STARdata$stark)
 ```
 
@@ -72,7 +56,14 @@ treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
 STARdata$starkbinary <- STARdata$stark == "small"
 table(STARdata$starkbinary)
 ```
-After this basic example, we will see how `{flexida}` makes it easy to handle non-binary treatment variables by introducing `dichotomy`s.
+After this basic example, we will see how `{flexida}` makes it easy to handle
+non-binary treatment variables by introducing `dichotomy`s.
+
+The outcome of interest is a reading score at the end of kindergarten.
+
+```{r}
+summary(STARdata$readk)
+```
 
 The students were blocked into schools via the `schoolidk` variable:
 
@@ -122,31 +113,178 @@ use something like `block(districtid, schoolidk)` in the `_design` function.
 
 ## Estimating the treatment effect
 
-The main function for estimating treatment effects is the `lmitt()` function.
+The main function for estimating treatment effects is the `lmitt()` function. It
+takes in three main required arguments:
 
-# Non-binary treatment variables
+1. A formula specifying the outcome and the desired treatment effect.
+2. The data set containing the outcome information.
+3. A `Design`.
 
-The `des` `Design` object we defined above contains the 3-level treatment
-variable `stark`. While the software can generally handle non-binary treatment,
-some features (notably weight generation and proper covariance estimates) are
-not fully supported in those cases. Since we want to estimate several different
-binary comparisons among those three levels, rather than doing this manually, we
-can use the `dichotomy` feature to inform the `Design` about the current binary
-comparison we are examing.
+Note that the data set does **not** need to be the same data set which generated
+the `Design`; it does however need to include the same variables to identify the
+units of assignment. (Note that if the variable names differ, the `by=` argument
+can be used to link them.) For example, treatment may be assigned at a school
+level, so the data set creating the `Design` is school-level. However, the
+outcome could be at the student level. As long as the student-level data had
+school identifiers, `{flexida}` can match them up.
+
+The formula entering `lmitt()` can take on one of two forms:
+
+```r
+y ~ 1
+```
+
+will estimate the main treatment effect on outcome variable `y`, and
+
+```r
+y ~ sbgrp
+```
+
+will estimate subgroup specific treatment effects for each level of `sbgrp` for
+the outcome `y`.
+
+(We hope in the future to support `y ~ 1 + sbgrp` to simultaneously estimate
+both main and subgroup effects; however for now you can fit each model
+separately.)
+
+Therefore, to estimate the treatment effect in our example, we can run:
+
+```{r}
+lmitt(readk ~ 1, data = STARdata, design = des)
+```
+
+The data includes ethnicity; we can estimate subgroup effects by ethnicity.
+
+```{r}
+lmitt(readk ~ ethnicity, data = STARdata, design = des)
+```
+
+## Including design weights
+
+Design weights can be easily included in this estimation. `{flexida}` supports
+average treatment effect (ATE) and effect of the treatment on the treated (ETT)
+weights.
+
+To include one of the weights, simply include the `weights = "ate"` or
+`weights = "ett"` argument to `lmitt()`:
+
+```{r}
+lmitt(readk ~ 1, data = STARdata, design = des, weights = "ate")
+lmitt(readk ~ 1, data = STARdata, design = des, weights = "ett")
+```
+
+Internally, these call the `ate()` or `ett()` functions which can be used
+directly.
+
+```{r}
+lmitt(readk ~ 1, data = STARdata, design = des, weights = ate())
+```
+
+This enables easy combination of weights; for example if you had some other
+weight contained with-in a variable, say `wgt`, you could include `weights =
+wgt*ate()` in the `lmitt()` call.
+
+The weight functions also function within normal model calls such as `lm()` or
+`glm()`.
+
+```{r}
+lm(readk ~ starkbinary, data = STARdata, weights = ate(des))
+```
+
+Note the neccessity to include the `Design` as an argument to `ate()`; `ate()`
+and `ett()` attempt to locate both the `Design` and `data` inside their call,
+however if needed, both can be manually included. For example, to obtain the
+weights indepndently on the model:
+
+```{r}
+head(ate(des, data = STARdata))
+```
+
+## Covariance Adjustment models
+
+By itself, `lmitt()` does not allow for other covariates; e.g. something like
+`lmitt(y ~ 1 + control_var,...` will fail. To adjust for covariates, a separate
+covariate model should be fit. Any model which supports a `predict()` function
+will work.
+
+```{r}
+camod <- lm(readk ~ gender + birth + lunchk, data = STARdata)
+```
+
+The `cov_adj()` function can be used to process the covariance adjustment model
+and produce the required values; and its output can be passed as an `offset=`.
+
+```{r}
+lmitt(readk ~ 1, data = STARdata, design = des,
+      weights = "ate", offset = cov_adj(camod))
+```
+
+Similarly to the weight functions, `cov_adj()` attempts to locate the correct
+dataset to use in the model command; while `cov_adj()` does fall back to using
+the data which is in the covariance model, its safer to use the `newdata=`
+argument if calling `cov_adj()` outside of the model.
+
+```{r}
+head(cov_adj(camod, newdata = STARdata))
+```
+
+Also, similarly to weights, `cov_adj()` can be used in normal modeling commands
+as well.
+
+```{r}
+lm(readk ~ starkbinary, data = STARdata, weights = ate(des),
+   offset = cov_adj(camod))
+```
+
+## Absorbing Blocks
+
+If it is desired to include fixed effects for blocks, which can be absorbed away
+to avoid estimating, the `absorb=TRUE` argument can be passed.
+
+```{r}
+lmitt(readk ~ 1, data = STARdata, design = des, absorb = TRUE)
+```
+
+# Standard error and confidence bound calculation
+
+
+# Additional topics
+
+## Non-binary treatment variables
+
+In the example above, we manually created a binary treatment variable,
+`starkbinary` out of a three-level categorical variable. `Design`s can instead
+handle non-binary treatment variables. (Note that factor variables, while able
+to be included in a `*_design` call, have their labels converted to numeric or
+character as appropriate. We therefore recommend doing this conversion a priori
+so you can control this conversion and ensure it is appropriate.)
+
+```{r}
+STARdata$stark <- as.character(STARdata$stark)
+des <- obs_design(stark ~ unit_of_assignment(studentid) + block(schoolidk),
+                  data = STARdata)
+summary(des)
+```
+
+Note however that some features (notably weight generation and proper covariance
+estimates) are not fully supported in cases with non-binary treatment. While we
+could manually create several binary variables based upon the non-binary
+treatment variables, we can instead use the `dichotomy` feature to inform the
+`Design` about the current binary comparison we are examing.
 
 A `dichotomy` is given as a formula object, where the left hand side evaluates
 to a logical statement about the treatment variable identifying the "treated"
 group, and the right hand side evaluates to a logical statement identifying the
-"control" group. For example, one of the treatment effects we want to estimate
-is "small" versus "regular". The following `dichotomy` would provide this
+"control" group. For example, if we wanted to examine the treatment effect of
+"small" versus "regular", the following `dichotomy` would provide this
 information:
 
 ```r
 stark == "small" ~ stark == "regular"
 ```
 
-The "small" versus pooled "regular"/"regular+aide" can be expressed in several
-ways:
+The "small" versus pooled "regular"/"regular+aide" can be expressed in any
+several ways:
 
 ```r
 stark == "small" ~ stark == "regular" | stark == "regular+aide"
@@ -161,7 +299,7 @@ defined as all units not assigned to the other group.
 
 You can attach a `dichotomy` to a `Design` with the `dichotomy()` function:
 
-```r
+```{r}
 des2 <- des
 dichotomy(des2) <- stark == "small" ~ .
 des2
