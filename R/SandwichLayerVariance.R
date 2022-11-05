@@ -134,7 +134,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
       wide_frame <- as.data.frame(dots$cluster)
       cluster_cols <- colnames(wide_frame)
     } else if (inherits(dots$cluster, c("integer", "numeric", "factor"))) {
-      m <- match.call()
+      m <- match.call(definition = sys.function(sys.parent(2L)),
+                      call = sys.call(sys.parent(2L)))
       cluster_cols <- deparse(m$cluster)
       wide_frame <- as.data.frame(dots$cluster)
       colnames(wide_frame) <- cluster_cols
@@ -394,7 +395,9 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
-  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  if (any(nas)) {
+    uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  }
   uoas <- factor(uoas)
   nuoas <- length(unique(uoas))
 

@@ -17,6 +17,62 @@ test_that("vcovDA correctly dispatches", {
   expect_equal(vmat, .vcovMB_CR0(damod))
 })
 
+test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+                "when cluster ID's have no NA's"), {
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  uid <- factor(simdata$uid)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+  
+  # check default clustering level is the same when specified using cluster arg
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = c("uid")))
+  
+  # test other arg types
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = simdata[, c("uid"), drop = FALSE]))
+  
+  uoas <- matrix(simdata$uid)
+  colnames(uoas) <- "uid"
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uoas))
+  
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = list(uid = simdata$uid)))
+  
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  
+  uid <- simdata$uid
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  
+  uid <- as.numeric(simdata$uid)
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  
+  # can also specify different cluster level
+  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+               vcovDA(dmod, cluster = simdata[, c("cid1", "cid2")]))
+  
+  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+               vcovDA(dmod, cluster = cbind(cid1 = simdata$cid1,
+                                            cid2 = simdata$cid2)))
+  
+  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+               vcovDA(dmod, cluster = list(cid1 = simdata$cid1,
+                                           cid2 = simdata$cid2)))
+})
+
+test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+                "when cluster ID's have NA's (must be via column name)"), {
+  data(simdata)
+  df <- rbind(simdata, simdata)
+  df[1:50, c("cid1", "cid2", "bid", "z")] <- NA
+  cmod <- lm(y ~ x, df[1:50,])
+  des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
+  dmod <- lmitt(y ~ assigned(), data = df[51:100,], design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+  
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = c("cid1", "cid2")))
+})
+
 test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
@@ -149,7 +205,7 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
                "must provide a data frame")
   bid1 <- simdata$bid
   expect_error(.get_b12(m, cluster = bid1),
-               "in the DirectAdjusted object's Design: bid1")
+               "in the DirectAdjusted object's Design")
 })
 
 test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
@@ -190,26 +246,6 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   # test list cluster argument
   expect_equal(.get_b12(m, cluster = list(cid1 = simdata[, "cid1"],
                                           cid2 = simdata[, "cid2"])), expected)
-  
-  # test factor/numeric/integer cluster arguments (change level to "bid")
-  cmod_eqns <- Reduce(
-    rbind,
-    by(estfun(cmod), simdata$bid, colSums)
-  )
-  dmod_eqns <- Reduce(
-    rbind,
-    by(estfun(m), simdata$bid, colSums)
-  )
-  expected <- crossprod(cmod_eqns, dmod_eqns)
-
-  bid <- simdata$bid
-  expect_equal(.get_b12(m, cluster = bid), expected)
-  
-  bid <- as.numeric(bid)
-  expect_equal(.get_b12(m, cluster = bid), expected)
-  
-  bid <- factor(bid)
-  expect_equal(.get_b12(m, cluster = bid), expected)
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
