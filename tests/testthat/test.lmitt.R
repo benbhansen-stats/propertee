@@ -19,7 +19,7 @@ test_that("lmitt and lm return the same in simple cases", {
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid),
                    data = simdata)
 
-  ml <- lm(y ~ z, data = simdata, weights = ate(des))
+  ml <- lm(y ~ assigned(), data = simdata, weights = ate(des))
   da <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
   ml2da <- lmitt(ml)
 
@@ -84,6 +84,9 @@ test_that("Design argument", {
   expect_true(mod3@Design@type == "Obs")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
+
+  expect_error(lmitt(y ~ 1, data = simdata, design = 4),
+               "formula specifying such a design")
 
 })
 
@@ -167,6 +170,8 @@ test_that("Allowed inputs to lmitt #73", {
 
   ### Main + Subgroup effects.
   ### NYI - see #73
+  expect_error(lmitt(y ~ 1 + dose, design = des, data = simdata),
+               "To estimate subgroup effects") # Remove this once #73 is fixed
 
   #expect_no_error(l3 <- lmitt(y ~ 1 + dose, design = des, data = simdata))
   #expect_no_error(l4 <- lmitt(y ~ dose + 1, design = des, data = simdata))
@@ -192,5 +197,19 @@ test_that("weights argument can be string", {
   # all.equal returns strings detailing differences
   expect_true(is.character(all.equal(l1, l3)))
 
+  # Passing a different string warns users, but allows `lm()` to error
+  # in case user is trying to pass something to someplace else
+  expect_error(expect_warning(lmitt(y ~ 1, design = des, data =simdata,
+                                    weights = "abc"), "other than \"ate\""))
+
+})
+
+test_that("Regular weights can still be used", {
+
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lmitt(y ~ 1, design = des, weights = simdata$dose, data = simdata)
+  expect_true(is(mod, "DirectAdjusted"))
 
 })

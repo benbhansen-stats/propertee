@@ -8,8 +8,7 @@ setClass("DirectAdjusted",
          slots = c(Design = "Design"))
 
 setValidity("DirectAdjusted", function(object) {
- if (!treatment_name(object) %in%
-        rownames(attr(terms(object), "factors"))[-1]) {
+  if (!is.character(.txt_fn(object))) {
     # Ensures that treatment variable appears somewhere in RHS (-1 removes
     # outcome) of formula. If created by `lmitt()`, treatment will be
     # "assigned()"; but if passed from lm to as.DA, it could be a variable name.
@@ -74,39 +73,63 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   return(ci)
 }
 
-##' Identify treatment variable in \code{DirectAdjusted} object
-##'
-##' @param x \code{DirectAdjusted} model
-##' @return Name of treatment in model.
-##' @export
-##' @examples
-##' data(simdata)
-##' des <- rct_design(z ~ unitid(cid1, cid2), data = simdata)
-##' mod <- lm(y ~ z, data = simdata, weights = ett(des))
-##' damod <- as.lmitt(mod)
-##' damod$coef[treatment_name(damod)]
-##' des2 <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
-##'                    dichotomy = dose > 200 ~ . )
-##' mod2 <- lm(y ~ assigned(), data = simdata, weights = ett(des2))
-##' damod2 <- as.lmitt(mod2)
-##' damod2$coef[treatment_name(damod2)]
-treatment_name <- function(x) {
-
-  cnames <- names(x$coefficients)
-  assigned_regexp <- "assigned\\([^)]*\\)"
-  assigned_match <- regmatches(cnames, regexpr(assigned_regexp, cnames))
-  if (length(unique(assigned_match)) > 1) {
-    stop(paste("Differing `assigned()` calls found;",
-               " all `assigned()` in formula must be identical."))
-  }
-  if (length(assigned_match) > 0) {
-    return(assigned_match[1])
-  }
-
-  zname <- var_names(x@Design, "t")
-  if (zname %in% cnames) {
-      # If treatment variable name is found in coefficients, return it
-      return(zname)
+##' (Internal) Obtain which variaiton of \code{assigned()}, \code{a.()} or
+##' \code{z.()} is used in the model
+##' @title Treatment variable name
+##' @param object \code{DirectAdjusted} object
+##' @return Character string identifying the name (e.g "assigned()" or
+##'   "a.(des)")
+##' @keywords internal
+.txt_fn <- function(object) {
+  cs <- names(object$coefficients)
+  found_assigned <- FALSE
+  if (any(grepl("assigned\\(.*\\)", cs))) {
+    found_assigned <- TRUE
+    assigned_form <- regmatches(cs, regexpr("assigned\\(.*\\)", cs))
+    if (length(unique(assigned_form)) > 1) {
+      stop("Differing forms of `assigned()` found. Keep form consistent.")
     }
-  stop(paste("Treatment", zname, "or `assigned()` must be found in formula"))
+    assigned_form <- assigned_form[1]
+  }
+  found_a. <- FALSE
+  if (any(grepl("a\\.\\(.*\\)", cs))) {
+    found_a. <- TRUE
+    a._form <- regmatches(cs, regexpr("a\\.\\(.*\\)", cs))
+    if (length(unique(a._form)) > 1) {
+      stop("Differing forms of `a.()` found. Keep form consistent.")
+    }
+    a._form <- a._form[1]
+  }
+  found_z. <- FALSE
+  if (any(grepl("z\\.\\(.*\\)", cs))) {
+    found_z. <- TRUE
+    z._form <- regmatches(cs, regexpr("z\\.\\(.*\\)", cs))
+    if (length(unique(z._form)) > 1) {
+      stop("Differing forms of `z.()` found. Keep form consistent.")
+    }
+    z._form <- z._form[1]
+
+  }
+
+  if (sum(found_assigned, found_a., found_z.) > 1) {
+    stop(paste("Differing treatment identification (`assigned()`, `a.()`",
+               " or `z.()`) found. Only one can be used."))
+  }
+  if (sum(found_assigned, found_a., found_z.) == 0) {
+    stop("No treatment variable found")
+  }
+
+  if (found_assigned) {
+    return(assigned_form)
+  }
+  if (found_a.) {
+    return(a._form)
+  }
+  if (found_z.) {
+    return(z._form)
+  }
+  stop("This error should never be hit!")
+  return(NULL)
+
+
 }

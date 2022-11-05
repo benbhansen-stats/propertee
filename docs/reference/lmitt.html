@@ -66,7 +66,7 @@ accounting for the study design.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, <span class="va">design</span>, absorb <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for formula</span></span>
-<span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, absorb <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, <span class="va">design</span>, absorb <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for lm</span></span>
 <span><span class="fu">lmitt</span><span class="op">(</span><span class="va">obj</span>, design <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -99,7 +99,10 @@ assignemnt/clusters identified in the <code>Design</code>. Excluded in
 
 <dt>...</dt>
 <dd><p>Additional arguments passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. Ignored if <code>obj</code>
-is already an <code>lm</code> object.</p></dd>
+is already an <code>lm</code> object. If <code>weights=</code> is passed, it can be
+either a call to <code><a href="WeightCreators.html">ate()</a></code> or <code><a href="WeightCreators.html">ett()</a></code>, or if no additional
+arguments or manipulations of those weights are needed, the strings
+<code>"ate"</code> or <code>"ett"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

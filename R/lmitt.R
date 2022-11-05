@@ -194,7 +194,12 @@ lmitt.formula <- function(obj,
     } else if (tolower(wt) == "ett") {
       mf$weights <- quote(ett())
     } else {
-      stop("Invalid weights= argument")
+      warning(paste("Character other than \"ate\" or \"ett\" passed to",
+                    "`weights=` argument.\nIf you are trying to pass a",
+                    "character to the internal `lm` you can disregard this",
+                    "warning.\nIf you are attemping to use `flexida`\'s",
+                    "weight generation, only \"ate\" and \"ett\" are",
+                    "accepted."))
     }
   }
 
@@ -205,8 +210,6 @@ lmitt.formula <- function(obj,
   mf[[2L]] <- obj
 
   model <- eval(mf, parent.frame())
-
-  model$call[[1]] <- as.name("lmitt")
 
   return(as.lmitt(model, design))
 

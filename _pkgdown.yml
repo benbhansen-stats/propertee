@@ -26,7 +26,7 @@ reference:
 - contents:
     - var_names
     - var_table
-    - treatment_table
+    - design_table
     - design_data_concordance
     - is_dichotomized
     - get_structure
@@ -71,7 +71,7 @@ reference:
     - show,DirectAdjusted-method
     - summary.DirectAdjusted
     - print.summary.DirectAdjusted
-    - treatment_name
+    - .txt_fn
     - vcov.DirectAdjusted
     - vcovDA
     - .absorbed
