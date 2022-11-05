@@ -196,7 +196,7 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
   nuoas <- nrow(des@structure)
   
   m <- as.lmitt(
-    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
   expect_error(.get_b12(m, cluster = c("cid3")),
@@ -553,7 +553,7 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   nuoas <- nrow(des@structure)
   
   m <- as.lmitt(
-    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
   expect_error(.get_b22(m, cluster = c("cid3")),
@@ -857,7 +857,7 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
   nuoas <- nrow(des@structure)
   
   m <- as.lmitt(
-    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
   
   expect_error(.get_b11(m, cluster = c("cid3")),
@@ -875,7 +875,7 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
   des <- rct_design(z ~ uoa(cid1), data = simdata)
   
   m <- as.lmitt(
-    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   uoas <- factor(simdata$cid1)
   nuoas <- length(levels(uoas))
