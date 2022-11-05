@@ -5,7 +5,20 @@ NULL
 #' @param object A \code{DirectAdjusted} model
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR0"
-#' @param ... Arguments to be passed to the internal variance estimation function
+#' @param ... Arguments to be passed to the internal variance estimation function.
+#' One argument a user may want to manually override is the `cluster` argument.
+#' Users may be interested in clustering standard errors at levels different than
+#' the unit of assignment level specified in the \code{DirectAdjusted} model's
+#' \code{Design}. In this case, they may specify column names in the ITT/covariance
+#' adjustment model datasets corresponding to a different clustering level, or
+#' dataframes, lists, matrices, or vectors indicating the clusters units pertain
+#' to.\n\n\code{.get_b11()} and \code{.get_b12()} tolerate NA values for manually
+#' provided cluster ID's, since the covariance adjustment model may be fit to a
+#' sample larger than the quasiexperimental sample. In this case, each unit with
+#' an NA cluster ID will be treated as an independent observation. \code{.get_b22()},
+#' however, will fail if the new cluster levels contain NA's because all units
+#' in the quasiexperimental sample should have well-defined design information.
+#' 
 #' @export
 #' @rdname var_estimators
 vcovDA <- function(object, type = c("CR0"), ...) {
@@ -41,15 +54,15 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
   
   m <- match.call()
-  if ("type" %in% names(m) | "cluster" %in% names(m)) {
-    stop(paste("Cannot override the `type` or `cluster` arguments for meat",
+  if ("type" %in% names(m)) {
+    stop(paste("Cannot override the `type` argument for meat",
                "matrix computations"))
   }
 
   # compute blocks
   a21 <- .get_a21(x)
   a11inv <- .get_a11_inverse(x)
-  b12 <- .get_b12(x)
+  b12 <- .get_b12(x, ...)
 
   a22inv <- .get_a22_inverse(x)
   b22 <- .get_b22(x, type = "HC0", ...)
@@ -81,7 +94,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
-.get_b12 <- function(x) {
+.get_b12 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -92,18 +105,70 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                "for direct adjustment standard errors"))
   }
 
-  uoanames <- var_names(x@Design, "u")
-  zname <- var_names(x@Design, "t")
+  cluster_cols <- var_names(x@Design, "u")
+  trt_col <- var_names(x@Design, "t")
 
-  # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0
-  if (ncol(sl@keys) == 1) {
-    keys <- sl@keys[, 1]
+  # If cluster argument is NULL, use the `keys` dataframe created at initialization,
+  # otherwise recreate given the desired clustering columns
+  dots <- list(...)
+  if (is.null(dots$cluster)) {
+    keys <- sl@keys
   } else {
-    keys <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
-    keys[grepl("NA", keys)] <- NA_integer_
+    if (inherits(dots$cluster, "character")) {
+      cluster_cols <- dots$cluster
+      wide_frame <- tryCatch(
+        stats::expand.model.frame(sl@fitted_covariance_model, cluster_cols,
+                                  na.expand = TRUE)[cluster_cols],
+        error = function(e) {
+          data <- eval(sl@fitted_covariance_model$call$data,
+                       envir = environment(formula(sl@fitted_covariance_model)))
+          stop(paste("The columns",
+                     paste(setdiff(cluster_cols, colnames(data)), collapse = ", "),
+                     "are missing from the covariance adjustment model dataset"),
+               call. = FALSE)
+        })
+    } else if (inherits(dots$cluster, "data.frame")) {
+      cluster_cols <- colnames(dots$cluster)
+      wide_frame <- dots$cluster
+    } else if (inherits(dots$cluster, c("matrix", "list"))) {
+      wide_frame <- as.data.frame(dots$cluster)
+      cluster_cols <- colnames(wide_frame)
+    } else if (inherits(dots$cluster, c("integer", "numeric", "factor"))) {
+      m <- match.call()
+      cluster_cols <- deparse(m$cluster)
+      wide_frame <- as.data.frame(dots$cluster)
+      colnames(wide_frame) <- cluster_cols
+    } else {
+      stop(paste("If overriding `cluster` argument for meat matrix calculations,",
+                 "must provide a data frame, matrix, list, numeric/factor vector, or",
+                 "a character vector specifying column names that exist in both the ITT and",
+                 "covariance model datasets"))
+    }
+    
+    # Check to see if provided column names overlap with design
+    missing_des_cols <- setdiff(cluster_cols, colnames(x@Design@structure))
+    if (length(missing_des_cols) > 0) {
+      stop(paste("The following columns in the `cluster` argument cannot be found",
+                 "in the DirectAdjusted object's Design:",
+                 paste(missing_des_cols, collapse = ", ")))
+    }
+    keys <- .merge_preserve_order(wide_frame,
+                                  unique(x@Design@structure[c(cluster_cols, trt_col)]),
+                                  all.x = TRUE,
+                                  sort = FALSE)
+    keys[is.na(keys[, trt_col]), cluster_cols] <- NA
+    keys <- keys[, cluster_cols, drop = FALSE]
   }
 
-  no_uoas_overlap <- all(is.na(unique(keys)))
+  if (ncol(keys) == 1) {
+    uoas <- keys[, 1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), keys)
+    uoas[grepl("NA", uoas)] <- NA_character_
+  }
+
+  # Check number of overlapping clusters n_QC; if n_QC == 0, return 0
+  no_uoas_overlap <- all(is.na(unique(uoas)))
   if (no_uoas_overlap) {
     return(matrix(0,
                   nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
@@ -114,10 +179,10 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
-  cmod_eqns <- Reduce(rbind, by(cmod_estfun, keys, cmod_aggfun))
+  cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, uoanames, na.expand = TRUE)[uoanames]
+  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
   } else {
@@ -125,12 +190,12 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
   }
 
-  msk <- Q_uoas %in% unique(keys[!is.na(keys)])
+  msk <- Q_uoas %in% unique(uoas[!is.na(uoas)])
   damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
   damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
 
-  matmul_func <- if (length(unique(keys[!is.na(keys)])) == 1) tcrossprod else crossprod
+  matmul_func <- if (length(unique(uoas[!is.na(uoas)])) == 1) tcrossprod else crossprod
   return(matmul_func(cmod_eqns, damod_eqns))
 }
 
@@ -197,18 +262,42 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
   nq <- nrow(sandwich::estfun(x))
 
-  # Get units of assignment for clustering
+  # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoanames <- var_names(x@Design, "u")
-    uoas <- stats::expand.model.frame(x, uoanames)[, uoanames, drop = FALSE]
-    if (ncol(uoas) == 1) {
-      uoas <- factor(uoas[,1])
-    } else {
-      uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
-    }
-    dots$cluster <- uoas
+    uoas <- stats::expand.model.frame(x,
+                                      var_names(x@Design, "u"))[, var_names(x@Design, "u"),
+                                                                drop = FALSE]
+  } else if (inherits(dots$cluster, "character")) {
+    uoas <- tryCatch(
+      stats::expand.model.frame(x, dots$cluster)[, dots$cluster, drop = FALSE],
+      error = function(e) {
+        data <- eval(x$call$data,
+                     envir = environment(formula(x)))
+        stop(paste("The columns",
+                   paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
+                   "are missing from the ITT model dataset"),
+             call. = FALSE)
+      })
+  } else if (inherits(dots$cluster, "data.frame")) {
+    uoas <- dots$cluster
+  } else if (inherits(dots$cluster, c("matrix", "list", "integer", "numeric", "factor"))) {
+    uoas <- as.data.frame(dots$cluster)
+  } else {
+    stop(paste("If overriding `cluster` argument for meat matrix calculations,",
+               "must provide a data frame, matrix, list, numeric/factor vector, or",
+               "a character vector specifying column names in the ITT model dataset"))
   }
+
+  # NOTE: if user passes in matrix with multiple columns, they are concatenated
+  # and forced to be one factor column (as we do in other situations, since we
+  # assume nested clusters only)
+  if (ncol(uoas) == 1) {
+    uoas <- factor(uoas[,1])
+  } else {
+    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
+  }
+  dots$cluster <- uoas
   dots$x <- x
 
   out <- do.call(sandwich::meatCL, dots) * nq
@@ -274,26 +363,46 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   # Get units of assignment for clustering
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    if (ncol(sl@keys) == 1) {
-      uoas <- sl@keys[, 1]
-    } else {
-      uoas <- Reduce(function(...) paste(..., sep = "_"), sl@keys)
-      uoas[grepl("NA", uoas)] <- NA_integer_
-    }
-
-    # Replace NA's for rows not in the experimental design with a unique cluster ID
-    nuoas <- length(unique(uoas))
-    nas <- is.na(uoas)
-    uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
-    uoas <- factor(uoas)
-    nuoas <- length(unique(uoas))
-
-    # if the covariance model only uses one cluster, treat units as independent
-    if (nuoas == 1) {
-      uoas <- seq_len(length(uoas))
-    }
-    dots$cluster <- uoas
+    uoas <- sl@keys
+  } else if (inherits(dots$cluster, "character")) {
+    uoas <- tryCatch(
+      stats::expand.model.frame(cmod, dots$cluster)[, dots$cluster, drop = FALSE],
+      error = function(e) {
+        data <- eval(cmod$call$data,
+                     envir = environment(formula(cmod)))
+        stop(paste("The columns",
+                   paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
+                   "are missing from the covariance adjustment model dataset"),
+             call. = FALSE)
+      })
+  } else if (inherits(dots$cluster, "data.frame")) {
+    uoas <- dots$cluster
+  } else if (inherits(dots$cluster, c("matrix", "list", "integer", "numeric", "factor"))) {
+    uoas <- as.data.frame(dots$cluster)
+  } else {
+    stop(paste("If overriding `cluster` argument for meat matrix calculations,",
+               "must provide a data frame, matrix, list, numeric/factor vector, or",
+               "a character vector specifying column names in the covariance model dataset"))
   }
+
+  # Replace NA's for rows not in the experimental design with a unique cluster ID
+  if (ncol(uoas) == 1) {
+    uoas <- uoas[, 1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), uoas)
+    uoas[grepl("NA", uoas)] <- NA_character_
+  }
+  nuoas <- length(unique(uoas))
+  nas <- is.na(uoas)
+  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  uoas <- factor(uoas)
+  nuoas <- length(unique(uoas))
+
+  # if the covariance model only uses one cluster, treat units as independent
+  if (nuoas == 1) {
+    uoas <- seq_len(length(uoas))
+  }
+  dots$cluster <- uoas
   dots$x <- cmod
 
   out <- do.call(sandwich::meatCL, dots) * nc

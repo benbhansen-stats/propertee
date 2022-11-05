@@ -127,9 +127,89 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
     by((m$weights * m$residuals * model.matrix(m))[msk, , drop = FALSE],
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
-  
+
   expect_equal(.get_b12(m),
                t(cmod_eqns) %*% m_eqns)
+})
+
+test_that(".get_b12 fails with invalid custom cluster argument", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b12(m, cluster = c("cid3")),
+               "cid3 are missing from the covariance adjustment model dataset")
+  expect_error(.get_b12(m, cluster = c(TRUE, FALSE)),
+               "must provide a data frame")
+  bid1 <- simdata$bid
+  expect_error(.get_b12(m, cluster = bid1),
+               "in the DirectAdjusted object's Design: bid1")
+})
+
+test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
+  data(simdata)
+  simdata[simdata$bid == 1, "z"] <- 0
+  simdata[simdata$bid == 2, "z"] <- 0
+  simdata[simdata$bid == 3, "z"] <- 1
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  cmod_eqns <- Reduce(
+    rbind,
+    by(estfun(cmod), list(simdata$cid1, simdata$cid2), colSums)
+  )
+  dmod_eqns <- Reduce(
+    rbind,
+    by(estfun(m), list(simdata$cid1, simdata$cid2), colSums)
+  )
+  expected <- crossprod(cmod_eqns, dmod_eqns)
+  
+  # default (columns specified in `cluster` argument of Design) matches expected
+  expect_equal(.get_b12(m), expected)
+  
+  # test character vector cluster argument
+  expect_equal(.get_b12(m, cluster = c("cid1", "cid2")), expected)
+  
+  # test data frame cluster argument
+  expect_equal(.get_b12(m, cluster = simdata[, c("cid1", "cid2")]), expected)
+  
+  # test matrix cluster argument
+  uoas <- cbind(simdata$cid1, simdata$cid2)
+  colnames(uoas) <- c("cid1", "cid2")
+  expect_equal(.get_b12(m, cluster = uoas), expected)
+  
+  # test list cluster argument
+  expect_equal(.get_b12(m, cluster = list(cid1 = simdata[, "cid1"],
+                                          cid2 = simdata[, "cid2"])), expected)
+  
+  # test factor/numeric/integer cluster arguments (change level to "bid")
+  cmod_eqns <- Reduce(
+    rbind,
+    by(estfun(cmod), simdata$bid, colSums)
+  )
+  dmod_eqns <- Reduce(
+    rbind,
+    by(estfun(m), simdata$bid, colSums)
+  )
+  expected <- crossprod(cmod_eqns, dmod_eqns)
+
+  bid <- simdata$bid
+  expect_equal(.get_b12(m, cluster = bid), expected)
+  
+  bid <- as.numeric(bid)
+  expect_equal(.get_b12(m, cluster = bid), expected)
+  
+  bid <- factor(bid)
+  expect_equal(.get_b12(m, cluster = bid), expected)
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -427,8 +507,26 @@ test_that(".get_b22 returns correct value for lm object w offset", {
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
+test_that(".get_b22 fails with invalid custom cluster argument", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b22(m, cluster = c("cid3")),
+               "cid3 are missing from the ITT model dataset")
+  expect_error(.get_b22(m, cluster = c(TRUE, FALSE)),
+               "must provide a data frame")
+  expect_error(.get_b22(m, cluster = c(seq_len(nrow(simdata) - 1), NA_integer_)),
+               "cannot handle NAs")
+})
 
-test_that(".get_b22 allows custom cluster argument to meatCL", {
+test_that(".get_b22 produces correct estimates with valid custom cluster argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
@@ -442,8 +540,7 @@ test_that(".get_b22 allows custom cluster argument to meatCL", {
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
-  uoas <- Reduce(function(...) paste(..., sep = "_"),
-                 stats::expand.model.frame(m, uoanames)[, uoanames])
+
   form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
   uoa_matrix <- stats::model.matrix(as.formula(form),
                                     stats::expand.model.frame(m, uoanames)[, uoanames])
@@ -451,8 +548,42 @@ test_that(".get_b22 allows custom cluster argument to meatCL", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
+  # test character vector cluster argument
+  expect_equal(.get_b22(m, cluster = uoanames, type = "HC0"),
+               vmat * nuoas / (nuoas - 1L))
+  
+  # test data frame cluster argument
+  expect_equal(.get_b22(m, cluster = simdata[, uoanames], type = "HC0"),
+               vmat * nuoas / (nuoas - 1L))
+  
+  # test matrix cluster argument
+  uoas <- Reduce(cbind, lapply(uoanames, function(x) simdata[[x]]))
+  colnames(uoas) <- uoanames
   expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
+  
+  # test list cluster argument
+  uoas <- lapply(uoanames, function(x) simdata[[x]])
+  names(uoas) <- uoanames
+  expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
+               vmat * nuoas / (nuoas - 1L))
+  
+  # test factor/numeric/integer cluster arguments
+  form <- "~ -1 + as.factor(bid)"
+  bid_matrix <- stats::model.matrix(as.formula(form),
+                                    stats::expand.model.frame(m, "bid")[, "bid",
+                                                                        drop = FALSE])
+  
+  bid_eqns <- crossprod(bid_matrix, WX)
+  bid_vmat <- crossprod(bid_eqns)
+  nbids <- length(unique(simdata[, "bid"]))
+  
+  expect_equal(.get_b22(m, cluster = simdata$bid, type = "HC0"),
+               bid_vmat * nbids / (nbids - 1L))
+  expect_equal(.get_b22(m, cluster = as.numeric(simdata$bid), type = "HC0"),
+               bid_vmat * nbids / (nbids - 1L))
+  expect_equal(.get_b22(m, cluster = factor(simdata$bid), type = "HC0"),
+               bid_vmat * nbids / (nbids - 1L))
 })
 
 test_that(".get_b22 with one clustering column", {
@@ -680,27 +811,73 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
   expect_equal(.get_b11(m), expected)
 })
 
-test_that(".get_b11 accepts custom cluster argument for meatCL", {
+test_that(".get_b11 fails with invalid custom cluster argument", {
   data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b11(m, cluster = c("cid3")),
+               "cid3 are missing from the covariance adjustment model dataset")
+  expect_error(.get_b11(m, cluster = c(TRUE, FALSE)),
+               "must provide a data frame")
+})
 
+test_that(".get_b11 produces correct estimates with valid custom cluster argument", {
+  data(simdata)
+  
   simdata[simdata$cid1 == 4, "z"] <- 0
   simdata[simdata$cid1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ uoa(cid1), data = simdata)
-
+  
   m <- as.lmitt(
     lm(y ~ z, data = simdata, weights = ate(des), offset = cov_adj(cmod)))
-
+  
   uoas <- factor(simdata$cid1)
   nuoas <- length(levels(uoas))
-
+  
   nc <- sum(summary(cmod)$df[1L:2L])
   expected <- (
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
-
+  
+  # test character vector cluster argument
+  expect_equal(.get_b11(m, cluster = "cid1"), expected)
+  
+  # test data frame cluster argument
+  expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
+  
+  # test matrix cluster argument
+  uoas <- as.matrix(simdata[, "cid1"])
+  colnames(uoas) <- "cid1"
+  expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
+  
+  # test list cluster argument
+  expect_equal(.get_b11(m, cluster = list(cid1 = simdata[, "cid1"])),
+               expected)
+  
+  # test factor/numeric/integer cluster arguments
+  expect_equal(.get_b11(m, cluster = simdata[, "cid1"]), expected)
+  expect_equal(.get_b11(m, cluster = as.numeric(simdata[, "cid1"])), expected)
   expect_equal(.get_b11(m, cluster = uoas), expected)
+  
+  # test different clustering level
+  bids <- factor(simdata[, "bid"])
+  nbids <- length(levels(bids))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), simdata[, "bid"], colSums))) *
+      nbids / (nbids - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  expect_equal(.get_b11(m, cluster = "bid"), expected)
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {

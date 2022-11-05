@@ -9,7 +9,7 @@
 \alias{.get_a21}
 \title{(Internal) Compute variance blocks}
 \usage{
-.get_b12(x)
+.get_b12(x, ...)
 
 .get_a22_inverse(x)
 
