@@ -150,13 +150,15 @@ separately.)
 Therefore, to estimate the treatment effect in our example, we can run:
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, design = des)
+te <- lmitt(readk ~ 1, data = STARdata, design = des)
+summary(te)
 ```
 
 The data includes ethnicity; we can estimate subgroup effects by ethnicity.
 
 ```{r}
-lmitt(readk ~ ethnicity, data = STARdata, design = des)
+te_s <- lmitt(readk ~ ethnicity, data = STARdata, design = des)
+summary(te_s)
 ```
 
 ## Including design weights
@@ -191,10 +193,10 @@ The weight functions also function within normal model calls such as `lm()` or
 lm(readk ~ starkbinary, data = STARdata, weights = ate(des))
 ```
 
-Note the neccessity to include the `Design` as an argument to `ate()`; `ate()`
-and `ett()` attempt to locate both the `Design` and `data` inside their call,
-however if needed, both can be manually included. For example, to obtain the
-weights indepndently on the model:
+Note the neccessity to include the `Design` as an argument to `ate()` when
+called within `lm()`; `ate()` and `ett()` attempt to locate both the `Design`
+and `data` inside their call, however if needed, both can be manually included.
+For example, to obtain the weights indepndently on the model:
 
 ```{r}
 head(ate(des, data = STARdata))
@@ -244,8 +246,6 @@ to avoid estimating, the `absorb=TRUE` argument can be passed.
 ```{r}
 lmitt(readk ~ 1, data = STARdata, design = des, absorb = TRUE)
 ```
-
-# Standard error and confidence bound calculation
 
 
 # Additional topics
