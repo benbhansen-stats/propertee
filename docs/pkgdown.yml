@@ -6,10 +6,11 @@ articles:
   LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
   RDD: RDD.html
   design_based_SEs: design_based_SEs.html
+  intro-to-flexida: intro-to-flexida.html
   covadj_with_clustering: not-for-cran/covadj_with_clustering.html
   non-binary-weights: not-for-cran/non-binary-weights.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2022-10-31T18:05Z
+last_built: 2022-11-14T16:52Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
