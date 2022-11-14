@@ -4,10 +4,10 @@ test_that("absorb= argument", {
   des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
                    data = simdata)
 
-  da <- lmitt(y ~ dose, weights = ate(), data = simdata, design = des)
+  da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
   expect_length(coefficients(da), 2)
 
-  da <- lmitt(y ~ dose, weights = ate(), data = simdata, absorb = TRUE, design = des)
+  da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
   expect_true(length(da$coefficients) > 2)
 
   # User passing .absorb should error
