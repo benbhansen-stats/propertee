@@ -55,10 +55,10 @@ as.lmitt <- function(x, design = NULL) {
   }
 
   ### 10/31/22 JE - The below causes a ton of errors in the test suite that do
-  ### NOT show up interactively and thuis are extremely challenging to debug. It
+  ### NOT show up interactively and thus are extremely challenging to debug. It
   ### is supposed to replace the treatment variable name with `assigned()` and
   ### refit the model. I've spent a few days trying to debug this and failing,
-  ### so going to leave it as unfixable for the moment, and instead simply erro
+  ### so going to leave it as unfixable for the moment, and instead simply error
   ### if the user does not include `assigned()` in the `lm`.
   ## # Update formula to use `assigned()` if needed
   ## ff <- stats::formula(x)
