@@ -78,7 +78,7 @@
       <img src="" class="logo" alt=""><h1>Regression Discontinuity Designs</h1>
                         <h4 data-toc-skip class="author">Adam Sales</h4>
             
-            <h4 data-toc-skip class="date">2022-11-14</h4>
+            <h4 data-toc-skip class="date">2022-11-29</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/flexida/blob/HEAD/vignettes/RDD.Rmd" class="external-link"><code>vignettes/RDD.Rmd</code></a></small>
       <div class="d-none name"><code>RDD.Rmd</code></div>
@@ -285,12 +285,7 @@ recommended in Sales &amp; Hansen (2020):</p>
 <code class="sourceCode R"><span><span class="va">g2</span> <span class="op">&lt;-</span></span>
 <span><span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"robustbase"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="fu">robustbase</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/robustbase/man/lmrob.html" class="external-link">lmrob</a></span><span class="op">(</span><span class="va">nextGPA</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/stats/poly.html" class="external-link">poly</a></span><span class="op">(</span><span class="va">R</span>,<span class="fl">5</span><span class="op">)</span><span class="op">+</span><span class="va">Z</span>,data<span class="op">=</span><span class="va">lsoSynthW</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="kw">else</span> <span class="va">g1</span></span>
-<span><span class="co">#&gt; Warning in lmrob.S(x, y, control = control): find_scale() did not converge in</span></span>
-<span><span class="co">#&gt; 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span></span>
-<span></span>
-<span><span class="co">#&gt; Warning in lmrob.S(x, y, control = control): find_scale() did not converge in</span></span>
-<span><span class="co">#&gt; 'maxit.scale' (= 200) iterations with tol=1e-10, last rel.diff=0</span></span></code></pre></div>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="va">g1</span></span></code></pre></div>
 <p>[Put something here evaluating them?]</p>
 </div>
 <div class="section level3">

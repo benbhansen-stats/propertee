@@ -22,6 +22,8 @@ reference:
     - .convert_to_data.frame
     - .update_structure
     - .update_call_formula
+    - .design_accessors_newdata_validate
+    - .get_col_from_new_data
 - subtitle: Helper functions for extracting useful information
 - contents:
     - var_names

@@ -64,30 +64,30 @@ extraction or replacement.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, binary <span class="op">=</span> <span class="cn">FALSE</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, binary <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, binary <span class="op">=</span> <span class="cn">FALSE</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
 <span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
-<span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
 <span><span class="fu">units_of_assignment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
-<span><span class="fu">clusters</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">clusters</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">clusters</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">clusters</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">clusters</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
@@ -104,20 +104,20 @@ extraction or replacement.</p>
 <span><span class="co"># S4 method for Design</span></span>
 <span><span class="fu">unitids</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
-<span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
 <span><span class="fu">blocks</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
-<span><span class="fu">forcings</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">forcings</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">forcings</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="fu">forcings</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">forcings</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
@@ -131,10 +131,6 @@ extraction or replacement.</p>
 <dd><p><code>Design</code> object</p></dd>
 
 
-<dt>...</dt>
-<dd><p>Ignored.</p></dd>
-
-
 <dt>binary</dt>
 <dd><p>If <code>FALSE</code> (default), return a <code>data.frame</code>
 containing the named treatment variable. If <code>TRUE</code> and <code>x</code> has a
@@ -144,6 +140,24 @@ binary treatment variable with the name <code>"z__"</code>. Errors on
 If <code>"ifany"</code>, returns a binary treatment if possible (if treatment is
 already binary, or there's a valid <code>@dichotomy</code>), otherwise return
 original treatment.</p></dd>
+
+
+<dt>newdata</dt>
+<dd><p>Optionally an additional <code>data.frame</code>. If passed, and
+the unit of assignment variable is found in <code>newdata</code>, then the
+requested variable type for each unit of <code>newdata</code> is returned. See
+<code>by</code> argument if the name of the unit of assignment differs.</p></dd>
+
+
+<dt>by</dt>
+<dd><p>optional; named vector or list connecting names of cluster/unit of
+assignment variables in <code>design</code> to cluster/unit of assignment
+variables in <code>data</code>. Names represent variables in the Design; values
+represent variables in the data. Only needed if variable names differ.</p></dd>
+
+
+<dt>...</dt>
+<dd><p>Ignored.</p></dd>
 
 
 <dt>value</dt>
