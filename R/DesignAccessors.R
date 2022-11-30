@@ -2,7 +2,7 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x, ...) {
+setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
   standardGeneric("treatment")
 })
 
@@ -34,21 +34,32 @@ setGeneric("treatment", function(x, ...) {
 ##'   If \code{"ifany"}, returns a binary treatment if possible (if treatment is
 ##'   already binary, or there's a valid \code{@dichotomy}), otherwise return
 ##'   original treatment.
+##' @param newdata Optionally an additional \code{data.frame}. If passed, and
+##'   the unit of assignment variable is found in \code{newdata}, then the
+##'   requested variable type for each unit of \code{newdata} is returned. See
+##'   \code{by} argument if the name of the unit of assignment differs.
+##' @param by optional; named vector or list connecting names of cluster/unit of
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
 ##' @param ... Ignored.
 ##' @return \code{data.frame} containing treatment variable
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
+setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
   binary <- as.character(binary)
   if (!binary %in% c("TRUE", "FALSE", "ifany")) {
     stop(paste("Valid input to `binary=` argument include only TRUE, ",
                "FALSE, and 'ifany'."))
   }
-
+  .design_accessors_newdata_validate(newdata, by)
 
   # Case 1: binary = FALSE
   if (binary == FALSE) {
     # Return original treatment
+    if (!is.null(newdata)) {
+      return(.get_col_from_new_data(x, newdata, type = "t", by))
+    }
     return(x@structure[x@column_index == "t"])
   }
 
@@ -58,12 +69,19 @@ setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
     # Case 2a: binary = TRUE, treatment is stored as binary
     if (has_binary_treatment(x)) {
       # Treatment is binary, return original treatment
+      if (!is.null(newdata)) {
+        return(.get_col_from_new_data(x, newdata, type = "t", by))
+      }
       return(x@structure[x@column_index == "t"])
     }
 
     # Case 2b: binary = TRUE, stored treatment is non-binary but has dichotomy
     if (is_dichotomized(x)) {
       # Has dichotomization, return that
+      if (!is.null(newdata)) {
+        treatment(x) <- .bin_txt(x)
+        return(.get_col_from_new_data(x, newdata, type = "t", by))
+      }
       return(data.frame(z__ = .bin_txt(x)))
     }
 
@@ -78,12 +96,19 @@ setMethod("treatment", "Design", function(x, binary = FALSE, ...) {
     # Case 3a: binary = "ifany", no dichotomy
     if (!is_dichotomized(x)) {
       # Return original treatment
+      if (!is.null(newdata)) {
+        return(.get_col_from_new_data(x, newdata, type = "t", by))
+      }
       return(x@structure[x@column_index == "t"])
     }
 
     # Case 3b: binary = "ifany", dichotomy
     if (is_dichotomized(x)) {
       # Has dichotomization, return that
+      if (!is.null(newdata)) {
+        treatment(x) <- .bin_txt(x)
+        return(.get_col_from_new_data(x, newdata, type = "t", by))
+      }
       return(data.frame(z__ = .bin_txt(x)))
     }
   }
@@ -189,18 +214,22 @@ setMethod("treatment<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("units_of_assignment", function(x) {
+setGeneric("units_of_assignment", function(x, newdata = NULL, by = NULL) {
   standardGeneric("units_of_assignment")
 })
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("units_of_assignment", "Design", function(x) {
+setMethod("units_of_assignment", "Design", function(x, newdata = NULL, by = NULL) {
   if (x@unit_of_assignment_type == "unitid") {
     stop("Design specified with `unitid()`, not `unit_of_assignment()`")
   }
   if (x@unit_of_assignment_type == "cluster") {
     stop("Design specified with `cluster()`, not `unit_of_assignment()`")
+  }
+  .design_accessors_newdata_validate(newdata, by)
+  if (!is.null(newdata)) {
+    return(.get_col_from_new_data(x, newdata, type = "u", by))
   }
   return(x@structure[x@column_index == "u"])
 })
@@ -241,16 +270,20 @@ setMethod("units_of_assignment<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("clusters", function(x) standardGeneric("clusters"))
+setGeneric("clusters", function(x, newdata = NULL, by = NULL) standardGeneric("clusters"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("clusters", "Design", function(x) {
+setMethod("clusters", "Design", function(x, newdata = NULL, by = NULL) {
   if (x@unit_of_assignment_type == "unitid") {
     stop("Design specified with `unitid()`, not `cluster()`")
   }
   if (x@unit_of_assignment_type == "unit_of_assignment") {
     stop("Design specified with `unit_of_assignment()`, not `cluster()`")
+  }
+  .design_accessors_newdata_validate(newdata, by)
+  if (!is.null(newdata)) {
+    return(.get_col_from_new_data(x, newdata, type = "u", by))
   }
   return(x@structure[x@column_index == "u"])
 })
@@ -337,11 +370,15 @@ setMethod("unitids<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("blocks", function(x) standardGeneric("blocks"))
+setGeneric("blocks", function(x, newdata = NULL, by = NULL) standardGeneric("blocks"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("blocks", "Design", function(x) {
+setMethod("blocks", "Design", function(x, newdata = NULL, by = NULL) {
+  .design_accessors_newdata_validate(newdata, by)
+  if (!is.null(newdata)) {
+    return(.get_col_from_new_data(x, newdata, type = "b", by))
+  }
   return(x@structure[x@column_index == "b"])
 })
 
@@ -364,13 +401,17 @@ setMethod("blocks<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("forcings", function(x) standardGeneric("forcings"))
+setGeneric("forcings", function(x, newdata = NULL, by = NULL) standardGeneric("forcings"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("forcings", "Design", function(x) {
+setMethod("forcings", "Design", function(x, newdata = NULL, by = NULL) {
   if (x@type != "RD") {
     stop("Forcing variable only used in RD designs")
+  }
+  .design_accessors_newdata_validate(newdata, by)
+  if (!is.null(newdata)) {
+    return(.get_col_from_new_data(x, newdata, type = "f", by))
   }
   return(x@structure[x@column_index == "f"])
 })
@@ -516,7 +557,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   return(design)
   }
 
-##' Helper function to update the \code{call} with the appropriate variable names after they've been modified. Called within \code{Design} replacers.
+##' Helper function to update the \code{call} with the appropriate variable
+##' names after they've been modified. Called within \code{Design} replacers.
 ##'
 ##' It's return should be stuck into the design via \code{des@call$formula <-
 ##' .update_call_formula(des)}
@@ -544,4 +586,66 @@ setMethod("dichotomy<-", "Design", function(x, value) {
     form <- paste0(form, "+ forcing(", .collapse(design, "f"), ")")
   }
   return(formula(form))
+}
+
+##' @title (Internal) Extract specified \code{type} from new data set
+##' @param design A \code{Design}
+##' @param newdata A \code{data.frame}, which may or may not be the one which
+##'   was used to create \code{design}. It must have the units of assignment
+##'   variable(s) (though \code{by=} argument can be used if the name differ),
+##'   and will appropriately merge with the \code{design} the blocks, treatment
+##'   or forcings.
+##' @param type One of "t", "f", or "b".
+##' @param by optional; named vector or list connecting names of cluster/unit of
+##'   assignment variables in \code{design} to cluster/unit of assignment
+##'   variables in \code{data}. Names represent variables in the Design; values
+##'   represent variables in the data. Only needed if variable names differ.
+##' @return The column(s) belonging to the requested \code{type} in
+##' @keywords internal
+.get_col_from_new_data <- function(design, newdata, type, by = NULL) {
+
+  if (!is.null(by)) {
+    design <- .update_by(design, newdata, by)
+  }
+
+  form_for_design <- as.formula(paste("~",
+                                       paste(c(var_names(design, "u"),
+                                               var_names(design, type)),
+                                             collapse = "+"),
+                                       " - 1"))
+  form_for_newdata <- as.formula(paste("~",
+                                       paste(var_names(design, "u"),
+                                             collapse = "+"),
+                                       " - 1"))
+
+  design_data <- model.matrix(form_for_design, design@structure)
+  newdata_data <- model.matrix(form_for_newdata, newdata)
+
+  merged <- merge(design_data, newdata_data, by = var_names(design, "u"))
+
+  return(merged[var_names(design, type)])
+
+
+}
+
+##' @title (Internal) Checks newdata/by argument for design accessors
+##' @param newdata newdata argument from e.g. \code{treatment()},
+##'   \code{blocks()}, etc
+##' @param byargument from e.g. \code{treatment()},
+##'   \code{blocks()}, etc. See \code{.check_by()}
+##' @return Invisibly \code{TRUE}. Warns or errors as appropriate.
+##' @keywords internal
+.design_accessors_newdata_validate <- function(newdata, by) {
+
+  if (!is.null(newdata)) {
+    if (!is.data.frame(newdata)) {
+      warning(paste("`newdata` is not a data.frame, errors or",
+                    "unpredictable results may occur"))
+    }
+  }
+  if (!is.null(by)) {
+    .check_by(by)
+  }
+
+  invisible(TRUE)
 }

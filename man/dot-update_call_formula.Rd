@@ -14,7 +14,8 @@ variable names.}
 An updated formula
 }
 \description{
-Helper function to update the \code{call} with the appropriate variable names after they've been modified. Called within \code{Design} replacers.
+Helper function to update the \code{call} with the appropriate variable
+names after they've been modified. Called within \code{Design} replacers.
 }
 \details{
 It's return should be stuck into the design via \code{des@call$formula <-

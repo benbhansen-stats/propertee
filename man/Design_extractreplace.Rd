@@ -27,25 +27,25 @@
 \alias{forcings<-,Design-method}
 \title{Accessors and Replacers for \code{Design} objects}
 \usage{
-treatment(x, ...)
+treatment(x, binary = FALSE, newdata = NULL, by = NULL, ...)
 
-\S4method{treatment}{Design}(x, binary = FALSE, ...)
+\S4method{treatment}{Design}(x, binary = FALSE, newdata = NULL, by = NULL, ...)
 
 treatment(x) <- value
 
 \S4method{treatment}{Design}(x) <- value
 
-units_of_assignment(x)
+units_of_assignment(x, newdata = NULL, by = NULL)
 
-\S4method{units_of_assignment}{Design}(x)
+\S4method{units_of_assignment}{Design}(x, newdata = NULL, by = NULL)
 
 units_of_assignment(x) <- value
 
 \S4method{units_of_assignment}{Design}(x) <- value
 
-clusters(x)
+clusters(x, newdata = NULL, by = NULL)
 
-\S4method{clusters}{Design}(x)
+\S4method{clusters}{Design}(x, newdata = NULL, by = NULL)
 
 clusters(x) <- value
 
@@ -59,17 +59,17 @@ unitids(x) <- value
 
 \S4method{unitids}{Design}(x) <- value
 
-blocks(x)
+blocks(x, newdata = NULL, by = NULL)
 
-\S4method{blocks}{Design}(x)
+\S4method{blocks}{Design}(x, newdata = NULL, by = NULL)
 
 blocks(x) <- value
 
 \S4method{blocks}{Design}(x) <- value
 
-forcings(x)
+forcings(x, newdata = NULL, by = NULL)
 
-\S4method{forcings}{Design}(x)
+\S4method{forcings}{Design}(x, newdata = NULL, by = NULL)
 
 forcings(x) <- value
 
@@ -77,8 +77,6 @@ forcings(x) <- value
 }
 \arguments{
 \item{x}{\code{Design} object}
-
-\item{...}{Ignored.}
 
 \item{binary}{If \code{FALSE} (default), return a \code{data.frame}
 containing the named treatment variable. If \code{TRUE} and \code{x} has a
@@ -88,6 +86,18 @@ binary treatment variable with the name \code{"z__"}. Errors on
 If \code{"ifany"}, returns a binary treatment if possible (if treatment is
 already binary, or there's a valid \code{@dichotomy}), otherwise return
 original treatment.}
+
+\item{newdata}{Optionally an additional \code{data.frame}. If passed, and
+the unit of assignment variable is found in \code{newdata}, then the
+requested variable type for each unit of \code{newdata} is returned. See
+\code{by} argument if the name of the unit of assignment differs.}
+
+\item{by}{optional; named vector or list connecting names of cluster/unit of
+assignment variables in \code{design} to cluster/unit of assignment
+variables in \code{data}. Names represent variables in the Design; values
+represent variables in the data. Only needed if variable names differ.}
+
+\item{...}{Ignored.}
 
 \item{value}{Replacement. Either a \code{vector}/\code{matrix} of
 appropriate dimension, or a named \code{data.frame} if renaming variable
