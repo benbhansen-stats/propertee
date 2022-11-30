@@ -43,7 +43,7 @@ setClass("SandwichLayer",
                    Design = "Design"))
 
 setValidity("SandwichLayer", function(object) {
-  if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
+  if (nrow(object@keys) != nrow(stats::model.matrix(object@fitted_covariance_model))) {
     return(paste("Keys does not have the same number of rows as the dataset",
                  "used to fit the covariance model"))
   }

@@ -602,6 +602,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 ##'   represent variables in the data. Only needed if variable names differ.
 ##' @return The column(s) belonging to the requested \code{type} in
 ##' @keywords internal
+##' @importFrom stats model.matrix
 .get_col_from_new_data <- function(design, newdata, type, by = NULL) {
 
   if (!is.null(by)) {
@@ -618,8 +619,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
                                              collapse = "+"),
                                        " - 1"))
 
-  design_data <- model.matrix(form_for_design, design@structure)
-  newdata_data <- model.matrix(form_for_newdata, newdata)
+  design_data <- stats::model.matrix(form_for_design, design@structure)
+  newdata_data <- stats::model.matrix(form_for_newdata, newdata)
 
   merged <- merge(design_data, newdata_data, by = var_names(design, "u"))
 
