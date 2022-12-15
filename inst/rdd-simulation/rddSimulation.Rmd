@@ -13,7 +13,7 @@ knitr::opts_knit$set(root.dir = '.')
 General dependencies.
 ```{r}
 library('knitr')
-#require('kableExtra')
+require('kableExtra')
 library('rdrobust')
 #library(flexida)
 source('simulationFunctions.r')
@@ -117,14 +117,76 @@ if (nreps) {
 
 ## Ugly results
 
-```{r uglyResults,warning=FALSE,message=FALSE}
+```{r uglyResults,warning=FALSE,message=FALSE,eval=FALSE}
 
 for(i in 1:length(totalPoly)){
   print(names(totalPoly)[i])
-  print(simpleSummary(totalPoly[[i]]))
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  print(round(simpleSummary(totalPoly[[i]]),2))
 }
 ```
 
+```{r uglyResultsDeg5,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  tp=totalPoly[[i]]
+  tp=tp[grep("5|ATE|TOT",rownames(tp)),]
+  print(round(simpleSummary(tp),2))
+}
+```
+
+### $\frac{Bias}{Sampling Variance}$
+```{r biasOverV,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  ss=simpleSummary(totalPoly[[i]])
+  print(round(ss[grep("bias/V",names(ss),fixed=TRUE)],2))
+}
+
+```
+
+### RMSE
+
+```{r RMSE,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  ss=simpleSummary(totalPoly[[i]])
+  print(round(ss[grep("RMSE",names(ss),fixed=TRUE)],2))
+}
+
+```
+
+### sampling variance relative bias
+
+```{r sampVar,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  ss=simpleSummary(totalPoly[[i]])
+  print(round(ss[grep("samplingVarRelativeBias",names(ss),fixed=TRUE)],2))
+}
+
+```
+
+### CI Coverage
+
+```{r coverage,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  rownames(totalPoly[[i]])=rownames(totalPoly[[1]])
+  ss=simpleSummary(totalPoly[[i]])
+  print(round(ss[grep("ciCoverage",names(ss),fixed=TRUE)],2))
+}
+
+```
 
 The following gives the results in Table 4 of the paper, in addition
 to the break-down of RMSE into bias and variance, and analogous
