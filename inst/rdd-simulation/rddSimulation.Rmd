@@ -88,7 +88,7 @@ if(clust){
     library('RItools')
     library('sandwich')
     library('nnet')
-    devtools::load_all("../..")
+    pkgload::load_all("../..")
                                         #           library(flexida)
     source('simulationFunctions.r')
     source('ddsandwich.R') ###
