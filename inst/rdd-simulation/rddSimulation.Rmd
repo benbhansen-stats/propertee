@@ -13,7 +13,7 @@ knitr::opts_knit$set(root.dir = '.')
 General dependencies.
 ```{r}
 library('knitr')
-require('kableExtra')
+#require('kableExtra')
 library('rdrobust')
 #library(flexida)
 source('simulationFunctions.r')
@@ -64,7 +64,7 @@ register a cluster, called `cl` with the desired number of nodes, with
 code similar to the following:
 ```{r eval=FALSE,echo=TRUE}
 library(parallel)
-cl <- makeCluster(5)
+cl <- makeCluster(10)
 ```
 
 ```{r  runLoadOutSim, warning=FALSE, message=FALSE}
@@ -114,6 +114,17 @@ if (nreps) {
   load(paste0('./',psims[1]))
 }
 ```
+
+## Ugly results
+
+```{r uglyResults,warning=FALSE,message=FALSE}
+
+for(i in 1:length(totalPoly)){
+  print(names(totalPoly)[i])
+  print(simpleSummary(totalPoly[[i]]))
+}
+```
+
 
 The following gives the results in Table 4 of the paper, in addition
 to the break-down of RMSE into bias and variance, and analogous
