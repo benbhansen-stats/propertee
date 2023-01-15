@@ -113,6 +113,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   dots <- list(...)
   if (is.null(dots$cluster)) {
     keys <- sl@keys
+    cov_adj_cluster_cols <- itt_cluster_cols <- cluster_cols
   } else {
     if (inherits(dots$cluster, "character")) {
       cluster_cols <- dots$cluster
@@ -127,6 +128,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                      "are missing from the covariance adjustment model dataset"),
                call. = FALSE)
         })
+      cov_adj_cluster_cols <- .check_cluster_col_nas(cluster_cols, wide_frame)
     } else if (inherits(dots$cluster, "data.frame")) {
       cluster_cols <- colnames(dots$cluster)
       wide_frame <- dots$cluster
@@ -153,12 +155,17 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                  "in the DirectAdjusted object's Design:",
                  paste(missing_des_cols, collapse = ", ")))
     }
-    keys <- .merge_preserve_order(wide_frame,
-                                  unique(x@Design@structure[c(cluster_cols, trt_col)]),
+    itt_cluster_cols <- .check_cluster_col_nas(cluster_cols,
+                                               x@Design@structure,
+                                               "ITT effect")
+    
+    # Re-create keys dataframe with the new clustering columns
+    keys <- .merge_preserve_order(wide_frame[cov_adj_cluster_cols],
+                                  unique(x@Design@structure[c(cov_adj_cluster_cols, trt_col)]),
                                   all.x = TRUE,
                                   sort = FALSE)
-    keys[is.na(keys[, trt_col]), cluster_cols] <- NA
-    keys <- keys[, cluster_cols, drop = FALSE]
+    keys[is.na(keys[, trt_col]), cov_adj_cluster_cols] <- NA
+    keys <- keys[, cov_adj_cluster_cols, drop = FALSE]
   }
 
   if (ncol(keys) == 1) {
@@ -183,7 +190,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
+  Q_uoas <- stats::expand.model.frame(x, itt_cluster_cols, na.expand = TRUE)[itt_cluster_cols]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
   } else {
@@ -455,6 +462,45 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
+}
+
+#' @title (Internal) Check the NA status of clustering columns in a dataframe
+#' @details \code{.check_cluster_col_nas} checks whether entire columns in a
+#' dataframe contain NA values. If a column only contains NA's, the function
+#' produces a warning that the given indicating the column cannot be used for
+#' clustering.
+#' @param cluster_cols vector of column names
+#' @param df dataframe whose columns are checked for NA's
+#' @param model_type string taking either the value "covariance adjustment",
+#' referring to the covariance adjustment model, or "ITT effect", referring to
+#' the direct adjusted model. This value is piped into any potential warning
+#' message.
+#' @return A vector of column names for the valid clustering columns
+#' @keywords internal
+.check_cluster_col_nas <- function(cluster_cols,
+                                   df,
+                                   model = c("covariance adjustment", "ITT effect")) {
+  model <- match.arg(model)
+  all_nas <- sapply(df[, cluster_cols, drop = FALSE], function(col) all(is.na(col)))
+  if (any(all_nas)) {
+    all_na_cols <- names(which(all_nas))
+    msg <- if (length(all_na_cols) == length(all_nas)) {
+      paste("This is taken to mean the observations should be treated",
+            "as IID. To avoid this warning, provide unique non-NA cluster",
+            "ID's for each row.")
+    } else {
+      paste("Only",
+            paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
+            "will be used to cluster the", model, "model.")
+    }
+    
+    cluster_cols <- setdiff(cluster_cols, all_na_cols)
+    warning(paste("The columns", paste(all_na_cols, collapse = ", "),
+                  "are all NA's in the", model, "model dataset.",
+                  msg))
+  }
+  
+  return(cluster_cols)
 }
 
 ##' @title Generate matrix of estimating equations for \code{lmrob()} fit

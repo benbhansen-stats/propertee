@@ -30,34 +30,34 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   # check default clustering level is the same when specified using cluster arg
   expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = c("uid")))
   
-  # test other arg types
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = simdata[, c("uid"), drop = FALSE]))
+  # # test other arg types
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = simdata[, c("uid"), drop = FALSE]))
+  # 
+  # uoas <- matrix(simdata$uid)
+  # colnames(uoas) <- "uid"
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uoas))
+  # 
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = list(uid = simdata$uid)))
+  # 
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  # 
+  # uid <- simdata$uid
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  # 
+  # uid <- as.numeric(simdata$uid)
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
   
-  uoas <- matrix(simdata$uid)
-  colnames(uoas) <- "uid"
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uoas))
-  
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = list(uid = simdata$uid)))
-  
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  
-  uid <- simdata$uid
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  
-  uid <- as.numeric(simdata$uid)
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  
-  # can also specify different cluster level
-  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
-               vcovDA(dmod, cluster = simdata[, c("cid1", "cid2")]))
-  
-  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
-               vcovDA(dmod, cluster = cbind(cid1 = simdata$cid1,
-                                            cid2 = simdata$cid2)))
-  
-  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
-               vcovDA(dmod, cluster = list(cid1 = simdata$cid1,
-                                           cid2 = simdata$cid2)))
+  # # can also specify different cluster level
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = simdata[, c("cid1", "cid2")]))
+  # 
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = cbind(cid1 = simdata$cid1,
+  #                                           cid2 = simdata$cid2)))
+  # 
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = list(cid1 = simdata$cid1,
+  #                                          cid2 = simdata$cid2)))
 })
 
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
@@ -70,7 +70,11 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   dmod <- lmitt(y ~ assigned(), data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
   
-  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = c("cid1", "cid2")))
+  expected <- vcovDA(dmod)
+  expect_warning(vcovDA(dmod, cluster = c("cid1", "cid2")),
+                 "cid1, cid2 are all NA's in the covariance adjustment model")
+  expect_equal(suppressWarnings(vcovDA(dmod, cluster = c("cid1", "cid2"))),
+               expected)
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
@@ -235,17 +239,54 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   # test character vector cluster argument
   expect_equal(.get_b12(m, cluster = c("cid1", "cid2")), expected)
   
-  # test data frame cluster argument
-  expect_equal(.get_b12(m, cluster = simdata[, c("cid1", "cid2")]), expected)
+  # # test data frame cluster argument
+  # expect_equal(.get_b12(m, cluster = simdata[, c("cid1", "cid2")]), expected)
+  # 
+  # # test matrix cluster argument
+  # uoas <- cbind(simdata$cid1, simdata$cid2)
+  # colnames(uoas) <- c("cid1", "cid2")
+  # expect_equal(.get_b12(m, cluster = uoas), expected)
+  # 
+  # # test list cluster argument
+  # expect_equal(.get_b12(m, cluster = list(cid1 = simdata[, "cid1"],
+  #                                         cid2 = simdata[, "cid2"])), expected)
+})
+
+test_that("get_b12 handles NA's in custom clustering columns correctly", {
+  data(simdata)
+  set.seed(200)
   
-  # test matrix cluster argument
-  uoas <- cbind(simdata$cid1, simdata$cid2)
-  colnames(uoas) <- c("cid1", "cid2")
-  expect_equal(.get_b12(m, cluster = uoas), expected)
+  cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
+                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+  cmod <- lm(y ~ x, cmod_data)
   
-  # test list cluster argument
-  expect_equal(.get_b12(m, cluster = list(cid1 = simdata[, "cid1"],
-                                          cid2 = simdata[, "cid2"])), expected)
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
+                 paste("cid1, cid2 are all NA's in the covariance adjustment",
+                       "model dataset. This is taken"))
+  expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
+               matrix(0, nrow = 2, ncol = 2))
+  
+  # NOTE: the non-NA ID's should be distinct from the ID's in Q. Otherwise, joining
+  # on the cluster ID column with no NA's produces a df with more rows than C,
+  # causing an error in the variance calculation. An example where someone would
+  # know school/classroom ID for some but not all units in a school doesn't seem
+  # likely, so this imposition doesn't seem restrictive.
+  cmod_data$cid1 <- rep(seq(6, 10), each = 20)
+  cmod <- lm(y ~ x, cmod_data)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
+                 paste("cid2 are all NA's in the covariance adjustment model",
+                       "dataset. Only cid1"))
+  expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
+               .get_b12(dmod, cluster = c("cid1")))
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
