@@ -17,6 +17,69 @@ test_that("vcovDA correctly dispatches", {
   expect_equal(vmat, .vcovMB_CR0(damod))
 })
 
+test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+                "when cluster ID's have no NA's"), {
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  uid <- factor(simdata$uid)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+  
+  # check default clustering level is the same when specified using cluster arg
+  expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = c("uid")))
+  
+  # # test other arg types
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = simdata[, c("uid"), drop = FALSE]))
+  # 
+  # uoas <- matrix(simdata$uid)
+  # colnames(uoas) <- "uid"
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uoas))
+  # 
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = list(uid = simdata$uid)))
+  # 
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  # 
+  # uid <- simdata$uid
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  # 
+  # uid <- as.numeric(simdata$uid)
+  # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
+  
+  # # can also specify different cluster level
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = simdata[, c("cid1", "cid2")]))
+  # 
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = cbind(cid1 = simdata$cid1,
+  #                                           cid2 = simdata$cid2)))
+  # 
+  # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
+  #              vcovDA(dmod, cluster = list(cid1 = simdata$cid1,
+  #                                          cid2 = simdata$cid2)))
+})
+
+test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+                "when cluster ID's have NA's (must be via column name)"), {
+  data(simdata)
+  df <- rbind(simdata, simdata)
+  df[1:50, c("cid1", "cid2", "bid", "z")] <- NA
+  cmod <- lm(y ~ x, df[1:50,])
+  des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
+  dmod <- lmitt(y ~ assigned(), data = df[51:100,], design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+  
+  expected <- vcovDA(dmod)
+  expect_warning(
+    expect_warning(vcovDA(dmod, cluster = c("cid1", "cid2")),
+                   "these observations should be treated as IID"),
+    "taken to mean it has no overlap"
+  )
+  expect_equal(suppressWarnings(vcovDA(dmod, cluster = c("cid1", "cid2"))),
+               expected)
+})
+
 test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
@@ -130,6 +193,86 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
 
   expect_equal(.get_b12(m),
                t(cmod_eqns) %*% m_eqns)
+})
+
+test_that(".get_b12 fails with invalid custom cluster argument", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b12(m, cluster = c("cid3")),
+               "cid3 are missing from the covariance adjustment model dataset")
+  expect_error(.get_b12(m, cluster = c(TRUE, FALSE)),
+               "must provide a character vector")
+})
+
+test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
+  data(simdata)
+  simdata[simdata$bid == 1, "z"] <- 0
+  simdata[simdata$bid == 2, "z"] <- 0
+  simdata[simdata$bid == 3, "z"] <- 1
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  cmod_eqns <- Reduce(
+    rbind,
+    by(estfun(cmod), list(simdata$cid1, simdata$cid2), colSums)
+  )
+  dmod_eqns <- Reduce(
+    rbind,
+    by(estfun(m), list(simdata$cid1, simdata$cid2), colSums)
+  )
+  expected <- crossprod(cmod_eqns, dmod_eqns)
+  
+  # default (columns specified in `cluster` argument of Design) matches expected
+  expect_equal(.get_b12(m), expected)
+  
+  expect_equal(.get_b12(m, cluster = c("cid1", "cid2")), expected)
+})
+
+test_that("get_b12 handles NA's in custom clustering columns correctly", {
+  data(simdata)
+  set.seed(200)
+  
+  cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
+                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+  cmod <- lm(y ~ x, cmod_data)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
+                 "All clustering columns found to only have NA's")
+  expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
+               matrix(0, nrow = 2, ncol = 2))
+  
+  # NOTE: the non-NA ID's should be distinct from the ID's in Q. Otherwise, joining
+  # on the cluster ID column with no NA's produces a df with more rows than C,
+  # causing an error in the variance calculation. An example where someone would
+  # know school/classroom ID for some but not all units in a school doesn't seem
+  # likely, so this imposition doesn't seem restrictive.
+  cmod_data$cid1 <- rep(seq(6, 10), each = 20)
+  cmod <- lm(y ~ x, cmod_data)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
+                 paste("cid2 found to only have NA's in the covariance adjustment model",
+                       "dataset. Only cid1"))
+  expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
+               .get_b12(dmod, cluster = c("cid1")))
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -429,8 +572,31 @@ test_that(".get_b22 returns correct value for lm object w offset", {
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
+test_that(".get_b22 fails with invalid custom cluster argument", {
+  data(simdata)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b22(m, cluster = c("cid3")),
+               "cid3 are missing from the ITT effect model dataset")
+  expect_error(.get_b22(m, cluster = c(TRUE, FALSE)),
+               "must provide a character vector")
+  
+  simdata$cid3 <- NA_integer_
+  des <- rct_design(z ~ cluster(cid1, cid2, cid3), data = simdata)
+  m <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  expect_error(.get_b22(m, cluster = "cid3"),
+               "cannot handle NAs")
+})
 
-test_that(".get_b22 allows custom cluster argument to meatCL", {
+test_that(".get_b22 produces correct estimates with valid custom cluster argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
@@ -444,8 +610,7 @@ test_that(".get_b22 allows custom cluster argument to meatCL", {
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
   uoanames <- var_names(m@Design, "u")
-  uoas <- Reduce(function(...) paste(..., sep = "_"),
-                 stats::expand.model.frame(m, uoanames)[, uoanames])
+
   form <- paste0("~ -1 + ", paste("as.factor(", uoanames, ")", collapse = ":"))
   uoa_matrix <- stats::model.matrix(as.formula(form),
                                     stats::expand.model.frame(m, uoanames)[, uoanames])
@@ -453,7 +618,7 @@ test_that(".get_b22 allows custom cluster argument to meatCL", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
+  expect_equal(.get_b22(m, cluster = uoanames, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
 })
 
@@ -682,27 +847,89 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
   expect_equal(.get_b11(m), expected)
 })
 
-test_that(".get_b11 accepts custom cluster argument for meatCL", {
+test_that(".get_b11 fails with invalid custom cluster argument", {
   data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  nuoas <- nrow(des@structure)
+  
+  m <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  expect_error(.get_b11(m, cluster = c("cid3")),
+               "cid3 are missing from the covariance adjustment model dataset")
+  expect_error(.get_b11(m, cluster = c(TRUE, FALSE)),
+               "must provide a character vector")
+})
 
+test_that(".get_b11 produces correct estimates with valid custom cluster argument", {
+  data(simdata)
+  
   simdata[simdata$cid1 == 4, "z"] <- 0
   simdata[simdata$cid1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ uoa(cid1), data = simdata)
-
+  
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   uoas <- factor(simdata$cid1)
   nuoas <- length(levels(uoas))
-
+  
   nc <- sum(summary(cmod)$df[1L:2L])
   expected <- (
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
+  
+  expect_equal(.get_b11(m, cluster = "cid1"), expected)
+  
+  # test different clustering level
+  bids <- factor(simdata[, "bid"])
+  nbids <- length(levels(bids))
+  
+  nc <- sum(summary(cmod)$df[1L:2L])
+  expected <- (
+    crossprod(Reduce(rbind, by(sandwich::estfun(cmod), simdata[, "bid"], colSums))) *
+      nbids / (nbids - 1L) * (nc - 1L) / (nc - 2L)
+  )
+  expect_equal(.get_b11(m, cluster = "bid"), expected)
+})
 
-  expect_equal(.get_b11(m, cluster = uoas), expected)
+test_that(".get_b11 handles NA's correctly in custom clustering columns", {
+  data(simdata)
+  set.seed(200)
+  
+  # check case where all clustering columns only have NA's
+  cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
+                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+  cmod <- lm(y ~ x, cmod_data)
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+                 "cid1, cid2 are found to have NA's")
+  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"),
+                                         type = "HC0", cadjust = FALSE)),
+               crossprod(sandwich::estfun(cmod))) # there should be no clustering
+  
+  # check case where one clustering column doesn't only have NA's
+  cmod_data$cid1 <- rep(seq(6, 10), each = 20)
+  cmod <- lm(y ~ x, cmod_data)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+                 "Only cid1 will be used to cluster")
+  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"))),
+               .get_b11(dmod, cluster = c("cid1")))
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
@@ -836,8 +1063,10 @@ test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
        offset = cov_adj(cmod, newdata = simdata[msk,]))
   )
 
-  expect_equal(.get_b11(m, type = "HC0", cadjust = FALSE),
-               crossprod(stats::model.matrix(cmod) * cmod$residuals))
+  expect_warning(.get_b11(m),
+                 "meat matrix numerically indistinguishable")
+  expect_equal(suppressWarnings(.get_b11(m)),
+               matrix(0, nrow = 2, ncol = 2))
 })
 
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clustering", {

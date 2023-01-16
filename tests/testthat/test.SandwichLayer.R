@@ -122,7 +122,7 @@ test_that("SandwichLayer keys doesn't have the same row count as covariance mode
                    psl,
                    keys = keys,
                    Design = des),
-               "to fit the covariance model")
+               "to fit the covariance adjustment model")
 })
 
 test_that("SandwichLayer created correctly", {

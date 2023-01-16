@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.get_ca_and_prediction_gradient}
 \alias{.get_ca_and_prediction_gradient}
-\title{(Internal) Get the a vector of "response" predictions from a covariance model
+\title{(Internal) Get the a vector of "response" predictions from a covariance adjustment model
 and its gradient with respect to the fitted coefficients}
 \usage{
 .get_ca_and_prediction_gradient(model, newdata = NULL)
@@ -15,9 +15,9 @@ robustbase::lmrob} object}
 }
 \value{
 Covariate adjusted outcomes and their gradient with respect to the
-parameters of the covariance model (a list of a numeric vector and a matrix)
+parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
 }
 \description{
-(Internal) Get the a vector of "response" predictions from a covariance model
+(Internal) Get the a vector of "response" predictions from a covariance adjustment model
 and its gradient with respect to the fitted coefficients
 }

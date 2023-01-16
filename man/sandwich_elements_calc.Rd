@@ -9,7 +9,7 @@
 \alias{.get_a21}
 \title{(Internal) Compute variance blocks}
 \usage{
-.get_b12(x)
+.get_b12(x, ...)
 
 .get_a22_inverse(x)
 
@@ -28,40 +28,40 @@
 }
 \value{
 \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
-are given by the number of terms in the covariance model and the number of
-columns correspond to intercept and treatment variable terms in the direct
-adjustment model
+are given by the number of terms in the covariance adjustment model and the number of
+columns correspond to intercept and treatment variable terms in the ITT
+effect model
 
 \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
 dimensions are given by the intercept and treatment variable terms in the
-direct adjustment model
+ITT effect model
 
 \code{.get_b22()}: A \eqn{2\times 2} matrix where the
 dimensions are given by the intercept and treatment variable terms in the
-direct adjustment model
+ITT effect model
 
 \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-dimensions are given by the number of terms in the covariance model
+dimensions are given by the number of terms in the covariance adjustment model
 including an intercept
 
 \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
-given by the number of terms in the covariance model including an
+given by the number of terms in the covariance adjustment model including an
 intercept
 
 \code{.get_a12()}: A \eqn{2\times p} matrix where the number of
-rows are given by intercept and treatment variable terms in the direct
-adjusted model, and the number of columns are given by the number of terms
-in the covariance model
+rows are given by intercept and treatment variable terms in the ITT effect
+model, and the number of columns are given by the number of terms
+in the covariance adjustment model
 }
 \description{
 (Internal) Compute variance blocks
 }
 \details{
 The \bold{B12 block} is the covariance matrix of the cluster-level
-estimating equations for the covariance and direct adjustment models. It
-has a row for each term in the covariance model and a column for each term
-in the direct adjustment model. For any row that does not appear in both
-the experimental design and the covariance model data, its contribution to
+estimating equations for the covariance adjustment and ITT effect models. It
+has a row for each term in the covariance adjustment model and a column for each term
+in the ITT effect model. For any row that does not appear in both
+the experimental design and the covariance adjustment model data, its contribution to
 this matrix will be 0. Thus, if there is no overlap between the two
 datasets, this will return a matrix of 0's.
 
@@ -78,8 +78,8 @@ sample, this can be expressed in matrix form as \eqn{X'WX}. The output of
 this function is the inverse of the diagonal element corresponding to the
 treatment estimate.
 
-The \bold{B22 block} refers to a clustered variance estimate of the
-treatment effect estimate. The \code{stats} package offers family objects
+The \bold{B22 block} refers to a clustered estimate of the covariance
+matrix for the ITT effect model. The \code{stats} package offers family objects
 with canonical link functions, so the log-likelihood for a generalized
 linear model can be written in terms of the linear predictor as
 \deqn{L(y_i, \beta, \phi, w_i) = w_i * (y_i * \beta'x_i - b(\beta'x_i)) /
@@ -100,32 +100,31 @@ is the matrix of estimating equations at the subject level.
 
 The \bold{A11 block} is the \eqn{p\times p} matrix corresponding to
 the unscaled inverse of the observed Fisher information of the covariance
-model. The observed information is given by the estimate of the negative
+adjustment model. The observed information is given by the estimate of the negative
 Jacobian of the model's estimating equations. The unscaled version provided
 here divides by the number of observations used to fit the covariance
-model.
+adjustment model.
 
 The \bold{B11 block} is the block of the sandwich variance estimator
 corresponding to the variance-covariance matrix of the covariance model
 coefficient estimates. The estimates returned here are potentially
-clustered (by the clustering in the experimental design) if rows in the
-covariance model data also exist in the design. If there is no overlap
-between the two datasets, the variance-covariance matrix is estimated
-assuming the observations are independent.
+clustered (either by the clustering in the experimental design or by
+a manually provided \code{cluster} argument) if clustering information can be
+retrieved from the covariance adjustment model data.
 
 The \bold{A21 block} is the block of the sandwich variance estimator
-corresponding to the gradient of the direct adjustment model with respect
+corresponding to the gradient of the ITT effect model with respect
 to the covariates. Some of the information needed for this calculation is
 stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
 block is the crossproduct of the prediction gradient and the gradient of
-the conditional mean vector for the direct adjustment model summed to the
+the conditional mean vector for the ITT effect model summed to the
 cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
   / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
   (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'} where \eqn{\mu} and
 \eqn{\eta_i} are the conditional mean function and linear predictor for the
-ith cluster in the direct adjustment model, and \eqn{\upsilon} and
+ith cluster in the ITT effect model, and \eqn{\upsilon} and
 \eqn{\zeta_i} are the conditional mean function and linear predictor for
-the ith cluster in the covariance model.
+the ith cluster in the covariance adjustment model.
 }
 \references{
 Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
