@@ -372,6 +372,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   dots <- list(...)
   if (is.null(dots$cluster)) {
     uoas <- sl@keys
+    cluster_cols <- colnames(sl@keys)
   } else if (inherits(dots$cluster, "character")) {
     uoas <- tryCatch(
       stats::expand.model.frame(cmod, dots$cluster)[, dots$cluster, drop = FALSE],
@@ -383,6 +384,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                    "are missing from the covariance adjustment model dataset"),
              call. = FALSE)
       })
+    cluster_cols <- .check_cluster_col_nas(dots$cluster, uoas)
   } else if (inherits(dots$cluster, "data.frame")) {
     uoas <- dots$cluster
   } else if (inherits(dots$cluster, c("matrix", "list", "integer", "numeric", "factor"))) {
@@ -394,10 +396,12 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
 
   # Replace NA's for rows not in the experimental design with a unique cluster ID
-  if (ncol(uoas) == 1) {
+  if (length(cluster_cols) == 0) {
+    uoas <- seq(1, nc)
+  } else if (length(cluster_cols) == 1) {
     uoas <- uoas[, 1]
   } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), uoas)
+    uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
     uoas[grepl("NA", uoas)] <- NA_character_
   }
   nuoas <- length(unique(uoas))

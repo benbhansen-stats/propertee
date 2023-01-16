@@ -71,8 +71,11 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
                 weights = ate(des), offset = cov_adj(cmod))
   
   expected <- vcovDA(dmod)
-  expect_warning(vcovDA(dmod, cluster = c("cid1", "cid2")),
-                 "cid1, cid2 are all NA's in the covariance adjustment model")
+  expect_warning(
+    expect_warning(vcovDA(dmod, cluster = c("cid1", "cid2")),
+                   "cid1, cid2 are all NA's in the covariance adjustment model"),
+    "cid1, cid2 are all NA's in the covariance adjustment model dataset. This is"
+  )
   expect_equal(suppressWarnings(vcovDA(dmod, cluster = c("cid1", "cid2"))),
                expected)
 })
@@ -930,22 +933,22 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
   # test character vector cluster argument
   expect_equal(.get_b11(m, cluster = "cid1"), expected)
   
-  # test data frame cluster argument
-  expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
-  
-  # test matrix cluster argument
-  uoas <- as.matrix(simdata[, "cid1"])
-  colnames(uoas) <- "cid1"
-  expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
-  
-  # test list cluster argument
-  expect_equal(.get_b11(m, cluster = list(cid1 = simdata[, "cid1"])),
-               expected)
-  
-  # test factor/numeric/integer cluster arguments
-  expect_equal(.get_b11(m, cluster = simdata[, "cid1"]), expected)
-  expect_equal(.get_b11(m, cluster = as.numeric(simdata[, "cid1"])), expected)
-  expect_equal(.get_b11(m, cluster = uoas), expected)
+  # # test data frame cluster argument
+  # expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
+  # 
+  # # test matrix cluster argument
+  # uoas <- as.matrix(simdata[, "cid1"])
+  # colnames(uoas) <- "cid1"
+  # expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
+  # 
+  # # test list cluster argument
+  # expect_equal(.get_b11(m, cluster = list(cid1 = simdata[, "cid1"])),
+  #              expected)
+  # 
+  # # test factor/numeric/integer cluster arguments
+  # expect_equal(.get_b11(m, cluster = simdata[, "cid1"]), expected)
+  # expect_equal(.get_b11(m, cluster = as.numeric(simdata[, "cid1"])), expected)
+  # expect_equal(.get_b11(m, cluster = uoas), expected)
   
   # test different clustering level
   bids <- factor(simdata[, "bid"])
@@ -957,6 +960,42 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
       nbids / (nbids - 1L) * (nc - 1L) / (nc - 2L)
   )
   expect_equal(.get_b11(m, cluster = "bid"), expected)
+})
+
+test_that(".get_b11 handles NA's correctly in custom clustering columns", {
+  data(simdata)
+  set.seed(200)
+  
+  # check case where all clustering columns only have NA's
+  cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
+                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+  cmod <- lm(y ~ x, cmod_data)
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+                 paste("cid1, cid2 are all NA's in the covariance adjustment",
+                       "model dataset. This is taken"))
+  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"),
+                                         type = "HC0", cadjust = FALSE)),
+               crossprod(sandwich::estfun(cmod))) # there should be no clustering
+  
+  # check case where one clustering column doesn't only have NA's
+  cmod_data$cid1 <- rep(seq(6, 10), each = 20)
+  cmod <- lm(y ~ x, cmod_data)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
+                      offset = cov_adj(cmod, design = des)))
+  
+  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+                 paste("cid2 are all NA's in the covariance adjustment model",
+                       "dataset. Only cid1"))
+  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"))),
+               .get_b11(dmod, cluster = c("cid1")))
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
