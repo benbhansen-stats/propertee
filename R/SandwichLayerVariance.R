@@ -116,19 +116,19 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     cov_adj_cluster_cols <- itt_cluster_cols <- cluster_cols
   } else {
     if (inherits(dots$cluster, "character")) {
-      cluster_cols <- dots$cluster
+      itt_cluster_cols <- dots$cluster
       wide_frame <- tryCatch(
-        stats::expand.model.frame(sl@fitted_covariance_model, cluster_cols,
-                                  na.expand = TRUE)[cluster_cols],
+        stats::expand.model.frame(sl@fitted_covariance_model, itt_cluster_cols,
+                                  na.expand = TRUE)[itt_cluster_cols],
         error = function(e) {
           data <- eval(sl@fitted_covariance_model$call$data,
                        envir = environment(formula(sl@fitted_covariance_model)))
           stop(paste("The columns",
-                     paste(setdiff(cluster_cols, colnames(data)), collapse = ", "),
+                     paste(setdiff(itt_cluster_cols, colnames(data)), collapse = ", "),
                      "are missing from the covariance adjustment model dataset"),
                call. = FALSE)
         })
-      cov_adj_cluster_cols <- .check_cluster_col_nas(cluster_cols, wide_frame)
+      cov_adj_cluster_cols <- .check_cluster_col_nas(itt_cluster_cols, wide_frame)
     } else if (inherits(dots$cluster, "data.frame")) {
       cluster_cols <- colnames(dots$cluster)
       wide_frame <- dots$cluster
@@ -155,9 +155,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                  "in the DirectAdjusted object's Design:",
                  paste(missing_des_cols, collapse = ", ")))
     }
-    itt_cluster_cols <- .check_cluster_col_nas(cluster_cols,
-                                               x@Design@structure,
-                                               "ITT effect")
     
     # Re-create keys dataframe with the new clustering columns
     keys <- .merge_preserve_order(wide_frame[cov_adj_cluster_cols],
@@ -468,23 +465,17 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   return(out)
 }
 
-#' @title (Internal) Check the NA status of clustering columns in a dataframe
+#' @title (Internal) Check the NA status of clustering columns in the covariance
+#' model data
 #' @details \code{.check_cluster_col_nas} checks whether entire columns in a
 #' dataframe contain NA values. If a column only contains NA's, the function
-#' produces a warning that the given indicating the column cannot be used for
+#' produces a warning indicating the column cannot be meaningfully used for
 #' clustering.
 #' @param cluster_cols vector of column names
 #' @param df dataframe whose columns are checked for NA's
-#' @param model_type string taking either the value "covariance adjustment",
-#' referring to the covariance adjustment model, or "ITT effect", referring to
-#' the direct adjusted model. This value is piped into any potential warning
-#' message.
 #' @return A vector of column names for the valid clustering columns
 #' @keywords internal
-.check_cluster_col_nas <- function(cluster_cols,
-                                   df,
-                                   model = c("covariance adjustment", "ITT effect")) {
-  model <- match.arg(model)
+.check_cluster_col_nas <- function(cluster_cols, df) {
   all_nas <- sapply(df[, cluster_cols, drop = FALSE], function(col) all(is.na(col)))
   if (any(all_nas)) {
     all_na_cols <- names(which(all_nas))
@@ -495,12 +486,12 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     } else {
       paste("Only",
             paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
-            "will be used to cluster the", model, "model.")
+            "will be used to cluster the covariance adjustment model.")
     }
     
     cluster_cols <- setdiff(cluster_cols, all_na_cols)
     warning(paste("The columns", paste(all_na_cols, collapse = ", "),
-                  "are all NA's in the", model, "model dataset.",
+                  "are all NA's in the covariance adjustment model dataset.",
                   msg))
   }
   
