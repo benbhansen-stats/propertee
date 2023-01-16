@@ -73,8 +73,8 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   expected <- vcovDA(dmod)
   expect_warning(
     expect_warning(vcovDA(dmod, cluster = c("cid1", "cid2")),
-                   "cid1, cid2 are all NA's in the covariance adjustment model"),
-    "cid1, cid2 are all NA's in the covariance adjustment model dataset. This is"
+                   "these observations should be treated as IID"),
+    "taken to mean it has no overlap"
   )
   expect_equal(suppressWarnings(vcovDA(dmod, cluster = c("cid1", "cid2"))),
                expected)
@@ -252,8 +252,7 @@ test_that("get_b12 handles NA's in custom clustering columns correctly", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
-                 paste("cid1, cid2 are all NA's in the covariance adjustment",
-                       "model dataset. This is taken"))
+                 "All clustering columns found to only have NA's")
   expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
                matrix(0, nrow = 2, ncol = 2))
   
@@ -270,7 +269,7 @@ test_that("get_b12 handles NA's in custom clustering columns correctly", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b12(dmod, cluster = c("cid1", "cid2")),
-                 paste("cid2 are all NA's in the covariance adjustment model",
+                 paste("cid2 found to only have NA's in the covariance adjustment model",
                        "dataset. Only cid1"))
   expect_equal(suppressWarnings(.get_b12(dmod, cluster = c("cid1", "cid2"))),
                .get_b12(dmod, cluster = c("cid1")))
@@ -914,8 +913,7 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
-                 paste("cid1, cid2 are all NA's in the covariance adjustment",
-                       "model dataset. This is taken"))
+                 "cid1, cid2 are found to have NA's")
   expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"),
                                          type = "HC0", cadjust = FALSE)),
                crossprod(sandwich::estfun(cmod))) # there should be no clustering
@@ -929,8 +927,7 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
-                 paste("cid2 are all NA's in the covariance adjustment model",
-                       "dataset. Only cid1"))
+                 "Only cid1 will be used to cluster")
   expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"))),
                .get_b11(dmod, cluster = c("cid1")))
 })

@@ -107,35 +107,51 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   if (is.null(dots$cluster)) {
     keys <- sl@keys
     cov_adj_cluster_cols <- itt_cluster_cols <- cluster_cols
-  } else {
-    if (inherits(dots$cluster, "character")) {
-      itt_cluster_cols <- dots$cluster
-      wide_frame <- tryCatch(
-        stats::expand.model.frame(sl@fitted_covariance_model, itt_cluster_cols,
-                                  na.expand = TRUE)[itt_cluster_cols],
-        error = function(e) {
-          data <- eval(sl@fitted_covariance_model$call$data,
-                       envir = environment(formula(sl@fitted_covariance_model)))
-          stop(paste("The columns",
-                     paste(setdiff(itt_cluster_cols, colnames(data)), collapse = ", "),
-                     "are missing from the covariance adjustment model dataset"),
-               call. = FALSE)
-        })
-      cov_adj_cluster_cols <- .check_cluster_col_nas(itt_cluster_cols, wide_frame)
-    } else {
-      stop(paste("If overriding `cluster` argument for meat matrix calculations,",
-                 "must provide a character vector specifying column names that",
-                 "exist in both the ITT effect and covariance model datasets"))
+  } else if (inherits(dots$cluster, "character")) {
+    itt_cluster_cols <- dots$cluster
+    wide_frame <- tryCatch(
+      stats::expand.model.frame(sl@fitted_covariance_model, itt_cluster_cols,
+                                na.expand = TRUE)[itt_cluster_cols],
+      error = function(e) {
+        data <- eval(sl@fitted_covariance_model$call$data,
+                     envir = environment(formula(sl@fitted_covariance_model)))
+        stop(paste("The columns",
+                   paste(setdiff(itt_cluster_cols, colnames(data)), collapse = ", "),
+                   "are missing from the covariance adjustment model dataset"),
+             call. = FALSE)
+      })
+
+    # check for NA's in the clustering columns
+    nas <- colSums(is.na(wide_frame[, itt_cluster_cols, drop = FALSE]))
+    all_nas <- which(nas == nrow(wide_frame))
+    all_na_cols <- names(all_nas)
+    if (any(all_nas)) {
+      if (length(all_na_cols) == length(nas)) {
+        msg <- paste("All clustering columns found to only have NA's in the",
+                     "covariance adjustment model dataset. This is taken to mean",
+                     "it has no overlap with the ITT effect model dataset. To",
+                     "avoid this warning, provide unique non-NA cluster ID's",
+                     "for each row in the covariance adjustment model dataset.")
+      } else {
+        msg <- paste(paste(all_na_cols, collapse = ", "),
+                     "found to only have NA's in the covariance adjustment model",
+                     "dataset. Only",
+                     paste(setdiff(names(nas), all_na_cols), collapse = ", "),
+                     "will be used to cluster the covariance adjustment model.")
+      }
+      warning(msg)
     }
 
+    cov_adj_cluster_cols <- setdiff(names(nas), all_na_cols)
+    
     # Check to see if provided column names overlap with design
-    missing_des_cols <- setdiff(cluster_cols, colnames(x@Design@structure))
+    missing_des_cols <- setdiff(cov_adj_cluster_cols, colnames(x@Design@structure))
     if (length(missing_des_cols) > 0) {
       stop(paste("The following columns in the `cluster` argument cannot be found",
                  "in the DirectAdjusted object's Design:",
                  paste(missing_des_cols, collapse = ", ")))
     }
-
+    
     # Re-create keys dataframe with the new clustering columns
     keys <- .merge_preserve_order(wide_frame[cov_adj_cluster_cols],
                                   unique(x@Design@structure[c(cov_adj_cluster_cols, trt_col)]),
@@ -143,6 +159,10 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                                   sort = FALSE)
     keys[is.na(keys[, trt_col]), cov_adj_cluster_cols] <- NA
     keys <- keys[, cov_adj_cluster_cols, drop = FALSE]
+  } else {
+    stop(paste("If overriding `cluster` argument for meat matrix calculations,",
+               "must provide a character vector specifying column names that",
+               "exist in both the ITT effect and covariance model datasets"))
   }
 
   if (ncol(keys) == 1) {
@@ -343,17 +363,40 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     uoas <- sl@keys
     cluster_cols <- colnames(sl@keys)
   } else if (inherits(dots$cluster, "character")) {
+    cluster_cols <- dots$cluster
     uoas <- tryCatch(
-      stats::expand.model.frame(cmod, dots$cluster)[, dots$cluster, drop = FALSE],
+      stats::expand.model.frame(cmod, cluster_cols)[, cluster_cols, drop = FALSE],
       error = function(e) {
         data <- eval(cmod$call$data,
                      envir = environment(formula(cmod)))
         stop(paste("The columns",
-                   paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
+                   paste(setdiff(cluster_cols, colnames(data)), collapse = ", "),
                    "are missing from the covariance adjustment model dataset"),
              call. = FALSE)
       })
-    cluster_cols <- .check_cluster_col_nas(dots$cluster, uoas)
+
+    # check for NA's in the clustering columns
+    nas <- colSums(is.na(uoas[, cluster_cols, drop = FALSE]))
+    all_nas <- which(nas == nrow(uoas))
+    any_nas <- which(nas > 0)
+    if (any(all_nas) | any(any_nas)) {
+      all_na_cols <- names(all_nas)
+      any_na_cols <- names(any_nas)
+      msg <- paste("The columns", paste(all_na_cols, collapse = ", "),
+                   "are found to have NA's in the covariance adjustment model",
+                   "dataset. This taken to mean these observations should be",
+                   "treated as IID. To avoid this warning, provide unique non-NA",
+                   "cluster ID's for each row.")
+      cluster_cols <- setdiff(cluster_cols, all_na_cols)
+      if (length(cluster_cols) > 0) {
+        msg <- paste(msg,
+                     "Only",
+                     paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
+                     "will be used to cluster the covariance adjustment model.")
+      }
+      
+      warning(msg)
+    }
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a character vector specifying column names in the",
@@ -435,39 +478,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
-}
-
-#' @title (Internal) Check the NA status of clustering columns in the covariance
-#' adjustment model data
-#' @details \code{.check_cluster_col_nas} checks whether entire columns in a
-#' dataframe contain NA values. If a column only contains NA's, the function
-#' produces a warning indicating the column cannot be meaningfully used for
-#' clustering.
-#' @param cluster_cols vector of column names
-#' @param df dataframe whose columns are checked for NA's
-#' @return A vector of column names for the valid clustering columns
-#' @keywords internal
-.check_cluster_col_nas <- function(cluster_cols, df) {
-  all_nas <- sapply(df[, cluster_cols, drop = FALSE], function(col) all(is.na(col)))
-  if (any(all_nas)) {
-    all_na_cols <- names(which(all_nas))
-    msg <- if (length(all_na_cols) == length(all_nas)) {
-      paste("This is taken to mean the observations should be treated",
-            "as IID. To avoid this warning, provide unique non-NA cluster",
-            "ID's for each row.")
-    } else {
-      paste("Only",
-            paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
-            "will be used to cluster the covariance adjustment model.")
-    }
-
-    cluster_cols <- setdiff(cluster_cols, all_na_cols)
-    warning(paste("The columns", paste(all_na_cols, collapse = ", "),
-                  "are all NA's in the covariance adjustment model dataset.",
-                  msg))
-  }
-
-  return(cluster_cols)
 }
 
 ##' @title Generate matrix of estimating equations for \code{lmrob()} fit
