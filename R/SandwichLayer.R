@@ -8,7 +8,7 @@ setClass("PreSandwichLayer",
 
 setValidity("PreSandwichLayer", function(object) {
   if (!inherits(object@fitted_covariance_model$terms, "terms")) {
-    return("Fitted covariance model must have a valid 'terms' attribute")
+    return("Fitted covariance adjustment model must have a valid 'terms' attribute")
   }
 
   tryCatch({
@@ -16,7 +16,7 @@ setValidity("PreSandwichLayer", function(object) {
     sandwich::estfun(object@fitted_covariance_model)
     }, error = function(e) {
       stop(paste("Functions for extracting vcov elements not applicable to",
-                 "fitted covariance model"))
+                 "fitted covariance adjustment model"))
   })
 
   if (!is.numeric(object@prediction_gradient)) {
@@ -32,7 +32,7 @@ setValidity("PreSandwichLayer", function(object) {
   if (dim(object@prediction_gradient)[2] !=
       length(object@fitted_covariance_model$coefficients)) {
     return(paste("Prediction gradient does not have the same number of columns",
-                 "predictors in the covariance model"))
+                 "predictors in the covariance adjustment model"))
   }
   TRUE
 })
@@ -45,12 +45,12 @@ setClass("SandwichLayer",
 setValidity("SandwichLayer", function(object) {
   if (nrow(object@keys) != nrow(model.matrix(object@fitted_covariance_model))) {
     return(paste("Keys does not have the same number of rows as the dataset",
-                 "used to fit the covariance model"))
+                 "used to fit the covariance adjustment model"))
   }
 
   if (any(is.na(object))) {
     msg <- paste("Some covariance adjustments are NA; be careful of dropping",
-                 "these observations when fitting the design model")
+                 "these observations when fitting the ITT effect model")
     warning(msg)
   }
   TRUE
@@ -106,13 +106,13 @@ setMethod("[", "PreSandwichLayer",
 
           })
 
-##' (Internal) Get the a vector of "response" predictions from a covariance model
+##' (Internal) Get the a vector of "response" predictions from a covariance adjustment model
 ##' and its gradient with respect to the fitted coefficients
 ##' @param model Any model that inherits from a \code{glm}, \code{lm}, or \code{
 ##' robustbase::lmrob} object
 ##' @param newdata Optional; a data.frame of new data
 ##' @return Covariate adjusted outcomes and their gradient with respect to the
-##' parameters of the covariance model (a list of a numeric vector and a matrix)
+##' parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
   if (is.null(newdata)) {
     newdata <- stats::model.frame(model)
@@ -174,7 +174,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
 
   data_call <- x@fitted_covariance_model$call$data
   if (is.null(data_call)) {
-    stop("The fitted covariance model for x must be fit using a `data` argument")
+    stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
   }
 
   covmoddata <- eval(data_call,
@@ -193,7 +193,7 @@ as.SandwichLayer <- function(x, design, by = NULL) {
                  gsub("_", " ", design@unit_of_assignment_type),
                  "columns",
                  paste(setdiff(uoanames, colnames(covmoddata)), collapse = ", "),
-                 "are missing from the covariance model dataset"),
+                 "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
     })
   keys <- .merge_preserve_order(wide_frame, design@structure, all.x = TRUE, sort = FALSE)

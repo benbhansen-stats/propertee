@@ -3,7 +3,7 @@
 \name{.check_cluster_col_nas}
 \alias{.check_cluster_col_nas}
 \title{(Internal) Check the NA status of clustering columns in the covariance
-model data}
+adjustment model data}
 \usage{
 .check_cluster_col_nas(cluster_cols, df)
 }
@@ -17,7 +17,7 @@ A vector of column names for the valid clustering columns
 }
 \description{
 (Internal) Check the NA status of clustering columns in the covariance
-model data
+adjustment model data
 }
 \details{
 \code{.check_cluster_col_nas} checks whether entire columns in a

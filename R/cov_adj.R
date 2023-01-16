@@ -24,7 +24,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
       .get_data_from_model("weights", form),
        error = function(e) {
          warning(paste("Could not find quasiexperimental data in the call",
-                       "stack, using the covariance model data to generate",
+                       "stack, using the covariance adjustment model data to generate",
                        "the covariance adjustments"), call. = FALSE)
          stats::model.frame(model, na.action = na.pass)
        })

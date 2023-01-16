@@ -1,7 +1,7 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Compute directly adjusted cluster-robust sandwich variance estimates
+#' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
 #' @param object A \code{DirectAdjusted} model
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR0"
@@ -9,7 +9,7 @@ NULL
 #' One argument a user may want to manually override is the `cluster` argument.
 #' Users may be interested in clustering standard errors at levels different than
 #' the unit of assignment level specified in the \code{DirectAdjusted} model's
-#' \code{Design}. In this case, they may specify column names in the ITT/covariance
+#' \code{Design}. In this case, they may specify column names in the ITT effect/covariance
 #' adjustment model datasets corresponding to a different clustering level, or
 #' dataframes, lists, matrices, or vectors indicating the clusters units pertain
 #' to.\n\n\code{.get_b11()} and \code{.get_b12()} tolerate NA values for manually
@@ -18,7 +18,7 @@ NULL
 #' an NA cluster ID will be treated as an independent observation. \code{.get_b22()},
 #' however, will fail if the new cluster levels contain NA's because all units
 #' in the quasiexperimental sample should have well-defined design information.
-#' 
+#'
 #' @export
 #' @rdname var_estimators
 vcovDA <- function(object, type = c("CR0"), ...) {
@@ -52,7 +52,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   m <- match.call()
   if ("type" %in% names(m)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -81,17 +81,17 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
 #' @title (Internal) Compute variance blocks
 #' @details The \bold{B12 block} is the covariance matrix of the cluster-level
-#'   estimating equations for the covariance and direct adjustment models. It
-#'   has a row for each term in the covariance model and a column for each term
-#'   in the direct adjustment model. For any row that does not appear in both
-#'   the experimental design and the covariance model data, its contribution to
+#'   estimating equations for the covariance adjustment and ITT effect models. It
+#'   has a row for each term in the covariance adjustment model and a column for each term
+#'   in the ITT effect model. For any row that does not appear in both
+#'   the experimental design and the covariance adjustment model data, its contribution to
 #'   this matrix will be 0. Thus, if there is no overlap between the two
 #'   datasets, this will return a matrix of 0's.
 #' @param x A \code{DirectAdjusted} model
 #' @return \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
-#'   are given by the number of terms in the covariance model and the number of
-#'   columns correspond to intercept and treatment variable terms in the direct
-#'   adjustment model
+#'   are given by the number of terms in the covariance adjustment model and the number of
+#'   columns correspond to intercept and treatment variable terms in the ITT
+#'   effect model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b12 <- function(x, ...) {
@@ -144,10 +144,10 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     } else {
       stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                  "must provide a data frame, matrix, list, numeric/factor vector, or",
-                 "a character vector specifying column names that exist in both the ITT and",
+                 "a character vector specifying column names that exist in both the ITT effect and",
                  "covariance model datasets"))
     }
-    
+
     # Check to see if provided column names overlap with design
     missing_des_cols <- setdiff(cluster_cols, colnames(x@Design@structure))
     if (length(missing_des_cols) > 0) {
@@ -155,7 +155,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                  "in the DirectAdjusted object's Design:",
                  paste(missing_des_cols, collapse = ", ")))
     }
-    
+
     # Re-create keys dataframe with the new clustering columns
     keys <- .merge_preserve_order(wide_frame[cov_adj_cluster_cols],
                                   unique(x@Design@structure[c(cov_adj_cluster_cols, trt_col)]),
@@ -218,7 +218,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   treatment estimate.
 #' @return \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
 #' dimensions are given by the intercept and treatment variable terms in the
-#' direct adjustment model
+#' ITT effect model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a22_inverse <- function(x) {
@@ -234,8 +234,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 }
 
 #' @param ... Arguments to be passed to sandwich::meatCL
-#' @details The \bold{B22 block} refers to a clustered variance estimate of the
-#'   treatment effect estimate. The \code{stats} package offers family objects
+#' @details The \bold{B22 block} refers to a clustered estimate of the covariance
+#'   matrix for the ITT effect model. The \code{stats} package offers family objects
 #'   with canonical link functions, so the log-likelihood for a generalized
 #'   linear model can be written in terms of the linear predictor as
 #'   \deqn{L(y_i, \beta, \phi, w_i) = w_i * (y_i * \beta'x_i - b(\beta'x_i)) /
@@ -257,7 +257,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
 #' @return \code{.get_b22()}: A \eqn{2\times 2} matrix where the
 #'   dimensions are given by the intercept and treatment variable terms in the
-#'   direct adjustment model
+#'   ITT effect model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_b22 <- function(x, ...) {
@@ -281,7 +281,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                      envir = environment(formula(x)))
         stop(paste("The columns",
                    paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
-                   "are missing from the ITT model dataset"),
+                   "are missing from the ITT effect model dataset"),
              call. = FALSE)
       })
   } else if (inherits(dots$cluster, "data.frame")) {
@@ -291,7 +291,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a data frame, matrix, list, numeric/factor vector, or",
-               "a character vector specifying column names in the ITT model dataset"))
+               "a character vector specifying column names in the ITT effect model dataset"))
   }
 
   # NOTE: if user passes in matrix with multiple columns, they are concatenated
@@ -312,12 +312,12 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
 #' @details The \bold{A11 block} is the \eqn{p\times p} matrix corresponding to
 #'   the unscaled inverse of the observed Fisher information of the covariance
-#'   model. The observed information is given by the estimate of the negative
+#'   adjustment model. The observed information is given by the estimate of the negative
 #'   Jacobian of the model's estimating equations. The unscaled version provided
 #'   here divides by the number of observations used to fit the covariance
-#'   model.
+#'   adjustment model.
 #' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-#'   dimensions are given by the number of terms in the covariance model
+#'   dimensions are given by the number of terms in the covariance adjustment model
 #'   including an intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
@@ -344,9 +344,9 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   coefficient estimates. The estimates returned here are potentially
 #'   clustered (either by the clustering in the experimental design or by
 #'   manually providing a `cluster` argument) if clustering information can be
-#'   retrieved from the covariance model data.
+#'   retrieved from the covariance adjustment model data.
 #' @return \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
-#'   given by the number of terms in the covariance model including an
+#'   given by the number of terms in the covariance adjustment model including an
 #'   intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
@@ -388,7 +388,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a data frame, matrix, list, numeric/factor vector, or",
-               "a character vector specifying column names in the covariance model dataset"))
+               "a character vector specifying column names in the covariance adjustment model dataset"))
   }
 
   # Replace NA's for rows not in the experimental design with a unique cluster ID
@@ -425,22 +425,22 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
 
 #' @details The \bold{A21 block} is the block of the sandwich variance estimator
-#'   corresponding to the gradient of the direct adjustment model with respect
+#'   corresponding to the gradient of the ITT effect model with respect
 #'   to the covariates. Some of the information needed for this calculation is
 #'   stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
 #'   block is the crossproduct of the prediction gradient and the gradient of
-#'   the conditional mean vector for the direct adjustment model summed to the
+#'   the conditional mean vector for the ITT effect model summed to the
 #'   cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
 #'   / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
 #'   (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'} where \eqn{\mu} and
 #'   \eqn{\eta_i} are the conditional mean function and linear predictor for the
-#'   ith cluster in the direct adjustment model, and \eqn{\upsilon} and
+#'   ith cluster in the ITT effect model, and \eqn{\upsilon} and
 #'   \eqn{\zeta_i} are the conditional mean function and linear predictor for
-#'   the ith cluster in the covariance model.
+#'   the ith cluster in the covariance adjustment model.
 #' @return \code{.get_a12()}: A \eqn{2\times p} matrix where the number of
-#'   rows are given by intercept and treatment variable terms in the direct
-#'   adjusted model, and the number of columns are given by the number of terms
-#'   in the covariance model
+#'   rows are given by intercept and treatment variable terms in the ITT effect
+#'   model, and the number of columns are given by the number of terms
+#'   in the covariance adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
@@ -454,7 +454,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                "for direct adjustment standard errors"))
   }
 
-  # Get contribution to the estimating equation from the direct adjustment model
+  # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
 
   damod_mm <- stats::model.matrix(formula(x),
@@ -469,7 +469,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 }
 
 #' @title (Internal) Check the NA status of clustering columns in the covariance
-#' model data
+#' adjustment model data
 #' @details \code{.check_cluster_col_nas} checks whether entire columns in a
 #' dataframe contain NA values. If a column only contains NA's, the function
 #' produces a warning indicating the column cannot be meaningfully used for
@@ -491,13 +491,13 @@ vcovDA <- function(object, type = c("CR0"), ...) {
             paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
             "will be used to cluster the covariance adjustment model.")
     }
-    
+
     cluster_cols <- setdiff(cluster_cols, all_na_cols)
     warning(paste("The columns", paste(all_na_cols, collapse = ", "),
                   "are all NA's in the covariance adjustment model dataset.",
                   msg))
   }
-  
+
   return(cluster_cols)
 }
 

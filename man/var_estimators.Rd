@@ -3,7 +3,7 @@
 \name{vcovDA}
 \alias{vcovDA}
 \alias{.vcovMB_CR0}
-\title{Compute directly adjusted cluster-robust sandwich variance estimates}
+\title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
 vcovDA(object, type = c("CR0"), ...)
 
@@ -25,7 +25,7 @@ given by the intercept and treatment variable terms in the direct adjustment
 model
 }
 \description{
-Compute directly adjusted cluster-robust sandwich variance estimates
+Compute covariance-adjusted cluster-robust sandwich variance estimates
 
 Compute directly-adjusted CR0 cluster-robust sandwich variance estimates
 under model-based assumptions
