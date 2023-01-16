@@ -209,10 +209,7 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
   expect_error(.get_b12(m, cluster = c("cid3")),
                "cid3 are missing from the covariance adjustment model dataset")
   expect_error(.get_b12(m, cluster = c(TRUE, FALSE)),
-               "must provide a data frame")
-  bid1 <- simdata$bid
-  expect_error(.get_b12(m, cluster = bid1),
-               "in the DirectAdjusted object's Design")
+               "must provide a character vector")
 })
 
 test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
@@ -239,20 +236,7 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   # default (columns specified in `cluster` argument of Design) matches expected
   expect_equal(.get_b12(m), expected)
   
-  # test character vector cluster argument
   expect_equal(.get_b12(m, cluster = c("cid1", "cid2")), expected)
-  
-  # # test data frame cluster argument
-  # expect_equal(.get_b12(m, cluster = simdata[, c("cid1", "cid2")]), expected)
-  # 
-  # # test matrix cluster argument
-  # uoas <- cbind(simdata$cid1, simdata$cid2)
-  # colnames(uoas) <- c("cid1", "cid2")
-  # expect_equal(.get_b12(m, cluster = uoas), expected)
-  # 
-  # # test list cluster argument
-  # expect_equal(.get_b12(m, cluster = list(cid1 = simdata[, "cid1"],
-  #                                         cid2 = simdata[, "cid2"])), expected)
 })
 
 test_that("get_b12 handles NA's in custom clustering columns correctly", {
@@ -591,7 +575,6 @@ test_that(".get_b22 returns correct value for lm object w offset", {
 
 test_that(".get_b22 fails with invalid custom cluster argument", {
   data(simdata)
-  
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
@@ -601,10 +584,16 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   )
   
   expect_error(.get_b22(m, cluster = c("cid3")),
-               "cid3 are missing from the ITT model dataset")
+               "cid3 are missing from the ITT effect model dataset")
   expect_error(.get_b22(m, cluster = c(TRUE, FALSE)),
-               "must provide a data frame")
-  expect_error(.get_b22(m, cluster = c(seq_len(nrow(simdata) - 1), NA_integer_)),
+               "must provide a character vector")
+  
+  simdata$cid3 <- NA_integer_
+  des <- rct_design(z ~ cluster(cid1, cid2, cid3), data = simdata)
+  m <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  expect_error(.get_b22(m, cluster = "cid3"),
                "cannot handle NAs")
 })
 
@@ -630,42 +619,8 @@ test_that(".get_b22 produces correct estimates with valid custom cluster argumen
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  # test character vector cluster argument
   expect_equal(.get_b22(m, cluster = uoanames, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
-  
-  # test data frame cluster argument
-  expect_equal(.get_b22(m, cluster = simdata[, uoanames], type = "HC0"),
-               vmat * nuoas / (nuoas - 1L))
-  
-  # test matrix cluster argument
-  uoas <- Reduce(cbind, lapply(uoanames, function(x) simdata[[x]]))
-  colnames(uoas) <- uoanames
-  expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
-               vmat * nuoas / (nuoas - 1L))
-  
-  # test list cluster argument
-  uoas <- lapply(uoanames, function(x) simdata[[x]])
-  names(uoas) <- uoanames
-  expect_equal(.get_b22(m, cluster = uoas, type = "HC0"),
-               vmat * nuoas / (nuoas - 1L))
-  
-  # test factor/numeric/integer cluster arguments
-  form <- "~ -1 + as.factor(bid)"
-  bid_matrix <- stats::model.matrix(as.formula(form),
-                                    stats::expand.model.frame(m, "bid")[, "bid",
-                                                                        drop = FALSE])
-  
-  bid_eqns <- crossprod(bid_matrix, WX)
-  bid_vmat <- crossprod(bid_eqns)
-  nbids <- length(unique(simdata[, "bid"]))
-  
-  expect_equal(.get_b22(m, cluster = simdata$bid, type = "HC0"),
-               bid_vmat * nbids / (nbids - 1L))
-  expect_equal(.get_b22(m, cluster = as.numeric(simdata$bid), type = "HC0"),
-               bid_vmat * nbids / (nbids - 1L))
-  expect_equal(.get_b22(m, cluster = factor(simdata$bid), type = "HC0"),
-               bid_vmat * nbids / (nbids - 1L))
 })
 
 test_that(".get_b22 with one clustering column", {
@@ -907,7 +862,7 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
   expect_error(.get_b11(m, cluster = c("cid3")),
                "cid3 are missing from the covariance adjustment model dataset")
   expect_error(.get_b11(m, cluster = c(TRUE, FALSE)),
-               "must provide a data frame")
+               "must provide a character vector")
 })
 
 test_that(".get_b11 produces correct estimates with valid custom cluster argument", {
@@ -930,25 +885,7 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
   
-  # test character vector cluster argument
   expect_equal(.get_b11(m, cluster = "cid1"), expected)
-  
-  # # test data frame cluster argument
-  # expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
-  # 
-  # # test matrix cluster argument
-  # uoas <- as.matrix(simdata[, "cid1"])
-  # colnames(uoas) <- "cid1"
-  # expect_equal(.get_b11(m, cluster = simdata[, "cid1", drop = FALSE]), expected)
-  # 
-  # # test list cluster argument
-  # expect_equal(.get_b11(m, cluster = list(cid1 = simdata[, "cid1"])),
-  #              expected)
-  # 
-  # # test factor/numeric/integer cluster arguments
-  # expect_equal(.get_b11(m, cluster = simdata[, "cid1"]), expected)
-  # expect_equal(.get_b11(m, cluster = as.numeric(simdata[, "cid1"])), expected)
-  # expect_equal(.get_b11(m, cluster = uoas), expected)
   
   # test different clustering level
   bids <- factor(simdata[, "bid"])

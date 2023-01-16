@@ -15,19 +15,24 @@ vcovDA(object, type = c("CR0"), ...)
 \item{type}{A string indicating the desired variance estimator. Currently
 accepts "CR0"}
 
-\item{...}{Arguments to be passed to sandwich::meatCL}
-
-\item{x}{A \code{DirectAdjusted} model}
+\item{...}{Arguments to be passed to the internal variance estimation function.
+One argument a user may want to manually override is the \code{cluster} argument.
+Users may be interested in clustering standard errors at levels different than
+the unit of assignment level specified in the \code{DirectAdjusted} model's
+\code{Design}. In this case, they may specify column names in the ITT effect/covariance
+adjustment model datasets corresponding to a different clustering level.
+\code{.get_b11()} and \code{.get_b12()} tolerate NA values for manually
+provided cluster ID's, since the covariance adjustment model may be fit to a
+sample larger than the quasiexperimental sample. In this case, each unit with
+an NA cluster ID will be treated as an independent observation. \code{.get_b22()},
+however, will fail if the new cluster levels contain NA's because all units
+in the quasiexperimental sample should have well-defined design information.}
 }
 \value{
-\code{.vcovMB_CR0()}: A \eqn{2\times 2} matrix where the dimensions are
-given by the intercept and treatment variable terms in the direct adjustment
-model
+A \eqn{2\times 2} matrix where the dimensions are
+given by the intercept and treatment variable terms in the ITT effect model
 }
 \description{
 Compute covariance-adjusted cluster-robust sandwich variance estimates
-
-Compute directly-adjusted CR0 cluster-robust sandwich variance estimates
-under model-based assumptions
 }
 \keyword{internal}

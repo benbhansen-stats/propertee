@@ -109,7 +109,7 @@ The \bold{B11 block} is the block of the sandwich variance estimator
 corresponding to the variance-covariance matrix of the covariance model
 coefficient estimates. The estimates returned here are potentially
 clustered (either by the clustering in the experimental design or by
-manually providing a \code{cluster} argument) if clustering information can be
+a manually provided \code{cluster} argument) if clustering information can be
 retrieved from the covariance adjustment model data.
 
 The \bold{A21 block} is the block of the sandwich variance estimator

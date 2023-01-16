@@ -10,15 +10,15 @@ NULL
 #' Users may be interested in clustering standard errors at levels different than
 #' the unit of assignment level specified in the \code{DirectAdjusted} model's
 #' \code{Design}. In this case, they may specify column names in the ITT effect/covariance
-#' adjustment model datasets corresponding to a different clustering level, or
-#' dataframes, lists, matrices, or vectors indicating the clusters units pertain
-#' to.\n\n\code{.get_b11()} and \code{.get_b12()} tolerate NA values for manually
+#' adjustment model datasets corresponding to a different clustering level.
+#' \code{.get_b11()} and \code{.get_b12()} tolerate NA values for manually
 #' provided cluster ID's, since the covariance adjustment model may be fit to a
 #' sample larger than the quasiexperimental sample. In this case, each unit with
 #' an NA cluster ID will be treated as an independent observation. \code{.get_b22()},
 #' however, will fail if the new cluster levels contain NA's because all units
 #' in the quasiexperimental sample should have well-defined design information.
-#'
+#' @return A \eqn{2\times 2} matrix where the dimensions are
+#' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
 vcovDA <- function(object, type = c("CR0"), ...) {
@@ -33,13 +33,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   return(est)
 }
 
-#' @title Compute directly-adjusted CR0 cluster-robust sandwich variance estimates
-#' under model-based assumptions
-#' @param x A \code{DirectAdjusted} model
-#' @param ... Arguments to be passed to sandwich::meatCL
-#' @return \code{.vcovMB_CR0()}: A \eqn{2\times 2} matrix where the dimensions are
-#' given by the intercept and treatment variable terms in the direct adjustment
-#' model
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR0 <- function(x, ...) {
@@ -129,23 +122,10 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                call. = FALSE)
         })
       cov_adj_cluster_cols <- .check_cluster_col_nas(itt_cluster_cols, wide_frame)
-    } else if (inherits(dots$cluster, "data.frame")) {
-      cluster_cols <- colnames(dots$cluster)
-      wide_frame <- dots$cluster
-    } else if (inherits(dots$cluster, c("matrix", "list"))) {
-      wide_frame <- as.data.frame(dots$cluster)
-      cluster_cols <- colnames(wide_frame)
-    } else if (inherits(dots$cluster, c("integer", "numeric", "factor"))) {
-      m <- match.call(definition = sys.function(sys.parent(2L)),
-                      call = sys.call(sys.parent(2L)))
-      cluster_cols <- deparse(m$cluster)
-      wide_frame <- as.data.frame(dots$cluster)
-      colnames(wide_frame) <- cluster_cols
     } else {
       stop(paste("If overriding `cluster` argument for meat matrix calculations,",
-                 "must provide a data frame, matrix, list, numeric/factor vector, or",
-                 "a character vector specifying column names that exist in both the ITT effect and",
-                 "covariance model datasets"))
+                 "must provide a character vector specifying column names that",
+                 "exist in both the ITT effect and covariance model datasets"))
     }
 
     # Check to see if provided column names overlap with design
@@ -284,19 +264,12 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                    "are missing from the ITT effect model dataset"),
              call. = FALSE)
       })
-  } else if (inherits(dots$cluster, "data.frame")) {
-    uoas <- dots$cluster
-  } else if (inherits(dots$cluster, c("matrix", "list", "integer", "numeric", "factor"))) {
-    uoas <- as.data.frame(dots$cluster)
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
-               "must provide a data frame, matrix, list, numeric/factor vector, or",
-               "a character vector specifying column names in the ITT effect model dataset"))
+               "must provide a character vector specifying column names in the",
+               "ITT effect model dataset"))
   }
 
-  # NOTE: if user passes in matrix with multiple columns, they are concatenated
-  # and forced to be one factor column (as we do in other situations, since we
-  # assume nested clusters only)
   if (ncol(uoas) == 1) {
     uoas <- factor(uoas[,1])
   } else {
@@ -343,7 +316,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   corresponding to the variance-covariance matrix of the covariance model
 #'   coefficient estimates. The estimates returned here are potentially
 #'   clustered (either by the clustering in the experimental design or by
-#'   manually providing a `cluster` argument) if clustering information can be
+#'   a manually provided `cluster` argument) if clustering information can be
 #'   retrieved from the covariance adjustment model data.
 #' @return \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
 #'   given by the number of terms in the covariance adjustment model including an
@@ -381,14 +354,10 @@ vcovDA <- function(object, type = c("CR0"), ...) {
              call. = FALSE)
       })
     cluster_cols <- .check_cluster_col_nas(dots$cluster, uoas)
-  } else if (inherits(dots$cluster, "data.frame")) {
-    uoas <- dots$cluster
-  } else if (inherits(dots$cluster, c("matrix", "list", "integer", "numeric", "factor"))) {
-    uoas <- as.data.frame(dots$cluster)
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
-               "must provide a data frame, matrix, list, numeric/factor vector, or",
-               "a character vector specifying column names in the covariance adjustment model dataset"))
+               "must provide a character vector specifying column names in the",
+               "covariance adjustment model dataset"))
   }
 
   # Replace NA's for rows not in the experimental design with a unique cluster ID
