@@ -342,10 +342,9 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #' @details The \bold{B11 block} is the block of the sandwich variance estimator
 #'   corresponding to the variance-covariance matrix of the covariance model
 #'   coefficient estimates. The estimates returned here are potentially
-#'   clustered (by the clustering in the experimental design) if rows in the
-#'   covariance model data also exist in the design. If there is no overlap
-#'   between the two datasets, the variance-covariance matrix is estimated
-#'   assuming the observations are independent.
+#'   clustered (either by the clustering in the experimental design or by
+#'   manually providing a `cluster` argument) if clustering information can be
+#'   retrieved from the covariance model data.
 #' @return \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
 #'   given by the number of terms in the covariance model including an
 #'   intercept
@@ -409,9 +408,13 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   uoas <- factor(uoas)
   nuoas <- length(unique(uoas))
 
-  # if the covariance model only uses one cluster, treat units as independent
+  # if the covariance model only uses one cluster, produce warning
   if (nuoas == 1) {
-    uoas <- seq_len(length(uoas))
+    warning(paste("Covariance adjustment model has meat matrix numerically",
+                  "indistinguishable from 0"))
+    return(
+      matrix(0, nrow = ncol(stats::model.matrix(cmod)), ncol = ncol(stats::model.matrix(cmod)))
+    )
   }
   dots$cluster <- uoas
   dots$x <- cmod

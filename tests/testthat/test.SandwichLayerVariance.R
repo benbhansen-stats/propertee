@@ -1129,8 +1129,10 @@ test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
        offset = cov_adj(cmod, newdata = simdata[msk,]))
   )
 
-  expect_equal(.get_b11(m, type = "HC0", cadjust = FALSE),
-               crossprod(stats::model.matrix(cmod) * cmod$residuals))
+  expect_warning(.get_b11(m),
+                 "meat matrix numerically indistinguishable")
+  expect_equal(suppressWarnings(.get_b11(m)),
+               matrix(0, nrow = 2, ncol = 2))
 })
 
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clustering", {
