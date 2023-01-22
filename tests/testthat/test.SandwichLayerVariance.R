@@ -960,7 +960,7 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
-                 "cid1, cid2 are found to have NA's")
+                 "are found to have NA's")
   expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"),
                                          type = "HC0", cadjust = FALSE)),
                crossprod(sandwich::estfun(cmod))) # there should be no clustering
@@ -974,7 +974,7 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
                       offset = cov_adj(cmod, design = des)))
   
   expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
-                 "Only cid1 will be used to cluster")
+                 "have NA's for some but not all")
   expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"))),
                .get_b11(dmod, cluster = c("cid1")))
 })
@@ -1041,7 +1041,8 @@ test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
 })
 
 test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
-                "subset of cov model data"), {
+                "subset of cov model data (also tests NA's in some cluster",
+                "but not all cluster columns)"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -1055,10 +1056,6 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
 
   # replace NA's with distinct uoa values and recalculate nuoas for small-sample adjustment
   uoas <- Reduce(function(x, y) paste(x, y, sep = "_"), m$model$`(offset)`@keys)
-  uoas[grepl("NA", uoas)] <- NA_integer_
-  nuoas <- length(unique(uoas))
-  nas <- is.na(uoas)
-  uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
   uoas <- factor(uoas)
   nuoas <- length(levels(uoas))
 

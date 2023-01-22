@@ -348,7 +348,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   dots <- list(...)
   if (is.null(dots$cluster)) {
     uoas <- sl@keys
-    cluster_cols <- colnames(sl@keys)
+    cluster_cols <- colnames(uoas)
   } else if (inherits(dots$cluster, "character")) {
     cluster_cols <- dots$cluster
     uoas <- tryCatch(
@@ -363,26 +363,19 @@ vcovDA <- function(object, type = c("CR0"), ...) {
       })
 
     # check for NA's in the clustering columns
-    nas <- colSums(is.na(uoas[, cluster_cols, drop = FALSE]))
-    all_nas <- which(nas == nrow(uoas))
-    any_nas <- which(nas > 0)
-    if (any(all_nas) | any(any_nas)) {
-      all_na_cols <- names(all_nas)
-      any_na_cols <- names(any_nas)
-      msg <- paste("The columns", paste(all_na_cols, collapse = ", "),
-                   "are found to have NA's in the covariance adjustment model",
-                   "dataset. This taken to mean these observations should be",
-                   "treated as IID. To avoid this warning, provide unique non-NA",
-                   "cluster ID's for each row.")
-      cluster_cols <- setdiff(cluster_cols, all_na_cols)
-      if (length(cluster_cols) > 0) {
-        msg <- paste(msg,
-                     "Only",
-                     paste(setdiff(cluster_cols, all_na_cols), collapse = ", "),
-                     "will be used to cluster the covariance adjustment model.")
-      }
-      
-      warning(msg)
+    nas <- rowSums(is.na(uoas[, cluster_cols, drop = FALSE]))
+    if (any(nas == length(cluster_cols))) {
+      warning(paste("Some or all rows in the covariance adjustment model dataset",
+                    "are found to have NA's for the given clustering columns.",
+                    "This is taken to mean these observations should be treated",
+                    "as IID. To avoid this warning, provide unique non-NA cluster",
+                    "ID's for each row."))
+    } else if (any(nas > 0 & nas < length(cluster_cols))) {
+      warning(paste("Some rows in the covariance adjustment model dataset have",
+                    "NA's for some but not all clustering columns. Rows sharing",
+                    "the same non-NA cluster ID's will be clustered together.",
+                    "If this is not intended, provide unique non-NA cluster ID's",
+                    "for these rows."))
     }
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
@@ -391,14 +384,13 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
 
   # Replace NA's for rows not in the experimental design with a unique cluster ID
-  if (length(cluster_cols) == 0) {
-    uoas <- seq(1, nc)
-  } else if (length(cluster_cols) == 1) {
+  if (ncol(uoas) == 1) {
     uoas <- uoas[, 1]
   } else {
     uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
-    uoas[grepl("NA", uoas)] <- NA_character_
+    uoas[vapply(strsplit(uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
   }
+
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
   if (any(nas)) {
