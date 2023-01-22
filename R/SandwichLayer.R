@@ -196,9 +196,12 @@ as.SandwichLayer <- function(x, design, by = NULL) {
                  "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
     })
-  keys <- .merge_preserve_order(wide_frame, design@structure, all.x = TRUE, sort = FALSE)
-  keys[is.na(keys[, var_names(design, "t")]), uoanames] <- NA
-  keys <- keys[, uoanames, drop = FALSE]
+
+  keys <- as.data.frame(
+    sapply(uoanames, function(col) {
+      match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
+    })
+  )
 
   return(new("SandwichLayer",
              x,
