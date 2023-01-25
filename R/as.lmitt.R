@@ -20,39 +20,6 @@ as.lmitt <- function(x, design = NULL) {
     stop("input must be lm object")
   }
 
-  # Ensure `design=` is a proper object
-  if (!is.null(design) & !is(design, "Design")) {
-    # Allow WeightedDesign just in case
-    if (is(design, "WeightedDesign")) {
-      design <- design@Design
-    } else {
-      stop(paste("If provided, `design` must be a `Design` or",
-                 "`WeightedDesign` object"))
-    }
-  }
-
-  # Check if we can find a design in either Weights (preferred) or cov_adj
-  design_weights <- tryCatch(x$model$"(weights)"@Design,
-                             error = function(e) NULL)
-  design_cov_adj <- tryCatch(.get_cov_adj(x)@Design,
-                             error = function(e) NULL)
-
-  # The list contains all designs possible found (one passed in, and one in each
-  # of weights and cov_adj). Passing `unique` removes any duplicates (since
-  # duplicates are OK).
-  unique_designs <- unique(list(design, design_weights, design_cov_adj))
-  # Drop any NULL designs
-  unique_designs <- unique_designs[!vapply(unique_designs,
-                                           is.null, logical(1))]
-  # At this point, if the length of `unique_designs` is 1, we're done. More than
-  # one is an error.
-  if (length(unique_designs) == 1) {
-    design <- unique_designs[[1]]
-  } else if (length(unique_designs) > 1) {
-    stop("Multiple differing `Design` found in object.")
-  } else {
-    stop("Cannot locate a `Design`, pass via it `design=` argument")
-  }
 
   ### 10/31/22 JE - The below causes a ton of errors in the test suite that do
   ### NOT show up interactively and thus are extremely challenging to debug. It
@@ -87,21 +54,66 @@ as.lmitt <- function(x, design = NULL) {
   }
 
 
-  eval_env <- new.env(parent = environment(formula(x)))
-  data <- eval(x$call$data, eval_env)
-  x$call$data <- quote(data)
-  assign("data", data, envir = eval_env)
-  assign("design", design, envir = eval_env)
-  environment(x$terms) <- eval_env
-  if (inherits(x, "glm")) {
-    x$formula <- as.formula(x, env = eval_env)
-  }
-
-  return(new("DirectAdjusted",
-             x,
-             Design = design))
+  return(.convert_to_lmitt(x, design))
 }
 
 ##' @rdname as_lmitt
 ##' @export
 as.DirectAdjusted <- as.lmitt
+
+.convert_to_lmitt <- function(lm_model, design) {
+  if (!inherits(lm_model, "lm")) {
+    stop("input must be lm object")
+  }
+
+  # Ensure `design=` is a proper object
+  if (!is.null(design) & !is(design, "Design")) {
+    # Allow WeightedDesign just in case
+    if (is(design, "WeightedDesign")) {
+      design <- design@Design
+    } else {
+      stop(paste("If provided, `design` must be a `Design` or",
+                 "`WeightedDesign` object"))
+    }
+  }
+
+  # Check if we can find a design in either Weights (preferred) or cov_adj
+  design_weights <- tryCatch(lm_model$model$"(weights)"@Design,
+                             error = function(e) NULL)
+  design_cov_adj <- tryCatch(.get_cov_adj(lm_model)@Design,
+                             error = function(e) NULL)
+
+  # The list contains all designs possible found (one passed in, and one in each
+  # of weights and cov_adj). Passing `unique` removes any duplicates (since
+  # duplicates are OK).
+  unique_designs <- unique(list(design, design_weights, design_cov_adj))
+  # Drop any NULL designs
+  unique_designs <- unique_designs[!vapply(unique_designs,
+                                           is.null, logical(1))]
+  # At this point, if the length of `unique_designs` is 1, we're done. More than
+  # one is an error.
+  if (length(unique_designs) == 1) {
+    design <- unique_designs[[1]]
+  } else if (length(unique_designs) > 1) {
+    stop("Multiple differing `Design` found in object.")
+  } else {
+    stop("Cannot locate a `Design`, pass via it `design=` argument")
+  }
+
+
+  eval_env <- new.env(parent = environment(formula(lm_model)))
+  data <- eval(lm_model$call$data, eval_env)
+  lm_model$call$data <- quote(data)
+  assign("data", data, envir = eval_env)
+  assign("design", design, envir = eval_env)
+  environment(lm_model$terms) <- eval_env
+  if (inherits(lm_model, "glm")) {
+    lm_model$formula <- as.formula(lm_model, env = eval_env)
+  }
+
+
+  return(new("DirectAdjusted",
+             lm_model,
+             Design = design))
+
+}

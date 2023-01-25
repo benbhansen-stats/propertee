@@ -8,30 +8,18 @@ test_that("absorb= argument", {
   expect_length(coefficients(da), 2)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_true(length(da$coefficients) > 2)
+  expect_length(coefficients(da), 2)
 
   # User passing .absorb should error
   expect_error(lmitt(y ~ .absorbed(cid1*cid2), data = simdata, design = des),
                "internal function")
 
-})
+  # subgroup effects
+  da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, design = des)
+  expect_length(coefficients(da), 4)
 
-test_that("absorbed effects aren't printed", {
-  data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
-                   data = simdata)
-
-  da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)
-
-  expect_match(capture_output(show(da)), "assigned()")
-  expect_no_match(capture_output(show(da)), ".absorbed")
-  expect_match(capture_output(print(da$coefficients)), ".absorbed")
-
-  sda <- summary(da)
-
-  expect_match(capture_output(print(sda)), "assigned()")
-  expect_no_match(capture_output(print(sda)), ".absorbed")
-  expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, absorb = TRUE, design = des)
+  expect_length(coefficients(da), 4)
 
 })
 
@@ -44,16 +32,6 @@ test_that("multiple variables in blocks", {
                    data = simdata)
 
   da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)
-  expect_true(length(da$coefficients) > 2)
-
-  expect_match(capture_output(show(da)), "assigned()")
-  expect_no_match(capture_output(show(da)), ".absorbed")
-  expect_match(capture_output(print(da$coefficients)), ".absorbed")
-
-  sda <- summary(da)
-
-  expect_match(capture_output(print(sda)), "assigned()")
-  expect_no_match(capture_output(print(sda)), ".absorbed")
-  expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  expect_true(length(da$coefficients) == 1)
 
 })

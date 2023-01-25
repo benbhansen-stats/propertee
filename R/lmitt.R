@@ -77,7 +77,15 @@ lmitt.formula <- function(obj,
                           design,
                           absorb = FALSE,
                           ...) {
-  mf <- match.call()
+  lmitt.call <- match.call()
+  m <- match(c("obj", "data", "subset", "weights", "na.action",
+               "method", "model", "x", "y", "qr", "singular.ok",
+               "contrasts", "offset"), names(lmitt.call), 0L)
+  lm.call <- lmitt.call[c(1L, m)]
+  names(lm.call)[2] <- "formula"
+  lm.call[[1]] <- quote(stats::lm)
+  #lmitt.call contains design, absorb. lm.call contains only things that get
+  #passed to lm, model.matrix
 
   if (!is.null(attr(terms(obj, specials = ".absorbed"),
                     "specials")$.absorbed)) {
@@ -100,11 +108,11 @@ lmitt.formula <- function(obj,
     # Build new call. All calls must include obj and data
     new_d_call <- paste0(des_call, "(",
                          "formula = ", deparse(design),
-                         ", data = ", deparse(mf$data))
+                         ", data = ", deparse(lmitt.call$data))
     # If user passed dichotomy, include it. We do this so the
     # `design@call` will be in agreement.
-    if (!is.null(mf$dichotomy)) {
-      new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(mf$dichotomy))
+    if (!is.null(lmitt.call$dichotomy)) {
+      new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(lmitt.call$dichotomy))
     }
     new_d_call <- paste0(new_d_call, ")")
     # str2lang converts character into call
@@ -114,85 +122,100 @@ lmitt.formula <- function(obj,
                "function, or a formula specifying such a design"))
   }
 
-  ### Next, update main formula
-
-  # Try to ensure proper formula. Valid forms are:
-  # ~ 1
-  # ~ sbgrp
-  # ~ 1 + sbgrp <- NYI, same as ~ sbgrp right now
+  # Extract formula bits
   rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
   rhs <- rhs[rhs != "+"]
-  if (length(rhs) > 2) {
+  if (length(rhs) > 1) {
+    # At max two terms ("sbgrp" and "1")
     stop("Too many terms on right hand side")
   }
-  if ("0" %in% rhs) {
+  if (rhs == "0") {
+    # We don't support y ~ 0
     stop("'0' is not a valid entry on right hand side")
   }
-  if (length(rhs[rhs != "1"]) > 1) {
-    stop("Too many variable on right hand ide")
-  }
-  if (var_names(design, "t") %in% rhs) {
-    stop("Treatment variable should not be manually entered.")
-  }
+  # `rhs` is now either "1" or subgrouping variable
 
-  #### This blocks on `~ 1 + sbgrp` and `~ sbgrp + 1`. When we eventually
-  #### enable this functionality, remove this block
-  #### See #73
-  if (length(rhs) == 2) {
-    stop("To estimate subgroup effects, do not include '1'")
-  }
+#  saveenv <- environment(lm.call[[2]])
 
-  # About the modify the formula; doing so strips off envir, so saving to
-  # restore below.
-  saveenv <- environment(obj)
+  # Obtain model.response
+  mr.call <- lm.call
+  mr.call[[1]] <- quote(stats::model.frame)
+  mr <- stats::model.response(eval(mr.call))
 
-  # Replace alises for assigned with assigned
-  obj <- formula(gsub("adopters(", "assigned(", deparse(obj), fixed = TRUE))
-  obj <- formula(gsub("a.(",       "assigned(", deparse(obj), fixed = TRUE))
-  obj <- formula(gsub("z.(",       "assigned(", deparse(obj), fixed = TRUE))
-  # Only using opening parans to catch things like `a.(des)`.
-  environment(obj) <- saveenv
-
-
-  # If there are no assigned() in the formula, assume all RHS variables are
-  # stratified and add interaction with `assigned()`
-
-
-  no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
-                              "specials")$assigned)
-  if (no_assigned) {
-    if (length(attr(terms(obj), "term.labels")) == 0) {
-      # If user passes `y ~ 1`, there will be no `terms`, and `1:assigned`
-      # is ignored, so add it instead
-      obj <- update(obj, . ~ . + assigned())
+  areg.center <- function(var, grp, wts = NULL) {
+    if (!is.null(wts)) {
+          df <- data.frame(var = var, wts = wts)
+          var - sapply(split(df, grp), function(x) {weighted.mean(x$var, x$wts)})[as.character(grp)] +
+            weighted.mean(var, w = wts, na.rm = TRUE)
     } else {
-      # There's a sbgrp (as checked above) so interact it with assigned
-      obj <- update(obj, . ~ . : assigned())
+      var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
+        mean(var, na.rm = TRUE)
     }
   }
 
-  # Handle the `absorb=` argument
-  if (absorb) {
-    fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
-                          collapse = "*")
-    obj <- update(obj, paste0(". ~ . + ", fixed_eff_term))
+  # Obtain model.matrix
+
+  if (rhs == "1") {
+    # Define new RHS and obtain model.matrix
+    new.form <- formula(~ flexida::assigned()) # need flexida:: or assigned()
+                                               # can't be found
+#    environment(new.form) <- saveenv # Do I need this?
+    mm.call <- lm.call
+    mm.call[[2]] <- new.form
+    mm.call[[1]] <- quote(stats::model.matrix.default)
+    names(mm.call)[2] <- "object"
+    mm <- eval(mm.call, parent.frame())
+
+    if (absorb) {
+      blocks <- .get_col_from_new_data(design,
+                                       eval(lmitt.call$data, parent.frame()),
+                                       "b")[, 1]
+      mf.call <- lm.call
+      mf.call[[1]] <- quote(stats::model.frame)
+      weights <- eval(mf.call, parent.frame())$"(weights)"
+      mm <- apply(mm, 2, areg.center, as.factor(blocks), weights)
+    }
+
+  } else {
+    sbgrp.form <- reformulate(paste0(rhs, "+0"))
+    sbgrp.call <- lm.call
+    sbgrp.call[[2]] <- sbgrp.form
+    sbgrp.call[[1]] <- quote(stats::model.matrix.default)
+    names(sbgrp.call)[2] <- "object"
+    sbgrp.mm <- eval(sbgrp.call, parent.frame())
+
+    effect.form <- reformulate(paste0("flexida::assigned():", rhs, "+0"))
+    effect.call <- lm.call
+    effect.call[[2]] <- effect.form
+    effect.call[[1]] <- quote(stats::model.matrix.default)
+    names(effect.call)[2] <- "object"
+    effect.mm <- eval(effect.call, parent.frame())
+
+    if (absorb) {
+      blocks <- .get_col_from_new_data(design,
+                                       eval(lmitt.call$data, parent.frame()),
+                                       "b")[, 1]
+      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, blocks)
+      effect.mm <- apply(effect.mm, 2, areg.center, blocks)
+    }
+
+    # Using `__xx__` to try and ensure no collision with variable names
+    mm <- apply(effect.mm, 2, function(xx__) {
+      lm.call$formula <- reformulate("sbgrp.mm", "xx__")
+      eval(lm.call, parent.frame())$resid
+    })
+
   }
 
-
-  m <- match(c("obj", "data", "subset", "weights", "na.action",
-               "method", "model", "x", "y", "qr", "singular.ok",
-               "contrasts", "offset"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
-  mf[[1L]] <- quote(stats::lm)
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
   wt <- substitute(list(...))$weights
   if (is(wt, "character")) {
     if (tolower(wt) == "ate") {
-      mf$weights <- quote(ate())
+      lm.call$weights <- quote(ate())
     } else if (tolower(wt) == "ett") {
-      mf$weights <- quote(ett())
+      lm.call$weights <- quote(ett())
     } else {
       warning(paste("Character other than \"ate\" or \"ett\" passed to",
                     "`weights=` argument.\nIf you are trying to pass a",
@@ -203,15 +226,11 @@ lmitt.formula <- function(obj,
     }
   }
 
-  # Reset the formula  for the `lm`, giving  it a proper name (since  we take in
-  # the  generic "obj"  name), and  replacing it  with the  updated `obj`  if we
-  # modified it above due to lack of `assigned()
-  names(mf)[2] <- "formula"
-  mf[[2L]] <- obj
+  lm.call[[2]] <- reformulate("mm + 0", "mr")
 
-  model <- eval(mf, parent.frame())
+  model <- eval(lm.call, parent.frame())
 
-  return(as.lmitt(model, design))
+  return(.convert_to_lmitt(model, design))
 
 }
 
