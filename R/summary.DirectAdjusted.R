@@ -40,7 +40,6 @@ print.summary.DirectAdjusted <-
            ...) {
 
   to_report <- x$coefficients
-  to_report <- to_report[!grepl("^\\.absorbed\\(", rownames(to_report)), ]
   stats::printCoefmat(to_report, digits = digits)
   invisible(x)
 }

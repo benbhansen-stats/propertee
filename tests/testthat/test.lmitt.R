@@ -95,8 +95,8 @@ test_that("Dichotomy option in Design creation", {
   data(simdata)
   des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
                     dichotomy = dose > 200 ~ .)
-  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
-  mod2 <- lmitt(y ~ assigned(), data = simdata,
+  mod1 <- lmitt(y ~ 1, data = simdata, design = des)
+  mod2 <- lmitt(y ~ 1, data = simdata,
                 design = dose ~ cluster(cid1, cid2),
                 dichotomy = dose > 200 ~ .)
   expect_identical(mod1@Design, mod2@Design)
@@ -113,19 +113,6 @@ test_that("Allow non-binary treatment", {
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
   expect_true(any(!model.frame(mod1)$`assigned()` %in% 0:1))
 
-})
-
-test_that("Aliases for assigned", {
-
-  data(simdata)
-  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata)
-  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
-  mod2 <- lmitt(y ~ adopters(), data = simdata, design = des)
-  mod3 <- lmitt(y ~ a.(), data = simdata, design = des)
-  mod4 <- lmitt(y ~ z.(), data = simdata, design = des)
-  expect_identical(mod1$coeff, mod2$coeff)
-  expect_identical(mod1$coeff, mod3$coeff)
-  expect_identical(mod1$coeff, mod4$coeff)
 })
 
 test_that("lmitt finds Design wherever it's stored", {

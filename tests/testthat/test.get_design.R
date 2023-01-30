@@ -56,7 +56,7 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
 test_that(".get_design finds design in expand.model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
+  damod <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   # ensure we're taking the Design object from the model not the existing object
   # in the environment
@@ -71,7 +71,7 @@ test_that(".get_design finds design in expand.model.frame call", {
 test_that(".get_design finds design in model.frame call", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  damod <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
+  damod <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   mf1 <- stats::model.frame(damod)
   mf2 <- stats::model.frame(formula(damod), simdata)

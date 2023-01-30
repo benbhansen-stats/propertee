@@ -24,7 +24,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   uid <- factor(simdata$uid)
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
-  dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
   
   # check default clustering level is the same when specified using cluster arg
@@ -68,7 +68,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   df[1:50, c("cid1", "cid2", "bid", "z")] <- NA
   cmod <- lm(y ~ x, df[1:50,])
   des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
-  dmod <- lmitt(y ~ assigned(), data = df[51:100,], design = des,
+  dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
   
   expect_warning(suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
@@ -223,8 +223,8 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
 
-  m <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
-  
+  m <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+
   cmod_eqns <- Reduce(
     rbind,
     by(estfun(cmod), list(simdata$cid1, simdata$cid2), colSums)

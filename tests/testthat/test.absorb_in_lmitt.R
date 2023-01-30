@@ -10,10 +10,6 @@ test_that("absorb= argument", {
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
   expect_length(coefficients(da), 2)
 
-  # User passing .absorb should error
-  expect_error(lmitt(y ~ .absorbed(cid1*cid2), data = simdata, design = des),
-               "internal function")
-
   # subgroup effects
   da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, design = des)
   expect_length(coefficients(da), 4)

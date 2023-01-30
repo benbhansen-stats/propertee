@@ -1,7 +1,7 @@
 test_that("summary.DirectAdjusted basics", {
   data(simdata)
   des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
-  da <- lmitt(y ~ assigned(), data = simdata, design = des)
+  da <- lmitt(y ~ 1, data = simdata, design = des)
   sda <- summary(da)
   expect_s3_class(sda, "summary.DirectAdjusted")
 

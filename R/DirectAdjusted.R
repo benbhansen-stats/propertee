@@ -8,12 +8,6 @@ setClass("DirectAdjusted",
          slots = c(Design = "Design"))
 
 setValidity("DirectAdjusted", function(object) {
-#  if (!is.character(.txt_fn(object))) {
-    # Ensures that treatment variable appears somewhere in RHS (-1 removes
-    # outcome) of formula. If created by `lmitt()`, treatment will be
-    # "assigned()"; but if passed from lm to as.DA, it could be a variable name.
-#    return("treatment not found in model")
-#  }
   return(TRUE)
 })
 

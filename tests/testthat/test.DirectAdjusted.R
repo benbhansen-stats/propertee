@@ -190,8 +190,8 @@ test_that("Differing designs found", {
   mod2 <- lmitt(y ~ x, data = simdata, weights = ate(des), design = des)
   expect_equal(mod1$coefficients, mod2$coefficients)
 
-  mod3 <- lmitt(y ~ assigned(), data = simdata, weights = ate(), design = des)
-  mod4 <- lmitt(y ~ assigned(), data = simdata, weights = ate(des), design = des)
+  mod3 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
+  mod4 <- lmitt(y ~ 1, data = simdata, weights = ate(des), design = des)
   expect_equal(mod3$coefficients, mod4$coefficients)
 
 
@@ -200,19 +200,15 @@ test_that("Differing designs found", {
 test_that("DirectAdjusted object has its own evaluation environment", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
-  mod2 <- lmitt(lm(y ~ assigned(), simdata, weights = ate(des)))
-  mod3 <- lmitt(y ~ 1, data = simdata, design = des)
+  mod1 <- lmitt(y ~ 1, data = simdata, design = des)
+  mod2 <- lmitt(lm(y ~ 1, simdata, weights = ate(des)))
 
   expect_false(identical(environment(), environment(formula(mod1))))
   expect_false(identical(environment(), environment(formula(mod2))))
-  expect_false(identical(environment(), environment(formula(mod3))))
   expect_equal(environment(formula(mod1))$data, simdata)
   expect_equal(environment(formula(mod1))$data, environment(formula(mod2))$data)
-  expect_equal(environment(formula(mod1))$data, environment(formula(mod3))$data)
   expect_equal(environment(formula(mod1))$design, des)
   expect_equal(environment(formula(mod1))$design, environment(formula(mod2))$design)
-  expect_equal(environment(formula(mod1))$design, environment(formula(mod3))$design)
 })
 
 test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
@@ -293,65 +289,4 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci2 <- confint(damod2, 2)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovlm_z.95)
-})
-
-test_that(".txt_fn for identifying treatment identifying function", {
-  data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
-
-  m1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
-  expect_identical(.txt_fn(m1), "assigned()")
-
-  m2 <- lmitt(lm(y ~ assigned() + assigned():dose, data = simdata,
-                 weights = ate(des)))
-  expect_identical(.txt_fn(m2), "assigned()")
-
-  m1 <- lmitt(lm(y ~ a.(), data = simdata, weights = ate(des)))
-  expect_identical(.txt_fn(m1), "a.()")
-
-  m2 <- lmitt(lm(y ~ a.() + a.():dose, data = simdata,
-                 weights = ate(des)))
-  expect_identical(.txt_fn(m2), "a.()")
-
-  m1 <- lmitt(lm(y ~ z.(), data = simdata, weights = ate(des)))
-  expect_identical(.txt_fn(m1), "z.()")
-
-  m2 <- lmitt(lm(y ~ z.() + z.():dose, data = simdata,
-                 weights = ate(des)))
-  expect_identical(.txt_fn(m2), "z.()")
-
-  m1 <- lmitt(lm(y ~ assigned(des), data = simdata), design = des)
-  expect_identical(.txt_fn(m1), "assigned(des)")
-
-  m2 <- lmitt(lm(y ~ assigned(des) + assigned(des):dose, data = simdata),
-              design = des)
-  expect_identical(.txt_fn(m2), "assigned(des)")
-
-  m1 <- lmitt(lm(y ~ a.(des), data = simdata), design = des)
-  expect_identical(.txt_fn(m1), "a.(des)")
-
-  m2 <- lmitt(lm(y ~ a.(des) + a.(des):dose, data = simdata),
-              design = des)
-  expect_identical(.txt_fn(m2), "a.(des)")
-
-  m1 <- lmitt(lm(y ~ z.(des), data = simdata), design = des)
-  expect_identical(.txt_fn(m1), "z.(des)")
-
-  m2 <- lmitt(lm(y ~ z.(des) + z.(des):dose, data = simdata),
-              design = des)
-  expect_identical(.txt_fn(m2), "z.(des)")
-
-
-  # Failing
-
-  m1 <- lm(y ~ assigned() + a.():dose, data = simdata, weights = ate(des))
-  expect_error(lmitt(m1), "Differing treatment")
-
-
-  m1 <- lm(y ~ assigned() + assigned(des):dose, data = simdata, weights = ate(des))
-  expect_error(lmitt(m1), "Differing forms")
-  m1 <- lm(y ~ a.() + a.(des):dose, data = simdata, weights = ate(des))
-  expect_error(lmitt(m1), "Differing forms")
-  m1 <- lm(y ~ z.() + z.(des):dose, data = simdata, weights = ate(des))
-  expect_error(lmitt(m1), "Differing forms")
 })

@@ -87,11 +87,27 @@ lmitt.formula <- function(obj,
   #lmitt.call contains design, absorb. lm.call contains only things that get
   #passed to lm, model.matrix
 
-  if (!is.null(attr(terms(obj, specials = ".absorbed"),
-                    "specials")$.absorbed)) {
-    stop(paste("`.absorbed()` is an internal function",
-               "and should not be used by end-users"))
+  ### Allow users to pass in "ate" and "ett" rather than functions if they have
+  ### no special modifications/additional arguments
+  wt <- substitute(list(...))$weights
+  if (is(wt, "character")) {
+    if (tolower(wt) == "ate") {
+      lm.call$weights <- quote(ate())
+      lmitt.call$weights <- quote(ate())
+    } else if (tolower(wt) == "ett") {
+      lm.call$weights <- quote(ett())
+      lmitt.call$weights <- quote(ett())
+    } else {
+      warning(paste("Character other than \"ate\" or \"ett\" passed to",
+                    "`weights=` argument.\nIf you are trying to pass a",
+                    "character to the internal `lm` you can disregard this",
+                    "warning.\nIf you are attemping to use `flexida`\'s",
+                    "weight generation, only \"ate\" and \"ett\" are",
+                    "accepted."))
+    }
   }
+
+
 
   # First, make sure we have a valid `design=` - if given a formula, make a new
   # `Design`, otherwise ensure `design=` is `Design` class.
@@ -132,6 +148,11 @@ lmitt.formula <- function(obj,
   if (rhs == "0") {
     # We don't support y ~ 0
     stop("'0' is not a valid entry on right hand side")
+  }
+  if (rhs == "assigned()") {
+    stop(paste("Do not specify `assigned()` in the right hand side of `lmitt()`.\n",
+               "To estimate only a treatment effect, pass `~ 1` as the right",
+               "hand side."))
   }
   # `rhs` is now either "1" or subgrouping variable
 
@@ -208,23 +229,6 @@ lmitt.formula <- function(obj,
   }
 
 
-  ### Allow users to pass in "ate" and "ett" rather than functions if they have
-  ### no special modifications/additional arguments
-  wt <- substitute(list(...))$weights
-  if (is(wt, "character")) {
-    if (tolower(wt) == "ate") {
-      lm.call$weights <- quote(ate())
-    } else if (tolower(wt) == "ett") {
-      lm.call$weights <- quote(ett())
-    } else {
-      warning(paste("Character other than \"ate\" or \"ett\" passed to",
-                    "`weights=` argument.\nIf you are trying to pass a",
-                    "character to the internal `lm` you can disregard this",
-                    "warning.\nIf you are attemping to use `flexida`\'s",
-                    "weight generation, only \"ate\" and \"ett\" are",
-                    "accepted."))
-    }
-  }
 
   lm.call[[2]] <- reformulate("mm + 0", "mr")
 
@@ -241,12 +245,3 @@ lmitt.lm <- function(obj,
                      ...) {
   return(as.lmitt(obj, design))
 }
-
-##' (Internal) Include blocks as absorbed effects
-##'
-##' Not to be used interactively. Alias for \code{as.factor()} to identify fixed
-##' effects generated through the \code{absorb=TRUE} option to \code{lmitt()}.
-##' @param x Block variables
-##' @return Identifies block variables as categorical for the model.
-##' @export
-.absorbed <- as.factor
