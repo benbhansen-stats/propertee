@@ -212,7 +212,7 @@ lmitt.formula <- function(obj,
   model <- eval(mf, parent.frame())
 
   toreturn <- as.lmitt(model, design)
-  toreturn@design_based_eligible <- TRUE
+  toreturn@lmitt_fitted <- TRUE
   return(toreturn)
 
 }

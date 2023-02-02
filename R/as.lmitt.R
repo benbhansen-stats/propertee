@@ -100,7 +100,7 @@ as.lmitt <- function(x, design = NULL) {
   return(new("DirectAdjusted",
              x,
              Design = design,
-             design_based_eligible = FALSE))
+             lmitt_fitted = FALSE))
 }
 
 ##' @rdname as_lmitt

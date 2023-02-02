@@ -7,7 +7,7 @@ test_that(paste("DirectAdjusted object created correctly with weights and no",
   dalm <- new("DirectAdjusted",
               lm(y ~ assigned(), data = simdata, weights = ate(des)),
               Design = des,
-              design_based_eligible = TRUE)
+              lmitt_fitted = TRUE)
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
@@ -25,7 +25,7 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
-              design_based_eligible = TRUE)
+              lmitt_fitted = TRUE)
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
@@ -47,7 +47,7 @@ test_that("DirectAdjusted print/show", {
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
-              design_based_eligible = TRUE)
+              lmitt_fitted = TRUE)
 
   aslm <- as(dalm, "lm")
 
@@ -359,17 +359,17 @@ test_that(".txt_fn for identifying treatment identifying function", {
   expect_error(lmitt(m1), "Differing forms")
 })
 
-test_that("design_based_eligible", {
+test_that("lmitt_fitted", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
   mod1 <- as.lmitt(lm(y ~ assigned(des), data = simdata), design = des)
-  expect_false(mod1@design_based_eligible)
+  expect_false(mod1@lmitt_fitted)
 
   mod2 <- lmitt(lm(y ~ assigned(des), data = simdata), design = des)
-  expect_false(mod2@design_based_eligible)
+  expect_false(mod2@lmitt_fitted)
 
   mod3 <- lmitt(y ~ 1, data = simdata, design = des)
-  expect_true(mod3@design_based_eligible)
+  expect_true(mod3@lmitt_fitted)
 
 })
