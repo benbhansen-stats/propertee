@@ -211,7 +211,9 @@ lmitt.formula <- function(obj,
 
   model <- eval(mf, parent.frame())
 
-  return(as.lmitt(model, design))
+  toreturn <- as.lmitt(model, design)
+  toreturn@design_based_eligible <- TRUE
+  return(toreturn)
 
 }
 

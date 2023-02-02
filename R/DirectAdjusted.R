@@ -5,7 +5,8 @@ NULL
 
 setClass("DirectAdjusted",
          contains = "lm",
-         slots = c(Design = "Design"))
+         slots = c(Design = "Design",
+                   design_based_eligible = "logical"))
 
 setValidity("DirectAdjusted", function(object) {
   if (!is.character(.txt_fn(object))) {
