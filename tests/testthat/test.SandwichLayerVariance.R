@@ -170,7 +170,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -325,7 +325,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -374,7 +374,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -494,7 +494,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                    offset = cov_adj(cmod)))
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
