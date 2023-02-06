@@ -174,7 +174,12 @@ lmitt.formula <- function(obj,
     }
   }
 
-  # Obtain model.matrix
+  if (absorb) {
+    blocks <- .get_col_from_new_data(design,
+                                     eval(lmitt.call$data, parent.frame()),
+                                     "b")[, 1]
+    # To be used below
+  }
 
   if (rhs == "1") {
     # Define new RHS and obtain model.matrix
@@ -188,9 +193,6 @@ lmitt.formula <- function(obj,
     mm <- eval(mm.call, parent.frame())
 
     if (absorb) {
-      blocks <- .get_col_from_new_data(design,
-                                       eval(lmitt.call$data, parent.frame()),
-                                       "b")[, 1]
       mf.call <- lm.call
       mf.call[[1]] <- quote(stats::model.frame)
       weights <- eval(mf.call, parent.frame())$"(weights)"
@@ -213,11 +215,11 @@ lmitt.formula <- function(obj,
     effect.mm <- eval(effect.call, parent.frame())
 
     if (absorb) {
-      blocks <- .get_col_from_new_data(design,
-                                       eval(lmitt.call$data, parent.frame()),
-                                       "b")[, 1]
-      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, blocks)
-      effect.mm <- apply(effect.mm, 2, areg.center, blocks)
+      mf.call <- lm.call
+      mf.call[[1]] <- quote(stats::model.frame)
+      weights <- eval(mf.call, parent.frame())$"(weights)"
+      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, as.factor(blocks), weights)
+      effect.mm <- apply(effect.mm, 2, areg.center, as.factor(blocks), weights)
     }
 
     # Using `__xx__` to try and ensure no collision with variable names
