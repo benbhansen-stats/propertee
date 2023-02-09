@@ -107,8 +107,6 @@ lmitt.formula <- function(obj,
     }
   }
 
-
-
   # First, make sure we have a valid `design=` - if given a formula, make a new
   # `Design`, otherwise ensure `design=` is `Design` class.
   if (inherits(design, "formula")) {
@@ -156,17 +154,32 @@ lmitt.formula <- function(obj,
   }
   # `rhs` is now either "1" or subgrouping variable
 
-#  saveenv <- environment(lm.call[[2]])
+  #  saveenv <- environment(lm.call[[2]])
+
+  mf.call <- lm.call
+  mf.call[[1]] <- quote(stats::model.frame)
+
+  lm.call$weights <- eval(mf.call, parent.frame())$"(weights)"
+
 
   # Obtain model.response
   mr.call <- lm.call
   mr.call[[1]] <- quote(stats::model.frame)
-  mr <- stats::model.response(eval(mr.call))
+  # Putting `assigned()` in the call so that subset gets evaluated; e.g., when
+  # assigned is computer, if the design is subset, it will return NA for those
+  # rows which are subset out.
+  newcall <- update(eval(lm.call$formula), . ~ . + flexida::assigned())
+  # the object going into the eval needs to have a `call` as the formula
+  # argument, not an actual `formula`
+  mr.call[[2]] <- str2lang(deparse(newcall))
+  mr <- stats::model.response(eval(mr.call, parent.frame()))
 
   areg.center <- function(var, grp, wts = NULL) {
     if (!is.null(wts)) {
           df <- data.frame(var = var, wts = wts)
-          var - sapply(split(df, grp), function(x) {weighted.mean(x$var, x$wts)})[as.character(grp)] +
+          var - sapply(split(df, grp), function(x) {
+            weighted.mean(x$var, x$wts)
+          })[as.character(grp)] +
             weighted.mean(var, w = wts, na.rm = TRUE)
     } else {
       var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
@@ -181,55 +194,59 @@ lmitt.formula <- function(obj,
     # To be used below
   }
 
+
+
+  if (!is.null(lm.call$subset)) {
+    # If provided, subset the data
+    lm.call$data <- subset(eval(lm.call$data),
+                              eval(lm.call$subset, eval(lm.call$data)))
+  }
+
+
   if (rhs == "1") {
     # Define new RHS and obtain model.matrix
     new.form <- formula(~ flexida::assigned()) # need flexida:: or assigned()
                                                # can't be found
 #    environment(new.form) <- saveenv # Do I need this?
     mm.call <- lm.call
-    mm.call[[2]] <- new.form
+    mm.call[[2]] <- str2lang(deparse(new.form))
     mm.call[[1]] <- quote(stats::model.matrix.default)
     names(mm.call)[2] <- "object"
     mm <- eval(mm.call, parent.frame())
 
     if (absorb) {
-      mf.call <- lm.call
-      mf.call[[1]] <- quote(stats::model.frame)
-      weights <- eval(mf.call, parent.frame())$"(weights)"
-      mm <- apply(mm, 2, areg.center, as.factor(blocks), weights)
+      mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
     }
 
   } else {
-    sbgrp.form <- reformulate(paste0(rhs, "+0"))
+    sbgrp.form <- reformulate(paste0(rhs, "+ 0"))
     sbgrp.call <- lm.call
-    sbgrp.call[[2]] <- sbgrp.form
+    sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
     sbgrp.call[[1]] <- quote(stats::model.matrix.default)
     names(sbgrp.call)[2] <- "object"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
 
     effect.form <- reformulate(paste0("flexida::assigned():", rhs, "+0"))
     effect.call <- lm.call
-    effect.call[[2]] <- effect.form
+    effect.call[[2]] <- str2lang(deparse(effect.form))
     effect.call[[1]] <- quote(stats::model.matrix.default)
     names(effect.call)[2] <- "object"
     effect.mm <- eval(effect.call, parent.frame())
 
     if (absorb) {
-      mf.call <- lm.call
-      mf.call[[1]] <- quote(stats::model.frame)
-      weights <- eval(mf.call, parent.frame())$"(weights)"
-      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, as.factor(blocks), weights)
-      effect.mm <- apply(effect.mm, 2, areg.center, as.factor(blocks), weights)
+      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, as.factor(blocks),
+                        lm.call$weights)
+      effect.mm <- apply(effect.mm, 2, areg.center, as.factor(blocks),
+                         lm.call$weights)
     }
 
     # Using `__xx__` to try and ensure no collision with variable names
     mm <- apply(effect.mm, 2, function(xx__) {
-      lm.call$formula <- reformulate("sbgrp.mm", "xx__")
+      lm.call$formula <- (reformulate("sbgrp.mm", "xx__"))
       eval(lm.call, parent.frame())$resid
     })
 
   }
-
 
 
   lm.call[[2]] <- reformulate("mm + 0", "mr")
