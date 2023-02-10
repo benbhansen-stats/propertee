@@ -254,6 +254,29 @@ lmitt.formula <- function(obj,
   }
 
 
+  # Strip intercept from model
+  mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
+
+  # Center (weighted if needed)
+  .center <- function(x, wts) {
+    if (is.null(wts)) {
+      x - mean(x, na.rm = TRUE)
+    } else {
+      x - weighted.mean(x, wts, na.rm = TRUE)
+    }
+  }
+
+  # Center variables to remove intercept
+  mm <- apply(mm, 2, .center, lm.call$weights)
+
+  if (is.matrix(mr)) {
+    # if somehow user passes in a matrix outcome, handle centering appropriately
+    mr <- apply(mr, 2, .center, lm.call$weights)
+  } else {
+    mr <- .center(mr, lm.call$weights)
+  }
+
+  # Scale terms to remove intercept
   lm.call[[2]] <- reformulate("mm + 0", "mr")
 
   model <- eval(lm.call, parent.frame())

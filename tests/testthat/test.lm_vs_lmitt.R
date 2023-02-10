@@ -12,7 +12,7 @@ test_that("equivalent of lm and lmitt calls", {
   # Subset No/In `Design`/in `lm`
 
   test_coeffs <- function(lmcoef, lmittcoef, subgroup) {
-    length <- ifelse(subgroup, 4, 2)
+    length <- ifelse(subgroup, 4, 1)
     expect_equal(length(lmittcoef), length)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
     expect_true(all(round(lmittcoef, 4) %in% round(lmcoef, 4)))
