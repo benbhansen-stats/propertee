@@ -5,10 +5,10 @@ test_that("absorb= argument", {
                    data = simdata)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
-  expect_length(coefficients(da), 2)
+  expect_length(coefficients(da), 1)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_length(coefficients(da), 2)
+  expect_length(coefficients(da), 1)
 
   # subgroup effects
   da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, design = des)

@@ -72,7 +72,7 @@ test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
 
   mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
-  expect_true(all(mod_da$coef == mod_lmitt$coef))
+  expect_true(all(round(mod_lmitt$coef, 4) %in% round(mod_da$coef, 4)))
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
