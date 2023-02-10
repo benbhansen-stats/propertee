@@ -245,8 +245,10 @@ lmitt.formula <- function(obj,
 
     # Using `__xx__` to try and ensure no collision with variable names
     mm <- apply(effect.mm, 2, function(xx__) {
-      lm.call$formula <- (reformulate("sbgrp.mm", "xx__"))
-      eval(lm.call, parent.frame())$resid
+      resid.call <- lm.call
+      resid.call$offset <- NULL #see issue #101
+      resid.call$formula <- (reformulate("sbgrp.mm", "xx__"))
+      eval(resid.call, parent.frame())$resid
     })
 
   }
