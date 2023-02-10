@@ -219,6 +219,8 @@ lmitt.formula <- function(obj,
     }
 
   } else {
+
+    # Create model.matrix with subgroup main effects (to BE residualized out)
     sbgrp.form <- reformulate(paste0(rhs, "+ 0"))
     sbgrp.call <- lm.call
     sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
@@ -226,6 +228,7 @@ lmitt.formula <- function(obj,
     names(sbgrp.call)[2] <- "object"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
 
+    # Create model.matrix with treatment:subgroup interaction (to be kept in)
     effect.form <- reformulate(paste0("flexida::assigned():", rhs, "+0"))
     effect.call <- lm.call
     effect.call[[2]] <- str2lang(deparse(effect.form))
