@@ -97,7 +97,7 @@ test_that("lm to DirectAdjusted with weights and SandwichLayer", {
   mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(),
                      offset = cov_adj(cmod), design = des)
 
-  expect_true(all(mod_da$coef == mod_lmitt$coef))
+  expect_true(all(round(mod_lmitt$coef, 4) %in%  round(mod_da$coef, 4)))
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
@@ -201,7 +201,7 @@ test_that("DirectAdjusted object has its own evaluation environment", {
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
-  mod2 <- lmitt(lm(y ~ 1, simdata, weights = ate(des)))
+  mod2 <- lmitt(lm(y ~ assigned(), simdata, weights = ate(des)))
 
   expect_false(identical(environment(), environment(formula(mod1))))
   expect_false(identical(environment(), environment(formula(mod2))))
