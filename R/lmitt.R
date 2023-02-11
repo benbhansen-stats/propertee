@@ -141,13 +141,15 @@ lmitt.formula <- function(obj,
   rhs <- rhs[rhs != "+"]
   if (length(rhs) > 1) {
     # At max two terms ("sbgrp" and "1")
-    stop("Too many terms on right hand side")
+    stop(paste("Too many terms on right hand side. To estimate subgroup",
+               "effects and main effect simultaneously, fit two",
+               "separate models."))
   }
   if (rhs == "0") {
     # We don't support y ~ 0
     stop("'0' is not a valid entry on right hand side")
   }
-  if (rhs == "assigned()") {
+  if (grepl("assigned\\(", rhs)) {
     stop(paste("Do not specify `assigned()` in the right hand side of `lmitt()`.\n",
                "To estimate only a treatment effect, pass `~ 1` as the right",
                "hand side."))

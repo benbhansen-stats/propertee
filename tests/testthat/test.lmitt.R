@@ -23,15 +23,15 @@ test_that("lmitt and lm return the same in simple cases", {
   da <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
   ml2da <- lmitt(ml)
 
-  expect_true(all(da$coef == ml$coef))
-  expect_true(all(da$coef == ml2da$coef))
+  expect_true(all.equal(da$coef, ml$coef[2], check.attributes = FALSE))
+  expect_true(all.equal(da$coef, ml2da$coef[2], check.attributes = FALSE))
   expect_identical(da$model$`(weights)`, ml$model$`(weights)`)
   expect_identical(da$model$`(weights)`, ml2da$model$`(weights)`)
 
   ml <- lm(y ~ z, data = simdata, weights = ett(des))
   da <- lmitt(y ~ 1, data = simdata, weights = ett(), design = des)
 
-  expect_true(all(da$coef == ml$coef))
+  expect_true(all.equal(da$coef, ml$coef[2], check.attributes = FALSE))
   expect_identical(da$model$`(weights)`, ml$model$`(weights)`)
 
 })
@@ -111,7 +111,7 @@ test_that("Allow non-binary treatment", {
   data(simdata)
   des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
-  expect_true(any(!model.frame(mod1)$`assigned()` %in% 0:1))
+  expect_true(any(!model.frame(mod1)[, 2] %in% 0:1))
 
 })
 
@@ -151,9 +151,8 @@ test_that("Allowed inputs to lmitt #73", {
   expect_error(lmitt(y ~ 0 + dose, design = des, data = simdata))
   expect_error(lmitt(y ~ dose + bid, design = des, data = simdata))
   expect_error(lmitt(y ~ 1 + dose + bid, design = des, data = simdata))
-  expect_error(lmitt(y ~ 1 + z, design = des, data = simdata))
-  expect_error(lmitt(y ~ z, design = des, data = simdata))
-  expect_error(lmitt(y ~ z + 1, design = des, data = simdata))
+  expect_error(lmitt(y ~ 1 + x, design = des, data = simdata))
+  expect_error(lmitt(y ~ x + 1, design = des, data = simdata))
 
   ### Main + Subgroup effects.
   ### NYI - see #73

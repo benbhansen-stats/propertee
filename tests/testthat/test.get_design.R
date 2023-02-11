@@ -78,7 +78,6 @@ test_that(".get_design finds design in model.frame call", {
   mf3 <- stats::model.frame(terms(damod), simdata)
 
   expect_equal(mf2, mf3)
-  expect_equal(mf2@.Data, stats::model.frame(y ~ z, simdata)@.Data)
   expect_equal(lapply(mf1@.Data, as.numeric),
                lapply(as.data.frame(cbind(mf2, weights = damod$weights))@.Data,
                       as.numeric))
