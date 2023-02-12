@@ -62,7 +62,7 @@
 ##'   \code{"ate"} or \code{"ett"}.
 ##' @return \code{DirectAdjusted} model.
 ##' @export
-##' @importFrom stats lm predict weights
+##' @importFrom stats lm predict weights weighted.mean reformulate
 ##' @rdname lmitt
 lmitt <- function(obj,
                   design,
@@ -180,9 +180,9 @@ lmitt.formula <- function(obj,
     if (!is.null(wts)) {
           df <- data.frame(var = var, wts = wts)
           var - sapply(split(df, grp), function(x) {
-            weighted.mean(x$var, x$wts)
+            stats::weighted.mean(x$var, x$wts)
           })[as.character(grp)] +
-            weighted.mean(var, w = wts, na.rm = TRUE)
+            stats::weighted.mean(var, w = wts, na.rm = TRUE)
     } else {
       var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
         mean(var, na.rm = TRUE)
@@ -223,7 +223,7 @@ lmitt.formula <- function(obj,
   } else {
 
     # Create model.matrix with subgroup main effects (to BE residualized out)
-    sbgrp.form <- reformulate(paste0(rhs, "+ 0"))
+    sbgrp.form <- stats::reformulate(paste0(rhs, "+ 0"))
     sbgrp.call <- lm.call
     sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
     sbgrp.call[[1]] <- quote(stats::model.matrix.default)
@@ -231,7 +231,7 @@ lmitt.formula <- function(obj,
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
 
     # Create model.matrix with treatment:subgroup interaction (to be kept in)
-    effect.form <- reformulate(paste0("flexida::assigned():", rhs, "+0"))
+    effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
     effect.call <- lm.call
     effect.call[[2]] <- str2lang(deparse(effect.form))
     effect.call[[1]] <- quote(stats::model.matrix.default)
@@ -249,7 +249,7 @@ lmitt.formula <- function(obj,
     mm <- apply(effect.mm, 2, function(xx__) {
       resid.call <- lm.call
       resid.call$offset <- NULL #see issue #101
-      resid.call$formula <- (reformulate("sbgrp.mm", "xx__"))
+      resid.call$formula <- stats::reformulate("sbgrp.mm", "xx__")
       eval(resid.call, parent.frame())$resid
     })
 

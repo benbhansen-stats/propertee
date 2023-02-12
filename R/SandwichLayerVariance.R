@@ -53,13 +53,13 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
 
   # compute blocks
-  a21 <- flexida:::.get_a21(x)
-  a11inv <- flexida:::.get_a11_inverse(x)
-  b12 <- flexida:::.get_b12(x, ...)
+  a21 <- .get_a21(x)
+  a11inv <- .get_a11_inverse(x)
+  b12 <- .get_b12(x, ...)
 
-  a22inv <- flexida:::.get_a22_inverse(x)
-  b22 <- flexida:::.get_b22(x, type = "HC0", ...)
-  b11 <- flexida:::.get_b11(x,  type = "HC0", ...)
+  a22inv <- .get_a22_inverse(x)
+  b22 <- .get_b22(x, type = "HC0", ...)
+  b11 <- .get_b11(x,  type = "HC0", ...)
 
   meat <- (
     b22 -
@@ -174,7 +174,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- flexida:::.expand.model.frame.DA(x, cluster_cols,
+  Q_uoas <- .expand.model.frame.DA(x, cluster_cols,
                                              na.expand = TRUE)[cluster_cols]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
@@ -263,7 +263,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
     uoas <- tryCatch(
-      flexida:::.expand.model.frame.DA(x, dots$cluster)[,
+      .expand.model.frame.DA(x, dots$cluster)[,
                                                         dots$cluster,
                                                         drop = FALSE],
       error = function(e) {

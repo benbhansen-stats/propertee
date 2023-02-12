@@ -32,10 +32,10 @@
                                   extras,
                                   envir = environment(formula(model)),
                                   na.expand = FALSE) {
-  stopifnot(is(model, "DirectAdjusted")) # JE Addition
-  f <- stats::formula(model)
+  stopifnot(is(model, "DirectAdjusted")) # JE addition
+  f <- stats::formula(model) # JE modification
   data <- eval(model$call$data, envir)
-  data <- cbind(data, stats::model.frame(model)) # JE Addition
+  data <- cbind(data, stats::model.frame(model)) # JE addition
   ff <- foo ~ bar + baz
   gg <- if (is.call(extras)) {
           extras
@@ -55,7 +55,7 @@
     subset <- model$call$subset
     rval <- eval(call("model.frame", ff, data = data, subset = subset,
                       na.action = I), envir)
-    oldmf <- stats::model.frame(model)
+    oldmf <- stats::model.frame(model) # JE modification
     keep <- match(rownames(oldmf), rownames(rval))
     rval <- rval[keep, ]
     class(rval) <- "data.frame"
