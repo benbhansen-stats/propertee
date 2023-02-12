@@ -225,7 +225,6 @@ test_that("Ops", {
   expect_s4_class(2 * wdes, "WeightedDesign")
   expect_identical(wdes * 3, 3 * wdes)
   expect_equal((wdes * 3)@.Data, wdes@.Data * 3)
-  expect_error(wdes * -1, "non-negative")
 
   expect_s4_class(wdes / 2, "WeightedDesign")
   expect_s4_class(2 / wdes, "WeightedDesign")

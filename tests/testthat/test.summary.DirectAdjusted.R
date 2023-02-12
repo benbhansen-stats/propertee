@@ -7,7 +7,7 @@ test_that("summary.DirectAdjusted basics", {
 
   out <- capture_output(print(sda))
 
-  expect_match(out, "assigned()")
+  expect_match(out, "Estimate")
 
   expect_no_match(out, "Residuals")
   expect_no_match(out, "R-squared")
