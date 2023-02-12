@@ -53,13 +53,13 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
 
   # compute blocks
-  a21 <- .get_a21(x)
-  a11inv <- .get_a11_inverse(x)
-  b12 <- .get_b12(x, ...)
+  a21 <- flexida:::.get_a21(x)
+  a11inv <- flexida:::.get_a11_inverse(x)
+  b12 <- flexida:::.get_b12(x, ...)
 
-  a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, type = "HC0", ...)
-  b11 <- .get_b11(x,  type = "HC0", ...)
+  a22inv <- flexida:::.get_a22_inverse(x)
+  b22 <- flexida:::.get_b22(x, type = "HC0", ...)
+  b11 <- flexida:::.get_b11(x,  type = "HC0", ...)
 
   meat <- (
     b22 -

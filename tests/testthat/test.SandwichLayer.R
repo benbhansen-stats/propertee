@@ -420,12 +420,12 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
 })
 
 test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
-  expect_error(.get_ca_and_prediction_gradient("a", matrix(1)),
+  expect_error(flexida:::.get_ca_and_prediction_gradient("a", matrix(1)),
                "must be a dataframe")
 })
 
 test_that(".get_ca_and_prediction_gradient model doesn't have a terms method", {
-  expect_error(.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
+  expect_error(flexida:::.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
                                                data.frame("x" = 1)),
                "must have `terms`")
 })
@@ -436,8 +436,8 @@ test_that(".get_ca_and_prediction_gradient model frame missing cmod columns", {
   df <- data.frame("x1" = rnorm(N), "x2" = rnorm(N), "y" = rnorm(N))
   pred_df <- data.frame("x1" = rnorm(N))
   cmod <- lm(y ~ x1 + x2, df)
-  
-  expect_error(.get_ca_and_prediction_gradient(cmod, pred_df),
+
+  expect_error(flexida:::.get_ca_and_prediction_gradient(cmod, pred_df),
                "'x2' not found")
 })
 
@@ -447,7 +447,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   N <- 100
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   cmod <- lm(y ~ x, df)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod)
 
   expect_equal(ca_and_grad$ca, cmod$fitted.values)
   expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
@@ -460,7 +460,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   pred_df <- data.frame("x" = rnorm(N))
   cmod <- lm(y ~ x, df)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, pred_df)
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod, pred_df)
 
   expect_equal(ca_and_grad$ca,
                drop(stats::model.matrix(
@@ -478,8 +478,8 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   cmod_form <- y ~ x
   cmod <- lm(cmod_form, df)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
-  
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod)
+
   expect_equal(ca_and_grad$ca, cmod$fitted.values)
   expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
 })
@@ -491,8 +491,8 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   df <- data.frame("x1" = rnorm(N), "x2" = rpois(N, 1) + 1, "y" = rnorm(N))
   cmod_form <- y ~ stats::poly(x1, 3) + log(x2)
   cmod <- lm(cmod_form, data = df)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
-  
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod)
+
   expect_equal(ca_and_grad$ca, cmod$fitted.values)
   expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
 })
@@ -504,8 +504,8 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   df <- data.frame("x1" = rnorm(N), "x2" = rpois(N, 1) + 1, "y" = rnorm(N))
   cmod <- glm(x2 ~ x1, data = df, family = stats::poisson())
   mm <- stats::model.matrix(cmod)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod)
-  
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod)
+
   expect_equal(ca_and_grad$ca,
               drop(exp(mm %*% cmod$coefficients)))
   expect_equal(ca_and_grad$prediction_gradient,
@@ -521,8 +521,8 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   pred_df <- data.frame("x1" = rnorm(N))
   mm <- stats::model.matrix(formula(stats::delete.response(terms(cmod))),
                             data = pred_df)
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, pred_df)
-  
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod, pred_df)
+
   expect_equal(ca_and_grad$ca,
                drop(exp(mm %*% cmod$coefficients)))
   expect_equal(ca_and_grad$prediction_gradient,
@@ -538,7 +538,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
   cmod <- lm(y ~ x, df)
 
   pred_df[N, c("x")] <- NA_real_
-  ca_and_grad <- .get_ca_and_prediction_gradient(cmod, pred_df)
+  ca_and_grad <- flexida:::.get_ca_and_prediction_gradient(cmod, pred_df)
   pred_gradient <- stats::model.matrix(
     formula(stats::delete.response(terms(cmod))),
     stats::model.frame(pred_df, na.action = na.pass))

@@ -14,7 +14,7 @@ test_that("vcovDA correctly dispatches", {
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat <- suppressMessages(vcovDA(damod, type = "CR0"))
-  expect_equal(vmat, suppressMessages(.vcovMB_CR0(damod)))
+  expect_equal(vmat, suppressMessages(flexida:::.vcovMB_CR0(damod)))
 })
 
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
@@ -85,14 +85,14 @@ test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(.vcovMB_CR0(cmod), "must be a DirectAdjusted")
-  expect_error(.get_b12(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_b22(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a11_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(.get_b11(cmod), "must be a DirectAdjusted")
-  expect_error(.get_a21(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.vcovMB_CR0(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_b12(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_a22_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_b22(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_a22_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_a11_inverse(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_b11(cmod), "must be a DirectAdjusted")
+  expect_error(flexida:::.get_a21(cmod), "must be a DirectAdjusted")
 })
 
 test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with DirectAdjusted model",
@@ -105,11 +105,11 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(.vcovMB_CR0(m), "must have an offset of class")
-  expect_error(.get_b12(m), "must have an offset of class")
-  expect_error(.get_a11_inverse(m), "must have an offset of class")
-  expect_error(.get_b11(m), "must have an offset of class")
-  expect_error(.get_a21(m), "must have an offset of class")
+  expect_error(flexida:::.vcovMB_CR0(m), "must have an offset of class")
+  expect_error(flexida:::.get_b12(m), "must have an offset of class")
+  expect_error(flexida:::.get_a11_inverse(m), "must have an offset of class")
+  expect_error(flexida:::.get_b11(m), "must have an offset of class")
+  expect_error(flexida:::.get_a21(m), "must have an offset of class")
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -134,7 +134,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
+  msk <- !is.na(flexida:::.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
@@ -146,7 +146,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_message(b12 <- .get_b12(m), paste(nrow(simdata), "rows"))
+  expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(simdata), "rows"))
   expect_equal(b12,
                t(cmod_eqns) %*% m_eqns)
 })
@@ -170,7 +170,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- flexida:::.txt_fn(m)
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -181,7 +181,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
+  msk <- !is.na(flexida:::.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
@@ -193,7 +193,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_message(b12 <- .get_b12(m), paste(nrow(simdata), "rows"))
+  expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(simdata), "rows"))
   expect_equal(b12, t(cmod_eqns) %*% m_eqns)
 })
 
@@ -207,10 +207,10 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
-  
-  expect_error(.get_b12(m, cluster = c("cid3")),
+
+  expect_error(flexida:::.get_b12(m, cluster = c("cid3")),
                "cid3 are missing from the covariance adjustment model dataset")
-  expect_error(.get_b12(m, cluster = c(TRUE, FALSE)),
+  expect_error(flexida:::.get_b12(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
 })
 
@@ -227,17 +227,17 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
 
   cmod_eqns <- Reduce(
     rbind,
-    by(estfun(cmod), list(simdata$cid1, simdata$cid2), colSums)
+    by(sandwich::estfun(cmod), list(simdata$cid1, simdata$cid2), colSums)
   )
   dmod_eqns <- Reduce(
     rbind,
-    by(estfun(m), list(simdata$cid1, simdata$cid2), colSums)
+    by(sandwich::estfun(m), list(simdata$cid1, simdata$cid2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
   
   # default (columns specified in `cluster` argument of Design) matches expected
-  expect_equal(suppressMessages(.get_b12(m)), expected)
-  expect_equal(suppressMessages(.get_b12(m, cluster = c("cid1", "cid2"))), expected)
+  expect_equal(suppressMessages(flexida:::.get_b12(m)), expected)
+  expect_equal(suppressMessages(flexida:::.get_b12(m, cluster = c("cid1", "cid2"))), expected)
 })
 
 test_that("get_b12 handles custom cluster columns with only NA's", {
@@ -251,8 +251,8 @@ test_that("get_b12 handles custom cluster columns with only NA's", {
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
-  
-  expect_message(b12 <- .get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+
+  expect_message(b12 <- flexida:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 })
@@ -264,24 +264,24 @@ test_that(paste("get_b12 handles multiple custom cluster columns where one is",
                           "cid1" = rep(seq(6, 10), each = 20),
                           "cid2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
-  
-  expect_message(b12 <- .get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+
+  expect_message(b12 <- flexida:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 
   # second test is where the non-NA cluster ID's overlap with design
   cmod_data$cid1 <- rep(seq(1, 5), each = 20)
   cmod <- lm(y ~ x, cmod_data)
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
-  
-  expect_message(b12 <- .get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+
+  expect_message(b12 <- flexida:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 })
@@ -299,15 +299,15 @@ test_that(paste(".get_b12 handles multiple custom cluster columns where both",
   
   cmod_eqns <- Reduce(
     rbind,
-    by(estfun(cmod), list(cmod_data$cid1, cmod_data$cid2), colSums)
+    by(sandwich::estfun(cmod), list(cmod_data$cid1, cmod_data$cid2), colSums)
   )
   dmod_eqns <- Reduce(
     rbind,
-    by(estfun(dmod), list(simdata$cid1, simdata$cid2), colSums)
+    by(sandwich::estfun(dmod), list(simdata$cid1, simdata$cid2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
 
-  expect_message(b12 <- .get_b12(dmod, cluster = c("cid1", "cid2")),
+  expect_message(b12 <- flexida:::.get_b12(dmod, cluster = c("cid1", "cid2")),
                  paste(nrow(simdata), "rows"))
   expect_equal(b12,
                expected)
@@ -325,7 +325,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- flexida:::.txt_fn(m)
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -336,7 +336,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
+  msk <- !is.na(flexida:::.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
@@ -348,7 +348,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_message(b12 <- .get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))
+  expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))
   expect_equal(b12,
                t(cmod_eqns) %*% m_eqns)
 })
@@ -374,7 +374,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- flexida:::.txt_fn(m)
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -385,7 +385,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
+  msk <- !is.na(flexida:::.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
@@ -397,7 +397,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_equal(suppressMessages(.get_b12(m)),
+  expect_equal(suppressMessages(flexida:::.get_b12(m)),
                t(cmod_eqns) %*% m_eqns)
 })
 
@@ -413,7 +413,7 @@ test_that(paste(".get_b12 returns expected B_12 for experimental",
     lm(y ~ assigned() + force, data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
 
-  expect_message(b12 <- .get_b12(m), "0 rows")
+  expect_message(b12 <- flexida:::.get_b12(m), "0 rows")
   expect_equal(dim(b12), c(2, 3))
   expect_true(all(b12 == 0))
 })
@@ -437,7 +437,7 @@ test_that(paste(".get_b12 returns B_12 with correct dimensions when only one",
   )
 
   expect_warning(
-    expect_message(b12 <- .get_b12(m), paste(nrow(cmod_data), "rows")),
+    expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(cmod_data), "rows")),
     "numerically indistinguishable from 0"
   )
   expect_equal(dim(b12), c(2, 2))
@@ -480,7 +480,7 @@ test_that(paste(".get_b12 returns expected matrix when some rows in cmod data",
             cid2 = simdata$cid2[!is.na(simdata$x)][msk]),
        colSums))
 
-  b12 <- suppressMessages(.get_b12(m))
+  b12 <- suppressMessages(flexida:::.get_b12(m))
   expect_equal(b12, crossprod(cmod_eqns, dmod_eqns))
 })
 
@@ -494,7 +494,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                    offset = cov_adj(cmod)))
 
   uoanames <- var_names(m@Design, "u")
-  zname <- .txt_fn(m)
+  zname <- flexida:::.txt_fn(m)
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -505,7 +505,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
+  msk <- !is.na(flexida:::.merge_preserve_order(
     Q,
     merge(unique(m$model$`(offset)`@keys), m@Design@structure),
     by = uoanames,
@@ -517,7 +517,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
 
-  expect_equal(suppressMessages(.get_b12(m)),
+  expect_equal(suppressMessages(flexida:::.get_b12(m)),
                t(cmod_eqns) %*% m_eqns)
 })
 
@@ -528,7 +528,7 @@ test_that(".get_a22_inverse returns correct value for lm", {
   m <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
 
   fim <- crossprod(stats::model.matrix(m) * m$weights, stats::model.matrix(m))
-  expect_equal(.get_a22_inverse(m), solve(fim))
+  expect_equal(flexida:::.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with Gaussian family", {
@@ -538,7 +538,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with Gaussian fami
   m <- as.lmitt(glm(y ~ assigned(), data = simdata, weights = ate(des)))
 
   fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
-  expect_equal(.get_a22_inverse(m), solve(fim))
+  expect_equal(flexida:::.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with poisson family", {
@@ -551,7 +551,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with poisson famil
   )
 
   fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
-  expect_equal(.get_a22_inverse(m), solve(fim))
+  expect_equal(flexida:::.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson family", {
@@ -565,7 +565,7 @@ test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson 
 
   dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
   fim <- crossprod(stats::model.matrix(m) * sqrt(m$weights))
-  expect_equal(.get_a22_inverse(m), solve(fim))
+  expect_equal(flexida:::.get_a22_inverse(m), solve(fim))
 })
 
 test_that(".get_b22 returns correct value for lm object w/o offset", {
@@ -586,9 +586,9 @@ test_that(".get_b22 returns correct value for lm object w/o offset", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
-  expect_equal(.get_b22(m, type = "HC1"),
+  expect_equal(flexida:::.get_b22(m, type = "HC1"),
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
@@ -613,9 +613,9 @@ test_that(".get_b22 returns correct value for lm object w offset", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
-  expect_equal(.get_b22(m, type = "HC1"),
+  expect_equal(flexida:::.get_b22(m, type = "HC1"),
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
@@ -628,10 +628,10 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
-  
-  expect_error(.get_b22(m, cluster = c("cid3")),
+
+  expect_error(flexida:::.get_b22(m, cluster = c("cid3")),
                "cid3 are missing from the ITT effect model dataset")
-  expect_error(.get_b22(m, cluster = c(TRUE, FALSE)),
+  expect_error(flexida:::.get_b22(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
   
   simdata$cid3 <- NA_integer_
@@ -639,7 +639,7 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
-  expect_error(.get_b22(m, cluster = "cid3"),
+  expect_error(flexida:::.get_b22(m, cluster = "cid3"),
                "cannot handle NAs")
 })
 
@@ -665,7 +665,7 @@ test_that(".get_b22 produces correct estimates with valid custom cluster argumen
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, cluster = uoanames, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, cluster = uoanames, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
 })
 
@@ -692,7 +692,7 @@ test_that(".get_b22 with one clustering column", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1L))
 })
 
@@ -714,7 +714,7 @@ test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1))
 })
 
@@ -739,7 +739,7 @@ test_that(".get_b22 returns correct value for poisson glm", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1))
 })
 
@@ -764,7 +764,7 @@ test_that(".get_b22 returns correct value for quasipoisson glm", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1))
 })
 
@@ -791,7 +791,7 @@ test_that(".get_b22 returns correct value for binomial glm", {
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
 
-  expect_equal(.get_b22(m, type = "HC0"),
+  expect_equal(flexida:::.get_b22(m, type = "HC0"),
                vmat * nuoas / (nuoas - 1))
 })
 
@@ -806,7 +806,7 @@ test_that(".get_a11_inverse returns correct value for lm cmod", {
   )
 
   fim <- crossprod(stats::model.matrix(cmod))
-  expect_equal(.get_a11_inverse(m), solve(fim))
+  expect_equal(flexida:::.get_a11_inverse(m), solve(fim))
 })
 
 test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
@@ -820,7 +820,7 @@ test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
 
   dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
   fim <- crossprod(stats::model.matrix(cmod), stats::model.matrix(cmod))
-  expect_equal(.get_a11_inverse(m), dispersion * solve(fim))
+  expect_equal(flexida:::.get_a11_inverse(m), dispersion * solve(fim))
 })
 
 test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
@@ -835,7 +835,7 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
 
   fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
                    stats::model.matrix(cmod))
-  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+  expect_equal(flexida:::.get_a11_inverse(m), solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
 })
 
 test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
@@ -851,7 +851,7 @@ test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
   dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
   fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
                    stats::model.matrix(cmod))
-  expect_equal(.get_a11_inverse(m), dispersion * solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+  expect_equal(flexida:::.get_a11_inverse(m), dispersion * solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
 })
 
 test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
@@ -868,7 +868,7 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
 
   fim <- crossprod(stats::model.matrix(cmod) * cmod$fitted.values * (1 - cmod$fitted.values),
                    stats::model.matrix(cmod))
-  expect_equal(.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
+  expect_equal(flexida:::.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
 })
 
 test_that(".get_b11 returns correct B_11 for one cluster column", {
@@ -891,7 +891,7 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
 
-  expect_equal(.get_b11(m), expected)
+  expect_equal(flexida:::.get_b11(m), expected)
 })
 
 test_that(".get_b11 fails with invalid custom cluster argument", {
@@ -904,10 +904,10 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
-  
-  expect_error(.get_b11(m, cluster = c("cid3")),
+
+  expect_error(flexida:::.get_b11(m, cluster = c("cid3")),
                "cid3 are missing from the covariance adjustment model dataset")
-  expect_error(.get_b11(m, cluster = c(TRUE, FALSE)),
+  expect_error(flexida:::.get_b11(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
 })
 
@@ -930,9 +930,9 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
-  
-  expect_equal(.get_b11(m, cluster = "cid1"), expected)
-  
+
+  expect_equal(flexida:::.get_b11(m, cluster = "cid1"), expected)
+
   # test different clustering level
   bids <- factor(simdata[, "bid"])
   nbids <- length(levels(bids))
@@ -942,7 +942,7 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), simdata[, "bid"], colSums))) *
       nbids / (nbids - 1L) * (nc - 1L) / (nc - 2L)
   )
-  expect_equal(.get_b11(m, cluster = "bid"), expected)
+  expect_equal(flexida:::.get_b11(m, cluster = "bid"), expected)
 })
 
 test_that(".get_b11 handles NA's correctly in custom clustering columns", {
@@ -958,10 +958,10 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
-  
-  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+
+  expect_warning(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2")),
                  "are found to have NA's")
-  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"),
+  expect_equal(suppressWarnings(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2"),
                                          type = "HC0", cadjust = FALSE)),
                crossprod(sandwich::estfun(cmod))) # there should be no clustering
   
@@ -972,11 +972,11 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
-  
-  expect_warning(.get_b11(dmod, cluster = c("cid1", "cid2")),
+
+  expect_warning(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2")),
                  "have NA's for some but not all")
-  expect_equal(suppressWarnings(.get_b11(dmod, cluster = c("cid1", "cid2"))),
-               .get_b11(dmod, cluster = c("cid1")))
+  expect_equal(suppressWarnings(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2"))),
+               flexida:::.get_b11(dmod, cluster = c("cid1")))
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
@@ -996,7 +996,7 @@ test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
 
-  expect_equal(.get_b11(m), expected)
+  expect_equal(flexida:::.get_b11(m), expected)
 })
 
 test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
@@ -1016,7 +1016,7 @@ test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
 
-  expect_equal(.get_b11(m), expected)
+  expect_equal(flexida:::.get_b11(m), expected)
 })
 
 test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
@@ -1037,7 +1037,7 @@ test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
       nuoas / (nuoas - 1L)
   )
 
-  expect_equal(.get_b11(m), expected)
+  expect_equal(flexida:::.get_b11(m), expected)
 })
 
 test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
@@ -1064,7 +1064,7 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
 
-  expect_equal(.get_b11(m), expected)
+  expect_equal(flexida:::.get_b11(m), expected)
 })
 
 
@@ -1092,7 +1092,7 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
   # no adjustment for cases where each row is its own cluster
   expected <- crossprod(sandwich::estfun(cmod)) * (nc - 1L) / (nc - 2L)
 
-  expect_equal(.get_b11(m, cadjust = FALSE), expected)
+  expect_equal(flexida:::.get_b11(m, cadjust = FALSE), expected)
 })
 
 test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
@@ -1107,9 +1107,9 @@ test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
        offset = cov_adj(cmod, newdata = simdata[msk,]))
   )
 
-  expect_warning(.get_b11(m),
+  expect_warning(flexida:::.get_b11(m),
                  "meat matrix numerically indistinguishable")
-  expect_equal(suppressWarnings(.get_b11(m)),
+  expect_equal(suppressWarnings(flexida:::.get_b11(m)),
                matrix(0, nrow = 2, ncol = 2))
 })
 
@@ -1127,7 +1127,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clusterin
   Qmat <- m$weights * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
 
-  a21 <- .get_a21(m)
+  a21 <- flexida:::.get_a21(m)
   expect_equal(dim(a21), c(2, 3))
   expect_equal(a21, crossprod(Qmat, Cmat))
 })
@@ -1143,7 +1143,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clusteri
   Qmat <- m$weights * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
 
-  a21 <- .get_a21(m)
+  a21 <- flexida:::.get_a21(m)
   expect_equal(dim(a21), c(2, 2))
   expect_equal(a21, crossprod(Qmat, Cmat))
 })
@@ -1165,7 +1165,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clusteri
   Qmat <- m$prior.weights * m$family$mu.eta(m$linear.predictors) * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
 
-  a21 <- .get_a21(m)
+  a21 <- flexida:::.get_a21(m)
   expect_equal(dim(a21), c(2, 3))
   expect_equal(a21, crossprod(Qmat, Cmat))
 })
@@ -1194,7 +1194,7 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
   )
   pg <- stats::model.matrix(formula(cmod), m_data)
 
-  a21 <- suppressWarnings(.get_a21(m))
+  a21 <- suppressWarnings(flexida:::.get_a21(m))
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
@@ -1209,18 +1209,18 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   damod_mm <- m$weights * stats::model.matrix(m)
   pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
 
-  a21 <- .get_a21(m)
+  a21 <- flexida:::.get_a21(m)
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
-test_that(".vcovMB_CR0 returns px2 matrix", {
+test_that("flexida:::.vcovMB_CR0 returns px2 matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  expect_message(vmat <- .vcovMB_CR0(m), paste(nrow(simdata), "rows"))
+  expect_message(vmat <- flexida:::.vcovMB_CR0(m), paste(nrow(simdata), "rows"))
   expect_equal(dim(vmat), c(2, 2))
 })
 
@@ -1296,7 +1296,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE),
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE),
                  "0 rows")
   expect_equal(vmat,
                a22inv %*%
@@ -1377,7 +1377,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
   expect_equal(vmat,
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1459,21 +1459,21 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   a11inv <- solve(crossprod(Xstar))
-  expect_equal(a11inv, .get_a11_inverse(damod))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
            by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
-  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(Z * damod$weights, Z))
-  expect_equal(a22inv, .get_a22_inverse(damod))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
   a21 <- crossprod(Z, X * damod$weights)
-  expect_equal(a21, .get_a21(damod))
+  expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  expect_equal(b12, suppressMessages(.get_b12(damod)))
+  expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
   b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
@@ -1492,7 +1492,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
   expect_equal(vmat,
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1559,21 +1559,21 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   a11inv <- solve(crossprod(Xstar))
-  expect_equal(a11inv, .get_a11_inverse(damod))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
            by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
-  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(Z * damod$weights, Z))
-  expect_equal(a22inv, .get_a22_inverse(damod))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
   a21 <- crossprod(Z, X * damod$weights)
-  expect_equal(a21, .get_a21(damod))
+  expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  expect_equal(b12, suppressMessages(.get_b12(damod)))
+  expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
   b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
@@ -1591,7 +1591,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
   expect_equal(vmat,
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1677,7 +1677,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE),
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE),
                  paste(nrow(df[df$z==0,]), "rows"))
   expect_equal(vmat,
                a22inv %*%
@@ -1742,21 +1742,21 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   a11inv <- solve(crossprod(Xstar))
-  expect_equal(a11inv, .get_a11_inverse(damod))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
   b22 <- crossprod(
     Reduce(rbind,
            by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
               colSums))
   )
-  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
   a22inv <- solve(crossprod(Z * damod$weights, Z))
-  expect_equal(a22inv, .get_a22_inverse(damod))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
   a21 <- crossprod(Z, X * damod$weights)
-  expect_equal(a21, .get_a21(damod))
+  expect_equal(a21, flexida:::.get_a21(damod))
   b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  expect_equal(b12, suppressMessages(.get_b12(damod)))
+  expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
   b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
@@ -1774,7 +1774,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE), "0 rows")
   expect_equal(vmat,
                a22inv %*%
                  (b22 + (a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))) %*%
@@ -1885,7 +1885,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE),
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE),
                  paste(nrow(df[df$z == 0,]), "rows"))
   expect_equal(vmat,
                a22inv %*%
@@ -1944,17 +1944,17 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm",
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
 
   a11inv <- solve(crossprod(Xstar * sqrt(fit_wstar)))
-  expect_equal(a11inv, .get_a11_inverse(damod))
+  expect_equal(a11inv, flexida:::.get_a11_inverse(damod))
   a21 <- crossprod(Z, X * w * mu_eta)
-  expect_equal(a21, .get_a21(damod))
+  expect_equal(a21, flexida:::.get_a21(damod))
   a22inv <- solve(crossprod(Z * w, Z))
-  expect_equal(a22inv, .get_a22_inverse(damod))
+  expect_equal(a22inv, flexida:::.get_a22_inverse(damod))
   b11 <- crossprod(Xstar * fit_wstar * rstar)
-  expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
   b12 <- crossprod(Xstar * rstar * fit_wstar, (Z * w * r)[df$z == 0,])
-  expect_equal(b12, suppressMessages(.get_b12(damod)))
+  expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
   b22 <- crossprod(Z * w * r)
-  expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
 
   ## COMPARE OUTPUTS TO SANDWICH
   # after scaling, a22inv is equivalent to sandwich::bread
@@ -1971,7 +1971,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_message(vmat <- .vcovMB_CR0(damod, cadjust = FALSE),
+  expect_message(vmat <- flexida:::.vcovMB_CR0(damod, cadjust = FALSE),
                  paste(nrow(df[df$z == 0,]), "rows"))
   expect_equal(vmat,
                a22inv %*%
