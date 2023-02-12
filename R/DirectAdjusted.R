@@ -5,7 +5,8 @@ NULL
 
 setClass("DirectAdjusted",
          contains = "lm",
-         slots = c(Design = "Design"))
+         slots = c(Design = "Design",
+                   lmitt_fitted = "logical"))
 
 setValidity("DirectAdjusted", function(object) {
   return(TRUE)

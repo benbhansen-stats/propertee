@@ -283,8 +283,7 @@ lmitt.formula <- function(obj,
 
   model <- eval(lm.call, parent.frame())
 
-  return(.convert_to_lmitt(model, design))
-
+  return(.convert_to_lmitt(model, design, lmitt_fitted = TRUE))
 }
 
 ##' @export

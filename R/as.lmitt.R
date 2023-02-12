@@ -54,14 +54,14 @@ as.lmitt <- function(x, design = NULL) {
   }
 
 
-  return(.convert_to_lmitt(x, design))
+  return(.convert_to_lmitt(x, design, lmitt_fitted = FALSE))
 }
 
 ##' @rdname as_lmitt
 ##' @export
 as.DirectAdjusted <- as.lmitt
 
-.convert_to_lmitt <- function(lm_model, design) {
+.convert_to_lmitt <- function(lm_model, design, lmitt_fitted) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
   }

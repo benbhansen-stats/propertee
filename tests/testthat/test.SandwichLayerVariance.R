@@ -26,36 +26,36 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
-  
+
   # check default clustering level is the same when specified using cluster arg
   expect_equal(suppressMessages(vcovDA(dmod)),
                suppressMessages(vcovDA(dmod, cluster = c("uid"))))
 
   # # test other arg types
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = simdata[, c("uid"), drop = FALSE]))
-  # 
+  #
   # uoas <- matrix(simdata$uid)
   # colnames(uoas) <- "uid"
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uoas))
-  # 
+  #
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = list(uid = simdata$uid)))
-  # 
+  #
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  # 
+  #
   # uid <- simdata$uid
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  # 
+  #
   # uid <- as.numeric(simdata$uid)
   # expect_equal(vcovDA(dmod), vcovDA(dmod, cluster = uid))
-  
+
   # # can also specify different cluster level
   # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
   #              vcovDA(dmod, cluster = simdata[, c("cid1", "cid2")]))
-  # 
+  #
   # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
   #              vcovDA(dmod, cluster = cbind(cid1 = simdata$cid1,
   #                                           cid2 = simdata$cid2)))
-  # 
+  #
   # expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")),
   #              vcovDA(dmod, cluster = list(cid1 = simdata$cid1,
   #                                          cid2 = simdata$cid2)))
@@ -70,10 +70,10 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
   dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
-  
+
   expect_warning(suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
                  "these observations should be treated as IID")
-  
+
   expected <- suppressMessages(vcovDA(dmod))
   expect_equal(
     suppressMessages(suppressWarnings(vcovDA(dmod, cluster = c("cid1", "cid2")))),
@@ -170,7 +170,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- flexida:::.txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -199,11 +199,11 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
 
 test_that(".get_b12 fails with invalid custom cluster argument", {
   data(simdata)
-  
+
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
-  
+
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
@@ -219,7 +219,7 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   simdata[simdata$bid == 1, "z"] <- 0
   simdata[simdata$bid == 2, "z"] <- 0
   simdata[simdata$bid == 3, "z"] <- 1
-  
+
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
 
@@ -234,7 +234,7 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
     by(sandwich::estfun(m), list(simdata$cid1, simdata$cid2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
-  
+
   # default (columns specified in `cluster` argument of Design) matches expected
   expect_equal(suppressMessages(flexida:::.get_b12(m)), expected)
   expect_equal(suppressMessages(flexida:::.get_b12(m, cluster = c("cid1", "cid2"))), expected)
@@ -243,11 +243,11 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
 test_that("get_b12 handles custom cluster columns with only NA's", {
   data(simdata)
   set.seed(200)
-  
+
   cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
                           "cid1" = NA_integer_, "cid2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
@@ -292,11 +292,11 @@ test_that(paste(".get_b12 handles multiple custom cluster columns where both",
   cmod_data <- rbind(simdata, simdata)
   cmod_data[(nrow(simdata)+1):(2*nrow(simdata)), c("cid1", "cid2")] <- NA_integer_
   cmod <- lm(y ~ x, cmod_data)
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des),
                       offset = cov_adj(cmod)))
-  
+
   cmod_eqns <- Reduce(
     rbind,
     by(sandwich::estfun(cmod), list(cmod_data$cid1, cmod_data$cid2), colSums)
@@ -325,7 +325,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- flexida:::.txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -374,7 +374,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
   )
 
   uoanames <- var_names(m@Design, "u")
-  zname <- flexida:::.txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -423,7 +423,7 @@ test_that(paste(".get_b12 returns B_12 with correct dimensions when only one",
                 "samples"), {
   data(simdata)
   set.seed(200)
-  
+
   cmod_data <- data.frame("y" = rnorm(10), "x" = rnorm(10),
                           "cid1" = rep(1, 10), "cid2" = rep(1, 10))
   cmod <- lm(y ~ x, cmod_data)
@@ -494,7 +494,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                    offset = cov_adj(cmod)))
 
   uoanames <- var_names(m@Design, "u")
-  zname <- flexida:::.txt_fn(m)
+  zname <- var_names(m@Design, "t")
 
   # est eqns for lm are wts * resids * dmatrix
   cmod <- m$model$`(offset)`@fitted_covariance_model
@@ -624,7 +624,7 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
-  
+
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
@@ -633,7 +633,7 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
                "cid3 are missing from the ITT effect model dataset")
   expect_error(flexida:::.get_b22(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
-  
+
   simdata$cid3 <- NA_integer_
   des <- rct_design(z ~ cluster(cid1, cid2, cid3), data = simdata)
   m <- as.lmitt(
@@ -896,11 +896,11 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
 
 test_that(".get_b11 fails with invalid custom cluster argument", {
   data(simdata)
-  
+
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   nuoas <- nrow(des@structure)
-  
+
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
@@ -913,18 +913,18 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
 
 test_that(".get_b11 produces correct estimates with valid custom cluster argument", {
   data(simdata)
-  
+
   simdata[simdata$cid1 == 4, "z"] <- 0
   simdata[simdata$cid1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ uoa(cid1), data = simdata)
-  
+
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   uoas <- factor(simdata$cid1)
   nuoas <- length(levels(uoas))
-  
+
   nc <- sum(summary(cmod)$df[1L:2L])
   expected <- (
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
@@ -936,7 +936,7 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
   # test different clustering level
   bids <- factor(simdata[, "bid"])
   nbids <- length(levels(bids))
-  
+
   nc <- sum(summary(cmod)$df[1L:2L])
   expected <- (
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), simdata[, "bid"], colSums))) *
@@ -948,13 +948,13 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
 test_that(".get_b11 handles NA's correctly in custom clustering columns", {
   data(simdata)
   set.seed(200)
-  
+
   # check case where all clustering columns only have NA's
   cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
                           "cid1" = NA_integer_, "cid2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
   nc <- sum(summary(cmod)$df[1L:2L])
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
@@ -964,11 +964,11 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
   expect_equal(suppressWarnings(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2"),
                                          type = "HC0", cadjust = FALSE)),
                crossprod(sandwich::estfun(cmod))) # there should be no clustering
-  
+
   # check case where one clustering column doesn't only have NA's
   cmod_data$cid1 <- rep(seq(6, 10), each = 20)
   cmod <- lm(y ~ x, cmod_data)
-  
+
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))

@@ -6,7 +6,8 @@ test_that(paste("DirectAdjusted object created correctly with weights and no",
 
   dalm <- new("DirectAdjusted",
               lm(y ~ assigned(), data = simdata, weights = ate(des)),
-              Design = des)
+              Design = des,
+              lmitt_fitted = TRUE)
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
@@ -23,7 +24,8 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
   dalm <- new("DirectAdjusted",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
-              Design = des)
+              Design = des,
+              lmitt_fitted = TRUE)
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
@@ -44,7 +46,8 @@ test_that("DirectAdjusted print/show", {
   dalm <- new("DirectAdjusted",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
-              Design = des)
+              Design = des,
+              lmitt_fitted = TRUE)
 
   aslm <- as(dalm, "lm")
 
