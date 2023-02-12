@@ -28,20 +28,18 @@
 ##' @param na.expand logical; see \code{stats::expand.model.frame} for details
 ##' @return A \code{data.frame}
 ##' @export
-.expand.model.frame.DA <- function(model,
-                                  extras,
-                                  envir = environment(formula(model)),
-                                  na.expand = FALSE) {
+.expand.model.frame.DA <- function (model,
+                                    extras,
+                                    envir = environment(formula(model)),
+                                   na.expand = FALSE) {
   stopifnot(is(model, "DirectAdjusted")) # JE addition
   f <- stats::formula(model) # JE modification
   data <- eval(model$call$data, envir)
   data <- cbind(data, stats::model.frame(model)) # JE addition
   ff <- foo ~ bar + baz
-  gg <- if (is.call(extras)) {
+  gg <- if (is.call(extras))
           extras
-        } else {
-          str2lang(paste("~", paste(extras, collapse = "+")))
-        }
+  else str2lang(paste("~", paste(extras, collapse = "+")))
   ff[[2L]] <- f[[2L]]
   ff[[3L]][[2L]] <- f[[3L]]
   ff[[3L]][[3L]] <- gg[[2L]]
