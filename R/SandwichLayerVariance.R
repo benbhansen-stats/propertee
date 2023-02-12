@@ -174,7 +174,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
+  Q_uoas <- flexida:::.expand.model.frame.DA(x, cluster_cols,
+                                             na.expand = TRUE)[cluster_cols]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
   } else {
@@ -257,12 +258,14 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- stats::expand.model.frame(x,
-                                      var_names(x@Design, "u"))[, var_names(x@Design, "u"),
-                                                                drop = FALSE]
+    uoas <- flexida::.expand.model.frame.DA(x,
+                         var_names(x@Design, "u"))[, var_names(x@Design, "u"),
+                                                   drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
     uoas <- tryCatch(
-      stats::expand.model.frame(x, dots$cluster)[, dots$cluster, drop = FALSE],
+      flexida:::.expand.model.frame.DA(x, dots$cluster)[,
+                                                        dots$cluster,
+                                                        drop = FALSE],
       error = function(e) {
         data <- eval(x$call$data,
                      envir = environment(formula(x)))
