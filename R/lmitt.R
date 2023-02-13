@@ -156,25 +156,20 @@ lmitt.formula <- function(obj,
   }
   # `rhs` is now either "1" or subgrouping variable
 
-  #  saveenv <- environment(lm.call[[2]])
 
+  # Evaluate model.frame
   mf.call <- lm.call
   mf.call[[1]] <- quote(stats::model.frame)
+  # Add assigned() to the model so it utilizes Design characteristics (primarly
+  # concerned about subset)
+  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + flexida::assigned())
+  mf <- eval(mf.call, parent.frame())
 
-  lm.call$weights <- eval(mf.call, parent.frame())$"(weights)"
+  # Get weights
+  lm.call$weights <- mf$"(weights)"
 
-
-  # Obtain model.response
-  mr.call <- lm.call
-  mr.call[[1]] <- quote(stats::model.frame)
-  # Putting `assigned()` in the call so that subset gets evaluated; e.g., when
-  # assigned is computer, if the design is subset, it will return NA for those
-  # rows which are subset out.
-  newcall <- update(eval(lm.call$formula), . ~ . + flexida::assigned())
-  # the object going into the eval needs to have a `call` as the formula
-  # argument, not an actual `formula`
-  mr.call[[2]] <- str2lang(deparse(newcall))
-  mr <- stats::model.response(eval(mr.call, parent.frame()))
+  # get response
+  mr <- stats::model.response(mf)
 
   areg.center <- function(var, grp, wts = NULL) {
     if (!is.null(wts)) {
