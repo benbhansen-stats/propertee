@@ -9,14 +9,18 @@
 # - Josh Wasserman, February 2023
 
 # DEFINE CLASSES AND FUNCTIONS FOR TESTING
-# `estfun.testDAClass` will be the new `estfun.DirectAdjusted` method, but the
-# rest of the functions will no longer be available in the `flexida` package
-setClass("testDAClass",
+# Create placeholder classes for this script so these tests will hold regardless
+# of package development
+# `newPsiTildeDAClass` will be use new `estfun.DirectAdjusted` method, the
+# `oldPsiTildeDAClass` will use the base class's `DirectAdjusted` method, and
+# the rest of the functions we re-write here because they will no longer be
+# exported as part of the `flexida` package
+setClass("newPsiTildeDAClass",
          contains = "DirectAdjusted")
 
-estfun.testDAClass <- function(object) {
-  # this vector indicates the hierarchy of `sandwich::estfun` methods to use
-  # to extract estimating equations for ITT model
+estfun.newPsiTildeDAClass <- function(object) {
+  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
+  ## to extract estimating equations for ITT model
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(object@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
@@ -25,59 +29,68 @@ estfun.testDAClass <- function(object) {
   }
   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
   
-  # if ITT model offset doesn't contain info about covariance model, psi should
-  # be the matrix of estimating equations returned
+  ## if ITT model offset doesn't contain info about covariance model, psi should
+  ## be the matrix of estimating equations returned
   ca <- object$model$`(offset)`
   if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
     return(psi)
   }
   
-  # otherwise, extract/compute the rest of the relevant matrices/quantities
+  ## otherwise, extract/compute the rest of the relevant matrices/quantities
   cmod <- ca@fitted_covariance_model
   C_uoas <- ca@keys
   phi <- estfun(cmod)
   uoa_cols <- colnames(C_uoas)
+  a11_inv <- .get_a11_inverse(object)
+  a21 <- .get_a21(object)
   n <- nrow(psi)
   nc <- nrow(phi)
-
+  
+  ## figure out if rows need to be added to the matrix of estimating equations
   Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
-  if (ncol(Q_uoas) == 1) {
-    Q_uoas <- Q_uoas[, 1]
-  } else {
-    Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
-  }
-  n_Q_uoas <- length(unique(Q_uoas))
-
-  if (ncol(C_uoas) == 1) {
-    C_uoas <- C_uoas[, 1]
-  } else {
-    C_uoas <- apply(C_uoas, 1, function(...) paste(..., sep = "_"))
-    C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
-  }
-
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+  
   nas <- is.na(C_uoas)
   if (any(nas)) {
+    # give unique ID's to uoa's in C but not Q
+    n_Q_uoas <- length(unique(Q_uoas))
     C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
   }
-
+  
+  # add rows if necessary
   add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
   add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
   if (length(add_C_uoas) > 0) {
     psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
   }
   if (length(add_Q_uoas) > 0) {
-    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)),
-                 phi)
+    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
   }
-
-  a11_inv <- .get_a11_inverse(object)
-  a21 <- .get_a21(object)
   
-  # form matrix of estimating equations
-  
+  ## form matrix of estimating equations
   mat <- psi / sqrt(n) - sqrt(n) / nc * phi %*% a11_inv %*% t(a21)
   
   return(mat)
+}
+
+setClass("oldPsiTildeDAClass",
+         contains = "DirectAdjusted")
+
+estfun.oldPsiTildeDAClass <- function(object) {
+  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
+  ## to extract estimating equations for ITT model
+  valid_classes <- c("glm", "lmrob", "svyglm", "lm")
+  base_class <- match(object@.S3Class, valid_classes)
+  if (all(is.na(base_class))) {
+    stop(paste("ITT effect model must have been fitted using a function from the",
+               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+  }
+  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
+  
+  return(psi)
 }
 
 .get_a11_inverse <- function(x) {
@@ -355,15 +368,16 @@ cmod1 <- lm(y ~ x1 + x2, newdata)
 des1 <- rct_design(z ~ unitid(uoa_id), data = newdata)
 damod1 <- lmitt(y ~ assigned(), data = newdata, design = des1, weights = ate(des1),
                 offset = cov_adj(cmod1))
-test_damod1 <- new("testDAClass", damod1)
+new_psi_tilde_da1 <- new("newPsiTildeDAClass", damod1)
+old_psi_tilde_da1 <- new("oldPsiTildeDAClass", damod1)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(test_damod1)) # = sandwich::meatCL with appropriate `cluster` arg
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod1)
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da1)) # = sandwich::meatCL with appropriate `cluster` arg
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da1)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(damod1, type = "HC0", cadjust = FALSE)
+old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da1, type = "HC0", cadjust = FALSE)
 testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
 
 # TEST MODEL 2
@@ -375,15 +389,16 @@ cmod2 <- lm(y ~ x1 + x2, cmod_data)
 des2 <- rct_design(z ~ unitid(uoa_id), data = newdata)
 damod2 <- lmitt(y ~ assigned(), data = newdata, design = des2, weights = ate(des2),
                 offset = cov_adj(cmod2))
-test_damod2 <- new("testDAClass", damod2)
+new_psi_tilde_da2 <- new("newPsiTildeDAClass", damod2)
+old_psi_tilde_da2 <- new("oldPsiTildeDAClass", damod2)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(test_damod2))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod2)
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da2))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da2)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(damod2, type = "HC0", cadjust = FALSE)
+old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da2, type = "HC0", cadjust = FALSE)
 testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
 
 # TEST MODEL 3
@@ -399,16 +414,17 @@ cmod3 <- lm(y ~ x1 + x2, newdata)
 des3 <- rct_design(z ~ cluster(uoa_id), data = newdata)
 damod3 <- lmitt(y ~ assigned(), data = newdata, design = des3, weights = ate(des3),
                 offset = cov_adj(cmod3))
-test_damod3 <- new("testDAClass", damod3)
+new_psi_tilde_da3 <- new("newPsiTildeDAClass", damod3)
+old_psi_tilde_da3 <- new("oldPsiTildeDAClass", damod3)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
 cov_psi_tilde <- crossprod(
-  Reduce(rbind, by(estfun(test_damod3), newdata$uoa_id, colSums)))
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod3)
+  Reduce(rbind, by(estfun(new_psi_tilde_da3), newdata$uoa_id, colSums)))
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da3)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(damod3, type = "HC0", cadjust = FALSE)
+old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da3, type = "HC0", cadjust = FALSE)
 testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
 
 # TEST MODEL 4
@@ -422,13 +438,14 @@ cmod4 <- glm(y ~ x1 + x2, newdata, family = binomial())
 des4 <- rct_design(z ~ unitid(uoa_id), data = newdata)
 damod4 <- lmitt(y ~ assigned(), data = newdata, design = des4, weights = ate(des4),
                 offset = cov_adj(cmod4))
-test_damod4 <- new("testDAClass", damod4)
+new_psi_tilde_da4 <- new("newPsiTildeDAClass", damod4)
+old_psi_tilde_da4 <- new("oldPsiTildeDAClass", damod4)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(test_damod4))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod4)
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da4))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da4)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
 # validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(damod4, type = "HC0", cadjust = FALSE)
+old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da4, type = "HC0", cadjust = FALSE)
 testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
