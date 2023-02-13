@@ -31,6 +31,10 @@ test_that(".get_design", {
   expect_error(lm( y ~ assigned(), data = simdata),
                "Unable to locate")
 
+  expect_error(lm(y ~ assigned(), data = simdata, weights = ate(),
+                  offset = cov_adj(mod)),
+               "Inf Recusion")
+
   # #37 offset in formula isntead of argument
   mod7 <- lm(y ~ z + offset(cov_adj(mod)), data = simdata, weights = ate(des))
   expect_true(all(mod1$coef == mod7$coef))

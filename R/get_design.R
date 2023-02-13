@@ -40,6 +40,13 @@
     }
   }
 
+  # #100 Checking for recusion and exiting early.
+  if (sum(lapply(sys.calls(), "[[", 1) == ".get_design") > 2) {
+    stop(paste("Unable to locate Design in call stack, please use the",
+               "`design` argument to pass a Design object.",
+               "(Internal: Inf Recusion error)"))
+  }
+
 
   # Searching for weights or cov_adj is basically the same, except for argument
   # type
@@ -67,7 +74,6 @@
     }
     return(design)
   }
-
 
   weight_design <- NULL
   covadj_design <- NULL
