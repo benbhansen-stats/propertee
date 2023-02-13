@@ -1,0 +1,434 @@
+# This script serves as validation for the change made to `DirectAdjusted`'s
+# `estfun` method in February 2023. The meat matrix for a `DirectAdjusted` model
+# was previously calculated according to the appendix of Carroll et al. (2006) as
+# `b22 - a21 %*% a11inv %*% b12 - t(b12) %*% t(a11inv) %*% t(a21) +
+# a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)`, with the matrices defined as
+# in their article. The new `estfun` method should make it such that `sandwich::vcovCL`
+# called on a `DirectAdjusted` model should return the same meat matrix. We test
+# that here.
+# - Josh Wasserman, February 2023
+
+# DEFINE CLASSES AND FUNCTIONS FOR TESTING
+# `estfun.testDAClass` will be the new `estfun.DirectAdjusted` method, but the
+# rest of the functions will no longer be available in the `flexida` package
+setClass("testDAClass",
+         contains = "DirectAdjusted")
+
+estfun.testDAClass <- function(object) {
+  # this vector indicates the hierarchy of `sandwich::estfun` methods to use
+  # to extract estimating equations for ITT model
+  valid_classes <- c("glm", "lmrob", "svyglm", "lm")
+  base_class <- match(object@.S3Class, valid_classes)
+  if (all(is.na(base_class))) {
+    stop(paste("ITT effect model must have been fitted using a function from the",
+               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+  }
+  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
+  
+  # if ITT model offset doesn't contain info about covariance model, psi should
+  # be the matrix of estimating equations returned
+  ca <- object$model$`(offset)`
+  if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
+    return(psi)
+  }
+  
+  # otherwise, extract/compute the rest of the relevant matrices/quantities
+  cmod <- ca@fitted_covariance_model
+  C_uoas <- ca@keys
+  phi <- estfun(cmod)
+  uoa_cols <- colnames(C_uoas)
+  n <- nrow(psi)
+  nc <- nrow(phi)
+
+  Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
+  if (ncol(Q_uoas) == 1) {
+    Q_uoas <- Q_uoas[, 1]
+  } else {
+    Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  }
+  n_Q_uoas <- length(unique(Q_uoas))
+
+  if (ncol(C_uoas) == 1) {
+    C_uoas <- C_uoas[, 1]
+  } else {
+    C_uoas <- apply(C_uoas, 1, function(...) paste(..., sep = "_"))
+    C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+  }
+
+  nas <- is.na(C_uoas)
+  if (any(nas)) {
+    C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+  }
+
+  add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
+  add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
+  if (length(add_C_uoas) > 0) {
+    psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
+  }
+  if (length(add_Q_uoas) > 0) {
+    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)),
+                 phi)
+  }
+
+  a11_inv <- .get_a11_inverse(object)
+  a21 <- .get_a21(object)
+  
+  # form matrix of estimating equations
+  
+  mat <- psi / sqrt(n) - sqrt(n) / nc * phi %*% a11_inv %*% t(a21)
+  
+  return(mat)
+}
+
+.get_a11_inverse <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  cmod <- sl@fitted_covariance_model
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  out <- sandwich::bread(cmod) / nc
+  return(out)
+}
+
+.get_a21 <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  # Get contribution to the estimating equation from the ITT effect model
+  w <- if (is.null(x$weights)) 1 else x$weights
+  
+  damod_mm <- stats::model.matrix(formula(x),
+                                  stats::model.frame(x, na.action = na.pass))
+  msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
+            apply(!is.na(damod_mm), 1, all))
+  
+  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
+                   sl@prediction_gradient[msk, , drop = FALSE])
+  
+  return(out)
+}
+
+.get_b11 <- function(x, ...) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!inherits(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  cmod <- sl@fitted_covariance_model
+  nc <- sum(summary(cmod)$df[1L:2L])
+  
+  # Get units of assignment for clustering
+  dots <- list(...)
+  uoas <- sl@keys
+  cluster_cols <- colnames(uoas)
+  
+  # Replace NA's for rows not in the experimental design with a unique cluster ID
+  if (ncol(uoas) == 1) {
+    uoas <- uoas[, 1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
+    uoas[vapply(strsplit(uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+  }
+  
+  nuoas <- length(unique(uoas))
+  nas <- is.na(uoas)
+  if (any(nas)) {
+    uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+  }
+  uoas <- factor(uoas)
+  nuoas <- length(unique(uoas))
+  
+  # if the covariance model only uses one cluster, produce warning
+  if (nuoas == 1) {
+    warning(paste("Covariance adjustment model has meat matrix numerically",
+                  "indistinguishable from 0"))
+    return(
+      matrix(0, nrow = ncol(stats::model.matrix(cmod)), ncol = ncol(stats::model.matrix(cmod)))
+    )
+  }
+  dots$cluster <- uoas
+  dots$x <- cmod
+  
+  out <- do.call(sandwich::meatCL, dots) * nc
+  return(out)
+}
+
+.get_b12 <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  sl <- x$model$`(offset)`
+  if (!is(sl, "SandwichLayer")) {
+    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+               "for direct adjustment standard errors"))
+  }
+  
+  cluster_cols <- var_names(x@Design, "u")
+  keys <- sl@keys
+  
+  if (ncol(keys) == 1) {
+    uoas <- keys[, 1]
+  } else {
+    uoas <- Reduce(function(...) paste(..., sep = "_"), keys)
+    uoas[grepl("NA", uoas)] <- NA_character_
+  }
+  
+  message(paste(sum(!is.na(uoas)),
+                "rows in the covariance adjustment model",
+                "data joined to the ITT effect model data\n"))
+  
+  
+  # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
+  # similarly to .get_b11(), throw a warning when only one cluster overlaps)
+  uoas_overlap <- length(unique(uoas))
+  if (uoas_overlap == 1) {
+    if (!is.na(unique(uoas))) {
+      warning(paste("Covariance matrix between covariance adjustment and ITT effect",
+                    "model estimating equations is numerically indistinguishable",
+                    "from 0"))
+    }
+    return(
+      matrix(0,
+             nrow = dim(stats::model.matrix(sl@fitted_covariance_model))[2],
+             ncol = dim(stats::model.matrix(x))[2])
+    )
+  }
+  
+  # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
+  # `by` call excludes them from being summed
+  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
+  cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
+  cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
+  
+  # get rows from overlapping clusters in experimental data
+  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
+  if (ncol(Q_uoas) == 1) {
+    Q_uoas <- Q_uoas[, 1]
+  } else {
+    Q_uoas <- Reduce(function(...) paste(..., sep = "_"), Q_uoas)
+    Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
+  }
+  
+  msk <- Q_uoas %in% unique(uoas[!is.na(uoas)])
+  damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
+  damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
+  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
+  
+  matmul_func <- if (length(unique(uoas[!is.na(uoas)])) == 1) tcrossprod else crossprod
+  return(matmul_func(cmod_eqns, damod_eqns))
+}
+
+.get_b22 <- function(x, ...) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  nq <- nrow(sandwich::estfun(x))
+  
+  # Create cluster ID matrix depending on cluster argument (or its absence)
+  dots <- list(...)
+  uoas <- stats::expand.model.frame(x,
+                                    var_names(x@Design, "u"))[, var_names(x@Design, "u"),
+                                                              drop = FALSE]
+  
+  if (ncol(uoas) == 1) {
+    uoas <- factor(uoas[,1])
+  } else {
+    uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
+  }
+  dots$cluster <- uoas
+  dots$x <- x
+  
+  out <- do.call(sandwich::meatCL, dots) * nq
+  
+  return(out)
+}
+
+matmul_cov_psi_tilde <- function(object) {
+  cmod <- object$model$`(offset)`@fitted_covariance_model
+  phi <- estfun(cmod)
+  psi <- estfun(object)
+  keys <- object$model$`(offset)`@keys
+  nc <- nrow(keys)
+  n <- nrow(psi)
+  
+  Q_uoas <- stats::expand.model.frame(object, colnames(keys))[, colnames(keys), drop = FALSE]
+  if (ncol(Q_uoas) == 1) {
+    Q_uoas <- Q_uoas[, 1]
+  } else {
+    Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  }
+  n_Q_uoas <- length(unique(Q_uoas))
+
+  C_uoas <- apply(keys, 1, function(...) paste(..., collapse = "_"))
+  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+  nas <- is.na(C_uoas)
+  if (any(nas)) {
+    C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+  }
+
+  add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
+  add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
+  if (length(add_C_uoas) > 0) {
+    psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
+  }
+  if (length(add_Q_uoas) > 0) {
+    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
+  }
+  psi_aggfun <- ifelse(dim(psi)[2] > 1, colSums, sum)
+  phi_aggfun <- ifelse(dim(phi)[2] > 1, colSums, sum)
+  psi_uoa_order <- factor(c(Q_uoas, C_uoas[C_uoas %in% add_C_uoas]),
+                          levels = unique(c(Q_uoas, C_uoas[C_uoas %in% add_C_uoas])))
+  phi_uoa_order <- factor(c(C_uoas, Q_uoas[Q_uoas %in% add_Q_uoas]),
+                          levels = unique(c(C_uoas, Q_uoas[Q_uoas %in% add_Q_uoas])))
+  psi <- Reduce(rbind, by(psi, psi_uoa_order, psi_aggfun))
+  phi <- Reduce(rbind, by(phi, phi_uoa_order, phi_aggfun))#[match(psi_uoa_order, phi_uoa_order),]
+  
+  a11_inv <- .get_a11_inverse(object)
+  a21 <- .get_a21(object)
+  m11 <- crossprod(phi) / nc
+  m12 <- crossprod(phi, psi) / sqrt(n * nc)
+  m22 <- crossprod(psi) / n
+  
+  return(
+    m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
+      n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21))
+  )
+}
+
+make_old_meat_matrix <- function(object, ...) {
+  # compute blocks
+  a21 <- .get_a21(object)
+  a11inv <- .get_a11_inverse(object)
+  b12 <- .get_b12(object)
+  
+  b22 <- .get_b22(object, ...)
+  b11 <- .get_b11(object,  ...)
+  
+  nq <- nrow(object$model)
+  nc <- nrow(object$model$`(offset)`@fitted_covariance_model$model)
+
+  return(
+    b22 / nq -
+      a21 %*% a11inv %*% b12 / nc -
+      t(b12) %*% t(a11inv) %*% t(a21) / nc +
+      (nq / nc) * a21 %*% a11inv %*% (b11 / nc) %*% t(a11inv) %*% t(a21)
+  )
+}
+
+# FORMULATE 3 DIRECT ADJUSTMENT MODELS TO TEST:
+# 1) linear ITT effect model when there's overlap between C and Q + no clustering
+# 2) linear ITT effect model when there's no overlap + no clustering
+# 3) linear ITT effect model with overlap + clustering
+# 4) nonlinear ITT effect model
+set.seed(2300)
+
+# TEST MODEL 1
+n <- 1000
+newdata <- cbind(matrix(rnorm(2 * n), ncol = 2), rbinom(n, 1, 0.5))
+beta <- c(1, -0.5, 0.25)
+newdata <- as.data.frame(cbind(seq_len(n), newdata, newdata %*% beta + 0.1 * rnorm(n)))
+colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
+
+cmod1 <- lm(y ~ x1 + x2, newdata)
+des1 <- rct_design(z ~ unitid(uoa_id), data = newdata)
+damod1 <- lmitt(y ~ assigned(), data = newdata, design = des1, weights = ate(des1),
+                offset = cov_adj(cmod1))
+test_damod1 <- new("testDAClass", damod1)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(test_damod1)) # = sandwich::meatCL with appropriate `cluster` arg
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod1)
+testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
+old_meat_matrix <- make_old_meat_matrix(damod1, type = "HC0", cadjust = FALSE)
+testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+
+# TEST MODEL 2
+cmod_data <- cbind(matrix(rnorm(4 * n), ncol = 2), rep(0, n))
+cmod_data <- as.data.frame(cbind(seq(n + 1, 3 * n), cmod_data, cmod_data %*% beta + 0.1 * rnorm(2 * n)))
+colnames(cmod_data) <- c("uoa_id", "x1", "x2", "z", "y")
+
+cmod2 <- lm(y ~ x1 + x2, cmod_data)
+des2 <- rct_design(z ~ unitid(uoa_id), data = newdata)
+damod2 <- lmitt(y ~ assigned(), data = newdata, design = des2, weights = ate(des2),
+                offset = cov_adj(cmod2))
+test_damod2 <- new("testDAClass", damod2)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(test_damod2))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod2)
+testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
+old_meat_matrix <- make_old_meat_matrix(damod2, type = "HC0", cadjust = FALSE)
+testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+
+# TEST MODEL 3
+n_clusters <- 10
+newdata <- cbind(matrix(rnorm(2 * n), ncol = 2),
+                 rep(rbinom(n_clusters, 1, 0.5), each = as.integer(n / n_clusters)))
+newdata <- as.data.frame(
+  cbind(rep(seq_len(10), each = n / 10), newdata, newdata %*% beta + 0.1 * rnorm(n))
+)
+colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
+
+cmod3 <- lm(y ~ x1 + x2, newdata)
+des3 <- rct_design(z ~ cluster(uoa_id), data = newdata)
+damod3 <- lmitt(y ~ assigned(), data = newdata, design = des3, weights = ate(des3),
+                offset = cov_adj(cmod3))
+test_damod3 <- new("testDAClass", damod3)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(
+  Reduce(rbind, by(estfun(test_damod3), newdata$uoa_id, colSums)))
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod3)
+testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
+old_meat_matrix <- make_old_meat_matrix(damod3, type = "HC0", cadjust = FALSE)
+testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+
+# TEST MODEL 4
+newdata <- cbind(matrix(rnorm(2 * n), ncol = 2), rbinom(n, 1, 0.5))
+beta <- c(1, -0.5, 0.25)
+newdata <- as.data.frame(cbind(seq_len(n), newdata,
+                               rbinom(n = n, size = 1, p = 1 / (1 + exp(-(newdata %*% beta + 0.1 * rnorm(n)))))))
+colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
+
+cmod4 <- glm(y ~ x1 + x2, newdata, family = binomial())
+des4 <- rct_design(z ~ unitid(uoa_id), data = newdata)
+damod4 <- lmitt(y ~ assigned(), data = newdata, design = des4, weights = ate(des4),
+                offset = cov_adj(cmod4))
+test_damod4 <- new("testDAClass", damod4)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(test_damod4))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+expected_cov_psi_tilde <- matmul_cov_psi_tilde(damod4)
+testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
+
+# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
+old_meat_matrix <- make_old_meat_matrix(damod4, type = "HC0", cadjust = FALSE)
+testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
