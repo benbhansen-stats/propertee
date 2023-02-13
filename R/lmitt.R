@@ -218,12 +218,17 @@ lmitt.formula <- function(obj,
   } else {
 
     # Create model.matrix with subgroup main effects (to BE residualized out)
-    sbgrp.form <- stats::reformulate(paste0(rhs, "+ 0"))
+    sbgrp.form <- stats::reformulate(paste0(paste(rhs,
+                                                  "flexida::assigned()",
+                                                  sep = "+"),
+                                            "+ 0"))
     sbgrp.call <- lm.call
     sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
     sbgrp.call[[1]] <- quote(stats::model.matrix.default)
     names(sbgrp.call)[2] <- "object"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
+    sbgrp.mm <- sbgrp.mm[, !grepl("assigned\\(", colnames(sbgrp.mm)),
+                         drop = FALSE]
 
     # Create model.matrix with treatment:subgroup interaction (to be kept in)
     effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
