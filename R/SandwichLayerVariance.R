@@ -28,9 +28,64 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     type,
     "CR0" = .vcovMB_CR0
   )
-
+  
+  # args <- list(x = object)
+  # args$cluster <- .make_uoa_ids(object, ...)
+  # 
+  # est <- do.call(var_func, args)
   est <- var_func(object, ...)
   return(est)
+}
+
+#' Make unit of assignment ID's that align with the output of `estfun.DirectAdjusted`
+#' @keywords internal
+.make_uoa_ids <- function(x, cluster = NULL, ...) {
+  if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
+    stop(paste("Cannot deduce units of assignment for clustering without a",
+               "Design object (stored in a DirectAdjusted object) or a `cluster`",
+               "argument specifying the columns with the units of assignment"))
+  }
+  
+  # Must be a DirectAdjusted object for this logic to occur
+  if (!inherits(cluster, "character")) {
+    cluster <- var_names(x@Design, "u")
+  }
+  
+  # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
+  Q_uoas <- tryCatch(
+    stats::expand.model.frame(x, cluster, na.expand = TRUE)[, cluster, drop = FALSE],
+    error = function(e) {
+      mf <- eval(x$call$data, envir = environment(x))
+      missing_cols <- setdiff(cluster, colnames(mf))
+      stop(paste("Could not find unit of assignment columns",
+                 paste(missing_cols, collapse = ", "), "in ITT effect model data"),
+           call. = FALSE)
+    })
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  names(Q_uoas) <- NULL
+
+  # If there's no covariance adjustment info, return the ID's found in Q
+  ca <- x$model$`(offset)`
+  if (!inherits(x, "DirectAdjusted") | !inherits(ca, "SandwichLayer")) {
+    return(factor(Q_uoas, levels = unique(Q_uoas)))
+  }
+
+  # Get the unit of assignment ID's in C
+  all_uoas <- Q_uoas
+  C_uoas <- ca@keys
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+  names(C_uoas) <- NULL
+  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+  
+  nas <- is.na(C_uoas)
+  if (any(nas)) {
+    # give unique ID's to units of assignment in C but not Q, and concatenate with ID's in Q
+    n_Q_uoas <- length(unique(Q_uoas))
+    new_C_uoas <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+    all_uoas <- c(Q_uoas, new_C_uoas)
+  }
+  
+  return(factor(all_uoas, levels = unique(all_uoas)))
 }
 
 #' @keywords internal
@@ -67,6 +122,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
       t(b12) %*% t(a11inv) %*% t(a21) +
       a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
   )
+  # meat <- sandwich::meatCL(x, cluster = m$cluster)
   vmat <- a22inv %*% meat %*% a22inv
 
   return(vmat)

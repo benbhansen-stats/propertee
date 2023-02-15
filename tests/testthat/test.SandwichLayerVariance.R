@@ -81,6 +81,91 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   )
 })
 
+test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model", {
+  data(simdata)
+  mod <- lm(y ~ z, data = simdata)
+  expect_error(.make_uoa_ids(mod), "Cannot deduce")
+})
+
+test_that(".make_uoa_ids fails with invalid cluster argument", {
+  data(simdata)
+  mod <- lm(y ~ z, data = simdata)
+  expect_error(.make_uoa_ids(mod, cluster = "not_uoas"),
+               "columns not_uoas in ITT effect model data")
+})
+
+test_that(".make_uoa_ids returns correct ID's for non-DirectAdjusted model", {
+  data(simdata)
+
+  mod <- lm(y ~ z, data = simdata)
+  
+  expected_out <- factor(
+    apply(simdata[, "cid1", drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  expect_equal(.make_uoa_ids(mod, cluster = "cid1",), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  mod <- lmitt(y ~ assigned(), data = simdata, design = des)
+
+  expected_out <- factor(
+    apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  expect_equal(.make_uoa_ids(mod), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
+  data(simdata)
+
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expected_out <- factor(
+    apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  expect_equal(.make_uoa_ids(dmod), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for no overlap of C and Q", {
+  data(simdata)
+  set.seed(300)
+  cmod_data <- data.frame("y" = rnorm(50), "x" = rnorm(50), "cid1" = NA, "cid2" = NA)
+
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                  function(...) paste(..., collapse = "_"))
+  n_Q_uoas <- length(unique(Q_uoas))
+  all_uoas <- c(Q_uoas, paste0(n_Q_uoas + seq_len(nrow(cmod_data)), "*"))
+  expected_out <- factor(all_uoas, levels = unique(all_uoas))
+  expect_equal(.make_uoa_ids(dmod), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
+  data(simdata)
+  set.seed(300)
+  cmod_data <- data.frame("y" = rnorm(50), "x" = rnorm(50), "z" = NA,
+                          "cid1" = NA, "cid2" = NA)
+  all_data <- rbind(simdata[, c("y", "x", "z", "cid1", "cid2")], cmod_data)
+  
+  cmod <- lm(y ~ x, all_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                  function(...) paste(..., collapse = "_"))
+  n_Q_uoas <- length(unique(Q_uoas))
+  all_uoas <- c(Q_uoas, paste0(n_Q_uoas + seq_len(nrow(cmod_data)), "*"))
+  expected_out <- factor(all_uoas, levels = unique(all_uoas))
+  expect_equal(.make_uoa_ids(dmod), expected_out)
+})
+
 test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
