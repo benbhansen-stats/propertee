@@ -105,7 +105,6 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(.vcovMB_CR0(m), "must have an offset of class")
   expect_error(.get_b12(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
   expect_error(.get_b11(m), "must have an offset of class")
@@ -1222,6 +1221,17 @@ test_that(".vcovMB_CR0 returns px2 matrix", {
 
   expect_message(vmat <- .vcovMB_CR0(m), paste(nrow(simdata), "rows"))
   expect_equal(dim(vmat), c(2, 2))
+})
+
+test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
+  data(simdata)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des))
+  
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_equal(vcovDA(m, type = "CR0"),
+               sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",

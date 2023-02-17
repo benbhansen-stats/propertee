@@ -40,12 +40,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  sl <- x$model$`(offset)`
-  if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
-               "for direct adjustment standard errors"))
-  }
-
   m <- match.call()
   if ("type" %in% names(m)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -53,20 +47,25 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   }
 
   # compute blocks
-  a21 <- .get_a21(x)
-  a11inv <- .get_a11_inverse(x)
-  b12 <- .get_b12(x, ...)
-
   a22inv <- .get_a22_inverse(x)
   b22 <- .get_b22(x, type = "HC0", ...)
-  b11 <- .get_b11(x,  type = "HC0", ...)
+  
+  if (!inherits(x$model$`(offset)`, "SandwichLayer")) {
+    meat <- b22
+  } else {
+    a21 <- .get_a21(x)
+    a11inv <- .get_a11_inverse(x)
+    b12 <- .get_b12(x, ...)
+    b11 <- .get_b11(x,  type = "HC0", ...)
+    
+    meat <- (
+      b22 -
+        a21 %*% a11inv %*% b12 -
+        t(b12) %*% t(a11inv) %*% t(a21) +
+        a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
+    )
+  }
 
-  meat <- (
-    b22 -
-      a21 %*% a11inv %*% b12 -
-      t(b12) %*% t(a11inv) %*% t(a21) +
-      a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
-  )
   vmat <- a22inv %*% meat %*% a22inv
 
   return(vmat)
