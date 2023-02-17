@@ -37,9 +37,8 @@ test_that("absorbed effects aren't printed", {
 
 test_that("multiple variables in blocks", {
   data(simdata)
-  simdata$bid1 <- simdata$bid
-  simdata$bid2 <- c(rep(c(2, 3), each = 10), c(rep(2, 4), rep(3, 10)),
-                    c(rep(2, 6), rep(3, 10)))
+  simdata$bid1 <- (simdata$bid > 1) + 1
+  simdata$bid2 <- (simdata$bid != 2) + 2
 
   des <- rct_design(z ~ cluster(cid2, cid1) + block(bid1, bid2),
                    data = simdata)

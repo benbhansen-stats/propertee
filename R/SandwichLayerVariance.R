@@ -214,7 +214,11 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
+  # NOTE: summary.lm handles less than full rank design matrices by taking the first
+  # columns that meet column rank. We will want to be more specific given the
+  # effects we want to report
+  model.rank <- x$rank
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w))[1L:model.rank, 1L:model.rank])
 
   return(out)
 }
