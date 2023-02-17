@@ -38,6 +38,14 @@ print.summary.DirectAdjusted <-
            ...) {
 
   to_report <- x$coefficients
+  
+  if (!is.null(aliased <- x$aliased) && any(aliased)) {
+    to_report <- rbind(
+      to_report,
+      matrix(NA, sum(aliased), 4, dimnames = list(names(which(aliased)),
+                                                  colnames(to_report)))
+    )
+  }
   to_report <- to_report[!grepl("^\\.absorbed\\(", rownames(to_report)), ]
   stats::printCoefmat(to_report, digits = digits)
   invisible(x)
