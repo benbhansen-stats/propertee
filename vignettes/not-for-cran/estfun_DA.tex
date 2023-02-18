@@ -388,7 +388,7 @@ covariance model by setting up our
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
   \hat{A}_{n,11}^{-1}\hat{A}_{n,21}' - \tilde{\Phi}
-  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}, 
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}', 
 \end{equation}
 where $\Upsilon =
 [\upsilon(\tilde{\mathbf{y}}_{i}; \mathbf{p}, \beta, \tau) : i]'$,
@@ -404,17 +404,21 @@ an average of diagonal matrices $\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
 b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
 $r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
-  \mathbf{p}}$ averages $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$, equal to $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
-\mathbf{p}, \beta, \tau)$ in the design-based scenario and in the
-model-based scenario estimable by $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
-\mathbf{p}, \beta, \tau)$, which is the product of the $k \times k$
+  \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
+\mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$, each equal to $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
+\mathbf{p}, \beta, \tau)$ in the design-based scenario if not the
+model-based scenario.  In either scenario, the average $A_{\tau,
+  \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
+\mathbf{p}, \beta, \tau)$ is estimable by corresponding means of
+random variables $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
+\mathbf{p}, \beta, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
+\mathbf{p}, \beta, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
 consisting of the opposite of the $k\times k$ identity at the
 $b_{i}$th block and the 0 matrix for the $r$th $k \times k$ block whenever
 $r\neq b_{i}$.  In particular, the product
-$A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}$ at right
+$A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}'$ at right
 of \eqref{eq:12} turns out the same under model- and design-based
 interpretations of the expected value operation.
 
