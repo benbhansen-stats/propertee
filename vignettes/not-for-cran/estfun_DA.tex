@@ -3,6 +3,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{stmaryrd}%for \llbracket
 \usepackage{mathtools}% for DeclarePairedDelimiter
+\usepackage{soul}
+\newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
 \usepackage{hyperref}
 
@@ -127,28 +129,85 @@ I conjecture these decisions can be made in such away that
 
 \subsection{The covariance we're trying to produce}
 
-M-estimation's characteristic covariance approximation is  
-\[ \operatorname{Cov}([\hat\beta',\hat\tau']) \approx
+Let $\hat\beta$ and $\hat\tau$ solve
+\[\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{y}}_{i}; \beta )
+  =0\quad\text{and}\quad
+\sum_{j\in \bigcup \mathcal{Q}}\psi(\tilde{\mathbf{y}}_{j}; \tau, \beta )  =0
+  \]
+  in $\beta$ and $\tau$, whereas $\beta_{0}$ and $\tau_{0}$ solve 
+\[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\tilde{\mathbf{Y}}_{i}; \beta )
+  =0\quad\text{and}\quad
+\sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta )  =0.
+  \]
+  Writing
+  \begin{align*}
+%    \label{eq:13}
+    A(\beta, \tau) &= \left(
+      \begin{array}{cc}
+        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+        \mathcal{C}}\nabla_{\beta}\EE \phi(\tilde{\mathbf{Y}}_{i};
+        \beta )&0\\
+        n^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\nabla_{\beta}\EE\psi(\tilde{\mathbf{Y}}_{j};
+        \tau, \beta )  & n^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\nabla_{\tau}\EE\psi(\tilde{\mathbf{Y}}_{j};
+        \tau, \beta )
+      \end{array}
+    \right)\\
+    &=:\left(
+      \begin{array}{cc}
+        A_{11}(\beta)& 0\\
+        A_{21}(\beta, \tau) & A_{22}(\beta, \tau)
+      \end{array}
+\right),
+  \end{align*}
+  define 
+  \begin{align*}
+   \tilde\beta &:= \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})
+  \quad \text{and}\\
+\tilde\tau &:=\tau_{0} + A_{22}^{-1}(\beta_{0}, \tau_{0})n^{-1}\sum_{j\in \bigcup \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{j}; \tau_{0},
+\beta_{0} ),
+\end{align*}
+known as \textit{linearizations} (of $\hat\beta$ and $\hat\tau$).
+Observe that these expressions define the same $\tilde\beta$ and $\tilde\tau$
+  irrespective of the choice of nonzero constants $n_{\mathcal{C}}$
+  and $n$.  To promote alignment with existing \texttt{sandwich}
+  functions%
+  \footnote{%
+    This $n_{\mathcal{C}}$ is the constant that \texttt{sandwich} functions
+will select for the covariance model, given its sample size.  It's
+incumbent on us to supply \texttt{sandwich::estfun()} and/or
+\texttt{sandwich::bread()} methods for \texttt{DirectAdjusted} objects
+with compatible implicit
+scaling constants. \texttt{sandwich::bread()} and
+\texttt{sandwich::breadCL()} take the scaling constant to be the
+reciprocal of the number of rows in whatever
+\texttt{sandwich::estfun()} returns; it will fall to us to ensure our
+$\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
+, we set $n_{\mathcal{C}}$ and $n$ to be the number of elements
+(not clusters) in the covariance and in the the combined samples,
+respectively.
+
+Assuming that with high probability $|\hat\beta -\tilde\beta|_{2}$ and
+$|\hat\tau -\tilde\tau|_{2}$ are small, 
+we have the covariance approximation characteristic of M-estimation,
+\begin{align*} \operatorname{Cov}([\hat\beta',\hat\tau']) \approx&
+  \operatorname{Cov}([\tilde\beta',\tilde\tau'])\\
+  &=
   A^{-1} \operatorname{Cov}\left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta )\\
        n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta )
      \end{array}
 \right)A^{-1}
-\]
-(recalling that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta) = 0$ when
-$j\not\in \bigcup \mathcal{Q}$.)
-Here we take sample size constants $n_{\mathcal{C}}$ and $n$ to be the number of elements
-(not clusters) in the covariance and in the the combined samples,
-respectively, as \texttt{sandwich} functions will want to do given the
-dimensions of the estfun's of the covariance and the DirectAdjusted
-objects.  There's no correct or incorrect $n$, provided that we
-calculate the covariance above correctly and keep track of what we've
-done.
+\end{align*}
+(recalling that we have so defined $\psi(\cdot)$ that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta) = 0$ when
+$j\not\in \bigcup \mathcal{Q}$).
 
-The choice of sample size constant affects B but not A matrices,
+
+The choice of sample size constant affects B \st{but not A matrices},
 at least as construed here (and as implemented in the sandwich
-package). As it does affect the B matrix, and as we're going to
+package). As we're going to
 construe B matrices slightly differently here than in prior threads,
 I'll use the letter M instead of B. We have
 \[
@@ -178,8 +237,11 @@ where
                      \tau, \beta )] .
     \end{array}
 \]
-Note that $M_{11}$ is a natural meat matrix, while $M_{22}$ and
-$M_{12}$/$M_{21}$ are progressively more weird.
+Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
+$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than $(\# \bigcup
+\mathcal{Q})^{-1}$ (or just $(\# \mathcal{Q})^{-1}$) in $M_{22}$'s
+case and $(n_{\mathcal{C}}n)^{-1/2}$ not $[n (\# \bigcup
+\mathcal{Q})]^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
 
 With these definitions,
 \begin{align}
