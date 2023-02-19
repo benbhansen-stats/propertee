@@ -373,7 +373,14 @@ we have no use for and will now proceed to do away with.
 
 \subsection{Accommodating intercept(s) via absorption}
 As $\rho_{0}$ is a nuisance parameter, let's use the
-Frisch-Waugh-Lovell (FWL) Theorem to get rid of it.  In the process we'll
+Frisch-Waugh-Lovell (FWL) Theorem%
+\footnote{Or rather, we invoke the variant of the FWL theorem calling
+  for regression of the unchanged independent variable on residualized
+or partialed out dependent variables.  See e.g. Section 8.4.1,
+``Regressing the partialled-out X on the full Y,'' of
+\href{https://bookdown.org/ts_robinson1994/10_fundamental_theorems_for_econometrics/frisch.html}{Robinson's
+  blog writeup of Wooldridge's 10 biggest principles of econometrics},
+which in turn references Angrist \& Pitschke (2009).} to get rid of it.  In the process we'll
 introduce at least $k$ new nuisance parameters, but we can think of these as
 being estimated not simultaneously but in a prior regression fit.
 We can fold them into the estimator stack in the same way that a prior
