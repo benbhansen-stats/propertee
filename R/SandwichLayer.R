@@ -29,8 +29,7 @@ setValidity("PreSandwichLayer", function(object) {
                   "covariance adjustment vector (", length(object), ")")
     return(msg)
   }
-  if (dim(object@prediction_gradient)[2] !=
-      length(object@fitted_covariance_model$coefficients)) {
+  if (dim(object@prediction_gradient)[2] != object@fitted_covariance_model$rank) {
     return(paste("Prediction gradient does not have the same number of columns",
                  "predictors in the covariance adjustment model"))
   }
