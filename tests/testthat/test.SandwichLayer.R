@@ -323,6 +323,71 @@ test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
   expect_equal(which(is.na(sl@keys$uid)), seq_len(25))
 })
 
+test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's",
+                "not starting at 1"), {
+  set.seed(20)
+  N <- 100
+  cmod_df <- data.frame("x" = rnorm(N), "y" = rnorm(N),
+                        "uid" = c(paste0("0400", seq_len(floor(N/2))),
+                                  rep(NA_character_, N - floor(N/2))))
+  cmod <- lm(y ~ x, cmod_df)
+  design_df <- data.frame("uid" = paste0("0400", seq_len(N)),
+                          "z" = rbinom(N, 1, 0.5))
+  des <- rct_design(z ~ unit_of_assignment(uid), design_df)
+  
+  offset <- rep(1, N)
+  pred_gradient <- matrix(1, nrow = N, ncol = 2)
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- as.SandwichLayer(psl, des)
+  
+  expect_equal(nrow(sl@keys),
+               nrow(sl@fitted_covariance_model$model))
+  expect_equal(sl@keys[, 1],
+               c(paste0("0400", seq_len(floor(N/2))),
+                 rep(NA_character_, N - floor(N/2))))
+})
+
+test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's",
+                "not starting at 1"), {
+  set.seed(20)
+  N <- 100
+  cmod_df <- data.frame("x" = rnorm(N), "y" = rnorm(N),
+                        "classid" = c(rep(c(1, 2), each = floor(N/4)),
+                                      rep(NA_character_, N - floor(N/2))),
+                        "schoolid" = c(rep("04001", 2 * floor(N/4)),
+                                       rep(NA_character_, N - floor(N/2))))
+  cmod <- lm(y ~ x, cmod_df)
+  design_df <- data.frame("classid" = rep(c(1, 2), each = floor(N/4)),
+                          "schoolid" = rep("04001", 2 * floor(N/4)),
+                          "z" = rep(c(0, 1), each = floor(N/4)))
+  des <- rct_design(z ~ cluster(classid, schoolid), design_df)
+  
+  offset <- rep(1, N)
+  pred_gradient <- matrix(1, nrow = N, ncol = 2)
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  sl <- as.SandwichLayer(psl, des)
+  
+  expected_keys <- c(rep(paste0("04001_", c(1, 2)), each = floor(N/4)),
+                     rep(NA_character_, N - 2 * floor(N/4)))
+  
+  expect_equal(nrow(sl@keys),
+               nrow(sl@fitted_covariance_model$model))
+  expect_equal(sl@keys[, "classid"],
+               c(rep(c(1, 2), each = floor(N/4)),
+                 rep(NA_character_, N - floor(N/2))))
+  expect_equal(sl@keys[, "schoolid"],
+               c(rep("04001", 2 * floor(N/4)),
+                 rep(NA_character_, N - floor(N/2))))
+})
+
 test_that("show_sandwich_layer works", {
   set.seed(20)
   N <- 100

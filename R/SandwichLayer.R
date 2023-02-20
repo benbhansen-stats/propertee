@@ -205,7 +205,9 @@ as.SandwichLayer <- function(x, design, by = NULL) {
 
   keys <- as.data.frame(
     sapply(uoanames, function(col) {
-      match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
+      unique(design@structure[[col]])[
+        match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
+      ]
     })
   )
 

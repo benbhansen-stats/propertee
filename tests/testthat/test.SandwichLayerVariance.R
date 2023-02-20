@@ -335,16 +335,10 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(.merge_preserve_order(
-    Q,
-    merge(unique(m$model$`(offset)`@keys), m@Design@structure),
-    by = uoanames,
-    all.x = TRUE,
-    sort = FALSE)[zname])
   m_eqns <- Reduce(
     rbind,
-    by((m$weights * m$residuals * model.matrix(m))[msk, , drop = FALSE],
-       lapply(uoanames, function(col) Q[msk, col]),
+    by((m$weights * m$residuals * model.matrix(m)),
+       lapply(uoanames, function(col) Q[, col]),
        colSums))
 
   expect_message(b12 <- .get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))

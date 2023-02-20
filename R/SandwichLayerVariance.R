@@ -129,7 +129,9 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     # Re-create keys dataframe with the new clustering columns
     keys <- as.data.frame(
       sapply(cluster_cols, function(col) {
-        match(wide_frame[[col]], unique(x@Design@structure[[col]]), incomparables = NA)
+        unique(x@Design@structure[[col]])[
+          match(wide_frame[[col]], unique(x@Design@structure[[col]]), incomparables = NA)
+        ]
       })
     )
   } else {
@@ -138,23 +140,19 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                "exist in both the ITT effect and covariance model datasets"))
   }
 
-  if (ncol(keys) == 1) {
-    uoas <- keys[, 1]
-  } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), keys)
-    uoas[grepl("NA", uoas)] <- NA_character_
-  }
-
-  message(paste(sum(!is.na(uoas)),
+  C_uoas <- apply(keys, 1, function(...) paste(..., collapse = "_"))
+  C_uoas_in_Q <- vapply(strsplit(C_uoas, "_"), function(x) all(x != "NA"), logical(1))
+  
+  message(paste(sum(C_uoas_in_Q),
                 "rows in the covariance adjustment model",
                 "data joined to the ITT effect model data\n"))
   
 
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
-  uoas_overlap <- length(unique(uoas))
-  if (uoas_overlap == 1) {
-    if (!is.na(unique(uoas))) {
+  uoas_overlap <- length(unique(C_uoas[C_uoas_in_Q]))
+  if (uoas_overlap <= 1) {
+    if (uoas_overlap == 1) {
       warning(paste("Covariance matrix between covariance adjustment and ITT effect",
                     "model estimating equations is numerically indistinguishable",
                     "from 0"))
@@ -168,26 +166,20 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
   # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
   # `by` call excludes them from being summed
-  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
+  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)[C_uoas_in_Q,]
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
-  cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
+  cmod_eqns <- Reduce(rbind, by(cmod_estfun, C_uoas[C_uoas_in_Q], cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
   Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
-  if (ncol(Q_uoas) == 1) {
-    Q_uoas <- Q_uoas[, 1]
-  } else {
-    Q_uoas <- Reduce(function(...) paste(..., sep = "_"), Q_uoas)
-    Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
-  }
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
 
-  msk <- Q_uoas %in% unique(uoas[!is.na(uoas)])
-  damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
+  Q_uoas_in_C <- Q_uoas %in% unique(C_uoas[!is.na(C_uoas)])
+  damod_estfun <- sandwich::estfun(x)[Q_uoas_in_C, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
-  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
+  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[Q_uoas_in_C], damod_aggfun))
 
-  matmul_func <- if (length(unique(uoas[!is.na(uoas)])) == 1) tcrossprod else crossprod
-  return(matmul_func(cmod_eqns, damod_eqns))
+  return(crossprod(cmod_eqns, damod_eqns))
 }
 
 #' @details The \bold{A22 block} is the diagonal element of the inverse expected
