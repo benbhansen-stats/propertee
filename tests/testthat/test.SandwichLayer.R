@@ -576,6 +576,10 @@ test_that(paste(".get_ca_and_prediction_gradient warns about less than full",
                  "prediction from a rank-deficient fit")
   expect_equal(sum(is.na(ca_and_grad$ca)), 0)
   expect_equal(ca_and_grad$ca, stats::predict(cmod))
+  expect_equal(ncol(ca_and_grad$prediction_gradient), cmod$rank)
+  expect_equal(colnames(ca_and_grad$prediction_gradient),
+               names(which(!is.na(cmod$coefficients))))
+  
   expect_warning(new_ca_and_grad <- .get_ca_and_prediction_gradient(cmod, newdata = newdata),
                  "prediction from a rank-deficient fit")
   expect_warning(stats_preds <- stats::predict(cmod, newdata),

@@ -139,11 +139,13 @@ setMethod("[", "PreSandwichLayer",
   p <- model$rank
   p1 <- seq_len(p)
   piv <- if(p) model$qr$pivot[p1]
-  if(p < ncol(X))
+  if(p < ncol(X)) {
     warning("prediction from a rank-deficient fit may be misleading")
+    X <- X[, piv, drop = FALSE]
+  }
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  xb <- drop(X[, piv, drop = FALSE] %*% model$coefficients[piv])
+  xb <- drop(X %*% model$coefficients[piv])
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models
