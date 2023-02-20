@@ -8,6 +8,9 @@
 # that here.
 # - Josh Wasserman, February 2023
 
+library(sandwich)
+library(flexida)
+
 # DEFINE CLASSES AND FUNCTIONS FOR TESTING
 # Create placeholder classes for this script so these tests will hold regardless
 # of package development
@@ -41,10 +44,9 @@ estfun.newPsiTildeDAClass <- function(object) {
   C_uoas <- ca@keys
   phi <- estfun(cmod)
   uoa_cols <- colnames(C_uoas)
-  a11_inv <- .get_a11_inverse(object)
-  a21 <- .get_a21(object)
-  n <- nrow(psi)
-  nc <- nrow(phi)
+  a11_inv <- .get_a11_inverse(object) # = (sum(d/dbeta phi_i))^(-1)
+  a21 <- .get_a21(object) # = sum(d/dbeta psi_i)
+  # nc <- nrow(phi)
   
   ## figure out if rows need to be added to the matrix of estimating equations
   Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
@@ -71,7 +73,8 @@ estfun.newPsiTildeDAClass <- function(object) {
   }
   
   ## form matrix of estimating equations
-  mat <- psi / sqrt(n) - sqrt(n) / nc * phi %*% a11_inv %*% t(a21)
+  # n <- nrow(psi)
+  mat <- psi - phi %*% a11_inv %*% t(a21)
   
   return(mat)
 }
@@ -132,6 +135,18 @@ estfun.oldPsiTildeDAClass <- function(object) {
   
   out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
+  
+  return(out)
+}
+
+.get_a22_inverse <- function(x) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("x must be a DirectAdjusted model")
+  }
+  
+  # Get expected information per sandwich_infrastructure vignette
+  w <- if (is.null(x$weights)) 1 else x$weights
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
   
   return(out)
 }
@@ -284,8 +299,7 @@ matmul_cov_psi_tilde <- function(object) {
   psi <- estfun(object)
   keys <- object$model$`(offset)`@keys
   nc <- nrow(keys)
-  n <- nrow(psi)
-  
+
   Q_uoas <- stats::expand.model.frame(object, colnames(keys))[, colnames(keys), drop = FALSE]
   if (ncol(Q_uoas) == 1) {
     Q_uoas <- Q_uoas[, 1]
@@ -316,45 +330,81 @@ matmul_cov_psi_tilde <- function(object) {
   phi_uoa_order <- factor(c(C_uoas, Q_uoas[Q_uoas %in% add_Q_uoas]),
                           levels = unique(c(C_uoas, Q_uoas[Q_uoas %in% add_Q_uoas])))
   psi <- Reduce(rbind, by(psi, psi_uoa_order, psi_aggfun))
-  phi <- Reduce(rbind, by(phi, phi_uoa_order, phi_aggfun))#[match(psi_uoa_order, phi_uoa_order),]
-  
+  phi <- Reduce(rbind, by(phi, phi_uoa_order, phi_aggfun))
+
+  n <- nrow(psi)
   a11_inv <- .get_a11_inverse(object)
   a21 <- .get_a21(object)
   m11 <- crossprod(phi) / nc
   m12 <- crossprod(phi, psi) / sqrt(n * nc)
   m22 <- crossprod(psi) / n
   
-  return(
-    m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
-      n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21))
-  )
+  # return(
+  #   m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
+  #     n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21))
+  # )
+  return(crossprod(psi) - crossprod(psi, phi) %*% a11_inv %*% t(a21) -
+           a21 %*% a11_inv %*% crossprod(phi, psi) +
+           a21 %*% a11_inv %*% crossprod(phi) %*% a11_inv %*% t(a21))
 }
 
-make_old_meat_matrix <- function(object, ...) {
+new_vcovMB_CR0 <- function(object, ...) {
+  cluster <- var_names(object@Design, "u")
+  # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
+  Q_uoas <- stats::expand.model.frame(object, cluster, na.expand = TRUE)[, cluster, drop = FALSE]
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  names(Q_uoas) <- NULL
+
+  # Get the unit of assignment ID's in C
+  ca <- object$model$`(offset)`
+  C_uoas <- ca@keys
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+  names(C_uoas) <- NULL
+  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+
+  all_uoas <- Q_uoas
+  nas <- is.na(C_uoas)
+  if (any(nas)) {
+    # give unique ID's to units of assignment in C but not Q, and concatenate with ID's in Q
+    n_Q_uoas <- length(unique(Q_uoas))
+    new_C_uoas <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+    all_uoas <- c(Q_uoas, new_C_uoas)
+  }
+  
+  uoa_ids <- factor(all_uoas, levels = unique(all_uoas))
+
+  a22inv <- .get_a22_inverse(object)
+  meat <- crossprod(Reduce(rbind, by(estfun(object), uoa_ids, colSums)))
+  vmat <- a22inv %*% meat %*% a22inv
+  return(vmat)
+}
+
+old_vcovMB_CR0 <- function(x, ...) {
   # compute blocks
-  a21 <- .get_a21(object)
-  a11inv <- .get_a11_inverse(object)
-  b12 <- .get_b12(object)
+  a21 <- .get_a21(x)
+  a11inv <- .get_a11_inverse(x)
+  b12 <- .get_b12(x)
   
-  b22 <- .get_b22(object, ...)
-  b11 <- .get_b11(object,  ...)
+  a22inv <- .get_a22_inverse(x)
+  b22 <- .get_b22(x, type = "HC0", ...)
+  b11 <- .get_b11(x,  type = "HC0", ...)
   
-  nq <- nrow(object$model)
-  nc <- nrow(object$model$`(offset)`@fitted_covariance_model$model)
-
-  return(
-    b22 / nq -
-      a21 %*% a11inv %*% b12 / nc -
-      t(b12) %*% t(a11inv) %*% t(a21) / nc +
-      (nq / nc) * a21 %*% a11inv %*% (b11 / nc) %*% t(a11inv) %*% t(a21)
+  meat <- (
+    b22 -
+      a21 %*% a11inv %*% b12 -
+      t(b12) %*% t(a11inv) %*% t(a21) +
+      a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
   )
+  vmat <- a22inv %*% meat %*% a22inv
+  
+  return(vmat)
 }
 
-# FORMULATE 3 DIRECT ADJUSTMENT MODELS TO TEST:
+# FORMULATE 4 DIRECT ADJUSTMENT MODELS TO TEST:
 # 1) linear ITT effect model when there's overlap between C and Q + no clustering
 # 2) linear ITT effect model when there's no overlap + no clustering
 # 3) linear ITT effect model with overlap + clustering
-# 4) nonlinear ITT effect model
+# 4) nonlinear covariance adjustment model
 set.seed(2300)
 
 # TEST MODEL 1
@@ -371,8 +421,8 @@ damod1 <- lmitt(y ~ assigned(), data = newdata, design = des1, weights = ate(des
 new_psi_tilde_da1 <- new("newPsiTildeDAClass", damod1)
 old_psi_tilde_da1 <- new("oldPsiTildeDAClass", damod1)
 
-# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da1)) # = sandwich::meatCL with appropriate `cluster` arg
+# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da1))
 expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da1)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
@@ -392,8 +442,8 @@ damod2 <- lmitt(y ~ assigned(), data = newdata, design = des2, weights = ate(des
 new_psi_tilde_da2 <- new("newPsiTildeDAClass", damod2)
 old_psi_tilde_da2 <- new("oldPsiTildeDAClass", damod2)
 
-# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da2))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da2))
 expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da2)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
@@ -417,7 +467,7 @@ damod3 <- lmitt(y ~ assigned(), data = newdata, design = des3, weights = ate(des
 new_psi_tilde_da3 <- new("newPsiTildeDAClass", damod3)
 old_psi_tilde_da3 <- new("oldPsiTildeDAClass", damod3)
 
-# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
+# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
 cov_psi_tilde <- crossprod(
   Reduce(rbind, by(estfun(new_psi_tilde_da3), newdata$uoa_id, colSums)))
 expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da3)
@@ -441,8 +491,8 @@ damod4 <- lmitt(y ~ assigned(), data = newdata, design = des4, weights = ate(des
 new_psi_tilde_da4 <- new("newPsiTildeDAClass", damod4)
 old_psi_tilde_da4 <- new("oldPsiTildeDAClass", damod4)
 
-# validate that Cov(sum(psi_tilde_eqns) / n) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da4))# = sandwich::meatCL(test_damod1, cadjust = FALSE)
+# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
+cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da4))
 expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da4)
 testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
 
