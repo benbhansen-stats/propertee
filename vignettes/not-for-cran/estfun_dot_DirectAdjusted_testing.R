@@ -1,14 +1,17 @@
-# This script serves as validation for the change made to `DirectAdjusted`'s
-# `estfun` method in February 2023. The meat matrix for a `DirectAdjusted` model
-# was previously calculated according to the appendix of Carroll et al. (2006) as
-# `b22 - a21 %*% a11inv %*% b12 - t(b12) %*% t(a11inv) %*% t(a21) +
-# a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)`, with the matrices defined as
-# in their article. The new `estfun` method should make it such that `sandwich::vcovCL`
-# called on a `DirectAdjusted` model should return the same meat matrix. We test
-# that here.
-# - Josh Wasserman, February 2023
+#' This script serves as validation for the adjustments made to `DirectAdjusted`'s
+#' `sandwich::estfun` method in February 2023. The goal of this change was to 
+#' write a new `estfun` method such that when `sandwich::vcovCL` was called on a
+#' `DirectAdjusted` object (and thus invoking `estfun`) it would return a meat
+#' matrix corresponding to the covariance matrix of our stacked estimating
+#' equations. Thus, this script tests 1) whether the new method produces the
+#' output matrix we expect and 2) whether the resulting sandwich covariance
+#' estimate matches what we previously calculated: \eqn{B_{22} - A_{21}A_{11}^{-1}
+#' B_{12} - B_{12}^{T}A_{11}^{-1}A_{21}^{T} + A_{21}A_{11}^{-1}B_{11}A_{11}^{-1}
+#' A_{21}^{T}, with these matrices defend in the appendix of Carroll et al. (2006).
+#' - Josh Wasserman, February 2023
 
 library(sandwich)
+library(testthat)
 library(flexida)
 
 # DEFINE CLASSES AND FUNCTIONS FOR TESTING
@@ -83,8 +86,6 @@ setClass("oldPsiTildeDAClass",
          contains = "DirectAdjusted")
 
 estfun.oldPsiTildeDAClass <- function(object) {
-  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
-  ## to extract estimating equations for ITT model
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(object@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
@@ -96,6 +97,8 @@ estfun.oldPsiTildeDAClass <- function(object) {
   return(psi)
 }
 
+#' The following submatrix computation functions are as they appeared in the
+#' `flexida` package prior to Feb. 2023
 .get_a11_inverse <- function(x) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
@@ -127,6 +130,10 @@ estfun.oldPsiTildeDAClass <- function(object) {
   
   # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
+  
+  nq <- nrow(x$model)
+  extra_nc <- sum(apply(is.na(sl@keys), 1, any))
+  n <- nq + extra_nc
   
   damod_mm <- stats::model.matrix(formula(x),
                                   stats::model.frame(x, na.action = na.pass))
@@ -293,7 +300,10 @@ estfun.oldPsiTildeDAClass <- function(object) {
   return(out)
 }
 
-matmul_cov_psi_tilde <- function(object) {
+#' This function computes the new meat matrix derived in the notes. We compare
+#' the crossproduct of the unit-of-assignment level estimating equations (cluster
+#' the output of `estfun` if need be) to the output of this function.
+compute_meat_matrix_no_estfun <- function(object) {
   cmod <- object$model$`(offset)`@fitted_covariance_model
   phi <- estfun(cmod)
   psi <- estfun(object)
@@ -333,21 +343,20 @@ matmul_cov_psi_tilde <- function(object) {
   phi <- Reduce(rbind, by(phi, phi_uoa_order, phi_aggfun))
 
   n <- nrow(psi)
-  a11_inv <- .get_a11_inverse(object)
-  a21 <- .get_a21(object)
+  a11_inv <- .get_a11_inverse(object) * nc # sandwich::bread(object$model$`(offset)`@fitted_covariance_model)
+  a21 <- .get_a21(object) / n
   m11 <- crossprod(phi) / nc
   m12 <- crossprod(phi, psi) / sqrt(n * nc)
   m22 <- crossprod(psi) / n
   
-  # return(
-  #   m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
-  #     n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21))
-  # )
-  return(crossprod(psi) - crossprod(psi, phi) %*% a11_inv %*% t(a21) -
-           a21 %*% a11_inv %*% crossprod(phi, psi) +
-           a21 %*% a11_inv %*% crossprod(phi) %*% a11_inv %*% t(a21))
+  return(
+    n * (m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
+      n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21)))
+  )
 }
 
+#' This function computes the full model-based sandwich variance estimate using
+#' the new `estfun` method
 new_vcovMB_CR0 <- function(object, ...) {
   cluster <- var_names(object@Design, "u")
   # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
@@ -372,13 +381,21 @@ new_vcovMB_CR0 <- function(object, ...) {
   }
   
   uoa_ids <- factor(all_uoas, levels = unique(all_uoas))
+  n <- length(uoa_ids)
 
   a22inv <- .get_a22_inverse(object)
   meat <- crossprod(Reduce(rbind, by(estfun(object), uoa_ids, colSums)))
-  vmat <- a22inv %*% meat %*% a22inv
+  vmat <- (1 / n) * (n * a22inv) %*% (meat / n) %*% (n * a22inv) # n^(-1) scaling factors are
+                                                                 # from sandwich package calcs.
+                                                                 # and n factors are from defs.
+                                                                 # of A_22 matrices
+
   return(vmat)
 }
 
+#' This function computes the model-based sandwich variance estimate using
+#' the submatrix computation functions that were used in the `flexida` package
+#' prior to Feb. 2023.
 old_vcovMB_CR0 <- function(x, ...) {
   # compute blocks
   a21 <- .get_a21(x)
@@ -405,6 +422,13 @@ old_vcovMB_CR0 <- function(x, ...) {
 # 2) linear ITT effect model when there's no overlap + no clustering
 # 3) linear ITT effect model with overlap + clustering
 # 4) nonlinear covariance adjustment model
+# For each model, verify:
+#  1) crossprod of new est. eqns. returns what we expect
+#  2) new vcovDA estimates are the same estimates output by the `flexida`
+#     package prior to Feb. 2023
+#  3) new vcovDA estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
+#     with appropriate scaling for the `bread` function and an appropriate
+#     `cluster` argument
 set.seed(2300)
 
 # TEST MODEL 1
@@ -421,14 +445,12 @@ damod1 <- lmitt(y ~ assigned(), data = newdata, design = des1, weights = ate(des
 new_psi_tilde_da1 <- new("newPsiTildeDAClass", damod1)
 old_psi_tilde_da1 <- new("oldPsiTildeDAClass", damod1)
 
-# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da1))
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da1)
-testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
-
-# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da1, type = "HC0", cadjust = FALSE)
-testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+testthat::expect_equal(crossprod(estfun(new_psi_tilde_da1)),
+                       compute_meat_matrix_no_estfun(old_psi_tilde_da1))
+testthat::expect_equal(new_vcov1 <- new_vcovMB_CR0(new_psi_tilde_da1),
+                       old_vcovMB_CR0(old_psi_tilde_da1, cadjust = FALSE))
+testthat::expect_equal(new_vcov1,
+                       sandwich::sandwich(new_psi_tilde_da1, adjust = FALSE))
 
 # TEST MODEL 2
 cmod_data <- cbind(matrix(rnorm(4 * n), ncol = 2), rep(0, n))
@@ -442,14 +464,18 @@ damod2 <- lmitt(y ~ assigned(), data = newdata, design = des2, weights = ate(des
 new_psi_tilde_da2 <- new("newPsiTildeDAClass", damod2)
 old_psi_tilde_da2 <- new("oldPsiTildeDAClass", damod2)
 
-# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da2))
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da2)
-testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
-
-# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da2, type = "HC0", cadjust = FALSE)
-testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+testthat::expect_equal(crossprod(estfun(new_psi_tilde_da2)),
+                       compute_meat_matrix_no_estfun(old_psi_tilde_da2))
+testthat::expect_equal(new_vcov2 <- new_vcovMB_CR0(new_psi_tilde_da2),
+                       old_vcovMB_CR0(old_psi_tilde_da2, cadjust = FALSE))
+testthat::expect_equal(new_vcov2,
+                       sandwich::sandwich(new_psi_tilde_da2,
+                                          bread. = function(x) {
+                                            sandwich::bread(x) / n * 3 * n
+                                          },
+                                          meat. = sandwich::meatCL,
+                                          cluster = seq_len(3 * n),
+                                          cadjust = FALSE))
 
 # TEST MODEL 3
 n_clusters <- 10
@@ -467,15 +493,19 @@ damod3 <- lmitt(y ~ assigned(), data = newdata, design = des3, weights = ate(des
 new_psi_tilde_da3 <- new("newPsiTildeDAClass", damod3)
 old_psi_tilde_da3 <- new("oldPsiTildeDAClass", damod3)
 
-# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(
-  Reduce(rbind, by(estfun(new_psi_tilde_da3), newdata$uoa_id, colSums)))
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da3)
-testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
-
-# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da3, type = "HC0", cadjust = FALSE)
-testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+testthat::expect_equal(
+  crossprod(Reduce(rbind, by(estfun(new_psi_tilde_da3), newdata$uoa_id, colSums))),
+  compute_meat_matrix_no_estfun(old_psi_tilde_da3)
+)
+testthat::expect_equal(new_vcov3 <- new_vcovMB_CR0(new_psi_tilde_da3),
+                       old_vcovMB_CR0(old_psi_tilde_da3, cadjust = FALSE))
+testthat::expect_equal(
+  new_vcov3,
+  sandwich::sandwich(new_psi_tilde_da3,
+                     meat. = sandwich::meatCL,
+                     cluster = newdata$uoa_id,
+                     cadjust = FALSE)
+)
 
 # TEST MODEL 4
 newdata <- cbind(matrix(rnorm(2 * n), ncol = 2), rbinom(n, 1, 0.5))
@@ -491,11 +521,9 @@ damod4 <- lmitt(y ~ assigned(), data = newdata, design = des4, weights = ate(des
 new_psi_tilde_da4 <- new("newPsiTildeDAClass", damod4)
 old_psi_tilde_da4 <- new("oldPsiTildeDAClass", damod4)
 
-# validate that crossprod(psi_tilde) = matrix multiplication in Ben's doc
-cov_psi_tilde <- crossprod(estfun(new_psi_tilde_da4))
-expected_cov_psi_tilde <- matmul_cov_psi_tilde(old_psi_tilde_da4)
-testthat::expect_equal(cov_psi_tilde, expected_cov_psi_tilde)
-
-# validate that Cov(sum(psi_tilde_eqns) / n) = meat matrix previously being calculated
-old_meat_matrix <- make_old_meat_matrix(old_psi_tilde_da4, type = "HC0", cadjust = FALSE)
-testthat::expect_equal(cov_psi_tilde, old_meat_matrix)
+testthat::expect_equal(crossprod(estfun(new_psi_tilde_da4)),
+                       compute_meat_matrix_no_estfun(old_psi_tilde_da4))
+testthat::expect_equal(new_vcov4 <- new_vcovMB_CR0(new_psi_tilde_da4),
+                       old_vcovMB_CR0(old_psi_tilde_da4, cadjust = FALSE))
+testthat::expect_equal(new_vcov4,
+                       sandwich::sandwich(new_psi_tilde_da4, adjust = FALSE))
