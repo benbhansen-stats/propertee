@@ -60,17 +60,44 @@ test_that(".make_uoa_ids fails with invalid cluster argument", {
   mod <- lm(y ~ z, data = simdata)
   expect_error(.make_uoa_ids(mod, cluster = "not_uoas"),
                "columns not_uoas in ITT effect model data")
+  
+  invalid_ids <- apply(simdata[, c("cid1", "cid2")], 1,
+                       function(...) paste(..., collapse = "_"))
+  expect_error(.make_uoa_ids(mod, cluster = invalid_ids),
+               ", 5_2 in ITT effect model data")
+})
+
+test_that(".make_uoa_ids produces expected warnings for NA uoas in C", {
+  data(simdata)
+  cmod_data <- data.frame("x" = rnorm(50), "y" = rnorm(50),
+                          "cid1" = rep(c(1, NA), each = 25),  "cid2" = NA)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
+                offset = cov_adj(cmod))
+  Q_ids <- apply(simdata[, c("cid1", "cid2")], 1,
+                 function(...) paste(..., collapse = "_"))
+  C_ids <- c(rep("1_NA", 25), paste0(length(unique(Q_ids)) + seq_len(25), "*"))
+  expected_ids <- factor(c(Q_ids, C_ids), levels = unique(c(Q_ids, C_ids)))
+  
+  expect_warning(
+    expect_warning(ids <- .make_uoa_ids(dmod), "ID's will be clustered"),
+    "should be treated as IID"
+  )
+  expect_equal(length(ids), nrow(cmod_data) + nrow(simdata))
+  expect_equal(ids, expected_ids)
 })
 
 test_that(".make_uoa_ids returns correct ID's for non-DirectAdjusted model", {
   data(simdata)
 
   mod <- lm(y ~ z, data = simdata)
-  
   expected_out <- factor(
     apply(simdata[, "cid1", drop = FALSE], 1, function(...) paste(..., collapse = "_"))
   )
-  expect_equal(.make_uoa_ids(mod, cluster = "cid1",), expected_out)
+
+  expect_equal(.make_uoa_ids(mod, cluster = "cid1"), expected_out)
 })
 
 test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
@@ -104,27 +131,6 @@ test_that(".make_uoa_ids returns correct ID's for no overlap of C and Q", {
   cmod_data <- data.frame("y" = rnorm(50), "x" = rnorm(50), "cid1" = NA, "cid2" = NA)
 
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
-  
-  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
-                  function(...) paste(..., collapse = "_"))
-  n_Q_uoas <- length(unique(Q_uoas))
-  all_uoas <- c(Q_uoas, paste0(n_Q_uoas + seq_len(nrow(cmod_data)), "*"))
-  expected_out <- factor(all_uoas, levels = unique(all_uoas))
-  
-  expect_warning(ids <- .make_uoa_ids(dmod), "treated as IID")
-  expect_equal(ids, expected_out)
-})
-
-test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
-  data(simdata)
-  set.seed(300)
-  cmod_data <- data.frame("y" = rnorm(50), "x" = rnorm(50), "z" = NA,
-                          "cid1" = NA, "cid2" = NA)
-  all_data <- rbind(simdata[, c("y", "x", "z", "cid1", "cid2")], cmod_data)
-  
-  cmod <- lm(y ~ x, all_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
   
@@ -404,6 +410,16 @@ test_that(".vcovMB_CR0 returns px2 matrix", {
 
   vmat <- .vcovMB_CR0(m)
   expect_equal(dim(vmat), c(2, 2))
+})
+
+test_that(".vcovMB_CR0 doesn't accept `type` argument", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
+  
+  expect_error(.vcovMB_CR0(m, type = "CR0"), "Cannot override the `type`")
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",

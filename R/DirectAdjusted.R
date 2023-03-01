@@ -40,20 +40,28 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
-  call <- match.call()
+  cl <- match.call()
 
-  if (is.null(call[["type"]])) {
+  if (is.null(cl[["type"]])) {
     confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
     if (any(confint_calls)) {
       type <- tryCatch(get("call", sys.frame(which(confint_calls)[1]))$type,
                        error = function(e) NULL)
-      call$type <- type # will not append if type is NULL
+      cl$type <- type # will not append if type is NULL
     }
   }
 
-  call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) vcovDA else getS3method("vcov", "lm")
-  vmat <- eval(call, parent.frame())
-
+  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    cl$x <- cl$object
+    argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
+    new_cl <- cl[c(1L, argmatch)]
+    new_cl[[1L]] <-  quote(vcovDA)
+  } else {
+    new_cl <- cl
+    new_cl[[1L]] <- getS3method("vcov", "lm")
+  }
+  
+  vmat <- eval(new_cl, parent.frame())
   return(vmat)
 }
 
@@ -74,30 +82,44 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   return(ci)
 }
 
-##' @title Extract Empirical Estimating Functions
-##' @param object DirectAdjusted
-##' @return n x (k+1) matrix corresponding to the empirical estimating equations
-##' of the ITT model incorporating covariance adjustment. Here, n represents the
-##' total number of units in the covariance adjustment model and ITT effect model
-##' samples combined, and k represents the number of treatments. The output
-##' matrix is ordered such that the units used to fit the ITT effect model
-##' comprise the intial rows, and those solely used to fit the covariance
-##' adjustment model follow.
+##' @title Extract empirical estimating functions from a \code{DirectAdjusted} model fit
+##' @param x a fitted \code{DirectAdjusted} object
+##' @param ... arguments passed to methods
+##' @return An \eqn{n\times k} matrix containing the empirical estimating
+##' functions of the directly adjusted ITT model. \eqn{n} represents the
+##' combined number of units at the observation level in the samples used to
+##' fit the covariance adjustment and ITT effect models. \eqn{k} represents the
+##' number of parameters in the ITT effect model.\cr\cr
+##' Each row represents an observation's contribution to the stacked estimating
+##' equations. This contribution, denoted \eqn{\tilde{\psi}_{i}} for the \eqn{i}th
+##' observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
+##' \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
+##' contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
+##' contribution to the covariance adjustment model fit, and the \eqn{A} matrices
+##' are given by typical sandwich calculations.\cr\cr
+##' Note that this formulation requires a row for each observation used to fit
+##' either the covariance adjustment model or the ITT effect model. The output
+##' matrix is ordered such that the units used to fit the latter comprise the
+##' initial rows, and those used to fit the former follow. When there is overlap
+##' of the rows used to fit the two models, there is no guarantee this method
+##' aligns each observation's contributions. However, given clustering information
+##' in a \code{DirectAdjusted}'s \code{Design} object, the contributions can be
+##' aggregated such that the resulting sandwich variance estimates are correct.
 ##' @exportS3Method
-estfun.DirectAdjusted <- function(object, ...) {
+estfun.DirectAdjusted <- function(x, ...) {
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
   ## to extract estimating equations for ITT model
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
-  base_class <- match(object@.S3Class, valid_classes)
+  base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
     stop(paste("ITT effect model must have been fitted using a function from the",
                "`flexida`, `stats`, `robustbase`, or `survey` package"))
   }
-  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
+  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x)
 
   ## if ITT model offset doesn't contain info about covariance model, psi should
   ## be the matrix of estimating equations returned
-  ca <- object$model$`(offset)`
+  ca <- x$model$`(offset)`
   if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
     return(psi)
   }
@@ -107,11 +129,11 @@ estfun.DirectAdjusted <- function(object, ...) {
   C_uoas <- ca@keys
   phi <- estfun(cmod)
   uoa_cols <- colnames(C_uoas)
-  a11_inv <- .get_a11_inverse(object)
-  a21 <- .get_a21(object)
+  a11_inv <- .get_a11_inverse(x)
+  a21 <- .get_a21(x)
 
   ## figure out if rows need to be added to the matrix of estimating equations
-  Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
+  Q_uoas <- stats::expand.model.frame(x, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
   Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
 
   C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
@@ -141,15 +163,18 @@ estfun.DirectAdjusted <- function(object, ...) {
 }
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
-##' @param x DirectAdjusted object
-##' @details Returns the expected Fisher information for the ITT effect model
-##' fit
-##' @return A \eqn{k\times k} matrix where k denotes the number of treatment
-##' levels
+##' @param x a fitted \code{DirectAdjusted} object
+##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
+##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
+##' model estimating equations defined in our accompanying documentation.
 ##' @exportS3Method
 bread.DirectAdjusted <- function(x) {
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
-    return(sandwich:::bread.lm(x))
+    return(utils::getS3method("bread", "lm")(x))
+  }
+  if (is.null(x$qr)) {
+    stop(paste("Cannot compute the Hessian of the ITT effect model estimating",
+               "equations if the model fit does not have a `qr` element."))
   }
 
   mm <- stats::model.matrix(x)
@@ -158,8 +183,7 @@ bread.DirectAdjusted <- function(x) {
   nc_not_q <- sum(apply(is.na(ca@keys), 1, any))
   n <- nq + nc_not_q
 
-  Qr <- stats:::qr.lm(x)
-  out <- n * chol2inv(Qr$qr)
+  out <- n * chol2inv(x$qr$qr)
   dimnames(out) <- list(colnames(mm), colnames(mm))
   
   return(out)

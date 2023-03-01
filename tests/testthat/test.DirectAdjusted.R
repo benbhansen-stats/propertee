@@ -469,6 +469,19 @@ test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted object
   expect_equal(sandwich::bread(m2), expected_out2)
 })
 
+test_that("bread.DirectAdjusted fails without a `qr` element", {
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(uid), simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des),
+             offset = cov_adj(cmod))
+  m$qr <- NULL
+  
+  expect_error(sandwich::bread(m), "Cannot compute")
+})
+
 test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
                 "of C and Q"), {
   data(simdata)

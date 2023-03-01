@@ -2,22 +2,37 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{estfun.DirectAdjusted}
 \alias{estfun.DirectAdjusted}
-\title{Extract Empirical Estimating Functions}
+\title{Extract empirical estimating functions from a \code{DirectAdjusted} model fit}
 \usage{
-\method{estfun}{DirectAdjusted}(object, ...)
+\method{estfun}{DirectAdjusted}(x, ...)
 }
 \arguments{
-\item{object}{DirectAdjusted}
+\item{x}{a fitted \code{DirectAdjusted} object}
+
+\item{...}{arguments passed to methods}
 }
 \value{
-n x (k+1) matrix corresponding to the empirical estimating equations
-of the ITT model incorporating covariance adjustment. Here, n represents the
-total number of units in the covariance adjustment model and ITT effect model
-samples combined, and k represents the number of treatments. The output
-matrix is ordered such that the units used to fit the ITT effect model
-comprise the intial rows, and those solely used to fit the covariance
-adjustment model follow.
+An \eqn{n\times k} matrix containing the empirical estimating
+functions of the directly adjusted ITT model. \eqn{n} represents the
+combined number of units at the observation level in the samples used to
+fit the covariance adjustment and ITT effect models. \eqn{k} represents the
+number of parameters in the ITT effect model.\cr\cr
+Each row represents an observation's contribution to the stacked estimating
+equations. This contribution, denoted \eqn{\tilde{\psi}_{i}} for the \eqn{i}th
+observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
+\phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
+contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
+contribution to the covariance adjustment model fit, and the \eqn{A} matrices
+are given by typical sandwich calculations.\cr\cr
+Note that this formulation requires a row for each observation used to fit
+either the covariance adjustment model or the ITT effect model. The output
+matrix is ordered such that the units used to fit the latter comprise the
+initial rows, and those used to fit the former follow. When there is overlap
+of the rows used to fit the two models, there is no guarantee this method
+aligns each observation's contributions. However, given clustering information
+in a \code{DirectAdjusted}'s \code{Design} object, the contributions can be
+aggregated such that the resulting sandwich variance estimates are correct.
 }
 \description{
-Extract Empirical Estimating Functions
+Extract empirical estimating functions from a \code{DirectAdjusted} model fit
 }

@@ -7,16 +7,13 @@
 \method{bread}{DirectAdjusted}(x)
 }
 \arguments{
-\item{x}{DirectAdjusted object}
+\item{x}{a fitted \code{DirectAdjusted} object}
 }
 \value{
-A \eqn{k\times k} matrix where k denotes the number of treatment
-levels
+A \eqn{k\times k} matrix where k denotes the number of parameters
+in the ITT effect model. This corresponds to the Hessian of the ITT effect
+model estimating equations defined in our accompanying documentation.
 }
 \description{
 Extract bread matrix from a \code{DirectAdjusted} model fit
-}
-\details{
-Returns the expected Fisher information for the ITT effect model
-fit
 }
