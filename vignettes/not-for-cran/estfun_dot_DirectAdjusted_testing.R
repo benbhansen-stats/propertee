@@ -82,6 +82,10 @@ estfun.newPsiTildeDAClass <- function(object) {
   return(mat)
 }
 
+bread.newPsiTildeDAClass <- function(object) {
+  return(utils::getS3method("bread", "lm")(object))
+}
+
 setClass("oldPsiTildeDAClass",
          contains = "DirectAdjusted")
 
