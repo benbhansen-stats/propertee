@@ -46,10 +46,8 @@ estfun.newPsiTildeDAClass <- function(object) {
   cmod <- ca@fitted_covariance_model
   C_uoas <- ca@keys
   phi <- estfun(cmod)
+  nc <- nrow(phi)
   uoa_cols <- colnames(C_uoas)
-  a11_inv <- .get_a11_inverse(object) # = (sum(d/dbeta phi_i))^(-1)
-  a21 <- .get_a21(object) # = sum(d/dbeta psi_i)
-  # nc <- nrow(phi)
   
   ## figure out if rows need to be added to the matrix of estimating equations
   Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
@@ -76,7 +74,9 @@ estfun.newPsiTildeDAClass <- function(object) {
   }
   
   ## form matrix of estimating equations
-  # n <- nrow(psi)
+  n <- nrow(psi)
+  a11_inv <- .get_a11_inverse(object)
+  a21 <- .get_a21(object)
   mat <- psi - phi %*% a11_inv %*% t(a21)
   
   return(mat)
@@ -383,12 +383,9 @@ new_vcovMB_CR0 <- function(object, ...) {
   uoa_ids <- factor(all_uoas, levels = unique(all_uoas))
   n <- length(uoa_ids)
 
-  a22inv <- .get_a22_inverse(object)
-  meat <- crossprod(Reduce(rbind, by(estfun(object), uoa_ids, colSums)))
-  vmat <- (1 / n) * (n * a22inv) %*% (meat / n) %*% (n * a22inv) # n^(-1) scaling factors are
-                                                                 # from sandwich package calcs.
-                                                                 # and n factors are from defs.
-                                                                 # of A_22 matrices
+  a22inv <- n * .get_a22_inverse(object) # `sandwich::bread()` but with correct scaling
+  meat <- crossprod(Reduce(rbind, by(estfun(object), uoa_ids, colSums))) / n # same as `sandwich::meatCL()`
+  vmat <- (1 / n) * a22inv %*% meat %*%  a22inv
 
   return(vmat)
 }
@@ -451,6 +448,7 @@ testthat::expect_equal(new_vcov1 <- new_vcovMB_CR0(new_psi_tilde_da1),
                        old_vcovMB_CR0(old_psi_tilde_da1, cadjust = FALSE))
 testthat::expect_equal(new_vcov1,
                        sandwich::sandwich(new_psi_tilde_da1, adjust = FALSE))
+new_vcov1
 
 # TEST MODEL 2
 cmod_data <- cbind(matrix(rnorm(4 * n), ncol = 2), rep(0, n))
@@ -476,6 +474,7 @@ testthat::expect_equal(new_vcov2,
                                           meat. = sandwich::meatCL,
                                           cluster = seq_len(3 * n),
                                           cadjust = FALSE))
+new_vcov2
 
 # TEST MODEL 3
 n_clusters <- 10
@@ -506,6 +505,7 @@ testthat::expect_equal(
                      cluster = newdata$uoa_id,
                      cadjust = FALSE)
 )
+new_vcov3
 
 # TEST MODEL 4
 newdata <- cbind(matrix(rnorm(2 * n), ncol = 2), rbinom(n, 1, 0.5))
@@ -527,3 +527,6 @@ testthat::expect_equal(new_vcov4 <- new_vcovMB_CR0(new_psi_tilde_da4),
                        old_vcovMB_CR0(old_psi_tilde_da4, cadjust = FALSE))
 testthat::expect_equal(new_vcov4,
                        sandwich::sandwich(new_psi_tilde_da4, adjust = FALSE))
+new_vcov4
+
+cat("Successfully tested estfun.DirectAdjusted", sep = "\n")

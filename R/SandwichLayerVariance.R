@@ -26,14 +26,14 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
   var_func <- switch(
     type,
-    "CR0" = .vcovMB_CR0
+    "CR0" = ".vcovMB_CR0"
   )
   
-  # args <- list(x = object)
-  # args$cluster <- .make_uoa_ids(object, ...)
-  # 
-  # est <- do.call(var_func, args)
-  est <- var_func(object, ...)
+  args <- list(...)
+  args$x <- object
+  args$cluster <- .make_uoa_ids(object, ...)
+
+  est <- do.call(var_func, args)
   return(est)
 }
 
@@ -73,15 +73,27 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   # Get the unit of assignment ID's in C
   all_uoas <- Q_uoas
   C_uoas <- ca@keys
+  any_C_uoa_is_na <- apply(is.na(C_uoas), 1, any)
+  all_C_uoa_is_na <- apply(is.na(C_uoas), 1, all)
   C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
-  names(C_uoas) <- NULL
-  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
   
-  nas <- is.na(C_uoas)
-  if (any(nas)) {
+  if (sum(any_C_uoa_is_na) - sum(all_C_uoa_is_na) > 0) {
+    warning(paste("Some rows in the covariance adjustment model dataset have",
+                  "NA's for some but not all clustering columns. Rows sharing",
+                  "the same non-NA cluster ID's will be clustered together.",
+                  "If this is not intended, provide unique non-NA cluster ID's",
+                  "for these rows."))
+  }
+  if (sum(all_C_uoa_is_na) > 0) {
+    warning(paste("Some or all rows in the covariance adjustment model dataset",
+                  "are found to have NA's for the given clustering columns.",
+                  "This is taken to mean these observations should be treated",
+                  "as IID. To avoid this warning, provide unique non-NA cluster",
+                  "ID's for each row."))
     # give unique ID's to units of assignment in C but not Q, and concatenate with ID's in Q
+    C_uoas[all_C_uoa_is_na] <- NA_character_
     n_Q_uoas <- length(unique(Q_uoas))
-    new_C_uoas <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+    new_C_uoas <- paste0(n_Q_uoas + seq_len(sum(all_C_uoa_is_na)), "*")
     all_uoas <- c(Q_uoas, new_C_uoas)
   }
   
@@ -101,29 +113,17 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                "for direct adjustment standard errors"))
   }
 
-  m <- match.call()
-  if ("type" %in% names(m)) {
+  args <- list(...)
+  if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
                "matrix computations"))
   }
-
-  # compute blocks
-  a21 <- .get_a21(x)
-  a11inv <- .get_a11_inverse(x)
-  b12 <- .get_b12(x, ...)
-
-  a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, type = "HC0", ...)
-  b11 <- .get_b11(x,  type = "HC0", ...)
-
-  meat <- (
-    b22 -
-      a21 %*% a11inv %*% b12 -
-      t(b12) %*% t(a11inv) %*% t(a21) +
-      a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
-  )
-  # meat <- sandwich::meatCL(x, cluster = m$cluster)
-  vmat <- a22inv %*% meat %*% a22inv
+  args$x <- x
+  n <- length(args$cluster)
+  
+  a22inv <- sandwich::bread(x)
+  meat <- do.call(sandwich::meatCL, args)
+  vmat <- (1 / n) * a22inv %*% meat %*% a22inv
 
   return(vmat)
 }
@@ -271,7 +271,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
+  mm <- stats::model.matrix(x)
+  out <- solve(crossprod(mm * sqrt(w)))
 
   return(out)
 }

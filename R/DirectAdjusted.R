@@ -74,73 +74,96 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   return(ci)
 }
 
-# ##' @title Extract Empirical Estimating Functions
-# ##' @param object DirectAdjusted
-# ##' @return n x (k+1) matrix corresponding to the empirical estimating equations
-# ##' of the ITT model incorporating covariance adjustment. Here, n represents the
-# ##' total number of units in the covariance adjustment model and ITT effect model
-# ##' samples combined, and k represents the number of treatments. The output
-# ##' matrix is ordered such that the units used to fit the ITT effect model
-# ##' comprise the intial rows, and those solely used to fit the covariance
-# ##' adjustment model follow.
-# ##' @exportS3Method
-# estfun.DirectAdjusted <- function(object, ...) {
-#   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
-#   ## to extract estimating equations for ITT model
-#   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
-#   base_class <- match(object@.S3Class, valid_classes)
-#   if (all(is.na(base_class))) {
-#     stop(paste("ITT effect model must have been fitted using a function from the",
-#                "`flexida`, `stats`, `robustbase`, or `survey` package"))
-#   }
-#   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
-# 
-#   ## if ITT model offset doesn't contain info about covariance model, psi should
-#   ## be the matrix of estimating equations returned
-#   ca <- object$model$`(offset)`
-#   if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
-#     return(psi)
-#   }
-# 
-#   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-#   cmod <- ca@fitted_covariance_model
-#   C_uoas <- ca@keys
-#   phi <- estfun(cmod)
-#   uoa_cols <- colnames(C_uoas)
-#   a11_inv <- .get_a11_inverse(object)
-#   a21 <- .get_a21(object)
-#   n <- nrow(psi)
-#   nc <- nrow(phi)
-# 
-#   ## figure out if rows need to be added to the matrix of estimating equations
-#   Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
-#   Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
-# 
-#   C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
-#   C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
-# 
-#   nas <- is.na(C_uoas)
-#   if (any(nas)) {
-#     # give unique ID's to uoa's in C but not Q
-#     n_Q_uoas <- length(unique(Q_uoas))
-#     C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
-#   }
-# 
-#   # add rows if necessary
-#   add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
-#   add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
-#   if (length(add_C_uoas) > 0) {
-#     psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
-#   }
-#   if (length(add_Q_uoas) > 0) {
-#     phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
-#   }
-# 
-#   ## form matrix of estimating equations
-#   mat <- psi / sqrt(n) - sqrt(n) / nc * phi %*% a11_inv %*% t(a21)
-# 
-#   return(mat)
-# }
+##' @title Extract Empirical Estimating Functions
+##' @param object DirectAdjusted
+##' @return n x (k+1) matrix corresponding to the empirical estimating equations
+##' of the ITT model incorporating covariance adjustment. Here, n represents the
+##' total number of units in the covariance adjustment model and ITT effect model
+##' samples combined, and k represents the number of treatments. The output
+##' matrix is ordered such that the units used to fit the ITT effect model
+##' comprise the intial rows, and those solely used to fit the covariance
+##' adjustment model follow.
+##' @exportS3Method
+estfun.DirectAdjusted <- function(object, ...) {
+  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
+  ## to extract estimating equations for ITT model
+  valid_classes <- c("glm", "lmrob", "svyglm", "lm")
+  base_class <- match(object@.S3Class, valid_classes)
+  if (all(is.na(base_class))) {
+    stop(paste("ITT effect model must have been fitted using a function from the",
+               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+  }
+  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
+
+  ## if ITT model offset doesn't contain info about covariance model, psi should
+  ## be the matrix of estimating equations returned
+  ca <- object$model$`(offset)`
+  if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
+    return(psi)
+  }
+
+  ## otherwise, extract/compute the rest of the relevant matrices/quantities
+  cmod <- ca@fitted_covariance_model
+  C_uoas <- ca@keys
+  phi <- estfun(cmod)
+  uoa_cols <- colnames(C_uoas)
+  a11_inv <- .get_a11_inverse(object)
+  a21 <- .get_a21(object)
+
+  ## figure out if rows need to be added to the matrix of estimating equations
+  Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
+
+  nas <- is.na(C_uoas)
+  if (any(nas)) {
+    # give unique ID's to uoa's in C but not Q
+    n_Q_uoas <- length(unique(Q_uoas))
+    C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+  }
+
+  # add rows if necessary
+  add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
+  add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
+  if (length(add_C_uoas) > 0) {
+    psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
+  }
+  if (length(add_Q_uoas) > 0) {
+    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
+  }
+
+  ## form matrix of estimating equations
+  mat <- psi - phi %*% a11_inv %*% t(a21)
+
+  return(mat)
+}
+
+##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
+##' @param x DirectAdjusted object
+##' @details Returns the expected Fisher information for the ITT effect model
+##' fit
+##' @return A \eqn{k\times k} matrix where k denotes the number of treatment
+##' levels
+##' @exportS3Method
+bread.DirectAdjusted <- function(x) {
+  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+    return(sandwich:::bread.lm(x))
+  }
+
+  mm <- stats::model.matrix(x)
+  # compute scaling factor
+  nq <- nrow(mm)
+  nc_not_q <- sum(apply(is.na(ca@keys), 1, any))
+  n <- nq + nc_not_q
+
+  Qr <- stats:::qr.lm(x)
+  out <- n * chol2inv(Qr$qr)
+  dimnames(out) <- list(colnames(mm), colnames(mm))
+  
+  return(out)
+}
 
 ##' (Internal) Obtain which variaiton of \code{assigned()}, \code{a.()} or
 ##' \code{z.()} is used in the model
