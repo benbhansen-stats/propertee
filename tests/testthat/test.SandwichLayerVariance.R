@@ -467,39 +467,35 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   n <- nc + nrow(Z)
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
-  # b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
-  # expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  # expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
-
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(N * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meat
+  
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(estfun(damod)) / n,
-               sandwich::meat(damod, adjust = FALSE))
+               (crossprod(ef_damod) -
+                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
+                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
+               ) / n)
+  
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
 
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
-
-  ## HEURISTIC CHECKS
-  # with perfect group balance, a22inv %*% a21 should be 0 for the trt row
-  expect_equal((a22inv %*% a21)[2,],
-               setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  # with perfect group balance, a22inv %*% a21 ((Z'WZ)^(-1)Z'WX) should be 0
+  # for the trt row
+  expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
                (1/n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be equal to the outputs of sandwich
-  expect_equal(diag(vmat), diag(sandwich::sandwich(damod)))
+  expect_equal(vmat, sandwich::sandwich(damod))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -546,27 +542,25 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   n <- nc + nrow(Z)
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
-  # b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
-  # expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  # expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
-
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(N / 4 * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meat
+  
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(estfun(damod)) / n,
-               sandwich::meat(damod, adjust = FALSE))
+               (crossprod(ef_damod) -
+                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
+                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
+               ) / n)
+  
 
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
@@ -576,7 +570,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                (1/n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(diag(vmat), diag(sandwich::sandwich(damod)))
+  expect_equal(vmat, sandwich::sandwich(damod))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -651,50 +645,43 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b22 <- crossprod(
-  #   Reduce(rbind,
-  #          by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
-  #             colSums))
-  # )
-  # expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  # b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  # expect_equal(b12, suppressMessages(.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
 
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meatCL
-  # expect_equal(b22 / (NQ * MI),
-  #              sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
-  #                               cadjust = FALSE))
-  expect_warning(ids <- .make_uoa_ids(damod), "treated as IID")
+  ids <- c(df$cid[!is.na(df$cid)],
+           paste0(length(df$cid[!is.na(df$cid)]) + seq_len(length(df$cid[is.na(df$cid)])),
+                  "*"))
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
+                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
+                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
+                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
+                  a11inv %*% t(a21)
+               ) / n)
+  
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
 
-  ## HEURISTIC CHECKS
   # with perfect group balance, a22inv %*% a21 should have 0's in the trt row
-  expect_equal((a22inv %*% a21)[2,],
-               setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
                (1 / n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(diag(vmat),
-               diag(sandwich::sandwich(damod,
-                                       meat. = sandwich::meatCL,
-                                       cluster = ids,
-                                       cadjust = FALSE)))
+  expect_equal(
+    vmat,
+    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
+  )
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -751,36 +738,31 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b22 <- crossprod(
-  #   Reduce(rbind,
-  #          by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
-  #             colSums))
-  # )
-  # expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  # b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  # expect_equal(b12, suppressMessages(.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
 
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meatCL
-  # expect_equal(b22 / (NQ * MI),
-  #              sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
-  #                               cadjust = FALSE))
-  expect_warning(ids <- .make_uoa_ids(damod), "treated as IID")
+  ids <- c(df$cid[!is.na(df$cid)],
+           paste0(length(df$cid[!is.na(df$cid)]) + seq_len(length(df$cid[is.na(df$cid)])),
+                  "*"))
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
+                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
+                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
+                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
+                  a11inv %*% t(a21)
+               ) / n)  
 
-  ## HEURISTIC CHECKS
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
@@ -789,12 +771,10 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                (1 / n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(diag(vmat),
-               diag(sandwich::sandwich(
-                 damod,
-                 meat. = sandwich::meatCL,
-                 cluster = ids,
-                 cadjust = FALSE)))
+  expect_equal(
+    vmat,
+    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
+  )
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -834,39 +814,24 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   nc <- nrow(Xstar)
   n <- nrow(Z)
 
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b22 <- crossprod(Z, diag((damod$weights * damod$residuals)^2)) %*% Z
-  # expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  # b12 <- crossprod(
-  #   Reduce(rbind, by(Xstar * cmod$residuals, df$uid[cmod_idx], colSums)),
-  #   Reduce(rbind,
-  #          by(Z[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
-  #             df$uid[cmod_idx],
-  #             colSums))
-  # )
-  # expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
 
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(N * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meat
-  expect_equal(sandwich::meat(damod, adjust = FALSE),
-               sandwich::meatCL(damod, cadjust = FALSE, type = "HC0"))
-  # expect_equal(b22 / N, sandwich::meat(damod, adjust = FALSE))
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(estfun(damod)) / n,
-               sandwich::meat(damod, adjust = FALSE))
-  
+               (crossprod(ef_damod) -
+                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
+                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
+               ) / n)
 
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
 
-  ## HEURISTIC CHECKS
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
@@ -875,106 +840,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                (1 / n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(diag(vmat), diag(sandwich::sandwich(damod, adjust = FALSE)))
-})
-
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
-                "imbalanced grps",
-                "no cmod/damod data overlap", sep = ", "), {
-  set.seed(50)
-  NC <- NQ <- 4
-  MI <- 16
-
-  # trt variable
-  z <- c(rep(rep(c(0, 1), each = MI), NC / 2),
-         rep(rep(c(0, 1), each = MI), NQ / 2))
-
-  # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
-  x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
-  x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
-
-  df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
-
-  # generate clustered errors
-  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(NC + NQ) - 1)) {
-    msk <- (1 + i * MI):((i + 1) * MI)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
-  df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + eps
-  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
-
-  cmod_form <- y ~ x1 + x2
-  damod_form <- y ~ assigned()
-
-  cmod <- lm(cmod_form, df, subset = is.na(cid))
-  des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
-  damod <- as.lmitt(
-    lm(damod_form, data = df, subset = !is.na(cid), weights = ate(des),
-       offset = cov_adj(cmod))
-  )
-
-  Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
-  X <- stats::model.matrix(as.formula(cmod_form[-2]), df[!is.na(df$cid),])
-  nc <- nrow(Xstar)
-  n <- nc + nrow(Z)
-
-  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b22 <- crossprod(
-  #   Reduce(rbind,
-  #          by(Z * damod$weights * damod$residuals, df$cid[!is.na(df$cid)],
-  #             colSums))
-  # )
-  # expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
-  # b12 <- matrix(0, nrow = dim(Xstar)[2], ncol = dim(Z)[2])
-  # expect_equal(b12, suppressMessages(.get_b12(damod)))
-  # b11 <- crossprod(Xstar * cmod$residuals^2, Xstar)
-  # expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
-
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(NQ * MI * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meatCL
-  # expect_equal(b22 / (NQ * MI),
-  #              sandwich::meatCL(damod, cluster = factor(df$cid[!is.na(df$cid)]),
-  #                               cadjust = FALSE))
-  expect_warning(ids <- .make_uoa_ids(damod), "treated as IID")
-  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
-
-  ## HEURISTIC CHECKS
-  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
-
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
-
-  # vmat should be the same as the outputs of sandwich
-  expect_equal(diag(vmat),
-                diag(sandwich::sandwich(
-                  damod,
-                  meat. = sandwich::meatCL,
-                  cluster = ids,
-                  cadjust = FALSE)))
+  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -1030,47 +896,27 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   n <- nrow(Z)
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar)))
-  # b22 <- crossprod(
-  #   Reduce(rbind,
-  #          by(Z * damod$weights * damod$residuals, df$cid, colSums))
-  # )
-  # expect_equal(b22, flexida:::.get_b22(damod, cadjust = FALSE, type = "HC0"))
-  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  # b12 <- crossprod(
-  #   Reduce(rbind, by(Xstar * cmod$residuals, df$cid[cmod_idx], colSums)),
-  #   Reduce(rbind,
-  #          by(Z[cmod_idx,] * (damod$residuals * damod$weights)[cmod_idx],
-  #             df$cid[cmod_idx],
-  #             colSums))
-  # )
-  # expect_equal(b12, suppressMessages(flexida:::.get_b12(damod)))
-  # b11 <- crossprod(
-  #   Reduce(rbind, by(Xstar * cmod$residuals, df$cid[cmod_idx], colSums))
-  # )
-  # expect_equal(b11, flexida:::.get_b11(damod, cadjust = FALSE, type = "HC0"))
+  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * damod$weights, Z)))
 
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal((NC + NQ) * MI * a22inv, sandwich::bread(damod))
-
-  # after scaling, b22 is equivalent to sandwich::meatCL
-  # expect_equal(b22 / ((NC + NQ) * MI),
-  #              sandwich::meatCL(damod, cluster = factor(df$cid),
-  #                               cadjust = FALSE))
-  ids <- .make_uoa_ids(damod)
+  ids <- df$cid
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv,
-  #              sandwich::sandwich(cmod,
-  #                                 meat. = sandwich::meatCL,
-  #                                 cluster = factor(df$cid[cmod_idx]),
-  #                                 cadjust = FALSE,
-  #                                 type = "HC0"))
+               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
+                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
+                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
+                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
+                  a11inv %*% t(a21)
+               ) / n)  
+  
+  # meat should be the same as the output of sandwich::meatCL
+  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
 
-  ## HEURISTIC CHECKS
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
@@ -1078,17 +924,14 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
                (1 / n) * a22inv %*% meat %*% a22inv)
 
-  # check that, since (a22inv %*% a21)["z",] != 0 and b21 != 0, flexida's
   # vmat should be the same as the outputs of sandwich
-  expect_equal(diag(vmat),
-               diag(sandwich::sandwich(damod,
-                                       meat. = sandwich::meatCL,
-                                       cluster = ids,
-                                       cadjust = FALSE)))
+  expect_equal(
+    vmat,
+    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
+  )
 })
 
-
-test_that(paste("HC0 .vcovMB_CR0 binomial glm",
+test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
@@ -1133,31 +976,129 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm",
   nc <- nrow(Xstar)
   n <- nrow(Z)
 
-  expect_equal(.get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
-  # b11 <- crossprod(Xstar * fit_wstar * rstar)
-  # expect_equal(b11, .get_b11(damod, cadjust = FALSE, type = "HC0"))
-  # b12 <- crossprod(Xstar * rstar * fit_wstar, (Z * w * r)[df$z == 0,])
-  # expect_equal(b12, suppressMessages(.get_b12(damod)))
-  # b22 <- crossprod(Z * w * r)
-  # expect_equal(b22, .get_b22(damod, cadjust = FALSE, type = "HC0"))
+  
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_cmod <- estfun(cmod)
+  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
+  expect_equal(meat <- crossprod(estfun(damod)) / n,
+               (crossprod(ef_damod) -
+                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
+                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
+               ) / n)
 
-  ## COMPARE OUTPUTS TO SANDWICH
-  # after scaling, a22inv is equivalent to sandwich::bread
-  # expect_equal(N * a22inv, sandwich::bread(damod))
+  # meat should be the same as the output of sandwich::meat
+  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
 
-  # after scaling, b22 is equivalent to sandwich::meat
-  expect_equal(meat <- crossprod(estfun(damod)) / n, sandwich::meat(damod))
-
-  # check the cmod sandwich
-  # expect_equal(a11inv %*% b11 %*% a11inv, sandwich::sandwich(cmod))
-
-  ## HEURISTIC CHECKS
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
                (1 / n) * a22inv %*% meat %*% a22inv)
+  
+  # vmat should be the same as the outputs of sandwich
+  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
+})
+
+test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
+                "w/ clustering",
+                "imbalanced grps",
+                "damod is a strict subset of cmod data", sep = ", "), {
+  set.seed(50)
+  NC <- NQ <- 4
+  MI <- 16
+  
+  # trt variable
+  z <- c(rep(rep(0, MI * 2), NC / 2),
+         rep(rep(c(0, 1), each = MI), NQ / 2))
+  
+  # p and mu for each matched pair's categorical and continuous cov
+  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
+  x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
+  x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
+  
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
+  
+  # generate clustered errors
+  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
+  icc <- 0.2
+  eps <- stats::rnorm(nrow(df))
+  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
+  for (i in (seq_len(NC + NQ) - 1)) {
+    msk <- (1 + i * MI):((i + 1) * MI)
+    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
+  }
+  A <- chol(Sigma)
+  eps <- t(A) %*% eps
+  
+  # generate y
+  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
+  py <- 1 / (1 + exp(-scale(stats::model.matrix(~ x1 + x2 + z, df),
+                            scale = FALSE) %*% theta))
+  df$y <- rbinom((NC + NQ) * MI, 1, py)
+  df$cid <- rep(seq_len(NC + NQ), each = MI)
+  
+  # set trt to NA for cmod rows
+  df[1:(NC * MI), "z"] <- NA_integer_
+  
+  # model
+  cmod_form <- y ~ x1 + x2
+  damod_form <- y ~ assigned()
+  cmod <- glm(cmod_form, data = df, family = stats::binomial())
+  des <- rct_design(z ~ uoa(cid), df[!is.na(df$z),])
+  damod <- lmitt(
+    lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod))
+  )
+  
+  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
+  Xstar <- stats::model.matrix(cmod)
+  fit_wstar <- cmod$weights
+  rstar <- cmod$residuals
+  mu_etastar <- cmod$family$mu.eta(cmod$linear.predictors)
+  Z <- stats::model.matrix(damod)
+  X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df[!is.na(df$z),])
+  w <- damod$weights
+  r <- damod$residuals
+  mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
+  nc <- nrow(Xstar)
+  n <- nrow(Xstar)
+  
+  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
+  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
+  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
+  
+  ids <- c(df$cid[!is.na(df$z)], df$cid[is.na(df$z)])
+  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- rbind(ef_damod, matrix(0, nrow = n - nrow(X), ncol = ncol(ef_damod)))
+  ef_cmod <- estfun(cmod)
+  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
+               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
+                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
+                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
+                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
+                  a11inv %*% t(a21)
+               ) / n)
+  
+  # meat should be the same as the output of sandwich::meatCL
+  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+  
+  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
+  expect_false(all((a22inv %*% a21)[2,] == 0))
+  
+  # check .vcovMB_CR0 matches manual matrix multiplication
+  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
+               (1 / n) * a22inv %*% meat %*% a22inv)
+  
+  # vmat should be the same as the outputs of sandwich
+  expect_equal(
+    vmat,
+    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
+  )
 })
