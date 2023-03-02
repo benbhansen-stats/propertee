@@ -51,16 +51,11 @@ vcov.DirectAdjusted <- function(object, ...) {
     }
   }
 
-  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-    cl$x <- cl$object
-    argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
-    new_cl <- cl[c(1L, argmatch)]
-    new_cl[[1L]] <-  quote(vcovDA)
-  } else {
-    new_cl <- cl
-    new_cl[[1L]] <- getS3method("vcov", "lm")
-  }
-  
+  cl$x <- cl$object
+  argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
+  new_cl <- cl[c(1L, argmatch)]
+  new_cl[[1L]] <-  quote(vcovDA)
+
   vmat <- eval(new_cl, parent.frame())
   return(vmat)
 }
@@ -185,7 +180,7 @@ bread.DirectAdjusted <- function(x) {
 
   out <- n * chol2inv(x$qr$qr)
   dimnames(out) <- list(colnames(mm), colnames(mm))
-  
+
   return(out)
 }
 

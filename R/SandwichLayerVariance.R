@@ -31,7 +31,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, ...)
-  
+
   est <- do.call(var_func, args)
   return(est)
 }
@@ -44,12 +44,12 @@ vcovDA <- function(x, type = c("CR0"), ...) {
                "Design object (stored in a DirectAdjusted object) or a `cluster`",
                "argument specifying the columns with the units of assignment"))
   }
-  
+
   # Must be a DirectAdjusted object for this logic to occur
   if (!inherits(cluster, "character")) {
     cluster <- var_names(x@Design, "u")
   }
-  
+
   # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
   Q_uoas <- tryCatch(
     stats::expand.model.frame(x, cluster, na.expand = TRUE)[, cluster, drop = FALSE],
@@ -75,7 +75,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   any_C_uoa_is_na <- apply(is.na(C_uoas), 1, any)
   all_C_uoa_is_na <- apply(is.na(C_uoas), 1, all)
   C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
-  
+
   if (sum(any_C_uoa_is_na) - sum(all_C_uoa_is_na) > 0) {
     warning(paste("Some rows in the covariance adjustment model dataset have",
                   "NA's for some but not all clustering columns. Rows sharing",
@@ -95,7 +95,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
     C_uoas[all_C_uoa_is_na] <- paste0(n_Q_uoas + seq_len(sum(all_C_uoa_is_na)), "*")
     all_uoas <- c(Q_uoas, C_uoas)
   }
-  
+
   return(factor(all_uoas, levels = unique(all_uoas)))
 }
 
@@ -107,12 +107,6 @@ vcovDA <- function(x, type = c("CR0"), ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  sl <- x$model$`(offset)`
-  if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
-               "for direct adjustment standard errors"))
-  }
-
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -120,7 +114,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   }
   args$x <- x
   n <- length(args$cluster)
-  
+
   a22inv <- sandwich::bread(x)
   meat <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * a22inv %*% meat %*% a22inv
@@ -153,8 +147,12 @@ vcovDA <- function(x, type = c("CR0"), ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-  mm <- stats::model.matrix(x)
-  out <- solve(crossprod(mm * sqrt(w)))
+
+  # NOTE: summary.lm handles less than full rank design matrices by taking the first
+  # columns that meet column rank. We will want to be more specific given the
+  # effects we want to report
+  model.rank <- x$rank
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w))[1L:model.rank, 1L:model.rank])
 
   return(out)
 }

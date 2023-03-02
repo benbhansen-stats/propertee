@@ -12,13 +12,11 @@
 ##' @method summary DirectAdjusted
 summary.DirectAdjusted <- function(object, ...) {
   out <- summary(as(object, "lm"))
-  if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-    out$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
-    out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
-    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
-                                          object$df.residual,
-                                          lower.tail = FALSE)
-  }
+  out$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+  out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
+  out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
+                                        object$df.residual,
+                                        lower.tail = FALSE)
   class(out) <- "summary.DirectAdjusted"
   return(out)
 }
@@ -40,6 +38,14 @@ print.summary.DirectAdjusted <-
            ...) {
 
   to_report <- x$coefficients
+  
+  if (!is.null(aliased <- x$aliased) && any(aliased)) {
+    to_report <- rbind(
+      to_report,
+      matrix(NA, sum(aliased), 4, dimnames = list(names(which(aliased)),
+                                                  colnames(to_report)))
+    )
+  }
   to_report <- to_report[!grepl("^\\.absorbed\\(", rownames(to_report)), ]
   stats::printCoefmat(to_report, digits = digits)
   invisible(x)

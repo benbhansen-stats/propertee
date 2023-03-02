@@ -26,7 +26,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
   dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
-  
+
   # check default clustering level is the same when specified using cluster arg
   expect_equal(suppressMessages(vcovDA(dmod)),
                suppressMessages(vcovDA(dmod, cluster = c("uid"))))
@@ -41,7 +41,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
   dmod <- lmitt(y ~ assigned(), data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
-  
+
   expect_warning(vmat <- suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
                  "these observations should be treated as IID")
   expect_warning(expected <- suppressMessages(vcovDA(dmod)),
@@ -60,7 +60,7 @@ test_that(".make_uoa_ids fails with invalid cluster argument", {
   mod <- lm(y ~ z, data = simdata)
   expect_error(.make_uoa_ids(mod, cluster = "not_uoas"),
                "columns not_uoas in ITT effect model data")
-  
+
   invalid_ids <- apply(simdata[, c("cid1", "cid2")], 1,
                        function(...) paste(..., collapse = "_"))
   expect_error(.make_uoa_ids(mod, cluster = invalid_ids),
@@ -71,7 +71,7 @@ test_that(".make_uoa_ids produces expected warnings for NA uoas in C", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(50), "y" = rnorm(50),
                           "cid1" = rep(c(1, NA), each = 25),  "cid2" = NA)
-  
+
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
@@ -80,7 +80,7 @@ test_that(".make_uoa_ids produces expected warnings for NA uoas in C", {
                  function(...) paste(..., collapse = "_"))
   C_ids <- c(rep("1_NA", 25), paste0(length(unique(Q_ids)) + seq_len(25), "*"))
   expected_ids <- factor(c(Q_ids, C_ids), levels = unique(c(Q_ids, C_ids)))
-  
+
   expect_warning(
     expect_warning(ids <- .make_uoa_ids(dmod), "ID's will be clustered"),
     "should be treated as IID"
@@ -118,7 +118,7 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
-  
+
   expected_out <- factor(
     apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
   )
@@ -133,13 +133,13 @@ test_that(".make_uoa_ids returns correct ID's for no overlap of C and Q", {
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
-  
+
   Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
   n_Q_uoas <- length(unique(Q_uoas))
   all_uoas <- c(Q_uoas, paste0(n_Q_uoas + seq_len(nrow(cmod_data)), "*"))
   expected_out <- factor(all_uoas, levels = unique(all_uoas))
-  
+
   expect_warning(ids <- .make_uoa_ids(dmod), "treated as IID")
   expect_equal(ids, expected_out)
 })
@@ -164,7 +164,6 @@ test_that(paste(".get_a11_inverse, .get_a21 used with DirectAdjusted model",
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(.vcovMB_CR0(m), "must have an offset of class")
   expect_error(.get_a11_inverse(m), "must have an offset of class")
   expect_error(.get_a21(m), "must have an offset of class")
 })
@@ -414,12 +413,23 @@ test_that(".vcovMB_CR0 returns px2 matrix", {
 
 test_that(".vcovMB_CR0 doesn't accept `type` argument", {
   data(simdata)
-  
+
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
-  
+
   expect_error(.vcovMB_CR0(m, type = "CR0"), "Cannot override the `type`")
+})
+
+test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des))
+
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_equal(vcovDA(m, type = "CR0"),
+               sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -471,7 +481,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  
+
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
@@ -482,7 +492,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                   a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
                   a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
                ) / n)
-  
+
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
 
@@ -546,7 +556,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
   expect_equal(a22inv <- sandwich::bread(damod),
                n * solve(crossprod(Z * damod$weights, Z)))
-  
+
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
@@ -557,7 +567,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                   a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
                   a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
                ) / n)
-  
+
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
@@ -666,7 +676,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                   a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
                   a11inv %*% t(a21)
                ) / n)
-  
+
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
 
@@ -758,7 +768,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                                                Reduce(rbind, by(ef_damod, ids, colSums))) +
                   a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
                   a11inv %*% t(a21)
-               ) / n)  
+               ) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
@@ -912,8 +922,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                                                Reduce(rbind, by(ef_damod, ids, colSums))) +
                   a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
                   a11inv %*% t(a21)
-               ) / n)  
-  
+               ) / n)
+
   # meat should be the same as the output of sandwich::meatCL
   expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
 
@@ -979,7 +989,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
-  
+
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
@@ -999,7 +1009,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   # check .vcovMB_CR0 matches manual matrix multiplication
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
                (1 / n) * a22inv %*% meat %*% a22inv)
-  
+
   # vmat should be the same as the outputs of sandwich
   expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
 })
@@ -1011,19 +1021,19 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   set.seed(50)
   NC <- NQ <- 4
   MI <- 16
-  
+
   # trt variable
   z <- c(rep(rep(0, MI * 2), NC / 2),
          rep(rep(c(0, 1), each = MI), NQ / 2))
-  
+
   # p and mu for each matched pair's categorical and continuous cov
   px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
   mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
-  
+
   df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
-  
+
   # generate clustered errors
   error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
   icc <- 0.2
@@ -1035,17 +1045,17 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   }
   A <- chol(Sigma)
   eps <- t(A) %*% eps
-  
+
   # generate y
   theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   py <- 1 / (1 + exp(-scale(stats::model.matrix(~ x1 + x2 + z, df),
                             scale = FALSE) %*% theta))
   df$y <- rbinom((NC + NQ) * MI, 1, py)
   df$cid <- rep(seq_len(NC + NQ), each = MI)
-  
+
   # set trt to NA for cmod rows
   df[1:(NC * MI), "z"] <- NA_integer_
-  
+
   # model
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ assigned()
@@ -1054,7 +1064,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   damod <- lmitt(
     lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod))
   )
-  
+
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   Xstar <- stats::model.matrix(cmod)
   fit_wstar <- cmod$weights
@@ -1067,11 +1077,11 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
   nc <- nrow(Xstar)
   n <- nrow(Xstar)
-  
+
   expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
-  
+
   ids <- c(df$cid[!is.na(df$z)], df$cid[is.na(df$z)])
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = n - nrow(X), ncol = ncol(ef_damod)))
@@ -1085,17 +1095,17 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
                   a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
                   a11inv %*% t(a21)
                ) / n)
-  
+
   # meat should be the same as the output of sandwich::meatCL
   expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
-  
+
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
-  
+
   # check .vcovMB_CR0 matches manual matrix multiplication
   expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
                (1 / n) * a22inv %*% meat %*% a22inv)
-  
+
   # vmat should be the same as the outputs of sandwich
   expect_equal(
     vmat,
