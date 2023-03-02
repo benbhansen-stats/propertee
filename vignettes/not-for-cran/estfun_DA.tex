@@ -6,6 +6,7 @@
 \usepackage{soul}
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
+\newcommand{\owt}[1][z_i]{\ensuremath{w_{i[#1]}}}
 \usepackage{hyperref}
 
 \author{BBH}
@@ -45,17 +46,17 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
          \label{eq:5}
          \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =\\
          \left( \begin{array}{c}
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[0] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[0] [Y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{z_{i}=0}\\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[1] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[1] [Y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{K}]\indicator{z_{i}=k}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[K] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
+                  \rho_{K}]\indicator{z_{i}=K}\\                  
                 \end{array}\right)
 \end{equation}
 where $Y_{i}[j]$ represents $i$'s potential outcome following
-assignment to condition $i$ and $\tau_{j} = \rho_{j}-\rho_{0}$, $j=1,
+assignment to condition $i$; $\owt[j]$ represents the product of 1, any user-provided weight attaching to observation unit $i$, and, as requested by the user, odds- or inverse probability-based weights attaching to $i$'s assignment unit $[i]$ under assignment $j$; and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
 \ldots, k$. I say ``for now'' because we'll later replace this $\psi(\cdot)$ with
 with variants better aligned with \texttt{lm()}'s default treatment effect parameterizations (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \rho_{0}, \tau, \beta)$; see \S~\ref{sec:psit-rho_0-tau})  or with adaptations of those involving ``absorption'' of intercept terms (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written $\tilde{\Psi}(\cdot)$ as
 it would appear in the model-based interpretation; in design-based
@@ -63,13 +64,13 @@ inference we would have
 \begin{equation*}
            \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =
          \left( \begin{array}{c}
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[0] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[0][y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{Z_{i}=0}\\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[1] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{1}]\indicator{Z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{K}]\indicator{Z_{i}=k}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[K][y_{i}[k] - g(\vec{x}_{i}\beta)-
+                  \rho_{K}]\indicator{Z_{i}=K}\\                  
                 \end{array}\right).
 \end{equation*}
 (Under the former expansion, appropriate to model-based inference,
@@ -315,13 +316,13 @@ $1\leq j \leq k$ and
          \psi(\tilde{\mathbf{y}}_{i};
   \rho_{0}, \tau, \beta) =
          \sum_{i}\left( \begin{array}{l}
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[1] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{0}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \rho_{0} - \tau_{K}]\indicator{z_{i}=k}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[K][y_{i}[k] - g(\vec{x}_{i}\beta)-
+                 \rho_{0} - \tau_{K}]\indicator{z_{i}=K}\\                  
                 \end{array}\right), 
 \end{equation*}
 the omission of ``$\indicator{z_{i}=0}$'' from the first of these
@@ -329,23 +330,23 @@ being intentional and deliberate. It doesn't affect the solution
 $(\rho_{0}, \tau_{1}, \ldots, \tau_{k})$
 because this solution also satisfies
 \begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i} - g(\vec{x}_{i}\beta)-
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}[y_{i} - g(\vec{x}_{i}\beta)-
                   \rho_{0}-\tau_{j}]\indicator{z_{i}=j}
 \end{equation*}
 for each $j=1, \ldots, k$, and therefore
 \begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
                   \rho_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
                   \neq 0}.
 \end{equation*}
 The complement of condition $\indicator{z\neq 0}$ being
 $\indicator{z=0}$, under which $\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows that
 \begin{align*}
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[0]\big[y_{i} - g(\vec{x}_{i}\beta)-
                   \rho_{0}\big]\indicator{z_{i}
              =0}\\
            & \Updownarrow \\
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
                   \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
 \end{align*}
 One advantage of this representation is that it better represents what
@@ -376,7 +377,7 @@ absorption of $s$ block or stratum fixed effects; if
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
   \indicator{i \in \bigcup \mathcal{Q}} \times \\
-  w_{i\mathcal{Q}}
+  \owt{}
   \left(
     \begin{array}{l}
            [y_{i}[0] - g(\vec{x}_{i}\beta)-
@@ -401,7 +402,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
   \tilde{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) &=
-                                                 \indicator{i \in \bigcup \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
+                                                 \indicator{i \in \bigcup \mathcal{Q}} \owt{} \times \nonumber \\
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -415,7 +416,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
   \right)%
   \right) ;\nonumber \\
   \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) &=
-\indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}} \nonumber \\
+\indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -482,12 +483,17 @@ $m$ parameters and complicating the $\tilde{\phi}$ definition accordingly.
 
 \subsection{Notes regarding design-based variance calculations}
 
-Potentially helpful observation: design-based covariances satisfy
+Potentially helpful observation:
+\marginpar{Check me\ldots}
+% I updated these expressions to use random weights without
+% stopping to consider whether the original idea properly allowed
+% for the weights to depend on $Z_{i}$.
+design-based covariances satisfy
 \begin{align*}
   \operatorname{Cov}[&n^{-1}\sum_{i}\upsilon(\tilde{\mathbf{Y}}_{i};
   \mathbf{p}, \beta, \tau)] \\
                      &=   \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-                       w_{i\mathcal{Q}}
+                       \owt[Z_{i}]
 \left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -501,7 +507,7 @@ Potentially helpful observation: design-based covariances satisfy
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
                      &=  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-w_{i\mathcal{Q}}
+\owt[Z_{i}]
 \left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -528,7 +534,7 @@ multiplied by.  Similar  considerations yield
   &n^{-1}\sum_{i}\tilde{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
-     \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
+     \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
 &  \operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -543,7 +549,7 @@ multiplied by.  Similar  considerations yield
   \Biggr] \nonumber \\ 
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
-     \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
+     \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -620,7 +626,7 @@ There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}
        $n_{\mathcal{Q}}^{-1}\sum_{i\in
          \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta)$,
        $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta) =
-       w_{i\mathcal{Q}}[y_{i} - \tau(z_{i} - \bar{z}) -
+       \owt{}[y_{i} - \tau(z_{i} - \bar{z}) -
        g(\vec{x}_{i}\beta)](z_{i} - \bar{z})$ where $\bar{z}$ solves
        \begin{equation}
          \label{eq:4}
@@ -642,12 +648,12 @@ We seek to represent $\sum_{i\in
        \begin{align}
          \label{eq:1}
          \sum_{i \in \mathcal{Q}}\psi_{0i} =& \sum_{i \in
-                                             \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}
+                                             \mathcal{Q}}\owt{}[y_{i}
                                              - g(\vec{x}_{i}\beta) -
                                              \rho_{0}](1-z_{i})\\
          \label{eq:2}
          \sum_{i \in \mathcal{Q}}\psi_{1i} =& \sum_{i \in
-                                             \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}
+                                             \mathcal{Q}}\owt{}[y_{i}
                                              - g(\vec{x}_{i}\beta) -
                                               \rho_{1}]z_{i}\\
          \label{eq:3}
