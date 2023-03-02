@@ -41,18 +41,9 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
        \rho, \beta): i]'$, \textit{also} an $n$ by $k$ matrix, with 
        $\phi(\tilde{\mathbf{Y}}_{i}; \beta)=$ covariance model estfun
        contrib times $\indicator{i \in \bigcup \mathcal{C}}$ and, for now:
-\begin{multline*}
-%         \label{eq:5}
-         \psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta) =\\
-         \left(
-           \begin{array}{ccccc}
-%             1&0&0&\cdots & 0\\
-             -1&1&0&\cdots&0\\
-             -1&0&1&\cdots&0\\
-             \vdots&\vdots&\vdots&\cdots&\vdots\\
-             -1&0&0&\cdots&1
-           \end{array}
-         \right) 
+\begin{equation}
+         \label{eq:5}
+         \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =\\
          \left( \begin{array}{c}
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{z_{i}=0}\\
@@ -62,24 +53,15 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[k] - g(\vec{x}_{i}\beta)-
                   \rho_{K}]\indicator{z_{i}=k}\\                  
                 \end{array}\right)
-\end{multline*}
+\end{equation}
 where $Y_{i}[j]$ represents $i$'s potential outcome following
 assignment to condition $i$ and $\tau_{j} = \rho_{j}-\rho_{0}$, $j=1,
-\ldots, k$. (I say ``for now'' because there are some other
-possibilities for the canonical form, noted below under ``absorption''.  We have written $\tilde{\Psi}(\cdot)$ as
+\ldots, k$. I say ``for now'' because we'll later replace this $\psi(\cdot)$ with
+with variants better aligned with \texttt{lm()}'s default treatment effect parameterizations (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \rho_{0}, \tau, \beta)$; see \S~\ref{sec:psit-rho_0-tau})  or with adaptations of those involving ``absorption'' of intercept terms (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written $\tilde{\Psi}(\cdot)$ as
 it would appear in the model-based interpretation; in design-based
 inference we would have
-\begin{multline*}
-           \psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta) =\\
-         \left(
-           \begin{array}{ccccc}
-%             1&0&0&\cdots & 0\\
-             -1&1&0&\cdots&0\\
-             -1&0&1&\cdots&0\\
-             \vdots&\vdots&\vdots&\cdots&\vdots\\
-             -1&0&0&\cdots&1
-           \end{array}
-         \right) 
+\begin{equation*}
+           \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =
          \left( \begin{array}{c}
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{Z_{i}=0}\\
@@ -89,7 +71,7 @@ inference we would have
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[k] - g(\vec{x}_{i}\beta)-
                   \rho_{K}]\indicator{Z_{i}=k}\\                  
                 \end{array}\right).
-\end{multline*}
+\end{equation*}
 (Under the former expansion, appropriate to model-based inference,
 $\tilde{\Psi}_{i}$s are independent across if not within
 clusters; in the design-based interpretation independence obtains only across blocks or
@@ -205,11 +187,9 @@ we have the covariance approximation characteristic of M-estimation,
 $j\not\in \bigcup \mathcal{Q}$).
 
 
-The choice of sample size constant affects B \st{but not A matrices},
-at least as construed here (and as implemented in the sandwich
-package). As we're going to
-construe B matrices slightly differently here than in prior threads,
-I'll use the letter M instead of B. We have
+To help mark our nonstandard scaling constants, as well as the difference from the package's first implementations of these estimating equation stacks (which took pains to avoid scaling constants), 
+bread matrices will be denoted with the letter ``M,'' not ``B.''
+We have
 \[
 \operatorname{Cov}\left(
      \begin{array}{c}
@@ -324,14 +304,16 @@ clustering or heteroskedasticity that we might seek to apply when
 calculating the bread matrix. 
 
 \subsection{$\psi(\tilde{\mathbf{Y}}_{i};
-  \rho, \beta)$ with intercept and $\rho$'s}
+  \rho_{0}, \tau, \beta)$ with intercept and $\rho$'s}
+\label{sec:psit-rho_0-tau}
 
-The estimating equation $\psi(\tilde{\mathbf{y}}; \rho, \beta)=0$
-above has the same solutions as, with $\tau_{j}=\rho_{j}-\rho_{0}$ for
-$1\leq j \leq k$, 
+The estimating equation $\psi(\tilde{\mathbf{y}}; \rho, \beta)=0$,
+$\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\psi(\tilde{\mathbf{y}}_{i};
+  \rho_{0}, \tau, \beta)=0$, with $\tau_{j}=\rho_{j}-\rho_{0}$ for
+$1\leq j \leq k$ and
 \begin{equation*}
-%         \label{eq:5}
-         0 =
+         \psi(\tilde{\mathbf{y}}_{i};
+  \rho_{0}, \tau, \beta) =
          \sum_{i}\left( \begin{array}{l}
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
@@ -371,7 +353,7 @@ One advantage of this representation is that it better represents what
 variable.  Another is that it isolates the intercept parameter, which
 we have no use for and will now proceed to do away with. 
 
-\subsection{Accommodating intercept(s) via absorption}
+\subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\rho_{0}$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
 \footnote{Or rather, we invoke the variant of the FWL theorem calling
@@ -390,10 +372,11 @@ First, let's switch over to using $\alpha$ as the intercept
 parameter. Or rather $[\alpha_{1}, \ldots, \alpha_{s}]$, allowing for
 absorption of $s$ block or stratum fixed effects; if
 \texttt{absorb=FALSE}, then let $S=1$.    Our estimating function becomes
-\begin{equation}
+\begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
-\indicator{i \in \bigcup \mathcal{Q}} w_{i\mathcal{Q}}
+  \indicator{i \in \bigcup \mathcal{Q}} \times \\
+  w_{i\mathcal{Q}}
   \left(
     \begin{array}{l}
            [y_{i}[0] - g(\vec{x}_{i}\beta)-
@@ -410,29 +393,30 @@ absorption of $s$ block or stratum fixed effects; if
                  \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{K}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
-\end{equation}
+\end{multline}
 
 The FWL theorem is used to switch this out for the pair of systems of
 equations $0 = \sum_{i}\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ and
 $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \beta)$,  where
-\begin{align*}
-  \tilde{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) =&
-                                                 \indicator{i \in \bigcup \mathcal{Q}} w_{i\mathcal{Q}} \times \\
+\begin{align}
+  \tilde{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) &=
+                                                 \indicator{i \in \bigcup \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
-                                                   (\indicator{z_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{z_{i}=1}-p_{1s})\indicator{b_{i}=s}\\
+                                                   (\indicator{z_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{z_{i}=1}-p_{1s})\indicator{b_{i}=s}
+                                                   \\
                                                    \vdots & \vdots &
                                                                      \vdots
                                                    \\
                                                    (\indicator{z_{i}=k}-p_{k1})\indicator{b_{i}=1}&\ldots&(\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                                   
                                                  \end{array}
   \right)%
-  \right) ;\\
-  \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) =&
-\indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}
-\left(
+  \right) ;\nonumber \\
+  \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) &=
+\indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}} \nonumber \\
+&\left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
                                                -
@@ -443,8 +427,8 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
                                                - g(\vec{x}_{i}\beta) -
                                                \tau_{K}](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
-\right)      .                                       
-\end{align*}
+\right) . \label{eq:upsilondef}
+\end{align}
 What the FWL theorem says is that this maneuver gets us to the same
 place, with regard to $\tau$, as does including the block-specific
 intercepts $\alpha_{r}$.
