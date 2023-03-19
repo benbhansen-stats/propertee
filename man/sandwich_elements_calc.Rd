@@ -12,6 +12,9 @@
 
 .get_a21(x)
 }
+\arguments{
+\item{x}{a \code{DirectAdjusted} model}
+}
 \value{
 \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
 dimensions are given by the intercept and treatment variable terms in the
