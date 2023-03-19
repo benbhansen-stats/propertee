@@ -13,7 +13,7 @@
 .get_a21(x)
 }
 \arguments{
-\item{x}{a \code{DirectAdjusted} model}
+\item{x}{a fitted \code{DirectAdjusted} model}
 }
 \value{
 \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the

@@ -10,7 +10,7 @@ vcovDA(x, type = c("CR0"), ...)
 .vcovMB_CR0(x, ...)
 }
 \arguments{
-\item{x}{A fitted \code{DirectAdjusted} model object}
+\item{x}{a fitted \code{DirectAdjusted} model object}
 
 \item{type}{A string indicating the desired variance estimator. Currently
 accepts "CR0"}

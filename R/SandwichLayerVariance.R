@@ -2,7 +2,7 @@
 NULL
 
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
-#' @param x A fitted \code{DirectAdjusted} model object
+#' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR0"
 #' @param ... Arguments to be passed to the internal variance estimation function.
@@ -129,7 +129,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
 #'   the experimental design and the covariance adjustment model data, its contribution to
 #'   this matrix will be 0. Thus, if there is no overlap between the two
 #'   datasets, this will return a matrix of 0's.
-#' @param x a \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
 #' @return \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
 #'   are given by the number of terms in the covariance adjustment model and the number of
@@ -141,17 +141,16 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-  
+
   if (x@.S3Class[1] != "lm") {
     stop("x must be an `lm` object")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!is(sl, "SandwichLayer")) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
   # If cluster argument is NULL, use the `keys` dataframe created at initialization,
   # otherwise recreate given the desired clustering columns
   dots <- list(...)
@@ -184,7 +183,9 @@ vcovDA <- function(x, type = c("CR0"), ...) {
     # Re-create keys dataframe with the new clustering columns
     keys <- as.data.frame(
       sapply(cluster_cols, function(col) {
-        match(wide_frame[[col]], unique(x@Design@structure[[col]]), incomparables = NA)
+        unique(x@Design@structure[[col]])[
+          match(wide_frame[[col]], unique(x@Design@structure[[col]]), incomparables = NA)
+        ]
       })
     )
   } else {
@@ -192,24 +193,20 @@ vcovDA <- function(x, type = c("CR0"), ...) {
                "must provide a character vector specifying column names that",
                "exist in both the ITT effect and covariance model datasets"))
   }
+
+  C_uoas <- apply(keys, 1, function(...) paste(..., collapse = "_"))
+  C_uoas_in_Q <- vapply(strsplit(C_uoas, "_"), function(x) all(x != "NA"), logical(1))
   
-  if (ncol(keys) == 1) {
-    uoas <- keys[, 1]
-  } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), keys)
-    uoas[grepl("NA", uoas)] <- NA_character_
-  }
-  
-  message(paste(sum(!is.na(uoas)),
+  message(paste(sum(C_uoas_in_Q),
                 "rows in the covariance adjustment model",
                 "data joined to the ITT effect model data\n"))
   
   
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
-  uoas_overlap <- length(unique(uoas))
-  if (uoas_overlap == 1) {
-    if (!is.na(unique(uoas))) {
+  uoas_overlap <- length(unique(C_uoas[C_uoas_in_Q]))
+  if (uoas_overlap <= 1) {
+    if (uoas_overlap == 1) {
       warning(paste("Covariance matrix between covariance adjustment and ITT effect",
                     "model estimating equations is numerically indistinguishable",
                     "from 0"))
@@ -220,33 +217,27 @@ vcovDA <- function(x, type = c("CR0"), ...) {
              ncol = dim(stats::model.matrix(x))[2])
     )
   }
-  
+
   # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
   # `by` call excludes them from being summed
-  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
+  cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)[C_uoas_in_Q,]
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
-  cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
+  cmod_eqns <- Reduce(rbind, by(cmod_estfun, C_uoas[C_uoas_in_Q], cmod_aggfun))
   
   # get rows from overlapping clusters in experimental data
   Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
-  if (ncol(Q_uoas) == 1) {
-    Q_uoas <- Q_uoas[, 1]
-  } else {
-    Q_uoas <- Reduce(function(...) paste(..., sep = "_"), Q_uoas)
-    Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
-  }
-  
-  msk <- Q_uoas %in% unique(uoas[!is.na(uoas)])
-  damod_estfun <- sandwich::estfun(as(x, "lm"))[msk, , drop = FALSE]
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+
+  Q_uoas_in_C <- Q_uoas %in% unique(C_uoas[!is.na(C_uoas)])
+  damod_estfun <- sandwich::estfun(as(x, "lm"))[Q_uoas_in_C, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
-  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
+  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[Q_uoas_in_C], damod_aggfun))
   
-  matmul_func <- if (length(unique(uoas[!is.na(uoas)])) == 1) tcrossprod else crossprod
-  return(matmul_func(cmod_eqns, damod_eqns))
+  return(crossprod(cmod_eqns, damod_eqns))
 }
 
 #' @title (Internal) Compute variance blocks
-#' @param x a \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model
 #' @details The \bold{A22 block} is the diagonal element of the inverse expected
 #'   Fisher Information matrix corresponding to the treatment estimate. As shown
 #'   in the Details of \code{.get_b22()}, the estimating equations for a
@@ -271,7 +262,6 @@ vcovDA <- function(x, type = c("CR0"), ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-
   # NOTE: summary.lm handles less than full rank design matrices by taking the first
   # columns that meet column rank. We will want to be more specific given the
   # effects we want to report
@@ -281,7 +271,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   return(out)
 }
 
-#' @param x a \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
 #' @details The \bold{B22 block} refers to a clustered estimate of the covariance
 #'   matrix for the ITT effect model. The \code{stats} package offers family objects
@@ -313,9 +303,9 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-  
+
   nq <- nrow(sandwich::estfun(x))
-  
+
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
@@ -338,7 +328,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
                "must provide a character vector specifying column names in the",
                "ITT effect model dataset"))
   }
-  
+
   if (ncol(uoas) == 1) {
     uoas <- factor(uoas[,1])
   } else {
@@ -346,9 +336,9 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   }
   dots$cluster <- uoas
   dots$x <- as(x, "lm")
-  
+
   out <- do.call(sandwich::meatCL, dots) * nq
-  
+
   return(out)
 }
 
@@ -381,7 +371,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   return(out)
 }
 
-#' @param x a \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
 #' @details The \bold{B11 block} is the block of the sandwich variance estimator
 #'   corresponding to the variance-covariance matrix of the covariance model
@@ -398,16 +388,16 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
-  
+
   # Get units of assignment for clustering
   dots <- list(...)
   if (is.null(dots$cluster)) {
@@ -425,7 +415,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
                    "are missing from the covariance adjustment model dataset"),
              call. = FALSE)
       })
-    
+
     # check for NA's in the clustering columns
     nas <- rowSums(is.na(uoas[, cluster_cols, drop = FALSE]))
     if (any(nas == length(cluster_cols))) {
@@ -446,7 +436,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
                "must provide a character vector specifying column names in the",
                "covariance adjustment model dataset"))
   }
-  
+
   # Replace NA's for rows not in the experimental design with a unique cluster ID
   if (ncol(uoas) == 1) {
     uoas <- uoas[, 1]
@@ -454,7 +444,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
     uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
     uoas[vapply(strsplit(uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
   }
-  
+
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
   if (any(nas)) {
@@ -462,7 +452,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   }
   uoas <- factor(uoas)
   nuoas <- length(unique(uoas))
-  
+
   # if the covariance model only uses one cluster, produce warning
   if (nuoas == 1) {
     warning(paste("Covariance adjustment model has meat matrix numerically",
@@ -473,7 +463,7 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   }
   dots$cluster <- uoas
   dots$x <- cmod
-  
+
   out <- do.call(sandwich::meatCL, dots) * nc
   return(out)
 }
