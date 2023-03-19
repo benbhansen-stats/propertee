@@ -379,6 +379,38 @@ test_that("lmitt_fitted", {
 
 })
 
+test_that("absorbed_intercepts", {
+  data(simdata)
+  des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+  
+  lmitt_fitted_absorbed <- lmitt(y ~ assigned(), data = simdata, design = des,
+                                 absorb = TRUE)
+  lmitt_fitted_not_absorbed <- lmitt(y ~ assigned(), data = simdata, design = des,
+                                     absorb = FALSE)
+  not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(des), data = simdata), design = des)
+  
+  expect_true(lmitt_fitted_absorbed@absorbed_intercepts)
+  expect_false(lmitt_fitted_not_absorbed@absorbed_intercepts)
+  expect_false(not_lmitt_fitted@absorbed_intercepts)
+})
+
+test_that("absorbed_moderators", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata, design = des)
+  lmitt_fitted_nosbgrp1 <- lmitt(y ~ assigned(), data = simdata, design = des)
+  lmitt_fitted_nosbgrp2 <- lmitt(y ~ adopters(), data = simdata, design = des)
+  lmitt_fitted_nosbgrp3 <- lmitt(y ~ 1, data = simdata, design = des)
+  not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(des), data = simdata), design = des)
+  
+  expect_equal(lmitt_fittedsbgrp@absorbed_moderators, "force")
+  expect_equal(lmitt_fitted_nosbgrp1@absorbed_moderators, vector("character"))
+  expect_equal(lmitt_fitted_nosbgrp2@absorbed_moderators, vector("character"))
+  expect_equal(lmitt_fitted_nosbgrp3@absorbed_moderators, vector("character"))
+  expect_equal(not_lmitt_fitted@absorbed_moderators, vector("character"))
+})
+
 test_that("estfun.DirectAdjusted requires a certain model class", {
   data(simdata)
 
