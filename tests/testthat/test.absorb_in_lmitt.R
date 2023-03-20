@@ -27,11 +27,11 @@ test_that("absorbed effects aren't printed", {
   expect_no_match(capture_output(show(da)), ".absorbed")
   expect_match(capture_output(print(da$coefficients)), ".absorbed")
 
-  sda <- summary(da)
+  expect_error(sda <- summary(da), "Model-based standard errors cannot be computed")
 
-  expect_match(capture_output(print(sda)), "assigned()")
-  expect_no_match(capture_output(print(sda)), ".absorbed")
-  expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  # expect_match(capture_output(print(sda)), "assigned()")
+  # expect_no_match(capture_output(print(sda)), ".absorbed")
+  # expect_match(capture_output(print(sda$coefficients)), ".absorbed")
 
 })
 
@@ -50,10 +50,11 @@ test_that("multiple variables in blocks", {
   expect_no_match(capture_output(show(da)), ".absorbed")
   expect_match(capture_output(print(da$coefficients)), ".absorbed")
 
-  sda <- summary(da)
-
-  expect_match(capture_output(print(sda)), "assigned()")
-  expect_no_match(capture_output(print(sda)), ".absorbed")
-  expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  expect_error(sda <- summary(da), "Model-based standard errors cannot be computed")
+  
+  # expect_match(capture_output(print(sda)), "assigned()")
+  # expect_no_match(capture_output(print(sda)), ".absorbed")
+  # expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  
 
 })

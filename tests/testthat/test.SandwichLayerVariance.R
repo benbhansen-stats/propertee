@@ -1307,6 +1307,16 @@ test_that(".vcovMB_CR0 returns px2 matrix", {
   expect_equal(dim(vmat), c(2, 2))
 })
 
+test_that(".vcovMB_CR0 fails if block effects have been absorbed", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, absorb = TRUE)
+  
+  expect_error(.vcovMB_CR0(m), "Model-based standard errors cannot be computed")
+})
+
 test_that(".vcovMB_CR0 doesn't accept `type` argument", {
   data(simdata)
 
