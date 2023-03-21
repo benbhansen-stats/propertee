@@ -127,13 +127,13 @@ Let $\hat\beta$ and $\hat\tau$ solve
     A(\beta, \tau) &= \left(
       \begin{array}{cc}
         n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-        \mathcal{C}}\nabla_{\beta}\EE \phi(\tilde{\mathbf{Y}}_{i};
-        \beta )&0\\
+        \mathcal{C}}\EE [\nabla_{\beta}\phi(\tilde{\mathbf{Y}}_{i};
+        \beta )]&0\\
         n^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\nabla_{\beta}\EE\psi(\tilde{\mathbf{Y}}_{j};
-        \tau, \beta )  & n^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\nabla_{\tau}\EE\psi(\tilde{\mathbf{Y}}_{j};
-        \tau, \beta )
+        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\tilde{\mathbf{Y}}_{j};
+        \tau, \beta )]  & n^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\tau}\psi(\tilde{\mathbf{Y}}_{j};
+        \tau, \beta )]
       \end{array}
     \right)\\
     &=:\left(
@@ -446,11 +446,11 @@ covariance model by setting up our
 where $\Upsilon =
 [\upsilon(\tilde{\mathbf{y}}_{i}; \mathbf{p}, \beta, \tau) : i]'$,
 $\tilde{\Phi}= [\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}): i]'$, 
-$A_{\mathbf{p}, \mathbf{p}} = n^{-1}\mathbb{E} \sum_{i\in \bigcup
-  \mathcal{Q}}\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{Y}}_{i};
-\mathbf{p})$, and $A_{\tau, \mathbf{p}} = n^{-1}\mathbb{E} \sum_{i\in \bigcup
-  \mathcal{Q}}\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$.
+$A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
+  \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{Y}}_{i};
+\mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
+  \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
+\mathbf{p}, \beta, \tau)]$.
 
 Barring algebra mistakes on my part in unpacking these formulas, $A_{\mathbf{p}, \mathbf{p}}$ is
 an average of diagonal matrices $\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{Y}}_{i};
