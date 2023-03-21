@@ -4,14 +4,23 @@
 \usepackage{stmaryrd}%for \llbracket
 \usepackage{mathtools}% for DeclarePairedDelimiter
 \usepackage{soul}
+\usepackage{colonequals}
+\newcommand{\defeq}{\ensuremath{\colonequals}}
+\newcommand{\eqdef}{\ensuremath{\equalscolon}}
+
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
+\usepackage{natbib}
+\usepackage{bibentry}
+\bibliographystyle{plain}
+
 \usepackage{hyperref}
+
 
 \author{BBH}
 
 \begin{document}
-
+\nobibliography*
 
 \section{\texttt{sandwich::estfun()} method for DA objects (cf
   \#79)}
@@ -145,10 +154,22 @@ Let $\hat\beta$ and $\hat\tau$ solve
   \end{align*}
   define 
   \begin{align*}
-   \tilde\beta &:= \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})
+   \tilde\beta &\defeq \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})
   \quad \text{and}\\
-\tilde\tau &:=\tau_{0} + A_{22}^{-1}(\beta_{0}, \tau_{0})n^{-1}\sum_{j\in \bigcup \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{j}; \tau_{0},
-\beta_{0} ),
+    \tilde\tau &\defeq \tau_{0} + A^{-1}(\beta_{0}, \tau_{0})\left(
+    \begin{array}{c}
+      n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+      \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})\\
+      n^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{j};
+                 \tau_{0},\beta_{0} )
+    \end{array}
+\right)\\
+    \\
+               &=\tau_{0} + A_{22}^{-1}(\beta_{0}, \tau_{0})\left[                 
+                 n^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{j};
+                 \tau_{0},\beta_{0} ) - A_{21}(\beta_{0}, \tau_{0}) A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})\right],
 \end{align*}
 known as \textit{linearizations} (of $\hat\beta$ and $\hat\tau$).
 Observe that these expressions define the same $\tilde\beta$ and $\tilde\tau$
@@ -167,11 +188,16 @@ reciprocal of the number of rows in whatever
 \texttt{sandwich::estfun()} returns; it will fall to us to ensure our
 $\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
 , we set $n_{\mathcal{C}}$ and $n$ to be the number of elements
-(not clusters) in the covariance and in the the combined samples,
+(not clusters) in the covariance and in the combined samples,
 respectively.
 
-Assuming that with high probability $|\hat\beta -\tilde\beta|_{2}$ and
-$|\hat\tau -\tilde\tau|_{2}$ are small, 
+Assuming that $|\hat\beta -\tilde\beta|_{2}$, 
+$|\hat\tau -\tilde\tau|_{2} \stackrel{P}{\rightarrow} 0$,
+$A_{11}(\beta_{0})$ and $A_{22}(\beta_{0}, \tau_{0})$ are nonsingular
+with eigenvalues bounded away from 0 and $A_{11}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
+regular\footnote{E.g, they admit of Lipshitz constants: see \S~9.8,
+  \bibentry{keener2010TheorStats}, while bearing in mind issues raised
+  by \bibentry{feng2014exact}.}, 
 we have the covariance approximation characteristic of M-estimation,
 \begin{align*} \operatorname{Cov}([\hat\beta',\hat\tau']) \approx&
   \operatorname{Cov}([\tilde\beta',\tilde\tau'])\\
@@ -575,6 +601,7 @@ contribution from $Z$; covariance model fit to entire
 quasiexperimental sample with a $Z$ term and also $Z$-interactions
 with covariates.
 
+\nobibliography{estfun_DA}
 \end{document}
 \subsubsection{Alt def of M's}
 \[
