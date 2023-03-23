@@ -172,45 +172,54 @@ One advantage of this representation is that it better represents what
 variable.  Another is that it isolates the intercept parameter, which
 we have no use for and will be done away with via absorption (\S~\ref{sec:accomm-interc-via} below). 
 
-\subsection{The covariance we're trying to produce}
+\subsection{The covariance we're trying to
+  produce}\label{sec:covar-were-trying}
 
-Let $\hat\beta$ and $\hat\tau$ solve
+Let $\hat\beta$, $\hat\alpha$ and $\hat\tau$ solve
 \[\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{y}}_{i}; \beta )
   =0\quad\text{and}\quad
-\sum_{j\in \bigcup \mathcal{Q}}\psi(\tilde{\mathbf{y}}_{j}; \tau, \beta )  =0
+\sum_{j\in \bigcup \mathcal{Q}}\psi(\tilde{\mathbf{y}}_{j}; \tau,
+\alpha, \beta )  =0
   \]
-  in $\beta$ and $\tau$, whereas $\beta_{0}$ and $\tau_{0}$ solve 
+  in $\beta$ and $\tau$, whereas $\beta_{0}$, $\alpha_{0}$ and $\tau_{0}$ solve 
 \[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\tilde{\mathbf{Y}}_{i}; \beta )
   =0\quad\text{and}\quad
-\sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta )  =0.
+\sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\tilde{\mathbf{Y}}_{j}; \tau,
+\alpha, \beta )  =0.
   \]
   Writing
   \begin{align*}
 %    \label{eq:13}
-    A(\beta, \tau) &= \left(
+    A(\alpha, \beta, \tau) &= \left(
       \begin{array}{cc}
         n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
         \mathcal{C}}\EE [\nabla_{\beta}\phi(\tilde{\mathbf{Y}}_{i};
         \beta )]&0\\
         n^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\tilde{\mathbf{Y}}_{j};
-        \tau, \beta )]  & n^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\EE[ \nabla_{\tau}\psi(\tilde{\mathbf{Y}}_{j};
-        \tau, \beta )]
+        \tau, \alpha, \beta )]  & n^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\tilde{\mathbf{Y}}_{j};
+        \tau, \alpha, \beta )]
       \end{array}
     \right)\\
     &=:\left(
       \begin{array}{cc}
         A_{11}(\beta)& 0\\
-        A_{21}(\beta, \tau) & A_{22}(\beta, \tau)
+        A_{21}(\beta) & A_{22}(\alpha, \tau)
       \end{array}
 \right),
   \end{align*}
+where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
+that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively,
   define 
   \begin{align*}
-   \tilde\beta &\defeq \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})
+   \tilde\beta
+    \defeq& \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})
   \quad \text{and}\\
-    \tilde\tau &\defeq \tau_{0} + A^{-1}(\beta_{0}, \tau_{0})\left(
+    \left(\begin{array}{c}\tilde\alpha\\ \tilde\tau \end{array}\right)
+    \defeq& \left(\begin{array}{c}\alpha_{0}\\
+                    \tau_{0} \end{array}\right)
+    + A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0})\left(
     \begin{array}{c}
       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
       \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})\\
@@ -220,12 +229,17 @@ Let $\hat\beta$ and $\hat\tau$ solve
     \end{array}
 \right)\\
     \\
-               &=\tau_{0} + A_{22}^{-1}(\beta_{0}, \tau_{0})\left[                 
+               &=\left(\begin{array}{c}\alpha_{0}\\
+                         \tau_{0} \end{array}\right) +
+    A_{22}^{-1}(\alpha_{0}, \tau_{0})\times \\
+    & \left[
                  n^{-1}\sum_{j\in \bigcup
                  \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{j};
-                 \tau_{0},\beta_{0} ) - A_{21}(\beta_{0}, \tau_{0}) A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})\right],
+                 \tau_{0},\beta_{0} ) - A_{21}(\beta_{0}) A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0})\right],
 \end{align*}
-known as \textit{linearizations} (of $\hat\beta$ and $\hat\tau$).
+known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
+
+
 Observe that these expressions define the same $\tilde\beta$ and $\tilde\tau$
   irrespective of the choice of nonzero constants $n_{\mathcal{C}}$
   and $n$.  To promote alignment with existing \texttt{sandwich}
@@ -248,22 +262,22 @@ respectively.
 Assuming that $|\hat\beta -\tilde\beta|_{2}$, 
 $|\hat\tau -\tilde\tau|_{2} \stackrel{P}{\rightarrow} 0$,
 $A_{11}(\beta_{0})$ and $A_{22}(\beta_{0}, \tau_{0})$ are nonsingular
-with eigenvalues bounded away from 0 and $A_{11}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
-regular\footnote{E.g, they admit of Lipshitz constants: see \S~9.8,
+with eigenvalues bounded away from 0 and $A_{11}(\cdot)$, $A_{21}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
+regular\footnote{E.g, they admit of Lipschitz constants: see \S~9.8,
   \bibentry{keener2010TheorStats}, while bearing in mind issues raised
   by \bibentry{feng2014exact}.}, 
 we have the covariance approximation characteristic of M-estimation,
-\begin{align*} \operatorname{Cov}([\hat\beta',\hat\tau']) \approx&
-  \operatorname{Cov}([\tilde\beta',\tilde\tau'])\\
+\begin{align*} \operatorname{Cov}([\hat\beta',\hat\alpha', \hat\tau']) \approx&
+  \operatorname{Cov}([\tilde\beta',\hat\alpha',\tilde\tau'])\\
   &=
-  A^{-1} \operatorname{Cov}\left(
+  A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0}) \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta )\\
-       n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0} )\\
+       n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau_{0}, \alpha_{0}, \beta_{0} )
      \end{array}
-\right)A^{-1}
+\right)A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0})
 \end{align*}
-(recalling that we have so defined $\psi(\cdot)$ that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta) = 0$ when
+(recalling that we have so defined $\psi(\cdot)$ that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
 
 
@@ -274,7 +288,7 @@ We have
 \operatorname{Cov}\left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta )\\
-       n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau, \beta )
+       n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau, \alpha, \beta )
      \end{array}
 \right) = \left(
   \begin{array}{cc}
@@ -292,9 +306,9 @@ where
                                                                   (n_{\mathcal{C}}n)^{-1/2} \operatorname{Cov}[\sum_{i\in \bigcup
              \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i};
                                                                   \beta
-                                                                  ), \sum_{j}\psi'(\tilde{\mathbf{Y}}_{j}; \tau, \beta )]\\
+                                                                  ), \sum_{j}\psi'(\tilde{\mathbf{Y}}_{j}; \tau, \alpha, \beta )]\\
     M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{j}\psi(\tilde{\mathbf{Y}}_{j};
-                     \tau, \beta )] .
+                     \tau, \alpha, \beta )] .
     \end{array}
 \]
 Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
@@ -626,10 +640,10 @@ with covariates.
              \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i};
                                                                   \beta
                                                                   ), \sum_{i\in \bigcup
-                                                                  \mathcal{Q}}\psi'(\tilde{\mathbf{Y}}_{i}; \tau, \beta )]\\
+                                                                  \mathcal{Q}}\psi'(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta )]\\
     M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
                                                                   \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i};
-                     \tau, \beta )] .
+                     \tau, \alpha, \beta )] .
     \end{array}
 \]
 With these definitions,
@@ -654,8 +668,8 @@ We can express HC0 type estimators with matrix rather than summation notation, u
   post-mtg note}
 There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta)$  and 
        $n_{\mathcal{Q}}^{-1}\sum_{i\in
-         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta)$,
-       $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta) =
+         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$,
+       $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta) =
        \owt{}[y_{i} - \tau(z_{i} - \bar{z}) -
        g(\vec{x}_{i}\beta)](z_{i} - \bar{z})$ where $\bar{z}$ solves
        \begin{equation}
@@ -667,13 +681,13 @@ There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}
    \end{array} = \left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\tilde{\mathbf{y}}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{y}}_{i}; \tau, \beta )
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right).
 \]
 
 We seek to represent $\sum_{i\in
-         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta)$ as a
+         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$ as a
        linear combination of
        \begin{align}
          \label{eq:1}
@@ -693,7 +707,7 @@ We seek to represent $\sum_{i\in
        If my algebra is OK, we have
        \begin{equation*}
          \sum_{i\in
-         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta) =
+         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta) =
        \sum_{i \in \mathcal{Q}}\psi_{0i} -  \bar{z}\sum_{i \in \mathcal{Q}}(\psi_{0i} + \psi_{1i})
      \end{equation*}
      by some algebra including \eqref{eq:4}.  I had to call time
@@ -707,7 +721,7 @@ M-estimation's characteristic covariance approximation is
   A^{-1} \operatorname{Cov}\left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta )
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right)A^{-1}
 \]
@@ -717,7 +731,7 @@ The right-hand side covariance isn't quite a constant multiple of $B$ as in prev
 \operatorname{Cov}\left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta )
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right) = \left(
   \begin{array}{cc}
