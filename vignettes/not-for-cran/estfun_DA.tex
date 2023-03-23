@@ -96,7 +96,7 @@ variable into the treatment variable (cf. \href{https://github.com/benbhansen-st
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
 \begin{equation*}
-  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{n,11}^{-1}A_{n,21}'.
+  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}'.
 \end{equation*}
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
@@ -117,7 +117,7 @@ Values of the constants $c_{1}$ and $c_{2}$ are to be determined.
 I conjecture these decisions can be made in such away that 
 \begin{enumerate}
 \item Using this as a basis for a meat matrix while using
-  $A_{n,22}^{-1}$  ``bread matrix'' lands us in the same place as the
+  $A_{22}^{-1}$  ``bread matrix'' lands us in the same place as the
   inversion formula as expressed with A's and B's on p.373 of Carroll
   et al. 2006.
 \item Suppose we've got multiple DA models that have been fit over the
@@ -213,7 +213,7 @@ Let $\hat\beta$, $\hat\alpha$ and $\hat\tau$ solve
         \tau, \alpha, \beta )]
       \end{array}
     \right)\\
-    &=:\left(
+    &\eqdef \left(
       \begin{array}{cc}
         A_{11}(\beta)& 0\\
         A_{21}(\beta) & A_{22}(\alpha, \tau)
@@ -372,41 +372,61 @@ column for each cluster:
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
 \texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
-\begin{equation*}
+\begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{n,11}^{-1}\hat{A}_{n,21}', 
-\end{equation*}
+  \hat{A}_{11}^{-1}\hat{A}_{21}', 
+\end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
 \texttt{DirectAdjusted} objects to return only
-the lower $A_{n,22}^{-1}$ matrix, then the effect of this will be for \texttt{sandwich::sandwich()}
-and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with $M$'s as
-given by \eqref{eq:7} or \eqref{eq:8}, respectively.
+the lower $A_{22}^{-1}$ matrix, then the effect of this will be for \texttt{sandwich::sandwich()}
+and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
+$\hat{M}$'s,  as
+given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
+$M$'s, and with $\hat{A}$'s for $A$'s.
+
+(In \eqref{eq:15}
+we use
+\begin{align*}
+  \hat{A}_{11}(\beta) &\defeq  n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+        \mathcal{C}}\nabla_{\beta}\phi(\tilde{\mathbf{y}}_{i};
+        \beta ),\\
+  \hat{A}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\nabla_{\beta}\psi(\tilde{\mathbf{y}}_{j};
+        \tau, \alpha, \beta ),\\
+  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{A}_{21}\defeq \hat{A}_{21}(\hat\beta).
+\end{align*}
+Under the model based
+formulation, $\hat{A}_{21}(\cdot) \equiv {A}_{21}(\cdot)$; when the
+first-stage model is a glm, also $\hat{A}_{11}(\cdot) \equiv
+{A}_{11}(\cdot)$.  However, in design based formulations neither
+equivalence holds in general.)
 
 Alternately put,
 defining $\tilde{k}$ by 1 random matrices 
 \begin{equation}\label{eq:10}
-    \tilde{\psi}(\tilde{\mathbf{Y}}; \tau,
-    \beta) = \psi (\tilde{\mathbf{Y}}; \tau,
+    \tilde{\psi}(\tilde{\mathbf{Y}}; \tau, \alpha, 
+    \beta) = \psi (\tilde{\mathbf{Y}}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    A_{n,21} A_{n,11}^{-1}\phi(\tilde{\mathbf{Y}}_{i};
+    \hat{A}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\tilde{\mathbf{Y}}_{i};
     \beta), 
 \end{equation}
-we have that
+we have in the model-based formulation 
 \begin{multline*}
-  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \tilde{\psi}(\tilde{\mathbf{Y}}_{i}; \tau,
-    \beta)\right) = \\
+  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \tilde{\psi}(\tilde{\mathbf{Y}}_{i}; \tau_{0},\alpha_{0},
+    \beta_{0})\right) = \\
   M_{22} -
                                  \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}
-                                .
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t},
                                \end{multline*}
-This relation would appear to hold regardless of whether we seek a model- or a
-design-based variance, and regardless of what adjustments for
+regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply when
-calculating the bread matrix. 
+calculating the bread matrix.   In the design-based formulation there
+would likely be approximate equality here, noting that in that setting
+$\hat{A}_{21}(\beta_{0})$ and $\hat{A}_{11}(\beta_{0})$ needn't
+coincide with ${A}_{21}(\beta_{0})$ and ${A}_{11}(\beta_{0})$, respectively.
 
 
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
@@ -495,7 +515,7 @@ covariance model by setting up our
 \begin{equation}\label{eq:12}
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{n,11}^{-1}\hat{A}_{n,21}' - \tilde{\Phi}
+  \hat{A}_{11}^{-1}\hat{A}_{21}' - \tilde{\Phi}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}', 
 \end{equation}
 where $\Upsilon =
