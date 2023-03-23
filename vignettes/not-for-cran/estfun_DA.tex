@@ -537,8 +537,7 @@ $m$ parameters and complicating the $\tilde{\phi}$ definition accordingly.
 
 \subsection{Notes regarding design-based variance calculations}
 
-Potentially helpful observation:
-\marginpar{Check me\ldots}
+\st{Potentially helpful} probably unhelpful observation:
 % I updated these expressions to use random weights without
 % stopping to consider whether the original idea properly allowed
 % for the weights to depend on $Z_{i}$.
@@ -560,7 +559,7 @@ design-based covariances satisfy
                                                \tau_{k}](\indicator{Z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
-                     &=  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
+                     &\stackrel{\text{sometimes}}{=}  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
 \owt[Z_{i}]
 \left(
                                              \begin{array}{l}                                               
@@ -582,7 +581,14 @@ design-based perspective, as are the residual-like%
   g(\vec{x}_{i}\beta) - \tau_{j} - \sum_{r=1}^{s}\alpha_{r}\indicator{b_{i}=r}$, not $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$.}
 quantities
 $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$ that they get
-multiplied by.  Similar considerations yield
+multiplied by.   If the weights are flat, or inverse probability
+weights, or inverse assignment odds weights, then weighted sums of
+these quantities will be design constants.  Unfortunately, however, if
+the weights also involve weighting factors arising from the data,
+e.g. cluster sizes, then the corresponding weighted sums need no
+longer be design constants.
+
+Similar considerations yield
 \begin{align}
 \operatorname{Cov}_{d}[
   &n^{-1}\sum_{i}\tilde{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
@@ -601,7 +607,7 @@ multiplied by.  Similar considerations yield
   \right)%
   \right)
   \Biggr] \nonumber \\ 
-  =&\operatorname{Cov}_{d}[n^{-1}
+  \stackrel{\text{sometimes}}{=}&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
      \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
   &\operatorname{vec}\left(%
