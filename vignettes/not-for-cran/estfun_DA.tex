@@ -123,49 +123,49 @@ I conjecture these decisions can be made in such away that
 \end{enumerate}
 
 \subsection{$\psi(\tilde{\mathbf{Y}}_{i};
-  \rho_{0}, \tau, \beta)$ with intercept and $\tau$'s}
+  \alpha, \tau, \beta)$ with intercept and $\tau$'s}
 \label{sec:psit-rho_0-tau}
 
 The estimating equation $\psi(\tilde{\mathbf{y}}; \rho, \beta)=0$,
 $\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\tilde{\mathbf{y}}_{i};
-  \rho_{0}, \tau, \beta)=0$, with $\tau_{j}=\rho_{j}-\rho_{0}$ for
+  \alpha, \tau, \beta)=0$, with $\alpha=\rho_{0}$, $\tau_{j}=\rho_{j}-\alpha$ for
 $1\leq j \leq k$ and $\psi(\cdot)$ now given by 
 \begin{equation} \label{eq:14}
          \psi(\tilde{\mathbf{y}}_{i};
-  \rho_{0}, \tau, \beta) =
+  \alpha, \tau, \beta) =
          \sum_{i}\left( \begin{array}{l}
            \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
+                  \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\tau_{1}]\indicator{z_{i}=1}\\
+                  \alpha-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[k][y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \rho_{0} - \tau_{k}]\indicator{z_{i}=k}\\                  
+                 \alpha - \tau_{k}]\indicator{z_{i}=k}\\
                 \end{array}\right), 
 \end{equation}
 the omission of ``$\indicator{z_{i}=0}$'' from the first of these
 being intentional and deliberate. It doesn't affect the solution
-$(\rho_{0}, \tau_{1}, \ldots, \tau_{k})$
+$(\alpha, \tau_{1}, \ldots, \tau_{k})$
 because this solution also satisfies
 \begin{equation*}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\tau_{j}]\indicator{z_{i}=j}
+                  \alpha-\tau_{j}]\indicator{z_{i}=j}
 \end{equation*}
 for each $j=1, \ldots, k$, and therefore
 \begin{equation*}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
+                  \alpha-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
                   \neq 0}.
 \end{equation*}
 The complement of condition $\indicator{z\neq 0}$ being
 $\indicator{z=0}$, under which $\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows that
 \begin{align*}
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[0]\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}\big]\indicator{z_{i}
+                  \alpha\big]\indicator{z_{i}
              =0}\\
            & \Updownarrow \\
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
+                  \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
 \end{align*}
 One advantage of this representation is that it better represents what
 \texttt{lm()} ordinarily does, when given a factor treatment
@@ -384,7 +384,7 @@ clustering or heteroskedasticity that we might seek to apply when
 calculating the bread matrix. 
 
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
-As $\rho_{0}$ is a nuisance parameter, let's use the
+As $\alpha$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
 \footnote{Or rather, we invoke the variant of the FWL theorem calling
   for regression of the unchanged independent variable on residualized
