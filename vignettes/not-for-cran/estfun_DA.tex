@@ -60,8 +60,8 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1] [Y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[K] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{K}]\indicator{z_{i}=K}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[k] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
+                  \rho_{k}]\indicator{z_{i}=k}\\
                 \end{array}\right)
 \end{equation}
 where $Y_{i}[j]$ represents $i$'s potential outcome following
@@ -78,8 +78,8 @@ inference we would have
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{1}]\indicator{Z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[K][y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{K}]\indicator{Z_{i}=K}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[k][y_{i}[k] - g(\vec{x}_{i}\beta)-
+                  \rho_{k}]\indicator{Z_{i}=k}\\                  
                 \end{array}\right).
 \end{equation*}
 (Under the former expansion, appropriate to model-based inference,
@@ -347,8 +347,8 @@ $1\leq j \leq k$ and
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \rho_{0}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[K][y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \rho_{0} - \tau_{K}]\indicator{z_{i}=K}\\                  
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[k][y_{i}[k] - g(\vec{x}_{i}\beta)-
+                 \rho_{0} - \tau_{k}]\indicator{z_{i}=k}\\                  
                 \end{array}\right), 
 \end{equation*}
 the omission of ``$\indicator{z_{i}=0}$'' from the first of these
@@ -395,10 +395,9 @@ being estimated not simultaneously but in a prior regression fit.
 We can fold them into the estimator stack in the same way that a prior
 covariance model is folded in.
 
-First, let's switch over to using $\alpha$ as the intercept
-parameter. Or rather $[\alpha_{1}, \ldots, \alpha_{s}]$, allowing for
-absorption of $s$ block or stratum fixed effects; if
-\texttt{absorb=FALSE}, then let $S=1$.    Our estimating function becomes
+First, let's switch over to using $[\alpha_{1}, \ldots, \alpha_{s}]$
+as the intercept parameter(s), allowing for absorption of $s$ block or
+stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.    Our estimating function becomes
 \begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
@@ -417,7 +416,7 @@ absorption of $s$ block or stratum fixed effects; if
                   \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
           {} [y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{K}]\indicator{z_{i}=k}\\
+                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
 \end{multline}
@@ -452,7 +451,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
                   \vdots \\
 {}           [y_{i}[k]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{K}](\indicator{z_{i}=k}
+                                               \tau_{k}](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
@@ -529,7 +528,7 @@ design-based covariances satisfy
                   \vdots \\
 {}           [y_{i}[k]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{K}](\indicator{Z_{i}=k}
+                                               \tau_{k}](\indicator{Z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
                      &=  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
@@ -554,7 +553,7 @@ design-based perspective, as are the residual-like%
   g(\vec{x}_{i}\beta) - \tau_{j} - \sum_{r=1}^{s}\alpha_{r}\indicator{b_{i}=r}$, not $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$.}
 quantities
 $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$ that they get
-multiplied by.  Similar  considerations yield
+multiplied by.  Similar considerations yield
 \begin{align}
 \operatorname{Cov}_{d}[
   &n^{-1}\sum_{i}\tilde{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
