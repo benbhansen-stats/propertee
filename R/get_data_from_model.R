@@ -64,12 +64,13 @@
   fns_called <- as.character(lapply(sys.calls(), `[[`, 1))
 
   # Identify all frames which have `model.frame.default` called (or
-  # `ittestimate`)
-  mf_pos <- which(fns_called %in% c("model.frame.default", "ittestimate"))
+  # `lmitt`)
+  mf_pos <- which(fns_called %in% c("model.frame.default", "lmitt.formula"))
 
   # identify whether we're looking inside weights or assigned
   if (which_fn == "weights") {
     # Find all frames with `weights` argument
+
     weights_args <- lapply(sys.calls(), `[[`, "weights")
 
     # Within each `weights` argument, we're looking for the string "ate(" or
@@ -84,7 +85,9 @@
     fn_pos <- which(ate_pos | ett_pos)
   } else if (which_fn == "assigned") {
     # Find all frames with `formula`
-    adopter_args <- lapply(sys.calls(), `[[`, "formula")
+    adopter_args <- lapply(sys.frames(), function(x)
+      tryCatch(get("formula", envir = x, inherits = FALSE),
+               error = function(e) NULL))
 
     # Search these formula for "assigned(", ensuring that the previous character
     # is not a letter, in case there are functions like customassigned().
@@ -100,19 +103,26 @@
   } else {
     # We've identified at least one model.frame.default
     if (length(mf_pos) > 1) {
-      # If we have more than one, pick the one that has weights/assigned.
-      mf_pos <- mf_pos[mf_pos %in% fn_pos]
-      if (length(mf_pos) > 1) {
-        # still multiple; too confusing!
-        stop("Multiple calls to model.frame.default contain flexida elements")
-      }
+      # If we have more than one, pick the one that has weights/assigned that is
+      # lowest in the call-stack. (Pick lowest to avoid any issues where there
+      # is pre-processing done at an in-bteween step.)
+      mf_pos <- max(mf_pos[mf_pos %in% fn_pos])
     }
 
     # Regenerate the model.frame with the appropriate data
     environment(form) <-
       environment(get("formula", sys.frame(mf_pos)))
+
+    # Try to get the data from the appropriate frame
+    passed_data <- tryCatch(get("data", sys.frame(mf_pos)))
+    if (is.null(passed_data)) {
+      # If we can't get the data directly, try getting it via name
+      passed_data <- tryCatch(eval(sys.call(mf_pos)$data,
+                                   sys.frame(mf_pos)),
+                              error = function(e) NULL)
+    }
     try(data <- model.frame(form,
-                            data = get("data", sys.frame(mf_pos)),
+                            data = passed_data,
                             na.action = na.pass),
         silent = TRUE)
   }
