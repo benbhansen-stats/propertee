@@ -100,10 +100,18 @@ contributions of form
 \end{equation*}
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
-$\mathcal{Q}$ sample, with columns corresponding to $\rho$%
-\footnote{When the
-DA model was fitted with absorption of the block intercept or
-intercepts, it will be $n \times k$; see \S~\ref{sec:accomm-interc-via} below.}.
+$\mathcal{Q}$ sample, with columns corresponding to $\rho$.%
+(Assuming we're estimating a single marginal treatment effect, as
+opposed to moderation effect[s], either without blocking or with
+neither explicit nor implicit block fixed effects; otherwise the
+number of columns could be $k$\footnote{For a main effect
+DA model fitted with absorption of the block intercept or
+intercepts; see \S~\ref{sec:accomm-interc-via} below.} or something
+larger than $k+1$\footnote{In the case of subgroup effects and/or unabsorbed block fixed effects.},
+depending. To obviate the ambiguity we'll say
+\begin{equation*}
+  \tilde{k} \defeq \mathtt{ncol}(\tilde{\Psi}).)
+\end{equation*}
 
 Values of the constants $c_{1}$ and $c_{2}$ are to be determined.
 I conjecture these decisions can be made in such away that 
@@ -363,7 +371,7 @@ column for each cluster:
   
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times k$ matrix
+\texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
 \begin{equation*}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
@@ -376,7 +384,7 @@ and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with $M$'s as
 given by \eqref{eq:7} or \eqref{eq:8}, respectively.
 
 Alternately put,
-defining $k$ by 1 random matrices 
+defining $\tilde{k}$ by 1 random matrices 
 \begin{equation}\label{eq:10}
     \tilde{\psi}(\tilde{\mathbf{Y}}; \tau,
     \beta) = \psi (\tilde{\mathbf{Y}}; \tau,
