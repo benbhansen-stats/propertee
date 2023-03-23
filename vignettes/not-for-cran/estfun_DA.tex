@@ -49,7 +49,8 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
        $\Psi(\mathbf{Y}; \rho, \beta) = [\psi(\tilde{\mathbf{Y}}_{i};
        \rho, \beta): i]'$, \textit{also} an $n$ by $k$ matrix, with 
        $\phi(\tilde{\mathbf{Y}}_{i}; \beta)=$ covariance model estfun
-       contrib times $\indicator{i \in \bigcup \mathcal{C}}$ and, for now:
+       contrib times $\indicator{i \in \bigcup \mathcal{C}}$ and, for
+       now (to be superceded by \eqref{eq:14}):
 \begin{equation}
          \label{eq:5}
          \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =\\
@@ -65,8 +66,10 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
 \end{equation}
 where $Y_{i}[j]$ represents $i$'s potential outcome following
 assignment to condition $i$ and $\tau_{j} = \rho_{j}-\rho_{0}$, $j=1,
-\ldots, k$. I say ``for now'' because we'll later replace this $\psi(\cdot)$ with
-with variants better aligned with \texttt{lm()}'s default treatment effect parameterizations (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \rho_{0}, \tau, \beta)$; see \S~\ref{sec:psit-rho_0-tau})  or with adaptations of those involving ``absorption'' of intercept terms (denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written $\tilde{\Psi}(\cdot)$ as
+\ldots, k$. I say ``for now'' because \eqref{eq:14} will present a
+$\psi(\cdot)$ with equivalent solutions that is better aligned with
+\texttt{lm()}'s default treatment effect parameterizations and their
+adaptations involving ``absorption'' of intercept terms (also denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written ${\Psi}(\cdot)$ as
 it would appear in the model-based interpretation; in design-based
 inference we would have
 \begin{equation*}
@@ -83,7 +86,7 @@ inference we would have
                 \end{array}\right).
 \end{equation*}
 (Under the former expansion, appropriate to model-based inference,
-$\tilde{\Psi}_{i}$s are independent across if not within
+${\Psi}_{i}$s are independent across if not within
 clusters; in the design-based interpretation independence obtains only across blocks or
 strata.)  \textbf{To do}: present appropriate $\psi(\cdot)$ for inference
 about moderator:treatment coefficient(s) following ``absorption'' of the moderator
@@ -118,6 +121,56 @@ I conjecture these decisions can be made in such away that
   reasonable and interpretable, at least in cases of HC0 and HC1
   degree of freedom adjustments. 
 \end{enumerate}
+
+\subsection{$\psi(\tilde{\mathbf{Y}}_{i};
+  \rho_{0}, \tau, \beta)$ with intercept and $\tau$'s}
+\label{sec:psit-rho_0-tau}
+
+The estimating equation $\psi(\tilde{\mathbf{y}}; \rho, \beta)=0$,
+$\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\tilde{\mathbf{y}}_{i};
+  \rho_{0}, \tau, \beta)=0$, with $\tau_{j}=\rho_{j}-\rho_{0}$ for
+$1\leq j \leq k$ and $\psi(\cdot)$ now given by 
+\begin{equation} \label{eq:14}
+         \psi(\tilde{\mathbf{y}}_{i};
+  \rho_{0}, \tau, \beta) =
+         \sum_{i}\left( \begin{array}{l}
+           \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
+                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
+                  \rho_{0}-\tau_{1}]\indicator{z_{i}=1}\\
+                  \vdots \\
+           \indicator{i \in \bigcup \mathcal{Q}}\owt[k][y_{i}[k] - g(\vec{x}_{i}\beta)-
+                 \rho_{0} - \tau_{k}]\indicator{z_{i}=k}\\                  
+                \end{array}\right), 
+\end{equation}
+the omission of ``$\indicator{z_{i}=0}$'' from the first of these
+being intentional and deliberate. It doesn't affect the solution
+$(\rho_{0}, \tau_{1}, \ldots, \tau_{k})$
+because this solution also satisfies
+\begin{equation*}
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}[y_{i} - g(\vec{x}_{i}\beta)-
+                  \rho_{0}-\tau_{j}]\indicator{z_{i}=j}
+\end{equation*}
+for each $j=1, \ldots, k$, and therefore
+\begin{equation*}
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
+                  \rho_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
+                  \neq 0}.
+\end{equation*}
+The complement of condition $\indicator{z\neq 0}$ being
+$\indicator{z=0}$, under which $\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows that
+\begin{align*}
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[0]\big[y_{i} - g(\vec{x}_{i}\beta)-
+                  \rho_{0}\big]\indicator{z_{i}
+             =0}\\
+           & \Updownarrow \\
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
+                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
+\end{align*}
+One advantage of this representation is that it better represents what
+\texttt{lm()} ordinarily does, when given a factor treatment
+variable.  Another is that it isolates the intercept parameter, which
+we have no use for and will be done away with via absorption (\S~\ref{sec:accomm-interc-via} below). 
 
 \subsection{The covariance we're trying to produce}
 
@@ -329,56 +382,6 @@ This relation would appear to hold regardless of whether we seek a model- or a
 design-based variance, and regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply when
 calculating the bread matrix. 
-
-\subsection{$\psi(\tilde{\mathbf{Y}}_{i};
-  \rho_{0}, \tau, \beta)$ with intercept and $\rho$'s}
-\label{sec:psit-rho_0-tau}
-
-The estimating equation $\psi(\tilde{\mathbf{y}}; \rho, \beta)=0$,
-$\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\psi(\tilde{\mathbf{y}}_{i};
-  \rho_{0}, \tau, \beta)=0$, with $\tau_{j}=\rho_{j}-\rho_{0}$ for
-$1\leq j \leq k$ and
-\begin{equation*}
-         \psi(\tilde{\mathbf{y}}_{i};
-  \rho_{0}, \tau, \beta) =
-         \sum_{i}\left( \begin{array}{l}
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\tau_{1}]\indicator{z_{i}=1}\\
-                  \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \rho_{0} - \tau_{k}]\indicator{z_{i}=k}\\                  
-                \end{array}\right), 
-\end{equation*}
-the omission of ``$\indicator{z_{i}=0}$'' from the first of these
-being intentional and deliberate. It doesn't affect the solution
-$(\rho_{0}, \tau_{1}, \ldots, \tau_{k})$
-because this solution also satisfies
-\begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\tau_{j}]\indicator{z_{i}=j}
-\end{equation*}
-for each $j=1, \ldots, k$, and therefore
-\begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
-                  \neq 0}.
-\end{equation*}
-The complement of condition $\indicator{z\neq 0}$ being
-$\indicator{z=0}$, under which $\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows that
-\begin{align*}
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0}\big]\indicator{z_{i}
-             =0}\\
-           & \Updownarrow \\
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \rho_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
-\end{align*}
-One advantage of this representation is that it better represents what
-\texttt{lm()} ordinarily does, when given a factor treatment
-variable.  Another is that it isolates the intercept parameter, which
-we have no use for and will now proceed to do away with. 
 
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\rho_{0}$ is a nuisance parameter, let's use the
