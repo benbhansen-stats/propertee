@@ -21,7 +21,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL) {
   if (is.null(newdata)) {
     form <- formula(model)
     newdata <- tryCatch(
-      .get_data_from_model("weights", form),
+      .get_data_from_model("cov_adj", form),
        error = function(e) {
          warning(paste("Could not find quasiexperimental data in the call",
                        "stack, using the covariance adjustment model data to generate",

@@ -66,7 +66,7 @@
 ##' @rdname lmitt
 lmitt <- function(obj,
                   design,
-                  absorb = FALSE,
+                  data,
                   ...) {
   UseMethod("lmitt")
 }
@@ -75,7 +75,10 @@ lmitt <- function(obj,
 ##' @rdname lmitt
 lmitt.formula <- function(obj,
                           design,
+                          data,
                           absorb = FALSE,
+                          offset = NULL,
+                          weights = NULL,
                           ...) {
   lmitt.call <- match.call()
   m <- match(c("obj", "data", "subset", "weights", "na.action",
@@ -126,7 +129,8 @@ lmitt.formula <- function(obj,
     # If user passed dichotomy, include it. We do this so the
     # `design@call` will be in agreement.
     if (!is.null(lmitt.call$dichotomy)) {
-      new_d_call <- paste0(new_d_call, ", dichotomy = ", deparse(lmitt.call$dichotomy))
+      new_d_call <- paste0(new_d_call, ", dichotomy = ",
+                           deparse(lmitt.call$dichotomy))
     }
     new_d_call <- paste0(new_d_call, ")")
     # str2lang converts character into call
@@ -150,11 +154,32 @@ lmitt.formula <- function(obj,
     stop("'0' is not a valid entry on right hand side")
   }
   if (grepl("assigned\\(", rhs)) {
-    stop(paste("Do not specify `assigned()` in the right hand side of `lmitt()`.\n",
-               "To estimate only a treatment effect, pass `~ 1` as the right",
-               "hand side."))
+    stop(paste("Do not specify `assigned()` in the right hand side of",
+               "`lmitt()`.\nTo estimate only a treatment effect, pass",
+               "`~ 1` as the right hand side."))
   }
   # `rhs` is now either "1" or subgrouping variable
+
+  # Get weights and offset if passed
+  lm.call$weights <- eval.parent(lm.call$weights)
+  lm.call$offset <- eval.parent(lm.call$offset)
+
+  # Ensure same design is used in weights and offset, if they're there
+  wtdes <- try(lm.call$weights@Design, silent = TRUE)
+  ofdes <- try(lm.call$offset@Design, silent = TRUE)
+
+  if (is(wtdes, "Design")) {
+    if (!identical(design, wtdes)) {
+      stop(paste("Multiple differing `Design` found (`design` argument to",
+                 " `lmitt` and `design` object inside the weights differ)."))
+    }
+  }
+  if (is(ofdes, "Design")) {
+    if (!identical(design, ofdes)) {
+      stop(paste("Multiple differing `Design` found (`design` argument to",
+                 " `lmitt` and `design` object inside the offset differ)."))
+    }
+  }
 
 
   # Evaluate model.frame
@@ -166,7 +191,7 @@ lmitt.formula <- function(obj,
   mf <- eval(mf.call, parent.frame())
 
   # Get weights
-  lm.call$weights <- mf$"(weights)"
+#  lm.call$weights <- mf$"(weights)"
 
   # get response
   mr <- stats::model.response(mf)

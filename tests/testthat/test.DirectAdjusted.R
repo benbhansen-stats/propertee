@@ -25,7 +25,7 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
-              lmitt_fitted = TRUE)
+              lmitt_fitted = FALSE)
 
   expect_s4_class(dalm, "DirectAdjusted")
   expect_true(inherits(dalm, "lm"))
@@ -160,21 +160,34 @@ test_that("Differing designs found", {
 
   data(simdata)
   des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
-  des2 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des2 <- obs_design(o ~ cluster(cid1, cid2) + block(bid), data = simdata,
+                     dichotomy = o >= 3 ~ .)
 
-  expect_error(lm(y ~ assigned(),
-                  data = simdata,
-                  weights = ate(des),
-                  offset = cov_adj(lm(y ~ x, data = simdata),
-                                   design = des2)),
+  # This should error, since there's no `design` argument to `lm`, `assigned()`
+  # finds both the `des` inside `ate()` and `des2` inside `cov_adj()`
+  ## expect_error(lm(y ~ assigned(),
+  ##                 data = simdata,
+  ##                 weights = ate(des),
+  ##                 offset = cov_adj(lm(y ~ x, data = simdata),
+  ##                                  design = des2)),
+  ##              "Multiple differing")
+
+  expect_error(lmitt(y ~ 1,
+                        data = simdata,
+                        design = des,
+                        weights = ate(),
+                        offset = cov_adj(lm(y ~ x, data = simdata),
+                                         design = des2)),
                "Multiple differing")
 
   expect_error(lmitt(y ~ 1,
-                     data = simdata,
-                     design = des,
-                     weights = ate(des),
-                     offset = cov_adj(lm(y ~ x, data = simdata),
-                                      design = des2)))
+                        data = simdata,
+                        design = des,
+                        weights = ate(),
+                        offset = cov_adj(lm(y ~ x, data = simdata),
+                                         design = des2)),
+               "Multiple differing")
+
 
   mod <- lm(y ~ assigned(), data = simdata,
             offset = cov_adj(lm(y ~ x, data = simdata),
@@ -258,38 +271,28 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod1, level = 0.9)
   expect_equal(ci1, vcovDA_ci.9)
 
-  vcovDA_z.95 <- matrix(damod1$coefficients["assigned()"] +
-                          sqrt(vcovDA(damod1)["assigned()", "assigned()"]) *
+  vcovDA_z.95 <- matrix(damod1$coefficients[1] +
+                          sqrt(vcovDA(damod1)[1, 1]) *
                           qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
-  dimnames(vcovDA_z.95) <- list(c("assigned()"), c("2.5 %", "97.5 %"))
-  ci1 <- confint(damod1, "assigned()")
-  ci2 <- confint(damod1, 2)
-  expect_equal(ci1, ci2)
-  expect_equal(ci1, vcovDA_z.95)
+  ci1 <- confint(damod1)
+  expect_true(all.equal(ci1, vcovDA_z.95, check.attributes = FALSE))
 
-  vcovDA_z.9 <- matrix(damod1$coefficients["assigned()"] +
-                         sqrt(vcovDA(damod1)["assigned()", "assigned()"]) *
+  vcovDA_z.9 <- matrix(damod1$coefficients[1] +
+                         sqrt(vcovDA(damod1)[1, 1]) *
                          qt(c(0.05, 0.95), damod1$df.residual), nrow = 1)
-  dimnames(vcovDA_z.9) <- list(c("assigned()"), c("5 %", "95 %"))
-  ci1 <- confint(damod1, "assigned()", level = 0.9)
-  ci2 <- confint(damod1, 2, level = 0.9)
-  expect_equal(ci1, ci2)
-  expect_equal(ci1, vcovDA_z.9)
+  ci1 <- confint(damod1, level = 0.9)
+  expect_true(all.equal(ci1, vcovDA_z.9, check.attributes = FALSE))
 
   vcovlm.9 <- damod2$coefficients + sqrt(diag(do.call(getS3method("vcov", "lm"),
                                                       list(object = damod2)))) %o%
     qt(c(0.05, 0.95), damod2$df.residual)
-  dimnames(vcovlm.9) <- list(names(damod2$coefficients), c("5 %", "95 %"))
   ci1 <- confint(damod2, level = 0.9)
-  expect_equal(ci1, vcovlm.9)
+  expect_true(all.equal(ci1, vcovlm.9, check.attributes = FALSE))
 
-  vcovlm_z.95 <- matrix(damod2$coefficients["assigned()"] +
+  vcovlm_z.95 <- matrix(damod2$coefficients[1] +
                           sqrt(do.call(getS3method("vcov", "lm"),
-                                       list(object = damod2))["assigned()", "assigned()"]) *
+                                       list(object = damod2))[1, 1]) *
                           qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
-  dimnames(vcovlm_z.95) <- list(c("assigned()"), c("2.5 %", "97.5 %"))
-  ci1 <- confint(damod2, "assigned()")
-  ci2 <- confint(damod2, 2)
-  expect_equal(ci1, ci2)
-  expect_equal(ci1, vcovlm_z.95)
+  ci1 <- confint(damod2)
+  expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
 })

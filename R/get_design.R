@@ -78,6 +78,7 @@
   weight_design <- NULL
   covadj_design <- NULL
   mf_design <- NULL
+  emf_design <- NULL
   # This avoids infinite recursion; if we're in weights or in cov_adj, don't
   # look for it again. Only assigned will look for both.
   if (sys.call(-1)[[1]] != ".weights_calc") {
@@ -87,45 +88,41 @@
     covadj_design <- .find.design("offset")
   }
 
-  # `expand.model.frame` or `model.frame` may have a DirectAdjusted object from
-  # which we can extract the design object
-  mf_funcs <- c("expand\\.model\\.frame$", "model.frame$")
-  mf_calls <- sapply(mf_funcs,
-                     function(x) grepl(x, lapply(sys.calls(), "[[", 1), perl = TRUE),
-                     simplify = FALSE)
+  # `model.frame` may have a DA object we can extract from
+  mf_calls <- grepl("model\\.frame$", lapply(sys.calls(), "[[", 1), perl = TRUE)
 
-  mf_design <- mapply(function(search_func, locs) {
-    des <- NULL
-    if (any(locs)) {
-      get_func <- switch(
-        search_func,
-        "expand\\.model\\.frame$" = function(mf) {
-          mod <- get("model", sys.frame(mf))
-          if (inherits(mod, "DirectAdjusted")) mod@Design else NULL
-        },
-        "model.frame$" = function(mf) {
-          form <- get("formula", sys.frame(mf))
-          if (inherits(form, "DirectAdjusted")) {
-            form@Design
-          } else if (inherits(form, "terms") | inherits(form, "formula")) {
-            tryCatch(get("design", environment(form)),
-                     error = function(e) NULL)
-          } else {
-            NULL
-          }
-        }
-      )
-      des <- get_func(which(locs)[1])
-      if (!inherits(des, "Design")) des <- NULL
+  mf_design <- lapply(which(mf_calls), function(x) {
+    form <- get("formula", sys.frame(x))
+    found_des <- if (inherits(form, "DirectAdjusted")) {
+      form@Design
+    } else if (inherits(form, "terms") | inherits(form, "formula")) {
+      tryCatch(get("design", environment(form)),
+               error = function(e) NULL)
+    } else {
+      NULL
     }
-    des
-  }, names(mf_calls), mf_calls, SIMPLIFY = FALSE)
+    if (!inherits(found_des, "Design")) {
+      found_des <- NULL
+    }
+    return(found_des)
+  })
+
+  emf_calls <- grepl("expand\\.model\\.frame$",
+                     lapply(sys.calls(), "[[", 1), perl = TRUE) |
+    grepl("\\.expand\\.model\\.frame\\.DA$",
+          lapply(sys.calls(), "[[", 1), perl = TRUE)
+
+  emf_design <- lapply(which(emf_calls), function(x) {
+    mod <- get("model", sys.frame(x))
+    if (inherits(mod, "DirectAdjusted")) mod@Design else NULL
+  })
 
   # At this point, each *_design is either NULL, or a Design (as enforced by
   # .find.design() and the special lmitt case)
-  potential_designs <- append(mf_design,
-                              c(weight_design = weight_design,
-                                covadj_design = covadj_design))
+  potential_designs <- append(emf_design,
+                              append(mf_design,
+                                     c(weight_design = weight_design,
+                                       covadj_design = covadj_design)))
 
   found_designs <- !vapply(potential_designs, is.null, logical(1))
 

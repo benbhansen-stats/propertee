@@ -19,7 +19,7 @@
                                  form = NULL,
                                  by = NULL) {
 
-  if (!which_fn %in% c("weights", "assigned")) {
+  if (!which_fn %in% c("weights", "cov_adj", "assigned")) {
     stop(paste("Internal error: which_fn is invalid,", which_fn))
   }
 
@@ -83,6 +83,11 @@
                       function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
 
     fn_pos <- which(ate_pos | ett_pos)
+  } else if (which_fn == "cov_adj") {
+    offset_args <- lapply(sys.calls(), `[[`, "offset")
+
+    fn_pos <- which(vapply(lapply(offset_args, deparse),
+                           function(x) any(grepl("[^a-zA-Z]?cov_adj\\(", x)), TRUE))
   } else if (which_fn == "assigned") {
     # Find all frames with `formula`
     adopter_args <- lapply(sys.frames(), function(x)

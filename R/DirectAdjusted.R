@@ -43,7 +43,12 @@ vcov.DirectAdjusted <- function(object, ...) {
     }
   }
 
-  call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) vcovDA else getS3method("vcov", "lm")
+  call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+    quote(vcovDA)
+  } else {
+    getS3method("vcov", "lm")
+  }
+
   vmat <- eval(call, parent.frame())
 
   return(vmat)
