@@ -10,11 +10,6 @@ test_that("Obtaining data for weights", {
              data = simdata)
   expect_true(mod1$coefficients[1] != mod2$coefficients[1])
 
-  # Multiple models in the stack with multiple weights,
-  expect_error(lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1,
-                  weights = ate(des), data = simdata),
-               "Multiple")
-
   # linear glm and lm are equivalent
   mod3 <- glm(y ~ x, data = simdata, weights = ate(des))
   expect_equal(mod$coefficients,

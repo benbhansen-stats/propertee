@@ -67,7 +67,7 @@ test_that(".get_design finds design in expand.model.frame call", {
   uoanames <- var_names(des, "u")
   des <- rct_design(z ~ cluster(cid1), data = simdata,
                     subset = simdata$cid1 %in% c(1, 3, 5))
-  dat <- stats::expand.model.frame(damod, uoanames)
+  dat <- .expand.model.frame.DA(damod, uoanames)
   expect_true(is.data.frame(dat))
   expect_true(all(uoanames %in% colnames(dat)))
 })
