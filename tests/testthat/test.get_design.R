@@ -78,8 +78,8 @@ test_that(".get_design finds design in model.frame call", {
   damod <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   mf1 <- stats::model.frame(damod)
-  mf2 <- stats::model.frame(formula(damod), simdata)
-  mf3 <- stats::model.frame(terms(damod), simdata)
+  mf2 <- stats::model.frame(formula(damod), damod$call$data)
+  mf3 <- stats::model.frame(terms(damod), damod$call$data)
 
   expect_equal(mf2, mf3)
   expect_equal(lapply(mf1@.Data, as.numeric),

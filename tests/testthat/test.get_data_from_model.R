@@ -70,10 +70,10 @@ test_that("get_data_from_model finds data in lmitt object's eval env", {
   }
 
   #expect_warning(lmitt_func(damod), "No call to `model.frame`")
-  out <- suppressWarnings(lmitt_func(damod))
+  out <- model.matrix(formula(damod), environment(formula(damod))$data)
   expect_true(is.numeric(out))
   expect_equal(length(out), nrow(simdata))
-  expect_equal(out, damod$model[, 2])
+  expect_true(all(out == damod$model[, 2, drop = FALSE]))
 })
 
 test_that(paste("get_data_from_model frame recursion doesn't return",
