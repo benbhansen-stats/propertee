@@ -90,6 +90,11 @@ lmitt.formula <- function(obj,
   #lmitt.call contains design, absorb. lm.call contains only things that get
   #passed to lm, model.matrix
 
+  # Save the subset and remove it from `lm.call`, to be re-added at the enc
+  savedsubset <- lm.call$subset
+  logicalsubset <- eval(savedsubset, data)
+  lm.call$subset <- NULL
+
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
   wt <- substitute(list(...))$weights
@@ -291,32 +296,39 @@ lmitt.formula <- function(obj,
   # Make sure to keep it as a named matrix
 
   # Center (weighted if needed)
-  .center <- function(x, wts) {
+  .center <- function(x, wts, sbst) {
+    # If the user passed in `$subset`, we'll want to center by the mean of the
+    # subset, not the whole data.
+    if (!is.null(sbst)) {
+      xs <- x[sbst]
+    } else {
+      xs <- x
+    }
     # `weighted.mean` with a NULL weights argument calls `mean`, but due to
     # the below issue with NAs in the weights, don't try combining these two
     # calls into one.
     if (is.null(wts)) {
-      x - mean(x, na.rm = TRUE)
+      x - mean(xs, na.rm = TRUE)
     } else {
       # `weighted.mean` with `na.rm = TRUE` only drops `x` as NA, any NA weights
       # will return an NA mean
-      x - weighted.mean(x[!is.na(lm.call$weights)],
+      x - weighted.mean(xs[!is.na(lm.call$weights)],
                         lm.call$weights[!is.na(lm.call$weights)],
                         na.rm = TRUE)
     }
   }
 
   # Center variables to remove intercept
-  mm <- apply(mm, 2, .center, lm.call$weights)
+  mm <- apply(mm, 2, .center, lm.call$weights, logicalsubset)
 
   # get response
   mr <- stats::model.response(mf)
 
   if (is.matrix(mr)) {
     # if somehow user passes in a matrix outcome, handle centering appropriately
-    flexida_y <- apply(mr, 2, .center, lm.call$weights)
+    flexida_y <- apply(mr, 2, .center, lm.call$weights, logicalsubset)
   } else {
-    flexida_y <- .center(mr, lm.call$weights)
+    flexida_y <- .center(mr, lm.call$weights, logicalsubset)
   }
 
   # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
@@ -327,7 +339,12 @@ lmitt.formula <- function(obj,
                                      collapse = "+"),
                                    collapse = ""))
 
+  # Data for model should be original data, plus updated outcome (flexida_y) and
+  # RHS (mm)
   lm.call$data <- cbind(data, flexida_y, mm)
+
+  # restore subset
+  lm.call$subset <- savedsubset
 
   model <- eval(lm.call, parent.frame())
 
