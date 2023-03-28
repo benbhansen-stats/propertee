@@ -191,12 +191,6 @@ lmitt.formula <- function(obj,
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
-  # Get weights
-#  lm.call$weights <- mf$"(weights)"
-
-  # get response
-  mr <- stats::model.response(mf)
-
   areg.center <- function(var, grp, wts = NULL) {
     if (!is.null(wts)) {
           df <- data.frame(var = var, wts = wts)
@@ -314,6 +308,9 @@ lmitt.formula <- function(obj,
 
   # Center variables to remove intercept
   mm <- apply(mm, 2, .center, lm.call$weights)
+
+  # get response
+  mr <- stats::model.response(mf)
 
   if (is.matrix(mr)) {
     # if somehow user passes in a matrix outcome, handle centering appropriately
