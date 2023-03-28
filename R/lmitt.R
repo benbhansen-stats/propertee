@@ -198,11 +198,18 @@ lmitt.formula <- function(obj,
 
   areg.center <- function(var, grp, wts = NULL) {
     if (!is.null(wts)) {
-          df <- data.frame(var = var, wts = wts)
-          var - sapply(split(df, grp), function(x) {
-            stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
-          })[as.character(grp)] +
-            stats::weighted.mean(var, w = wts, na.rm = TRUE)
+      # weighted.mean produces NA if any weights are NA
+      if (any(is.na(wts))) {
+        var2 <- var[!is.na(wts)]
+      } else {
+        var2 <- var
+      }
+
+      df <- data.frame(var = var, wts = wts)
+      var - sapply(split(df, grp), function(x) {
+        stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
+      })[as.character(grp)] +
+        stats::weighted.mean(var2, w = wts[!is.na(wts)], na.rm = TRUE)
     } else {
       var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
         mean(var, na.rm = TRUE)
@@ -215,18 +222,9 @@ lmitt.formula <- function(obj,
     }
     blocks <- .get_col_from_new_data(design,
                                      eval(lm.call$data, parent.frame()),
-                                     "b")[, 1]
+                                     "b", all.x = TRUE)[, 1]
     # To be used below
   }
-
-
-
-  if (!is.null(lm.call$subset)) {
-    # If provided, subset the data
-    lm.call$data <- subset(eval(lm.call$data),
-                              eval(lm.call$subset, eval(lm.call$data)))
-  }
-
 
   if (rhs == "1") {
     # Define new RHS and obtain model.matrix

@@ -600,10 +600,11 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 ##'   assignment variables in \code{design} to cluster/unit of assignment
 ##'   variables in \code{data}. Names represent variables in the Design; values
 ##'   represent variables in the data. Only needed if variable names differ.
+##' @param ... Additional arguments to \code{merge()}.
 ##' @return The column(s) belonging to the requested \code{type} in
 ##' @keywords internal
 ##' @importFrom stats model.matrix
-.get_col_from_new_data <- function(design, newdata, type, by = NULL) {
+.get_col_from_new_data <- function(design, newdata, type, by = NULL, ...) {
 
   if (!is.null(by)) {
     design <- .update_by(design, newdata, by)
@@ -623,7 +624,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
   newdata_data <- stats::model.matrix(form_for_newdata, newdata)
 
   merged <- merge(newdata_data, design_data, by = var_names(design, "u"),
-                  sort = FALSE)
+                  sort = FALSE, ...)
 
   return(merged[var_names(design, type)])
 
