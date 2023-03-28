@@ -32,24 +32,19 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @return Variance-Covariance matrix
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
-  call <- match.call()
+  cl <- match.call()
 
-  if (is.null(call[["type"]])) {
+  if (is.null(cl[["type"]])) {
     confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
     if (any(confint_calls)) {
       type <- tryCatch(get("call", sys.frame(which(confint_calls)[1]))$type,
                        error = function(e) NULL)
-      call$type <- type # will not append if type is NULL
+      cl$type <- type # will not append if type is NULL
     }
   }
 
-  call[[1L]] <- if (inherits(object$model$`(offset)`, "SandwichLayer")) {
-    quote(vcovDA)
-  } else {
-    getS3method("vcov", "lm")
-  }
-
-  vmat <- eval(call, parent.frame())
+  cl[[1L]] <- quote(vcovDA)
+  vmat <- eval(cl, parent.frame())
 
   return(vmat)
 }

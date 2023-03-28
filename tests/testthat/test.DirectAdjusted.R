@@ -245,9 +245,12 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcovDA(damod1))
 
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
   vmat3 <- vcov(damod2)
-  expect_identical(vmat3, do.call(getS3method("vcov", "lm"),
-                                  list(object = damod2)))
+  expect_true(all.equal(
+    vmat3,
+    sandwich::sandwich(damod2, meat. = sandwich::meatCL, cluster = uoas),
+    check.attributes = FALSE))
 })
 
 test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
@@ -286,15 +289,18 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod1, level = 0.9)
   expect_true(all.equal(ci1, vcovDA_z.9, check.attributes = FALSE))
 
-  vcovlm.9 <- damod2$coefficients + sqrt(diag(do.call(getS3method("vcov", "lm"),
-                                                      list(object = damod2)))) %o%
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  vcovlm.9 <- damod2$coefficients + sqrt(diag(sandwich::sandwich(damod2,
+                                                                 meat. = sandwich::meatCL,
+                                                                 cluster = uoas))) %o%
     qt(c(0.05, 0.95), damod2$df.residual)
   ci1 <- confint(damod2, level = 0.9)
   expect_true(all.equal(ci1, vcovlm.9, check.attributes = FALSE))
 
-  vcovlm_z.95 <- matrix(damod2$coefficients[1] +
-                          sqrt(do.call(getS3method("vcov", "lm"),
-                                       list(object = damod2))[1, 1]) *
+  vcovlm_z.95 <- matrix(damod2$coefficients["assigned()"] +
+                          sqrt(sandwich::sandwich(damod2,
+                                                  meat. = sandwich::meatCL,
+                                                  cluster = uoas)["assigned()", "assigned()"]) *
                           qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
   ci1 <- confint(damod2)
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))

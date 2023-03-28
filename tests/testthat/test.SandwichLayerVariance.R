@@ -105,11 +105,10 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
   )
 
-  expect_error(flexida:::.vcovMB_CR0(m), "must have an offset of class")
-  expect_error(flexida:::.get_b12(m), "must have an offset of class")
-  expect_error(flexida:::.get_a11_inverse(m), "must have an offset of class")
-  expect_error(flexida:::.get_b11(m), "must have an offset of class")
-  expect_error(flexida:::.get_a21(m), "must have an offset of class")
+  expect_error(.get_b12(m), "must have an offset of class")
+  expect_error(.get_a11_inverse(m), "must have an offset of class")
+  expect_error(.get_b11(m), "must have an offset of class")
+  expect_error(.get_a21(m), "must have an offset of class")
 })
 
 test_that(paste(".get_b12 returns expected B_12 for individual-level",
@@ -336,16 +335,10 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
-  msk <- !is.na(flexida:::.merge_preserve_order(
-    Q,
-    merge(unique(m$model$`(offset)`@keys), m@Design@structure),
-    by = uoanames,
-    all.x = TRUE,
-    sort = FALSE)[zname])
   m_eqns <- Reduce(
     rbind,
-    by((m$weights * m$residuals * model.matrix(m))[msk, , drop = FALSE],
-       lapply(uoanames, function(col) Q[msk, col]),
+    by((m$weights * m$residuals * model.matrix(m)),
+       lapply(uoanames, function(col) Q[, col]),
        colSums))
 
   expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))
@@ -1222,6 +1215,17 @@ test_that("flexida:::.vcovMB_CR0 returns px2 matrix", {
 
   expect_message(vmat <- flexida:::.vcovMB_CR0(m), paste(nrow(simdata), "rows"))
   expect_equal(dim(vmat), c(2, 2))
+})
+
+test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
+
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_equal(vcovDA(m, type = "CR0"),
+               sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",

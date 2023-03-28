@@ -29,8 +29,7 @@ setValidity("PreSandwichLayer", function(object) {
                   "covariance adjustment vector (", length(object), ")")
     return(msg)
   }
-  if (dim(object@prediction_gradient)[2] !=
-      length(object@fitted_covariance_model$coefficients)) {
+  if (dim(object@prediction_gradient)[2] != object@fitted_covariance_model$rank) {
     return(paste("Prediction gradient does not have the same number of columns",
                  "predictors in the covariance adjustment model"))
   }
@@ -135,9 +134,17 @@ setMethod("[", "PreSandwichLayer",
                          na.action = na.pass)
   })
   X <- stats::model.matrix(stats::delete.response(model_terms), data = newdata)
+  # use the `stats` package's method for handling model fits not of full rank
+  p <- model$rank
+  p1 <- seq_len(p)
+  piv <- if(p) model$qr$pivot[p1]
+  if(p < ncol(X)) {
+    warning("prediction from a rank-deficient fit may be misleading")
+    X <- X[, piv, drop = FALSE]
+  }
 
   # TODO: support predict(..., type = "response"/"link"/other?)
-  xb <- drop(X %*% model$coefficients)
+  xb <- drop(X %*% model$coefficients[piv])
 
   # this branch applies to (at least) `glm`, `survey::surveyglm`,
   # `robustbase::glmrob` and `gam` models
@@ -199,7 +206,9 @@ as.SandwichLayer <- function(x, design, by = NULL) {
 
   keys <- as.data.frame(
     sapply(uoanames, function(col) {
-      match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
+      unique(design@structure[[col]])[
+        match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
+      ]
     })
   )
 
