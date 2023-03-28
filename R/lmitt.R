@@ -188,6 +188,7 @@ lmitt.formula <- function(obj,
   # Add assigned() to the model so it utilizes Design characteristics (primarly
   # concerned about subset)
   mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + flexida::assigned())
+  mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
   # Get weights
@@ -200,7 +201,7 @@ lmitt.formula <- function(obj,
     if (!is.null(wts)) {
           df <- data.frame(var = var, wts = wts)
           var - sapply(split(df, grp), function(x) {
-            stats::weighted.mean(x$var, x$wts)
+            stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
           })[as.character(grp)] +
             stats::weighted.mean(var, w = wts, na.rm = TRUE)
     } else {
@@ -235,7 +236,10 @@ lmitt.formula <- function(obj,
 #    environment(new.form) <- saveenv # Do I need this?
     mm.call <- lm.call
     mm.call[[2]] <- str2lang(deparse(new.form))
-    mm.call[[1]] <- quote(stats::model.matrix.default)
+    # model.matrix.lm supports as `na.action` argument where
+    # model.matrix.default doesn't
+    mm.call[[1]] <- quote(stats::model.matrix.lm)
+    mm.call$na.action <- "na.pass"
     names(mm.call)[2] <- "object"
     mm <- eval(mm.call, parent.frame())
 
@@ -252,8 +256,9 @@ lmitt.formula <- function(obj,
                                             "+ 0"))
     sbgrp.call <- lm.call
     sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
-    sbgrp.call[[1]] <- quote(stats::model.matrix.default)
+    sbgrp.call[[1]] <- quote(stats::model.matrix.lm)
     names(sbgrp.call)[2] <- "object"
+    sbgrp.call$na.action <- "na.pass"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
     sbgrp.mm <- sbgrp.mm[, !grepl("assigned\\(", colnames(sbgrp.mm)),
                          drop = FALSE]
@@ -262,7 +267,8 @@ lmitt.formula <- function(obj,
     effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
     effect.call <- lm.call
     effect.call[[2]] <- str2lang(deparse(effect.form))
-    effect.call[[1]] <- quote(stats::model.matrix.default)
+    effect.call[[1]] <- quote(stats::model.matrix.lm)
+    effect.call$na.action <- "na.pass"
     names(effect.call)[2] <- "object"
     effect.mm <- eval(effect.call, parent.frame())
 
@@ -278,7 +284,9 @@ lmitt.formula <- function(obj,
       resid.call <- lm.call
       resid.call$offset <- NULL #see issue #101
       resid.call$formula <- stats::reformulate("sbgrp.mm", "xx__")
-      eval(resid.call, parent.frame())$resid
+      # By switching from `na.omit` to `na.exclude`, `residuals()` includes NAs
+      resid.call$na.action <- na.exclude
+      residuals(eval(resid.call, parent.frame()))
     })
 
   }
