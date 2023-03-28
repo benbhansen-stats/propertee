@@ -32,13 +32,13 @@ objects
 \details{
 When building a \code{DirectAdjusted} object inside \code{lmitt()}, we do a
 lot of manipulation of the variables involved in the model such that by the
-time the \code{Directadjusted} is produced, neither the outcome nor
+time the \code{DirectAdjusted} is produced, neither the outcome nor
 predictors actually fit in the model exist in the \code{data} passed into
 the call.
 
 (E.g. to be specific, if a user calls \code{myda <- lmitt(y ~ 1, data =
 mydata)}, then \code{model.frame(myda)} would contain column names not found
-in \code{mtdata}.)
+in \code{mydata}.)
 
 This is a clone of \code{stats::expand.model.frame()} which has one
 addition - after extracting the \code{model$call$data} from \code{model}, it

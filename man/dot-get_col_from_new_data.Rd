@@ -4,7 +4,7 @@
 \alias{.get_col_from_new_data}
 \title{(Internal) Extract specified \code{type} from new data set}
 \usage{
-.get_col_from_new_data(design, newdata, type, by = NULL)
+.get_col_from_new_data(design, newdata, type, by = NULL, ...)
 }
 \arguments{
 \item{design}{A \code{Design}}
@@ -21,6 +21,8 @@ or forcings.}
 assignment variables in \code{design} to cluster/unit of assignment
 variables in \code{data}. Names represent variables in the Design; values
 represent variables in the data. Only needed if variable names differ.}
+
+\item{...}{Additional arguments to \code{merge()}.}
 }
 \value{
 The column(s) belonging to the requested \code{type} in

@@ -42,27 +42,23 @@
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
 ##' into \code{lm()} or \code{lmitt()}.
 ##' @param obj A \code{formula} or a \code{lm} object. See details.
-##' @param design Optional, explicitly specify the \code{Design} to be used. If
-##'   the \code{Design} is specified elsewhere in the model (e.g. passed as an
-##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-##'   \code{assigned()}) it will be found automatically and does not need to be
-##'   passed here as well. (If different \code{Design} objects are passed
-##'   (either through the \code{lm} in weights or covariance adjustment, or
-##'   through this argument), an error will be produced.) Alternatively, a
-##'   formula creating a design (of the type of that would be passed as the
-##'   first argument to \code{rd_design()}, \code{rct_design()}, or
-##'   \code{obs_design()}.
+##' @param design The \code{Design} to be used. Alternatively, a formula
+##'   creating a design (of the type of that would be passed as the first
+##'   argument to \code{rd_design()}, \code{rct_design()}, or
+##'   \code{obs_design()}).
+##' @param data Data frame such as would be passed into \code{lm()}.
 ##' @param absorb If \code{TRUE}, fixed effects are included for units of
 ##'   assignemnt/clusters identified in the \code{Design}. Excluded in
 ##'   \code{FALSE}. Default is \code{FALSE}.
-##' @param ... Additional arguments passed to \code{lm()}. Ignored if \code{obj}
-##'   is already an \code{lm} object. If \code{weights=} is passed, it can be
-##'   either a call to \code{ate()} or \code{ett()}, or if no additional
-##'   arguments or manipulations of those weights are needed, the strings
-##'   \code{"ate"} or \code{"ett"}.
+##' @param offset Offset of the kind which would be passed into \code{lm()}. To
+##'   utilize flexida's functionality, the output of \code{cov_adj()}.
+##' @param weights Weight of the kind which would be passed into \code{lm()}. To
+##'   utilize flexida's functionality, the output of \code{ate()} or
+##'   \code{ett()}, or the strings \code{"ate"}/\code{"ett"}.
+##' @param ... Additional arguments passed to \code{lm()}.
 ##' @return \code{DirectAdjusted} model.
 ##' @export
-##' @importFrom stats lm predict weights weighted.mean reformulate
+##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt
 lmitt <- function(obj,
                   design,
@@ -282,8 +278,8 @@ lmitt.formula <- function(obj,
       resid.call$offset <- NULL #see issue #101
       resid.call$formula <- stats::reformulate("sbgrp.mm", "xx__")
       # By switching from `na.omit` to `na.exclude`, `residuals()` includes NAs
-      resid.call$na.action <- na.exclude
-      residuals(eval(resid.call, parent.frame()))
+      resid.call$na.action <- "na.exclude"
+      stats::residuals(eval(resid.call, parent.frame()))
     })
 
   }
