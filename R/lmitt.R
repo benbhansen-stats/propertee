@@ -298,10 +298,17 @@ lmitt.formula <- function(obj,
 
   # Center (weighted if needed)
   .center <- function(x, wts) {
+    # `weighted.mean` with a NULL weights argument calls `mean`, but due to
+    # the below issue with NAs in the weights, don't try combining these two
+    # calls into one.
     if (is.null(wts)) {
       x - mean(x, na.rm = TRUE)
     } else {
-      x - weighted.mean(x, wts, na.rm = TRUE)
+      # `weighted.mean` with `na.rm = TRUE` only drops `x` as NA, any NA weights
+      # will return an NA mean
+      x - weighted.mean(x[!is.na(lm.call$weights)],
+                        lm.call$weights[!is.na(lm.call$weights)],
+                        na.rm = TRUE)
     }
   }
 
