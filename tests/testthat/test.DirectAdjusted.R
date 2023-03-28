@@ -221,8 +221,11 @@ test_that("DirectAdjusted object has its own evaluation environment", {
 
   expect_false(identical(environment(), environment(formula(mod1))))
   expect_false(identical(environment(), environment(formula(mod2))))
-  expect_equal(environment(formula(mod1))$data, simdata)
-  expect_equal(environment(formula(mod1))$data, environment(formula(mod2))$data)
+
+  # `lmitt.formula` builds a data that includes the passed-in data, plus updated
+  # RHS and LHS for centering and absorb.
+  expect_true(all(simdata %in% environment(formula(mod1))$data))
+  expect_true(all(environment(formula(mod2))$data %in% environment(formula(mod1))$data))
   expect_equal(environment(formula(mod1))$design, des)
   expect_equal(environment(formula(mod1))$design, environment(formula(mod2))$design)
 })

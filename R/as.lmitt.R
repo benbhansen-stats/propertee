@@ -103,8 +103,10 @@ as.DirectAdjusted <- as.lmitt
   eval_env <- new.env(parent = environment(formula(lm_model)))
   # Find data
   if (lmitt_fitted) {
-    # If `lmitt.formula` is called, get the data from there directly
-    data <- get("data", environment(formula(lm_model)), mode = "list")
+    # If `lmitt.formula` is called, get the data from there directly (since
+    # inside `lmitt.formula`, we pass in the data directly after appenindg on
+    # the updated RHS and LHS).
+    data <- lm_model$call$data
   } else {
     # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
     data <- eval(lm_model$call$data, envir = eval_env)

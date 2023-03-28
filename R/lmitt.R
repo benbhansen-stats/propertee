@@ -286,6 +286,7 @@ lmitt.formula <- function(obj,
 
   # Strip intercept from model
   mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
+  # Make sure to keep it as a named matrix
 
   # Center (weighted if needed)
   .center <- function(x, wts) {
@@ -301,13 +302,20 @@ lmitt.formula <- function(obj,
 
   if (is.matrix(mr)) {
     # if somehow user passes in a matrix outcome, handle centering appropriately
-    mr <- apply(mr, 2, .center, lm.call$weights)
+    flexida_y <- apply(mr, 2, .center, lm.call$weights)
   } else {
-    mr <- .center(mr, lm.call$weights)
+    flexida_y <- .center(mr, lm.call$weights)
   }
 
-  # Scale terms to remove intercept
-  lm.call[[2]] <- mr ~ mm + 0
+  # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
+  # is centered) and `flexida::assigned()` or `flexida::assigned():sbrp`
+  lm.call$formula <- formula(paste("flexida_y ~ 0 + ",
+                                   paste(
+                                     paste0("`", colnames(mm), "`"),
+                                     collapse = "+"),
+                                   collapse = ""))
+
+  lm.call$data <- cbind(data, flexida_y, mm)
 
   model <- eval(lm.call, parent.frame())
 
