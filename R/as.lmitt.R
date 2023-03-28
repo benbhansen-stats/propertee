@@ -100,10 +100,16 @@ as.DirectAdjusted <- as.lmitt
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
-
   eval_env <- new.env(parent = environment(formula(lm_model)))
-  data <- eval(lm_model$call$data, eval_env)
-  lm_model$call$data <- quote(data)
+  # Find data
+  if (lmitt_fitted) {
+    # If `lmitt.formula` is called, get the data from there directly
+    data <- get("data", environment(formula(lm_model)), mode = "list")
+  } else {
+    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
+    data <- eval(lm_model$call$data, envir = eval_env)
+  }
+  lm_model$call$data <- data
   assign("data", data, envir = eval_env)
   assign("design", design, envir = eval_env)
   environment(lm_model$terms) <- eval_env

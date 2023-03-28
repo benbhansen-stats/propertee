@@ -307,7 +307,7 @@ lmitt.formula <- function(obj,
   }
 
   # Scale terms to remove intercept
-  lm.call[[2]] <- reformulate("mm + 0", "mr")
+  lm.call[[2]] <- mr ~ mm + 0
 
   model <- eval(lm.call, parent.frame())
 
