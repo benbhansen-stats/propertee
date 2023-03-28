@@ -65,7 +65,9 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     dichotomy(design) <- dichotomy
   }
 
-  if (is.null(design)) {
+  missing_design <- try(is.null(design), silent = TRUE)
+
+  if (isTRUE(missing_design) | is(missing_design, "try-error")) {
     design <- .get_design()
   }
 

@@ -18,6 +18,39 @@ NULL
 ##' @export
 ##' @example inst/examples/cov_adj.R
 cov_adj <- function(model, newdata = NULL, design =  NULL) {
+  # JE: I was frequently getting an error where I passed a covariance matrix
+  # (say `cmod`) in, but was getting the error `Error: object 'cmod' not found`.
+  # This checks for the issue, then tries to find the object in the call-stack.
+  model <- try(eval.parent(substitute(model)), silent = TRUE)
+  if (is(model, "try-error")) {
+    # First, look in all frames for objects of the name passed in as
+    # the `model` object
+    modelname <- deparse(match.call()$model)
+    found_models <-
+      lapply(sys.frames(),
+             function(x) {
+               tryCatch(get(modelname,#as.character(match.call()$model),
+                            envir = x),
+                        error = function(e) NULL)
+                        })
+    # Next, extract only the non-NULL ones
+    found_models <- found_models[which(!vapply(found_models,
+                                               is.null, logical(1)))]
+    # Finally, restrict to only objects which support a precict
+    # function
+    found_models <-
+      found_models[vapply(found_models,
+                          function(x)
+                            any(grepl("^predict",
+                                      methods(class = class(x)))),
+                          logical(1))]
+    # If we have more than one, pick the one closest in the call
+    # stack
+    model <- found_models[[length(found_models)]]
+  }
+
+
+
   if (is.null(newdata)) {
     form <- formula(model)
     newdata <- tryCatch(
