@@ -97,7 +97,7 @@ lmitt.formula <- function(obj,
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
-  wt <- substitute(list(...))$weights
+  wt <- lmitt.call$weights
   if (is(wt, "character")) {
     if (tolower(wt) == "ate") {
       lm.call$weights <- quote(ate())
