@@ -297,10 +297,10 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod2, level = 0.9)
   expect_true(all.equal(ci1, vcovlm.9, check.attributes = FALSE))
 
-  vcovlm_z.95 <- matrix(damod2$coefficients["assigned()"] +
+  vcovlm_z.95 <- matrix(damod2$coefficients[1] +
                           sqrt(sandwich::sandwich(damod2,
                                                   meat. = sandwich::meatCL,
-                                                  cluster = uoas)["assigned()", "assigned()"]) *
+                                                  cluster = uoas)[1, 1]) *
                           qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
   ci1 <- confint(damod2)
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
