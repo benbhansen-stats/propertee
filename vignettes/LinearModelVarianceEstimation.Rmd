@@ -1,7 +1,7 @@
 ---
 title: "Variance Estimation Testing Using A Simple Linear Specification"
-author: "Mark Fredrickson"
-date: '2022-05-09'
+author: "Mark Fredrickson, Ben Hansen"
+date: '2023-03-30'
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Variance Estimation Testing Using A Simple Linear Specification}
@@ -17,7 +17,8 @@ The goal of this document is to consider a simple model that can be arranged as 
 
 ## Combined model 
 
-Consider two sets of background variables and treatment assignments, $x$ and $z$ with dimension $p_x$ and $p_z$, respectively. While we allow correlation between the variables, we will assume that the matrix $\begin{pmatrix} X & Z \end{pmatrix}' \begin{pmatrix} X & Z \end{pmatrix}$ has an inverse (I think most of these results would work with generalized inverses, but if does not exist it makes the dimesionality of the coefficients a little tricky).
+Consider two sets of background variables and treatment assignments, $x$ and $z$ with dimension $p_x$ and $p_z$, respectively, to be treated as nonrandom or fixed by conditioning.
+While we allow correlation between the variables, we will assume that the matrix $\begin{pmatrix} X & Z \end{pmatrix}' \begin{pmatrix} X & Z \end{pmatrix}$ has an inverse (I think most of these results would work with generalized inverses, but if does not exist it makes the dimesionality of the coefficients a little tricky).
 
 $$Y = \alpha'x + \beta'z + \epsilon, \quad E(\epsilon) = 0, \text{Var}(\epsilon) = \sigma^2$$
 
@@ -33,19 +34,30 @@ $$\text{Var}(\hat \beta_1) = \sigma^2 \left[Z'Z - Z' X (X'X)^{-1} X'Z\right]^{-1
 Write $H = I - X (X'X)^{-1} X'$, matrix that creates the residuals of the regression on $x$ alone. Then,
 $$\text{Var}(\hat \beta_1) = \sigma^2 \left[Z'H Z\right]^{-1}$$
 
+The same $\hat \beta_1$ arises as the coefficient of a regression of $HY$ on $HZ$ (by the so-called Frisch-Waugh-Lovell Theorem).  In consequence,
+$$\hat \beta_1 = (Z'HZ)^{-1}(Z'Hy) .$$
+
 ## Two regressions
 
-Let $\hat \alpha_2$ and $\hat \beta_2$ be the estimators from first regression on $Y$ on $x$ alone and then regressing $Y - \hat \alpha_2'x$ on $Z$. Again by standard results we have
+Let $\hat \alpha_2$ and $\hat \beta_2$ be the estimators from first regression on $Y$ on $x$ alone and then regressing $Y - \hat \alpha_2'x$, that is $YH$ with $H$ as defined above, on $Z$. Standard results give
 
 $$\hat \alpha_2 = (X'X)^{-1} X' y$$
-And 
+and
 $$\hat \beta_2 = (Z'Z)^{-1} Z' (y - X \hat \alpha_2)  = (Z'Z)^{-1} Z'(y - X (X'X)^{-1} X' y) = (Z'Z)^{-1} Z' H y$$
-The variance of $\hat \beta_2$ would be
-$$\text{Var}(\hat \beta_2) = \sigma^2 (Z'Z)^{-1} Z' H Z (Z'Z)^{-1}$$
-Consider the SVD of $Z = UDV'$. Then we have
+
+As both $Z$ and $X$ are taken to be nonrandom, we may pass between $\hat \beta_1$ and $\hat \beta_2$ via nonrandom linear transformations, as follows:
+$$\hat \beta_1 = (Z'HZ)^{-1}(Z'Z) \hat \beta_2;\quad \hat \beta_2 = (Z'Z)^{-1}(Z'HZ) \hat \beta_1 .$$
+Accordingly
+$$ \operatorname{Cov}(\hat \beta_1) = (Z'HZ)^{-1}(Z'Z)
+\operatorname{Cov}(\hat \beta_{2})(Z'Z) (Z'HZ)^{-1}$$
+which may serve as a basis for tests.
+
+The standard expression of $\hat \beta_2$'s variance is
+$$\text{Var}(\hat \beta_2) = \sigma^2 (Z'Z)^{-1} Z' H Z (Z'Z)^{-1}.$$
+Considering the SVD of $Z = UDV'$, an alternate variance expression above entails
 $$\text{Var}(\hat \beta_2) = \sigma^2 V D^{-2} V' V D U' H U D V' V D^{-2} V' = \sigma^2 V D^{-1} U' H U D^{-1} V' = \sigma^2 \left[Z^{-}\right]' H^{-} Z^{-} $$
 
-Where $Z^{-}$ is the generalized inverse of $Z$ and $H$ is its own generalized inverse as it is idempotent. 
+where $Z^{-}$ is the generalized inverse of $Z$ and $H$ is its own generalized inverse as it is idempotent.
 
 ## Estimating $\sigma^2$
 
