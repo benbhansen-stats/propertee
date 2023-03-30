@@ -52,14 +52,14 @@ $$ \operatorname{Cov}(\hat \beta_1) = (Z'HZ)^{-1}(Z'Z)
 \operatorname{Cov}(\hat \beta_{2})(Z'Z) (Z'HZ)^{-1}$$
 which may serve as a basis for tests.
 
-The standard expression of $\hat \beta_2$'s variance is
+<!-- The standard expression of $\hat \beta_2$'s variance is
 $$\text{Var}(\hat \beta_2) = \sigma^2 (Z'Z)^{-1} Z' H Z (Z'Z)^{-1}.$$
 Considering the SVD of $Z = UDV'$, an alternate variance expression above entails
 $$\text{Var}(\hat \beta_2) = \sigma^2 V D^{-2} V' V D U' H U D V' V D^{-2} V' = \sigma^2 V D^{-1} U' H U D^{-1} V' = \sigma^2 \left[Z^{-}\right]' H^{-} Z^{-} $$
 
-where $Z^{-}$ is the generalized inverse of $Z$ and $H$ is its own generalized inverse as it is idempotent.
+where $Z^{-}$ is the generalized inverse of $Z$ and $H$ is its own generalized inverse as it is idempotent.-->
 
-## Estimating $\sigma^2$
+<!-- ## Estimating $\sigma^2$
 
 Define $G = I - Z(Z'Z)^{-1}Z'$
 
@@ -71,7 +71,7 @@ In the the first model, the usual estimator of $\sigma^2$ would be
 &= \frac{1}{n - (p_x + p_z)} y' \left[I - X (X'GX)^{-1} X'G - Z(Z'HZ)^{-1} Z'H \right] y
 \end{aligned}
 \]
-
+--> 
 <!-- Proof of last line
 \[
 \begin{aligned}
@@ -106,7 +106,7 @@ Z'H & 0
 -->
 
 
-In the second case, the usual naive estimate of the variance that does not take into account the fact that $\hat \alpha_2$ is random would be
+<!-- In the second case, the usual naive estimate of the variance that does not take into account the fact that $\hat \alpha_2$ is random would be
 
 \[ 
 \begin{aligned}
@@ -117,8 +117,8 @@ In the second case, the usual naive estimate of the variance that does not take 
   &= \frac{1}{n - p_z} y' H G H y 
 \end{aligned}
 \]
+--> 
 
 ## TODO
 
-- Relate the above to estimating equations for the joint and sequential models. Chapter 7 of Boos and Stefanski's textbook contains relevant material for the combined model. The errors-in-variables textbook has the extensions for the sequential models.
-- Implement as tests. See `test.cov_adj.R` for verifications of these results. 
+- Implement as tests.
