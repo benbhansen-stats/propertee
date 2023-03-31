@@ -106,11 +106,6 @@ vcovDA <- function(x, type = c("CR0"), ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-  
-  if (x@absorbed_intercepts) {
-    stop(paste("Model-based standard errors cannot be computed for ITT effect",
-               "models with absorbed block effects"))
-  }
 
   args <- list(...)
   if ("type" %in% names(args)) {
