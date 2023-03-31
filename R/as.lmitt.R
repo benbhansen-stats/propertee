@@ -100,7 +100,9 @@ as.lmitt <- function(x, design = NULL) {
   return(new("DirectAdjusted",
              x,
              Design = design,
-             lmitt_fitted = FALSE))
+             lmitt_fitted = FALSE,
+             absorbed_intercepts = FALSE,
+             absorbed_moderators = vector("character")))
 }
 
 ##' @rdname as_lmitt

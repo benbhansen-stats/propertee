@@ -158,6 +158,14 @@ lmitt.formula <- function(obj,
   # stratified and add interaction with `assigned()`
 
 
+  # based on the restrictions enforced above, determining the absorbed_moderators
+  # can be done simply using the code below
+  if (length(all.vars(obj)) == 1) {
+    absorbed_moderators <- vector("character")
+  } else {
+    absorbed_moderators <- all.vars(obj)[2]
+  }
+  
   no_assigned <- is.null(attr(terms(obj, specials = "assigned"),
                               "specials")$assigned)
   if (no_assigned) {
@@ -172,10 +180,12 @@ lmitt.formula <- function(obj,
   }
 
   # Handle the `absorb=` argument
+  absorbed_intercepts <- FALSE
   if (absorb) {
     fixed_eff_term <- paste(paste0(".absorbed(", var_names(design, "b"), ")"),
                           collapse = "*")
     obj <- update(obj, paste0(". ~ . + ", fixed_eff_term))
+    absorbed_intercepts <- TRUE
   }
 
 
@@ -213,6 +223,8 @@ lmitt.formula <- function(obj,
 
   toreturn <- as.lmitt(model, design)
   toreturn@lmitt_fitted <- TRUE
+  toreturn@absorbed_intercepts <- absorbed_intercepts
+  toreturn@absorbed_moderators <- absorbed_moderators
   return(toreturn)
 
 }

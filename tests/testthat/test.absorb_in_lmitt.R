@@ -55,5 +55,6 @@ test_that("multiple variables in blocks", {
   expect_match(capture_output(print(sda)), "assigned()")
   expect_no_match(capture_output(print(sda)), ".absorbed")
   expect_match(capture_output(print(sda$coefficients)), ".absorbed")
+  
 
 })
