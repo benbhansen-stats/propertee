@@ -100,7 +100,7 @@ setMethod("[", "PreSandwichLayer",
             idx[i] <- TRUE
             dat <- methods::callNextMethod()
             x@.Data <- dat
-            x@prediction_gradient <- subset(x@prediction_gradient, idx)
+            x@prediction_gradient <- subset(x@prediction_gradient, subset = idx)
             return(x)
 
           })
