@@ -370,18 +370,18 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   ca <- cov_adj(cmod, newdata = simdata, design = des)
 
-  nolmittmod1 <- lm(y ~ z, simdata)
+  nolmittmod1 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
+                    simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
-  nolmittmod2 <- lm(y ~ z, data = simdata, offset = ca)
+  nolmittmod2 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
+                    data = simdata, offset = ca)
   mod2 <- lmitt(y ~ 1, data = simdata, design = des, offset = stats::predict(cmod))
 
   ef_expected1 <- estfun(nolmittmod1)
-  colnames(ef_expected1) <- c("(Intercept)", "assigned()")
   ef_expected2 <- estfun(nolmittmod2)
-  colnames(ef_expected2) <- c("(Intercept)", "assigned()")
 
-  expect_equal(estfun(mod1), ef_expected1)
-  expect_equal(estfun(mod2), ef_expected2)
+  expect_true(all.equal(estfun(mod1), ef_expected1, check.attributes = FALSE))
+  expect_true(all.equal(estfun(mod2), ef_expected2, check.attributes = FALSE))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions for full",

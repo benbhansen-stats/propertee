@@ -310,7 +310,7 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
 
   # default (columns specified in `cluster` argument of Design) matches expected
   expect_equal(suppressMessages(flexida:::.get_b12(m)), expected)
-  expect_equal(suppressMessages(flexida:::.get_b12(m, cluster = c("cid1", "cid2"))), expected)
+  expect_equal(suppressMessages(flexida:::.get_b12(m, cluster = "cid2")), expected)
 })
 
 test_that("get_b12 handles custom cluster columns with only NA's", {
