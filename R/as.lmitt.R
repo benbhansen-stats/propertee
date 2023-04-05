@@ -54,14 +54,22 @@ as.lmitt <- function(x, design = NULL) {
   }
 
 
-  return(.convert_to_lmitt(x, design, lmitt_fitted = FALSE))
+  return(.convert_to_lmitt(x,
+                           design,
+                           lmitt_fitted = FALSE,
+                           absorbed_intercepts = FALSE,
+                           absorbed_moderators = vector("character")))
 }
 
 ##' @rdname as_lmitt
 ##' @export
 as.DirectAdjusted <- as.lmitt
 
-.convert_to_lmitt <- function(lm_model, design, lmitt_fitted) {
+.convert_to_lmitt <- function(lm_model,
+                              design,
+                              lmitt_fitted,
+                              absorbed_intercepts,
+                              absorbed_moderators) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
   }
@@ -122,6 +130,8 @@ as.DirectAdjusted <- as.lmitt
 
   return(new("DirectAdjusted",
              lm_model,
-             Design = design))
+             Design = design,
+             absorbed_intercepts = absorbed_intercepts,
+             absorbed_moderators = absorbed_moderators))
 
 }

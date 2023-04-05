@@ -305,3 +305,217 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod2)
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
 })
+
+test_that("absorbed_intercepts", {
+  data(simdata)
+  
+  blockeddes <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+  noblocksdes <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  blocked_lmitt_fitted_absorbed <- lmitt(y ~ assigned(), data = simdata,
+                                         design = blockeddes, absorb = TRUE)
+  blocked_lmitt_fitted_not_absorbed <- lmitt(y ~ assigned(), data = simdata,
+                                             design = blockeddes, absorb = FALSE)
+  blocked_not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(blockeddes), data = simdata),
+                                       design = blockeddes)
+  
+  expect_error(lmitt(y ~ assigned(), data = simdata, design = noblocksdes, absorb = TRUE))
+  noblocks_lmitt_fitted_not_absorbed <- lmitt(y ~ assigned(), data = simdata,
+                                              design = noblocksdes, absorb = FALSE)
+  
+  expect_true(blocked_lmitt_fitted_absorbed@absorbed_intercepts)
+  expect_false(blocked_lmitt_fitted_not_absorbed@absorbed_intercepts)
+  expect_false(blocked_not_lmitt_fitted@absorbed_intercepts)
+  expect_false(noblocks_lmitt_fitted_not_absorbed@absorbed_intercepts)
+})
+
+test_that("absorbed_moderators", {
+  data(simdata)
+  
+  blockeddes <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
+  noblocksdes <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  
+  noblocks_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata, design = noblocksdes)
+  blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata, design = blockeddes)
+  lmitt_fitted_nosbgrp1 <- lmitt(y ~ assigned(), data = simdata, design = noblocksdes)
+  lmitt_fitted_nosbgrp2 <- lmitt(y ~ adopters(), data = simdata, design = noblocksdes)
+  lmitt_fitted_nosbgrp3 <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
+  blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata, design = blockeddes)
+  not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata), design = noblocksdes)
+  
+  expect_equal(noblocks_lmitt_fittedsbgrp@absorbed_moderators, "force")
+  expect_equal(blocked_lmitt_fittedsbgrp@absorbed_moderators, "force")
+  expect_equal(lmitt_fitted_nosbgrp1@absorbed_moderators, vector("character"))
+  expect_equal(lmitt_fitted_nosbgrp2@absorbed_moderators, vector("character"))
+  expect_equal(lmitt_fitted_nosbgrp3@absorbed_moderators, vector("character"))
+  expect_equal(blocked_lmitt_fitted_nosbgrp@absorbed_moderators, vector("character"))
+  expect_equal(not_lmitt_fitted@absorbed_moderators, vector("character"))
+})
+
+test_that("estfun.DirectAdjusted requires a certain model class", {
+  data(simdata)
+
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  mod <- lmitt(y ~ assigned(), data = simdata, design = des)
+  mod@.S3Class <- "not_a_mod"
+
+  expect_error(estfun(mod), "must have been fitted using")
+})
+
+test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
+                "SandwichLayer offset"), {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  ca <- cov_adj(cmod, newdata = simdata, design = des)
+
+  nolmittmod1 <- lm(y ~ z, simdata)
+  mod1 <- lmitt(y ~ assigned(), data = simdata, design = des)
+  nolmittmod2 <- lm(y ~ z, data = simdata, offset = ca)
+  mod2 <- lmitt(y ~ assigned(), data = simdata, design = des, offset = stats::predict(cmod))
+
+  ef_expected1 <- estfun(nolmittmod1)
+  colnames(ef_expected1) <- c("(Intercept)", "assigned()")
+  ef_expected2 <- estfun(nolmittmod2)
+  colnames(ef_expected2) <- c("(Intercept)", "assigned()")
+  
+  expect_equal(estfun(mod1), ef_expected1)
+  expect_equal(estfun(mod2), ef_expected2)
+})
+
+test_that(paste("estfun.DirectAdjusted returns correct dimensions for full",
+                "overlap of C and Q"), {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  mod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expect_equal(dim(estfun(mod)), c(nrow(simdata), 2))
+})
+
+test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
+                "overlap of C and Q"), {
+  data(simdata)
+  set.seed(401)
+  cmod_data <- rbind(
+    simdata[simdata$cid1 == 1, c("x", "y", "cid1", "cid2")],
+    data.frame("x" = rnorm(100), "y" = rnorm(100), "cid1" = NA, "cid2" = NA)
+  )
+                  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  mod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expect_equal(dim(estfun(mod)),
+               c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$cid1),]), 2))
+})
+
+test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
+                "overlap of C and Q"), {
+  data(simdata)
+  set.seed(401)
+  cmod_data <- data.frame(
+    "x" = rnorm(100), "y" = rnorm(100), "cid1" = NA, "cid2" = NA
+  )
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  mod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 2))
+})
+
+test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted objects",
+                "with non-SandwichLayer or NULL offsets"), {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  ca <- predict(cmod)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  m1 <- lmitt(y ~ assigned(), data = simdata, design = des)
+  m2 <- lmitt(y ~ assigned(), data = simdata, design = des, offset = ca)
+  
+  expected_out1 <- nrow(simdata) * chol2inv(m1$qr$qr)
+  coef_names <- names(m1$coefficients)
+  dimnames(expected_out1) <- list(coef_names, coef_names)
+  expect_equal(sandwich::bread(m1), expected_out1)
+  
+  expected_out2 <- nrow(simdata) * chol2inv(m2$qr$qr)
+  dimnames(expected_out2) <- list(coef_names, coef_names)
+  expect_equal(sandwich::bread(m2), expected_out2)
+})
+
+test_that("bread.DirectAdjusted fails without a `qr` element", {
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(uid), simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des),
+             offset = cov_adj(cmod))
+  m$qr <- NULL
+  
+  expect_error(sandwich::bread(m), "Cannot compute")
+})
+
+test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
+                "of C and Q"), {
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+                  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(uid), simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des),
+             offset = cov_adj(cmod))
+  
+  expected_out <- nrow(simdata) * chol2inv(m$qr$qr)
+  coef_names <- names(m$coefficients)
+  dimnames(expected_out) <- list(coef_names, coef_names)
+  expect_equal(sandwich::bread(m), expected_out)
+})
+
+test_that(paste("bread.DirectAdjusted returns expected output for partial overlap",
+                "of C and Q"), {
+  set.seed(879)
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  
+  cmod_data <- rbind(simdata[, c("uid", "x", "y")],
+                     data.frame("uid" = seq(nrow(simdata) + 1,
+                                            nrow(simdata) + 25),
+                                "x" = rnorm(25),
+                                "y" = rnorm(25)))
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(uid), simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des),
+             offset = cov_adj(cmod))
+  
+  expected_out <- (nrow(simdata) + 25) * chol2inv(m$qr$qr)
+  coef_names <- names(m$coefficients)
+  dimnames(expected_out) <- list(coef_names, coef_names)
+  expect_equal(sandwich::bread(m), expected_out)
+})
+
+test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
+                "of C and Q"), {
+  set.seed(879)
+  data(simdata)
+  simdata$uid <- seq_len(nrow(simdata))
+  
+  cmod_data <- data.frame("uid" = seq(nrow(simdata) + 1, nrow(simdata) + 25),
+                          "x" = rnorm(25),
+                          "y" = rnorm(25))
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(uid), simdata)
+  m <- lmitt(y ~ assigned(), data = simdata, design = des, weights = ate(des),
+             offset = cov_adj(cmod))
+  
+  expected_out <- (nrow(simdata) + 25) * chol2inv(m$qr$qr)
+  coef_names <- names(m$coefficients)
+  dimnames(expected_out) <- list(coef_names, coef_names)
+  expect_equal(sandwich::bread(m), expected_out)
+})

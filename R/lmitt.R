@@ -175,6 +175,7 @@ lmitt.formula <- function(obj,
                  " `lmitt` and `design` object inside the weights differ)."))
     }
   }
+
   if (is(ofdes, "Design")) {
     if (!identical(design, ofdes)) {
       stop(paste("Multiple differing `Design` found (`design` argument to",
@@ -240,6 +241,8 @@ lmitt.formula <- function(obj,
       mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
     }
 
+    absorbed_moderators = character()
+
   } else {
 
     # Create model.matrix with subgroup main effects (to BE residualized out)
@@ -282,6 +285,7 @@ lmitt.formula <- function(obj,
       stats::residuals(eval(resid.call, parent.frame()))
     })
 
+    absorbed_moderator <- as.character(rhs)
   }
 
 
@@ -325,6 +329,12 @@ lmitt.formula <- function(obj,
     flexida_y <- .center(mr, lm.call$weights, logicalsubset)
   }
 
+  toreturn <- as.lmitt(model, design)
+  toreturn@lmitt_fitted <- TRUE
+  toreturn@absorbed_intercepts <- absorbed_intercepts
+  toreturn@absorbed_moderators <- absorbed_moderators
+  return(toreturn)
+
   # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
   # is centered) and `flexida::assigned()` or `flexida::assigned():sbrp`
   lm.call$formula <- formula(paste("flexida_y ~ 0 + ",
@@ -342,7 +352,11 @@ lmitt.formula <- function(obj,
 
   model <- eval(lm.call, parent.frame())
 
-  return(.convert_to_lmitt(model, design, lmitt_fitted = TRUE))
+  return(.convert_to_lmitt(model,
+                           design,
+                           lmitt_fitted = TRUE,
+                           absorbed_moderators = absorbed_moderators,
+                           absorbed_intercepts = TRUE))
 }
 
 ##' @export

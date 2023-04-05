@@ -49,6 +49,7 @@ Collate:
     'get_data_from_model.R'
     'get_design.R'
     'lmitt.R'
+    'lmrob_methods.R'
     'merge_preserve_order.R'
     'summary.Design.R'
     'summary.DirectAdjusted.R'

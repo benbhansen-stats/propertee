@@ -2,7 +2,7 @@
 NULL
 
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
-#' @param object A \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR0"
 #' @param ... Arguments to be passed to the internal variance estimation function.
@@ -21,18 +21,85 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(object, type = c("CR0"), ...) {
+vcovDA <- function(x, type = c("CR0"), ...) {
   type <- match.arg(type)
 
   var_func <- switch(
     type,
     "CR0" = .vcovMB_CR0
   )
+  args <- list(...)
+  args$x <- x
+  args$cluster <- .make_uoa_ids(x, ...)
 
-  est <- var_func(object, ...)
+  est <- do.call(var_func, args)
   return(est)
 }
 
+#' Make unit of assignment ID's that align with the output of `estfun.DirectAdjusted`
+#' @keywords internal
+.make_uoa_ids <- function(x, cluster = NULL, ...) {
+  if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
+    stop(paste("Cannot deduce units of assignment for clustering without a",
+               "Design object (stored in a DirectAdjusted object) or a `cluster`",
+               "argument specifying the columns with the units of assignment"))
+  }
+
+  # Must be a DirectAdjusted object for this logic to occur
+  if (!inherits(cluster, "character")) {
+    cluster <- var_names(x@Design, "u")
+  }
+
+  # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
+  Q_uoas <- tryCatch(
+    stats::expand.model.frame(x, cluster, na.expand = TRUE)[, cluster, drop = FALSE],
+    error = function(e) {
+      mf <- eval(x$call$data, envir = environment(x))
+      missing_cols <- setdiff(cluster, colnames(mf))
+      stop(paste("Could not find unit of assignment columns",
+                 paste(missing_cols, collapse = ", "), "in ITT effect model data"),
+           call. = FALSE)
+    })
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  names(Q_uoas) <- NULL
+
+  # If there's no covariance adjustment info, return the ID's found in Q
+  ca <- x$model$`(offset)`
+  if (!inherits(x, "DirectAdjusted") | !inherits(ca, "SandwichLayer")) {
+    return(factor(Q_uoas, levels = unique(Q_uoas)))
+  }
+
+  # Get the unit of assignment ID's in C
+  all_uoas <- Q_uoas
+  C_uoas <- ca@keys
+  any_C_uoa_is_na <- apply(is.na(C_uoas), 1, any)
+  all_C_uoa_is_na <- apply(is.na(C_uoas), 1, all)
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+
+  if (sum(any_C_uoa_is_na) - sum(all_C_uoa_is_na) > 0) {
+    warning(paste("Some rows in the covariance adjustment model dataset have",
+                  "NA's for some but not all clustering columns. Rows sharing",
+                  "the same non-NA cluster ID's will be clustered together.",
+                  "If this is not intended, provide unique non-NA cluster ID's",
+                  "for these rows."))
+  }
+  if (sum(all_C_uoa_is_na) > 0) {
+    warning(paste("Some or all rows in the covariance adjustment model dataset",
+                  "are found to have NA's for the given clustering columns.",
+                  "This is taken to mean these observations should be treated",
+                  "as IID. To avoid this warning, provide unique non-NA cluster",
+                  "ID's for each row."))
+    # give unique ID's to units of assignment in C but not Q, and concatenate with ID's in Q
+    C_uoas[all_C_uoa_is_na] <- NA_character_
+    n_Q_uoas <- length(unique(Q_uoas))
+    C_uoas[all_C_uoa_is_na] <- paste0(n_Q_uoas + seq_len(sum(all_C_uoa_is_na)), "*")
+    all_uoas <- c(Q_uoas, C_uoas)
+  }
+
+  return(factor(all_uoas, levels = unique(all_uoas)))
+}
+
+#' Model-based standard errors with HC0 adjustment
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR0 <- function(x, ...) {
@@ -40,38 +107,21 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     stop("x must be a DirectAdjusted model")
   }
 
-  m <- match.call()
-  if ("type" %in% names(m)) {
+  args <- list(...)
+  if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
                "matrix computations"))
   }
+  args$x <- x
+  n <- length(args$cluster)
 
-  # compute blocks
-  a22inv <- .get_a22_inverse(x)
-  b22 <- .get_b22(x, type = "HC0", ...)
-
-  if (!inherits(x$model$`(offset)`, "SandwichLayer")) {
-    meat <- b22
-  } else {
-    a21 <- .get_a21(x)
-    a11inv <- .get_a11_inverse(x)
-    b12 <- .get_b12(x, ...)
-    b11 <- .get_b11(x,  type = "HC0", ...)
-
-    meat <- (
-      b22 -
-        a21 %*% a11inv %*% b12 -
-        t(b12) %*% t(a11inv) %*% t(a21) +
-        a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
-    )
-  }
-
-  vmat <- a22inv %*% meat %*% a22inv
+  a22inv <- sandwich::bread(x)
+  meat <- do.call(sandwich::meatCL, args)
+  vmat <- (1 / n) * a22inv %*% meat %*% a22inv
 
   return(vmat)
 }
 
-#' @title (Internal) Compute variance blocks
 #' @details The \bold{B12 block} is the covariance matrix of the cluster-level
 #'   estimating equations for the covariance adjustment and ITT effect models. It
 #'   has a row for each term in the covariance adjustment model and a column for each term
@@ -79,16 +129,21 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   the experimental design and the covariance adjustment model data, its contribution to
 #'   this matrix will be 0. Thus, if there is no overlap between the two
 #'   datasets, this will return a matrix of 0's.
-#' @param x A \code{DirectAdjusted} model
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
 #' @return \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
 #'   are given by the number of terms in the covariance adjustment model and the number of
 #'   columns correspond to intercept and treatment variable terms in the ITT
 #'   effect model
 #' @keywords internal
-#' @rdname sandwich_elements_calc
+#' @noRd
 .get_b12 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
+  }
+
+  if (x@.S3Class[1] != "lm") {
+    stop("x must be an `lm` object")
   }
 
   sl <- x$model$`(offset)`
@@ -96,7 +151,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-
   # If cluster argument is NULL, use the `keys` dataframe created at initialization,
   # otherwise recreate given the desired clustering columns
   dots <- list(...)
@@ -147,7 +201,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                 "rows in the covariance adjustment model",
                 "data joined to the ITT effect model data\n"))
 
-
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
   uoas_overlap <- length(unique(C_uoas[C_uoas_in_Q]))
@@ -175,13 +228,15 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
 
   Q_uoas_in_C <- Q_uoas %in% unique(C_uoas[!is.na(C_uoas)])
-  damod_estfun <- sandwich::estfun(x)[Q_uoas_in_C, , drop = FALSE]
+  damod_estfun <- sandwich::estfun(as(x, "lm"))[Q_uoas_in_C, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
   damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[Q_uoas_in_C], damod_aggfun))
 
   return(crossprod(cmod_eqns, damod_eqns))
 }
 
+#' @title (Internal) Compute variance blocks
+#' @param x a fitted \code{DirectAdjusted} model
 #' @details The \bold{A22 block} is the diagonal element of the inverse expected
 #'   Fisher Information matrix corresponding to the treatment estimate. As shown
 #'   in the Details of \code{.get_b22()}, the estimating equations for a
@@ -215,7 +270,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   return(out)
 }
 
-#' @param ... Arguments to be passed to sandwich::meatCL
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
 #' @details The \bold{B22 block} refers to a clustered estimate of the covariance
 #'   matrix for the ITT effect model. The \code{stats} package offers family objects
 #'   with canonical link functions, so the log-likelihood for a generalized
@@ -241,7 +297,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   dimensions are given by the intercept and treatment variable terms in the
 #'   ITT effect model
 #' @keywords internal
-#' @rdname sandwich_elements_calc
+#' @noRd
 .get_b22 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
@@ -280,7 +336,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
     uoas <- factor(Reduce(function(...) paste(..., sep = "_"), uoas))
   }
   dots$cluster <- uoas
-  dots$x <- x
+  dots$x <- as(x, "lm")
 
   out <- do.call(sandwich::meatCL, dots) * nq
 
@@ -316,6 +372,8 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   return(out)
 }
 
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
 #' @details The \bold{B11 block} is the block of the sandwich variance estimator
 #'   corresponding to the variance-covariance matrix of the covariance model
 #'   coefficient estimates. The estimates returned here are potentially
@@ -326,7 +384,7 @@ vcovDA <- function(object, type = c("CR0"), ...) {
 #'   given by the number of terms in the covariance adjustment model including an
 #'   intercept
 #' @keywords internal
-#' @rdname sandwich_elements_calc
+#' @noRd
 .get_b11 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
@@ -411,7 +469,6 @@ vcovDA <- function(object, type = c("CR0"), ...) {
   return(out)
 }
 
-
 #' @details The \bold{A21 block} is the block of the sandwich variance estimator
 #'   corresponding to the gradient of the ITT effect model with respect
 #'   to the covariates. Some of the information needed for this calculation is
@@ -454,121 +511,4 @@ vcovDA <- function(object, type = c("CR0"), ...) {
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
-}
-
-##' @title Generate matrix of estimating equations for \code{lmrob()} fit
-##' @details This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation. The issue in question is issue
-##' #6471, robustbase project on R-Forge. This function contributes to providing
-##' sandwich estimates of covariance-adjusted standard errors for robust linear
-##' covariance adjustment models.
-##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
-##' @param ... Additional arguments to be passed to \code{estfun}
-##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
-##' the scale estimate and the remaining \eqn{p} colums correspond to the
-##' coefficients
-##' @author lrd author 2
-##' @rdname lmrob_methods
-##' @exportS3Method
-estfun.lmrob <- function(x, ...) {
-  ctrl <- x$control
-  if (!inherits(ctrl, "list")) {
-    stop("Model object must have a `control` element of type `list`")
-  }
-  if (!(ctrl$method %in% c("SM", "MM"))) {
-    stop("estfun.lmrob() supports only SM or MM estimates")
-  }
-  if (is.null(ctrl$psi)) {
-    stop("parameter psi is not defined")
-  }
-
-  xmat <- stats::model.matrix(x)
-  xmat <- stats::naresid(x$na.action, xmat)
-  psi <- chi <- ctrl$psi
-  stopifnot(is.numeric(c.chi <- ctrl$tuning.chi),
-            is.numeric(c.psi <- ctrl$tuning.psi))
-  r0 <- x$init$resid
-  r <- x$residuals
-  scale <- x$scale
-  n <- length(r)
-  stopifnot(n == length(r0), is.matrix(xmat), n == nrow(xmat))
-  p <- ncol(xmat)
-  r0.s <- r0 / scale
-  w0 <- robustbase::Mchi(r0.s, cc = c.chi, psi = chi)
-  Usigma <- scale(w0, center=TRUE, scale=FALSE)
-  colnames(Usigma) <- "sigma"
-  r.s <- r / scale
-  w <- robustbase::Mpsi(r.s, cc = c.psi, psi = psi)
-  Ubeta <- w * xmat
-  rval <- cbind(Usigma, Ubeta)
-  attr(rval, "assign") <- NULL
-  attr(rval, "contrasts") <- NULL
-
-  return(rval)
-}
-
-##' @title Extract bread matrix from an \code{lmrob()} fit
-##' @details This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation. The issue in question is issue
-##' #6471, robustbase project on R-Forge. This function contributes to providing
-##' sandwich estimates of covariance-adjusted standard errors for robust linear
-##' covariance adjustment models.
-##'
-##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
-##' @param ... Additional arguments to be passed to \code{bread}
-##' @return A \eqn{p\times }(p+1) matrix where the first column corresponds to
-##' the scale estimate and the remaining \eqn{p} colums correspond to the
-##' coefficients
-##' @author lrd author 2
-##' @rdname lmrob_methods
-##' @exportS3Method
-bread.lmrob <- function(x, ...) {
-  ctrl <- x$control
-  if (!inherits(ctrl, "list")) {
-    stop("Model object must have a `control` element of type `list`")
-  }
-  if (!(ctrl$method %in% c("SM", "MM"))) {
-    stop("estfun.lmrob() supports only SM or MM estimates")
-  }
-  if (is.null(ctrl$psi)) {
-    stop("parameter psi is not defined")
-  }
-
-  psi <- chi <- ctrl$psi
-  stopifnot(is.numeric(c.chi <- ctrl$tuning.chi),
-            is.numeric(c.psi <- ctrl$tuning.psi))
-  r0 <- x$init$resid
-  r <- x$residuals
-  scale <- x$scale
-  xmat <- stats::model.matrix(x)
-  bb <- 1 / 2
-  n <- length(r)
-  stopifnot(n == length(r0), is.matrix(xmat), n == nrow(xmat))
-  p <- ncol(xmat)
-  r.s <- r / scale
-  r0.s <- r0 / scale
-  w <- robustbase::Mpsi(r.s, cc = c.psi, psi = psi, deriv = 1)
-  w0 <- robustbase::Mchi(r0.s, cc = c.chi, psi = chi, deriv = 1)
-  x.wx <- crossprod(xmat, xmat * w)
-  A <- tryCatch(solve(x.wx) * scale, error = function(e) {
-    tryCatch({
-      out <- solve(x.wx, tol = 0) * scale
-      warning("X'WX is almost singular", call. = FALSE)
-      out
-      }, error = function(e) {
-        stop("X'WX is singular", call. = FALSE)
-    })
-  })
-
-  # At this point A has no sample size scaling, as in robustbase:::.vcov.avar1
-  # The lack of scaling there precisely compensates for the lack of scaling of
-  # the crossproduct
-  a <- A %*% (crossprod(xmat, w * r.s) / mean(w0 * r0.s))
-  colnames(a) <- "sigma"
-
-  # Now we restore sample size scaling to A
-  A <- n * A
-  rval <- cbind(a, A)
-
-  return(rval)
 }
