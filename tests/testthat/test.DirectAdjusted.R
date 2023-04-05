@@ -392,7 +392,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for full",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata), 2))
+  expect_equal(dim(estfun(mod)), c(nrow(simdata), 1))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
@@ -409,7 +409,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   expect_equal(dim(estfun(mod)),
-               c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$cid1),]), 2))
+               c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$cid1),]), 1))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
@@ -424,7 +424,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 2))
+  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 1))
 })
 
 test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted objects",
