@@ -376,7 +376,7 @@ test_that(paste(".get_b12 handles multiple custom cluster columns where both",
   )
   dmod_eqns <- Reduce(
     rbind,
-    by(sandwich::estfun(dmod), list(simdata$cid1, simdata$cid2), colSums)
+    by(sandwich:::estfun.lm(dmod), list(simdata$cid1, simdata$cid2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
 
