@@ -241,7 +241,7 @@ lmitt.formula <- function(obj,
       mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
     }
 
-    absorbed_moderators = character()
+    absorbed_moderators <- character()
 
   } else {
 
@@ -285,7 +285,7 @@ lmitt.formula <- function(obj,
       stats::residuals(eval(resid.call, parent.frame()))
     })
 
-    absorbed_moderator <- as.character(rhs)
+    absorbed_moderators <- rhs
   }
 
 
@@ -328,12 +328,6 @@ lmitt.formula <- function(obj,
   } else {
     flexida_y <- .center(mr, lm.call$weights, logicalsubset)
   }
-
-  toreturn <- as.lmitt(model, design)
-  toreturn@lmitt_fitted <- TRUE
-  toreturn@absorbed_intercepts <- absorbed_intercepts
-  toreturn@absorbed_moderators <- absorbed_moderators
-  return(toreturn)
 
   # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
   # is centered) and `flexida::assigned()` or `flexida::assigned():sbrp`

@@ -74,7 +74,7 @@ test_that(".make_uoa_ids produces expected warnings for NA uoas in C", {
 
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  dmod <- lmitt(y ~ assigned(), data = simdata, design = des,
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
   Q_ids <- apply(simdata[, c("cid1", "cid2")], 1,
                  function(...) paste(..., collapse = "_"))
@@ -104,7 +104,7 @@ test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
   data(simdata)
 
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  mod <- lmitt(y ~ assigned(), data = simdata, design = des)
+  mod <- lmitt(y ~ 1, data = simdata, design = des)
 
   expected_out <- factor(
     apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
@@ -117,7 +117,7 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
 
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   expected_out <- factor(
     apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
@@ -132,7 +132,7 @@ test_that(".make_uoa_ids returns correct ID's for no overlap of C and Q", {
 
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  dmod <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -296,7 +296,7 @@ test_that(".get_b12 produces correct estimates with valid custom cluster argumen
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid2), data = simdata)
 
-  m <- lmitt(y ~ assigned(), data = simdata, design = des, offset = cov_adj(cmod))
+  m <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   cmod_eqns <- Reduce(
     rbind,
@@ -1377,7 +1377,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .flexida:::vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
+  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
                (1/n) * a22inv %*% meat %*% a22inv)
 
   # vmat should be equal to the outputs of sandwich
