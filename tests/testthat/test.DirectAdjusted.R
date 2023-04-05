@@ -335,19 +335,19 @@ test_that("absorbed_moderators", {
   blockeddes <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
   noblocksdes <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  noblocks_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata, design = noblocksdes)
-  blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata, design = blockeddes)
-  lmitt_fitted_nosbgrp1 <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
-  lmitt_fitted_nosbgrp2 <- lmitt(y ~ adopters(), data = simdata, design = noblocksdes)
-  lmitt_fitted_nosbgrp3 <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
-  blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata, design = blockeddes)
-  not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata), design = noblocksdes)
+  noblocks_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
+                                      design = noblocksdes)
+  blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
+                                     design = blockeddes)
+  lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
+  blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata,
+                                        design = blockeddes)
+  not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata),
+                               design = noblocksdes)
 
   expect_equal(noblocks_lmitt_fittedsbgrp@absorbed_moderators, "force")
   expect_equal(blocked_lmitt_fittedsbgrp@absorbed_moderators, "force")
-  expect_equal(lmitt_fitted_nosbgrp1@absorbed_moderators, vector("character"))
-  expect_equal(lmitt_fitted_nosbgrp2@absorbed_moderators, vector("character"))
-  expect_equal(lmitt_fitted_nosbgrp3@absorbed_moderators, vector("character"))
+  expect_equal(lmitt_fitted_nosbgrp@absorbed_moderators, vector("character"))
   expect_equal(blocked_lmitt_fitted_nosbgrp@absorbed_moderators, vector("character"))
   expect_equal(not_lmitt_fitted@absorbed_moderators, vector("character"))
 })

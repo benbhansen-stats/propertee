@@ -154,11 +154,18 @@ lmitt.formula <- function(obj,
     # We don't support y ~ 0
     stop("'0' is not a valid entry on right hand side")
   }
-  if (grepl("assigned\\(", rhs)) {
-    stop(paste("Do not specify `assigned()` in the right hand side of",
-               "`lmitt()`.\nTo estimate only a treatment effect, pass",
-               "`~ 1` as the right hand side."))
+  .check_for_assigned_and_aliases <- function(fn) {
+    if (grepl(paste0(fn, "\\("), rhs)) {
+      stop(paste("Do not specify `assigned()` or any of it's aliases in",
+                 "the right hand side of `lmitt()`.\nTo estimate only",
+                 "a treatment effect, pass `~ 1` as the right hand side."))
+    }
   }
+  .check_for_assigned_and_aliases("assigned")
+  .check_for_assigned_and_aliases("adopters")
+  .check_for_assigned_and_aliases("a\\.")
+  .check_for_assigned_and_aliases("z\\.")
+
   # `rhs` is now either "1" or subgrouping variable
 
   # Get weights and offset if passed
@@ -350,7 +357,7 @@ lmitt.formula <- function(obj,
                            design,
                            lmitt_fitted = TRUE,
                            absorbed_moderators = absorbed_moderators,
-                           absorbed_intercepts = TRUE))
+                           absorbed_intercepts = absorb))
 }
 
 ##' @export

@@ -199,3 +199,39 @@ test_that("Regular weights can still be used", {
   expect_true(is(mod, "DirectAdjusted"))
 
 })
+
+test_that("Aliases for assigned() aren't allowed either", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  expect_error(lmitt(y ~ assigned(), design = des, data = simdata),
+               "Do not specify")
+
+  expect_error(lmitt(y ~ adopters(), design = des, data = simdata),
+               "Do not specify")
+
+  expect_error(lmitt(y ~ a.(), design = des, data = simdata),
+               "Do not specify")
+
+
+  expect_error(lmitt(y ~ z.(), design = des, data = simdata),
+               "Do not specify")
+
+  #### because of the `.` in `a.()`, let's make sure the regexp isn't breaking
+  ad <- assigned
+  # Passing in a different weight to ensure we get a predictable error that
+  # ocurs *after* checking the formula
+  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  expect_error(lmitt(y ~ ad(), design = des, data = simdata,
+                     weights = ate(des2)),
+               "Multiple differing")
+
+  # Just to ensure that `lmitt.formula()` doesn't get changed in a way such that
+  # checking for differing designs happens prior:
+  expect_error(lmitt(y ~ a.(), design = des, data = simdata,
+                     weights = ate(des2)),
+               "Do not specify")
+
+  rm(ad)
+
+})
