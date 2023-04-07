@@ -639,3 +639,58 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
   expect_equal(ca_and_grad$prediction_gradient[seq_len(N-1),],
                pred_gradient[seq_len(N-1),])
 })
+
+test_that(".sanitize_C_uoas fails with invalid `cluster` argument", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+                offset = cov_adj(cmod))
+  
+  expect_error(.sanitize_C_uoas(dmod$model$`(offset)`, cluster = "uid"),
+               "uid could not be found")
+})
+
+test_that(".sanitize_C_uoas succeeds with with full UOA info", {
+  data(simdata)
+
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+                offset = cov_adj(cmod))
+  
+  ids <- .sanitize_C_uoas(dmod$model$`(offset)`)
+  expected_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_equal(ids, expected_ids)
+})
+
+test_that(".sanitize_C_uoas succeeds with warning with partial UOA info", {
+  data(simdata)
+  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
+                          "cid1" = rep(c(1, 2), each = 5),  "cid2" = NA)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+                offset = cov_adj(cmod))
+  
+  expect_warning(ids <- .sanitize_C_uoas(dmod$model$`(offset)`), "ID's will be clustered")
+  expect_equal(length(ids), nrow(cmod_data))
+  expect_equal(length(unique(ids)), 2)
+})
+
+test_that(".sanitize_C_uoas succeeds with warning with no UOA info", {
+  data(simdata)
+  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "cid1" = NA,  "cid2" = NA)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+                offset = cov_adj(cmod))
+
+  expect_warning(ids <- .sanitize_C_uoas(dmod$model$`(offset)`),
+                 "should be treated as IID")
+  expect_equal(length(ids), nrow(cmod_data))
+  expect_equal(length(unique(ids)), nrow(cmod_data))
+})
