@@ -721,7 +721,7 @@ test_that("sanitize_Q_uoas succeeds with valid cluster argument", {
   cmod <- lm(y ~ z, data = simdata)
   des <- rct_design(z ~ unitid(cid1, cid2, uid), simdata)
   dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
-  out <- .sanitize_Q_uoas(mod, cluster = c("cid1", "cid2"))
+  out <- .sanitize_Q_uoas(dmod, cluster = c("cid1", "cid2"))
   
   expected_out <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                         function(...) paste(..., collapse = "_"))
