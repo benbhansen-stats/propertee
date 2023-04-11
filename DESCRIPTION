@@ -10,7 +10,7 @@ Authors@R: c(person("Ben", "Hansen", role = "aut",
                     email = "jwass@umich.edu"),
              person("Xinhe", "Wang", role = "aut",
                     email = "xinhew@umich.edu"))
-License: MIT
+License: GPL (>= 3)
 License_is_FOSS: yes
 License_restricts_use: no
 Encoding: UTF-8
