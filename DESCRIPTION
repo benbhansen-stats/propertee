@@ -1,13 +1,15 @@
-Package: flexida
-Title: What the Package Does (One Line, Title Case)
+Title: Direct Adjustment with Design-Informed Standard Errors and Optional Prior Covariance Adjustment
 Version: 0.2.2.9000
-Authors@R:
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "jerrick@umich.edu")
-Description: What the package does (one paragraph).
-License: MIT + file LICENSE
+Authors@R: c(person("Ben", "Hansen", role = "aut",
+                    email = "ben.hansen@umich.edu"),
+             person("Josh", "Errickson", role = c("cre","aut"),
+                    email = "jerrick@umich.edu"),
+             person("Josh", "Wasserman", role = "aut",
+                    email = "jwass@umich.edu"),
+             person("Xinhe", "Wang", role = "aut",
+                    email = "xinhew@umich.edu"))
+Description: Flexida enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.
+License: MIT
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -53,5 +55,6 @@ Collate:
     'merge_preserve_order.R'
     'summary.Design.R'
     'summary.DirectAdjusted.R'
+    'txt_fn.R'
     'update_by.R'
     'weights.R'
