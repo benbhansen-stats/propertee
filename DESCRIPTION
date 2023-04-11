@@ -2,15 +2,17 @@ Package: flexida
 Version: 0.2.2.9000
 Title: Direct Adjustment with Design-Informed Standard Errors and Optional Prior Covariance Adjustment
 Description: Flexida enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.
-Authors@R: c(person("Ben", "Hansen", role = "aut",
-                    email = "ben.hansen@umich.edu"),
-             person("Josh", "Errickson", role = c("cre","aut"),
+Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
                     email = "jerrick@umich.edu"),
              person("Josh", "Wasserman", role = "aut",
                     email = "jwass@umich.edu"),
-             person("Xinhe", "Wang", role = "aut",
-                    email = "xinhew@umich.edu"))
-License: MIT + file LICENSE
+             person("Mark", "Fredrickson", role = "ctb",
+	            email = "mark.m.fredrickson@gmail.com"),
+             person("Xinhe", "Wang", role = "ctb",
+                    email = "xinhew@umich.edu"),
+             person("Ben", "Hansen", role = "aut",
+                    email = "ben.hansen@umich.edu"))
+License: MIT
 License_is_FOSS: yes
 License_restricts_use: no
 Encoding: UTF-8
