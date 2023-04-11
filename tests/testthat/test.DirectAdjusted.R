@@ -716,14 +716,44 @@ test_that("sanitize_Q_uoas fails with invalid cluster argument", {
 
 test_that("sanitize_Q_uoas succeeds with valid cluster argument", {
   data(simdata)
-  
+
   simdata$uid <- seq_len(nrow(simdata))
   cmod <- lm(y ~ z, data = simdata)
   des <- rct_design(z ~ unitid(cid1, cid2, uid), simdata)
   dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
   out <- .sanitize_Q_uoas(dmod, cluster = c("cid1", "cid2"))
-  
+
   expected_out <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                         function(...) paste(..., collapse = "_"))
   expect_equal(out, expected_out)
+})
+
+test_that("checking proper errors in conversion from lm to DA", {
+  data(simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  expect_error(as.lmitt(lm(y ~ x, data = simdata), design = des),
+               "aliases are not found")
+
+
+  # Take in either Design or WeightedDesign
+  mod1 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     des,
+                                     FALSE,
+                                     TRUE,
+                                     "a")
+  mod2 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     ate(des, data = simdata),
+                                     FALSE,
+                                     TRUE,
+                                     "a")
+  expect_identical(mod1@Design, mod2@Design)
+
+  expect_error(flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     1,
+                                     FALSE,
+                                     TRUE,
+                                     "a"), "must be a")
+
+
 })
