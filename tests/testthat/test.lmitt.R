@@ -235,3 +235,13 @@ test_that("Aliases for assigned() aren't allowed either", {
   rm(ad)
 
 })
+
+test_that("User can pass WeightedDesign", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lmitt(y ~ 1, data = simdata, design = ate(des))
+
+  expect_identical(des, mod@Design)
+
+})

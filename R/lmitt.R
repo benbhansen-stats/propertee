@@ -136,6 +136,8 @@ lmitt.formula <- function(obj,
     new_d_call <- paste0(new_d_call, ")")
     # str2lang converts character into call
     design <- eval(str2lang(new_d_call))
+  } else if (is(design, "WeightedDesign")) {
+    design <- design@Design
   } else if (!is(design, "Design")) {
     stop(paste("`design=` must be an object created by `*_design`",
                "function, or a formula specifying such a design"))
