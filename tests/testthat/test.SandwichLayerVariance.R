@@ -13,7 +13,7 @@ test_that("vcovDA correctly dispatches", {
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  vmat <- suppressMessages(vcovDA(damod, type = "CR0"))
+  vmat <- suppressMessages(vcovDA(damod, type = "MB_CR0"))
   expect_equal(vmat, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
 })
 
@@ -1294,7 +1294,7 @@ test_that(".vcovMB_CR0 doesn't accept `type` argument", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  expect_error(.vcovMB_CR0(m, type = "CR0"), "Cannot override the `type`")
+  expect_error(.vcovMB_CR0(m, type = "MB_CR0"), "Cannot override the `type`")
 })
 
 test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
@@ -1304,7 +1304,7 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  expect_equal(vcovDA(m, type = "CR0"),
+  expect_equal(vcovDA(m, type = "MB_CR0"),
                sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
 })
 

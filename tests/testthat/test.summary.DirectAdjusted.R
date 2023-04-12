@@ -50,7 +50,7 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses sandwich SE's", 
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  s <- summary(damod, type = "CR0", cadjust = FALSE)
+  s <- summary(damod, type = "MB_CR0", cadjust = FALSE)
   expect_equal(
     s$coefficients[, 2],
     sqrt(diag(sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = uoas,

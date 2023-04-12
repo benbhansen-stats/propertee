@@ -110,6 +110,15 @@ estfun.DirectAdjusted <- function(x, ...) {
   ## be the matrix of estimating equations returned
   ca <- x$model$`(offset)`
   if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
+    # if the user asks for a design-based SE
+    cl <- match.call()
+    db <- eval(cl[["db"]], parent.frame())
+    if (!is.null(db)){
+      upsilon <- .get_upsilon(x)
+      phitilde <- .get_phi_tilde(x)
+      appinv_atp <- .get_appinv_atp(x)
+      return(psi - phitilde %*% appinv_atp)
+    }
     return(psi)
   }
 
@@ -147,6 +156,25 @@ estfun.DirectAdjusted <- function(x, ...) {
 
   ## form matrix of estimating equations
   mat <- psi - phi %*% a11_inv %*% t(a21)
+  
+  # if the user asks for a design-based SE
+  cl <- match.call()
+  db <- eval(cl[["db"]], parent.frame())
+  if (!is.null(db)){
+    upsilon <- .get_upsilon(x)
+    phitilde <- .get_phi_tilde(x)
+    appinv_atp <- .get_appinv_atp(x)
+    
+    if (length(add_Q_uoas) > 0) {
+      phitilde <- rbind(
+        matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phitilde)), 
+        phitilde
+        )
+    }
+    
+    # mat <- upsilon - phi %*% a11_inv %*% t(a21) - phitilde %*% appinv_atp
+    mat <- mat - phitilde %*% appinv_atp
+  }
 
   return(mat)
 }
