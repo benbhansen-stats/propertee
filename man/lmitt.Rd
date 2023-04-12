@@ -18,7 +18,9 @@ lmitt(obj, design, data, ...)
 \item{design}{The \code{Design} to be used. Alternatively, a formula
 creating a design (of the type of that would be passed as the first
 argument to \code{rd_design()}, \code{rct_design()}, or
-\code{obs_design()}).}
+\code{obs_design()}). If the formula includes a \code{forcing()} element,
+an RD design is created. Otherwise an observational design is created. An
+RCT design must be created using \code{rct_design()}.}
 
 \item{data}{Data frame such as would be passed into \code{lm()}.}
 
@@ -29,11 +31,12 @@ assignemnt/clusters identified in the \code{Design}. Excluded in
 \code{FALSE}. Default is \code{FALSE}.}
 
 \item{offset}{Offset of the kind which would be passed into \code{lm()}. To
-utilize flexida's functionality, the output of \code{cov_adj()}.}
+utilize flexida's functionality, the output of \code{cov_adj()} should be
+used.}
 
 \item{weights}{Weight of the kind which would be passed into \code{lm()}. To
 utilize flexida's functionality, the output of \code{ate()} or
-\code{ett()}, or the strings \code{"ate"}/\code{"ett"}.}
+\code{ett()}, or the strings \code{"ate"}/\code{"ett"}, should be used..}
 }
 \value{
 \code{DirectAdjusted} model.
@@ -43,25 +46,10 @@ Generates a linear model object which allows proper estimation of variances
 accounting for the study design.
 }
 \details{
-The first argument to \code{lmitt}, \code{obj}, specifies a linear
-regression model. The formula is specified exactly how it would be in
-\code{lm()}, with one deviation. Rather than including the treatment
-variable by name, the helper function \code{assigned()} should be used in
-its place. For example, if your outcome is \code{y}, you could call
-\code{lmitt(y ~ assigned(), design = ...)}.
-
-If the formula does \emph{not} contain at least one \code{assigned()}, the
-right hand side of the formula will be treated as a series of
-strataification variables. This means that a formula such as \code{y ~ x +
-q} will be replaced with \code{y ~ x:assigned() + q:assigned()} such that
-\code{lmitt} will estimate the treatment effect within each level of both
-\code{x} and \code{q}. If \code{assigned()} is found anywhere on the right
-hand side of \code{obj}, this modification is \emph{not} made.
-
-Any additional arguments to \code{lm()} can be passed into \code{...}. See
-the help for \code{lm()} for a list of possible argument. Most commonly used
-in this scenario would be \code{weights=} to pass \code{ate()} or
-\code{ett()}, or \code{offset=} to pass \code{cov_adj()}.
+The first argument to \code{lmitt()} should be a formula specifying the
+outcome on the left hand side. The right hand side should be either one of
+"1", requesting a singluar treatment effect, or a subgrouping variable,
+requesting a treatment effect be estimated for each subgroup.
 
 Alternatively, \code{obj} can be a pre-created \code{lm} object. No
 modification is made to the formula of the object. See the help for
