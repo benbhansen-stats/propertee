@@ -145,7 +145,7 @@ $1\leq j \leq k$ and $\psi(\cdot)$ now given by
          \psi(\tilde{\mathbf{y}}_{i};
   \alpha, \tau, \beta) =
          \left( \begin{array}{l}
-           \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
+           \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \alpha-\tau_{1}]\indicator{z_{i}=1}\\
@@ -154,28 +154,28 @@ $1\leq j \leq k$ and $\psi(\cdot)$ now given by
                  \alpha - \tau_{k}]\indicator{z_{i}=k}\\
                 \end{array}\right), 
 \end{equation}
-the omission of ``$\indicator{z_{i}=0}$'' from the first of these
-being intentional and deliberate. It doesn't affect the solution
-$(\alpha, \tau_{1}, \ldots, \tau_{k})$
-because this solution also satisfies
+the omission of a ``$\indicator{z_{i}=0}$'' factor from the topmost
+expression being intentional and deliberate. It doesn't affect the solution
+$(\alpha, \tau_{1}, \ldots, \tau_{k})$ because this solution also satisfies
+\begin{equation} \label{eq:16}
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}[y_{i}[z_i] - g(\vec{x}_{i}\beta)-
+                  \alpha-\tau_{j}]\indicator{z_{i}=j}, \text{ each } j=1, \ldots, k;
+\end{equation}
+and therefore
 \begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}[y_{i} - g(\vec{x}_{i}\beta)-
-                  \alpha-\tau_{j}]\indicator{z_{i}=j}
-\end{equation*}
-for each $j=1, \ldots, k$, and therefore
-\begin{equation*}
-       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
+       0 = \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[z_i] - g(\vec{x}_{i}\beta)-
                   \alpha-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
                   \neq 0}.
 \end{equation*}
 The complement of condition $\indicator{z\neq 0}$ being
-$\indicator{z=0}$, under which $\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows that
+$\indicator{z=0}$, under which
+$\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows from \eqref{eq:16} that
 \begin{align*}
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[0]\big[y_{i} - g(\vec{x}_{i}\beta)-
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[0]\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \alpha\big]\indicator{z_{i}
              =0}\\
            & \Updownarrow \\
-         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i} - g(\vec{x}_{i}\beta)-
+         0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[z_i] - g(\vec{x}_{i}\beta)-
                   \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
 \end{align*}
 One advantage of this representation is that it better represents what
