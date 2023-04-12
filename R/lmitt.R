@@ -183,14 +183,20 @@ lmitt.formula <- function(obj,
   ofdes <- try(lm.call$offset@Design, silent = TRUE)
 
   if (is(wtdes, "Design")) {
-    if (!identical(design, wtdes)) {
+    wtdestmp <- wtdes
+    wtdestmp@dichotomy <- stats::formula(env = globalenv())
+    wtdestmp@call$dichotomy <- NULL
+    if (!identical(design, wtdestmp)) {
       stop(paste("Multiple differing `Design` found (`design` argument to",
                  " `lmitt` and `design` object inside the weights differ)."))
     }
   }
 
   if (is(ofdes, "Design")) {
-    if (!identical(design, ofdes)) {
+    ofdestmp <- ofdes
+    ofdestmp@dichotomy <- stats::formula(env = globalenv())
+    ofdestmp@call$dichotomy <- NULL
+    if (!identical(design, ofdestmp)) {
       stop(paste("Multiple differing `Design` found (`design` argument to",
                  " `lmitt` and `design` object inside the offset differ)."))
     }

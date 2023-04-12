@@ -211,6 +211,18 @@ test_that("Differing designs found", {
   expect_equal(mod3$coefficients, mod4$coefficients)
 
 
+  des3 <- obs_design(o ~ uoa(cid1, cid2), dat = simdata)
+
+  # No error with a dichotomy
+  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
+                             weights = ate(des3, dichotomy = o > 2 ~ .)))
+
+  des4 <- obs_design(o ~ uoa(cid1, cid2), data = simdata,
+                     dichotomy = o > 2 ~ .)
+
+  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
+                              weights = ett(des4)))
+
 })
 
 test_that("DirectAdjusted object has its own evaluation environment", {
