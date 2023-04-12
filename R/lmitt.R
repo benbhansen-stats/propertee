@@ -41,6 +41,11 @@
 ##' On the other hand, the \code{subset=} argument in \code{lm()} or
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
 ##' into \code{lm()} or \code{lmitt()}.
+##'
+##' \code{lmitt()} will produce a message if the \code{design} passed in has
+##' block information that is not being utilized in the model. Note that this is
+##' \emph{not} an error, but could be an oversight. To disable this message, run
+##' \code{options("flexida_message_on_unused_blocks" = FALSE)}.
 ##' @param obj A \code{formula} or a \code{lm} object. See details.
 ##' @param design The \code{Design} to be used. Alternatively, a formula
 ##'   creating a design (of the type of that would be passed as the first
@@ -173,6 +178,17 @@ lmitt.formula <- function(obj,
   # Get weights and offset if passed
   lm.call$weights <- eval.parent(lm.call$weights)
   lm.call$offset <- eval.parent(lm.call$offset)
+
+  if (!is(lm.call$weights, "WeightedDesign") & !absorb) {
+    if ("b" %in% design@column_index) {
+      if (options()$flexida_message_on_unused_blocks) {
+        message(paste("The Design object contains block-level information,",
+                      "but it is not used in this model. Block information",
+                      "is used when weights are defined via `ate()` or `ett()`",
+                      "or if the `absorb=TRUE` argument is passed."))
+      }
+    }
+  }
 
   # Ensure same design is used in weights and offset, if they're there
   wtdes <- try(lm.call$weights@Design, silent = TRUE)

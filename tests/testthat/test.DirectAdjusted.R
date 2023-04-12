@@ -314,8 +314,9 @@ test_that("absorbed_intercepts", {
 
   blocked_lmitt_fitted_absorbed <- lmitt(y ~ 1, data = simdata,
                                          design = blockeddes, absorb = TRUE)
-  blocked_lmitt_fitted_not_absorbed <- lmitt(y ~ 1, data = simdata,
-                                             design = blockeddes, absorb = FALSE)
+  expect_message(blocked_lmitt_fitted_not_absorbed <-
+                   lmitt(y ~ 1, data = simdata, design = blockeddes,
+                         absorb = FALSE))
   blocked_not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(blockeddes), data = simdata),
                                        design = blockeddes)
 
@@ -337,11 +338,11 @@ test_that("absorbed_moderators", {
 
   noblocks_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
                                       design = noblocksdes)
-  blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
-                                     design = blockeddes)
+  expect_message(blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
+                                                    design = blockeddes))
   lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
-  blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata,
-                                        design = blockeddes)
+  expect_message(blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata,
+                                                       design = blockeddes))
   not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata),
                                design = noblocksdes)
 

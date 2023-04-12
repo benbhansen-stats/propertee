@@ -8,6 +8,9 @@
 # CovAdj Yes/No
 # Subset No/In `Design`/in `lm`
 
+# To avoid a bunch of messages being printed:
+save_options <- options()
+options("flexida_message_on_unused_blocks" = FALSE)
 
 test_that("equivalent of lm and lmitt calls - no subset", {
   data(simdata)
@@ -332,3 +335,5 @@ test_that("subset in design", {
                      offset = cov_adj(cmod), weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 })
+
+options(save_options)

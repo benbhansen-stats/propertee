@@ -81,4 +81,9 @@ analysis removes them from the model.)
 On the other hand, the \code{subset=} argument in \code{lm()} or
 \code{lmitt()} refers only to subsetting the \code{data} argument passed
 into \code{lm()} or \code{lmitt()}.
+
+\code{lmitt()} will produce a message if the \code{design} passed in has
+block information that is not being utilized in the model. Note that this is
+\emph{not} an error, but could be an oversight. To disable this message, run
+\code{options("flexida_message_on_unused_blocks" = FALSE)}.
 }

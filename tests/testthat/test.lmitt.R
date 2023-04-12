@@ -1,4 +1,7 @@
- test_that("lmitt", {
+save_options <- options()
+options("flexida_message_on_unused_blocks" = FALSE)
+
+test_that("lmitt", {
 
   data(simdata)
   des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
@@ -243,5 +246,26 @@ test_that("User can pass WeightedDesign", {
   mod <- lmitt(y ~ 1, data = simdata, design = ate(des))
 
   expect_identical(des, mod@Design)
+
+})
+
+options(save_options)
+
+test_that("Message if design has block info but isn't used in lmitt", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  expect_message(lmitt(y ~ 1, data = simdata, design = des),
+                 "is not used in this model")
+  expect_message(lmitt(y ~ 1, data = simdata, design = ate(des)),
+                 "is not used in this model")
+  expect_message(lmitt(y ~ 1, data = simdata, design = ate(des),
+                       weights = abs(simdata$x)),
+                 "is not used in this model")
+
+  expect_silent(x <- lmitt(y ~ 1, data = simdata, absorb = TRUE, design = des))
+  expect_silent(x <- lmitt(y ~ 1, data = simdata, weights = "ate", design = des))
+  expect_silent(x <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des))
+  expect_silent(x <- lmitt(y ~ 1, data = simdata, weights = ett()*3, design = des))
 
 })
