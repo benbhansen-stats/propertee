@@ -105,6 +105,7 @@ as.DirectAdjusted <- as.lmitt
   } else if (length(unique_designs) > 1) {
     stop("Multiple differing `Design` found in object.")
   } else {
+    # This should never be hit
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 

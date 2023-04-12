@@ -96,6 +96,14 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' aggregated such that the resulting sandwich variance estimates are correct.
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
+  ## If user has passed a custom `cluster` argument to use in `sandwich::meatCL`,
+  ## use it here, otherwise use the default unit of assignment columns from the
+  ## Design (validity of custom `cluster` argument will be checked in )
+  args <- list(...)
+  if (!inherits(cluster <- args$cluster, "character")) {
+    cluster <- var_names(x@Design, "u")
+  }
+
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
   ## to extract estimating equations for ITT model
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
@@ -124,34 +132,17 @@ estfun.DirectAdjusted <- function(x, ...) {
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   cmod <- ca@fitted_covariance_model
-  C_uoas <- ca@keys
   phi <- estfun(cmod)
-  uoa_cols <- colnames(C_uoas)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
 
-  ## figure out if rows need to be added to the matrix of estimating equations
-  Q_uoas <- stats::expand.model.frame(x, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
-  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
-
-  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
-  C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
-
-  nas <- is.na(C_uoas)
-  if (any(nas)) {
-    # give unique ID's to uoa's in C but not Q
-    n_Q_uoas <- length(unique(Q_uoas))
-    C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
+  # add rows to estimating equations based on overlap of C and Q
+  uoas <- .sanitize_uoas(x, cluster, verbose = FALSE, ...)
+  if (any(uoas == "C")) {
+    psi <- rbind(psi, matrix(0, nrow = sum(uoas == "C"), ncol = ncol(psi)))
   }
-
-  # add rows if necessary
-  add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
-  add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
-  if (length(add_C_uoas) > 0) {
-    psi <- rbind(psi, matrix(0, nrow = sum(C_uoas %in% add_C_uoas), ncol = ncol(psi)))
-  }
-  if (length(add_Q_uoas) > 0) {
-    phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
+  if (any(uoas == "Q")) {
+    phi <- rbind(matrix(0, nrow = sum(uoas == "Q"), ncol = ncol(phi)), phi)
   }
 
   ## form matrix of estimating equations
@@ -206,63 +197,116 @@ bread.DirectAdjusted <- function(x) {
   return(out)
 }
 
-##' (Internal) Obtain which variaiton of \code{assigned()}, \code{a.()} or
-##' \code{z.()} is used in the model
-##' @title Treatment variable name
-##' @param object \code{DirectAdjusted} object
-##' @return Character string identifying the name (e.g "assigned()" or
-##'   "a.(des)")
-##' @keywords internal
-.txt_fn <- function(object) {
-  cs <- names(object$coefficients)
-  found_assigned <- FALSE
-  if (any(grepl("assigned\\(.*\\)", cs))) {
-    found_assigned <- TRUE
-    assigned_form <- regmatches(cs, regexpr("assigned\\(.*\\)", cs))
-    if (length(unique(assigned_form)) > 1) {
-      stop("Differing forms of `assigned()` found. Keep form consistent.")
-    }
-    assigned_form <- assigned_form[1]
+#' Make unit of assignment ID's that align with the output of
+#' \code{estfun.DirectAdjusted}
+#' @details \code{estfun.DirectAdjusted} stacks the rows from Q, the
+#' quasiexperimental sample, atop the rows in C that don't overlap with Q, C
+#' being the covariance adjustment sample. Thus, the number of rows in the
+#' estimating equations matrix is equal to \eqn{|Q| + |C \ Q|}, so
+#' \code{.make_uoa_ids} returns a vector of that length with corresponding
+#' units of assignment.
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param cluster Defaults to NULL, which means unit of assignment columns
+#' indicated in the Design will be used to generate clustered covariance estimates.
+#' A non-NULL argument to `cluster` specifies a string or character vector of
+#' column names appearing in both the covariance adjustment and quasiexperimental
+#' samples that should be used for clustering covariance estimates.
+#' @param ... arguments passed to methods
+#' @return A vector of length \eqn{|Q| + |C \ Q|}
+#' @keywords internal
+.make_uoa_ids <- function(x, cluster = NULL, ...) {
+  if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
+    stop(paste("Cannot deduce units of assignment for clustering without a",
+               "Design object (stored in a DirectAdjusted object) or a `cluster`",
+               "argument specifying the columns with the units of assignment"))
   }
-  found_a. <- FALSE
-  if (any(grepl("a\\.\\(.*\\)", cs))) {
-    found_a. <- TRUE
-    a._form <- regmatches(cs, regexpr("a\\.\\(.*\\)", cs))
-    if (length(unique(a._form)) > 1) {
-      stop("Differing forms of `a.()` found. Keep form consistent.")
-    }
-    a._form <- a._form[1]
+  
+  # Must be a DirectAdjusted object for this logic to occur
+  if (!inherits(cluster, "character")) {
+    cluster <- var_names(x@Design, "u")
   }
-  found_z. <- FALSE
-  if (any(grepl("z\\.\\(.*\\)", cs))) {
-    found_z. <- TRUE
-    z._form <- regmatches(cs, regexpr("z\\.\\(.*\\)", cs))
-    if (length(unique(z._form)) > 1) {
-      stop("Differing forms of `z.()` found. Keep form consistent.")
-    }
-    z._form <- z._form[1]
+  
+  # If there's no covariance adjustment info, return the ID's found in Q
+  if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
+    Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
+    return(factor(Q_uoas, levels = unique(Q_uoas)))
+  }
+  
+  uoas <- .sanitize_uoas(x, cluster, ...)
+  
+  return(factor(names(uoas), levels = unique(names(uoas))))
+}
 
+#' Generate a vector of sanitized units of assignment from C and Q
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param cluster Defaults to NULL, which means unit of assignment columns
+#' indicated in the Design will be used to generate clustered covariance estimates.
+#' A non-NULL argument to `cluster` specifies a string or character vector of
+#' column names appearing in both the covariance adjustment and quasiexperimental
+#' samples that should be used for clustering covariance estimates.
+#' @param ca SandwichLayer object storing information about the covariance
+#' adjustment model; usually stored as the `offset` of a \code{DirectAdjusted}
+#' object when covariance adjustment is performed
+#' @param verbose Boolean defaulting to TRUE, which will produce rather than
+#' swallow any warnings about the coding of the units of assignment in the
+#' covariance adjustment model data
+#' @return A named vector of length \eqn{|Q| + |C \ Q|}, where Q and C represent
+#' the sets of observations in the quasiexperimental sample and covariance
+#' adjustment sample, respectively. Values can be "Q", for observations that only
+#' appear in Q, "C", for those that only appear in C, and "QC" for those that
+#' appear in both. Names correspond to the unit of assignment ID.
+#' @param ... arguments passed to methods
+#' @keywords internal
+.sanitize_uoas <- function(x, cluster = NULL, ca = x$model$`(offset)`, verbose = TRUE, ...) {
+  if (!inherits(x, "DirectAdjusted") | !inherits(ca, "SandwichLayer")) {
+    stop(paste("x must be a DirectAdjusted object with a SandwichLayer offset or",
+               "ca must be a SandwichLayer object to retrieve information about",
+               "the covariance adjustment model"))
   }
+  if (is.null(cluster)) {
+    cluster <- var_names(x@Design, "u")
+  }
+  
+  Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
+  C_uoas <- .sanitize_C_uoas(ca, cluster, verbose = verbose, ...)
+  
+  # return a vector of the sample the observations pertain to named by their
+  # unit of assignment
+  not_Q_idx <- !(C_uoas %in% unique(Q_uoas))
+  uoas <- vector("character", length(Q_uoas) + sum(not_Q_idx))
+  uoas[which(!(Q_uoas %in% unique(C_uoas)))] <- "Q"
+  uoas[which(Q_uoas %in% unique(C_uoas))] <- "Q_C"
+  uoas[which(uoas == "")] <- "C"
+  names(uoas) <- c(Q_uoas, C_uoas[not_Q_idx])
+  
+  return(uoas)
+}
 
-  if (sum(found_assigned, found_a., found_z.) > 1) {
-    stop(paste("Differing treatment identification (`assigned()`, `a.()`",
-               " or `z.()`) found. Only one can be used."))
+#' Generate a list of sanitized units of assignment from Q
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param cluster Defaults to NULL, which means unit of assignment columns
+#' indicated in the Design will be used to generate clustered covariance estimates.
+#' A non-NULL argument to `cluster` specifies a string or character vector of
+#' column names appearing in both the covariance adjustment and quasiexperimental
+#' samples that should be used for clustering covariance estimates.
+#' @param ... arguments passed to methods
+#' @return A vector of length \eqn{|Q|}, where Q is the quasiexperimental sample
+#' @keywords internal
+.sanitize_Q_uoas <- function(x, cluster = NULL, ...) {
+  if (is.null(cluster)) {
+    cluster <- var_names(x@Design, "u")
   }
-  if (sum(found_assigned, found_a., found_z.) == 0) {
-    stop("No treatment variable found")
-  }
+  uoas <- tryCatch(
+    stats::expand.model.frame(x, cluster, na.expand = TRUE)[, cluster, drop = FALSE],
+    error = function(e) {
+      mf <- eval(x$call$data, envir = environment(x))
+      missing_cols <- setdiff(cluster, colnames(mf))
+      stop(paste("Could not find unit of assignment columns",
+                 paste(missing_cols, collapse = ", "), "in ITT effect model data"),
+           call. = FALSE)
+    })
+  out <- apply(uoas, 1, function(...) paste(..., collapse = "_"))
+  names(out) <- NULL
 
-  if (found_assigned) {
-    return(assigned_form)
-  }
-  if (found_a.) {
-    return(a._form)
-  }
-  if (found_z.) {
-    return(z._form)
-  }
-  stop("This error should never be hit!")
-  return(NULL)
-
-
+  return(out)
 }

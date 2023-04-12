@@ -314,8 +314,9 @@ test_that("absorbed_intercepts", {
 
   blocked_lmitt_fitted_absorbed <- lmitt(y ~ 1, data = simdata,
                                          design = blockeddes, absorb = TRUE)
-  blocked_lmitt_fitted_not_absorbed <- lmitt(y ~ 1, data = simdata,
-                                             design = blockeddes, absorb = FALSE)
+  expect_message(blocked_lmitt_fitted_not_absorbed <-
+                   lmitt(y ~ 1, data = simdata, design = blockeddes,
+                         absorb = FALSE))
   blocked_not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(blockeddes), data = simdata),
                                        design = blockeddes)
 
@@ -337,11 +338,11 @@ test_that("absorbed_moderators", {
 
   noblocks_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
                                       design = noblocksdes)
-  blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
-                                     design = blockeddes)
+  expect_message(blocked_lmitt_fittedsbgrp <- lmitt(y ~ force, data = simdata,
+                                                    design = blockeddes))
   lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata, design = noblocksdes)
-  blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata,
-                                        design = blockeddes)
+  expect_message(blocked_lmitt_fitted_nosbgrp <- lmitt(y ~ 1, data = simdata,
+                                                       design = blockeddes))
   not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata),
                                design = noblocksdes)
 
@@ -518,4 +519,242 @@ test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
   coef_names <- names(m$coefficients)
   dimnames(expected_out) <- list(coef_names, coef_names)
   expect_equal(sandwich::bread(m), expected_out)
+})
+
+test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model", {
+  data(simdata)
+  mod <- lm(y ~ z, data = simdata)
+  expect_error(.make_uoa_ids(mod), "Cannot deduce")
+})
+
+test_that(".make_uoa_ids returns correct ID's for non-DirectAdjusted model", {
+  data(simdata)
+  
+  mod <- lm(y ~ z, data = simdata)
+  expected_out <- factor(
+    apply(simdata[, "cid1", drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  
+  expect_equal(.make_uoa_ids(mod, cluster = "cid1"), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
+  data(simdata)
+  
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  mod <- lmitt(y ~ 1, data = simdata, design = des)
+  
+  expected_out <- factor(
+    apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  expect_equal(.make_uoa_ids(mod), expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expected_out <- factor(
+    apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  )
+  out <- .make_uoa_ids(dmod)
+  
+  expect_equal(out, expected_out)
+})
+
+test_that(".make_uoa_ids returns correct ID's for no overlap of C and Q", {
+  data(simdata)
+  set.seed(300)
+  cmod_data1 <- data.frame("y" = rnorm(10), "x" = rnorm(10), "cid1" = NA, "cid2" = NA)
+  cmod_data2 <- data.frame("y" = rnorm(10), "x" = rnorm(10),
+                           "cid1" = rep(c(1, 2), each = 5), "cid2" = NA)
+  
+  cmod1 <- lm(y ~ x, cmod_data1)
+  cmod2 <- lm(y ~ x, cmod_data2)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod1))
+  dmod2 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod2))
+  
+  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                  function(...) paste(..., collapse = "_"))
+  
+  expect_warning(ids1 <- .make_uoa_ids(dmod1), "treated as IID")
+  expect_warning(ids2 <- .make_uoa_ids(dmod2), "NA's for some but not all")
+  
+  expect_true(is.factor(ids1))
+  expect_true(is.factor(ids2))
+
+  expect_equal(length(ids1), nrow(simdata) + 10)
+  expect_equal(length(ids2), nrow(simdata) + 10)
+
+  expect_true(all.equal(ids1[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
+  expect_true(all.equal(ids2[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
+
+  expect_equal(length(unique(ids1)), length(unique(Q_uoas)) + 10)
+  expect_equal(length(unique(ids2)), length(unique(Q_uoas)) + 2)
+})
+
+test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
+  data(simdata)
+  set.seed(300)
+  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "cid1" = NA, "cid2" = NA)
+  cmod_data <- rbind(simdata[, colnames(C_not_Q)], C_not_Q)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+
+  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                  function(...) paste(..., collapse = "_"))
+
+  expect_warning(ids <- .make_uoa_ids(dmod), "treated as IID")
+  
+  expect_true(is.factor(ids))
+
+  expect_equal(length(ids), nrow(simdata) + 20)
+
+  expect_true(all.equal(ids[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
+
+  expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
+})
+
+test_that(paste(".sanitize_uoas fails without a DirectAdjusted object or",
+                "SandwichLayer offset"), {
+  data(simdata)
+  
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  mod1 <- lm(y ~ z, simdata, offset = predict(cmod))
+  mod2 <- lmitt(y ~ 1, data = simdata, design = des)
+  
+  expect_error(.sanitize_uoas(mod1), "must be a DirectAdjusted object")
+  expect_error(.sanitize_uoas(mod2), "must be a DirectAdjusted object")
+})
+
+test_that(paste(".sanitize_uoas succeeds with valid custom `cluster` argument",
+                "(both full and no overlap cases)"), {
+  set.seed(300)
+  data(simdata)
+  
+  simdata$uid <- seq_len(nrow(simdata))
+  cmod_data1 <- simdata
+  cmod_data2 <- data.frame(x = rnorm(30), y = rnorm(30), cid1 = NA, cid2 = NA, uid = NA)
+  cmod1 <- lm(y ~ x, cmod_data1)
+  cmod2 <- lm(y ~ x, cmod_data2)
+  des <- rct_design(z ~ unitid(cid1, cid2, uid), data = simdata)
+  mod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod1))
+  mod2 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod2))
+  
+  out1 <- .sanitize_uoas(mod1, cluster = c("cid1", "cid2"))
+  Q_uoas <- apply(simdata[, c("cid1", "cid2")], 1,
+                  function(...) paste(..., collapse = "_"))
+  expect_warning(out2 <- .sanitize_uoas(mod2, cluster = c("cid1", "cid2")),
+                 "Some or all rows")
+  
+  expect_equal(length(out1), nrow(simdata))
+  expect_equal(length(out2), nrow(simdata) + 30)
+  
+  expect_equal(names(out1)[1:50], Q_uoas)
+  expect_equal(names(out2)[1:50], Q_uoas)
+  
+  expect_equal(sum(out1 == "Q_C"), nrow(simdata))
+  expect_equal(sum(out2 == "Q_C"), 0)
+  
+  expect_equal(sum(out1 == "C"), 0)
+  expect_equal(sum(out2 == "C"), 30)
+  
+  expect_equal(sum(out1 == "Q"), 0)
+  expect_equal(sum(out2 == "Q"), nrow(simdata))
+})
+
+test_that(paste(".sanitize_uoas generates correct sample assignments with partial",
+                "overlap of Q and C"), {
+  data(simdata)
+  set.seed(300)
+  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "cid1" = NA, "cid2" = NA)
+  cmod_data <- rbind(simdata[, colnames(C_not_Q)], C_not_Q)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expect_warning(out <- .sanitize_uoas(dmod), "Some or all rows")
+  expect_equal(sum(out == "Q_C"), nrow(simdata))
+  expect_equal(sum(out == "C"), 20)
+  expect_equal(sum(out == "Q"), 0)
+})
+
+test_that(paste(".sanitize_uoas generates correct sample assignments with no",
+                "overlap of Q and C"), {
+  data(simdata)
+  set.seed(300)
+  cmod_data <- data.frame("y" = rnorm(10), "x" = rnorm(10), "cid1" = NA, "cid2" = NA)
+
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+  
+  expect_warning(out <- .sanitize_uoas(dmod), "Some or all rows")
+  expect_equal(sum(out == "Q"), nrow(simdata))
+  expect_equal(sum(out == "C"), 10)
+  expect_equal(sum(out == "Q_C"), 0)
+})
+
+test_that("sanitize_Q_uoas fails with invalid cluster argument", {
+  data(simdata)
+  mod <- lm(y ~ z, data = simdata)
+  expect_error(.sanitize_Q_uoas(mod, cluster = "not_uoas"),
+               "columns not_uoas in ITT effect model data")
+  
+  invalid_ids <- apply(simdata[, c("cid1", "cid2")], 1,
+                       function(...) paste(..., collapse = "_"))
+  expect_error(.sanitize_Q_uoas(mod, cluster = invalid_ids),
+               ", 5_2 in ITT effect model data")
+})
+
+test_that("sanitize_Q_uoas succeeds with valid cluster argument", {
+  data(simdata)
+
+  simdata$uid <- seq_len(nrow(simdata))
+  cmod <- lm(y ~ z, data = simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2, uid), simdata)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
+  out <- .sanitize_Q_uoas(dmod, cluster = c("cid1", "cid2"))
+
+  expected_out <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                        function(...) paste(..., collapse = "_"))
+  expect_equal(out, expected_out)
+})
+
+test_that("checking proper errors in conversion from lm to DA", {
+  data(simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  expect_error(as.lmitt(lm(y ~ x, data = simdata), design = des),
+               "aliases are not found")
+
+
+  # Take in either Design or WeightedDesign
+  mod1 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     des,
+                                     FALSE,
+                                     TRUE,
+                                     "a")
+  mod2 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     ate(des, data = simdata),
+                                     FALSE,
+                                     TRUE,
+                                     "a")
+  expect_identical(mod1@Design, mod2@Design)
+
+  expect_error(flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+                                     1,
+                                     FALSE,
+                                     TRUE,
+                                     "a"), "must be a")
+
+
 })

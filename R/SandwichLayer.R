@@ -217,3 +217,101 @@ as.SandwichLayer <- function(x, design, by = NULL) {
              keys = keys,
              Design = design))
 }
+
+#' Generate a list of sanitized units of assignment from C
+#' @param x a \code{SandwichLayer} object.
+#' @param cluster Defaults to NULL, which means unit of assignment columns
+#' indicated in the Design will be used to generate clustered covariance estimates.
+#' A non-NULL argument to `cluster` specifies a string or character vector of
+#' column names appearing in both the covariance adjustment and quasiexperimental
+#' samples that should be used for clustering covariance estimates.
+#' @param verbose Boolean defaulting to TRUE, which will produce rather than
+#' swallow any warnings about the coding of the units of assignment in the
+#' covariance adjustment model data
+#' @param ... arguments passed to methods
+#' @return A vector of length \eqn{|C|}, where C is the covariance adjustment sample
+#' @keywords internal
+.sanitize_C_uoas <- function(x, cluster = NULL, verbose = TRUE, ...) {
+  if (is.null(cluster)) {
+    cluster <- var_names(x@Design, "u")
+  }
+
+  C_uoas <- tryCatch(
+    x@keys[, cluster, drop = FALSE],
+    error = function(e) {
+      tryCatch({
+        camod <- x@fitted_covariance_model
+        stats::expand.model.frame(camod, cluster, na.expand = TRUE)[cluster]
+      },
+      error = function(e) {
+        camod <- x@fitted_covariance_model
+        data <- eval(camod$call$data, envir = environment(formula(camod)))
+        stop(paste("The columns",
+                   paste(setdiff(cluster, colnames(data)), collapse = ", "),
+                   "could not be found in either the SandwichLayer's `keys`",
+                   "slot or the covariance adjustment model dataset"),
+             call. = FALSE)
+      })
+    })
+  
+  check_nas_funcs <- list(all = all, any_not_all = function(row) any(row) & !all(row))
+  nas <- lapply(check_nas_funcs,
+                function(f) which(apply(is.na(C_uoas), 1, f)))
+  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
+  
+  # warn if verbose
+  if (verbose) {
+    if (length(nas[["any_not_all"]]) > 0) {
+      warning(paste("Some rows in the covariance adjustment model dataset have",
+                    "NA's for some but not all clustering columns. Rows sharing",
+                    "the same non-NA cluster ID's will be clustered together.",
+                    "If this is not intended, provide unique non-NA cluster ID's",
+                    "for these rows."))
+    }
+    if (length(nas[["all"]]) > 0) {
+      warning(paste("Some or all rows in the covariance adjustment model dataset",
+                    "are found to have NA's for the given clustering columns.",
+                    "This is taken to mean these observations should be treated",
+                    "as IID. To avoid this warning, provide unique non-NA cluster",
+                    "ID's for each row."))
+    }
+  }
+  
+  # function for creating new uoa ID's for observations in C but not Q: create
+  # "_"-separated randomly generated collections of 4 upper- or lower-case letters,
+  # with the number of separations given by the number of uoa columns - 1. This
+  # will maintain structure if future strsplit calls are desired
+  create_new_ids <- function(n_ids, n_uoa_cols) {
+    new_ids <- split(sample(c(letters, LETTERS), n_ids * n_uoa_cols * 4, replace = TRUE),
+                     seq_len(n_ids))
+    mapply(
+      function(id) {
+        split_ids <- tapply(id, rep(seq_len(n_uoa_cols), each = 4),
+                            function(...) paste(..., collapse = ""))
+        paste(split_ids, collapse = "_")
+      },
+      new_ids,
+      USE.NAMES = FALSE
+    )
+  }
+
+  # since we use available unit of assignment information, we make sure to assign
+  # new uoa ID's to all observations that fall in the same uoa
+  if (length(nas$any_not_all) > 0) {
+    replace_ids <- unique(C_uoas[nas$any_not_all])
+    n_uoa_cols <- length(cluster)
+    new_ids <- create_new_ids(length(replace_ids), n_uoa_cols)
+    names(new_ids) <- replace_ids
+    C_uoas[nas$any_not_all] <- new_ids[C_uoas[nas$any_not_all]]
+  }
+  # for observations with no unit of assignment information, we create unique uoa
+  # ID's
+  if (length(nas$all) > 0) {
+    n_replace_ids <- length(nas$all)
+    n_uoa_cols <- length(cluster)
+    new_ids <- create_new_ids(n_replace_ids, n_uoa_cols)
+    C_uoas[nas$all] <- new_ids
+  }
+
+  return(C_uoas)
+}
