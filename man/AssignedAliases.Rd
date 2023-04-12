@@ -46,4 +46,7 @@ treatment variable, and the binary comparison of interest is captured in
 \code{lm(y ~ assigned(), weights = ate(des), ...)}, \code{assigned()} will
 generate the appropriate binary variable to allow estimation of treatment
 effects.
+
+If called outside of a model call and without a \code{data} argument, this
+will extract the treatment from the \code{design}.
 }

@@ -15,6 +15,9 @@
 ##' generate the appropriate binary variable to allow estimation of treatment
 ##' effects.
 ##'
+##' If called outside of a model call and without a \code{data} argument, this
+##' will extract the treatment from the \code{design}.
+##'
 ##' @title Obtain Treatment from Design
 ##' @param design Optional \code{Design}. If the \code{Design} can't be
 ##'   identified in the model (usually because neither weights (\code{ate()} or
@@ -36,7 +39,13 @@ assigned <- function(design = NULL, data = NULL) {
                                       collapse = "+")))
 
   if (is.null(data)) {
-    data <- .get_data_from_model("assigned", form)
+    suppressWarnings(data <- try(.get_data_from_model("assigned", form),
+                                 silent = TRUE))
+    if (is(data, "try-error")) {
+      warning(paste("`data` cannot be found. Extracting treatment",
+                    "from `design` instead."))
+      return(treatment(design)[, 1])
+    }
   }
 
   # Extract treatment and unitofassignment variables from the Design

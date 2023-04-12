@@ -63,3 +63,13 @@ test_that("aliases", {
   expect_true(all(coef(mod1) == coef(mod3)))
   expect_true(all(coef(mod1) == coef(mod4)))
 })
+
+test_that("no data argument is equivalent to treatment() #88", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+
+  expect_warning(a1 <- assigned(des), "Extracting treatment")
+  a2 <- assigned(des, simdata)
+  expect_identical(a1, treatment(des)[, 1])
+  expect_true(length(a2) > length(a1))
+})
