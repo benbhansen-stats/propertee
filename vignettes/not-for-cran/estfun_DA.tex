@@ -10,10 +10,6 @@
 
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
-<<<<<<< HEAD
-\newcommand{\owt}[1][z_i]{\ensuremath{w_{i[#1]}}}
-=======
->>>>>>> origin/main
 \usepackage{natbib}
 \usepackage{bibentry}
 \bibliographystyle{plain}
@@ -59,19 +55,6 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
          \label{eq:5}
          \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =\\
          \left( \begin{array}{c}
-<<<<<<< HEAD
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[0] [Y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \rho_{0}]\indicator{z_{i}=0}\\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[1] [Y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \rho_{1}]\indicator{z_{i}=1}\\
-                  \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[k] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{k}]\indicator{z_{i}=k}\\
-                \end{array}\right)
-\end{equation}
-where $Y_{i}[j]$ represents $i$'s potential outcome following
-assignment to condition $i$; $\owt[j]$ represents the product of 1, any user-provided weight attaching to observation unit $i$, and, as requested by the user, odds- or inverse probability-based weights attaching to $i$'s assignment unit $[i]$ under assignment $j$; and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
-=======
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{z_{i}=0}\\
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[Y_{i}[1] - g(\vec{x}_{i}\beta)-
@@ -83,7 +66,6 @@ assignment to condition $i$; $\owt[j]$ represents the product of 1, any user-pro
 \end{equation}
 where $Y_{i}[j]$ represents $i$'s potential outcome following
 assignment to condition $i$ and $\tau_{j} = \rho_{j}-\rho_{0}$, $j=1,
->>>>>>> origin/main
 \ldots, k$. I say ``for now'' because \eqref{eq:14} will present a
 $\psi(\cdot)$ with equivalent solutions that is better aligned with
 \texttt{lm()}'s default treatment effect parameterizations and their
@@ -93,14 +75,6 @@ inference we would have
 \begin{equation*}
            \psi(\tilde{\mathbf{Y}}_{i}; \rho, \beta) =
          \left( \begin{array}{c}
-<<<<<<< HEAD
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[0][y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \rho_{0}]\indicator{Z_{i}=0}\\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \rho_{1}]\indicator{Z_{i}=1}\\
-                  \vdots \\
-           \indicator{i \in \bigcup \mathcal{Q}}\owt[k][y_{i}[k] - g(\vec{x}_{i}\beta)-
-=======
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \rho_{0}]\indicator{Z_{i}=0}\\
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[1] - g(\vec{x}_{i}\beta)-
@@ -108,7 +82,6 @@ inference we would have
                   \vdots \\
 
            \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}[k] - g(\vec{x}_{i}\beta)-
->>>>>>> origin/main
                   \rho_{k}]\indicator{Z_{i}=k}\\                  
                 \end{array}\right).
 \end{equation*}
@@ -455,10 +428,6 @@ would likely be approximate equality here, noting that in that setting
 $\hat{A}_{21}(\beta_{0})$ and $\hat{A}_{11}(\beta_{0})$ needn't
 coincide with ${A}_{21}(\beta_{0})$ and ${A}_{11}(\beta_{0})$, respectively.
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
@@ -481,11 +450,7 @@ stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.    Our estimati
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
   \indicator{i \in \bigcup \mathcal{Q}} \times \\
-<<<<<<< HEAD
-  \owt{}
-=======
   w_{i\mathcal{Q}}
->>>>>>> origin/main
   \left(
     \begin{array}{l}
            [y_{i}[0] - g(\vec{x}_{i}\beta)-
@@ -510,11 +475,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
   \tilde{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) &=
-<<<<<<< HEAD
-                                                 \indicator{i \in \bigcup \mathcal{Q}} \owt{} \times \nonumber \\
-=======
                                                  \indicator{i \in \bigcup \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
->>>>>>> origin/main
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -528,11 +489,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
   \right)%
   \right) ;\nonumber \\
   \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) &=
-<<<<<<< HEAD
-\indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
-=======
 \indicator{i \in \bigcup \mathcal{Q}}w_{i\mathcal{Q}} \nonumber \\
->>>>>>> origin/main
 &\left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -574,33 +531,17 @@ an average of diagonal matrices $\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
 b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
 $r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
-<<<<<<< HEAD
-  \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$, each equal to $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
-\mathbf{p}, \beta, \tau)$ in the design-based scenario if not the
-model-based scenario.  In either scenario, the average $A_{\tau,
-  \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$ is estimable by corresponding means of
-random variables $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
-\mathbf{p}, \beta, \tau)$ is the product of the $k \times k$
-=======
   \mathbf{p}}$ averages $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
 \mathbf{p}, \beta, \tau)$, equal to $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
 \mathbf{p}, \beta, \tau)$ in the design-based scenario and in the
 model-based scenario estimable by $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
 \mathbf{p}, \beta, \tau)$, which is the product of the $k \times k$
->>>>>>> origin/main
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
 consisting of the opposite of the $k\times k$ identity at the
 $b_{i}$th block and the 0 matrix for the $r$th $k \times k$ block whenever
 $r\neq b_{i}$.  In particular, the product
-<<<<<<< HEAD
-$A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}'$ at right
-=======
 $A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}$ at right
->>>>>>> origin/main
 of \eqref{eq:12} turns out the same under model- and design-based
 interpretations of the expected value operation.
 
@@ -611,24 +552,12 @@ $m$ parameters and complicating the $\tilde{\phi}$ definition accordingly.
 
 \subsection{Notes regarding design-based variance calculations}
 
-<<<<<<< HEAD
-\st{Potentially helpful} probably unhelpful observation:
-% I updated these expressions to use random weights without
-% stopping to consider whether the original idea properly allowed
-% for the weights to depend on $Z_{i}$.
-design-based covariances satisfy
-=======
 Potentially helpful observation: design-based covariances satisfy
->>>>>>> origin/main
 \begin{align*}
   \operatorname{Cov}[&n^{-1}\sum_{i}\upsilon(\tilde{\mathbf{Y}}_{i};
   \mathbf{p}, \beta, \tau)] \\
                      &=   \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-<<<<<<< HEAD
-                       \owt[Z_{i}]
-=======
                        w_{i\mathcal{Q}}
->>>>>>> origin/main
 \left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -641,13 +570,8 @@ Potentially helpful observation: design-based covariances satisfy
                                                \tau_{k}](\indicator{Z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
-<<<<<<< HEAD
-                     &\stackrel{\text{sometimes}}{=}  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-\owt[Z_{i}]
-=======
                      &=  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
 w_{i\mathcal{Q}}
->>>>>>> origin/main
 \left(
                                              \begin{array}{l}                                               
            [y_{i}[1]
@@ -668,28 +592,13 @@ design-based perspective, as are the residual-like%
   g(\vec{x}_{i}\beta) - \tau_{j} - \sum_{r=1}^{s}\alpha_{r}\indicator{b_{i}=r}$, not $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$.}
 quantities
 $y_{i}[j] - g(\vec{x}_{i}\beta) - \tau_{j}$ that they get
-<<<<<<< HEAD
-multiplied by.   If the weights are flat, or inverse probability
-weights, or inverse assignment odds weights, then weighted sums of
-these quantities will be design constants.  Unfortunately, however, if
-the weights also involve weighting factors arising from the data,
-e.g. cluster sizes, then the corresponding weighted sums need no
-longer be design constants.
-
-Similar considerations yield
-=======
 multiplied by.  Similar considerations yield
->>>>>>> origin/main
 \begin{align}
 \operatorname{Cov}_{d}[
   &n^{-1}\sum_{i}\tilde{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
-<<<<<<< HEAD
-     \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
-=======
      \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
->>>>>>> origin/main
 &  \operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -702,15 +611,9 @@ multiplied by.  Similar considerations yield
   \right)%
   \right)
   \Biggr] \nonumber \\ 
-<<<<<<< HEAD
-  \stackrel{\text{sometimes}}{=}&\operatorname{Cov}_{d}[n^{-1}
-                                                 \sum_{i \in \bigcup
-     \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
-=======
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
      \mathcal{Q}} w_{i\mathcal{Q}} \times \nonumber \\
->>>>>>> origin/main
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
@@ -786,15 +689,9 @@ We can express HC0 type estimators with matrix rather than summation notation, u
   post-mtg note}
 There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta)$  and 
        $n_{\mathcal{Q}}^{-1}\sum_{i\in
-<<<<<<< HEAD
-         \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$,
-       $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta) =
-       \owt{}[y_{i} - \tau(z_{i} - \bar{z}) -
-=======
          \mathcal{Q}}\psi(\tilde{\mathbf{Y}}_{i}; \tau, \beta)$,
        $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta) =
        w_{i\mathcal{Q}}[y_{i} - \tau(z_{i} - \bar{z}) -
->>>>>>> origin/main
        g(\vec{x}_{i}\beta)](z_{i} - \bar{z})$ where $\bar{z}$ solves
        \begin{equation}
          \label{eq:4}
@@ -816,20 +713,12 @@ We seek to represent $\sum_{i\in
        \begin{align}
          \label{eq:1}
          \sum_{i \in \mathcal{Q}}\psi_{0i} =& \sum_{i \in
-<<<<<<< HEAD
-                                             \mathcal{Q}}\owt{}[y_{i}
-=======
                                              \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}
->>>>>>> origin/main
                                              - g(\vec{x}_{i}\beta) -
                                              \rho_{0}](1-z_{i})\\
          \label{eq:2}
          \sum_{i \in \mathcal{Q}}\psi_{1i} =& \sum_{i \in
-<<<<<<< HEAD
-                                             \mathcal{Q}}\owt{}[y_{i}
-=======
                                              \mathcal{Q}}w_{i\mathcal{Q}}[y_{i}
->>>>>>> origin/main
                                              - g(\vec{x}_{i}\beta) -
                                               \rho_{1}]z_{i}\\
          \label{eq:3}
