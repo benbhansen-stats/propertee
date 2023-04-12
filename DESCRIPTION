@@ -7,12 +7,12 @@ Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
              person("Josh", "Wasserman", role = "aut",
                     email = "jwass@umich.edu"),
              person("Mark", "Fredrickson", role = "ctb",
-	            email = "mark.m.fredrickson@gmail.com"),
+                    email = "mark.m.fredrickson@gmail.com"),
              person("Xinhe", "Wang", role = "ctb",
                     email = "xinhew@umich.edu"),
              person("Ben", "Hansen", role = "aut",
                     email = "ben.hansen@umich.edu"))
-License: MIT
+License: MIT + file LICENSE
 License_is_FOSS: yes
 License_restricts_use: no
 Encoding: UTF-8
