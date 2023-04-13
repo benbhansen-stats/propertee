@@ -75,7 +75,7 @@ setValidity("Design", function(object) {
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
 ##' @return A new Design object
-##' @importFrom stats formula
+##' @importFrom stats formula complete.cases
 ##' @keywords internal
 .new_Design <- function(form,
                        data,
@@ -130,7 +130,7 @@ setValidity("Design", function(object) {
   index <- cd[["index"]]
 
   # #94 handling NA's in non-treatment columns
-  completecases <- complete.cases(m[, index != "t"])
+  completecases <- stats::complete.cases(m[, index != "t"])
   if (!all(completecases)) {
     if (na.fail) {
       stop(paste("Missing values cannot be found in the variables creating",
