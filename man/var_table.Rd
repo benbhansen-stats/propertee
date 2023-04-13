@@ -31,11 +31,11 @@ in the output matrix.
 When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
 rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
 \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
-rows (treatment and cluster/unitid/unif of assignment), with additional rows
+rows (treatment and cluster/unitid/unit of assignment), with additional rows
 for blocks and forcing if included in the \code{Design}.
 }
 \examples{
-des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 var_table(des)
 var_table(des, compress = FALSE)
 }
