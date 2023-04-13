@@ -72,6 +72,8 @@ setValidity("Design", function(object) {
 ##' @param subset Any subset information
 ##' @param call The call generating the \code{Design}.
 ##' @param dichotomy If present, the dichotomization formula
+##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
+##'   (\code{FALSE})?
 ##' @return A new Design object
 ##' @importFrom stats formula
 ##' @keywords internal
@@ -80,7 +82,8 @@ setValidity("Design", function(object) {
                        type,
                        subset = NULL,
                        call = NULL,
-                       dichotomy = stats::formula()) {
+                       dichotomy = stats::formula(),
+                       na.fail = TRUE) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -125,6 +128,22 @@ setValidity("Design", function(object) {
   cd <- .rename_model_frame_columns(m)
   m <- cd[["renamedModelFrame"]]
   index <- cd[["index"]]
+
+  # #94 handling NA's in non-treatment columns
+  completecases <- complete.cases(m[, index != "t"])
+  if (!all(completecases)) {
+    if (na.fail) {
+      stop(paste("Missing values cannot be found in the variables creating",
+                 "the `Design` (except treatment). Remove them manually,",
+                 "or pass `na.fail = FALSE` to remove them automatically."))
+    } else {
+      m <- m[completecases, ]
+    }
+  }
+
+
+
+
 
   m_collapse <- unique(m)
 
@@ -272,10 +291,19 @@ setValidity("Design", function(object) {
 ##'   object
 ##' @param dichotomy optionally, a formula defining the dichotomy of the
 ##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
-##' @return a Design object of the requested type for use in further analysis
+##' @param na.fail If \code{TRUE} (default), any missing data found in the
+##'   variables specified in \code{formula} (excluding treatment) will trigger
+##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
+##'   creation of the \code{Design}
+##' @return a \code{Design} object of the requested type for use in further
+##'   analysis
 ##' @export
 ##' @rdname Design_objects
-rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
+rct_design <- function(formula,
+                       data,
+                       subset = NULL,
+                       dichotomy = NULL,
+                       na.fail = TRUE) {
   .check_design_formula(formula)
 
   return(.new_Design(form = formula,
@@ -283,12 +311,17 @@ rct_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
                      type = "RCT",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy))
+                     dichotomy = dichotomy,
+                     na.fail = na.fail))
 }
 
 ##' @export
 ##' @rdname Design_objects
-rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
+rd_design <- function(formula,
+                      data,
+                      subset = NULL,
+                      dichotomy = NULL,
+                      na.fail = TRUE) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
   return(.new_Design(form = formula,
@@ -296,12 +329,17 @@ rd_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
                      type = "RD",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy))
+                     dichotomy = dichotomy,
+                     na.fail = na.fail))
 }
 
 ##' @export
 ##' @rdname Design_objects
-obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
+obs_design <- function(formula,
+                       data,
+                       subset = NULL,
+                       dichotomy = NULL,
+                       na.fail = TRUE) {
   .check_design_formula(formula)
 
   return(.new_Design(form = formula,
@@ -309,7 +347,8 @@ obs_design <- function(formula, data, subset = NULL, dichotomy = NULL) {
                      type = "Obs",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy))
+                     dichotomy = dichotomy,
+                     na.fail = na.fail))
 }
 
 ##' @title Show a \code{Design}
