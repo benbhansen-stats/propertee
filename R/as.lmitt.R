@@ -91,13 +91,23 @@ as.DirectAdjusted <- as.lmitt
   design_cov_adj <- tryCatch(.get_cov_adj(lm_model)@Design,
                              error = function(e) NULL)
 
+  designs <- list(design, design_weights, design_cov_adj)
+  designs <- designs[!vapply(designs, is.null, logical(1))]
+  if (lmitt_fitted) {
+    # If we fitted this via `lmitt.formula`, strip off dichotomies before
+    # checking for equality. See #91.
+    designs <- lapply(designs, function(x) {
+      x@dichotomy <- stats::formula(env = globalenv())
+      x@call$dichotomy <- NULL
+      return(x)
+    })
+  }
+
   # The list contains all designs possible found (one passed in, and one in each
   # of weights and cov_adj). Passing `unique` removes any duplicates (since
   # duplicates are OK).
-  unique_designs <- unique(list(design, design_weights, design_cov_adj))
-  # Drop any NULL designs
-  unique_designs <- unique_designs[!vapply(unique_designs,
-                                           is.null, logical(1))]
+  unique_designs <- unique(designs)
+
   # At this point, if the length of `unique_designs` is 1, we're done. More than
   # one is an error.
   if (length(unique_designs) == 1) {

@@ -249,7 +249,24 @@ test_that("User can pass WeightedDesign", {
 
 })
 
+test_that("#82 Informative error if design in weight/offset but not lmitt", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  expect_error(lmitt(y ~ 1, data = simdata, weights = ate(des)),
+               "into the weight function")
+
+  cmod <- lm(y ~ x, data = simdata)
+  expect_error(lmitt(y ~ 1, data = simdata, offset = cov_adj(cmod, design = des)),
+               "into the offset function")
+
+})
+
 options(save_options)
+#### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
+# This test below should NOT have `options()$flexida_message_on_unused_blocks`
+# step to FALSE. So it needs to sty below the restoration of options line above.
+# Other tests should probably go above the restoration of options line.
 
 test_that("Message if design has block info but isn't used in lmitt", {
   data(simdata)
@@ -269,3 +286,5 @@ test_that("Message if design has block info but isn't used in lmitt", {
   expect_silent(x <- lmitt(y ~ 1, data = simdata, weights = ett()*3, design = des))
 
 })
+
+### READ COMMENT ABOUT LAST TEST!

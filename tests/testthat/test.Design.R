@@ -532,3 +532,43 @@ test_that("variable_concordance", {
   }))
 
 })
+
+test_that("NA's in data to create Design", {
+  data(simdata)
+  sd2 <- simdata
+  sd2$cid1[1] <- NA
+
+  expect_error(obs_design(z ~ unitid(cid1, cid2), data = sd2),
+               "Missing values cannot be found")
+
+  des1 <- obs_design(z ~ unitid(cid1, cid2), data = simdata)
+  des2 <- obs_design(z ~ unitid(cid1, cid2), data = sd2, na.fail = FALSE)
+
+  des1@call <- call("c")
+  des2@call <- call("c")
+
+  expect_identical(des1, des2)
+
+  sd2 <- simdata
+  sd2$bid <- NA
+
+  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2))
+  expect_error(obs_design(z ~ unitid(cid1, cid2) + block(bid), data = sd2),
+               "Missing values cannot be found")
+
+  # Shouldn't affect treatment
+  sd2 <- simdata
+  sd2$z[1:10] <- NA
+  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2,
+                                  na.fail = TRUE))
+  expect_equal(nrow(des@structure), 10)
+  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2,
+                                  na.fail = FALSE))
+  expect_equal(nrow(des@structure), 10)
+
+  sd2 <- simdata
+  sd2$cid1[1:4] <- NA
+  des <- obs_design(z ~ unitid(cid1, cid2), data = sd2, na.fail = FALSE)
+  expect_equal(nrow(des@structure), 9)
+
+})

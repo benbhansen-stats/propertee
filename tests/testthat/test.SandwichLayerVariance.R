@@ -612,14 +612,6 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
                "cid3 are missing from the ITT effect model dataset")
   expect_error(flexida:::.get_b22(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
-
-  simdata$cid3 <- NA_integer_
-  des <- rct_design(z ~ cluster(cid1, cid2, cid3), data = simdata)
-  m <- as.lmitt(
-    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
-  )
-  expect_error(flexida:::.get_b22(m, cluster = "cid3"),
-               "cannot handle NAs")
 })
 
 test_that(".get_b22 produces correct estimates with valid custom cluster argument", {

@@ -14,7 +14,7 @@ The \code{data.frame} with function calls removed
 }
 \description{
 After calling \code{model.frame()} on the formula input to
-\code{.new_Design()}, the names of the columns will include functino names,
-e.g. "cluster(clustvar)". This function strips all these.
+\code{.new_Design()}, the names of the columns will include function names,
+e.g. "block(blockvar)". This function strips all these.
 }
 \keyword{internal}

@@ -106,34 +106,36 @@ lmitt.formula <- function(obj,
 
   # First, make sure we have a valid `design=` - if given a formula, make a new
   # `Design`, otherwise ensure `design=` is `Design` class.
-  if (inherits(design, "formula")) {
-    # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
-    # must create Design manually.
-    if (!is.null(attr(terms(design, specials = "forcing"),
-                      "specials")$forcing)) {
-      des_call <- "rd_design"
-    } else {
-      des_call <- "obs_design"
-    }
+  if (!missing(design)) {
+    if (inherits(design, "formula")) {
+      # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
+      # must create Design manually.
+      if (!is.null(attr(terms(design, specials = "forcing"),
+                        "specials")$forcing)) {
+        des_call <- "rd_design"
+      } else {
+        des_call <- "obs_design"
+      }
 
-    # Build new call. All calls must include obj and data
-    new_d_call <- paste0(des_call, "(",
-                         "formula = ", deparse(design),
-                         ", data = ", deparse(lmitt.call$data))
-    # If user passed dichotomy, include it. We do this so the
-    # `design@call` will be in agreement.
-    if (!is.null(lmitt.call$dichotomy)) {
-      new_d_call <- paste0(new_d_call, ", dichotomy = ",
-                           deparse(lmitt.call$dichotomy))
+      # Build new call. All calls must include obj and data
+      new_d_call <- paste0(des_call, "(",
+                           "formula = ", deparse(design),
+                           ", data = ", deparse(lmitt.call$data))
+      # If user passed dichotomy, include it. We do this so the
+      # `design@call` will be in agreement.
+      if (!is.null(lmitt.call$dichotomy)) {
+        new_d_call <- paste0(new_d_call, ", dichotomy = ",
+                             deparse(lmitt.call$dichotomy))
+      }
+      new_d_call <- paste0(new_d_call, ")")
+      # str2lang converts character into call
+      design <- eval(str2lang(new_d_call))
+    } else if (is(design, "WeightedDesign")) {
+      design <- design@Design
+    } else if (!is(design, "Design")) {
+      stop(paste("`design=` must be an object created by `*_design`",
+                 "function, or a formula specifying such a design"))
     }
-    new_d_call <- paste0(new_d_call, ")")
-    # str2lang converts character into call
-    design <- eval(str2lang(new_d_call))
-  } else if (is(design, "WeightedDesign")) {
-    design <- design@Design
-  } else if (!is(design, "Design")) {
-    stop(paste("`design=` must be an object created by `*_design`",
-               "function, or a formula specifying such a design"))
   }
 
   # Extract formula bits
@@ -167,6 +169,47 @@ lmitt.formula <- function(obj,
   lm.call$weights <- eval.parent(lm.call$weights)
   lm.call$offset <- eval.parent(lm.call$offset)
 
+
+  # Ensure same design is used in weights and offset, if they're there
+  wtdes <- try(lm.call$weights@Design, silent = TRUE)
+  ofdes <- try(lm.call$offset@Design, silent = TRUE)
+
+  if (missing(design) & is(wtdes, "Design")) {
+    stop(paste("You've passed a `Design` into the weight function (`ate()`",
+                "or `ett()`) but not the `lmitt()` call. Please pass the",
+                "`Design` into the `design=` argument of `lmitt()`. It is",
+                "not needed in `ate()` or `ett()` when passed as the",
+                "`weights=` argument to `lmitt()`."))
+  }
+
+  if (missing(design) & is(ofdes, "Design")) {
+    stop(paste("You've passed a `Design` into the offset function",
+                " (`cov_adj()`) but not the `lmitt()` call. Please pass the",
+                "`Design` into the `design=` argument of `lmitt()`. It is",
+                "not needed in `cov_adj()` when passed as the `offset=`",
+                "argument to `lmitt()`."))
+  }
+
+  if (is(wtdes, "Design")) {
+    wtdestmp <- wtdes
+    wtdestmp@dichotomy <- stats::formula(env = globalenv())
+    wtdestmp@call$dichotomy <- NULL
+    if (!identical(design, wtdestmp)) {
+      stop(paste("Multiple differing `Design` found (`design` argument to",
+                 " `lmitt` and `design` object inside the weights differ)."))
+    }
+  }
+
+  if (is(ofdes, "Design")) {
+    ofdestmp <- ofdes
+    ofdestmp@dichotomy <- stats::formula(env = globalenv())
+    ofdestmp@call$dichotomy <- NULL
+    if (!identical(design, ofdestmp)) {
+      stop(paste("Multiple differing `Design` found (`design` argument to",
+                 " `lmitt` and `design` object inside the offset differ)."))
+    }
+  }
+
   if (!is(lm.call$weights, "WeightedDesign") & !absorb) {
     if ("b" %in% design@column_index) {
       if (options()$flexida_message_on_unused_blocks) {
@@ -177,25 +220,6 @@ lmitt.formula <- function(obj,
       }
     }
   }
-
-  # Ensure same design is used in weights and offset, if they're there
-  wtdes <- try(lm.call$weights@Design, silent = TRUE)
-  ofdes <- try(lm.call$offset@Design, silent = TRUE)
-
-  if (is(wtdes, "Design")) {
-    if (!identical(design, wtdes)) {
-      stop(paste("Multiple differing `Design` found (`design` argument to",
-                 " `lmitt` and `design` object inside the weights differ)."))
-    }
-  }
-
-  if (is(ofdes, "Design")) {
-    if (!identical(design, ofdes)) {
-      stop(paste("Multiple differing `Design` found (`design` argument to",
-                 " `lmitt` and `design` object inside the offset differ)."))
-    }
-  }
-
 
   # Evaluate model.frame
   mf.call <- lm.call

@@ -10,7 +10,8 @@
   type,
   subset = NULL,
   call = NULL,
-  dichotomy = stats::formula()
+  dichotomy = stats::formula(),
+  na.fail = TRUE
 )
 }
 \arguments{
@@ -26,6 +27,9 @@
 \item{call}{The call generating the \code{Design}.}
 
 \item{dichotomy}{If present, the dichotomization formula}
+
+\item{na.fail}{Should it error on NA's (\code{TRUE}) or remove them
+(\code{FALSE})?}
 }
 \value{
 A new Design object

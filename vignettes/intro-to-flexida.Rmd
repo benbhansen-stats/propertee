@@ -102,7 +102,7 @@ To define the `Design` in our example:
 
 ```{r}
 des <- obs_design(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
-                  data = STARdata)
+                  data = STARdata, na.fail = FALSE)
 summary(des)
 ```
 
@@ -262,7 +262,7 @@ so you can control this conversion and ensure it is appropriate.)
 ```{r}
 STARdata$stark <- as.character(STARdata$stark)
 des <- obs_design(stark ~ unit_of_assignment(studentid) + block(schoolidk),
-                  data = STARdata)
+                  data = STARdata, na.fail = FALSE)
 summary(des)
 lmitt(readk ~ 1, des, data = STARdata)
 ```

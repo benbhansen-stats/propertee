@@ -6,11 +6,11 @@
 \alias{obs_design}
 \title{Generates a \code{Design} object with the given specifications.}
 \usage{
-rct_design(formula, data, subset = NULL, dichotomy = NULL)
+rct_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 
-rd_design(formula, data, subset = NULL, dichotomy = NULL)
+rd_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 
-obs_design(formula, data, subset = NULL, dichotomy = NULL)
+obs_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 }
 \arguments{
 \item{formula}{defines the \code{Design} components}
@@ -22,9 +22,15 @@ object}
 
 \item{dichotomy}{optionally, a formula defining the dichotomy of the
 treatment variable if it isn't already 0/1 or \code{logical}. See details.}
+
+\item{na.fail}{If \code{TRUE} (default), any missing data found in the
+variables specified in \code{formula} (excluding treatment) will trigger
+an error. If \code{FALSE}, non-complete cases will be dropped before the
+creation of the \code{Design}}
 }
 \value{
-a Design object of the requested type for use in further analysis
+a \code{Design} object of the requested type for use in further
+analysis
 }
 \description{
 Generates a randomized control treatment Design (\code{rct_design()}), or an
