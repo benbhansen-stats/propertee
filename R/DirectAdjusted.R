@@ -89,55 +89,31 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' Note that this formulation requires a row for each observation used to fit
 ##' either the covariance adjustment model or the ITT effect model. The output
 ##' matrix is ordered such that the units used to fit the latter comprise the
-##' initial rows, and those used to fit the former follow. When there is overlap
-##' of the rows used to fit the two models, there is no guarantee this method
-##' aligns each observation's contributions. However, given clustering information
-##' in a \code{DirectAdjusted}'s \code{Design} object, the contributions can be
-##' aggregated such that the resulting sandwich variance estimates are correct.
+##' initial rows, and any additional observations used to fit the former are
+##' stacked below. When there is overlap of the rows used to fit the two models,
+##' a best attempt is made to align observations' contributions to the two fits.
+##' The `by` argument in `cov_adj()` can be used to specify a column unrelated to
+##' the design that will allow for exact alignment. If no `by` argument is
+##' provided, clustering information given in the \code{DirectAdjusted}'s
+##' \code{Design} object will be used to align rows at least in the same unit of
+##' assignment. Regardless of the ultiamte alignment--as well as the initial
+##' ordering of observations in the two dataframes--the resulting sandwich
+##' variance estimates will be the same.
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
-  ## If user has passed a custom `cluster` argument to use in `sandwich::meatCL`,
-  ## use it here, otherwise use the default unit of assignment columns from the
-  ## Design (validity of custom `cluster` argument will be checked in )
-  args <- list(...)
-  if (!inherits(cluster <- args$cluster, "character")) {
-    cluster <- var_names(x@Design, "u")
-  }
-
-  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
-  ## to extract estimating equations for ITT model
-  valid_classes <- c("glm", "lmrob", "svyglm", "lm")
-  base_class <- match(x@.S3Class, valid_classes)
-  if (all(is.na(base_class))) {
-    stop(paste("ITT effect model must have been fitted using a function from the",
-               "`flexida`, `stats`, `robustbase`, or `survey` package"))
-  }
-  psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x)
-
-  ## if ITT model offset doesn't contain info about covariance model, psi should
-  ## be the matrix of estimating equations returned
-  ca <- x$model$`(offset)`
-  if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
-    return(psi)
+  ## if ITT model offset doesn't contain info about covariance model, estimating
+  ## equations should be the ITT model estimating equations
+  if (is.null(x$model$`(offset)`) | !inherits(x$model$`(offset)`, "SandwichLayer")) {
+    return(.base_S3class_estfun(x))
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  cmod <- ca@fitted_covariance_model
-  phi <- estfun(cmod)
+  estmats <- .align_and_extend_estfuns(x, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
 
-  # add rows to estimating equations based on overlap of C and Q
-  uoas <- .sanitize_uoas(x, cluster, verbose = FALSE, ...)
-  if (any(uoas == "C")) {
-    psi <- rbind(psi, matrix(0, nrow = sum(uoas == "C"), ncol = ncol(psi)))
-  }
-  if (any(uoas == "Q")) {
-    phi <- rbind(matrix(0, nrow = sum(uoas == "Q"), ncol = ncol(phi)), phi)
-  }
-
   ## form matrix of estimating equations
-  mat <- psi - phi %*% a11_inv %*% t(a21)
+  mat <- estmats[["psi"]] - estmats[["phi"]] %*% a11_inv %*% t(a21)
 
   return(mat)
 }
@@ -146,7 +122,9 @@ estfun.DirectAdjusted <- function(x, ...) {
 ##' @param x a fitted \code{DirectAdjusted} object
 ##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
 ##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
-##' model estimating equations defined in our accompanying documentation.
+##' model estimating equations defined in our accompanying documentation (which
+##' defines a perhaps unintuitive scaling factor of \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
+##' for this matrix).
 ##' @exportS3Method
 bread.DirectAdjusted <- function(x) {
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
@@ -160,7 +138,7 @@ bread.DirectAdjusted <- function(x) {
   mm <- stats::model.matrix(x)
   # compute scaling factor
   nq <- nrow(mm)
-  nc_not_q <- sum(apply(is.na(ca@keys), 1, any))
+  nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
 
   out <- n * chol2inv(x$qr$qr)
@@ -169,13 +147,61 @@ bread.DirectAdjusted <- function(x) {
   return(out)
 }
 
+##' (Internal) Align the matrices of estimating equations from the ITT effect
+##' and covariance adjustment models
+##' @inheritParams estfun.DirectAdjusted
+##' @return list of two matrices, one being the aligned contributions to the
+##' estimating equations for the ITT effect model, and the other being the
+##' aligned contributions to the covariance adjustment model
+##' @keywords internal
+.align_and_extend_estfuns <- function(x, ...) {
+  if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
+    stop("`x` must be a fitted DirectAdjusted object with a SandwichLayer offset")
+  }
+
+  # get the original estimating equations
+  psi <- .base_S3class_estfun(x)
+  phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
+
+  # define the row ordering using .order_samples() and insert rows of 0's into
+  # the matrices where necessary while maintaining observation alignment
+  ids <- .order_samples(x, verbose = FALSE)
+  aligned_psi <- rbind(
+    psi[ids$Q_order, , drop = FALSE],
+    matrix(0, nrow = sum(!(names(ids$C_order) %in% names(ids$Q_order))), ncol = ncol(psi))
+  )
+  rownames(aligned_psi) <- NULL
+  aligned_phi <- matrix(0, nrow = nrow(aligned_psi), ncol = ncol(phi),
+                        dimnames = list(seq_len(nrow(aligned_psi)), colnames(phi)))
+  aligned_phi[which(!is.na(ids$C_order)),] <- phi[ids$C_order[!is.na(ids$C_order)], ]
+
+  return(list(psi = aligned_psi, phi = aligned_phi))
+}
+
+##' (Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
+##' object's based on its base S3 class
+##' @inheritParams estfun.DirectAdjusted
+##' @return S3 method
+##' @keywords internal
+.base_S3class_estfun <- function(x) {
+  ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
+  ## to extract estimating equations for ITT model
+  valid_classes <- c("glm", "lmrob", "svyglm", "lm")
+  base_class <- match(x@.S3Class, valid_classes)
+  if (all(is.na(base_class))) {
+    stop(paste("ITT effect model must have been fitted using a function from the",
+               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+  }
+  return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
+}
+
 #' Make unit of assignment ID's that align with the output of
 #' \code{estfun.DirectAdjusted}
 #' @details \code{estfun.DirectAdjusted} stacks the rows from Q, the
 #' quasiexperimental sample, atop the rows in C that don't overlap with Q, C
 #' being the covariance adjustment sample. Thus, the number of rows in the
-#' estimating equations matrix is equal to \eqn{|Q| + |C \ Q|}, so
-#' \code{.make_uoa_ids} returns a vector of that length with corresponding
+#' estimating equations matrix is equal to \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}},
+#' so \code{.make_uoa_ids} returns a vector of that length with corresponding
 #' units of assignment.
 #' @param x a fitted \code{DirectAdjusted} object
 #' @param cluster Defaults to NULL, which means unit of assignment columns
@@ -184,7 +210,7 @@ bread.DirectAdjusted <- function(x) {
 #' column names appearing in both the covariance adjustment and quasiexperimental
 #' samples that should be used for clustering covariance estimates.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|Q| + |C \ Q|}
+#' @return A vector of length \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
 #' @keywords internal
 .make_uoa_ids <- function(x, cluster = NULL, ...) {
   if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
@@ -200,13 +226,17 @@ bread.DirectAdjusted <- function(x) {
   
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
-    Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
+    Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
     return(factor(Q_uoas, levels = unique(Q_uoas)))
   }
   
-  uoas <- .sanitize_uoas(x, cluster, ...)
+  ids <- .order_samples(x, ...)
+  Q_uoas <- .sanitize_Q_ids(x, cluster, ...)[ids$Q_order]
+  C_uoas <- .sanitize_C_ids(x$model$`(offset)`, cluster, verbose = FALSE, ...)[
+    ids$C_order[!is.na(ids$C_order)]]
+  uoas <- c(Q_uoas, C_uoas[!(C_uoas %in% Q_uoas)])
   
-  return(factor(names(uoas), levels = unique(names(uoas))))
+  return(factor(uoas, levels = unique(uoas)))
 }
 
 #' Generate a vector of sanitized units of assignment from C and Q
@@ -229,56 +259,84 @@ bread.DirectAdjusted <- function(x) {
 #' appear in both. Names correspond to the unit of assignment ID.
 #' @param ... arguments passed to methods
 #' @keywords internal
-.sanitize_uoas <- function(x, cluster = NULL, ca = x$model$`(offset)`, verbose = TRUE, ...) {
-  if (!inherits(x, "DirectAdjusted") | !inherits(ca, "SandwichLayer")) {
+.order_samples <- function(x, verbose = TRUE, ...) {
+  if (!inherits(x, "DirectAdjusted") | !inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     stop(paste("x must be a DirectAdjusted object with a SandwichLayer offset or",
                "ca must be a SandwichLayer object to retrieve information about",
                "the covariance adjustment model"))
   }
-  if (is.null(cluster)) {
-    cluster <- var_names(x@Design, "u")
+  ## `keys` may have additional columns beyond "in_Q" and the uoa columns if a
+  ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If
+  ## there is, use those columns exclusively to merge.
+  by <- setdiff(colnames(ca@keys), "in_Q")
+  if (length(setdiff(by, var_names(x@Design, "u"))) > 0) {
+    by <- setdiff(by, var_names(x@Design, "u"))
   }
+
+  # first sort the ID's in Q
+  Q_ids <- .sanitize_Q_ids(x, by, sorted = TRUE, ...)
+  Q_ix <- Q_ids$ix
+  Q_ix <- stats::setNames(Q_ix, Q_ids$x)
   
-  Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
-  C_uoas <- .sanitize_C_uoas(ca, cluster, verbose = verbose, ...)
+  # find the overlap of C and Q and dedupe the indices returned by `match()`
+  C_ids <- .sanitize_C_ids(ca, by, verbose = verbose, sorted = TRUE, ...)
+  Q_C_ix <- match(Q_ids$x, C_ids$x)
+  for (start_loc in unique(Q_C_ix[!is.na(Q_C_ix)])) {
+    Q_C_ix[!is.na(Q_C_ix) & Q_C_ix == start_loc] <- start_loc - 1 + seq_along(
+      Q_C_ix[!is.na(Q_C_ix) & Q_C_ix == start_loc])
+  }
+  Q_C_ix <- C_ids$ix[Q_C_ix]
   
-  # return a vector of the sample the observations pertain to named by their
-  # unit of assignment
-  not_Q_idx <- !(C_uoas %in% unique(Q_uoas))
-  uoas <- vector("character", length(Q_uoas) + sum(not_Q_idx))
-  uoas[which(!(Q_uoas %in% unique(C_uoas)))] <- "Q"
-  uoas[which(Q_uoas %in% unique(C_uoas))] <- "Q_C"
-  uoas[which(uoas == "")] <- "C"
-  names(uoas) <- c(Q_uoas, C_uoas[not_Q_idx])
+  # append the remaining ID's in C if necessary
+  C_ix <- C_ids$ix[!(C_ids$x %in% Q_ids$x)]
+  C_ix <- c(Q_C_ix, C_ix)
+  C_ix <- stats::setNames(C_ix, c(Q_ids$x, C_ids$x[!(C_ids$x %in% Q_ids$x)]))
   
-  return(uoas)
+  return(list(Q_order = Q_ix, C_order = C_ix))
 }
 
 #' Generate a list of sanitized units of assignment from Q
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
+#' @param by Defaults to NULL, which means unit of assignment columns
+#' indicated in the Design will be used to align contributions to estimating
+#' equations or generate clustered covariance estimates. A non-NULL argument to
+#' `by` specifies a string or character vector of column names appearing in both
+#' the covariance adjustment and quasiexperimental sa,ples that should be used
+#' for clustering covariance estimates.
+#' @param sorted Defaults to FALSE, which provides the unit of assignment ID's
+#' in the same order as the model frame. If TRUE, the unit of assignment ID's
+#' will be sorted alphanumerically and returned as a list, as typical of the
+#' output of \code{sort.int} when `index.return = TRUE`.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|Q|}, where Q is the quasiexperimental sample
+#' @return If not `sorted`, a vector of length \eqn{|Q|}, where Q is the
+#' quasiexperimental sample. If `sorted`, a list whose elements are vectors of
+#' length \eqn{\{|i : i \in Q|\}}. The sorted output will be used to align observations'
+#' contributions to the ITT effect model with their contributions to the covariance
+#' adjustment model in \code{estfun.DirectAdjusted}.
 #' @keywords internal
-.sanitize_Q_uoas <- function(x, cluster = NULL, ...) {
-  if (is.null(cluster)) {
-    cluster <- var_names(x@Design, "u")
+.sanitize_Q_ids <- function(x, by = NULL, sorted = FALSE, ...) {
+  if (is.null(by)) {
+    by <- var_names(x@Design, "u")
   }
-  uoas <- tryCatch(
-    stats::expand.model.frame(x, cluster, na.expand = TRUE)[, cluster, drop = FALSE],
+  ids <- tryCatch(
+    stats::expand.model.frame(x, by, na.expand = TRUE)[, by, drop = FALSE],
     error = function(e) {
       mf <- eval(x$call$data, envir = environment(x))
-      missing_cols <- setdiff(cluster, colnames(mf))
+      missing_cols <- setdiff(by, colnames(mf))
       stop(paste("Could not find unit of assignment columns",
                  paste(missing_cols, collapse = ", "), "in ITT effect model data"),
            call. = FALSE)
     })
-  out <- apply(uoas, 1, function(...) paste(..., collapse = "_"))
+  out <- apply(ids, 1, function(...) paste(..., collapse = "_"))
   names(out) <- NULL
+  
+  if (sorted) {
+    if (suppressWarnings(any(is.na(as.numeric(out))))) {
+      out <- sort(out, index.return = TRUE)
+    } else {
+      out <- sort(as.numeric(out), index.return = TRUE)
+    }
+  }
 
   return(out)
 }

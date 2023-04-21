@@ -4,7 +4,7 @@
 \alias{as.SandwichLayer}
 \title{Convert a PreSandwichLayer to a SandwichLayer via a Design Object}
 \usage{
-as.SandwichLayer(x, design, by = NULL)
+as.SandwichLayer(x, design, by = NULL, Q_data = NULL)
 }
 \arguments{
 \item{x}{a \code{PreSandwichLayer} object.}
@@ -14,8 +14,15 @@ as.SandwichLayer(x, design, by = NULL)
 
 \item{by}{optional; named vector or list connecting names of cluster/unit of
 assignment variables in \code{design} to cluster/unit of assignment
-variables in \code{data}. Names represent variables in the Design; values
-represent variables in the data. Only needed if variable names differ.}
+variables in the covariance adjustment data. Names represent variables in the
+Design; values represent variables in the data. Only needed if variable names
+differ.}
+
+\item{Q_data}{optional; quasiexperimental dataframe to allow for merging
+to the covariance adjustment data via the \code{by} argument. If \code{by} is not NULL
+and \code{Q_data} is NULL, the function will search through the call stack to find
+the quasiexperimental data; if the search is unsuccessful, the function will
+use the \code{design} data to attempt to merge.}
 }
 \value{
 a \code{SandwichLayer} object

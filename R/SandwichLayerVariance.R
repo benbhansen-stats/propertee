@@ -125,8 +125,10 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
                "exist in both the ITT effect and covariance model datasets"))
   }
 
-  C_uoas <- apply(keys, 1, function(...) paste(..., collapse = "_"))
-  C_uoas_in_Q <- vapply(strsplit(C_uoas, "_"), function(x) all(x != "NA"), logical(1))
+  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
+  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
+  C_uoas <- apply(keys[, cluster_cols, drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+  C_uoas_in_Q <- C_uoas %in% unique(Q_uoas)
 
   message(paste(sum(C_uoas_in_Q),
                 "rows in the covariance adjustment model",
@@ -155,10 +157,7 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, C_uoas[C_uoas_in_Q], cmod_aggfun))
 
   # get rows from overlapping clusters in experimental data
-  Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
-  Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
-
-  Q_uoas_in_C <- Q_uoas %in% unique(C_uoas[!is.na(C_uoas)])
+  Q_uoas_in_C <- Q_uoas %in% unique(C_uoas[C_uoas %in% Q_uoas])
   damod_estfun <- sandwich::estfun(as(x, "lm"))[Q_uoas_in_C, , drop = FALSE]
   damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
   damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[Q_uoas_in_C], damod_aggfun))
@@ -333,11 +332,11 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
   # Get units of assignment for clustering
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- sl@keys
-    cluster_cols <- colnames(uoas)
+    keys <- sl@keys
+    cluster_cols <- setdiff(colnames(keys), "in_Q")
   } else if (inherits(dots$cluster, "character")) {
     cluster_cols <- dots$cluster
-    uoas <- tryCatch(
+    keys <- tryCatch(
       stats::expand.model.frame(cmod, cluster_cols)[, cluster_cols, drop = FALSE],
       error = function(e) {
         data <- eval(cmod$call$data,
@@ -349,7 +348,7 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
       })
 
     # check for NA's in the clustering columns
-    nas <- rowSums(is.na(uoas[, cluster_cols, drop = FALSE]))
+    nas <- rowSums(is.na(keys[, cluster_cols, drop = FALSE]))
     if (any(nas == length(cluster_cols))) {
       warning(paste("Some or all rows in the covariance adjustment model dataset",
                     "are found to have NA's for the given clustering columns.",
@@ -370,12 +369,10 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
   }
 
   # Replace NA's for rows not in the experimental design with a unique cluster ID
-  if (ncol(uoas) == 1) {
-    uoas <- uoas[, 1]
-  } else {
-    uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
-    uoas[vapply(strsplit(uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
-  }
+  uoas <- Reduce(function(...) paste(..., sep = "_"), keys[, cluster_cols, drop = FALSE])
+
+  any_nas <- apply(keys[, cluster_cols, drop = FALSE], 1, function(x) any(is.na(x)))
+  uoas[any_nas] <- NA_character_
 
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
@@ -395,7 +392,6 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
   }
   dots$cluster <- uoas
   dots$x <- cmod
-
   out <- do.call(sandwich::meatCL, dots) * nc
   return(out)
 }

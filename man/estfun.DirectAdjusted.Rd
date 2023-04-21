@@ -27,11 +27,16 @@ are given by typical sandwich calculations.\cr\cr
 Note that this formulation requires a row for each observation used to fit
 either the covariance adjustment model or the ITT effect model. The output
 matrix is ordered such that the units used to fit the latter comprise the
-initial rows, and those used to fit the former follow. When there is overlap
-of the rows used to fit the two models, there is no guarantee this method
-aligns each observation's contributions. However, given clustering information
-in a \code{DirectAdjusted}'s \code{Design} object, the contributions can be
-aggregated such that the resulting sandwich variance estimates are correct.
+initial rows, and any additional observations used to fit the former are
+stacked below. When there is overlap of the rows used to fit the two models,
+a best attempt is made to align observations' contributions to the two fits.
+The \code{by} argument in \code{cov_adj()} can be used to specify a column unrelated to
+the design that will allow for exact alignment. If no \code{by} argument is
+provided, clustering information given in the \code{DirectAdjusted}'s
+\code{Design} object will be used to align rows at least in the same unit of
+assignment. Regardless of the ultiamte alignment--as well as the initial
+ordering of observations in the two dataframes--the resulting sandwich
+variance estimates will be the same.
 }
 \description{
 Extract empirical estimating functions from a \code{DirectAdjusted} model fit

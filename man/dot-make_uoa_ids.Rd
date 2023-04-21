@@ -19,7 +19,7 @@ samples that should be used for clustering covariance estimates.}
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|Q| + |C \ Q|}
+A vector of length \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
 }
 \description{
 Make unit of assignment ID's that align with the output of
@@ -29,8 +29,8 @@ Make unit of assignment ID's that align with the output of
 \code{estfun.DirectAdjusted} stacks the rows from Q, the
 quasiexperimental sample, atop the rows in C that don't overlap with Q, C
 being the covariance adjustment sample. Thus, the number of rows in the
-estimating equations matrix is equal to \eqn{|Q| + |C \ Q|}, so
-\code{.make_uoa_ids} returns a vector of that length with corresponding
+estimating equations matrix is equal to \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}},
+so \code{.make_uoa_ids} returns a vector of that length with corresponding
 units of assignment.
 }
 \keyword{internal}
