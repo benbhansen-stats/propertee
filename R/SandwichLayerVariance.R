@@ -4,7 +4,7 @@ NULL
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "MB_CR0" for model-based SEs and "DB_CR0" for design-based SEs
+#' accepts "CR0", "MB0", or "HC0"
 #' @param cluster Defaults to NULL, which means unit of assignment columns
 #' indicated in the Design will be used to generate clustered covariance estimates.
 #' A non-NULL argument to `cluster` specifies a string or character vector of
@@ -15,13 +15,14 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("MB_CR0", "DB_CR0"), cluster = NULL, ...) {
+vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   type <- match.arg(type)
   
   var_func <- switch(
     type,
-    "MB_CR0" = .vcovMB_CR0,
-    "DB_CR0" = .vcovDB_CR0
+    "CR0" = .vcovMB_CR0,
+    "MB0" = .vcovMB_CR0,
+    "HC0" = .vcovMB_CR0
   )
   args <- list(...)
   args$x <- x
@@ -193,11 +194,7 @@ vcovDA <- function(x, type = c("MB_CR0", "DB_CR0"), cluster = NULL, ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-  # NOTE: summary.lm handles less than full rank design matrices by taking the first
-  # columns that meet column rank. We will want to be more specific given the
-  # effects we want to report
-  model.rank <- x$rank
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w))[1L:model.rank, 1L:model.rank])
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
 
   return(out)
 }

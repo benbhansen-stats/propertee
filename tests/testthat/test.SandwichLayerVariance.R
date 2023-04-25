@@ -13,8 +13,14 @@ test_that("vcovDA correctly dispatches", {
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  vmat <- suppressMessages(vcovDA(damod, type = "MB_CR0"))
-  expect_equal(vmat, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
+  vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
+  expect_equal(vmat1, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
+  
+  vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
+  expect_equal(vmat2, vmat1)
+  
+  vmat3 <- suppressMessages(vcovDA(damod, type = "HC0"))
+  expect_equal(vmat3, vmat1)
 })
 
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
