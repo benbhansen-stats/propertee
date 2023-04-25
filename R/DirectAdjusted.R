@@ -192,20 +192,20 @@ bread.DirectAdjusted <- function(x) {
                "Design object (stored in a DirectAdjusted object) or a `cluster`",
                "argument specifying the columns with the units of assignment"))
   }
-  
+
   # Must be a DirectAdjusted object for this logic to occur
   if (!inherits(cluster, "character")) {
     cluster <- var_names(x@Design, "u")
   }
-  
+
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
     return(factor(Q_uoas, levels = unique(Q_uoas)))
   }
-  
+
   uoas <- .sanitize_uoas(x, cluster, ...)
-  
+
   return(factor(names(uoas), levels = unique(names(uoas))))
 }
 
@@ -238,10 +238,10 @@ bread.DirectAdjusted <- function(x) {
   if (is.null(cluster)) {
     cluster <- var_names(x@Design, "u")
   }
-  
+
   Q_uoas <- .sanitize_Q_uoas(x, cluster, ...)
   C_uoas <- .sanitize_C_uoas(ca, cluster, verbose = verbose, ...)
-  
+
   # return a vector of the sample the observations pertain to named by their
   # unit of assignment
   not_Q_idx <- !(C_uoas %in% unique(Q_uoas))
@@ -250,7 +250,7 @@ bread.DirectAdjusted <- function(x) {
   uoas[which(Q_uoas %in% unique(C_uoas))] <- "Q_C"
   uoas[which(uoas == "")] <- "C"
   names(uoas) <- c(Q_uoas, C_uoas[not_Q_idx])
-  
+
   return(uoas)
 }
 
@@ -281,4 +281,10 @@ bread.DirectAdjusted <- function(x) {
   names(out) <- NULL
 
   return(out)
+}
+
+#' @exportS3Method getCall DirectAdjusted
+#' @importFrom stats getCall
+getCall.DirectAdjusted <- function(x, ...) {
+  return(x$call)
 }
