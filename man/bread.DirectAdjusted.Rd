@@ -4,10 +4,12 @@
 \alias{bread.DirectAdjusted}
 \title{Extract bread matrix from a \code{DirectAdjusted} model fit}
 \usage{
-\method{bread}{DirectAdjusted}(x)
+\method{bread}{DirectAdjusted}(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
+
+\item{...}{arguments passed to methods}
 }
 \value{
 A \eqn{k\times k} matrix where k denotes the number of parameters

@@ -144,11 +144,12 @@ estfun.DirectAdjusted <- function(x, ...) {
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
 ##' @param x a fitted \code{DirectAdjusted} object
+##' @param ... arguments passed to methods
 ##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
 ##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
 ##' model estimating equations defined in our accompanying documentation.
 ##' @exportS3Method
-bread.DirectAdjusted <- function(x) {
+bread.DirectAdjusted <- function(x, ...) {
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(utils::getS3method("bread", "lm")(x))
   }
