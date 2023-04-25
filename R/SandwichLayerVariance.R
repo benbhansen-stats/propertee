@@ -4,7 +4,7 @@ NULL
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "CR0", "MB0", or "HC0"
+#' accepts "CR0", "MB0", "HC0" for model-based SE and "DB0" for design-based SE
 #' @param cluster Defaults to NULL, which means unit of assignment columns
 #' indicated in the Design will be used to generate clustered covariance estimates.
 #' A non-NULL argument to `cluster` specifies a string or character vector of
@@ -15,14 +15,15 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
+vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...) {
   type <- match.arg(type)
   
   var_func <- switch(
     type,
     "CR0" = .vcovMB_CR0,
     "MB0" = .vcovMB_CR0,
-    "HC0" = .vcovMB_CR0
+    "HC0" = .vcovMB_CR0,
+    "DB0" = .vcovDB_CR0
   )
   args <- list(...)
   args$x <- x
@@ -466,14 +467,19 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   n <- length(args$cluster)
   
   if (x@absorbed_intercepts) {
+    stop(paste("Design-based standard errors cannot be computed for ITT effect",
+               "models with absorbed block effects"))
     a22inv <- sandwich::bread(x)
     meat <- do.call(sandwich::meatCL, args)
     
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
   }
   else {
-    stop(paste("Design-based standard errors cannot be computed for ITT effect",
-               "models without absorbed block effects"))
+    if (!is.null(x$call$offset)){
+      stop(paste("Design-based standard errors cannot be computed for ITT effect",
+                 "models with covariance adjustment"))
+    }
+    vmat <- "variance"
   }
   return(vmat)
 }
