@@ -445,6 +445,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 
 
 #' Design-based standard errors with HC0 adjustment
+#' @param x a fitted \code{DirectAdjusted} model
 #' @keywords internal
 #' @rdname var_estimators
 .vcovDB_CR0 <- function(x, ...) {
@@ -479,10 +480,139 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with covariance adjustment"))
     }
-    vmat <- "variance"
+    vmat <- .get_design_based_variance(x)
+    name <- colnames(x$model)[grep("assign", colnames(x$model))]
+    colnames(vmat) <- name
+    rownames(vmat) <- name
   }
   return(vmat)
 }
+
+#' This function calculates the design-based variance estimate
+#' for ITT effect models without covariance adjustment and without absorbed effects
+#' @param x a fitted \code{DirectAdjusted} model
+#' @keywords internal
+.get_design_based_variance <- function(x, ...){
+  ws <- x$weights
+  data_temp <- x$call$data[, 1:(ncol(x$call$data)-2)]
+  # find the column of y
+  names <- colnames(data_temp)
+  name_y <- names[apply(
+    trunc(data_temp - x$call$data$flexida_y, 4), 2, function(a) length(unique(a))==1
+    )]
+  data_temp <- cbind(data_temp, weight = ws, wy = ws * data_temp[, name_y])
+  
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  
+  eq_blk <- paste(name_blk, collapse = ", ")
+  eq_clu <- paste(name_clu, collapse = " + ")
+  form <- paste("cbind(", name_trt, ", ", eq_blk, ") ~ ", eq_clu, sep = "")
+  form2 <- paste("cbind(wy, weight) ~ ", eq_clu, sep = "")
+  
+  data_aggr <- cbind(
+    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
+    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
+  )
+  data_aggr$wy <- data_aggr$wy / data_aggr$weight
+  var <- .get_db_var_from_df(data = data_aggr, 
+                             weight = "weight", y = "wy", z = name_trt, block = name_blk)
+  return(var)
+}
+
+#' @param a a numeric vector
+#' @param b a numeric vector
+#' @return the mean of squared contrasts between elements of the input vectors
+#' @keywords internal
+.get_ms_contrast <- function(a,b){
+  # calculate the cross term difference squared
+  t = 0
+  for (i in 1:length(a)){
+    for (j in 1:length(b)){
+      t = t + (a[i] - b[j])^2
+    }
+  }
+  return (t/length(a)/length(b))
+}
+
+#' @param data a dataframe of weights, outcomes, treatment assignments, and block indicators
+#' @param weight a character, the name of the weight column
+#' @param y a character, the name of the outcome column
+#' @param z a character, the name of the treatment indicator column
+#' @param block a character, the name of the block indicator column
+#' @return the design-based variance estimate
+#' @keywords internal
+.get_db_var_from_df <- function(data, weight, y, z, block){
+  ws <- data[[weight]]  # weights
+  
+  yobs <- data[[y]]  # observed ys
+  zobs <- data[[z]]  # observed zs (random assignment)
+  nbs <- table(data[[block]])  # block sizes
+  
+  nbk <- table(data.frame(data[[block]], data[[z]]))
+  # nbk, number of units in each block and treatment, B by K
+  nbk_all <- nbk[data[[block]], ]
+  # nbk, number of units in each block and treatment
+  # corresponding to each unit, n by K
+  
+  B <- length(nbs)  # number of blocks
+  K <- ncol(nbk)  # number of treatments
+  
+  pi <- t(t(nbk) / t(nbs)[1,])
+  # pi_b,k propensity score of each block and treatment, B by K
+  
+  gammas <- nbk_all[,1] * ws
+  for (k in 2:K)
+    gammas <- cbind(gammas, nbk_all[,k] * ws)
+  # gamma (or xps and yps) for variance estimation, n by K
+  gamsbk <- matrix(nrow=B, ncol=K)  # s^2_b,j, sample variance
+  sigmab <- matrix(nrow=B, ncol=K)  # hat sigma b,j
+  
+  nu1 <- matrix(nrow=B, ncol=K-1)  # nu1_b,0k
+  theta <- vector(length=K)  # Hajek estimators
+  varest <- matrix(nrow=1, ncol=K-1)  # variance estimators
+  
+  for (k in 1:K){
+    indk <- (zobs == k-1)
+    theta[k] <- sum(ws[indk] * yobs[indk]) / sum(ws[indk])  # ratio estimates
+    gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - theta[k])
+    
+    for (b in 1:B){
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b]))  # indices of units in block b
+      indbk <- (zobs[in_b] == k-1)  # indices of units in block b, treatment k
+      
+      if (sum(indbk) == 1)
+        gamsbk[b,k] = 0
+      else
+        gamsbk[b,k] = sd(gammas[in_b,k][indbk])^2
+      
+      sigmab[b,k] <- gamsbk[b,k] * (nbs[b] - nbs[b]*pi[b,k]) / nbs[b]^2 / pi[b,k]
+      
+      # variance estimators by block
+      if (k > 1){
+        indb0 <- (zobs[in_b] == 0)
+        if (sigmab[b,1] == 0 | sigmab[b,k] == 0){
+          # in this case, nu1 is invalid, fill in with nu3 instead
+          nu1[b,k-1] <- .get_ms_contrast(gammas[in_b,k][indbk],
+                                         gammas[in_b,1][indb0]) -
+            (nbk[b,1]-1) / nbk[b,1] * gamsbk[b,1] -
+            (nbk[b,k]-1) / nbk[b,k] * gamsbk[b,k]
+        }
+        else{
+          nu1[b,k-1] <- nbs[b] / (nbs[b] - nbk[b,1]) * sigmab[b,1] +
+            nbs[b] / (nbs[b] - nbk[b,k]) * sigmab[b,k]
+        }
+      }
+    }
+    # variance estimators
+    if (k > 1){
+      varest[1,k-1] <- sum(nu1[,k-1]) / sum(ws)^2
+    }
+  }
+  return(varest)
+}
+
 
 #' 
 .get_upsilon <- function(x, ...){
