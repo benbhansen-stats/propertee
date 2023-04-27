@@ -153,7 +153,7 @@ lmitt.formula <- function(obj,
   }
   .check_for_assigned_and_aliases <- function(fn) {
     if (grepl(paste0(fn, "\\("), rhs)) {
-      stop(paste("Do not specify `assigned()` or any of it's aliases in",
+      stop(paste("Do not specify `assigned()` or any of its aliases in",
                  "the right hand side of `lmitt()`.\nTo estimate only",
                  "a treatment effect, pass `~ 1` as the right hand side."))
     }
