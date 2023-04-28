@@ -126,7 +126,7 @@ prntTab <- function(totalPoly,maxDeg=4,full=TRUE,md=FALSE){
               res[['tabLLR']])
     }
     for(dgm in c('lin','antiSym','wass')){
-        tab <- rbind(tab,ctab(paste0(dgm,'_t'),full))
+        tab <- rbind(tab,ctab(paste0("reg=",dgm,'_t'),full))
         if(full) if(paste0(dgm,'_norm')%in%names(totalPoly)) tab <- rbind(tab,ctab(paste0(dgm,'_norm'),full))
     }
     if(md){
@@ -207,4 +207,35 @@ polyLatex5 <- function(tab,full,caption='',label='tab:poly'){
 \\label{',label,'}
 \\end{table}\n',sep='')
 
+}
+
+
+simpleSummaryOneEstimator=function(est,eff='TOT'){
+  err <- est['est',]-est[eff,]
+  V <- var(err,na.rm=TRUE)
+  c(
+    `bias/V`=mean(err,na.rm=TRUE)/V,
+    RMSE=sqrt(mean(err^2,na.rm=TRUE)),
+    samplingVarRelativeBias=(mean(est['se',]^2,na.rm=TRUE)-V)/V,
+    ciCoverage=mean(est['ciL',]<est[eff,] & est['ciH',]>est[eff,],na.rm=TRUE) 
+  )
+}
+
+simpleSummary <- function(run,eff='TOT'){
+  run=run[apply(run,1,function(x) mean(is.na(x)))<1,]
+
+  effs=run[c('ATE','TOT'),]
+  run=run[-which(rownames(run)%in%c('ATE','TOT')),]
+  rownamesplit <- do.call('rbind',strsplit(rownames(run),'\\.'))
+  
+  summ <- NULL
+  for(estimator in unique(rownamesplit[,1])){
+    est <- run[rownamesplit[,1]==estimator,]
+    rownames(est) <- rownamesplit[rownamesplit[,1]==estimator,2]
+    est <- rbind(est,effs)
+    summ1=simpleSummaryOneEstimator(est,eff=eff)
+    names(summ1) <- paste(estimator,names(summ1),sep='.')
+    summ <- c(summ,summ1)
+  }
+  summ
 }
