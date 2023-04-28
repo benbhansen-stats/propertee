@@ -502,6 +502,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     )]
   data_temp <- cbind(data_temp, weight = ws, wy = ws * data_temp[, name_y])
   
+  design_obj <- x@Design
   name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
