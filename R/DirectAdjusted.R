@@ -289,3 +289,10 @@ bread.DirectAdjusted <- function(x, ...) {
 getCall.DirectAdjusted <- function(x, ...) {
   return(x$call)
 }
+
+#' @export
+update.DirectAdjusted <- function(object, ...) {
+  stop(paste("DirectAdjusted objects do not support an `update` method.\n",
+             "You can use `update` on the formula object passed to `lmitt`",
+             "instead."))
+}
