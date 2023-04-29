@@ -53,12 +53,28 @@ as.lmitt <- function(x, design = NULL) {
                "avoid explicitly indicating `assigned()`."))
   }
 
+  #### Obtain the proper call.
+  # The first conditional is the user calls `lmitt()` and passes an `lm` object.
+  # The second conditional if the user calls `lmitt.lm()` directly
+  # The third conditional is if the user calls `as.lmitt()`.
 
+  # `&&` necessary to return FALSE immediately if not enough frames on stack
+  if (sys.nframe() >= 2 && sys.call(-2)[[1]] == as.name("lmitt")) {
+    # If we're in `lmitt.lm()` via `lmitt()`, save the call to `lmitt`.
+    lmitt_call <- sys.call(-2)
+  } else if (!is.null(sys.call(-1)) && sys.call(-1)[[1]] == as.name("lmitt.lm")) {
+    # If we're in `lmitt.lm()` directly, save that call.
+    lmitt_call <- sys.call(-1)
+  } else {
+    # Otherwise save the `as.lmitt()` call
+    lmitt_call <- sys.call()
+  }
   return(.convert_to_lmitt(x,
                            design,
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
-                           absorbed_moderators = vector("character")))
+                           absorbed_moderators = vector("character"),
+                           lmitt_call = lmitt_call))
 }
 
 ##' @rdname as_lmitt
@@ -69,7 +85,8 @@ as.DirectAdjusted <- as.lmitt
                               design,
                               lmitt_fitted,
                               absorbed_intercepts,
-                              absorbed_moderators) {
+                              absorbed_moderators,
+                              lmitt_call) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
   }
@@ -143,6 +160,7 @@ as.DirectAdjusted <- as.lmitt
              lm_model,
              Design = design,
              absorbed_intercepts = absorbed_intercepts,
-             absorbed_moderators = absorbed_moderators))
+             absorbed_moderators = absorbed_moderators,
+             lmitt_call = call("quote", lmitt_call)))
 
 }

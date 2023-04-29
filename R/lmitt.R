@@ -383,11 +383,20 @@ lmitt.formula <- function(obj,
 
   model <- eval(lm.call, parent.frame())
 
+  # `&&` necessary to return FALSE immediately if not enough frames on stack
+  if (!is.null(sys.call(-1)) && sys.call(-1)[[1]] == as.name("lmitt")) {
+    # If we're in `lmitt.formula()` via `lmitt()`, save that call.
+    lmitt_call <- sys.call(-1)
+  } else {
+    # Otherwise save the `lmitt.formula()` call
+    lmitt_call <- sys.call()
+  }
   return(.convert_to_lmitt(model,
                            design,
                            lmitt_fitted = TRUE,
                            absorbed_moderators = absorbed_moderators,
-                           absorbed_intercepts = absorb))
+                           absorbed_intercepts = absorb,
+                           lmitt_call = lmitt_call))
 }
 
 ##' @export

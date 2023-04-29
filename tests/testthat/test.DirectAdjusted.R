@@ -754,19 +754,22 @@ test_that("checking proper errors in conversion from lm to DA", {
                                      des,
                                      FALSE,
                                      TRUE,
-                                     "a")
+                                     "a",
+                                     call("quote", call("ls")))
   mod2 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
                                      ate(des, data = simdata),
                                      FALSE,
                                      TRUE,
-                                     "a")
+                                     "a",
+                                     call("quote", call("ls")))
   expect_identical(mod1@Design, mod2@Design)
 
   expect_error(flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
                                      1,
                                      FALSE,
                                      TRUE,
-                                     "a"), "must be a")
+                                     "a",
+                                     call("quote", call("ls"))), "must be a")
 
 
 })
@@ -780,4 +783,44 @@ test_that("disable update.DA", {
 
   expect_error(update(mod),
                "DirectAdjusted objects do not support")
+})
+
+test_that("lmitt_call", {
+  data(simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  # Make sure slot is actual call
+  mod <- lmitt(y ~ 1, data = simdata, design = des)
+  expect_true(is.call(mod@lmitt_call))
+
+  # Call via `lmitt()` should match
+  lmittcall <- str2lang("lmitt(y ~ 1, data = simdata, design = des)")
+  mod <- eval(lmittcall)
+  expect_equal(lmittcall, mod@lmitt_call)
+
+  # Call via `lmitt.formula()` should match
+  lmittformcall <- str2lang("lmitt.formula(y ~ 1, data = simdata, design = des)")
+  mod <- eval(lmittformcall)
+  expect_equal(lmittformcall, mod@lmitt_call)
+
+  # as.lmitt, make sure is actual call
+  lmmod <- lm(y ~ a.(des), data = simdata)
+  mod <- as.lmitt(lmmod, design = des)
+  expect_true(is.call(mod@lmitt_call))
+
+  # Call via `as.lmitt()` should match
+  aslmittcall <- str2lang("as.lmitt(lmmod, design = des)")
+  mod <- eval(aslmittcall)
+  expect_equal(aslmittcall, mod@lmitt_call)
+
+  # Call via `lmitt(lm` should match
+  lmittlmcall <- str2lang("lmitt(lmmod, design = des)")
+  mod <- eval(lmittlmcall)
+  expect_equal(lmittlmcall, mod@lmitt_call)
+
+  # Call via `lmitt.lm` should match
+  lmittlmcall <- str2lang("lmitt.lm(lmmod, design = des)")
+  mod <- eval(lmittlmcall)
+  expect_equal(lmittlmcall, mod@lmitt_call)
+
 })
