@@ -17,10 +17,12 @@ test_that("vcovDA correctly dispatches", {
   expect_equal(vmat1, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
 
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
-  expect_equal(vmat2, vmat1)
+  expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
+  expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
 
   vmat3 <- suppressMessages(vcovDA(damod, type = "HC0"))
-  expect_equal(vmat3, vmat1)
+  expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
+  expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
 })
 
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
@@ -1918,9 +1920,6 @@ test_that("type attribute", {
   damod <- lmitt(y ~ 1, data = simdata, weights = "ate", design = des)
   expect_identical(attr(vcov(damod), "type"), "CR0")
   expect_identical(attr(vcov(damod, type = "CR0"), "type"), "CR0")
-  # Enable these once implemented #113
-  #expect_identical(attr(vcov(damod, type = "MB0"), "type"), "MB0")
-  #expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
-
-
+  expect_identical(attr(vcov(damod, type = "MB0"), "type"), "MB0")
+  expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
 })

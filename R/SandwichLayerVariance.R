@@ -29,6 +29,12 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   args$cluster <- .make_uoa_ids(x, cluster, ...)
 
   est <- do.call(var_func, args)
+  if (type %in% c("CR0", "MB0", "HC0")) {
+    # Since these are acronyms, need user input to distinguish which type to
+    # print. Other methods should have their own functions so the type should be
+    # assigned in those functions.
+    attr(est, "type") <- type
+  }
   return(est)
 }
 

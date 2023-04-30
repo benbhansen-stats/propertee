@@ -63,20 +63,19 @@ test_that("vcov.type argument", {
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
   expect_equal(summary(damod)$vcov.type, "CR0")
   expect_equal(summary(damod, vcov.type = "CR0")$vcov.type, "CR0")
-  # Enable these once implemented #113
-  #expect_equal(summary(damod, vcov.type = "MB0")$vcov.type, "MB0")
-  #expect_equal(summary(damod, vcov.type = "HC0")$vcov.type, "HC0")
+  expect_equal(summary(damod, vcov.type = "MB0")$vcov.type, "MB0")
+  expect_equal(summary(damod, vcov.type = "HC0")$vcov.type, "HC0")
 
   expect_equal(sum(grepl("CR0", capture.output(summary(damod)))), 1)
   expect_equal(sum(grepl("CR0",
                          capture.output(summary(damod, vcov.type = "CR0")))),
                1)
-  # Enable these once implemented #113
-  # expect_equal(sum(grepl("MB0",
-  #                        capture.output(summary(damod, vcov.type = "MB0")))),
-  #              1)
-  # expect_equal(sum(grepl("HC0",
-  #                        capture.output(summary(damod, vcov.type = "HC0")))),
-  #              1)
+
+  expect_equal(sum(grepl("MB0",
+                         capture.output(summary(damod, vcov.type = "MB0")))),
+               1)
+  expect_equal(sum(grepl("HC0",
+                         capture.output(summary(damod, vcov.type = "HC0")))),
+               1)
 
 })
