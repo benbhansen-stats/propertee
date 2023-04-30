@@ -96,8 +96,14 @@
 
     # Search these formula for "assigned(", ensuring that the previous character
     # is not a letter, in case there are functions like customassigned().
-    fn_pos <- which(grepl("[^a-zA-Z]?assigned\\(",
-                                lapply(adopter_args, deparse)))
+    fn_pos <- c(which(grepl("[^a-zA-Z]?assigned\\(",
+                            lapply(adopter_args, deparse))),
+                which(grepl("[^a-zA-Z]?a\\.\\(",
+                                lapply(adopter_args, deparse))),
+                which(grepl("[^a-zA-Z]?z\\.\\(",
+                            lapply(adopter_args, deparse))),
+                which(grepl("[^a-zA-Z]?adopters\\(",
+                                lapply(adopter_args, deparse))))
   }
 
 
