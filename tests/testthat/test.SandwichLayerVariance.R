@@ -15,10 +15,10 @@ test_that("vcovDA correctly dispatches", {
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
   expect_equal(vmat1, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
-  
+
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
   expect_equal(vmat2, vmat1)
-  
+
   vmat3 <- suppressMessages(vcovDA(damod, type = "HC0"))
   expect_equal(vmat3, vmat1)
 })
@@ -1207,8 +1207,11 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  expect_equal(vcovDA(m, type = "CR0"),
-               sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
+  expect_true(all.equal(vcovDA(m, type = "CR0"),
+                        sandwich::sandwich(m,
+                                           meat. = sandwich::meatCL,
+                                           cluster = uoas),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -1277,14 +1280,17 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
 
   # with perfect group balance, a22inv %*% a21 ((Z'WZ)^(-1)Z'WX) should be 0
   # for the trt row
-  expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  expect_equal((a22inv %*% a21)[2,],
+               setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1/n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal to the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+                        check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -1355,11 +1361,13 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1/n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+                       check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -1463,14 +1471,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -1556,14 +1566,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -1625,11 +1637,13 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = df$uid, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = df$uid, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -1710,14 +1724,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
@@ -1786,11 +1802,13 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
@@ -1882,12 +1900,27 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
+})
+
+test_that("type attribute", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ 1, data = simdata, weights = "ate", design = des)
+  expect_identical(attr(vcov(damod), "type"), "CR0")
+  expect_identical(attr(vcov(damod, type = "CR0"), "type"), "CR0")
+  # Enable these once implemented #113
+  #expect_identical(attr(vcov(damod, type = "MB0"), "type"), "MB0")
+  #expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
+
+
 })
