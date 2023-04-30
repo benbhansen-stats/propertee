@@ -17,6 +17,7 @@ test_that("binary treatment, in all data", {
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des))))
   expect_silent(as.lmitt(lm(y ~ a.(), data = simdata, weights = ate(des))))
   expect_silent(as.lmitt(lm(y ~ z.(), data = simdata, weights = ate(des))))
+  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata, weights = ate(des))))
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
@@ -40,9 +41,9 @@ test_that("binary treatment, in all data", {
   # weight + cov_adj
   expect_silent(as.lmitt(lm(y ~ z.(), data = simdata, weights = ett(des),
                             offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ z.(), data = simdata, weights = ett(),
+  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata, weights = ett(),
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ z.(), data = simdata, weights = ett(des),
+  expect_silent(as.lmitt(lm(y ~ a.(), data = simdata, weights = ett(des),
                             offset = cov_adj(camod, design = des))))
 
   # weight + cov_adj in formula
@@ -215,10 +216,10 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
                             weights = ett(),
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ z.(), data = simdata,
                             weights = ett(des),
                             offset = cov_adj(camod, design = des))))
 

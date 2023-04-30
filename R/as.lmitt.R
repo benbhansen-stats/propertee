@@ -44,7 +44,8 @@ as.lmitt <- function(x, design = NULL) {
   ## }
   ## x <- newx
 
-  tt <- terms(stats::formula(x), specials = c("assigned", "a.", "z."))
+  tt <- terms(stats::formula(x),
+              specials = c("assigned", "a.", "z.", "adopters"))
 
   if (all(vapply(attr(tt, "specials"), is.null, logical(1)))) {
     stop(paste("`assigned()` or its aliases are not found in the model formula.",
