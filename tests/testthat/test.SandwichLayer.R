@@ -66,7 +66,7 @@ test_that("PreSandwichLayer prediction gradient has invalid number of columns", 
   N <- 100
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   cmod <- lm(y ~ x, df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 1)
 
@@ -85,7 +85,7 @@ test_that("SandwichLayer has NA's", {
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unitid(uid), df)
   keys <- df[, "uid", drop = FALSE]
-  
+
   offset <- rep(1, N)
   offset[N] <- NA_real_
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
@@ -94,7 +94,7 @@ test_that("SandwichLayer has NA's", {
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
-  
+
   expect_warning(new("SandwichLayer",
                      psl,
                      keys = keys,
@@ -110,7 +110,7 @@ test_that("SandwichLayer keys doesn't have the same row count as covariance mode
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unitid(uid), df)
   keys <- df[seq_len(N-1), "uid", drop = FALSE]
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
   psl <- new("PreSandwichLayer",
@@ -133,7 +133,7 @@ test_that("SandwichLayer created correctly", {
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unitid(uid), df)
   keys <- df[, "uid", drop = FALSE]
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
   psl <- new("PreSandwichLayer",
@@ -161,7 +161,7 @@ test_that("as.SandwichLayer not called with a PreSandwichLayer", {
   N <- 100
   df <- data.frame("z" = rbinom(N, 1, 0.5), "uid" = seq_len(N))
   des <- rct_design(z ~ unitid(uid), df)
-  
+
   expect_error(as.SandwichLayer(seq_len(N), des),
                "must be a `PreSandwichLayer`")
 })
@@ -231,7 +231,7 @@ test_that("as.SandwichLayer used correctly", {
                    "uid" = seq_len(N))
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unit_of_assignment(uid), df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
   psl <- new("PreSandwichLayer",
@@ -255,7 +255,7 @@ test_that("as.SandwichLayer used correctly with `by`", {
   cmod <- lm(y ~ x, cmod_df)
   design_df <- data.frame("uoa1" = seq_len(N), "z" = rbinom(N, 1, 0.5))
   des <- rct_design(z ~ unit_of_assignment(uoa1), design_df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
 
@@ -265,7 +265,7 @@ test_that("as.SandwichLayer used correctly with `by`", {
              prediction_gradient = pred_gradient)
   by <- c("uoa1" = "uid")
   sl <- as.SandwichLayer(psl, des, by)
-  
+
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(colnames(sl@keys), as.character(by))
 })
@@ -278,16 +278,16 @@ test_that(paste("as.SandwichLayer produces NA rows in `keys` for non-NA uoa",
   cmod <- lm(y ~ x, cmod_df)
   design_df <- data.frame("uid" = seq_len(N), "z" = rbinom(N, 1, 0.5))
   des <- rct_design(z ~ unit_of_assignment(uid), design_df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
-  
+
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   sl <- as.SandwichLayer(psl, des)
-  
+
   expect_equal(nrow(sl@keys),
                nrow(sl@fitted_covariance_model$model))
   expect_true(nrow(sl@keys[is.na(sl@keys$uid), , drop = FALSE]) > 0)
@@ -305,7 +305,7 @@ test_that("as.SandwichLayer produces NA rows in `keys` for NA uoa values", {
   cmod <- lm(y ~ x, cmod_df)
   design_df <- data.frame("uid" = seq_len(N), "z" = rbinom(N, 1, 0.5))
   des <- rct_design(z ~ unit_of_assignment(uid), design_df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
 
@@ -334,16 +334,16 @@ test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's"
   design_df <- data.frame("uid" = paste0("0400", seq_len(N)),
                           "z" = rbinom(N, 1, 0.5))
   des <- rct_design(z ~ unit_of_assignment(uid), design_df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
-  
+
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   sl <- as.SandwichLayer(psl, des)
-  
+
   expect_equal(nrow(sl@keys),
                nrow(sl@fitted_covariance_model$model))
   expect_equal(sl@keys[, 1],
@@ -365,19 +365,19 @@ test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's"
                           "schoolid" = rep("04001", 2 * floor(N/4)),
                           "z" = rep(c(0, 1), each = floor(N/4)))
   des <- rct_design(z ~ cluster(classid, schoolid), design_df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
-  
+
   psl <- new("PreSandwichLayer",
              offset,
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
   sl <- as.SandwichLayer(psl, des)
-  
+
   expected_keys <- c(rep(paste0("04001_", c(1, 2)), each = floor(N/4)),
                      rep(NA_character_, N - 2 * floor(N/4)))
-  
+
   expect_equal(nrow(sl@keys),
                nrow(sl@fitted_covariance_model$model))
   expect_equal(sl@keys[, "classid"],
@@ -395,7 +395,7 @@ test_that("show_sandwich_layer works", {
                    "uid" = seq_len(N))
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unitid(uid), df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
   psl <- new("PreSandwichLayer",
@@ -420,7 +420,7 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
                    "uid" = seq_len(N))
   cmod <- lm(y ~ x, df)
   des <- rct_design(z ~ unitid(uid), df)
-  
+
   offset <- rep(1, N)
   pred_gradient <- matrix(1, nrow = N, ncol = 2)
   psl <- new("PreSandwichLayer",
@@ -579,12 +579,11 @@ test_that(paste(".get_ca_and_prediction_gradient warns about less than full",
   expect_equal(ncol(ca_and_grad$prediction_gradient), cmod$rank)
   expect_equal(colnames(ca_and_grad$prediction_gradient),
                names(which(!is.na(cmod$coefficients))))
-  
+
   expect_warning(new_ca_and_grad <- .get_ca_and_prediction_gradient(cmod, newdata = newdata),
                  "prediction from a rank-deficient fit")
-#  expect_warning(stats_preds <- stats::predict(cmod, newdata),
-#                 "prediction from a rank-deficient fit")
-#  expect_equal(new_ca_and_grad$ca, stats_preds)
+  stats_preds <- stats::predict(cmod, newdata)
+  expect_equal(new_ca_and_grad$ca, stats_preds)
 })
 
 test_that(paste(".get_ca_and_prediction_gradient returns expected output",
@@ -632,7 +631,7 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
   pred_gradient <- stats::model.matrix(
     formula(stats::delete.response(terms(cmod))),
     stats::model.frame(pred_df, na.action = na.pass))
-  
+
   expect_equal(length(ca_and_grad$ca), N)
   expect_equal(sum(is.na(ca_and_grad$ca)), 1)
   expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient))
@@ -642,12 +641,12 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
 
 test_that(".sanitize_C_uoas fails with invalid `cluster` argument", {
   data(simdata)
-  
+
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
-  
+
   expect_error(.sanitize_C_uoas(dmod$model$`(offset)`, cluster = "uid"),
                "uid could not be found")
 })
@@ -659,7 +658,7 @@ test_that(".sanitize_C_uoas succeeds with with full UOA info", {
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
-  
+
   ids <- .sanitize_C_uoas(dmod$model$`(offset)`)
   expected_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
   expect_equal(ids, expected_ids)
@@ -669,12 +668,12 @@ test_that(".sanitize_C_uoas succeeds with warning with partial UOA info", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
                           "cid1" = rep(c(1, 2), each = 5),  "cid2" = NA)
-  
+
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
-  
+
   expect_warning(ids <- .sanitize_C_uoas(dmod$model$`(offset)`), "ID's will be clustered")
   expect_equal(length(ids), nrow(cmod_data))
   expect_equal(length(unique(ids)), 2)
@@ -683,7 +682,7 @@ test_that(".sanitize_C_uoas succeeds with warning with partial UOA info", {
 test_that(".sanitize_C_uoas succeeds with warning with no UOA info", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "cid1" = NA,  "cid2" = NA)
-  
+
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ uoa(cid1, cid2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
