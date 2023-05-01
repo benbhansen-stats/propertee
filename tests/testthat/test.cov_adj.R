@@ -197,7 +197,7 @@ test_that("cov_adj with named `by` argument called within `lmitt`", {
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
 })
 
-test_that("cov_adj with redundant `by` argument called within `lmitt`", {
+test_that("cov_adj with `by` argument that's the same as the default called within `lmitt`", {
   cmod <- lm(y ~ x, Q_wo_nulls)
   des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
   m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,

@@ -219,13 +219,22 @@ test_that("as.SandwichLayer used correctly with NULL `by` and `Q_data`", {
              fitted_covariance_model = cmod,
              prediction_gradient = pred_gradient)
 
-  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(sl1 <- as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_equal(length(setdiff(colnames(sl1@keys), c("uid", "in_Q"))), 0)
+  expect_true(all(sl1@keys$in_Q == 1))
+  expect_equal(sl1@keys$uid, df$uid)
 
   des <- rct_design(z ~ cluster(uid), df)
-  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(sl2 <- as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_equal(length(setdiff(colnames(sl2@keys), c("uid", "in_Q"))), 0)
+  expect_true(all(sl2@keys$in_Q == 1))
+  expect_equal(sl2@keys$uid, df$uid)
 
   des <- rct_design(z ~ unitid(uid), df)
-  expect_true(inherits(as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_true(inherits(sl3 <- as.SandwichLayer(psl, des), "SandwichLayer"))
+  expect_equal(length(setdiff(colnames(sl3@keys), c("uid", "in_Q"))), 0)
+  expect_true(all(sl3@keys$in_Q == 1))
+  expect_equal(sl3@keys$uid, df$uid)
 })
 
 test_that("as.SandwichLayer used correctly with unnamed `by` and non-NULL `Q_data`", {
@@ -248,6 +257,7 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and non-NULL `Q_dat
 
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(length(setdiff(colnames(sl@keys), c("clust", "uid", "in_Q"))), 0)
+  expect_true(all(sl@keys$in_Q == 0))
 })
 
 test_that("as.SandwichLayer used correctly with named `by` and non-NULL `Q_data`", {
@@ -271,6 +281,7 @@ test_that("as.SandwichLayer used correctly with named `by` and non-NULL `Q_data`
 
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(length(setdiff(colnames(sl@keys), c("clust", "uid", "in_Q"))), 0)
+  expect_true(all(sl@keys$in_Q == 0))
 })
 
 test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`", {
@@ -301,6 +312,8 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`",
 
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(length(setdiff(colnames(sl@keys), c("uoa1", "in_Q"))), 0)
+  expect_true(all(sl@keys$in_Q == 1))
+  expect_equal(sl@keys$uoa1, cmod_df$uoa1)
 })
 
 test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's",
