@@ -13,6 +13,13 @@ knitr::opts_chunk$set(echo = TRUE,error=FALSE,message=FALSE,warning=FALSE)
 knitr::opts_knit$set(root.dir = '.')
 ```
 
+
+```{r getCommandArgs,include=FALSE}
+aaa=commandArgs(TRUE)
+aaa=gsub("--","",aaa)
+for(a in aaa) eval(parse(text=a))
+```
+
 General dependencies.
 ```{r}
 library('knitr')
@@ -21,6 +28,49 @@ library('testthat')
 source('displaySim.r')
 devtools::load_all("../..")
 ```
+
+
+## Running Simulation
+
+Initialization. In order to re-run the simulations, set the `nreps`
+variable to a positive integer corresponding to the desired number of replications before initiating this script.
+Note that `nreps=0` corresponds to no simulations,
+just print results from previously saved simulations.
+
+
+
+```{r setNreps,echo=TRUE, warning=FALSE, message=FALSE}
+if (!exists('nreps') ){
+  nreps <- 0
+} else if(!is.numeric(nreps)) error("non-numeric nreps detected in workspace")
+
+if(nreps){
+  message(paste("Running simulation with",nreps,"replications"))
+}else message("Making table from previously-run simulation")
+
+```
+
+### Parallel Computing
+
+In order to run the simulation in parallel, if `nclust` is set to a positive integer, set the `nclust` variable to a positive integer corresponding to the desired number of clusters.
+Note that `nclust=1` corresponds to running the simulation sequentially.
+
+```{r parallel, eval=nreps>0}
+clust=FALSE
+if(exists("nclust")) if(is.numeric(nclust)) if(nclust>1) if(require(parallel)) {
+  cl <- makeCluster(nclust)
+  clust=TRUE
+}
+```
+
+### Running the simulation
+
+```{r runSimulation, eval=nreps>0}
+source('./runSimulations.R')
+```
+
+## Outputting the Results in a Table
+
 
 The following gives the results in Table 4 of the paper, in addition
 to the break-down of RMSE into bias and variance, and analogous

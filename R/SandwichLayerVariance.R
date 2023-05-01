@@ -4,7 +4,7 @@ NULL
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "CR0"
+#' accepts "CR0", "MB0", or "HC0"
 #' @param cluster Defaults to NULL, which means unit of assignment columns
 #' indicated in the Design will be used to generate clustered covariance estimates.
 #' A non-NULL argument to `cluster` specifies a string or character vector of
@@ -15,18 +15,26 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
+vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   type <- match.arg(type)
 
   var_func <- switch(
     type,
-    "CR0" = .vcovMB_CR0
+    "CR0" = .vcovMB_CR0,
+    "MB0" = .vcovMB_CR0,
+    "HC0" = .vcovMB_CR0
   )
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, cluster, ...)
 
   est <- do.call(var_func, args)
+  if (type %in% c("CR0", "MB0", "HC0")) {
+    # Since these are acronyms, need user input to distinguish which type to
+    # print. Other methods should have their own functions so the type should be
+    # assigned in those functions.
+    attr(est, "type") <- type
+  }
   return(est)
 }
 
@@ -50,6 +58,7 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
   meat <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * a22inv %*% meat %*% a22inv
 
+  attr(vmat, "type") <- "CR0"
   return(vmat)
 }
 
@@ -191,11 +200,7 @@ vcovDA <- function(x, type = c("CR0"), cluster = NULL, ...) {
 
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
-  # NOTE: summary.lm handles less than full rank design matrices by taking the first
-  # columns that meet column rank. We will want to be more specific given the
-  # effects we want to report
-  model.rank <- x$rank
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w))[1L:model.rank, 1L:model.rank])
+  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
 
   return(out)
 }

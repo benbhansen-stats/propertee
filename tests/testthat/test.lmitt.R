@@ -180,6 +180,11 @@ test_that("weights argument can be string", {
   l3 <- lmitt(y ~ 1, design = des, data = simdata, weights = ett())
   l4 <- lmitt(y ~ 1, design = des, data = simdata, weights = "ett")
 
+  l1@lmitt_call <- call("ls")
+  l2@lmitt_call <- call("ls")
+  l3@lmitt_call <- call("ls")
+  l4@lmitt_call <- call("ls")
+
   expect_true(all.equal(l1, l2))
   expect_true(all.equal(l3, l4))
 

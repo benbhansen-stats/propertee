@@ -8,9 +8,13 @@ setClass("DirectAdjusted",
          slots = c(Design = "Design",
                    lmitt_fitted = "logical",
                    absorbed_intercepts = "logical",
-                   absorbed_moderators = "character"))
+                   absorbed_moderators = "character",
+                   lmitt_call = "call"))
 
 setValidity("DirectAdjusted", function(object) {
+  if (length(object@lmitt_fitted) != 1) {
+    return("@lmitt_fitted slot must be a single logical")
+  }
   return(TRUE)
 })
 
@@ -120,13 +124,14 @@ estfun.DirectAdjusted <- function(x, ...) {
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
 ##' @param x a fitted \code{DirectAdjusted} object
+##' @param ... arguments passed to methods
 ##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
 ##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
 ##' model estimating equations defined in our accompanying documentation (which
 ##' defines a perhaps unintuitive scaling factor of \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
 ##' for this matrix).
 ##' @exportS3Method
-bread.DirectAdjusted <- function(x) {
+bread.DirectAdjusted <- function(x, ...) {
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(utils::getS3method("bread", "lm")(x))
   }
@@ -218,24 +223,24 @@ bread.DirectAdjusted <- function(x) {
                "Design object (stored in a DirectAdjusted object) or a `cluster`",
                "argument specifying the columns with the units of assignment"))
   }
-  
+
   # Must be a DirectAdjusted object for this logic to occur
   if (!inherits(cluster, "character")) {
     cluster <- var_names(x@Design, "u")
   }
-  
+
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
     return(factor(Q_uoas, levels = unique(Q_uoas)))
   }
-  
+
   ids <- .order_samples(x, ...)
   Q_uoas <- .sanitize_Q_ids(x, cluster, ...)[ids$Q_order]
   C_uoas <- .sanitize_C_ids(x$model$`(offset)`, cluster, verbose = FALSE, ...)[
     ids$C_order[!is.na(ids$C_order)]]
   uoas <- c(Q_uoas, C_uoas[!(C_uoas %in% Q_uoas)])
-  
+
   return(factor(uoas, levels = unique(uoas)))
 }
 
@@ -277,7 +282,7 @@ bread.DirectAdjusted <- function(x) {
   Q_ids <- .sanitize_Q_ids(x, by, sorted = TRUE, ...)
   Q_ix <- Q_ids$ix
   Q_ix <- stats::setNames(Q_ix, Q_ids$x)
-  
+
   # find the overlap of C and Q and dedupe the indices returned by `match()`
   C_ids <- .sanitize_C_ids(ca, by, verbose = verbose, sorted = TRUE, ...)
   Q_C_ix <- match(Q_ids$x, C_ids$x)
@@ -286,12 +291,12 @@ bread.DirectAdjusted <- function(x) {
       Q_C_ix[!is.na(Q_C_ix) & Q_C_ix == start_loc])
   }
   Q_C_ix <- C_ids$ix[Q_C_ix]
-  
+
   # append the remaining ID's in C if necessary
   C_ix <- C_ids$ix[!(C_ids$x %in% Q_ids$x)]
   C_ix <- c(Q_C_ix, C_ix)
   C_ix <- stats::setNames(C_ix, c(Q_ids$x, C_ids$x[!(C_ids$x %in% Q_ids$x)]))
-  
+
   return(list(Q_order = Q_ix, C_order = C_ix))
 }
 
@@ -329,7 +334,7 @@ bread.DirectAdjusted <- function(x) {
     })
   out <- apply(ids, 1, function(...) paste(..., collapse = "_"))
   names(out) <- NULL
-  
+
   if (sorted) {
     if (suppressWarnings(any(is.na(as.numeric(out))))) {
       out <- sort(out, index.return = TRUE)
@@ -339,4 +344,17 @@ bread.DirectAdjusted <- function(x) {
   }
 
   return(out)
+}
+
+#' @exportS3Method getCall DirectAdjusted
+#' @importFrom stats getCall
+getCall.DirectAdjusted <- function(x, ...) {
+  return(x$call)
+}
+
+#' @export
+update.DirectAdjusted <- function(object, ...) {
+  stop(paste("DirectAdjusted objects do not support an `update` method.\n",
+             "You can use `update` on the formula object passed to `lmitt`",
+             "instead."))
 }

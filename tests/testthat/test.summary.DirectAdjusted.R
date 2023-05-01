@@ -50,9 +50,54 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses sandwich SE's", 
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  s <- summary(damod, type = "CR0", cadjust = FALSE)
+  s <- summary(damod, vcov.type = "CR0", cadjust = FALSE)
   expect_equal(
     s$coefficients[, 2],
     sqrt(diag(sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = uoas,
                                  cadjust = FALSE))))
+})
+
+test_that("vcov.type argument", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
+  expect_equal(summary(damod)$vcov.type, "CR0")
+  expect_equal(summary(damod, vcov.type = "CR0")$vcov.type, "CR0")
+  expect_equal(summary(damod, vcov.type = "MB0")$vcov.type, "MB0")
+  expect_equal(summary(damod, vcov.type = "HC0")$vcov.type, "HC0")
+
+  expect_equal(sum(grepl("CR0", capture.output(summary(damod)))), 1)
+  expect_equal(sum(grepl("CR0",
+                         capture.output(summary(damod, vcov.type = "CR0")))),
+               1)
+
+  expect_equal(sum(grepl("MB0",
+                         capture.output(summary(damod, vcov.type = "MB0")))),
+               1)
+  expect_equal(sum(grepl("HC0",
+                         capture.output(summary(damod, vcov.type = "HC0")))),
+               1)
+
+})
+
+test_that("lmitt.form vs as.lmitt", {
+  # `lmitt.formula` should report only "Treatment Effects", whereas
+  # as.`lmitt`/`lmitt(lm(...` report coefficients since we don't have control
+  # over what is reported.
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+
+  co <- capture.output(summary(lmitt(y ~ 1, data = simdata, design = des)))
+  expect_true(any(grepl("Treatment Effects", co)))
+  expect_false(any(grepl("Coefficients", co)))
+
+  co <- capture.output(summary(as.lmitt(lm(y ~ z.(des), data = simdata),
+                                        design = des)))
+  expect_false(any(grepl("Treatment Effects", co)))
+  expect_true(any(grepl("Coefficients", co)))
+
+  co <- capture.output(summary(lmitt(lm(y ~ z.(des), data = simdata),
+                                        design = des)))
+  expect_false(any(grepl("Treatment Effects", co)))
+  expect_true(any(grepl("Coefficients", co)))
 })

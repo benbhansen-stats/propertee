@@ -153,7 +153,7 @@ lmitt.formula <- function(obj,
   }
   .check_for_assigned_and_aliases <- function(fn) {
     if (grepl(paste0(fn, "\\("), rhs)) {
-      stop(paste("Do not specify `assigned()` or any of it's aliases in",
+      stop(paste("Do not specify `assigned()` or any of its aliases in",
                  "the right hand side of `lmitt()`.\nTo estimate only",
                  "a treatment effect, pass `~ 1` as the right hand side."))
     }
@@ -226,7 +226,7 @@ lmitt.formula <- function(obj,
   mf.call[[1]] <- quote(stats::model.frame)
   # Add assigned() to the model so it utilizes Design characteristics (primarly
   # concerned about subset)
-  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + flexida::assigned())
+  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + a.())
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
@@ -262,9 +262,7 @@ lmitt.formula <- function(obj,
 
   if (rhs == "1") {
     # Define new RHS and obtain model.matrix
-    new.form <- formula(~ flexida::assigned()) # need flexida:: or assigned()
-                                               # can't be found
-#    environment(new.form) <- saveenv # Do I need this?
+    new.form <- formula(~ a.())
     mm.call <- lm.call
     mm.call[[2]] <- str2lang(deparse(new.form))
     # model.matrix.lm supports as `na.action` argument where
@@ -284,7 +282,7 @@ lmitt.formula <- function(obj,
 
     # Create model.matrix with subgroup main effects (to BE residualized out)
     sbgrp.form <- stats::reformulate(paste0(paste(rhs,
-                                                  "flexida::assigned()",
+                                                  "a.()",
                                                   sep = "+"),
                                             "+ 0"))
     sbgrp.call <- lm.call
@@ -293,11 +291,11 @@ lmitt.formula <- function(obj,
     names(sbgrp.call)[2] <- "object"
     sbgrp.call$na.action <- "na.pass"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
-    sbgrp.mm <- sbgrp.mm[, !grepl("assigned\\(", colnames(sbgrp.mm)),
+    sbgrp.mm <- sbgrp.mm[, !grepl("a\\.\\(", colnames(sbgrp.mm)),
                          drop = FALSE]
 
     # Create model.matrix with treatment:subgroup interaction (to be kept in)
-    effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
+    effect.form <- stats::reformulate(paste0("a.():", rhs, "+0"))
     effect.call <- lm.call
     effect.call[[2]] <- str2lang(deparse(effect.form))
     effect.call[[1]] <- quote(stats::model.matrix.lm)
@@ -352,9 +350,18 @@ lmitt.formula <- function(obj,
                         na.rm = TRUE)
     }
   }
-
   # Center variables to remove intercept
   mm <- apply(mm, 2, .center, lm.call$weights, logicalsubset)
+  colnames(mm) <- gsub("a\\.\\(\\)",
+                       paste0(var_names(design, "t"), "_"),
+                       colnames(mm))
+  # Adding a _ after the treatment variable name to avoid conflict with original
+  # treatment variable.
+
+  # Replace : with _ for interaction to try and avoid backticks
+  colnames(mm) <- gsub("\\:", "_", colnames(mm))
+  # This isn't foolproof as the sbgrp variable can cause them too
+  # e.g. `as.factor(sbgrp)` forces backticks.
 
   # get response
   mr <- stats::model.response(mf)
@@ -383,11 +390,20 @@ lmitt.formula <- function(obj,
 
   model <- eval(lm.call, parent.frame())
 
+  # `&&` necessary to return FALSE immediately if not enough frames on stack
+  if (!is.null(sys.call(-1)) && sys.call(-1)[[1]] == as.name("lmitt")) {
+    # If we're in `lmitt.formula()` via `lmitt()`, save that call.
+    lmitt_call <- sys.call(-1)
+  } else {
+    # Otherwise save the `lmitt.formula()` call
+    lmitt_call <- sys.call()
+  }
   return(.convert_to_lmitt(model,
                            design,
                            lmitt_fitted = TRUE,
                            absorbed_moderators = absorbed_moderators,
-                           absorbed_intercepts = absorb))
+                           absorbed_intercepts = absorb,
+                           lmitt_call = lmitt_call))
 }
 
 ##' @export

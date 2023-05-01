@@ -5,19 +5,26 @@
 ##'
 ##' @title Create summary of \code{DirectAdjusted} object
 ##' @param object DirectAdjusted object
+##' @param vcov.type A string indicating the desired variance estimator.
+##'   Currently accepts "CR0", "MB0", or "HC0"
 ##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
-##' finite sample heteroskedasticity-robust standard error adjustment.
+##'   finite sample heteroskedasticity-robust standard error adjustment.
 ##' @return object of class \code{summary.DirectAdjusted}
 ##' @export
 ##' @method summary DirectAdjusted
-summary.DirectAdjusted <- function(object, ...) {
+summary.DirectAdjusted <- function(object,
+                                   vcov.type = c("CR0", "MB0", "HC0"),
+                                   ...) {
   out <- summary(as(object, "lm"))
-  out$coefficients[, 2L] <- sqrt(diag(vcovDA(object, ...)))
+  covmat <- vcovDA(object, type = vcov.type, ...)
+  out$coefficients[, 2L] <- sqrt(diag(covmat))
   out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
   out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
                                         object$df.residual,
                                         lower.tail = FALSE)
   class(out) <- "summary.DirectAdjusted"
+  out$vcov.type <- attr(covmat, "type")
+  out$lmitt <- object
   return(out)
 }
 
@@ -31,13 +38,21 @@ summary.DirectAdjusted <- function(object, ...) {
 ##' @return object, invisibly
 ##' @importFrom stats pt printCoefmat
 ##' @export
-print.summary.DirectAdjusted <-
-  function(x,
-           digits = max(3L, getOption("digits") - 3L),
-           signif.stars = getOption("show.signif.stars"),
-           ...) {
+print.summary.DirectAdjusted <- function(x, digits =
+                                              max(3L, getOption("digits") - 3L),
+                                         signif.stars =
+                                           getOption("show.signif.stars"),
+                                         ...) {
 
   to_report <- x$coefficients
+  cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n", collapse = "\n"),
+      "\n\n", sep = "")
+  if (x$lmitt@lmitt_fitted) {
+    cat("Treatment Effects:\n")
+  } else {
+    cat("Coefficients:\n")
+  }
   stats::printCoefmat(to_report, digits = digits)
+  cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
   invisible(x)
 }

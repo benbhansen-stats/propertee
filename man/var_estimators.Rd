@@ -5,7 +5,7 @@
 \alias{.vcovMB_CR0}
 \title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
-vcovDA(x, type = c("CR0"), cluster = NULL, ...)
+vcovDA(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...)
 
 .vcovMB_CR0(x, ...)
 }
@@ -13,7 +13,7 @@ vcovDA(x, type = c("CR0"), cluster = NULL, ...)
 \item{x}{a fitted \code{DirectAdjusted} model object}
 
 \item{type}{A string indicating the desired variance estimator. Currently
-accepts "CR0"}
+accepts "CR0", "MB0", or "HC0"}
 
 \item{cluster}{Defaults to NULL, which means unit of assignment columns
 indicated in the Design will be used to generate clustered covariance estimates.
