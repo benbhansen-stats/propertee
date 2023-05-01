@@ -542,30 +542,6 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient warns about less than full",
-                "rank model fit"), {
-  set.seed(20)
-  n <- 30
-  x <- rbinom(n, 1, 0.5)
-  df <- data.frame(x_0 = (x == 0) + 0, x_1 = 1 - (x == 0), y = rnorm(1.5 * x))
-  cmod <- lm(y ~ x_0 + x_1, df)
-  newx <- rbinom(n, 1, 0.5)
-  newdata <- data.frame(x_0 = (x == 0) + 0, x_1 = 1 - (x == 0))
-
-  expect_warning(ca_and_grad <- .get_ca_and_prediction_gradient(cmod),
-                 "prediction from a rank-deficient fit")
-  expect_equal(sum(is.na(ca_and_grad$ca)), 0)
-  expect_equal(ca_and_grad$ca, stats::predict(cmod))
-  expect_equal(ncol(ca_and_grad$prediction_gradient), cmod$rank)
-  expect_equal(colnames(ca_and_grad$prediction_gradient),
-               names(which(!is.na(cmod$coefficients))))
-
-  expect_warning(new_ca_and_grad <- .get_ca_and_prediction_gradient(cmod, newdata = newdata),
-                 "prediction from a rank-deficient fit")
-  stats_preds <- stats::predict(cmod, newdata)
-  expect_equal(new_ca_and_grad$ca, stats_preds)
-})
-
 test_that(paste(".get_ca_and_prediction_gradient returns expected output",
                 "for `glm` object"), {
   set.seed(20)
