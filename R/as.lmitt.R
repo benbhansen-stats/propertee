@@ -146,7 +146,11 @@ as.DirectAdjusted <- as.lmitt
     data <- lm_model$call$data
   } else {
     # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
-    data <- eval(lm_model$call$data, envir = eval_env)
+    data <- tryCatch(
+      suppressWarnings(.get_data_from_model("cov_adj", ~ .)),
+      error = function(e) {
+        .fallback_data_search(lm_model$call$data)
+      })
   }
   lm_model$call$data <- data
   assign("data", data, envir = eval_env)
