@@ -226,7 +226,7 @@ lmitt.formula <- function(obj,
   mf.call[[1]] <- quote(stats::model.frame)
   # Add assigned() to the model so it utilizes Design characteristics (primarly
   # concerned about subset)
-  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + flexida::assigned())
+  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + a.())
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
@@ -262,9 +262,7 @@ lmitt.formula <- function(obj,
 
   if (rhs == "1") {
     # Define new RHS and obtain model.matrix
-    new.form <- formula(~ flexida::assigned()) # need flexida:: or assigned()
-                                               # can't be found
-#    environment(new.form) <- saveenv # Do I need this?
+    new.form <- formula(~ a.())
     mm.call <- lm.call
     mm.call[[2]] <- str2lang(deparse(new.form))
     # model.matrix.lm supports as `na.action` argument where
@@ -284,7 +282,7 @@ lmitt.formula <- function(obj,
 
     # Create model.matrix with subgroup main effects (to BE residualized out)
     sbgrp.form <- stats::reformulate(paste0(paste(rhs,
-                                                  "flexida::assigned()",
+                                                  "a.()",
                                                   sep = "+"),
                                             "+ 0"))
     sbgrp.call <- lm.call
@@ -293,11 +291,11 @@ lmitt.formula <- function(obj,
     names(sbgrp.call)[2] <- "object"
     sbgrp.call$na.action <- "na.pass"
     sbgrp.mm <- eval(sbgrp.call, parent.frame())
-    sbgrp.mm <- sbgrp.mm[, !grepl("assigned\\(", colnames(sbgrp.mm)),
+    sbgrp.mm <- sbgrp.mm[, !grepl("a\\.\\(", colnames(sbgrp.mm)),
                          drop = FALSE]
 
     # Create model.matrix with treatment:subgroup interaction (to be kept in)
-    effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
+    effect.form <- stats::reformulate(paste0("a.():", rhs, "+0"))
     effect.call <- lm.call
     effect.call[[2]] <- str2lang(deparse(effect.form))
     effect.call[[1]] <- quote(stats::model.matrix.lm)
