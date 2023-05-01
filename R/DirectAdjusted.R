@@ -12,6 +12,9 @@ setClass("DirectAdjusted",
                    lmitt_call = "call"))
 
 setValidity("DirectAdjusted", function(object) {
+  if (length(object@lmitt_fitted) != 1) {
+    return("@lmitt_fitted slot must be a single logical")
+  }
   return(TRUE)
 })
 

@@ -824,3 +824,18 @@ test_that("lmitt_call", {
   expect_equal(lmittlmcall, mod@lmitt_call)
 
 })
+
+test_that("lmitt_fitted object", {
+  data(simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  mod <- lmitt(y ~ as.factor(o), data = simdata, design = des)
+  expect_true(mod@lmitt_fitted)
+
+  mod <- as.lmitt(lm(y ~ adopters(des), data = simdata), design = des)
+  expect_false(mod@lmitt_fitted)
+
+  mod <- lmitt(lm(y ~ adopters(des), data = simdata), design = des)
+  expect_false(mod@lmitt_fitted)
+
+})

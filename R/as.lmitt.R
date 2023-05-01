@@ -156,12 +156,12 @@ as.DirectAdjusted <- as.lmitt
     lm_model$formula <- as.formula(lm_model, env = eval_env)
   }
 
-
   return(new("DirectAdjusted",
              lm_model,
              Design = design,
              absorbed_intercepts = absorbed_intercepts,
              absorbed_moderators = absorbed_moderators,
-             lmitt_call = call("quote", lmitt_call)))
+             lmitt_call = call("quote", lmitt_call),
+             lmitt_fitted = lmitt_fitted))
 
 }
