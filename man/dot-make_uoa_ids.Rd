@@ -2,35 +2,30 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.make_uoa_ids}
 \alias{.make_uoa_ids}
-\title{Make unit of assignment ID's that align with the output of
-\code{estfun.DirectAdjusted}}
+\title{Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
+argument}
 \usage{
 .make_uoa_ids(x, cluster = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
 
-\item{cluster}{Defaults to NULL, which means unit of assignment columns
-indicated in the Design will be used to generate clustered covariance estimates.
-A non-NULL argument to \code{cluster} specifies a string or character vector of
-column names appearing in both the covariance adjustment and quasiexperimental
-samples that should be used for clustering covariance estimates.}
+\item{cluster}{character vector or list; optional. Specifies column names that appear
+in both the covariance adjustment dataframe C and quasiexperimental dataframe
+Q. Defaults to NULL, in which case unit of assignment columns indicated in
+the Design will be used to generate clustered covariance estimates.}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|Q| + |C \ Q|}
+A vector of length \eqn{|Q| + |C} \ \eqn{Q|}
 }
 \description{
-Make unit of assignment ID's that align with the output of
-\code{estfun.DirectAdjusted}
+Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
+argument
 }
 \details{
-\code{estfun.DirectAdjusted} stacks the rows from Q, the
-quasiexperimental sample, atop the rows in C that don't overlap with Q, C
-being the covariance adjustment sample. Thus, the number of rows in the
-estimating equations matrix is equal to \eqn{|Q| + |C \ Q|}, so
-\code{.make_uoa_ids} returns a vector of that length with corresponding
-units of assignment.
+These ID's should align with the output of \code{estfun.DirectAdjusted},
+which stacks the rows from Q atop the rows in C that don't overlap with Q.
 }
 \keyword{internal}
