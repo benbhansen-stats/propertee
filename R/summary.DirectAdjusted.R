@@ -24,7 +24,7 @@ summary.DirectAdjusted <- function(object,
                                         lower.tail = FALSE)
   class(out) <- "summary.DirectAdjusted"
   out$vcov.type <- attr(covmat, "type")
-  out$call <- object@lmitt_call
+  out$lmitt <- object
   return(out)
 }
 
@@ -45,9 +45,13 @@ print.summary.DirectAdjusted <- function(x, digits =
                                          ...) {
 
   to_report <- x$coefficients
-  cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"),
+  cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n", collapse = "\n"),
       "\n\n", sep = "")
-  cat("Treatment Effects:\n")
+  if (x$lmitt@lmitt_fitted) {
+    cat("Treatment Effects:\n")
+  } else {
+    cat("Coefficients:\n")
+  }
   stats::printCoefmat(to_report, digits = digits)
   cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
   invisible(x)

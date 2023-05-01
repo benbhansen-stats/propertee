@@ -350,9 +350,18 @@ lmitt.formula <- function(obj,
                         na.rm = TRUE)
     }
   }
-
   # Center variables to remove intercept
   mm <- apply(mm, 2, .center, lm.call$weights, logicalsubset)
+  colnames(mm) <- gsub("a\\.\\(\\)",
+                       paste0(var_names(design, "t"), "_"),
+                       colnames(mm))
+  # Adding a _ after the treatment variable name to avoid conflict with original
+  # treatment variable.
+
+  # Replace : with _ for interaction to try and avoid backticks
+  colnames(mm) <- gsub("\\:", "_", colnames(mm))
+  # This isn't foolproof as the sbgrp variable can cause them too
+  # e.g. `as.factor(sbgrp)` forces backticks.
 
   # get response
   mr <- stats::model.response(mf)

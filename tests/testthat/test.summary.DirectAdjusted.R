@@ -79,3 +79,25 @@ test_that("vcov.type argument", {
                1)
 
 })
+
+test_that("lmitt.form vs as.lmitt", {
+  # `lmitt.formula` should report only "Treatment Effects", whereas
+  # as.`lmitt`/`lmitt(lm(...` report coefficients since we don't have control
+  # over what is reported.
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+
+  co <- capture.output(summary(lmitt(y ~ 1, data = simdata, design = des)))
+  expect_true(any(grepl("Treatment Effects", co)))
+  expect_false(any(grepl("Coefficients", co)))
+
+  co <- capture.output(summary(as.lmitt(lm(y ~ z.(des), data = simdata),
+                                        design = des)))
+  expect_false(any(grepl("Treatment Effects", co)))
+  expect_true(any(grepl("Coefficients", co)))
+
+  co <- capture.output(summary(lmitt(lm(y ~ z.(des), data = simdata),
+                                        design = des)))
+  expect_false(any(grepl("Treatment Effects", co)))
+  expect_true(any(grepl("Coefficients", co)))
+})
