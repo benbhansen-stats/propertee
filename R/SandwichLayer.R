@@ -168,11 +168,12 @@ setMethod("[", "PreSandwichLayer",
 ##' @param x a \code{PreSandwichLayer} object.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},
 ##' \code{rd_design()}, or \code{obs_design()}.
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##' assignment variables in \code{design} to cluster/unit of assignment
-##' variables in the covariance adjustment data. Names represent variables in the
-##' Design; values represent variables in the data. Only needed if variable names
-##' differ.
+##' @param by character vector or list; optional. Specifies column names that
+##' appear in both the covariance adjustment and quasiexperimental dataframes
+##' and can be used to match observations in case the two overlap. Names
+##' represent variables in the Design; values represent variables in the data.
+##' Defaults to NULL, in which case unit of assignment columns indicated in
+##' the Design will be used to match observations in the samples.
 ##' @param Q_data optional; quasiexperimental dataframe to allow for merging
 ##' to the covariance adjustment data via the `by` argument. If `by` is not NULL
 ##' and `Q_data` is NULL, the function will search through the call stack to find
@@ -255,19 +256,17 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
              Design = design))
 }
 
-#' Generate a list of sanitized units of assignment from C
+#' Return ID's for observations in the covariance adjustment sample C
 #' @param x a \code{SandwichLayer} object.
-#' @param by Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to align contributions to estimating
-#' equations or generate clustered covariance estimates. A non-NULL argument to
-#' `by` specifies a string or character vector of column names appearing in both
-#' the covariance adjustment and quasiexperimental sa,ples that should be used
-#' for clustering covariance estimates.
+#' @param by character vector or list; optional. Specifies column names that appear in
+#' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+#' Defaults to NULL, in which case unit of assignment columns indicated in the
+#' Design will be used to generate ID's.
 #' @param verbose Boolean defaulting to TRUE, which will produce rather than
 #' swallow any warnings about the coding of the units of assignment in the
 #' covariance adjustment model data
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|C|}, where C is the covariance adjustment sample
+#' @return A vector of length \eqn{|C|}
 #' @keywords internal
 .sanitize_C_ids <- function(x, by = NULL, verbose = TRUE, sorted = FALSE, ...) {
   if (!inherits(x, "SandwichLayer")) {

@@ -2,8 +2,8 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.align_and_extend_estfuns}
 \alias{.align_and_extend_estfuns}
-\title{(Internal) Align the matrices of estimating equations from the ITT effect
-and covariance adjustment models}
+\title{(Internal) Align the dimensions and rows of estimating equations matrices
+from the ITT effect and covariance adjustment models}
 \usage{
 .align_and_extend_estfuns(x, ...)
 }
@@ -18,7 +18,7 @@ estimating equations for the ITT effect model, and the other being the
 aligned contributions to the covariance adjustment model
 }
 \description{
-(Internal) Align the matrices of estimating equations from the ITT effect
-and covariance adjustment models
+(Internal) Align the dimensions and rows of estimating equations matrices
+from the ITT effect and covariance adjustment models
 }
 \keyword{internal}

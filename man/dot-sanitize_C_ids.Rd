@@ -2,19 +2,17 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.sanitize_C_ids}
 \alias{.sanitize_C_ids}
-\title{Generate a list of sanitized units of assignment from C}
+\title{Return ID's for observations in the covariance adjustment sample C}
 \usage{
 .sanitize_C_ids(x, by = NULL, verbose = TRUE, sorted = FALSE, ...)
 }
 \arguments{
 \item{x}{a \code{SandwichLayer} object.}
 
-\item{by}{Defaults to NULL, which means unit of assignment columns
-indicated in the Design will be used to align contributions to estimating
-equations or generate clustered covariance estimates. A non-NULL argument to
-\code{by} specifies a string or character vector of column names appearing in both
-the covariance adjustment and quasiexperimental sa,ples that should be used
-for clustering covariance estimates.}
+\item{by}{character vector or list; optional. Specifies column names that appear in
+botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+Defaults to NULL, in which case unit of assignment columns indicated in the
+Design will be used to generate ID's.}
 
 \item{verbose}{Boolean defaulting to TRUE, which will produce rather than
 swallow any warnings about the coding of the units of assignment in the
@@ -23,9 +21,9 @@ covariance adjustment model data}
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|C|}, where C is the covariance adjustment sample
+A vector of length \eqn{|C|}
 }
 \description{
-Generate a list of sanitized units of assignment from C
+Return ID's for observations in the covariance adjustment sample C
 }
 \keyword{internal}

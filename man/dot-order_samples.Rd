@@ -2,37 +2,39 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.order_samples}
 \alias{.order_samples}
-\title{Generate a vector of sanitized units of assignment from C and Q}
+\title{Order observations used to fit a \code{DirectAdjusted} model and its
+covariance adjustment model}
 \usage{
 .order_samples(x, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
 
-\item{verbose}{Boolean defaulting to TRUE, which will produce rather than
-swallow any warnings about the coding of the units of assignment in the
-covariance adjustment model data}
+\item{verbose}{boolean; optional. Defaults to TRUE, which will produce rather
+than swallow any warnings about the coding of the units of assignment in the
+covariance adjustment model data.}
 
 \item{...}{arguments passed to methods}
-
-\item{cluster}{Defaults to NULL, which means unit of assignment columns
-indicated in the Design will be used to generate clustered covariance estimates.
-A non-NULL argument to \code{cluster} specifies a string or character vector of
-column names appearing in both the covariance adjustment and quasiexperimental
-samples that should be used for clustering covariance estimates.}
-
-\item{ca}{SandwichLayer object storing information about the covariance
-adjustment model; usually stored as the \code{offset} of a \code{DirectAdjusted}
-object when covariance adjustment is performed}
 }
 \value{
-A named vector of length \eqn{|Q| + |C \ Q|}, where Q and C represent
-the sets of observations in the quasiexperimental sample and covariance
-adjustment sample, respectively. Values can be "Q", for observations that only
-appear in Q, "C", for those that only appear in C, and "QC" for those that
-appear in both. Names correspond to the unit of assignment ID.
+a list of two named vectors. The first element \code{Q_order} corresponds
+to the order of the observations in Q with names corresponding to their ID's.
+The second, \code{C_order}, corresponds to the order of observations in C but with
+any observations in Q that do not appear in C appended as NA's to the front
+(names still correspond to the observations' ID's). This vector has length
+\eqn{|Q| + |C} \ \eqn{Q|}.
 }
 \description{
-Generate a vector of sanitized units of assignment from C and Q
+Order observations used to fit a \code{DirectAdjusted} model and its
+covariance adjustment model
+}
+\details{
+\code{.order_samples} underpins the ordering for both \code{.make_uoa_ids}
+and \code{estfun.DirectAdjusted}, which need to be aligned for proper
+clustering to occur in \code{vcovDA} calls. Since \code{estfun.DirectAdjusted}
+returns a matrix with a row count equal to \eqn{|Q| + |C} \ \eqn{Q|},
+\code{.order_samples} must not only order the rows in Q and C, but also
+provide information about which observations appear in both samples. How this
+manifests is explained below.
 }
 \keyword{internal}

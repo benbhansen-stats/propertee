@@ -2,24 +2,21 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.sanitize_Q_ids}
 \alias{.sanitize_Q_ids}
-\title{Generate a list of sanitized units of assignment from Q}
+\title{Return ID's for observations in the quasiexperimental sample Q}
 \usage{
 .sanitize_Q_ids(x, by = NULL, sorted = FALSE, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
 
-\item{by}{Defaults to NULL, which means unit of assignment columns
-indicated in the Design will be used to align contributions to estimating
-equations or generate clustered covariance estimates. A non-NULL argument to
-\code{by} specifies a string or character vector of column names appearing in both
-the covariance adjustment and quasiexperimental sa,ples that should be used
-for clustering covariance estimates.}
+\item{by}{character vector or list; optional. Specifies column names that appear in
+botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+Defaults to NULL, in which case unit of assignment columns indicated in the
+Design will be used to generate ID's.}
 
-\item{sorted}{Defaults to FALSE, which provides the unit of assignment ID's
-in the same order as the model frame. If TRUE, the unit of assignment ID's
-will be sorted alphanumerically and returned as a list, as typical of the
-output of \code{sort.int} when \code{index.return = TRUE}.}
+\item{sorted}{boolean defaulting to FALSE, which provides ID's in the same
+order as the model frame. If TRUE, ID's will be sorted alphanumerically and
+returned as a list, as given by \code{sort.int} with \code{index.return = TRUE}.}
 
 \item{...}{arguments passed to methods}
 }
@@ -31,6 +28,6 @@ contributions to the ITT effect model with their contributions to the covariance
 adjustment model in \code{estfun.DirectAdjusted}.
 }
 \description{
-Generate a list of sanitized units of assignment from Q
+Return ID's for observations in the quasiexperimental sample Q
 }
 \keyword{internal}

@@ -75,34 +75,36 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   return(ci)
 }
 
-##' @title Extract empirical estimating functions from a \code{DirectAdjusted} model fit
+##' @title Extract empirical estimating equations from a \code{DirectAdjusted} model fit
 ##' @param x a fitted \code{DirectAdjusted} object
 ##' @param ... arguments passed to methods
-##' @return An \eqn{n\times k} matrix containing the empirical estimating
-##' functions of the directly adjusted ITT model. \eqn{n} represents the
-##' combined number of units at the observation level in the samples used to
-##' fit the covariance adjustment and ITT effect models. \eqn{k} represents the
-##' number of parameters in the ITT effect model.\cr\cr
+##' @return An \eqn{n\times k} matrix of empirical estimating equations for the
+##' covariance-adjusted ITT effect regression. \eqn{n} represents the number of
+##' observations in the union of the samples used to fit the two regressions.
+##' \eqn{k} represents the number of parameters in the latter model.\cr\cr
 ##' Each row represents an observation's contribution to the stacked estimating
 ##' equations. This contribution, denoted \eqn{\tilde{\psi}_{i}} for the \eqn{i}th
 ##' observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
 ##' \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
 ##' contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
 ##' contribution to the covariance adjustment model fit, and the \eqn{A} matrices
-##' are given by typical sandwich calculations.\cr\cr
-##' Note that this formulation requires a row for each observation used to fit
-##' either the covariance adjustment model or the ITT effect model. The output
-##' matrix is ordered such that the units used to fit the latter comprise the
-##' initial rows, and any additional observations used to fit the former are
-##' stacked below. When there is overlap of the rows used to fit the two models,
-##' a best attempt is made to align observations' contributions to the two fits.
+##' are given by typical sandwich calculations. The output matrix is orderded
+##' such that the units used to fit the latter comprise the initial rows, and
+##' any additional observations used to fit the former are stacked below.\cr\cr
+##' Note that the formulation of the output matrix \eqn{\tilde{\Psi}} requires
+##' information about each observation's contributions to both the covariance
+##' adjustment and ITT effect models (where some observations may not contribute
+##' to both models). Estimating equations are taken from \code{sandwich::estfun}
+##' calls on both fitted models and aligned as closely as possible.
 ##' The `by` argument in `cov_adj()` can be used to specify a column unrelated to
-##' the design that will allow for exact alignment. If no `by` argument is
-##' provided, clustering information given in the \code{DirectAdjusted}'s
-##' \code{Design} object will be used to align rows at least in the same unit of
-##' assignment. Regardless of the ultiamte alignment--as well as the initial
-##' ordering of observations in the two dataframes--the resulting sandwich
-##' variance estimates will be the same.
+##' the design that will allow for exact alignment of such matrices. If no `by`
+##' argument is provided, clustering information given in the \code{DirectAdjusted}'s
+##' \code{Design} object will be used to align rows by unit of assignment, even
+##' though no guarantees can be made about aligning the matrices within units
+##' of assignment. Regardless of the eventual alignment and initial ordering of the
+##' observations in the two matrices, however, when using \code{vcovDA},
+##' variance estimates will ultimately be the same due to the clustering passed
+##' to any \code{sandwich::meatCL} calls.
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
@@ -127,9 +129,7 @@ estfun.DirectAdjusted <- function(x, ...) {
 ##' @param ... arguments passed to methods
 ##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
 ##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
-##' model estimating equations defined in our accompanying documentation (which
-##' defines a perhaps unintuitive scaling factor of \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
-##' for this matrix).
+##' model estimating equations defined in our accompanying documentation.
 ##' @exportS3Method
 bread.DirectAdjusted <- function(x, ...) {
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
@@ -152,8 +152,8 @@ bread.DirectAdjusted <- function(x, ...) {
   return(out)
 }
 
-##' (Internal) Align the matrices of estimating equations from the ITT effect
-##' and covariance adjustment models
+##' (Internal) Align the dimensions and rows of estimating equations matrices
+##' from the ITT effect and covariance adjustment models
 ##' @inheritParams estfun.DirectAdjusted
 ##' @return list of two matrices, one being the aligned contributions to the
 ##' estimating equations for the ITT effect model, and the other being the
@@ -184,13 +184,13 @@ bread.DirectAdjusted <- function(x, ...) {
 }
 
 ##' (Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-##' object's based on its base S3 class
+##' object based on its base S3 class
 ##' @inheritParams estfun.DirectAdjusted
 ##' @return S3 method
 ##' @keywords internal
 .base_S3class_estfun <- function(x) {
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
-  ## to extract estimating equations for ITT model
+  ## to extract ITT model's estimating equations
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
@@ -200,22 +200,17 @@ bread.DirectAdjusted <- function(x, ...) {
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
 }
 
-#' Make unit of assignment ID's that align with the output of
-#' \code{estfun.DirectAdjusted}
-#' @details \code{estfun.DirectAdjusted} stacks the rows from Q, the
-#' quasiexperimental sample, atop the rows in C that don't overlap with Q, C
-#' being the covariance adjustment sample. Thus, the number of rows in the
-#' estimating equations matrix is equal to \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}},
-#' so \code{.make_uoa_ids} returns a vector of that length with corresponding
-#' units of assignment.
+#' Make unit of assignment ID's to pass to \code{sandwich::meatCL} `cluster`
+#' argument
+#' @details These ID's should align with the output of \code{estfun.DirectAdjusted},
+#' which stacks the rows from Q atop the rows in C that don't overlap with Q.
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
+#' @param cluster character vector or list; optional. Specifies column names that appear
+#' in both the covariance adjustment dataframe C and quasiexperimental dataframe
+#' Q. Defaults to NULL, in which case unit of assignment columns indicated in
+#' the Design will be used to generate clustered covariance estimates.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
+#' @return A vector of length \eqn{|Q| + |C} \ \eqn{Q|}
 #' @keywords internal
 .make_uoa_ids <- function(x, cluster = NULL, ...) {
   if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
@@ -244,24 +239,25 @@ bread.DirectAdjusted <- function(x, ...) {
   return(factor(uoas, levels = unique(uoas)))
 }
 
-#' Generate a vector of sanitized units of assignment from C and Q
+#' Order observations used to fit a \code{DirectAdjusted} model and its
+#' covariance adjustment model
+#' @details \code{.order_samples} underpins the ordering for both \code{.make_uoa_ids}
+#' and \code{estfun.DirectAdjusted}, which need to be aligned for proper
+#' clustering to occur in \code{vcovDA} calls. Since \code{estfun.DirectAdjusted}
+#' returns a matrix with a row count equal to \eqn{|Q| + |C} \ \eqn{Q|},
+#' \code{.order_samples} must not only order the rows in Q and C, but also
+#' provide information about which observations appear in both samples. How this
+#' manifests is explained below.
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
-#' @param ca SandwichLayer object storing information about the covariance
-#' adjustment model; usually stored as the `offset` of a \code{DirectAdjusted}
-#' object when covariance adjustment is performed
-#' @param verbose Boolean defaulting to TRUE, which will produce rather than
-#' swallow any warnings about the coding of the units of assignment in the
-#' covariance adjustment model data
-#' @return A named vector of length \eqn{|Q| + |C \ Q|}, where Q and C represent
-#' the sets of observations in the quasiexperimental sample and covariance
-#' adjustment sample, respectively. Values can be "Q", for observations that only
-#' appear in Q, "C", for those that only appear in C, and "QC" for those that
-#' appear in both. Names correspond to the unit of assignment ID.
+#' @param verbose boolean; optional. Defaults to TRUE, which will produce rather
+#' than swallow any warnings about the coding of the units of assignment in the
+#' covariance adjustment model data.
+#' @return a list of two named vectors. The first element `Q_order` corresponds
+#' to the order of the observations in Q with names corresponding to their ID's.
+#' The second, `C_order`, corresponds to the order of observations in C but with
+#' any observations in Q that do not appear in C appended as NA's to the front
+#' (names still correspond to the observations' ID's). This vector has length
+#' \eqn{|Q| + |C} \ \eqn{Q|}.
 #' @param ... arguments passed to methods
 #' @keywords internal
 .order_samples <- function(x, verbose = TRUE, ...) {
@@ -271,8 +267,8 @@ bread.DirectAdjusted <- function(x, ...) {
                "the covariance adjustment model"))
   }
   ## `keys` may have additional columns beyond "in_Q" and the uoa columns if a
-  ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If
-  ## there is, use those columns exclusively to merge.
+  ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
+  ## does, use the columns exclusively specified in `by` to merge.
   by <- setdiff(colnames(ca@keys), "in_Q")
   if (length(setdiff(by, var_names(x@Design, "u"))) > 0) {
     by <- setdiff(by, var_names(x@Design, "u"))
@@ -300,18 +296,15 @@ bread.DirectAdjusted <- function(x, ...) {
   return(list(Q_order = Q_ix, C_order = C_ix))
 }
 
-#' Generate a list of sanitized units of assignment from Q
+#' Return ID's for observations in the quasiexperimental sample Q
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param by Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to align contributions to estimating
-#' equations or generate clustered covariance estimates. A non-NULL argument to
-#' `by` specifies a string or character vector of column names appearing in both
-#' the covariance adjustment and quasiexperimental sa,ples that should be used
-#' for clustering covariance estimates.
-#' @param sorted Defaults to FALSE, which provides the unit of assignment ID's
-#' in the same order as the model frame. If TRUE, the unit of assignment ID's
-#' will be sorted alphanumerically and returned as a list, as typical of the
-#' output of \code{sort.int} when `index.return = TRUE`.
+#' @param by character vector or list; optional. Specifies column names that appear in
+#' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+#' Defaults to NULL, in which case unit of assignment columns indicated in the
+#' Design will be used to generate ID's.
+#' @param sorted boolean defaulting to FALSE, which provides ID's in the same
+#' order as the model frame. If TRUE, ID's will be sorted alphanumerically and
+#' returned as a list, as given by \code{sort.int} with `index.return = TRUE`.
 #' @param ... arguments passed to methods
 #' @return If not `sorted`, a vector of length \eqn{|Q|}, where Q is the
 #' quasiexperimental sample. If `sorted`, a list whose elements are vectors of

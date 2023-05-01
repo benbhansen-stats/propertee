@@ -12,11 +12,12 @@ as.SandwichLayer(x, design, by = NULL, Q_data = NULL)
 \item{design}{a \code{Design} object created by one of \code{rct_design()},
 \code{rd_design()}, or \code{obs_design()}.}
 
-\item{by}{optional; named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in the covariance adjustment data. Names represent variables in the
-Design; values represent variables in the data. Only needed if variable names
-differ.}
+\item{by}{character vector or list; optional. Specifies column names that
+appear in both the covariance adjustment and quasiexperimental dataframes
+and can be used to match observations in case the two overlap. Names
+represent variables in the Design; values represent variables in the data.
+Defaults to NULL, in which case unit of assignment columns indicated in
+the Design will be used to match observations in the samples.}
 
 \item{Q_data}{optional; quasiexperimental dataframe to allow for merging
 to the covariance adjustment data via the \code{by} argument. If \code{by} is not NULL

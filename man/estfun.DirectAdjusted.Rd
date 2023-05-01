@@ -2,7 +2,7 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{estfun.DirectAdjusted}
 \alias{estfun.DirectAdjusted}
-\title{Extract empirical estimating functions from a \code{DirectAdjusted} model fit}
+\title{Extract empirical estimating equations from a \code{DirectAdjusted} model fit}
 \usage{
 \method{estfun}{DirectAdjusted}(x, ...)
 }
@@ -12,32 +12,34 @@
 \item{...}{arguments passed to methods}
 }
 \value{
-An \eqn{n\times k} matrix containing the empirical estimating
-functions of the directly adjusted ITT model. \eqn{n} represents the
-combined number of units at the observation level in the samples used to
-fit the covariance adjustment and ITT effect models. \eqn{k} represents the
-number of parameters in the ITT effect model.\cr\cr
+An \eqn{n\times k} matrix of empirical estimating equations for the
+covariance-adjusted ITT effect regression. \eqn{n} represents the number of
+observations in the union of the samples used to fit the two regressions.
+\eqn{k} represents the number of parameters in the latter model.\cr\cr
 Each row represents an observation's contribution to the stacked estimating
 equations. This contribution, denoted \eqn{\tilde{\psi}_{i}} for the \eqn{i}th
 observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
 \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
 contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
 contribution to the covariance adjustment model fit, and the \eqn{A} matrices
-are given by typical sandwich calculations.\cr\cr
-Note that this formulation requires a row for each observation used to fit
-either the covariance adjustment model or the ITT effect model. The output
-matrix is ordered such that the units used to fit the latter comprise the
-initial rows, and any additional observations used to fit the former are
-stacked below. When there is overlap of the rows used to fit the two models,
-a best attempt is made to align observations' contributions to the two fits.
+are given by typical sandwich calculations. The output matrix is orderded
+such that the units used to fit the latter comprise the initial rows, and
+any additional observations used to fit the former are stacked below.\cr\cr
+Note that the formulation of the output matrix \eqn{\tilde{\Psi}} requires
+information about each observation's contributions to both the covariance
+adjustment and ITT effect models (where some observations may not contribute
+to both models). Estimating equations are taken from \code{sandwich::estfun}
+calls on both fitted models and aligned as closely as possible.
 The \code{by} argument in \code{cov_adj()} can be used to specify a column unrelated to
-the design that will allow for exact alignment. If no \code{by} argument is
-provided, clustering information given in the \code{DirectAdjusted}'s
-\code{Design} object will be used to align rows at least in the same unit of
-assignment. Regardless of the ultiamte alignment--as well as the initial
-ordering of observations in the two dataframes--the resulting sandwich
-variance estimates will be the same.
+the design that will allow for exact alignment of such matrices. If no \code{by}
+argument is provided, clustering information given in the \code{DirectAdjusted}'s
+\code{Design} object will be used to align rows by unit of assignment, even
+though no guarantees can be made about aligning the matrices within units
+of assignment. Regardless of the eventual alignment and initial ordering of the
+observations in the two matrices, however, when using \code{vcovDA},
+variance estimates will ultimately be the same due to the clustering passed
+to any \code{sandwich::meatCL} calls.
 }
 \description{
-Extract empirical estimating functions from a \code{DirectAdjusted} model fit
+Extract empirical estimating equations from a \code{DirectAdjusted} model fit
 }

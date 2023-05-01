@@ -3,7 +3,7 @@
 \name{.base_S3class_estfun}
 \alias{.base_S3class_estfun}
 \title{(Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-object's based on its base S3 class}
+object based on its base S3 class}
 \usage{
 .base_S3class_estfun(x)
 }
@@ -15,6 +15,6 @@ S3 method
 }
 \description{
 (Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-object's based on its base S3 class
+object based on its base S3 class
 }
 \keyword{internal}

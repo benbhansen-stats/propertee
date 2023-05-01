@@ -14,9 +14,7 @@
 \value{
 A \eqn{k\times k} matrix where k denotes the number of parameters
 in the ITT effect model. This corresponds to the Hessian of the ITT effect
-model estimating equations defined in our accompanying documentation (which
-defines a perhaps unintuitive scaling factor of \eqn{|\{i : i \in Q\}| + |\{i : i in C\ Q|\}}
-for this matrix).
+model estimating equations defined in our accompanying documentation.
 }
 \description{
 Extract bread matrix from a \code{DirectAdjusted} model fit
