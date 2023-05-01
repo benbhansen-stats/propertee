@@ -497,8 +497,9 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   data_temp <- x$call$data[, 1:(ncol(x$call$data)-2)]
   # find the column of y
   names <- colnames(data_temp)
+  centered_y <- x$call$data[, (ncol(x$call$data)-1)]
   name_y <- names[apply(
-    trunc(data_temp - x$call$data$flexida_y, 4), 2, function(a) length(unique(a))==1
+    trunc(data_temp - centered_y, 2), 2, function(a) length(unique(a))==1
     )]
   data_temp <- cbind(data_temp, weight = ws, wy = ws * data_temp[, name_y])
   
@@ -549,11 +550,21 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   
   yobs <- data[[y]]  # observed ys
   zobs <- data[[z]]  # observed zs (random assignment)
-  nbs <- table(data[[block]])  # block sizes
+  nbs <- as.numeric(table(data[, block]))  # block sizes
   
-  nbk <- table(data.frame(data[[block]], data[[z]]))
+  nbk <- cbind(as.vector(table(data[data[[z]] == 0, block])),
+               as.vector(table(data[data[[z]] == 1, block])))
   # nbk, number of units in each block and treatment, B by K
-  nbk_all <- nbk[data[[block]], ]
+  if (length(block) == 1)
+    nbk_all <- nbk[data[, block], ]
+  else {
+    tab_all <- table(data[, c(block, z)])
+    nbk_all <- matrix(0, nrow = nrow(data), ncol = 2)
+    for (row in 1:nrow(as.matrix(data[, block]))) {
+      rownum <- as.matrix(data[, block])[row, ]
+      nbk_all[row, ] <- tab_all[rownum[1], rownum[2], ]
+    }
+  }
   # nbk, number of units in each block and treatment
   # corresponding to each unit, n by K
   
