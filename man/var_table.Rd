@@ -7,16 +7,16 @@
 var_table(design, compress = TRUE, report_all = FALSE)
 }
 \arguments{
-\item{design}{A Design object}
+\item{design}{a \code{Design} object}
 
-\item{compress}{Should multiple variables be compressed into a
+\item{compress}{should multiple variables be compressed into a
 comma-separated string? Default \code{TRUE}.}
 
-\item{report_all}{Should we report all possible structures even if they
-don't exist in the Design? Default \code{FALSE}.}
+\item{report_all}{should we report all possible structures even if they
+don't exist in the \code{Design}? Default \code{FALSE}.}
 }
 \value{
-a \code{matrix} of variables in the Design structure
+a \code{matrix} of variables in the \code{Design} structure
 }
 \description{
 Returns a table containing the variables identified in each structure
@@ -26,13 +26,14 @@ When \code{compress} is \code{TRUE}, the result will always have two
 columns. When \code{FALSE}, the result will have number of columns equal to
 the largest number of variables in a particular role, plus one. E.g., a call
 such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
-in the output matrix.
+in the output matrix with \code{compress = FALSE}.
 
 When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
-rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
-\code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
-rows (treatment and cluster/unitid/unit of assignment), with additional rows
-for blocks and forcing if included in the \code{Design}.
+rows (when the \code{design} is an RCT or Obs) or 4 rows (when the
+\code{design} is a RD), with empty variable entries as appropriate. When
+\code{FALSE}, the matrix will have minimum 2 rows (treatment and
+cluster/unitid/unit of assignment), with additional rows for blocks and
+forcing if included in the \code{Design}.
 }
 \examples{
 des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)

@@ -16,12 +16,13 @@ dichotomy(x) <- value
 \S4method{dichotomy}{Design}(x) <- value
 }
 \arguments{
-\item{x}{\code{Design} object}
+\item{x}{a \code{Design} object}
 
-\item{value}{Replacement \code{dichotomy} formula, or \code{NULL} to remove}
+\item{value}{replacement \code{dichotomy} formula, or \code{NULL} to remove}
 }
 \value{
-Dichomization formula
+dichomization formula, or a \code{Design} with the
+\code{dichomization} replaces with \code{x}.
 }
 \description{
 Extract or replace dichotomy
