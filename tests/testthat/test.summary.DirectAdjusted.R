@@ -101,3 +101,22 @@ test_that("lmitt.form vs as.lmitt", {
   expect_false(any(grepl("Treatment Effects", co)))
   expect_true(any(grepl("Coefficients", co)))
 })
+
+test_that("issues with coefficients", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  mod <- lmitt(y ~ 1, data = simdata, design =des, subset = simdata$z == 0)
+  s <- summary(mod)
+  co <- capture.output(s)
+  expect_true(any(grepl("Treatment Effects", co)))
+
+  expect_false(any(grepl("calculated via type", co)))
+
+  dalm <- new("DirectAdjusted",
+              lm(y ~ 0, data = simdata, weights = ate(des)),
+              Design = des,
+              lmitt_fitted = TRUE)
+
+  expect_true(any(grepl("No Coefficients", capture.output(summary(dalm)))))
+
+})

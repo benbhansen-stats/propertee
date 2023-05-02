@@ -16,14 +16,17 @@ summary.DirectAdjusted <- function(object,
                                    vcov.type = c("CR0", "MB0", "HC0"),
                                    ...) {
   out <- summary(as(object, "lm"))
-  covmat <- vcovDA(object, type = vcov.type, ...)
-  out$coefficients[, 2L] <- sqrt(diag(covmat))
-  out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
-  out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
-                                        object$df.residual,
-                                        lower.tail = FALSE)
+
+  if (object$rank > 0) {
+    covmat <- vcovDA(object, type = vcov.type, ...)
+    out$coefficients[, 2L] <- sqrt(diag(covmat))
+    out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
+    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
+                                          object$df.residual,
+                                          lower.tail = FALSE)
+    out$vcov.type <- attr(covmat, "type")
+  }
   class(out) <- "summary.DirectAdjusted"
-  out$vcov.type <- attr(covmat, "type")
   out$lmitt <- object
   return(out)
 }
@@ -46,7 +49,7 @@ print.summary.DirectAdjusted <- function(x,
                                          ...) {
 
   cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n",
-                         collapse = "\n"), "\n\n", sep = "")
+                         collapse = "\n"), "\n", sep = "")
 
   df <- x$df
 
@@ -79,6 +82,11 @@ print.summary.DirectAdjusted <- function(x,
                         na.print = "NA", ...)
   }
 
-  cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+  if (nrow(x$coefficients) > 0) {
+    # Only print if we estimate at least one coefficient
+    cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+  } else {
+    cat("\n")
+  }
   invisible(x)
 }
