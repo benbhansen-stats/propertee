@@ -180,11 +180,10 @@
 ##'   call stack.
 ##' @return If found, the data.
 ##' @keywords internal
-.fallback_data_search <- function(data_name = NULL) {
-  if (is.null(data_name)) data_name <- "data"
+.fallback_data_search <- function() {
   for (i in seq_len(sys.nframe())) {
     try({
-      data <- get(data_name, envir = sys.frame(i))
+      data <- get("data", envir = sys.frame(i))
     }, silent = TRUE)
     if (!is.null(data) && is.data.frame(data)) {
       break()
