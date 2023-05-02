@@ -145,12 +145,20 @@ as.DirectAdjusted <- as.lmitt
     # the updated RHS and LHS).
     data <- lm_model$call$data
   } else {
-    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
-    data <- tryCatch(
-      suppressWarnings(.get_data_from_model("cov_adj", ~ .)),
-      error = function(e) {
-        .fallback_data_search(lm_model$call$data)
-      })
+    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data using a
+    # `fallback_data_search`-esque approach
+    data <- lm_model$call$data
+    for (i in seq_len(sys.nframe() - 1)) {
+      try(data <- eval(data, envir = parent.frame(i)),
+          silent = TRUE)
+    }
+    if (!inherits(data, "data.frame")) {
+      stop("Could not determine appropriate data")
+    }
+    if (!is.null(lm_model$call$subset)) {
+      sbst <- eval(lm_model$call$subset, data)
+      data <- subset(data, sbst)
+    }
   }
   lm_model$call$data <- data
   assign("data", data, envir = eval_env)
