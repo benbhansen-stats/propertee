@@ -446,32 +446,55 @@ covariance model is folded in.
 
 First, let's switch over to using $[\alpha_{1}, \ldots, \alpha_{s}]$
 as the intercept parameter(s), allowing for absorption of $s$ block or
-stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.    Our estimating function becomes
+stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.
+Our estimating function \eqref{eq:14} becomes
 \begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
-  \indicator{i \in \bigcup \mathcal{Q}} \times \\
-  \owt{}
+  \indicator{i \in \bigcup \mathcal{Q}} \owt{}\times \\  
   \left(
     \begin{array}{l}
-           [y_{i}[0] - g(\vec{x}_{i}\beta)-
+           [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} -
       \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}]\indicator{b_{i}=1}\\
       \vdots\\ 
-          {} [y_{i}[0] - g(\vec{x}_{i}\beta)-
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{s} -
       \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}]\indicator{b_{i}=s}\\      
-         {}  [y_{i}[1] - g(\vec{x}_{i}\beta)-
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-          {} [y_{i}[k] - g(\vec{x}_{i}\beta)-
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                  \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
 \end{multline}
+(Of note, the argument of \S~\ref{sec:psit-rho_0-tau} no longer applies
+to show the system of equations
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$
+equivalent to $0=\sum_{i}\dot{\psi}(\tilde{\mathbf{y}}_{i}; \tau,
+\alpha, \beta)$, where $\dot{\psi}(\tilde{\mathbf{y}}; \tau,
+\alpha, \beta)$ has uppermost $s$ entries
+\begin{equation*}
+    \left(
+    \begin{array}{l}
+           [y_{i}[0] - g(\vec{x}_{i}\beta)-
+                  \alpha_{1} ]\indicator{b_{i}=1} \indicator{z_{i}=0}\\
+      \vdots\\ 
+          {} [y_{i}[0] - g(\vec{x}_{i}\beta)-
+                  \alpha_{s}]\indicator{b_{i}=s} \indicator{z_{i}=0}\\      
+    \end{array}
+    \right),
+  \end{equation*}
+in parallel with \eqref{eq:5}, but bottom $k$ entries the same as ${\psi}(\tilde{\mathbf{y}}_{i}; \tau,
+\alpha, \beta)$'s. That is, it may not be the case that the $\alpha$-solutions of
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$ are
+block-specific control group means.  Accordingly its $\tau$-solutions
+do not necessarily bear interpretation as contrasts of Hajek estimators.)
 
-The FWL theorem is used to switch this out for the pair of systems of
-equations $0 = \sum_{i}\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ and
+The FWL theorem is used to switch out the system of equations
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$
+for the pair of systems $0 = \sum_{i}\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ and
 $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
@@ -493,12 +516,12 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
                                              \begin{array}{l}                                               
-           [y_{i}[1]
+           [y_{i}[z_{i}]
                                                -
                                                g(\vec{x}_{i}\beta)-\tau_{1}](
                                                \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
-{}           [y_{i}[k]
+{}           [y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
                                                \tau_{k}](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
