@@ -123,3 +123,12 @@ test_that("issues with coefficients", {
   expect_true(any(grepl("No Coefficients", capture.output(summary(dalm)))))
 
 })
+
+test_that("catching bug with summary(as.lmitt", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+
+  mod <- lm(y ~ assigned(des), data = simdata)
+  ss <- summary(as.lmitt(mod, des))
+  expect_true(is(ss, "summary.DirectAdjusted"))
+})
