@@ -75,7 +75,7 @@ flexPoly <- function(dat,deg){
     getElement('coefficients')
 
 
-  setNames(c(res[2,'Std. Error'],res[2,'Estimate']),
+  setNames(c(res[1,'Std. Error'],res[1,'Estimate']),
             paste0(c('flex.se.','flex.est.'),deg))
 }
 
