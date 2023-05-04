@@ -181,10 +181,8 @@
 ##' @return If found, the data.
 ##' @keywords internal
 .fallback_data_search <- function() {
-  for (i in seq_len(sys.nframe())) {
-    try({
-      data <- get("data", envir = sys.frame(i))
-    }, silent = TRUE)
+  for (i in seq(2, sys.nframe())) {
+    data <- mget("data", envir = sys.frame(i), ifnotfound = list(NULL))$data
     if (!is.null(data) && is.data.frame(data)) {
       break()
     }
