@@ -286,14 +286,14 @@ we have the covariance approximation characteristic of M-estimation,
        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0} )\\
        n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau_{0}, \alpha_{0}, \beta_{0} )
      \end{array}
-\right)A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0})
+\right)A^{-t}(\alpha_{0}, \beta_{0}, \tau_{0})
 \end{align*}
 (recalling that we have so defined $\psi(\cdot)$ that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
 
 
 To help mark our nonstandard scaling constants, as well as the difference from the package's first implementations of these estimating equation stacks (which took pains to avoid scaling constants), 
-bread matrices will be denoted with the letter ``M,'' not ``B.''
+meat matrices will be denoted with the letter ``M,'' not ``B.''
 We have
 \[
 \operatorname{Cov}\left(
@@ -375,7 +375,7 @@ appropriate, it seems that if we define
 \begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-1}\hat{A}_{21}', 
+  \hat{A}_{11}^{-t}\hat{A}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
 \texttt{DirectAdjusted} objects to return only
@@ -538,7 +538,7 @@ covariance model by setting up our
 \begin{equation}\label{eq:12}
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-1}\hat{A}_{21}' - \grave{\phi}
+  \hat{A}_{11}^{-t}\hat{A}_{21}' - \grave{\phi}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}', 
 \end{equation}
 where $\Upsilon =
@@ -645,7 +645,7 @@ corresponds to solving $0 = \sum
    \label{eq:19}
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-1}\hat{A}_{21}' - \grave{\phi}
+  \hat{A}_{11}^{-t}\hat{A}_{21}' - \grave{\phi}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
   \acute{\Phi}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'
  \end{equation}
