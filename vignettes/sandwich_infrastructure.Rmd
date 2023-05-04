@@ -104,7 +104,7 @@ c(nrow(@.Data), length(coef(fitted_covariance_model)))
 ```
 
 
-Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `SandwichLayer` amounts to providing a mapping from the rows of `model.matrix(x)` or `sandwich::estfun(x)` to units of assignment recorded in `des`. This mapping is to be recorded the `@keys` data frame, with as many rows as `model.matrix(x)` and as many columns as there are unit-of-assignment (clustering) variables in a corresponding `Design`.
+Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `SandwichLayer` amounts to providing a mapping from the rows of `model.matrix(x)` or `sandwich::estfun(x)` to units of assignment recorded in `des`. This mapping is to be recorded in the `@keys` data frame, which has as many rows as `model.matrix(x)` and columns storing unit-of-assignment (clustering) information as well as a Boolean variable indicating whether such unit of assignments could be found in `des`.
 
 The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `design`, `desvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[desvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `desvars`. 
 
@@ -203,7 +203,7 @@ $B_{22}$.
 ## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
 
-1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. An NA in `keys` indicates a unit not appearing in the Design.
+1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. A falsy value in the `in_Q` column of `keys` indicates an observation not appearing in the `Design` object.
 
 2\.  Estimating functions may need to be aggregated (summed) to the cluster level before calculation of $B_{21}$.  There should be a dedicated function to calculate $B_{21}$ from the cluster-aggregated estimating function matrices. 
 

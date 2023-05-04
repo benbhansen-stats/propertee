@@ -7,21 +7,22 @@
 design_data_concordance(design, data, by = NULL, warn_on_nonexistence = TRUE)
 }
 \arguments{
-\item{design}{A Design object}
+\item{design}{a \code{Design} object}
 
-\item{data}{Data set, presumably not the same used to create \code{design}.}
+\item{data}{new data set, presumably not the same used to create
+\code{design}.}
 
 \item{by}{optional; named vector or list connecting names of variables in
 \code{design} to variables in \code{data}. Names represent variables in
 \code{design}; values represent variables in \code{data}. Only needed if
 variable names differ.}
 
-\item{warn_on_nonexistence}{Default \code{TRUE}. If a variable does not
+\item{warn_on_nonexistence}{default \code{TRUE}. If a variable does not
 exist in \code{data}, should this be flagged? If \code{FALSE}, silently
 move on if a variable doesn't exist in \code{data}.}
 }
 \value{
-Invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
+invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
 any warnings are produced.
 }
 \description{
@@ -40,9 +41,9 @@ also exists, but due to some issue with data cleaning, does not agree with
 "b1" in "data1".
 
 This could cause errors, either directly (via actual error messages) or
-simply produce nonsense results. \code{design_data_concordance()} is designed to
-help debug these scenarios but providing information on whether variables in
-both "data1" (used in the creation of the \code{Design}) and "data2" (some
-new dataset passed to \code{design_data_concordance()}) have any
-inconsistencies.
+simply produce nonsense results. \code{design_data_concordance()} is
+designed to help debug these scenarios by providing information on whether
+variables in both the data used in the creation of \code{design} ("data1" in
+the above example) and some new dataset, \code{data}, ("data2" in the above
+example) have any inconsistencies.
 }

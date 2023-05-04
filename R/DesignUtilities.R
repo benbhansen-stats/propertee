@@ -1,4 +1,4 @@
-##' These are special function used only in the definition of Design class
+##' These are special functions used only in the definition of \code{Design}
 ##' objects. They identify the units of assignment, blocks and forcing
 ##' variables.
 ##'
@@ -9,6 +9,9 @@
 ##' all aliases of each other; you must include one and only one in each
 ##' \code{Design}. The choice of which to use will have no impact on any
 ##' analysis, only on some output display.
+##'
+##' See \code{rct_design}, \code{obs_design}, or \code{rd_design} for examples
+##' of their usage.
 ##'
 ##' @title Special terms in \code{Design} creation formula
 ##' @param ... any number of variables of the same length.
@@ -145,10 +148,27 @@ forcing <- unit_of_assignment
 ##' \code{is_dichotomized()} and \code{has_binary_treatment()} return
 ##' \code{TRUE}.
 ##'
-##' @param des A \code{Design}
+##' @param des a \code{Design} object
 ##' @return Logical; see details.
 ##' @export
 ##' @rdname design_treatment_status
+##' @examples
+##' data(simdata)
+##' des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+##' des2 <- rct_design(o ~ uoa(cid1, cid2), data = simdata)
+##' des3 <- rct_design(o ~ uoa(cid1, cid2), data = simdata,
+##'                    dichotomy = o >= 3 ~ .)
+##'
+##' if (is_binary_or_dichotomized(des1)) {
+##'   wt <- ate(des1, data = simdata)
+##' }
+##' if (is_binary_or_dichotomized(des2)) {
+##'   wt <- ate(des2, data = simdata) # would fail but won't be run
+##' }
+##' if (is_binary_or_dichotomized(des3)) {
+##'   wt <- ate(des3, data = simdata)
+##' }
+##'
 is_dichotomized <- function(des) {
   if (!inherits(des, "Design")) {
     stop("des must be a Design object.")

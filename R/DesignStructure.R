@@ -18,9 +18,9 @@ setValidity("DesignStructure", function(object) {
 ##' Creates a \code{data.frame} containing the information at the unit of
 ##' assignment/cluster level.
 ##' @title Returns \code{Design} Structure Information
-##' @param design A \code{Design}.
-##' @param binary Binary, default \code{FALSE}. If \code{TRUE} and the design
-##'   contains a \code{dichotomy}, replace the treatment column with its binary
+##' @param design a \code{Design} object
+##' @param binary default \code{FALSE}. If \code{TRUE} and the design contains a
+##'   \code{dichotomy}, replace the treatment column with its binary
 ##'   representation. Has no effect if \code{design} is not dichotomized.
 ##' @return A \code{data.frame} containing the structure of the \code{design}.
 ##' @export

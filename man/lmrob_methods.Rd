@@ -42,5 +42,5 @@ sandwich estimates of covariance-adjusted standard errors for robust linear
 covariance adjustment models.
 }
 \author{
-lrd author 2
+Ben B. Hansen
 }

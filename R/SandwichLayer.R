@@ -168,15 +168,56 @@ setMethod("[", "PreSandwichLayer",
 ##' @param x a \code{PreSandwichLayer} object.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},
 ##' \code{rd_design()}, or \code{obs_design()}.
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##' assignment variables in \code{design} to cluster/unit of assignment
-##' variables in \code{data}. Names represent variables in the Design; values
-##' represent variables in the data. Only needed if variable names differ.
+##' @param by character vector or list; optional. Specifies column names that
+##' appear in both the covariance adjustment and quasiexperimental dataframes
+##' and can be used to match observations in case the two overlap. Names
+##' represent variables in the Design; values represent variables in the data.
+##' Defaults to NULL, in which case unit of assignment columns indicated in
+##' the Design will be used to match observations in the samples.
+##' @param Q_data optional; quasiexperimental dataframe to allow for merging
+##' to the covariance adjustment data via the `by` argument. If `by` is not NULL
+##' and `Q_data` is NULL, the function will search through the call stack to find
+##' the quasiexperimental data; if the search is unsuccessful, the function will
+##' use the `design` data to attempt to merge.
 ##' @return a \code{SandwichLayer} object
 ##' @export
-as.SandwichLayer <- function(x, design, by = NULL) {
+as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
   if (!inherits(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
+  }
+  
+  if (is.null(by)) {
+    by <- stats::setNames(var_names(design, "u"), var_names(design, "u"))
+    if (is.null(Q_data)) Q_data <- design@structure
+  } else {
+    if (is.null(names(by))) {
+      names(by) <- by
+    } else if (!is.null(names(by))) {
+      names(by)[names(by) == ""] <- by[names(by) == ""]
+    }
+
+    if (is.null(Q_data)) {
+      form <- .update_ca_model_formula(x@fitted_covariance_model, by, design)
+      Q_data <- tryCatch(
+        .get_data_from_model("cov_adj", form),
+        error = function(e) {
+          warning(paste("Could not find quasiexperimental data in the call stack,",
+                        "or it did not contain the columns specified in `by`.",
+                        "Searching for `names(by)` in `design@structure`.",
+                        "Supply the quasiexperimental data to the `Q_data`",
+                        "argument when using `by` to avoid this error."),
+                  call. = FALSE)
+          tryCatch({
+            design@structure[, names(by), drop = FALSE]
+          }, error = function(e) {
+            stop("Could not find columns specified in `by` in design@structure",
+                 call. = FALSE)
+          })
+          
+        })
+    }
+    by <- c(by, stats::setNames(var_names(design, "u"), var_names(design, "u")))
+    by <- by[!duplicated(by)]
   }
 
   data_call <- x@fitted_covariance_model$call$data
@@ -187,29 +228,26 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   covmoddata <- eval(data_call,
                      envir = environment(formula(x@fitted_covariance_model)))
 
-  if (!is.null(by)) {
-    # .update_by handles checking input
-    design <- .update_by(design, covmoddata, by)
-  }
-
-  uoanames <- var_names(design, "u")
-  wide_frame <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, uoanames, na.expand = TRUE)[uoanames],
+  keys <- tryCatch(
+    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
     error = function(e) {
-      stop(paste("The",
-                 gsub("_", " ", design@unit_of_assignment_type),
-                 "columns",
-                 paste(setdiff(uoanames, colnames(covmoddata)), collapse = ", "),
+      stop(paste("Columns",
+                 paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
                  "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
     })
 
-  keys <- as.data.frame(
-    sapply(uoanames, function(col) {
-      unique(design@structure[[col]])[
-        match(wide_frame[[col]], unique(design@structure[[col]]), incomparables = NA)
-      ]
-    })
+  keys$in_Q <- apply(
+    mapply(
+      function(covmod_col, des_col) {
+        unique(Q_data[[des_col]])[
+          match(keys[[covmod_col]], unique(Q_data[[des_col]]), incomparables = NA)
+        ]
+      },
+      by, names(by)
+    ),
+    1,
+    function(uids) all(!is.na(uids))
   )
 
   return(new("SandwichLayer",
@@ -218,61 +256,73 @@ as.SandwichLayer <- function(x, design, by = NULL) {
              Design = design))
 }
 
-#' Generate a list of sanitized units of assignment from C
+#' Return ID's for observations in the covariance adjustment sample C
 #' @param x a \code{SandwichLayer} object.
-#' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
+#' @param by character vector or list; optional. Specifies column names that appear in
+#' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+#' Defaults to NULL, in which case unit of assignment columns indicated in the
+#' Design will be used to generate ID's.
 #' @param verbose Boolean defaulting to TRUE, which will produce rather than
 #' swallow any warnings about the coding of the units of assignment in the
 #' covariance adjustment model data
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|C|}, where C is the covariance adjustment sample
+#' @return A vector of length \eqn{|C|}
 #' @keywords internal
-.sanitize_C_uoas <- function(x, cluster = NULL, verbose = TRUE, ...) {
-  if (is.null(cluster)) {
-    cluster <- var_names(x@Design, "u")
+.sanitize_C_ids <- function(x, by = NULL, verbose = TRUE, sorted = FALSE, ...) {
+  if (!inherits(x, "SandwichLayer")) {
+    stop("x must be a `SandwichLayer` object")
+  }
+  if (is.null(by)) {
+    by <- var_names(x@Design, "u")
   }
 
-  C_uoas <- tryCatch(
-    x@keys[, cluster, drop = FALSE],
+  C_ids <- tryCatch(
+    x@keys[, by, drop = FALSE],
     error = function(e) {
       tryCatch({
         camod <- x@fitted_covariance_model
-        stats::expand.model.frame(camod, cluster, na.expand = TRUE)[cluster]
+        stats::expand.model.frame(camod, by, na.expand = TRUE)[by]
       },
       error = function(e) {
         camod <- x@fitted_covariance_model
         data <- eval(camod$call$data, envir = environment(formula(camod)))
         stop(paste("The columns",
-                   paste(setdiff(cluster, colnames(data)), collapse = ", "),
+                   paste(setdiff(by, colnames(data)), collapse = ", "),
                    "could not be found in either the SandwichLayer's `keys`",
                    "slot or the covariance adjustment model dataset"),
              call. = FALSE)
       })
     })
   
-  check_nas_funcs <- list(all = all, any_not_all = function(row) any(row) & !all(row))
+  ## NOTE: This code has been updated because of the lingering issue that we
+  ## can't cluster on partially known unit of assignment information without
+  ## being provided a notion of nesting levels for the units of assignment.
+  ## Commented out code in the remaining lines pertain to this issue. For the time
+  ## being, we treat any observations that couldn't be fully matched to the
+  ## quasiexperimental sample as independent.
+  # check_nas_funcs <- list(all = all, any_not_all = function(row) any(row) & !all(row))
+  check_nas_funcs <- list(any = any)
   nas <- lapply(check_nas_funcs,
-                function(f) which(apply(is.na(C_uoas), 1, f)))
-  C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
-  
+                function(f) which(apply(is.na(C_ids), 1, f)))
+  out <- apply(C_ids, 1, function(...) paste(..., collapse = "_"))
+  names(out) <- NULL
+
   # warn if verbose
   if (verbose) {
-    if (length(nas[["any_not_all"]]) > 0) {
-      warning(paste("Some rows in the covariance adjustment model dataset have",
-                    "NA's for some but not all clustering columns. Rows sharing",
-                    "the same non-NA cluster ID's will be clustered together.",
-                    "If this is not intended, provide unique non-NA cluster ID's",
-                    "for these rows."))
-    }
-    if (length(nas[["all"]]) > 0) {
-      warning(paste("Some or all rows in the covariance adjustment model dataset",
-                    "are found to have NA's for the given clustering columns.",
+    # if (length(nas[["any_not_all"]]) > 0) {
+    #   warning(paste("Some rows in the covariance adjustment model dataset have",
+    #                 "NA's for some but not all clustering columns. Rows sharing",
+    #                 "the same non-NA cluster ID's will be clustered together.",
+    #                 "If this is not intended, provide unique non-NA cluster ID's",
+    #                 "for these rows."))
+    # }
+    # if (length(nas[["all"]]) > 0) {
+    if (length(nas[["any"]]) > 0) {
+      warning(paste("Some or all rows in the covariance adjustment model could",
+                    # "are found to have NA's for the given clustering columns.",
+                    "not be matched to the quasiexperimental sample.",
                     "This is taken to mean these observations should be treated",
-                    "as IID. To avoid this warning, provide unique non-NA cluster",
+                    "as independent. To avoid this warning, provide unique non-NA cluster",
                     "ID's for each row."))
     }
   }
@@ -281,12 +331,12 @@ as.SandwichLayer <- function(x, design, by = NULL) {
   # "_"-separated randomly generated collections of 4 upper- or lower-case letters,
   # with the number of separations given by the number of uoa columns - 1. This
   # will maintain structure if future strsplit calls are desired
-  create_new_ids <- function(n_ids, n_uoa_cols) {
-    new_ids <- split(sample(c(letters, LETTERS), n_ids * n_uoa_cols * 4, replace = TRUE),
+  create_new_ids <- function(n_ids, n_id_cols) {
+    new_ids <- split(sample(c(letters, LETTERS), n_ids * n_id_cols * 4, replace = TRUE),
                      seq_len(n_ids))
     mapply(
       function(id) {
-        split_ids <- tapply(id, rep(seq_len(n_uoa_cols), each = 4),
+        split_ids <- tapply(id, rep(seq_len(n_id_cols), each = 4),
                             function(...) paste(..., collapse = ""))
         paste(split_ids, collapse = "_")
       },
@@ -297,21 +347,32 @@ as.SandwichLayer <- function(x, design, by = NULL) {
 
   # since we use available unit of assignment information, we make sure to assign
   # new uoa ID's to all observations that fall in the same uoa
-  if (length(nas$any_not_all) > 0) {
-    replace_ids <- unique(C_uoas[nas$any_not_all])
-    n_uoa_cols <- length(cluster)
-    new_ids <- create_new_ids(length(replace_ids), n_uoa_cols)
-    names(new_ids) <- replace_ids
-    C_uoas[nas$any_not_all] <- new_ids[C_uoas[nas$any_not_all]]
-  }
+  # if (length(nas$any_not_all) > 0) {
+  #   replace_ids <- unique(out[nas$any_not_all])
+  #   n_uoa_cols <- length(cluster)
+  #   new_ids <- create_new_ids(length(replace_ids), n_uoa_cols)
+  #   names(new_ids) <- replace_ids
+  #   out[nas$any_not_all] <- new_ids[out[nas$any_not_all]]
+  # }
   # for observations with no unit of assignment information, we create unique uoa
   # ID's
-  if (length(nas$all) > 0) {
-    n_replace_ids <- length(nas$all)
-    n_uoa_cols <- length(cluster)
-    new_ids <- create_new_ids(n_replace_ids, n_uoa_cols)
-    C_uoas[nas$all] <- new_ids
+  # if (length(nas$all) > 0) {
+  if (length(nas[["any"]]) > 0) {
+    # n_replace_ids <- length(nas$all)
+    n_replace_ids <- length(nas$any)
+    n_id_cols <- length(by)
+    new_ids <- create_new_ids(n_replace_ids, n_id_cols)
+    # out[nas$all] <- new_ids
+    out[nas$any] <- new_ids
   }
 
-  return(C_uoas)
+  if (sorted) {
+    if (suppressWarnings(any(is.na(as.numeric(out))))) {
+      out <- sort(out, index.return = TRUE)
+    } else {
+      out <- sort(as.numeric(out), index.return = TRUE)
+    }
+  }
+  
+  return(out)
 }

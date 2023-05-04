@@ -60,7 +60,7 @@ as.lmitt <- function(x, design = NULL) {
   # The third conditional is if the user calls `as.lmitt()`.
 
   # `&&` necessary to return FALSE immediately if not enough frames on stack
-  if (sys.nframe() >= 2 && sys.call(-2)[[1]] == as.name("lmitt")) {
+  if (!is.null(sys.call(-2)) && sys.call(-2)[[1]] == as.name("lmitt")) {
     # If we're in `lmitt.lm()` via `lmitt()`, save the call to `lmitt`.
     lmitt_call <- sys.call(-2)
   } else if (!is.null(sys.call(-1)) && sys.call(-1)[[1]] == as.name("lmitt.lm")) {

@@ -78,7 +78,7 @@ forcings(x) <- value
 \arguments{
 \item{x}{\code{Design} object}
 
-\item{binary}{If \code{FALSE} (default), return a \code{data.frame}
+\item{binary}{if \code{FALSE} (default), return a \code{data.frame}
 containing the named treatment variable. If \code{TRUE} and \code{x} has a
 formula in \code{@dichotomy}, return a \code{data.frame} containing a
 binary treatment variable with the name \code{"z__"}. Errors on
@@ -87,24 +87,25 @@ If \code{"ifany"}, returns a binary treatment if possible (if treatment is
 already binary, or there's a valid \code{@dichotomy}), otherwise return
 original treatment.}
 
-\item{newdata}{Optionally an additional \code{data.frame}. If passed, and
-the unit of assignment variable is found in \code{newdata}, then the
-requested variable type for each unit of \code{newdata} is returned. See
-\code{by} argument if the name of the unit of assignment differs.}
+\item{newdata}{optional; an additional \code{data.frame}. If passed, and the
+unit of assignment variable is found in \code{newdata}, then the requested
+variable type for each unit of \code{newdata} is returned. See \code{by}
+argument if the name of the unit of assignment differs.}
 
 \item{by}{optional; named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in \code{data}. Names represent variables in the Design; values
-represent variables in the data. Only needed if variable names differ.}
+assignment variables in \code{x} to cluster/unit of assignment variables
+in \code{data}. Names represent variables in the Design; values represent
+variables in the data. Only needed if variable names differ.}
 
-\item{...}{Ignored.}
+\item{...}{ignored.}
 
-\item{value}{Replacement. Either a \code{vector}/\code{matrix} of
+\item{value}{replacement. Either a \code{vector}/\code{matrix} of
 appropriate dimension, or a named \code{data.frame} if renaming variable
 as well.}
 }
 \value{
-\code{data.frame} containing treatment variable
+\code{data.frame} containing requested variable, or an updated
+\code{Design}.
 }
 \description{
 Allows access to the elements which define a \code{Design}, enabling their
@@ -126,4 +127,11 @@ original treatment without error.
 The one-column \code{data.frame} returned by \code{treatment()} is named as
 entered in the \code{Design} creation, but if a \code{dichotomy} is in the
 \code{Design}, the column name is \code{"__z"}.
+}
+\examples{
+data(simdata)
+des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+blocks(des) # empty
+blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
+blocks(des)
 }

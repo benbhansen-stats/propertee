@@ -13,19 +13,19 @@ as_obs_design(Design, ..., loseforcing = FALSE)
 as_rd_design(Design, data, ..., forcing)
 }
 \arguments{
-\item{Design}{\code{Design} to convert}
+\item{Design}{a \code{Design} to convert}
 
-\item{...}{No addiitonal options at present}
+\item{...}{No additional options at present}
 
-\item{loseforcing}{Converting from RD to another \code{Design} type will
+\item{loseforcing}{converting from RD to another \code{Design} type will
 error to avoid losing the forcing variable. Setting \code{loseforcing =
   TRUE} allows the conversion to automatically drop the forcing variable.
 Default \code{FALSE}.}
 
-\item{data}{Converting to an RD requires adding a \code{forcing} variable,
+\item{data}{converting to an RD requires adding a \code{forcing} variable,
 which requires access to the original data.}
 
-\item{forcing}{Converting to an RD requires adding a \code{forcing}
+\item{forcing}{converting to an RD requires adding a \code{forcing}
 variable. This should be entered as the update to a formula, e.g.
 \code{"~ . + forcing(forcevar)"}.}
 }

@@ -17,11 +17,11 @@ obs_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 
 \item{data}{the data set.}
 
-\item{subset}{optionally subset the data before creating the \code{Design}
+\item{subset}{optional, subset the data before creating the \code{Design}
 object}
 
-\item{dichotomy}{optionally, a formula defining the dichotomy of the
-treatment variable if it isn't already 0/1 or \code{logical}. See details.}
+\item{dichotomy}{optional, a formula defining the dichotomy of the treatment
+variable if it isn't already 0/1 or \code{logical}. See details.}
 
 \item{na.fail}{If \code{TRUE} (default), any missing data found in the
 variables specified in \code{formula} (excluding treatment) will trigger
@@ -40,9 +40,13 @@ Design (\code{rd_design()}).
 \details{
 The formula must include exactly one of \code{unit_of_assignment()},
 \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
-assignment (one or more variables). If defining an rd_design, the formula
-must also include a \code{forcing()} entry. The formula may optionally
-include a \code{block()} entry as well.
+assignment (one or more variables). These are all synonyms; the choice of
+which has no impact on the analysis. If defining an \code{rd_design}, the
+formula must also include a \code{forcing()} entry. The formula may
+optionally include a \code{block()} as well. Each of these can take in
+multiple variables, e.g. to pass both a hosuehold ID and individual ID as
+unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
+uoa(iid)}.
 
 The treatment variable passed into the left-hand side of \code{formula} can
 either be \code{logical}, \code{numeric}, or \code{character}. If it is
@@ -65,10 +69,12 @@ variable was called \code{dose}, you might write:
 \code{dichotomy = dose > 250 ~ dose <= 250}
 
 The conditionals need not assign all values of treatment to control or
-treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
-\code{200 <= dose <= 300}. Units of assignment with treatment values not
-assigned to either treatment or control as assumed to not recieve either,
-but will be maintained in the Design for proper standard error calculations.
+treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
+\code{200 <= dose <= 300} to either treatment or control. This would be
+equivalent to manually generating a binary variable with \code{NA} whenever
+\code{dose} is between 200 and 300. Units not assigned to treatment or
+control will be maintained in the Design for proper standard error
+calculations.
 
 The period (\code{.}) can be used to assign all other units of assignment.
 For example, we could have written the above example as
@@ -88,4 +94,12 @@ instead passing the treatment variable directly and using \code{dichotomy}.
 Otherwise changing the dichotomy will require re-creating the Design,
 instead of simply using \code{dichotomy(design) <-} or passing
 \code{dichotomy} to \code{ate()} or \code{ett()}.
+}
+\examples{
+data(simdata)
+des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+
+data(schooldata)
+des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),
+                  data = schooldata)
 }

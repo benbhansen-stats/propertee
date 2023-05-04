@@ -286,14 +286,14 @@ we have the covariance approximation characteristic of M-estimation,
        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\tilde{\mathbf{Y}}_{i}; \beta_{0} )\\
        n^{-1}\sum_{j=1}^{n}\psi(\tilde{\mathbf{Y}}_{j}; \tau_{0}, \alpha_{0}, \beta_{0} )
      \end{array}
-\right)A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0})
+\right)A^{-t}(\alpha_{0}, \beta_{0}, \tau_{0})
 \end{align*}
 (recalling that we have so defined $\psi(\cdot)$ that $\psi(\tilde{\mathbf{Y}}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
 
 
 To help mark our nonstandard scaling constants, as well as the difference from the package's first implementations of these estimating equation stacks (which took pains to avoid scaling constants), 
-bread matrices will be denoted with the letter ``M,'' not ``B.''
+meat matrices will be denoted with the letter ``M,'' not ``B.''
 We have
 \[
 \operatorname{Cov}\left(
@@ -375,7 +375,7 @@ appropriate, it seems that if we define
 \begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-1}\hat{A}_{21}', 
+  \hat{A}_{11}^{-t}\hat{A}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
 \texttt{DirectAdjusted} objects to return only
@@ -446,36 +446,59 @@ covariance model is folded in.
 
 First, let's switch over to using $[\alpha_{1}, \ldots, \alpha_{s}]$
 as the intercept parameter(s), allowing for absorption of $s$ block or
-stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.    Our estimating function becomes
+stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.
+Our estimating function \eqref{eq:14} becomes
 \begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
-  \indicator{i \in \bigcup \mathcal{Q}} \times \\
-  \owt{}
+  \indicator{i \in \bigcup \mathcal{Q}} \owt{}\times \\  
   \left(
     \begin{array}{l}
-           [y_{i}[0] - g(\vec{x}_{i}\beta)-
+           [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} -
       \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}]\indicator{b_{i}=1}\\
       \vdots\\ 
-          {} [y_{i}[0] - g(\vec{x}_{i}\beta)-
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{s} -
       \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}]\indicator{b_{i}=s}\\      
-         {}  [y_{i}[1] - g(\vec{x}_{i}\beta)-
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-          {} [y_{i}[k] - g(\vec{x}_{i}\beta)-
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                  \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
 \end{multline}
+(Of note, the argument of \S~\ref{sec:psit-rho_0-tau} no longer applies
+to show the system of equations
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$
+equivalent to $0=\sum_{i}\dot{\psi}(\tilde{\mathbf{y}}_{i}; \tau,
+\alpha, \beta)$, where $\dot{\psi}(\tilde{\mathbf{y}}; \tau,
+\alpha, \beta)$ has uppermost $s$ entries
+\begin{equation*}
+    \left(
+    \begin{array}{l}
+           [y_{i}[0] - g(\vec{x}_{i}\beta)-
+                  \alpha_{1} ]\indicator{b_{i}=1} \indicator{z_{i}=0}\\
+      \vdots\\ 
+          {} [y_{i}[0] - g(\vec{x}_{i}\beta)-
+                  \alpha_{s}]\indicator{b_{i}=s} \indicator{z_{i}=0}\\      
+    \end{array}
+    \right),
+  \end{equation*}
+in parallel with \eqref{eq:5}, but bottom $k$ entries the same as ${\psi}(\tilde{\mathbf{y}}_{i}; \tau,
+\alpha, \beta)$'s. That is, it may not be the case that the $\alpha$-solutions of
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$ are
+block-specific control group means.  Accordingly its $\tau$-solutions
+do not necessarily bear interpretation as contrasts of Hajek estimators.)
 
-The FWL theorem is used to switch this out for the pair of systems of
-equations $0 = \sum_{i}\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ and
+The FWL theorem is used to switch out the system of equations
+$0=\sum_{i}\psi(\tilde{\mathbf{y}}_{i}; \tau, \alpha, \beta)$
+for the pair of systems $0 = \sum_{i}\grave{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ and
 $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
-  \tilde{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) &=
+  \grave{\phi}(\tilde{\mathbf{y}}; \mathbf{p}) &=
                                                  \indicator{i \in \bigcup \mathcal{Q}} \owt{} \times \nonumber \\
   &\operatorname{vec}\left(%
                                                  \left(
@@ -493,12 +516,12 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
                                              \begin{array}{l}                                               
-           [y_{i}[1]
+           [y_{i}[z_{i}]
                                                -
                                                g(\vec{x}_{i}\beta)-\tau_{1}](
                                                \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
-{}           [y_{i}[k]
+{}           [y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
                                                \tau_{k}](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
@@ -515,20 +538,20 @@ covariance model by setting up our
 \begin{equation}\label{eq:12}
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-1}\hat{A}_{21}' - \tilde{\Phi}
+  \hat{A}_{11}^{-t}\hat{A}_{21}' - \grave{\phi}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}', 
 \end{equation}
 where $\Upsilon =
 [\upsilon(\tilde{\mathbf{y}}_{i}; \mathbf{p}, \beta, \tau) : i]'$,
-$\tilde{\Phi}= [\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}): i]'$, 
+$\grave{\phi}= [\grave{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}): i]'$, 
 $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
-  \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{Y}}_{i};
+  \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\grave{\phi}(\tilde{\mathbf{Y}}_{i};
 \mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
 \mathbf{p}, \beta, \tau)]$.
 
 Barring algebra mistakes on my part in unpacking these formulas, $A_{\mathbf{p}, \mathbf{p}}$ is
-an average of diagonal matrices $\nabla_{\mathbf{p}}\tilde{\phi}(\tilde{\mathbf{Y}}_{i};
+an average of diagonal matrices $\nabla_{\mathbf{p}}\grave{\phi}(\tilde{\mathbf{Y}}_{i};
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
 b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
 $r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
@@ -550,10 +573,84 @@ $A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}'$ at right
 of \eqref{eq:12} turns out the same under model- and design-based
 interpretations of the expected value operation.
 
-For a subgrouping variable with $m$ levels,
-we can also absorb in main effects of these levels by adding another
-$m$ parameters and complicating the $\tilde{\phi}$ definition accordingly. 
+\subsection{Accommodating moderator variables via absorption}
+\label{sec:accomm-moder-vari}
+For a continuous moderator $m$, absorption of the moderator into the assignment variable
+corresponds to solving the system $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p},{\gamma})$ for
+$\gamma$, where $\mathbf{p}$ solves $0 =
+\sum_{i}\grave{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$,
+$\grave{\phi}(\cdot)$ as above, 
+\begin{equation}
+  \label{eq:18}
+    \acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})=
+    \indicator{i \in \bigcup \mathcal{Q}} \owt{}
+     \left(
+                                                 \begin{array}{c}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+                                                   \tilde{m}_{i})m_{i} \\
+                                                   \vdots\\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \gamma_{k} \tilde{m}_{i})m_{i}\\
+                                                 \end{array}
+  \right)%
+\end{equation}
+and $\tilde{m}$ is $m$ with block centering. Equivalently, $\gamma$
+solves $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p},{\gamma})$ with 
+$\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})$ given by 
+\begin{equation*}
+    \indicator{i \in \bigcup \mathcal{Q}} \owt{}
+     \left(
+                                                 \begin{array}{c}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+                                                   \tilde{m}_{i})\tilde{m}_{i} \\
+                                                   \vdots\\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
+                                                 \end{array}
+  \right).
+\end{equation*}
+If there were no blocks,
+or no absorption of block intercepts, then $\tilde{m} = m -
+\bar{m}_{w}$,  where $\bar{m}_{w}$ is $m$'s weighted mean, and $p_{jk}
+\equiv p_{j}$, with $\hat{p}_{j}$ equal to a weighted mean of
+$\indicator{z_{i}=j}$. 
 
+For a subgrouping variable $m$ with $t>1$ levels, and corresponding
+indicator variables $m_{\ell} =\indicator{m_{i}=\ell}$, $\ell=1,
+\ldots, t$, and block-centered versions $\tilde{m}_{\ell}$  moderator absorption into the assignment variable
+corresponds to solving $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}, {\gamma})$ for $\gamma$, where
+\begin{align}
+    \acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})
+&=
+                                                 \indicator{i \in \bigcup \mathcal{Q}} \owt{} \times \nonumber \\
+  &\operatorname{vec}  \left(%
+                                                 \left(
+                                                 \begin{array}{ccc}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   \\
+                                                   \vdots & \vdots &
+                                                                     \vdots
+                                                   \\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=k}-p_{ks}-\tilde{m}_{ti}\gamma_{t})m_{ti}\\                                                 \end{array}
+  \right)%
+  \right) .  \label{eq:17}
+\end{align}
+ Our \texttt{sandwich::estfun.DirectAdjusted()} return value
+ \eqref{eq:12} becomes
+ \begin{equation}
+   \label{eq:19}
+  \Upsilon -
+  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \hat{A}_{11}^{-t}\hat{A}_{21}' - \grave{\phi}
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
+  \acute{\Phi}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'
+ \end{equation}
+with $A_{\gamma \gamma}$ and $A_{\tau \gamma}$ defined in the natural
+way given the $\acute{\phi}()$ definitions stated just above. 
 
 \subsection{Notes regarding design-based variance calculations}
 
@@ -611,7 +708,7 @@ longer be design constants.
 Similar considerations yield
 \begin{align}
 \operatorname{Cov}_{d}[
-  &n^{-1}\sum_{i}\tilde{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
+  &n^{-1}\sum_{i}\grave{\phi}(\tilde{\mathbf{Y}}; \mathbf{p})] \nonumber\\
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
      \mathcal{Q}} \owt[Z_{i}] \times \nonumber \\
@@ -648,7 +745,7 @@ $\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in form
 $b(\mathbf{x}_{i}) + \sum_{j=0}^{k}c_{j}(y_{i}[j], \vec{x}_{i}, \beta)\indicator{Z_{i}=j}$, after conditioning
 on potential outcomes? If so, then as a consequence we can think of
 \eqref{eq:10} as having rows that are also of this form.
-\eqref{eq:11} says $\tilde{\phi}(\tilde{\mathbf{Y}}_{i}; \mathbf{p})$
+\eqref{eq:11} says $\grave{\phi}(\tilde{\mathbf{Y}}_{i}; \mathbf{p})$
 has this form, so if we can get represent
 $\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in this way then \eqref{eq:12}
 will have this form as well. That strikes me as likely to facilitate

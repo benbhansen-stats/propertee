@@ -32,13 +32,16 @@ test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
                       lower.tail = FALSE))
 
   cmod <- lm(y ~ x, simdata, subset = z == 0)
-  damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des),
+  # Removing intercept which is otherwise estimated at 0, causing warnings in
+  # sqrt(diag(vcov)) calculations below
+  damod <- lmitt(lm(y ~ assigned() + 0, data = simdata, weights = ate(des),
                     offset = cov_adj(cmod)))
+
   s <- summary(damod)
-  expect_equal(s$coefficients[, 2L], sqrt(diag(vcovDA(damod))))
-  expect_equal(s$coefficients[, 3L],
+  expect_true(s$coefficients[, 2L] ==  sqrt(diag(vcovDA(damod))))
+  expect_true(s$coefficients[, 3L] ==
                damod$coefficients / sqrt(diag(vcovDA(damod))))
-  expect_equal(s$coefficients[, 4L],
+  expect_true(s$coefficients[, 4L] ==
                2 * pt(abs(damod$coefficients / sqrt(diag(vcovDA(damod)))),
                       damod$df.residual,
                       lower.tail = FALSE))
@@ -100,4 +103,32 @@ test_that("lmitt.form vs as.lmitt", {
                                         design = des)))
   expect_false(any(grepl("Treatment Effects", co)))
   expect_true(any(grepl("Coefficients", co)))
+})
+
+test_that("issues with coefficients", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  mod <- lmitt(y ~ 1, data = simdata, design =des, subset = simdata$z == 0)
+  s <- summary(mod)
+  co <- capture.output(s)
+  expect_true(any(grepl("Treatment Effects", co)))
+
+  expect_false(any(grepl("calculated via type", co)))
+
+  dalm <- new("DirectAdjusted",
+              lm(y ~ 0, data = simdata, weights = ate(des)),
+              Design = des,
+              lmitt_fitted = TRUE)
+
+  expect_true(any(grepl("No Coefficients", capture.output(summary(dalm)))))
+
+})
+
+test_that("catching bug with summary(as.lmitt", {
+  data(simdata)
+  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+
+  mod <- lm(y ~ assigned(des), data = simdata)
+  ss <- summary(as.lmitt(mod, des))
+  expect_true(is(ss, "summary.DirectAdjusted"))
 })

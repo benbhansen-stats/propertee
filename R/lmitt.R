@@ -374,7 +374,8 @@ lmitt.formula <- function(obj,
   }
 
   # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
-  # is centered) and `flexida::assigned()` or `flexida::assigned():sbrp`
+  # is centered) and treatment name (from `var_names(design, "t")`) or treatment
+  # name:sbgrp
   lm.call$formula <- formula(paste("flexida_y ~ 0 + ",
                                    paste(
                                      paste0("`", colnames(mm), "`"),

@@ -16,14 +16,17 @@ summary.DirectAdjusted <- function(object,
                                    vcov.type = c("CR0", "MB0", "HC0"),
                                    ...) {
   out <- summary(as(object, "lm"))
-  covmat <- vcovDA(object, type = vcov.type, ...)
-  out$coefficients[, 2L] <- sqrt(diag(covmat))
-  out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
-  out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
-                                        object$df.residual,
-                                        lower.tail = FALSE)
+
+  if (object$rank > 0) {
+    covmat <- vcovDA(object, type = vcov.type, ...)
+    out$coefficients[, 2L] <- sqrt(diag(covmat))
+    out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
+    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
+                                          object$df.residual,
+                                          lower.tail = FALSE)
+    out$vcov.type <- attr(covmat, "type")
+  }
   class(out) <- "summary.DirectAdjusted"
-  out$vcov.type <- attr(covmat, "type")
   out$lmitt <- object
   return(out)
 }
@@ -38,21 +41,52 @@ summary.DirectAdjusted <- function(object,
 ##' @return object, invisibly
 ##' @importFrom stats pt printCoefmat
 ##' @export
-print.summary.DirectAdjusted <- function(x, digits =
-                                              max(3L, getOption("digits") - 3L),
+print.summary.DirectAdjusted <- function(x,
+                                         digits =
+                                           max(3L, getOption("digits") - 3L),
                                          signif.stars =
                                            getOption("show.signif.stars"),
                                          ...) {
 
-  to_report <- x$coefficients
-  cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n", collapse = "\n"),
-      "\n\n", sep = "")
+  cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n",
+                         collapse = "\n"), "\n", sep = "")
+
+  df <- x$df
+
   if (x$lmitt@lmitt_fitted) {
-    cat("Treatment Effects:\n")
+    coefmatname <- "Treatment Effects"
   } else {
-    cat("Coefficients:\n")
+    coefmatname <- "Coefficients"
   }
-  stats::printCoefmat(to_report, digits = digits)
-  cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+
+
+  if (length(x$aliased) == 0L) {
+    cat("\nNo Coefficients\n")
+  }
+  else {
+    if (nsingular <- df[3L] - df[1L])
+      cat("\n", coefmatname, ": (", nsingular,
+          " not defined because of singularities)\n",
+          sep = "")
+    else cat("\n", coefmatname, ":\n")
+    coefs <- x$coefficients
+    if (any(aliased <- x$aliased)) {
+      cn <- names(aliased)
+      coefs <- matrix(NA, length(aliased), 4,
+                      dimnames = list(cn, colnames(coefs)))
+      coefs[!aliased, ] <- x$coefficients
+    }
+    stats::printCoefmat(coefs,
+                        digits = digits,
+                        signif.stars = signif.stars,
+                        na.print = "NA", ...)
+  }
+
+  if (nrow(x$coefficients) > 0) {
+    # Only print if we estimate at least one coefficient
+    cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+  } else {
+    cat("\n")
+  }
   invisible(x)
 }
