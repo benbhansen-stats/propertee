@@ -573,10 +573,84 @@ $A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}'$ at right
 of \eqref{eq:12} turns out the same under model- and design-based
 interpretations of the expected value operation.
 
-For a subgrouping variable with $m$ levels,
-we can also absorb in main effects of these levels by adding another
-$m$ parameters and complicating the $\tilde{\phi}$ definition accordingly. 
+\subsection{Accommodating moderator variables via absorption}
+\label{sec:accomm-moder-vari}
+For a continuous moderator $m$, absorption of the moderator into the assignment variable
+corresponds to solving the system $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p},{\gamma})$ for
+$\gamma$, where $\mathbf{p}$ solves $0 =
+\sum_{i}\tilde{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$,
+$\tilde{\phi}(\cdot)$ as above, 
+\begin{equation}
+  \label{eq:18}
+    \acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})=
+    \indicator{i \in \bigcup \mathcal{Q}} \owt{}
+     \left(
+                                                 \begin{array}{c}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+                                                   \tilde{m}_{i})m_{i} \\
+                                                   \vdots\\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \gamma_{k} \tilde{m}_{i})m_{i}\\
+                                                 \end{array}
+  \right)%
+\end{equation}
+and $\tilde{m}$ is $m$ with block centering. Equivalently, $\gamma$
+solves $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p},{\gamma})$ with 
+$\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})$ given by 
+\begin{equation*}
+    \indicator{i \in \bigcup \mathcal{Q}} \owt{}
+     \left(
+                                                 \begin{array}{c}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+                                                   \tilde{m}_{i})\tilde{m}_{i} \\
+                                                   \vdots\\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
+                                                 \end{array}
+  \right).
+\end{equation*}
+If there were no blocks,
+or no absorption of block intercepts, then $\tilde{m} = m -
+\bar{m}_{w}$,  where $\bar{m}_{w}$ is $m$'s weighted mean, and $p_{jk}
+\equiv p_{j}$, with $\hat{p}_{j}$ equal to a weighted mean of
+$\indicator{z_{i}=j}$. 
 
+For a subgrouping variable $m$ with $t>1$ levels, and corresponding
+indicator variables $m_{\ell} =\indicator{m_{i}=\ell}$, $\ell=1,
+\ldots, t$, and block-centered versions $\tilde{m}_{\ell}$  moderator absorption into the assignment variable
+corresponds to solving $0 = \sum
+\acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}, {\gamma})$ for $\gamma$, where
+\begin{align}
+    \acute{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{\gamma})
+&=
+                                                 \indicator{i \in \bigcup \mathcal{Q}} \owt{} \times \nonumber \\
+  &\operatorname{vec}  \left(%
+                                                 \left(
+                                                 \begin{array}{ccc}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   \\
+                                                   \vdots & \vdots &
+                                                                     \vdots
+                                                   \\
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=k}-p_{ks}-\tilde{m}_{ti}\gamma_{t})m_{ti}\\                                                 \end{array}
+  \right)%
+  \right) .  \label{eq:17}
+\end{align}
+ Our \texttt{sandwich::estfun.DirectAdjusted()} return value
+ \eqref{eq:12} becomes
+ \begin{equation}
+   \label{eq:19}
+  \Upsilon -
+  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \hat{A}_{11}^{-1}\hat{A}_{21}' - \tilde{\Phi}
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
+  \acute{\Phi}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'
+ \end{equation}
+with $A_{\gamma \gamma}$ and $A_{\tau \gamma}$ defined in the natural
+way given the $\acute{\phi}()$ definitions stated just above. 
 
 \subsection{Notes regarding design-based variance calculations}
 
