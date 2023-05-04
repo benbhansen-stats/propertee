@@ -9,7 +9,7 @@
 ##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
-##' @author lrd author 2
+##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method 
 estfun.lmrob <- function(x, ...) {
@@ -61,7 +61,7 @@ estfun.lmrob <- function(x, ...) {
 ##' @return A \eqn{p\times }(p+1) matrix where the first column corresponds to
 ##' the scale estimate and the remaining \eqn{p} colums correspond to the
 ##' coefficients
-##' @author lrd author 2
+##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method 
 bread.lmrob <- function(x, ...) {
