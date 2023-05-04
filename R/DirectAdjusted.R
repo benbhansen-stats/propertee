@@ -119,7 +119,7 @@ estfun.DirectAdjusted <- function(x, ...) {
   a21 <- .get_a21(x)
 
   ## form matrix of estimating equations
-  mat <- estmats[["psi"]] - estmats[["phi"]] %*% a11_inv %*% t(a21)
+  mat <- estmats[["psi"]] - estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
 
   return(mat)
 }

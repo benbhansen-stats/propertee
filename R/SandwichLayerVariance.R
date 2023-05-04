@@ -56,7 +56,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
 
   a22inv <- sandwich::bread(x)
   meat <- do.call(sandwich::meatCL, args)
-  vmat <- (1 / n) * a22inv %*% meat %*% a22inv
+  vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
 
   attr(vmat, "type") <- "CR0"
   return(vmat)
