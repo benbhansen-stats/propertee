@@ -1101,10 +1101,11 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clusterin
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clustering", {
   data(simdata)
 
-  simdata$uid <- seq_len(nrow(simdata))
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ unitid(uid), data = simdata)
-  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
+  new_df <- simdata
+  new_df$uid <- seq_len(nrow(new_df))
+  cmod <- lm(y ~ x, new_df)
+  des <- rct_design(z ~ unitid(uid), data = new_df)
+  m <- as.lmitt(lm(y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod)))
 
   Qmat <- m$weights * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
