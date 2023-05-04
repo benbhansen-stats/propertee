@@ -480,6 +480,16 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
   expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 1))
 })
 
+test_that("estfun.DirectAdjusted returns correct dimensions for rectangular A11_inv", {
+  data(simdata)
+  cmod <- robustbase::lmrob(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  dmod <- lmitt(lm(y ~ z.(des), simdata, offset = cov_adj(cmod)), design = des)
+  
+  out <- estfun(dmod)
+  expect_equal(dim(out), c(50, 2))
+})
+
 test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted objects",
                 "with non-SandwichLayer or NULL offsets"), {
   data(simdata)

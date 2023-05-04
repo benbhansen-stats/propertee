@@ -1,3 +1,10 @@
+# v0.3.2
+
+## Bug Fixes
+* Covariate adjustment models that admit rectangular bread matrices, such as those
+produced by `robustbase::lmrob`, are now accommodated given the reformulated estimating
+equations in versions `v0.1.1` and later
+
 # v0.3.1
 
 ## Breaking Changes
