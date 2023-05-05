@@ -132,3 +132,40 @@ test_that("catching bug with summary(as.lmitt", {
   ss <- summary(as.lmitt(mod, des))
   expect_true(is(ss, "summary.DirectAdjusted"))
 })
+
+test_that("#119 flagging as NaN", {
+  data(simdata)
+  simdata$o <- as.factor(simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+
+  ### lmitt.formula
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  cf <- coefficients(summary(damod))
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  cf[1, 2:4] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(cf[1, 2:4])))
+  expect_true(all(!is.nan(cf[, 1])))
+  expect_true(all(!is.nan(cf[-1, ])))
+
+  #### lmitt.lm
+  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  cf <- coefficients(summary(damod))
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  cf[1, 2:4] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(cf[1, 2:4])))
+  expect_true(all(!is.nan(cf[, 1])))
+  expect_true(all(!is.nan(cf[-1, ])))
+
+})

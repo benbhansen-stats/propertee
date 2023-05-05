@@ -1929,3 +1929,41 @@ test_that("type attribute", {
   expect_identical(attr(vcov(damod, type = "MB0"), "type"), "MB0")
   expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
 })
+
+test_that("#119 flagging vcovDA entries as NaN", {
+  data(simdata)
+  simdata$o <- as.factor(simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+
+  ### lmitt.formula
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  vc <- vcov(damod)
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  vc[1, ] <- NaN
+  vc[, 1] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(vc[1, ])))
+  expect_true(all(is.nan(vc[, 1])))
+  expect_true(all(!is.nan(vc[-1, -1])))
+
+  #### lmitt.lm
+  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  vc <- vcov(damod)[5:7, 5:7]
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  vc[1, ] <- NaN
+  vc[, 1] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(vc[1, ])))
+  expect_true(all(is.nan(vc[, 1])))
+  expect_true(all(!is.nan(vc[-1, -1])))
+})
