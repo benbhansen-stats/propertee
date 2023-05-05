@@ -144,7 +144,7 @@ $1\leq j \leq k$ and $\psi(\cdot)$ now given by
 \begin{equation} \label{eq:14}
          \psi(\tilde{\mathbf{y}}_{i};
   \alpha, \tau, \beta) =
-         \left( \begin{array}{l}
+         \left( \begin{array}{c}
            \indicator{i \in \bigcup \mathcal{Q}}\owt{}\big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[1][y_{i}[1] - g(\vec{x}_{i}\beta)-
@@ -453,7 +453,7 @@ Our estimating function \eqref{eq:14} becomes
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
   \indicator{i \in \bigcup \mathcal{Q}} \owt{}\times \\  
   \left(
-    \begin{array}{l}
+    \begin{array}{c}
            [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} -
       \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}]\indicator{b_{i}=1}\\
@@ -477,7 +477,7 @@ equivalent to $0=\sum_{i}\dot{\psi}(\tilde{\mathbf{y}}_{i}; \tau,
 \alpha, \beta)$ has uppermost $s$ entries
 \begin{equation*}
     \left(
-    \begin{array}{l}
+    \begin{array}{c}
            [y_{i}[0] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} ]\indicator{b_{i}=1} \indicator{z_{i}=0}\\
       \vdots\\ 
@@ -515,7 +515,7 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
   \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
-                                             \begin{array}{l}                                               
+                                             \begin{array}{c}                                               
            [y_{i}[z_{i}]
                                                -
                                                g(\vec{x}_{i}\beta)-\tau_{1}](
@@ -527,38 +527,84 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
-What the FWL theorem says is that this maneuver gets us to the same
-place, with regard to $\tau$, as does including the block-specific
-intercepts $\alpha_{r}$.
 
-The $\mathbf{p}$ being another nuisance parameter estimated in a
-preliminary regression, we'll get variance propagation for it and the
-covariance model by setting up our
-\texttt{sandwich::estfun.DirectAdjusted()} to return
-\begin{equation}\label{eq:12}
+In the model based formulation, $[Z_{i}: i]$ is held fixed, so
+solutions $\hat{\mathbf{p}}$ of
+$0 = \sum_{i}\grave{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p})$ have
+covariance 0.  Writing $\Upsilon =
+[\upsilon(\tilde{\mathbf{y}}_{i}; \mathbf{p}, \beta, \tau) : i]'$, one
+obtains valid\footnote{%
+The residuals contributing to $\Upsilon$ via \eqref{eq:upsilondef} do not remove stratum
+effects, as conventional covariance estimators for this scenario
+seem to do.  This aspect would inflate these standard errors
+relative to those. Nonetheless, I maintain that
+\texttt{estfun.DirectAdjusted()} as described here are sound as a
+basis for variance-covariance estimation.}
+  sandwich estimates by substitution of $\Upsilon$ for
+$\Psi$ in \eqref{eq:15}.  That is, for a
+\texttt{DirectAdjusted} object \texttt{DA} we should have
+\begin{equation*}
+\mathtt{estfun.DirectAdjusted(DA)} = 
+  \begin{cases}
   \Upsilon -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{A}_{21}' - \grave{\phi}
-  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}', 
-\end{equation}
-where $\Upsilon =
-[\upsilon(\tilde{\mathbf{y}}_{i}; \mathbf{p}, \beta, \tau) : i]'$,
+  \hat{A}_{11}^{-t}\hat{A}_{21}'& \mathtt{DA} \text{ absorbs
+    intercepts}\\
+\Psi -
+  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \hat{A}_{11}^{-t}\hat{A}_{21}'  & \text{ otherwise}.
+\end{cases}
+\end{equation*}
+
+In design-based formulation, randomness of $Z$ can propagate to
+sampling variability of $\hat{\mathbf{p}}$,  so we must attend to
+variance contributions from $[\grave{\phi}(z_{i}, \mathbf{p}): i]$. 
+The $\mathbf{p}$ being another nuisance parameter estimated in a
+preliminary regression, we can get variance propagation for it by
+another elaboration of estimating functions along the lines of
+\eqref{eq:15}. We facilitate doing
+this by \st{setting up our
+\texttt{sandwich::estfun.DirectAdjusted()} to return} creating a
+helper \texttt{estfun\_DB\_blockabsorb()}, applying to
+\texttt{DirectAdjusted} objects \texttt{DB} and returning
+\begin{equation*}
+\begin{cases}
+  \grave{\phi}
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' &
+  \mathtt{DA} \text{ absorbs intercepts}\\
+0 & \text{ otherwise}\\
+\end{cases}
+\end{equation*}
+where 
 $\grave{\phi}= [\grave{\phi}(\tilde{\mathbf{y}}_{i}; \mathbf{p}): i]'$, 
 $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\grave{\phi}(\tilde{\mathbf{Y}}_{i};
 \mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)]$.
+\mathbf{p}, \beta, \tau)]$.  For design-based variance-covariance
+estimation one uses as estimating function
+\begin{multline*}
+  \mathtt{estfun.DirectAdjusted(DA)} -
+  \mathtt{estfun\_DB\_blockabsorb(DA)} =\\
+\begin{cases}
+\Upsilon -
+  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \hat{A}_{11}^{-t}\hat{A}_{21}'  - \grave{\phi}
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' & \mathtt{DA} \text{ absorbs intercepts}\\
+ \Psi -
+  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \hat{A}_{11}^{-t}\hat{A}_{21}' 
+ & \text{ otherwise}.\\
+\end{cases}
+\end{multline*}
 
-Barring algebra mistakes on my part in unpacking these formulas, $A_{\mathbf{p}, \mathbf{p}}$ is
+In these displays, $A_{\mathbf{p}, \mathbf{p}}$ is
 an average of diagonal matrices $\nabla_{\mathbf{p}}\grave{\phi}(\tilde{\mathbf{Y}}_{i};
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
 b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
 $r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
   \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
-\mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$, each equal to $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{y}}_{i};
-\mathbf{p}, \beta, \tau)$ in the design-based scenario if not the
-model-based scenario.  In either scenario, the average $A_{\tau,
+\mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
   \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
 \mathbf{p}, \beta, \tau)$ is estimable by corresponding means of
 random variables $\nabla_{\mathbf{p}}\upsilon(\tilde{\mathbf{Y}}_{i};
@@ -568,10 +614,7 @@ diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
 consisting of the opposite of the $k\times k$ identity at the
 $b_{i}$th block and the 0 matrix for the $r$th $k \times k$ block whenever
-$r\neq b_{i}$.  In particular, the product
-$A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}'$ at right
-of \eqref{eq:12} turns out the same under model- and design-based
-interpretations of the expected value operation.
+$r\neq b_{i}$.
 
 \subsection{Accommodating moderator variables via absorption}
 \label{sec:accomm-moder-vari}
@@ -639,8 +682,48 @@ corresponds to solving $0 = \sum
   \right)%
   \right) .  \label{eq:17}
 \end{align}
- Our \texttt{sandwich::estfun.DirectAdjusted()} return value
- \eqref{eq:12} becomes
+
+In the model-based formulation neither of these demands and special
+accounting in covariance estimation, since both $Z$ and the moderating
+variable are held fixed by conditioning. We get a legit covariance
+without doing anything special, using an $\Upsilon$ given by
+\begin{multline*}
+  \upsilon(\tilde{\mathbf{y}}; \tau, \mathbf{p}, \beta) =
+    \indicator{i \in \bigcup \mathcal{Q}}\owt{} \times \\
+\left(
+                                             \begin{array}{c}                                               
+           [y_{i}[z_{i}]
+                                               -
+                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               \indicator{z_{i}=1} -
+                                               \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
+                                               - \tilde{m}_{i}\gamma)\\
+                  \vdots \\
+{}           [y_{i}[z_{i}]
+                                               - g(\vec{x}_{i}\beta) -
+                                               \tau_{k}](\indicator{z_{i}=k}
+                                               -
+                                               \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
+                                               - \tilde{m}_{i}\gamma)\\                                             \end{array}
+\right) .
+\end{multline*}
+Because the covariance estimates will
+involve residuals that have not been decorrelated from the moderating
+variable, they may err on the side of conservatism relative to
+covariance estimates issuing from a fit that addressed the moderator
+not by absorption but by adding it to the outcome regression
+equation. We might consider alternate elaborations of the estimating
+function that introduce moderator main effects to the outcome equation.
+
+For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
+ should return
+ \begin{equation*}
+   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' +
+  \acute{\Phi}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'.
+ \end{equation*}
+ In this way, the overall estimating function
+ \texttt{estfun.DirectAdjusted(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)} 
+ becomes
  \begin{equation}
    \label{eq:19}
   \Upsilon -
@@ -665,7 +748,7 @@ design-based covariances satisfy
                      &=   \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
                        \owt[Z_{i}]
 \left(
-                                             \begin{array}{l}                                               
+                                             \begin{array}{c}                                               
            [y_{i}[1]
                                                -
                                                g(\vec{x}_{i}\beta)-\tau_{1}](
@@ -679,7 +762,7 @@ design-based covariances satisfy
                      &\stackrel{\text{sometimes}}{=}  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
 \owt[Z_{i}]
 \left(
-                                             \begin{array}{l}                                               
+                                             \begin{array}{c}                                               
            [y_{i}[1]
                                                -
                                                g(\vec{x}_{i}\beta)-\tau_{1}]
