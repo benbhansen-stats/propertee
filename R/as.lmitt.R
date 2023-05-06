@@ -160,7 +160,7 @@ as.DirectAdjusted <- as.lmitt
   
   # NEED TO RECONFIGURE TO BE MORE CAREFUL ABOUT POSITIONAL VS. NAMED ARGS IN
   # WEIGHTS AND COV_ADJ CALLS
-  if (!is.null(lm_model$weights)) {
+  if (!is.null(lm_model$model$`(weights)`)) {
     weights_call <- quoted_call$weights
     if (inherits(lm_model$weights, "WeightedDesign")) {
       weights_call[[2]] <- quote(design)
@@ -170,7 +170,7 @@ as.DirectAdjusted <- as.lmitt
     quoted_call$weights <- weights_call
   }
 
-  if (!is.null(lm_model$offset)) {
+  if (!is.null(lm_model$model$`(offset)`)) {
     offset_call <- quoted_call$call$offset
     if (inherits(lm_model$offset, "PreSandwichLayer")) {
       offset_call$design <- quote(design)
