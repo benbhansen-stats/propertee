@@ -160,9 +160,10 @@ as.DirectAdjusted <- as.lmitt
   
   # NEED TO RECONFIGURE TO BE MORE CAREFUL ABOUT POSITIONAL VS. NAMED ARGS IN
   # WEIGHTS AND COV_ADJ CALLS
-  if (!is.null(lm_model$model$`(weights)`)) {
+  if (!is.null(lm_model$weights)) {
     weights_call <- quoted_call$weights
-    if (inherits(lm_model$weights, "WeightedDesign")) {
+    if (inherits(lm_model$model$`(weights)`, "WeightedDesign") &&
+        inherits(weights_call, "call")) {
       weights_call[[2]] <- quote(design)
       weights_call$data <- quote(data)
     }
@@ -170,9 +171,10 @@ as.DirectAdjusted <- as.lmitt
     quoted_call$weights <- weights_call
   }
 
-  if (!is.null(lm_model$model$`(offset)`)) {
+  if (!is.null(lm_model$offset)) {
     offset_call <- quoted_call$call$offset
-    if (inherits(lm_model$offset, "PreSandwichLayer")) {
+    if (inherits(lm_model$model$`(offset)`, "PreSandwichLayer") &&
+        inherits(offset_call, "call")) {
       offset_call$design <- quote(design)
       offset_call$newdata <- quote(data)
       assign("cmod", lm_model$model$`(offset)`@fitted_covariance_model, envir = eval_env)
