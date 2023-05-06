@@ -142,19 +142,44 @@ as.DirectAdjusted <- as.lmitt
   }
 
   eval_env <- new.env(parent = environment(formula(lm_model)))
+  assign("design", design, envir = eval_env)
   # Find data
   if (lmitt_fitted) {
     # If `lmitt.formula` is called, get the data from there directly (since
     # inside `lmitt.formula`, we pass in the data directly after appenindg on
     # the updated RHS and LHS).
     data <- lm_model$call$data
+    quoted_call <- lmitt_call
   } else {
     # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
     data <- eval(lm_model$call$data, envir = eval_env)
+    quoted_call <- lm_model$call
   }
-  lm_model$call$data <- data
+  lm_model$call$data <- quote(data)
   assign("data", data, envir = eval_env)
-  assign("design", design, envir = eval_env)
+  
+  # NEED TO RECONFIGURE TO BE MORE CAREFUL ABOUT POSITIONAL VS. NAMED ARGS IN
+  # WEIGHTS AND COV_ADJ CALLS
+  if (!is.null(lm_model$weights)) {
+    weights_call <- quoted_call$weights
+    if (inherits(lm_model$weights, "WeightedDesign")) {
+      weights_call[[2]] <- quote(design)
+      weights_call$data <- quote(data)
+    }
+    assign("weights", lm_model$weights, envir = eval_env)
+    quoted_call$weights <- weights_call
+  }
+
+  if (!is.null(lm_model$offset)) {
+    offset_call <- quoted_call$call$offset
+    if (inherits(lm_model$offset, "PreSandwichLayer")) {
+      offset_call$design <- quote(design)
+      offset_call$newdata <- quote(data)
+      assign("cmod", lm_model$model$`(offset)`@fitted_covariance_model, envir = eval_env)
+    }
+    quoted_call$offset <- offset_call
+  }
+
   environment(lm_model$terms) <- eval_env
   if (inherits(lm_model, "glm")) {
     lm_model$formula <- as.formula(lm_model, env = eval_env)
