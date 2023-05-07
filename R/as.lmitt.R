@@ -155,32 +155,48 @@ as.DirectAdjusted <- as.lmitt
     data <- eval(lm_model$call$data, envir = eval_env)
     quoted_call <- lm_model$call
   }
-  lm_model$call$data <- quote(data)
+  quoted_call$data <- quote(data)
   assign("data", data, envir = eval_env)
   
-  # NEED TO RECONFIGURE TO BE MORE CAREFUL ABOUT POSITIONAL VS. NAMED ARGS IN
-  # WEIGHTS AND COV_ADJ CALLS
   if (!is.null(lm_model$weights)) {
     weights_call <- quoted_call$weights
     if (inherits(lm_model$model$`(weights)`, "WeightedDesign") &&
-        inherits(weights_call, "call")) {
-      weights_call[[2]] <- quote(design)
+        inherits(weights_call, c("call", "character"))) {
+      if (inherits(weights_call, "character")) weights_call <- call(weights_call)
+      m <- match(c("dichotomy", "by"), names(weights_call), 0L)
+      weights_call <- weights_call[c(1L, m)]
+      
+      # NOTE: We force the `data` argument to be the data used to fit the model--
+      # how could a user possibly want weights generated from other data in this
+      # context?
       weights_call$data <- quote(data)
+      weights_call$design <- quote(design)
+    } else {
+      weights_call <- quote(weights)
     }
     assign("weights", lm_model$weights, envir = eval_env)
     quoted_call$weights <- weights_call
   }
 
   if (!is.null(lm_model$offset)) {
-    offset_call <- quoted_call$call$offset
+    offset_call <- quoted_call$offset
     if (inherits(lm_model$model$`(offset)`, "PreSandwichLayer") &&
         inherits(offset_call, "call")) {
-      offset_call$design <- quote(design)
+      m <- match("by", names(offset_call), 0L)
+      offset_call <- offset_call[c(1L, m)]
+      
+      offset_call$model <- quote(cmod)
+      # NOTE: Same note about `data` here as in the weights section above
       offset_call$newdata <- quote(data)
+      offset_call$design <- quote(design)
       assign("cmod", lm_model$model$`(offset)`@fitted_covariance_model, envir = eval_env)
+    } else {
+      offset_call <- quote(offset)
     }
+    assign("offset", lm_model$model$`(offset)`, envir = eval_env)
     quoted_call$offset <- offset_call
   }
+  lm_model$call <- quoted_call
 
   environment(lm_model$terms) <- eval_env
   if (inherits(lm_model, "glm")) {
