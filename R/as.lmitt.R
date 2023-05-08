@@ -150,14 +150,26 @@ as.DirectAdjusted <- as.lmitt
     # the updated RHS and LHS).
     data <- lm_model$call$data
     quoted_call <- lmitt_call
+    quoted_call[[1]] <- quote(stats::lm)
   } else {
     # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
     data <- eval(lm_model$call$data, envir = eval_env)
     quoted_call <- lm_model$call
+  
+    fcall <- eval(quoted_call[[2]], eval_env)
+    treatment_aliases <- attr(terms(fcall, specials = c("assigned", "a.", "z.", "adopters")), "specials")
+    which_alias <- names(which(!vapply(treatment_aliases, is.null, logical(1))))
+    assign(which_alias,
+           function(design = NULL, data = NULL) {
+             data <- get("data", eval_env)
+             design <- get("design", eval_env)
+             data[[var_names(design, "t")]]
+           },
+           envir = eval_env)
   }
   quoted_call$data <- quote(data)
   assign("data", data, envir = eval_env)
-  
+
   if (!is.null(lm_model$weights)) {
     weights_call <- quoted_call$weights
     if (inherits(lm_model$model$`(weights)`, "WeightedDesign") &&
