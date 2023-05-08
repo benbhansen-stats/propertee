@@ -1207,7 +1207,7 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  expect_equal(vcovDA(m, type = "MB_CR0"),
+  expect_equal(vcovDA(m, type = "MB0"),
                sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
 })
 
