@@ -626,7 +626,10 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 }
 
 
-#' 
+#' @keywords internal
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
+#' @return 
 .get_upsilon <- function(x, ...){
   # weights
   ws <- x$weights
@@ -679,13 +682,16 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     resi <- x$call$data$y
   else
     resi <- x$call$offset@fitted_covariance_model$residuals
-  term1 <- ws * (resi - tau1) * assignment
+  term1 <- ws * (resi - tau1)
   term2 <- z_ind[,2] - b_ind %*% p1
   mat <- term1 * term2
   return(mat)
 }
 
-#'
+#' 
+#' @keywords internal
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
 .get_phi_tilde <- function(x, ...){
   # the weight vector
   ws <- x$weights
@@ -730,8 +736,8 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 
 #' This function
 #' @keywords internal
-#' @param x
-#' @param ... 
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
 #' @return An \eqn{s\times k} matrix
 .get_appinv_atp <- function(x, ...){
   # weights
@@ -740,9 +746,9 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   tau1 <- x$coefficients
   
   # treatment assignments
-  design_obj <- damod_abs@Design
+  design_obj <- x@Design
   name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  df <- damod_abs$call$data
+  df <- x$call$data
   assignment <- df[, name_of_trt]
   
   # the indicators of z (treatment assignment)
@@ -780,19 +786,27 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     resi <- x$call$data$y
   else
     resi <- x$call$offset@fitted_covariance_model$residuals
-  term1 <- ws * (resi - tau1) * assignment
   
+  # compute nuisance parameters p
+  wb <- matrix(replicate(s, ws), ncol = s) * b_ind
+  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
+  p1 <- p[2, ]
+  
+  term2 <- z_ind[,2] - b_ind %*% p1
   app <- list()
+  atp <- list()
   for (i in 1:s){
-    app[[i]] <- ws * (resi - tau1) * assignment * b_ind[,i]
+    atp[[i]] <- ws * (resi - tau1) * b_ind[,i]
+    # atp[[i]] <- .get_upsilon(x) / term2 * b_ind[,i]
+    app[[i]] <- ws * b_ind[,i]
   }
-  w_ipv <- ate(x@Design, data = x$call$data)
-  # need inverse probability weights!
-  # the weights are good for now because we used ate(des) when creating damod_abs
+  # w_ipv <- ate(x@Design, data = x$call$data)
+  # inverse probability weights
   
   mat <- matrix(0, nrow = (k-1)*s, ncol = k-1)
   for (i in 1:s){
-    mat[i,1] <- sum(app[[i]] * w_ipv) / sum(w_ipv)
+    # mat[i,1] <- sum(app[[i]] * w_ipv) / sum(w_ipv)
+    mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
   }
   return(mat)
 }
