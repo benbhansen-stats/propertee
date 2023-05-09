@@ -1979,4 +1979,28 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
                     design = des)
   expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
 
+
+  copy_simdata <- simdata
+  copy_simdata$schoolid <- seq(900, 949)
+  C_df <- rbind(copy_simdata[, c("schoolid", "x", "y")],
+                data.frame(schoolid = seq(1000, 1049),
+                           x = rnorm(50),
+                           y = rnorm(50)))
+  cmod <- lm(y ~ x, C_df)
+  des <- rct_design(z ~ uoa(schoolid), copy_simdata)
+  lm1 <- lm(y ~ assigned(), copy_simdata, weights = ett(design = des),
+            offset = cov_adj(cmod, NULL, NULL, "schoolid"))
+  dmod1 <- lmitt(lm1, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v1 <- vcovDA(dmod1)
+
+  wts2 <- ett(des, data = copy_simdata)
+  offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid")
+  lm2 <- lm(y ~ assigned(), copy_simdata, weights = wts2, offset = offst2)
+  dmod2 <- lmitt(lm2, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v2 <- vcovDA(dmod2)
+
+  expect_true(all.equal(v1, v2))
+
 })
