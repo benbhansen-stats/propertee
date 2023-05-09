@@ -1967,3 +1967,13 @@ test_that("#119 flagging vcovDA entries as NaN", {
   expect_true(all(is.nan(vc[, 1])))
   expect_true(all(!is.nan(vc[-1, -1])))
 })
+
+test_that("#123 ensure PreSandwich are converted to Sandwich", {
+  data(simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  damod <- as.lmitt(lm(y ~ a.(des), data = simdata, offset = cov_adj(cmod)),
+                    design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+
+})

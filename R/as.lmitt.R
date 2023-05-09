@@ -141,6 +141,13 @@ as.DirectAdjusted <- as.lmitt
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
+  # #123 Make PreSandwichLayer to SandwichLayer if necessary
+  ca <- .get_cov_adj(lm_model)
+  if (is(ca, "PreSandwichLayer") & !is(ca, "SandwichLayer")) {
+    lm_model$model$`(offset)` <- as.SandwichLayer(.get_cov_adj(lm_model),
+                                                  design = design)
+  }
+
   eval_env <- new.env(parent = environment(formula(lm_model)))
   # Find data
   if (lmitt_fitted) {
