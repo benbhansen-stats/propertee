@@ -94,6 +94,15 @@
       tryCatch(get("formula", envir = x, inherits = FALSE),
                error = function(e) NULL))
 
+    # Ensure only terms or formula are found #124
+    adopter_args <- lapply(adopter_args, function(x) {
+      if (!(is(x, "formula") | is(x, "terms"))) {
+        return(NULL)
+      } else {
+        return(x)
+      }
+    })
+
     # Search these formula for "assigned(", ensuring that the previous character
     # is not a letter, in case there are functions like customassigned().
     fn_pos <- c(which(grepl("[^a-zA-Z]?assigned\\(",
