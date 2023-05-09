@@ -468,8 +468,6 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   n <- length(args$cluster)
   
   if (x@absorbed_intercepts) {
-    stop(paste("Design-based standard errors cannot be computed for ITT effect",
-               "models with absorbed block effects"))
     a22inv <- sandwich::bread(x)
     meat <- do.call(sandwich::meatCL, args)
     
@@ -626,24 +624,21 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 }
 
 
+#' 
 #' @keywords internal
 #' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
-#' @return 
-.get_upsilon <- function(x, ...){
-  # weights
+.get_phi_tilde <- function(x, ...){
   ws <- x$weights
-  # estimated treatment effect (tau_1)
-  tau1 <- x$coefficients
   
   # treatment assignments
   design_obj <- x@Design
   name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
   df <- x$call$data
-  assignment <- df[, name_of_trt]
+  assignment <- df[[name_of_trt]]
   
   # the indicators of z (treatment assignment)
-  n <- length(ws) # number of units in Q(?)
+  n <- length(ws) # number of units in Q
   k <- length(c(0,1)) # unique(assignment)
   z_ind <- matrix(nrow = n, ncol = k)
   for (j in 1:k){
@@ -652,7 +647,8 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   
   # stratum ids 
   name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  stratum <- df[, name_of_blk]
+  stratum <- df[[name_of_blk]]
+  
   # the indicators of b (stratum)
   if (sum(x@Design@column_index == "b") == 1){
     s <- length(unique(stratum)) # number of stratum
@@ -666,59 +662,11 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     s <- nrow(blks) # number of stratum
     b_ind <- matrix(nrow = n, ncol = s)
     for (j in 1:s){
-      b_ind[,j] <- cluster[,1] == blks[j,1]
+      b_ind[,j] <- stratum[,1] == blks[j,1]
       for (i in 2:ncol(blks))
-        b_ind[,j] <- b_ind[,j] & (cluster[,i] == blks[j,i])
+        b_ind[,j] <- b_ind[,j] & (stratum[,i] == blks[j,i])
       b_ind[,j] <- as.integer(b_ind[,j])
     }
-  }
-  
-  # compute nuisance parameters p
-  wb <- matrix(replicate(s, ws), ncol = s) * b_ind
-  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
-  p1 <- p[2, ]
-  
-  if (is.null(x$call$offset))
-    resi <- x$call$data$y
-  else
-    resi <- x$call$offset@fitted_covariance_model$residuals
-  term1 <- ws * (resi - tau1)
-  term2 <- z_ind[,2] - b_ind %*% p1
-  mat <- term1 * term2
-  return(mat)
-}
-
-#' 
-#' @keywords internal
-#' @param x a fitted \code{DirectAdjusted} model
-#' @param ... arguments to pass to internal functions
-.get_phi_tilde <- function(x, ...){
-  # the weight vector
-  ws <- x$weights
-  
-  # treatment assignments
-  design_obj <- x@Design
-  name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  df <- x$call$data
-  assignment <- df[[name_of_trt]]
-  
-  # the indicators of z (treatment assignment)
-  n <- length(ws) # number of units in Q(?)
-  k <- length(c(0,1)) # unique(assignment)
-  z_ind <- matrix(nrow = n, ncol = k)
-  for (j in 1:k){
-    z_ind[,j] <- as.integer(assignment == c(0,1)[j])
-  }
-  
-  # stratum ids 
-  name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  stratum <- df[[name_of_blk]]
-  
-  # the indicators of b (stratum)
-  s <- length(unique(stratum)) # number of stratum
-  b_ind <- matrix(nrow = n, ncol = s)
-  for (j in 1:s){
-    b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
   }
   
   # compute nuisance parameters p
@@ -742,8 +690,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 .get_appinv_atp <- function(x, ...){
   # weights
   ws <- x$weights
-  # estimated treatment effect (tau_1)
-  tau1 <- x$coefficients
+  # estimated treatment effect tau1 <- x$coefficients
   
   # treatment assignments
   design_obj <- x@Design
@@ -775,33 +722,22 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     s <- nrow(blks) # number of stratum
     b_ind <- matrix(nrow = n, ncol = s)
     for (j in 1:s){
-      b_ind[,j] <- cluster[,1] == blks[j,1]
+      b_ind[,j] <- stratum[,1] == blks[j,1]
       for (i in 2:ncol(blks))
-        b_ind[,j] <- b_ind[,j] & (cluster[,i] == blks[j,i])
+        b_ind[,j] <- b_ind[,j] & (stratum[,i] == blks[j,i])
       b_ind[,j] <- as.integer(b_ind[,j])
     }
   }
+  #resi <- x$call$offset@fitted_covariance_model$residuals
   
-  if (is.null(x$call$offset))
-    resi <- x$call$data$y
-  else
-    resi <- x$call$offset@fitted_covariance_model$residuals
-  
-  # compute nuisance parameters p
-  wb <- matrix(replicate(s, ws), ncol = s) * b_ind
-  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
-  p1 <- p[2, ]
-  
-  term2 <- z_ind[,2] - b_ind %*% p1
   app <- list()
   atp <- list()
   for (i in 1:s){
-    atp[[i]] <- ws * (resi - tau1) * b_ind[,i]
+    atp[[i]] <- ws * (x$residuals) * b_ind[,i]
     # atp[[i]] <- .get_upsilon(x) / term2 * b_ind[,i]
     app[[i]] <- ws * b_ind[,i]
   }
-  # w_ipv <- ate(x@Design, data = x$call$data)
-  # inverse probability weights
+  # w_ipv <- ate(x@Design, data = x$call$data) inverse probability weights
   
   mat <- matrix(0, nrow = (k-1)*s, ncol = k-1)
   for (i in 1:s){
