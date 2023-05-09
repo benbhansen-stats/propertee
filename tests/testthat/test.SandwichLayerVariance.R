@@ -1972,7 +1972,10 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
-  damod <- as.lmitt(lm(y ~ a.(des), data = simdata, offset = cov_adj(cmod)),
+  # Make sure its PreSandwich prior
+  ca <- cov_adj(cmod, newdata = simdata)
+  expect_false(is(ca, "SandwichLayer"))
+  damod <- as.lmitt(lm(y ~ a.(des), data = simdata, offset = ca),
                     design = des)
   expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
 
