@@ -30,6 +30,11 @@ test_that("Obtaining data for weights", {
 
   # Allow simple manipulation of weights
   mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
+  mod7 <- lm(y ~ x, data = simdata, weights = simdata$o*ate(des))
+
+  # additional arguments in weights
+  des2 <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
+  mod8 <- lm(y ~ x, data = simdata, weights = ett(des2, dichotomy = o >= 3 ~ .))
 
 
   # Test for fallback if no model.frame call
