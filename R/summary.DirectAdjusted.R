@@ -27,7 +27,7 @@ summary.DirectAdjusted <- function(object,
     out$vcov.type <- attr(covmat, "type")
   }
   class(out) <- "summary.DirectAdjusted"
-  out$lmitt <- object
+  out$DirectAdjusted <- object
   return(out)
 }
 
@@ -48,20 +48,20 @@ print.summary.DirectAdjusted <- function(x,
                                            getOption("show.signif.stars"),
                                          ...) {
 
-  cat("\nCall:\n", paste(deparse(x$lmitt@lmitt_call), sep = "\n",
+  cat("\nCall:\n", paste(deparse(x$DirectAdjusted@lmitt_call), sep = "\n",
                          collapse = "\n"), "\n", sep = "")
 
   df <- x$df
 
-  if (x$lmitt@lmitt_fitted) {
+  if (x$DirectAdjusted@lmitt_fitted) {
     coefmatname <- "Treatment Effects"
   } else {
     coefmatname <- "Coefficients"
   }
 
-
   if (length(x$aliased) == 0L) {
     cat("\nNo Coefficients\n")
+    return(invisible(x))
   }
   else {
     if (nsingular <- df[3L] - df[1L])
@@ -76,14 +76,20 @@ print.summary.DirectAdjusted <- function(x,
                       dimnames = list(cn, colnames(coefs)))
       coefs[!aliased, ] <- x$coefficients
     }
-    stats::printCoefmat(coefs,
+    if (x$DirectAdjusted@lmitt_fitted) {
+      toprint <- grepl(paste0(var_names(x$DirectAdjusted@Design, "t"), "_"),
+                       rownames(coefs))
+    } else {
+      toprint <- nrow(coefs)
+    }
+    stats::printCoefmat(coefs[toprint, , drop = FALSE],
                         digits = digits,
                         signif.stars = signif.stars,
                         na.print = "NA", ...)
   }
 
-  if (nrow(x$coefficients) > 0) {
-    # Only print if we estimate at least one coefficient
+  if (sum(toprint) > 0 & any(!is.na(coefs[toprint, 1]))) {
+    # Only print if we estimate at least one treatment effect
     cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
   } else {
     cat("\n")

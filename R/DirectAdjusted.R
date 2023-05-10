@@ -24,7 +24,14 @@ setValidity("DirectAdjusted", function(object) {
 ##' @export
 setMethod("show", "DirectAdjusted", function(object) {
   coeffs <- object$coefficients
-  print(coeffs)
+  # Display only treatment effects
+  if (object@lmitt_fitted) {
+    toprint <- grepl(paste0(var_names(object@Design, "t"), "_"),
+                     names(coeffs))
+    print(coeffs[toprint])
+  } else {
+    print(coeffs)
+  }
   invisible(object)
 })
 
