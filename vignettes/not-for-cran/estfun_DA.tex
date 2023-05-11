@@ -448,6 +448,7 @@ First, let's switch over to using $[\alpha_{1}, \ldots, \alpha_{s}]$
 as the intercept parameter(s), allowing for absorption of $s$ block or
 stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.
 Our estimating function \eqref{eq:14} becomes
+
 \begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
@@ -516,14 +517,14 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
                                              \begin{array}{c}                                               
-           [y_{i}[z_{i}]
+           \big[y_{i}[z_{i}]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               g(\vec{x}_{i}\beta)-\tau_{z_{i}}\indicator{z_{i}>0}\big](
                                                \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
-{}           [y_{i}[z_{i}]
+{}           \big[y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{k}](\indicator{z_{i}=k}
+                                               \tau_{z_{i}}\indicator{z_{i}>0}\big](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
@@ -692,19 +693,21 @@ without doing anything special, using an $\Upsilon$ given by
     \indicator{i \in \bigcup \mathcal{Q}}\owt{} \times \\
 \left(
                                              \begin{array}{c}                                               
-           [y_{i}[z_{i}]
+           \big[y_{i}[z_{i}]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               g(\vec{x}_{i}\beta)-\tau_{z_{i}}\indicator{z_{i}>0}\big](
                                                \indicator{z_{i}=1} -
                                                \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
                                                - \tilde{m}_{i}\gamma)\\
                   \vdots \\
-{}           [y_{i}[z_{i}]
+{}           \big[y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{k}](\indicator{z_{i}=k}
+                                               \tau_{z_{i}}\indicator{z_{i}>0}\big](\indicator{z_{i}=k}
                                                -
                                                \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
-                                               - \tilde{m}_{i}\gamma)\\                                             \end{array}
+                                               -
+                                               \tilde{m}_{i}\gamma)\\
+                                             \end{array}
 \right) .
 \end{multline*}
 Because the covariance estimates will
@@ -830,7 +833,7 @@ on potential outcomes? If so, then as a consequence we can think of
 \eqref{eq:10} as having rows that are also of this form.
 \eqref{eq:11} says $\grave{\phi}(\tilde{\mathbf{Y}}_{i}; \mathbf{p})$
 has this form, so if we can get represent
-$\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in this way then \eqref{eq:12}
+$\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in this way then \eqref{eq:19}
 will have this form as well. That strikes me as likely to facilitate
 derivation, 
 presentation in print and coding in R of these design-based covariances. 
@@ -847,6 +850,36 @@ with covariates.
 
 \nobibliography{estfun_DA}
 \end{document}
+
+\begin{multline}
+  \label{eq:9}
+  \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
+  \indicator{i \in \bigcup \mathcal{Q}} \owt{}\times \\  
+  \left(
+    \begin{array}{c}
+           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j}m_{j})\indicator{z_{i}=j} \\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j} m_{i})\indicator{z_{i}=j}
+      \big] m_{i}\\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      (\tau_{1}+\delta_{1} m_{i}) \big](m_{i}\indicator{z_{i}=1})\\      
+\vdots \\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta  m_{i}-
+      (\tau_{k}+\delta_{k} m_{i}) \big](m_{i}\indicator{z_{i}=k})\\      
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
+                  \vdots \\
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
+    \end{array}
+\right).
+\end{multline}
+
 \subsubsection{Alt def of M's}
 \[
   \begin{array}{cc}
