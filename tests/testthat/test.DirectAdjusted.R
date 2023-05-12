@@ -62,9 +62,9 @@ test_that("DirectAdjusted print/show", {
 
   ######## Now pretend it comes from `lmitt.formula`
   # Need `txt_` to match what comes out of a call like `lmitt(y ~ 1...)`
-  simdata$z_ <- simdata$z
+  simdata$z. <- simdata$z
   dalm <- new("DirectAdjusted",
-              lm(y ~ z_, data = simdata, weights = ate(des),
+              lm(y ~ z., data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
               lmitt_fitted = TRUE)
@@ -75,8 +75,8 @@ test_that("DirectAdjusted print/show", {
   expect_silent(invisible(capture.output(expect_identical(show(dalm), dalm))))
 
   # Expect "assigned()"
-  expect_output(print(dalm), "z_")
-  expect_output(show(dalm), "z_")
+  expect_output(print(dalm), "z\\.")
+  expect_output(show(dalm), "z\\.")
 })
 
 test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
@@ -1241,4 +1241,27 @@ test_that("lmitt_fitted object", {
   mod <- lmitt(lm(y ~ adopters(des), data = simdata), design = des)
   expect_false(mod@lmitt_fitted)
 
+})
+
+test_that("printed effects aren't confused by bad naming", {
+  data(simdata)
+  simdata$abz.c <- as.factor(simdata$o)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  mod <- lmitt(y ~ abz.c, data = simdata, design = des)
+  co <- capture.output(show(mod))
+  cos <- strsplit(trimws(co), "[[:space:]]+")
+
+  expect_true(all(vapply(cos, length, numeric(1)) == 4))
+  expect_true(all(!isTRUE(grepl("^abz", cos[[1]]))))
+  expect_true(all(grepl("^z", cos[[1]])))
+
+  # to force ` in variable names via as.factor
+  mod <- lmitt(y ~ as.factor(abz.c), data = simdata, design = des)
+  co <- capture.output(show(mod))
+  cos <- strsplit(trimws(co[c(1, 3)]), "[[:space:]]+")
+  cos <- Reduce("c", cos)
+  expect_length(cos, 4)
+  expect_true(all(!isTRUE(grepl("^as\\.factor", cos))))
+  expect_true(all(grepl("^`z", cos)))
 })

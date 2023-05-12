@@ -27,6 +27,12 @@
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
 ##' into \code{lm()} or \code{lmitt()}.
 ##'
+##' To avoid variable name collision, the treatment variable defined in the
+##' \code{design} will have a "\code{.}" appended to it. For example, if you
+##' request a main treatment effect with a treatment variable named "txt", you
+##' can obtain it's estimate from the returned \code{DirectAdjusted} object via
+##' \code{$coefficients["txt."]}.
+##'
 ##' \code{lmitt()} will produce a message if the \code{design} passed in has
 ##' block information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
@@ -289,10 +295,10 @@ lmitt.formula <- function(obj,
   mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
   # Make sure to keep it as a named matrix
 
-  # Rename `a.()` to treatment named, adding a _ after to avoid conflict with
+  # Rename `a.()` to treatment named, adding a "." after to avoid conflict with
   # original treatment variable.
   colnames(mm) <- gsub("a\\.\\(\\)",
-                       paste0(var_names(design, "t"), "_"),
+                       paste0(var_names(design, "t"), "."),
                        colnames(mm))
 
   # Replace : with _ for interaction to try and avoid backticks

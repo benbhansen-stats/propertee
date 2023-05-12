@@ -26,7 +26,8 @@ setMethod("show", "DirectAdjusted", function(object) {
   coeffs <- object$coefficients
   # Display only treatment effects
   if (object@lmitt_fitted) {
-    toprint <- grepl(paste0(var_names(object@Design, "t"), "_"),
+    # This should match any coefficients starting with the "txt." or "`txt."
+    toprint <- grepl(paste0("^\\`?", var_names(object@Design, "t"), "\\."),
                      names(coeffs))
     print(coeffs[toprint])
   } else {

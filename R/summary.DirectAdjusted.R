@@ -77,7 +77,8 @@ print.summary.DirectAdjusted <- function(x,
       coefs[!aliased, ] <- x$coefficients
     }
     if (x$DirectAdjusted@lmitt_fitted) {
-      toprint <- grepl(paste0(var_names(x$DirectAdjusted@Design, "t"), "_"),
+      toprint <- grepl(paste0("^\\`?",
+                              var_names(x$DirectAdjusted@Design, "t"), "\\."),
                        rownames(coefs))
     } else {
       toprint <- nrow(coefs)

@@ -169,3 +169,24 @@ test_that("#119 flagging as NaN", {
   expect_true(all(!is.nan(cf[-1, ])))
 
 })
+
+
+test_that("print.summary isn't confused by bad naming", {
+  data(simdata)
+  simdata$abz.c <- as.factor(simdata$o)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  mod <- lmitt(y ~ abz.c, data = simdata, design = des)
+  co <- capture.output(summary(mod))
+  cos <- strsplit(trimws(co), "[[:space:]]+")
+
+  expect_true(!any(grepl("^abz\\.", co)))
+  expect_equal(sum(grepl("^z\\.", co)), 4)
+
+  # to force ` in variable names via as.factor
+  mod <- lmitt(y ~ as.factor(abz.c), data = simdata, design = des)
+  co <- capture.output(summary(mod))
+  expect_true(!any(grepl("^`abz\\.", co)))
+  expect_equal(sum(grepl("^`z\\.", co)), 4)
+
+})
