@@ -31,33 +31,65 @@
 .expand.model.frame.DA <- function (model,
                                     extras,
                                     envir = environment(formula(model)),
-                                   na.expand = FALSE) {
-  stopifnot(is(model, "DirectAdjusted")) # JE addition
-  f <- stats::formula(model) # JE modification
-  data <- eval(model$call$data, envir)
-  data <- cbind(data, stats::model.frame(model)) # JE addition
-  ff <- foo ~ bar + baz
-  gg <- if (is.call(extras))
-          extras
-  else str2lang(paste("~", paste(extras, collapse = "+")))
-  ff[[2L]] <- f[[2L]]
-  ff[[3L]][[2L]] <- f[[3L]]
-  ff[[3L]][[3L]] <- gg[[2L]]
-  if (!na.expand) {
-    naa <- model$call$na.action
-    subset <- model$call$subset
-    rval <- eval(call("model.frame", ff, data = data, subset = subset,
-                      na.action = naa), envir)
-  }
-  else {
-    subset <- model$call$subset
-    rval <- eval(call("model.frame", ff, data = data, subset = subset,
-                      na.action = I), envir)
-    oldmf <- stats::model.frame(model) # JE modification
-    keep <- match(rownames(oldmf), rownames(rval))
-    rval <- rval[keep, ]
-    class(rval) <- "data.frame"
-  }
-  return(rval)
+                                    na.expand = FALSE) {
+  # R4.2.3 or earlier
+  if (as.numeric(version$major) < 4 |
+        (as.numeric(version$major) == 4 & as.numeric(version$minor) < 3)) {
+    stopifnot(is(model, "DirectAdjusted")) # JE addition
+    f <- stats::formula(model) # JE modification
+    data <- eval(model$call$data, envir)
+    data <- cbind(data, stats::model.frame(model)) # JE addition
+    ff <- foo ~ bar + baz
+    gg <- if (is.call(extras))
+            extras
+    else str2lang(paste("~", paste(extras, collapse = "+")))
+    ff[[2L]] <- f[[2L]]
+    ff[[3L]][[2L]] <- f[[3L]]
+    ff[[3L]][[3L]] <- gg[[2L]]
+    if (!na.expand) {
+      naa <- model$call$na.action
+      subset <- model$call$subset
+      rval <- eval(call("model.frame", ff, data = data, subset = subset,
+                        na.action = naa), envir)
+    }
+    else {
+      subset <- model$call$subset
+      rval <- eval(call("model.frame", ff, data = data, subset = subset,
+                        na.action = I), envir)
+      oldmf <- stats::model.frame(model) # JE modification
+      keep <- match(rownames(oldmf), rownames(rval))
+      rval <- rval[keep, ]
+      class(rval) <- "data.frame"
+    }
+    return(rval)
+  } else {
+    stopifnot(is(model, "DirectAdjusted")) # JE addition
+    f <- stats::formula(model) # JE modification
+    cl <- getCall(model)
+    data <- cl$data
+    data <- cbind(data, stats::model.frame(model)) # JE addition
+    f <- formula(model)
+    ff <- foo ~ bar + baz
+    gg <- if (is.call(extras))
+        extras
+    else str2lang(paste("~", paste(extras, collapse = "+")))
+    ff[[2L]] <- f[[2L]]
+    ff[[3L]][[2L]] <- f[[3L]]
+    ff[[3L]][[3L]] <- gg[[2L]]
+    environment(ff) <- envir
+    if (!na.expand) {
+        rval <- eval(call("model.frame", ff, data = data,
+            subset = cl$subset, na.action = cl$na.action), envir)
+    }
+    else {
+        rval <- eval(call("model.frame", ff, data = data,
+            subset = cl$subset, na.action = I), envir)
+        oldmf <- stats::model.frame(model) # JE modification
+        keep <- match(rownames(oldmf), rownames(rval))
+        rval <- rval[keep, ]
+        class(rval) <- "data.frame"
+    }
+    return(rval)
+}
 
 }

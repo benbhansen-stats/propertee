@@ -44,7 +44,8 @@ as.lmitt <- function(x, design = NULL) {
   ## }
   ## x <- newx
 
-  tt <- terms(stats::formula(x), specials = c("assigned", "a.", "z."))
+  tt <- terms(stats::formula(x),
+              specials = c("assigned", "a.", "z.", "adopters"))
 
   if (all(vapply(attr(tt, "specials"), is.null, logical(1)))) {
     stop(paste("`assigned()` or its aliases are not found in the model formula.",
@@ -53,12 +54,32 @@ as.lmitt <- function(x, design = NULL) {
                "avoid explicitly indicating `assigned()`."))
   }
 
+  #### Obtain the proper call.
+  # The first conditional is the user calls `lmitt()` and passes an `lm` object.
+  # The second conditional if the user calls `lmitt.lm()` directly
+  # The third conditional is if the user calls `as.lmitt()`.
 
+  # `&&` necessary to return FALSE immediately if not enough frames on stack
+  if (sys.nframe() >=3 &&
+      !is.null(sys.call(-2)) &&
+      sys.call(-2)[[1]] == as.name("lmitt")) {
+    # If we're in `lmitt.lm()` via `lmitt()`, save the call to `lmitt`.
+    lmitt_call <- sys.call(-2)
+  } else if (sys.nframe() >= 2 &&
+             !is.null(sys.call(-1)) &&
+             sys.call(-1)[[1]] == as.name("lmitt.lm")) {
+    # If we're in `lmitt.lm()` directly, save that call.
+    lmitt_call <- sys.call(-1)
+  } else {
+    # Otherwise save the `as.lmitt()` call
+    lmitt_call <- sys.call()
+  }
   return(.convert_to_lmitt(x,
                            design,
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
-                           absorbed_moderators = vector("character")))
+                           absorbed_moderators = vector("character"),
+                           lmitt_call = lmitt_call))
 }
 
 ##' @rdname as_lmitt
@@ -69,7 +90,8 @@ as.DirectAdjusted <- as.lmitt
                               design,
                               lmitt_fitted,
                               absorbed_intercepts,
-                              absorbed_moderators) {
+                              absorbed_moderators,
+                              lmitt_call) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
   }
@@ -119,6 +141,13 @@ as.DirectAdjusted <- as.lmitt
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
+  # #123 Make PreSandwichLayer to SandwichLayer if necessary
+  ca <- .get_cov_adj(lm_model)
+  if (is(ca, "PreSandwichLayer") & !is(ca, "SandwichLayer")) {
+    lm_model$model$`(offset)` <- as.SandwichLayer(.get_cov_adj(lm_model),
+                                                  design = design)
+  }
+
   eval_env <- new.env(parent = environment(formula(lm_model)))
   # Find data
   if (lmitt_fitted) {
@@ -138,11 +167,12 @@ as.DirectAdjusted <- as.lmitt
     lm_model$formula <- as.formula(lm_model, env = eval_env)
   }
 
-
   return(new("DirectAdjusted",
              lm_model,
              Design = design,
              absorbed_intercepts = absorbed_intercepts,
-             absorbed_moderators = absorbed_moderators))
+             absorbed_moderators = absorbed_moderators,
+             lmitt_call = call("quote", lmitt_call),
+             lmitt_fitted = lmitt_fitted))
 
 }

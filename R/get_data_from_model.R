@@ -77,27 +77,49 @@
     # "ett(", ensuring that the previous character (if there is one: ?) is not a
     # letter, thus ensuring we don't have some oddity like `translate(x)`
     # triggering.
-    ate_pos <- vapply(lapply(weights_args, deparse),
-                      function(x) any(grepl("[^a-zA-Z]?ate\\(", x)), TRUE)
-    ett_pos <- vapply(lapply(weights_args, deparse),
-                      function(x) any(grepl("[^a-zA-Z]?ett\\(", x)), TRUE)
+    pos <- vapply(weights_args, function(aa) {
+      is.call(aa) && (aa[[1]] == quote(ate) || aa[[1]] == quote(ett) ||
+                        any(vapply(aa, function(x) {
+                         x == quote(ate()) || x == quote(ett())
+                        }, logical(1))))
+    },   logical(1))
 
-    fn_pos <- which(ate_pos | ett_pos)
+    fn_pos <- which(pos)
   } else if (which_fn == "cov_adj") {
     offset_args <- lapply(sys.calls(), `[[`, "offset")
 
-    fn_pos <- which(vapply(lapply(offset_args, deparse),
-                           function(x) any(grepl("[^a-zA-Z]?cov_adj\\(", x)), TRUE))
+    pos <- vapply(offset_args, function(aa) {
+      is.call(aa) && (aa[[1]] == quote(cov_adj) ||
+                        any(vapply(aa, function(x) {
+                         x == quote(cov_adj)
+                        }, logical(1))))
+    },  logical(1))
+
+    fn_pos <- which(pos)
   } else if (which_fn == "assigned") {
     # Find all frames with `formula`
     adopter_args <- lapply(sys.frames(), function(x)
       tryCatch(get("formula", envir = x, inherits = FALSE),
                error = function(e) NULL))
 
+    # Ensure only terms or formula are found #124
+    adopter_args <- lapply(adopter_args, function(x) {
+      if (!(is(x, "formula") | is(x, "terms"))) {
+        return(NULL)
+      } else {
+        return(x)
+      }
+    })
+
     # Search these formula for "assigned(", ensuring that the previous character
     # is not a letter, in case there are functions like customassigned().
-    fn_pos <- which(grepl("[^a-zA-Z]?assigned\\(",
-                                lapply(adopter_args, deparse)))
+    pos <- vapply(adopter_args, function(x) {
+      any(c("assigned", "z.", "a.", "adopters") %in%
+            all.names(as.formula(x)))
+    },
+    logical(1))
+
+    fn_pos <- which(pos)
   }
 
 

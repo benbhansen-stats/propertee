@@ -20,9 +20,10 @@ setValidity("CombinedWeightedDesign", function(object) {
 ##'
 ##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
 ##' individual \code{WeightedDesign}s to come from the same \code{Design}
-##' (except \code{dichotomy}, see below) and have the target (e.g all created
-##' with \code{ate()} or all created with \code{ett()}, no mixing-and-matching).
-##' All arguments to \code{c()} must be \code{WeightedDesign}.
+##' (except \code{dichotomy}, see below) and have the same target (e.g all
+##' created with \code{ate()} or all created with \code{ett()}, no
+##' mixing-and-matching). All arguments to \code{c()} must be
+##' \code{WeightedDesign}.
 ##'
 ##' One exception is when concatenting \code{WeightedDesign}s with the same
 ##' \code{Design} but different dichotomies. There may be cases where the
@@ -34,7 +35,7 @@ setValidity("CombinedWeightedDesign", function(object) {
 ##' \code{dichotomy}.
 ##'
 ##' @title Concatenate weights
-##' @param x A \code{WeightedDesign} object with equivalent \code{Design} to
+##' @param x a \code{WeightedDesign} object with equivalent \code{Design} to
 ##'   those in \code{...}.
 ##' @param ... any number of \code{WeightedDesign} objects with equivalent
 ##'   \code{Design} to each other and \code{x}.

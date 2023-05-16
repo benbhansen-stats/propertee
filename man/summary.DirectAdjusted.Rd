@@ -4,10 +4,13 @@
 \alias{summary.DirectAdjusted}
 \title{Create summary of \code{DirectAdjusted} object}
 \usage{
-\method{summary}{DirectAdjusted}(object, ...)
+\method{summary}{DirectAdjusted}(object, vcov.type = c("CR0", "MB0", "HC0"), ...)
 }
 \arguments{
 \item{object}{DirectAdjusted object}
+
+\item{vcov.type}{A string indicating the desired variance estimator.
+Currently accepts "CR0", "MB0", or "HC0"}
 
 \item{...}{Additional arguments to \code{vcovDA()}, such as the desired
 finite sample heteroskedasticity-robust standard error adjustment.}

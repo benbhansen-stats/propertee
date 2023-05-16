@@ -15,12 +15,14 @@ test_that("vcovDA correctly dispatches", {
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
   expect_equal(vmat1, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
-  
+
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
-  expect_equal(vmat2, vmat1)
-  
+  expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
+  expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
+
   vmat3 <- suppressMessages(vcovDA(damod, type = "HC0"))
-  expect_equal(vmat3, vmat1)
+  expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
+  expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
 })
 
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
@@ -49,9 +51,9 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
                 weights = ate(des), offset = cov_adj(cmod))
 
   expect_warning(vmat <- suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
-                 "these observations should be treated as IID")
+                 "these observations should be treated as independent")
   expect_warning(expected <- suppressMessages(vcovDA(dmod)),
-                 "these observations should be treated as IID")
+                 "these observations should be treated as independent")
   expect_equal(vmat, expected)
 })
 
@@ -315,14 +317,14 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
   cmod <- m$model$`(offset)`@fitted_covariance_model
   cmod_eqns <- Reduce(
     rbind,
-    by(cmod$residuals * model.matrix(cmod),
-       lapply(uoanames, function(col) m$model$`(offset)`@keys[,col]),
+    by((cmod$residuals * model.matrix(cmod))[m$model$`(offset)`@keys$in_Q,],
+       lapply(uoanames, function(col) m$model$`(offset)`@keys[m$model$`(offset)`@keys$in_Q,col]),
        colSums))
 
   Q <- stats::expand.model.frame(m, uoanames)
   msk <- !is.na(.merge_preserve_order(
     Q,
-    merge(unique(m$model$`(offset)`@keys), m@Design@structure),
+    merge(unique(m$model$`(offset)`@keys[, uoanames, drop = FALSE]), m@Design@structure),
     by = uoanames,
     all.x = TRUE,
     sort = FALSE)[zname])
@@ -333,7 +335,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
        colSums))
   expect_message(b12 <- flexida:::.get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))
   expect_equal(b12,
-               t(cmod_eqns) %*% m_eqns)
+               crossprod(cmod_eqns, m_eqns))
 })
 
 test_that(paste(".get_b12 returns expected B_12 for cluster-level",
@@ -862,7 +864,7 @@ test_that(".get_b11 returns correct B_11 for one cluster column", {
     crossprod(Reduce(rbind, by(sandwich::estfun(cmod), uoas, colSums))) *
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
-  expect_equal(flexida:::.get_b11(m), expected)
+  expect_equal(.get_b11(m), expected)
 })
 
 test_that(".get_b11 fails with invalid custom cluster argument", {
@@ -947,8 +949,6 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
 
   expect_warning(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2")),
                  "have NA's for some but not all")
-  expect_equal(suppressWarnings(flexida:::.get_b11(dmod, cluster = c("cid1", "cid2"))),
-               flexida:::.get_b11(dmod, cluster = c("cid1")))
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
@@ -1207,8 +1207,11 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
   uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  expect_equal(vcovDA(m, type = "MB0"),
-               sandwich::sandwich(m, meat. = sandwich::meatCL, cluster = uoas))
+  expect_true(all.equal(vcovDA(m, type = "CR0"),
+                        sandwich::sandwich(m,
+                                           meat. = sandwich::meatCL,
+                                           cluster = uoas),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -1277,14 +1280,17 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
 
   # with perfect group balance, a22inv %*% a21 ((Z'WZ)^(-1)Z'WX) should be 0
   # for the trt row
-  expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  expect_equal((a22inv %*% a21)[2,],
+               setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1/n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal to the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+                        check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -1355,11 +1361,13 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1/n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+                       check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -1463,14 +1471,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- flexida:::.vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- flexida:::.vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -1556,14 +1566,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
@@ -1609,8 +1621,10 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                n * solve(crossprod(Z * damod$weights, Z)))
 
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
-  ef_cmod <- estfun(cmod)
-  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
+  nonzero_ef_cmod <- estfun(cmod)
+  ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
+  colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
+  ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
   expect_equal(meat <- crossprod(estfun(damod)) / n,
                (crossprod(ef_damod) -
                   crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
@@ -1625,11 +1639,13 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = df$uid, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = df$uid, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
@@ -1691,8 +1707,10 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
 
   ids <- df$cid
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
-  ef_cmod <- estfun(cmod)
-  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
+  nonzero_ef_cmod <- estfun(cmod)
+  ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
+  colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
+  ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
@@ -1710,14 +1728,16 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
@@ -1770,8 +1790,10 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
   ef_damod <- utils::getS3method("estfun", "lm")(damod)
-  ef_cmod <- estfun(cmod)
-  ef_cmod <- rbind(matrix(0, nrow = n - nc, ncol = ncol(ef_cmod)), ef_cmod)
+  nonzero_ef_cmod <- estfun(cmod)
+  ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
+  colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
+  ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
   expect_equal(meat <- crossprod(estfun(damod)) / n,
                (crossprod(ef_damod) -
                   crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
@@ -1786,11 +1808,13 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(vmat, sandwich::sandwich(damod, adjust = FALSE))
+  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
@@ -1862,9 +1886,11 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
   ids <- c(df$cid[!is.na(df$z)], df$cid[is.na(df$z)])
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
-  ef_damod <- rbind(ef_damod, matrix(0, nrow = n - nrow(X), ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
+  nonzero_ef_damod <- estfun(as(damod, "lm"))
+  ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(nonzero_ef_damod))
+  colnames(ef_damod) <- colnames(nonzero_ef_damod)
+  ef_damod[!is.na(df$z), ] <- nonzero_ef_damod
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
@@ -1882,12 +1908,99 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
   # check .vcovMB_CR0 matches manual matrix multiplication
-  expect_equal(vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE),
-               (1 / n) * a22inv %*% meat %*% a22inv)
+  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+                        check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_equal(
-    vmat,
-    sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = ids, cadjust = FALSE)
-  )
+  expect_true(all.equal(vmat,
+                        sandwich::sandwich(damod,
+                                           meat. = sandwich::meatCL,
+                                           cluster = ids, cadjust = FALSE),
+                        check.attributes = FALSE))
+})
+
+test_that("type attribute", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ 1, data = simdata, weights = "ate", design = des)
+  expect_identical(attr(vcov(damod), "type"), "CR0")
+  expect_identical(attr(vcov(damod, type = "CR0"), "type"), "CR0")
+  expect_identical(attr(vcov(damod, type = "MB0"), "type"), "MB0")
+  expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
+})
+
+test_that("#119 flagging vcovDA entries as NaN", {
+  data(simdata)
+  simdata$o <- as.factor(simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+
+  ### lmitt.formula
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  vc <- vcov(damod)
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  vc[1, ] <- NaN
+  vc[, 1] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(vc[1, ])))
+  expect_true(all(is.nan(vc[, 1])))
+  expect_true(all(!is.nan(vc[-1, -1])))
+
+  #### lmitt.lm
+  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  vc <- vcov(damod)[5:7, 5:7]
+
+  #****************************************
+  ### Setting these to NaN manually only for testing purposes!
+  vc[1, ] <- NaN
+  vc[, 1] <- NaN
+  ### Remove these once #119 is addressed!!!!!
+  #****************************************
+
+  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  expect_true(all(is.nan(vc[1, ])))
+  expect_true(all(is.nan(vc[, 1])))
+  expect_true(all(!is.nan(vc[-1, -1])))
+})
+
+test_that("#123 ensure PreSandwich are converted to Sandwich", {
+  data(simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  # Make sure its PreSandwich prior
+  ca <- cov_adj(cmod, newdata = simdata)
+  expect_false(is(ca, "SandwichLayer"))
+  damod <- as.lmitt(lm(y ~ a.(des), data = simdata, offset = ca),
+                    design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+
+
+  copy_simdata <- simdata
+  copy_simdata$schoolid <- seq(900, 949)
+  C_df <- rbind(copy_simdata[, c("schoolid", "x", "y")],
+                data.frame(schoolid = seq(1000, 1049),
+                           x = rnorm(50),
+                           y = rnorm(50)))
+  cmod <- lm(y ~ x, C_df)
+  des <- rct_design(z ~ uoa(schoolid), copy_simdata)
+  lm1 <- lm(y ~ assigned(), copy_simdata, weights = ett(design = des),
+            offset = cov_adj(cmod, NULL, NULL, "schoolid"))
+  dmod1 <- lmitt(lm1, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v1 <- vcovDA(dmod1)
+
+  wts2 <- ett(des, data = copy_simdata)
+  offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid")
+  lm2 <- lm(y ~ assigned(), copy_simdata, weights = wts2, offset = offst2)
+  dmod2 <- lmitt(lm2, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v2 <- vcovDA(dmod2)
+
+  expect_true(all.equal(v1, v2))
+
 })

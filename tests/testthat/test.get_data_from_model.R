@@ -30,10 +30,15 @@ test_that("Obtaining data for weights", {
 
   # Allow simple manipulation of weights
   mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
+  mod7 <- lm(y ~ x, data = simdata, weights = simdata$o*ate(des))
+
+  # additional arguments in weights
+  des2 <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
+  mod8 <- lm(y ~ x, data = simdata, weights = ett(des2, dichotomy = o >= 3 ~ .))
 
 
   # Test for fallback if no model.frame call
-  
+
   w <- capture_warnings(with(simdata, ate(des)))
   expect_equal(length(w), 4)
   expect_true(any(sapply(w, grepl, pattern = "No call")))
@@ -72,8 +77,8 @@ test_that("get_data_from_model finds data in lmitt object's eval env", {
   #expect_warning(lmitt_func(damod), "No call to `model.frame`")
   out <- model.matrix(formula(damod), environment(formula(damod))$data)
   expect_true(is.numeric(out))
-  expect_equal(length(out), nrow(simdata))
-  expect_true(all(out == damod$model[, 2, drop = FALSE]))
+  expect_equal(dim(out), c(nrow(simdata), 2))
+  expect_true(all(out[, 2] == damod$model[, 2]))
 })
 
 test_that(paste("get_data_from_model frame recursion doesn't return",

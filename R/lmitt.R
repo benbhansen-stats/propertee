@@ -27,6 +27,12 @@
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
 ##' into \code{lm()} or \code{lmitt()}.
 ##'
+##' To avoid variable name collision, the treatment variable defined in the
+##' \code{design} will have a "\code{.}" appended to it. For example, if you
+##' request a main treatment effect with a treatment variable named "txt", you
+##' can obtain it's estimate from the returned \code{DirectAdjusted} object via
+##' \code{$coefficients["txt."]}.
+##'
 ##' \code{lmitt()} will produce a message if the \code{design} passed in has
 ##' block information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
@@ -153,7 +159,7 @@ lmitt.formula <- function(obj,
   }
   .check_for_assigned_and_aliases <- function(fn) {
     if (grepl(paste0(fn, "\\("), rhs)) {
-      stop(paste("Do not specify `assigned()` or any of it's aliases in",
+      stop(paste("Do not specify `assigned()` or any of its aliases in",
                  "the right hand side of `lmitt()`.\nTo estimate only",
                  "a treatment effect, pass `~ 1` as the right hand side."))
     }
@@ -226,7 +232,7 @@ lmitt.formula <- function(obj,
   mf.call[[1]] <- quote(stats::model.frame)
   # Add assigned() to the model so it utilizes Design characteristics (primarly
   # concerned about subset)
-  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + flexida::assigned())
+  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + a.())
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
@@ -260,134 +266,78 @@ lmitt.formula <- function(obj,
     # To be used below
   }
 
+  # Generate formula for the internal `lm`
   if (rhs == "1") {
-    # Define new RHS and obtain model.matrix
-    new.form <- formula(~ flexida::assigned()) # need flexida:: or assigned()
-                                               # can't be found
-#    environment(new.form) <- saveenv # Do I need this?
-    mm.call <- lm.call
-    mm.call[[2]] <- str2lang(deparse(new.form))
-    # model.matrix.lm supports as `na.action` argument where
-    # model.matrix.default doesn't
-    mm.call[[1]] <- quote(stats::model.matrix.lm)
-    mm.call$na.action <- "na.pass"
-    names(mm.call)[2] <- "object"
-    mm <- eval(mm.call, parent.frame())
-
-    if (absorb) {
-      mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
-    }
-
+    new.form <- formula(~ a.())
     absorbed_moderators <- character()
-
   } else {
-
-    # Create model.matrix with subgroup main effects (to BE residualized out)
-    sbgrp.form <- stats::reformulate(paste0(paste(rhs,
-                                                  "flexida::assigned()",
-                                                  sep = "+"),
-                                            "+ 0"))
-    sbgrp.call <- lm.call
-    sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
-    sbgrp.call[[1]] <- quote(stats::model.matrix.lm)
-    names(sbgrp.call)[2] <- "object"
-    sbgrp.call$na.action <- "na.pass"
-    sbgrp.mm <- eval(sbgrp.call, parent.frame())
-    sbgrp.mm <- sbgrp.mm[, !grepl("assigned\\(", colnames(sbgrp.mm)),
-                         drop = FALSE]
-
-    # Create model.matrix with treatment:subgroup interaction (to be kept in)
-    effect.form <- stats::reformulate(paste0("flexida::assigned():", rhs, "+0"))
-    effect.call <- lm.call
-    effect.call[[2]] <- str2lang(deparse(effect.form))
-    effect.call[[1]] <- quote(stats::model.matrix.lm)
-    effect.call$na.action <- "na.pass"
-    names(effect.call)[2] <- "object"
-    effect.mm <- eval(effect.call, parent.frame())
-
-    if (absorb) {
-      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, as.factor(blocks),
-                        lm.call$weights)
-      effect.mm <- apply(effect.mm, 2, areg.center, as.factor(blocks),
-                         lm.call$weights)
-    }
-
-    # Using `__xx__` to try and ensure no collision with variable names
-    mm <- apply(effect.mm, 2, function(xx__) {
-      resid.call <- lm.call
-      resid.call$offset <- NULL #see issue #101
-      resid.call$formula <- stats::reformulate("sbgrp.mm", "xx__")
-      # By switching from `na.omit` to `na.exclude`, `residuals()` includes NAs
-      resid.call$na.action <- "na.exclude"
-      stats::residuals(eval(resid.call, parent.frame()))
-    })
-
+    new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
     absorbed_moderators <- rhs
   }
+  mm.call <- lm.call
+  mm.call[[2]] <- str2lang(deparse(new.form))
+  # model.matrix.lm supports as `na.action` argument where
+  # model.matrix.default doesn't
+  mm.call[[1]] <- quote(stats::model.matrix.lm)
+  mm.call$na.action <- "na.pass"
+  names(mm.call)[2] <- "object"
+  mm <- eval(mm.call, parent.frame())
 
+  if (absorb) {
+    mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
+  }
 
-  # Strip intercept from model
+  if (rhs == "1") {
+  } else {
+  }
+
+  # Strip intercept from data if it's in there
   mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
   # Make sure to keep it as a named matrix
 
-  # Center (weighted if needed)
-  .center <- function(x, wts, sbst) {
-    # If the user passed in `$subset`, we'll want to center by the mean of the
-    # subset, not the whole data.
-    if (!is.null(sbst)) {
-      xs <- x[sbst]
-    } else {
-      xs <- x
-    }
-    # `weighted.mean` with a NULL weights argument calls `mean`, but due to
-    # the below issue with NAs in the weights, don't try combining these two
-    # calls into one.
-    if (is.null(wts)) {
-      x - mean(xs, na.rm = TRUE)
-    } else {
-      # `weighted.mean` with `na.rm = TRUE` only drops `x` as NA, any NA weights
-      # will return an NA mean
-      x - weighted.mean(xs[!is.na(lm.call$weights)],
-                        lm.call$weights[!is.na(lm.call$weights)],
-                        na.rm = TRUE)
-    }
-  }
+  # Rename `a.()` to treatment named, adding a "." after to avoid conflict with
+  # original treatment variable.
+  colnames(mm) <- gsub("a\\.\\(\\)",
+                       paste0(var_names(design, "t"), "."),
+                       colnames(mm))
 
-  # Center variables to remove intercept
-  mm <- apply(mm, 2, .center, lm.call$weights, logicalsubset)
+  # Replace : with _ for interaction to try and avoid backticks
+  colnames(mm) <- gsub("\\:", "_", colnames(mm))
+  # This isn't foolproof as the sbgrp variable can cause them too
+  # e.g. `as.factor(sbgrp)` forces backticks.
 
-  # get response
-  mr <- stats::model.response(mf)
+  # Rebuild RHS of formula: RHS is "txt_" or "txt_sbgrp", where "txt" has been
+  # replaced with the actual treatment name above.
+  lm.call$formula <- str2lang(paste(lm.call$formula[[2]], " ~ ",
+                                    paste(
+                                      paste0("`", colnames(mm), "`"),
+                                      collapse = "+"),
+                                    collapse = ""))
 
-  if (is.matrix(mr)) {
-    # if somehow user passes in a matrix outcome, handle centering appropriately
-    flexida_y <- apply(mr, 2, .center, lm.call$weights, logicalsubset)
-  } else {
-    flexida_y <- .center(mr, lm.call$weights, logicalsubset)
-  }
-
-  # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
-  # is centered) and `flexida::assigned()` or `flexida::assigned():sbrp`
-  lm.call$formula <- formula(paste("flexida_y ~ 0 + ",
-                                   paste(
-                                     paste0("`", colnames(mm), "`"),
-                                     collapse = "+"),
-                                   collapse = ""))
-
-  # Data for model should be original data, plus updated outcome (flexida_y) and
-  # RHS (mm)
-  lm.call$data <- cbind(data, flexida_y, mm)
+  # Data for model should be original data, plus updated RHS (mm)
+  lm.call$data <- cbind(data, mm)
 
   # restore subset
   lm.call$subset <- savedsubset
 
   model <- eval(lm.call, parent.frame())
 
+  # `&&` necessary to return FALSE immediately if not enough frames on stack
+  if (sys.nframe() >= 2 &&
+      !is.null(sys.call(-1)) &&
+      sys.call(-1)[[1]] == as.name("lmitt")) {
+    # If we're in `lmitt.formula()` via `lmitt()`, save that call.
+    lmitt_call <- sys.call(-1)
+  } else {
+    # Otherwise save the `lmitt.formula()` call
+    lmitt_call <- sys.call()
+  }
   return(.convert_to_lmitt(model,
                            design,
                            lmitt_fitted = TRUE,
                            absorbed_moderators = absorbed_moderators,
-                           absorbed_intercepts = absorb))
+                           absorbed_intercepts = absorb,
+                           lmitt_call = lmitt_call))
 }
 
 ##' @export

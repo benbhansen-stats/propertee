@@ -4,15 +4,15 @@
 ##' dropping the forcing variable (see \code{loseforcing=} argument).
 ##'
 ##' @title Convert \code{Design} between types
-##' @param Design \code{Design} to convert
-##' @param data Converting to an RD requires adding a \code{forcing} variable,
+##' @param Design a \code{Design} to convert
+##' @param data converting to an RD requires adding a \code{forcing} variable,
 ##'   which requires access to the original data.
-##' @param ... No addiitonal options at present
-##' @param loseforcing Converting from RD to another \code{Design} type will
+##' @param ... No additional options at present
+##' @param loseforcing converting from RD to another \code{Design} type will
 ##'   error to avoid losing the forcing variable. Setting \code{loseforcing =
 ##'   TRUE} allows the conversion to automatically drop the forcing variable.
 ##'   Default \code{FALSE}.
-##' @param forcing Converting to an RD requires adding a \code{forcing}
+##' @param forcing converting to an RD requires adding a \code{forcing}
 ##'   variable. This should be entered as the update to a formula, e.g.
 ##'   \code{"~ . + forcing(forcevar)"}.
 ##' @return \code{Design} of the updated type

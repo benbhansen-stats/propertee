@@ -13,7 +13,7 @@ has_binary_treatment(des)
 is_binary_or_dichotomized(des)
 }
 \arguments{
-\item{des}{A \code{Design}}
+\item{des}{a \code{Design} object}
 }
 \value{
 Logical; see details.
@@ -37,4 +37,22 @@ allows \code{NA} in the treatment.
 \code{is_binary_or_dichotomized} returns \code{TRUE} if either
 \code{is_dichotomized()} and \code{has_binary_treatment()} return
 \code{TRUE}.
+}
+\examples{
+data(simdata)
+des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+des2 <- rct_design(o ~ uoa(cid1, cid2), data = simdata)
+des3 <- rct_design(o ~ uoa(cid1, cid2), data = simdata,
+                   dichotomy = o >= 3 ~ .)
+
+if (is_binary_or_dichotomized(des1)) {
+  wt <- ate(des1, data = simdata)
+}
+if (is_binary_or_dichotomized(des2)) {
+  wt <- ate(des2, data = simdata) # would fail but won't be run
+}
+if (is_binary_or_dichotomized(des3)) {
+  wt <- ate(des3, data = simdata)
+}
+
 }

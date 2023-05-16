@@ -28,7 +28,7 @@ forcing(...)
 the variables with appropriate labels
 }
 \description{
-These are special function used only in the definition of Design class
+These are special functions used only in the definition of \code{Design}
 objects. They identify the units of assignment, blocks and forcing
 variables.
 }
@@ -40,4 +40,7 @@ These functions have no use outside of the formula in creating a
 all aliases of each other; you must include one and only one in each
 \code{Design}. The choice of which to use will have no impact on any
 analysis, only on some output display.
+
+See \code{rct_design}, \code{obs_design}, or \code{rd_design} for examples
+of their usage.
 }

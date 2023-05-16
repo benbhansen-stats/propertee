@@ -5,17 +5,17 @@ test_that("absorb= argument", {
                    data = simdata)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
-  expect_length(coefficients(da), 1)
+  expect_length(coefficients(da), 2)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_length(coefficients(da), 1)
+  expect_length(coefficients(da), 2)
 
   # subgroup effects
   da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, design = des)
-  expect_length(coefficients(da), 4)
+  expect_length(coefficients(da), 8)
 
   da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_length(coefficients(da), 4)
+  expect_length(coefficients(da), 8)
 
 })
 
@@ -28,6 +28,6 @@ test_that("multiple variables in blocks", {
                    data = simdata)
 
   da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)
-  expect_true(length(da$coefficients) == 1)
+  expect_true(length(da$coefficients) == 3)
 
 })

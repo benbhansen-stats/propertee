@@ -186,6 +186,122 @@ test_that("cov_adj as offset specified w/ no newdata nor design, no weights, dat
   expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
+test_that("cov_adj with named `by` argument called within `lmitt`", {
+  on.exit(Q_wo_nulls <- Q_wo_nulls[, !(colnames(Q_wo_nulls) == "obs_id")])
+  Q_wo_nulls$obs_id <- seq_len(nrow(Q_wo_nulls))
+  
+  cmod <- lm(y ~ x, Q_wo_nulls)
+  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
+             offset = cov_adj(cmod, by = "obs_id"))
+  test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
+})
+
+test_that("cov_adj with `by` argument that's the same as the default called within `lmitt`", {
+  cmod <- lm(y ~ x, Q_wo_nulls)
+  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
+             offset = cov_adj(cmod, by = c("cid1", "cid2")))
+  test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
+})
+
+test_that(paste("cov_adj without `lmitt` call with named `by` argument and cmod",
+                "fit without `data` arg"), {
+  on.exit(Q_wo_nulls <- Q_wo_nulls[, !(colnames(Q_wo_nulls) == "obs_id")])
+  C_data <- Q_wo_nulls
+  Q_wo_nulls$obs_id <- seq_len(nrow(Q_wo_nulls))
+  C_data$uid <- seq_len(nrow(C_data))
+
+  cmod <- lm(C_data$y ~ C_data$x)
+  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+
+  expect_error(
+    expect_warning(
+      expect_warning(
+        expect_warning(
+          cov_adj(cmod, design = des, by = c("obs_id" = "uid")),
+          "No call to"
+        ),
+        "Unable to detect"
+      ),
+      "Could not find quasiexperimental data"
+    ),
+    "`model` must be fit"
+  )
+})
+
+test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmod",
+                "fit with `data` arg"), {
+  C_data <- Q_wo_nulls[, !(colnames(Q_wo_nulls) %in% c("cid1", "cid2"))]
+  C_data$c1 <- Q_wo_nulls$cid1
+  C_data$c2 <- Q_wo_nulls$cid2
+  
+  cmod <- lm(y ~ x, Q_wo_nulls)
+  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+
+  expect_warning(
+    expect_warning(
+      expect_warning(
+        ca <- cov_adj(cmod, design = des, by = c("cid1", "cid2")),
+        "No call to"
+      ),
+      "Unable to detect"
+    ),
+    "Could not find quasiexperimental data"
+  )
+  
+  test_ca(ca, cmod, Q_wo_nulls)
+})
+
+test_that(paste(".update_ca_model_formula with NULL `by` and NULL `design` returns",
+                "returns original model formula"), {
+  set.seed(819)
+  df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
+  
+  model <- lm(y ~ x, df)
+  expect_equal(deparse(.update_ca_model_formula(model)), "y ~ x")
+})
+
+test_that(paste(".update_ca_model_formula with named `by`"), {
+  set.seed(819)
+  df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
+  
+  model <- lm(y ~ x, df)
+  expect_equal(deparse(.update_ca_model_formula(model, by = c("uoa1" = "uid"))),
+               "y ~ x + uoa1")
+})
+
+test_that(paste(".update_ca_model_formula with unnamed `by`"), {
+  set.seed(819)
+  df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
+  
+  model <- lm(y ~ x, df)
+  expect_equal(deparse(.update_ca_model_formula(model, by = "uid")),
+               "y ~ x + uid")
+})
+
+test_that(paste(".update_ca_model_formula with NULL `by` and non-NULL `design`"), {
+  set.seed(819)
+  df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
+  design_df <- data.frame(z = rep(c(0, 1), each = 5), uid = seq_len(10))
+  des <- rct_design(z ~ unitid(uid), design_df)
+  
+  model <- lm(y ~ x, df)
+  expect_equal(deparse(.update_ca_model_formula(model, design = des)),
+               "y ~ x + uid")
+})
+
+test_that(paste(".update_ca_model_formula with non-NULL `by` and non-NULL `design`"), {
+  set.seed(819)
+  df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
+  design_df <- data.frame(z = rep(c(0, 1), each = 5), clust = rep(c(1, 2), each = 5), uid = seq_len(10))
+  des <- rct_design(z ~ cluster(clust), design_df)
+  
+  model <- lm(y ~ x, df)
+  expect_equal(deparse(.update_ca_model_formula(model, by = "uid", design = des)),
+               "y ~ x + clust + uid")
+})
+
 test_that("cov_adj variance estimates for orthogonal predictors", {
   library(sandwich)
   set.seed(230274373)

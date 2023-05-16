@@ -7,10 +7,10 @@
 get_structure(design, binary = FALSE)
 }
 \arguments{
-\item{design}{A \code{Design}.}
+\item{design}{a \code{Design} object}
 
-\item{binary}{Binary, default \code{FALSE}. If \code{TRUE} and the design
-contains a \code{dichotomy}, replace the treatment column with its binary
+\item{binary}{default \code{FALSE}. If \code{TRUE} and the design contains a
+\code{dichotomy}, replace the treatment column with its binary
 representation. Has no effect if \code{design} is not dichotomized.}
 }
 \value{

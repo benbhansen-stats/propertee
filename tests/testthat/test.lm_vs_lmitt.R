@@ -20,7 +20,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
 
   test_coeffs <- function(lmcoef, lmittcoef, subgroup) {
-    length <- ifelse(subgroup, 4, 1)
+    length <- ifelse(subgroup, 8, 2)
     expect_equal(length(lmittcoef), length)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
     expect_true(all(round(lmittcoef, 4) %in% round(lmcoef, 4)))
@@ -182,7 +182,7 @@ test_that("subset in design", {
   cmod <- lm(y ~ x, data = simdata)
 
   test_coeffs <- function(lmcoef, lmittcoef, subgroup) {
-    length <- ifelse(subgroup, 4, 1)
+    length <- ifelse(subgroup, 8, 2)
     expect_equal(length(lmittcoef), length)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
     expect_true(all(round(lmittcoef, 4) %in% round(lmcoef, 4)))

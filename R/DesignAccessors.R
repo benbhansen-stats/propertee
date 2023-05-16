@@ -26,7 +26,7 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##' \code{Design}, the column name is \code{"__z"}.
 ##' @title Accessors and Replacers for \code{Design} objects
 ##' @param x \code{Design} object
-##' @param binary If \code{FALSE} (default), return a \code{data.frame}
+##' @param binary if \code{FALSE} (default), return a \code{data.frame}
 ##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
 ##'   formula in \code{@dichotomy}, return a \code{data.frame} containing a
 ##'   binary treatment variable with the name \code{"z__"}. Errors on
@@ -34,18 +34,25 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##'   If \code{"ifany"}, returns a binary treatment if possible (if treatment is
 ##'   already binary, or there's a valid \code{@dichotomy}), otherwise return
 ##'   original treatment.
-##' @param newdata Optionally an additional \code{data.frame}. If passed, and
-##'   the unit of assignment variable is found in \code{newdata}, then the
-##'   requested variable type for each unit of \code{newdata} is returned. See
-##'   \code{by} argument if the name of the unit of assignment differs.
+##' @param newdata optional; an additional \code{data.frame}. If passed, and the
+##'   unit of assignment variable is found in \code{newdata}, then the requested
+##'   variable type for each unit of \code{newdata} is returned. See \code{by}
+##'   argument if the name of the unit of assignment differs.
 ##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data. Only needed if variable names differ.
-##' @param ... Ignored.
-##' @return \code{data.frame} containing treatment variable
+##'   assignment variables in \code{x} to cluster/unit of assignment variables
+##'   in \code{data}. Names represent variables in the Design; values represent
+##'   variables in the data. Only needed if variable names differ.
+##' @param ... ignored.
+##' @return \code{data.frame} containing requested variable, or an updated
+##'   \code{Design}.
 ##' @export
 ##' @rdname Design_extractreplace
+##' @examples
+##' data(simdata)
+##' des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+##' blocks(des) # empty
+##' blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
+##' blocks(des)
 setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
   binary <- as.character(binary)
   if (!binary %in% c("TRUE", "FALSE", "ifany")) {
@@ -119,7 +126,7 @@ setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by 
 ##' @rdname Design_extractreplace
 setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 
-##' @param value Replacement. Either a \code{vector}/\code{matrix} of
+##' @param value replacement. Either a \code{vector}/\code{matrix} of
 ##'   appropriate dimension, or a named \code{data.frame} if renaming variable
 ##'   as well.
 ##' @export
@@ -438,9 +445,10 @@ setMethod("forcings<-", "Design", function(x, value) {
 ############### dichotomy
 
 ##' Extract or replace dichotomy
-##' @param x \code{Design} object
-##' @param value Replacement \code{dichotomy} formula, or \code{NULL} to remove
-##' @return Dichomization formula
+##' @param x a \code{Design} object
+##' @param value replacement \code{dichotomy} formula, or \code{NULL} to remove
+##' @return dichomization formula, or a \code{Design} with the
+##'   \code{dichomization} replaces with \code{x}.
 ##' @export
 ##' @rdname Design_extract_dichotomy
 setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))

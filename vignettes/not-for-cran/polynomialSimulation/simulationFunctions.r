@@ -70,12 +70,12 @@ flexPoly <- function(dat,deg){
 
   covMod <- lmrob(covForm,data=dat,method='MM')
 
-  res <- lmitt(Y~assigned(),design=des,offset=cov_adj(covMod),data=dat)|>
+  res <- lmitt(Y~1,design=des,offset=cov_adj(covMod),data=dat)|>
     summary()|>
     getElement('coefficients')
 
 
-  setNames(c(res[2,'Std. Error'],res[2,'Estimate']),
+  setNames(c(res[1,'Std. Error'],res[1,'Estimate']),
             paste0(c('flex.se.','flex.est.'),deg))
 }
 
@@ -123,13 +123,13 @@ polyDisp <- function(sim){
 #' @return list of output for each simulation run
 #' @export
 #'
-totalPolySim <- function(nreps=5000,cluster=NULL){
+totalPolySim <- function(nreps=5000,
+                         n=500,
+                         degs = seq_len(5),
+                         tau = 0,
+                         cluster=NULL){
   appFunc <- if(is.null(cluster)) sapply else function(X,FUN) parSapply(cl=cluster,X=X,FUN=FUN)
   res <- list()
-    #B=5000
-    n=500
-    tau=0
-    degs <- 1:5
 
     for(shape in c('lin','antiSym','wass')){
         for(tdist in c(TRUE)){#,FALSE)){

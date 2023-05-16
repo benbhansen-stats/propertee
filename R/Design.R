@@ -235,9 +235,13 @@ setValidity("Design", function(object) {
 ##'
 ##' The formula must include exactly one of \code{unit_of_assignment()},
 ##' \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
-##' assignment (one or more variables). If defining an rd_design, the formula
-##' must also include a \code{forcing()} entry. The formula may optionally
-##' include a \code{block()} entry as well.
+##' assignment (one or more variables). These are all synonyms; the choice of
+##' which has no impact on the analysis. If defining an \code{rd_design}, the
+##' formula must also include a \code{forcing()} entry. The formula may
+##' optionally include a \code{block()} as well. Each of these can take in
+##' multiple variables, e.g. to pass both a hosuehold ID and individual ID as
+##' unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
+##' uoa(iid)}.
 ##'
 ##' The treatment variable passed into the left-hand side of \code{formula} can
 ##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
@@ -260,10 +264,12 @@ setValidity("Design", function(object) {
 ##' \code{dichotomy = dose > 250 ~ dose <= 250}
 ##'
 ##' The conditionals need not assign all values of treatment to control or
-##' treatment, for example, \code{dose > 300 ~ dose < 200} does not handle
-##' \code{200 <= dose <= 300}. Units of assignment with treatment values not
-##' assigned to either treatment or control as assumed to not recieve either,
-##' but will be maintained in the Design for proper standard error calculations.
+##' treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
+##' \code{200 <= dose <= 300} to either treatment or control. This would be
+##' equivalent to manually generating a binary variable with \code{NA} whenever
+##' \code{dose} is between 200 and 300. Units not assigned to treatment or
+##' control will be maintained in the Design for proper standard error
+##' calculations.
 ##'
 ##' The period (\code{.}) can be used to assign all other units of assignment.
 ##' For example, we could have written the above example as
@@ -287,10 +293,10 @@ setValidity("Design", function(object) {
 ##' @title Generates a \code{Design} object with the given specifications.
 ##' @param formula defines the \code{Design} components
 ##' @param data the data set.
-##' @param subset optionally subset the data before creating the \code{Design}
+##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
-##' @param dichotomy optionally, a formula defining the dichotomy of the
-##'   treatment variable if it isn't already 0/1 or \code{logical}. See details.
+##' @param dichotomy optional, a formula defining the dichotomy of the treatment
+##'   variable if it isn't already 0/1 or \code{logical}. See details.
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
@@ -299,6 +305,13 @@ setValidity("Design", function(object) {
 ##'   analysis
 ##' @export
 ##' @rdname Design_objects
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+##'
+##' data(schooldata)
+##' des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),
+##'                   data = schooldata)
 rct_design <- function(formula,
                        data,
                        subset = NULL,
@@ -351,8 +364,8 @@ obs_design <- function(formula,
                      na.fail = na.fail))
 }
 
-##' @title Show a \code{Design}
-##' @param object \code{Design} object
+##' @title Display a \code{Design}
+##' @param object a \code{Design} object
 ##' @return an invisible copy of \code{object}
 ##' @export
 setMethod("show", "Design", function(object) {
@@ -386,9 +399,9 @@ setMethod("show", "Design", function(object) {
 })
 
 ##' @title Return names of variables defining the \code{Design}
-##' @param x Design x
+##' @param x a \code{Design} object
 ##' @param type one of "t", "u", "b", "f"; for "treatment",
-##'   "unit_of_assignment", "block", and "forcing"
+##'   "unit_of_assignment", "block", and "forcing" respectively
 ##' @return character vector of variable names of the given type
 ##' @export
 ##' @examples
@@ -455,20 +468,21 @@ var_names <- function(x, type) {
 ##' columns. When \code{FALSE}, the result will have number of columns equal to
 ##' the largest number of variables in a particular role, plus one. E.g., a call
 ##' such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
-##' in the output matrix.
+##' in the output matrix with \code{compress = FALSE}.
 ##'
 ##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
-##' rows (if the \code{design} is an RCT or Obs) or 4 rows (when the
-##' \code{design} is a RD). When \code{FALSE}, the matrix will have minimum 2
-##' rows (treatment and cluster/unitid/unit of assignment), with additional rows
-##' for blocks and forcing if included in the \code{Design}.
+##' rows (when the \code{design} is an RCT or Obs) or 4 rows (when the
+##' \code{design} is a RD), with empty variable entries as appropriate. When
+##' \code{FALSE}, the matrix will have minimum 2 rows (treatment and
+##' cluster/unitid/unit of assignment), with additional rows for blocks and
+##' forcing if included in the \code{Design}.
 ##' @title Table of variables identifying a \code{Design}
-##' @param design A Design object
-##' @param compress Should multiple variables be compressed into a
+##' @param design a \code{Design} object
+##' @param compress should multiple variables be compressed into a
 ##'   comma-separated string? Default \code{TRUE}.
-##' @param report_all Should we report all possible structures even if they
-##'   don't exist in the Design? Default \code{FALSE}.
-##' @return a \code{matrix} of variables in the Design structure
+##' @param report_all should we report all possible structures even if they
+##'   don't exist in the \code{Design}? Default \code{FALSE}.
+##' @return a \code{matrix} of variables in the \code{Design} structure
 ##' @export
 ##' @examples
 ##' des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
@@ -549,22 +563,23 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
 ##' "b1" in "data1".
 ##'
 ##' This could cause errors, either directly (via actual error messages) or
-##' simply produce nonsense results. `design_data_concordance()` is designed to
-##' help debug these scenarios but providing information on whether variables in
-##' both "data1" (used in the creation of the \code{Design}) and "data2" (some
-##' new dataset passed to \code{design_data_concordance()}) have any
-##' inconsistencies.
+##' simply produce nonsense results. \code{design_data_concordance()} is
+##' designed to help debug these scenarios by providing information on whether
+##' variables in both the data used in the creation of \code{design} ("data1" in
+##' the above example) and some new dataset, \code{data}, ("data2" in the above
+##' example) have any inconsistencies.
 ##' @title Check for variable agreement within units of assignment
-##' @param design A Design object
-##' @param data Data set, presumably not the same used to create \code{design}.
+##' @param design a \code{Design} object
+##' @param data new data set, presumably not the same used to create
+##'   \code{design}.
 ##' @param by optional; named vector or list connecting names of variables in
 ##'   \code{design} to variables in \code{data}. Names represent variables in
 ##'   \code{design}; values represent variables in \code{data}. Only needed if
 ##'   variable names differ.
-##' @param warn_on_nonexistence Default \code{TRUE}. If a variable does not
+##' @param warn_on_nonexistence default \code{TRUE}. If a variable does not
 ##'   exist in \code{data}, should this be flagged? If \code{FALSE}, silently
 ##'   move on if a variable doesn't exist in \code{data}.
-##' @return Invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
+##' @return invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
 ##'   any warnings are produced.
 ##' @export
 design_data_concordance <- function(design,
