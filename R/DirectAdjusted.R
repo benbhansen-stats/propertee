@@ -107,10 +107,12 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' to any \code{sandwich::meatCL} calls.
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
+  args <- list(...)
+  args$x <- x
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(x$model$`(offset)`) | !inherits(x$model$`(offset)`, "SandwichLayer")) {
-    return(.base_S3class_estfun(x))
+    return(.base_S3class_estfun(x) - do.call(.estfun_DB_blockabsorb, args))
   }
   
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -120,6 +122,7 @@ estfun.DirectAdjusted <- function(x, ...) {
   
   ## form matrix of estimating equations
   mat <- estmats[["psi"]] - estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat <- mat - do.call(.estfun_DB_blockabsorb, args)
   
   return(mat)
 }
@@ -353,21 +356,44 @@ update.DirectAdjusted <- function(object, ...) {
 }
 
 
-##' @title Contributions to estimating equations from a \code{DirectAdjusted} model with
-##' absorbed intercepts
-##' @param x a fitted \code{DirectAdjusted} object
-##' @param ... arguments passed to methods
-##' @return An \eqn{n\times k} matrix of contributions to empirical estimating 
-##' equations from a design-based perspective
-estfun_DB_blockabsorb <- function (x, ...){
-  # if the user is not asking for a design-based SE or DA does not absorb intercepts
+#' Contributions to estimating equations from a \code{DirectAdjusted} model with
+#' absorbed intercepts
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param ... arguments passed to methods
+#' @return An \eqn{n\times k} matrix of contributions to empirical estimating 
+#' equations from a design-based perspective
+#' @keywords internal
+.estfun_DB_blockabsorb <- function (x, ...){
+  if (!is.null(x$call$offset)){
+    # if the model involves covariance adjustment
+    temp <- .align_and_extend_estfuns(x)[["psi"]]
+  }
+  else
+    temp <- .base_S3class_estfun(x)
+  
+  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
   cl <- match.call()
   db <- eval(cl[["db"]], parent.frame())
   if (is.null(db) | !x@absorbed_intercepts){
-    return(0)
+    return(matrix(0, nrow = nrow(temp), ncol = ncol(temp)))
   }
   phitilde <- .get_phi_tilde(x)
   appinv_atp <- .get_appinv_atp(x)
   
-  return(phitilde %*% appinv_atp)
+  if (!is.null(x$call$offset)){
+    # if the model involves covariance adjustment
+    # define the row ordering using .order_samples() and insert rows of 0's into
+    # the matrices where necessary while maintaining observation alignment
+    ids <- .order_samples(x, verbose = FALSE)
+    aligned_phitilde <- matrix(
+      0, nrow = nrow(temp), ncol = ncol(phitilde),
+      dimnames = list(seq_len(nrow(temp)), colnames(phitilde)))
+    aligned_phitilde[which(!is.na(ids$C_order)),] <- phitilde[ids$C_order[!is.na(ids$C_order)], ]
+    mat <- aligned_phitilde %*% appinv_atp
+  }
+  else{
+    mat <- phitilde %*% appinv_atp
+  }
+  mat <- cbind(matrix(0, nrow = nrow(mat), ncol = ncol(temp) - ncol(mat)), mat)
+  return(mat)
 }

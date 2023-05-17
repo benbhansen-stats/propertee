@@ -475,17 +475,25 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     meat <- do.call(sandwich::meatCL, args)
     
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
+    name <- grep("z", colnames(x$model))
+    vmat <- as.matrix(vmat[name, name])
   }
   else {
     if (!is.null(x$call$offset)){
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with covariance adjustment"))
     }
+    if (length(x@absorbed_moderators) > 0){
+      stop(paste("Design-based standard errors cannot be computed for ITT effect",
+                 "models with moderators"))
+    }
     vmat <- .get_design_based_variance(x)
-    name <- colnames(x$model)[grep("assign", colnames(x$model))]
-    colnames(vmat) <- name
-    rownames(vmat) <- name
   }
+  name <- colnames(x$model)[grep("z", colnames(x$model))]
+  colnames(vmat) <- name
+  rownames(vmat) <- name
+  
+  attr(vmat, "type") <- "DB0"
   return(vmat)
 }
 
@@ -495,13 +503,8 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 #' @keywords internal
 .get_design_based_variance <- function(x, ...){
   ws <- x$weights
-  data_temp <- x$call$data[, 1:(ncol(x$call$data)-2)]
-  # find the column of y
-  names <- colnames(data_temp)
-  centered_y <- x$call$data[, (ncol(x$call$data)-1)]
-  name_y <- names[apply(
-    trunc(data_temp - centered_y, 2), 2, function(a) length(unique(a))==1
-    )]
+  data_temp <- x$call$data
+  name_y <- as.character(x$terms[[2]]) # the column of y
   data_temp <- cbind(data_temp, weight = ws, wy = ws * data_temp[, name_y])
   
   design_obj <- x@Design
@@ -519,8 +522,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
   )
   data_aggr$wy <- data_aggr$wy / data_aggr$weight
-  var <- .get_db_var_from_df(data = data_aggr, 
-                             weight = "weight", y = "wy", z = name_trt, block = name_blk)
+  var <- .get_db_var_from_df(data = data_aggr, z = name_trt, block = name_blk)
   return(var)
 }
 
@@ -546,9 +548,11 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 #' @param block a character, the name of the block indicator column
 #' @return the design-based variance estimate
 #' @keywords internal
-.get_db_var_from_df <- function(data, weight, y, z, block){
-  ws <- data[[weight]]  # weights
+.get_db_var_from_df <- function(data, z, block){
+  weight <- "weight"
+  ws <- data[[weight]]
   
+  y <- "wy"
   yobs <- data[[y]]  # observed ys
   zobs <- data[[z]]  # observed zs (random assignment)
   nbs <- as.numeric(table(data[, block]))  # block sizes
@@ -639,10 +643,9 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
   df <- x$call$data
   assignment <- df[[name_of_trt]]
-  
-  # the indicators of z (treatment assignment)
+  # indicators of treatment assignment
   n <- length(ws) # number of units in Q
-  k <- length(c(0,1)) # unique(assignment)
+  k <- length(unique(assignment))
   z_ind <- matrix(nrow = n, ncol = k)
   for (j in 1:k){
     z_ind[,j] <- as.integer(assignment == c(0,1)[j])
@@ -651,8 +654,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   # stratum ids 
   name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   stratum <- df[[name_of_blk]]
-  
-  # the indicators of b (stratum)
+  # indicators of block
   if (sum(x@Design@column_index == "b") == 1){
     s <- length(unique(stratum)) # number of stratum
     b_ind <- matrix(nrow = n, ncol = s)
@@ -672,7 +674,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
     }
   }
   
-  # compute nuisance parameters p
+  # nuisance parameters p
   wb <- matrix(replicate(s, ws), ncol = s) * b_ind
   p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
   p1 <- p[2, ]
@@ -691,7 +693,6 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
 #' @param ... arguments to pass to internal functions
 #' @return An \eqn{s\times k} matrix
 .get_appinv_atp <- function(x, ...){
-  # weights
   ws <- x$weights
   # estimated treatment effect tau1 <- x$coefficients
   
