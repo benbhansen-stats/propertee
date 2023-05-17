@@ -66,6 +66,7 @@ as.lmitt <- function(x, design = NULL) {
     # If we're in `lmitt.lm()` via `lmitt()`, save the call to `lmitt`.
     lmitt_call <- sys.call(-2)
   } else if (sys.nframe() >= 2 &&
+             is.name(sys.call(-1)[[1]]) && # Catches mapply issue
              !is.null(sys.call(-1)) &&
              sys.call(-1)[[1]] == as.name("lmitt.lm")) {
     # If we're in `lmitt.lm()` directly, save that call.

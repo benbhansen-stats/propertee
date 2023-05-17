@@ -1265,3 +1265,38 @@ test_that("printed effects aren't confused by bad naming", {
   expect_true(all(!isTRUE(grepl("^as\\.factor", cos))))
   expect_true(all(grepl("^`z", cos)))
 })
+
+
+test_that("as.lmitt call inside mapply", {
+  min_df <- data.frame(schoolid = seq_len(20),
+                       response_col = rnorm(20),
+                       grade = rep(3:4, each = 10),
+                       adsy = rep(rep(c(0, 1), each = 5), 2))
+
+  min_des <- rct_design(adsy ~ unitid(schoolid), min_df)
+
+  res <- mapply(function(fmla) {
+    as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+  },
+  list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+  SIMPLIFY = FALSE)
+
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
+
+  res <- lapply(list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+                function(fmla) {
+                  as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+                })
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
+
+})
