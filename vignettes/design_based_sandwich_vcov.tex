@@ -6,14 +6,9 @@ Often ``sandwich standard error'' conjures an expectation of standard
 errors that are model-based in the sense of assuming i.i.d.  data
 \((A_i,  W_{i}, X_i, Y_{0i}, \ldots Y_{Ki})\) and making inference conditional
 on the values of treatment assignments \(A \in
-\{0, \ldots, K\}\), weights \(W\) and covariates \(X\), if
-not the values of potential responses \(\{Y_k: k \leq K\}\).  (To
-simplify discussion we assume $i$ ranges over intact clusters, units
-assigned together to one or another of the treatment conditions; in
-the M-estimation context this assumption is
-non-restrictive. Particularly since we will allow case weights
-which may reflect differences in cluster
-size.)  With the i.i.d assumption, these model-based SEs are valid
+\{0, \ldots, K\}\), importance or frequency weights \(W\), and covariates \(X\), but
+not the values of potential responses \(\{Y_k: k \leq K\}\).  (This
+document takes $i$ to range over intact clusters.)  With the i.i.d assumption, these model-based SEs are valid
 even if the design specification isn't, provided that the outcome
 model is well-specified. The role of the study design is to provide
 analysis weights which, if respected, ensure desired interpretations
@@ -29,13 +24,15 @@ conditioning on
 
 where \(\mathcal{P}\) is a given partition of \{1,\ldots{}, n\} encoding
 a stratification. Of particular interest are standard errors for Hajek
-estimators, i.e.~estimators of form
+estimators, i.e. estimators of form
 \[\hat{\mu}_k[\mathbf{v}] = \frac{\sum_i w_{ki} [\![A_i=k]\!] v_i}{\sum_i w_{ki}  [\![A_i=k]\!]}\]
 and their differences
 \begin{equation}\label{eq:hajekdiff}
 \hat{\mu}_k[\mathbf{u}] - \hat{\mu}_0[\mathbf{v}].
 \end{equation}
-Note that the case weights $\{w_{ki}:i\leq n, k\leq K\}$ are permitted
+The case weights $\{w_{ki}:i\leq n, k\leq K\}$ are the products of
+an frequency or importance weight attaching to the cluster and, as
+appopriate, an inverse probability of assignment weight; they are permitted
 to differ by assigned condition.
 With $w_{ji} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
 $j=0, \ldots, K$,
@@ -263,7 +260,7 @@ stratum-wise contributions
 B_S((\mu_0, \ldots, \mu_K)) =
 \mathrm{Cov}\left(\left[
 \begin{array}{c}
-\sum_{i\in S} [\![A_i=K]\!] w_{ki} (y_{Ki} - \mu_K) \\
+\sum_{i\in S} [\![A_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
 \vdots \\
 \sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
 \end{array}
@@ -360,6 +357,7 @@ would indeed be interpretable as design-based SEs.%
 }.
 
 %<!-- init segment of document shared w/ Xinhe W, early Feb22, ends here-->
+
 Another approach to covariates is to have fit their coefficients in a separate and
 prior regression fit --- perhaps a robust linear fit; or perhaps a binary
 regression fit --- and then to contrast Hajek aggregates of residuals
@@ -434,7 +432,9 @@ calculation of \(A\) matrices.)
   \citep[p.373]{carroll2006measurement}.
 \end{quote}
 
+<!--
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "design_based_SEs_"
 %%% End:
+-->
