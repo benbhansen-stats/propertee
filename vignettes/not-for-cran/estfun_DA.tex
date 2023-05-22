@@ -65,12 +65,23 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
                   \rho_{k}]\indicator{z_{i}=k}\\
                 \end{array}\right)
 \end{equation}
-where $Y_{i}[j]$ represents $i$'s potential outcome following
-assignment to condition $i$; $\owt[j]$ represents the product of 1, any user-provided weight attaching to observation unit $i$, and, as requested by the user, odds- or inverse probability-based weights attaching to $i$'s assignment unit $[i]$ under assignment $j$; and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
-\ldots, k$. I say ``for now'' because \eqref{eq:14} will present a
+where
+\begin{itemize}
+\item $Y_{i}[j]$ represents $i$'s potential outcome following
+  assignment to condition $i$;
+\item $\owt[j]$ represents the product of 1, any user-provided weight
+  attaching to observation unit $i$, and, as requested by the user,
+  odds- or inverse probability-based weights attaching to $i$'s
+  assignment unit $[i]$ under assignment $j$;
+\item and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
+\ldots, k$.
+\end{itemize}
+(I say ``for now'' because \eqref{eq:14} will present a
 $\psi(\cdot)$ with equivalent solutions that is better aligned with
-\texttt{lm()}'s default treatment effect parameterizations and their
-adaptations involving ``absorption'' of intercept terms (also denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written ${\Psi}(\cdot)$ as
+\texttt{lm()}'s default treatment effect parameterizations, whereas
+\eqref{eq:9} in \S~\ref{sec:accomm-interc-via} below presents
+another $\psi()$ adding block-specific intercepts to \eqref{eq:14}.)
+I've written ${\Psi}(\cdot)$ as
 it would appear in the model-based interpretation; in design-based
 inference we would have
 \begin{equation*}

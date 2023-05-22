@@ -31,9 +31,10 @@ and their differences
 \hat{\mu}_k[\mathbf{u}] - \hat{\mu}_0[\mathbf{v}].
 \end{equation}
 The case weights $\{w_{i[k]}:i\leq n, k\leq K\}$ are the products of
-an frequency or importance weight attaching to the cluster and, as
-appopriate, an inverse probability of assignment weight; they are permitted
-to differ by assigned condition.
+a frequency or importance weight $w_{i}$ and, as
+appopriate, a weighting factor representing a reciprocal of $i$'s
+probability (or odds) of assignment to $k$ (or to one of \{$k, \ldots,
+K$\}); in general differ by $k$.
 With $w_{i[j]} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
 $j=0, \ldots, K$,
 $\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ is the
@@ -220,9 +221,9 @@ is the need for estimates of
     \frac{\sum_i w_{i[k]} [\![A_i=k]\!] v_{ki}}{\sum_i w_{i[k]}
       [\![A_i=k]\!]} -
     \frac{\sum_i w_{i[k]} [\![A_i=k]\!] v_{0i}}{\sum_i w_{i[k]}  [\![A_i=k]\!]},
-  \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{ki}}{\sum_i {w}_{ki}
+  \frac{\sum_i w_{ki} [\![A_i=k]\!] u_{ki}}{\sum_i w_{ki}
       [\![A_i=k]\!]} -
-    \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{0i}}{\sum_i {w}_{ki}  [\![A_i=k]\!]}
+    \frac{\sum_i w_{ki} [\![A_i=k]\!] u_{0i}}{\sum_i w_{ki}  [\![A_i=k]\!]}
   \right)
 \end{equation*}
 where $v_{ji}$ and $u_{ji}$ are observed only
