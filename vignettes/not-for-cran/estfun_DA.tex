@@ -10,7 +10,7 @@
 
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
-\newcommand{\owt}[1][z_i]{\ensuremath{w_{i[#1]}}}
+\newcommand{\owt}[1][z_i]{\ensuremath{\check{w}_{i[#1]}}}
 \usepackage{natbib}
 \usepackage{bibentry}
 \bibliographystyle{plain}
@@ -69,8 +69,10 @@ where
 \begin{itemize}
 \item $Y_{i}[j]$ represents $i$'s potential outcome following
   assignment to condition $i$;
-\item $\owt[j]$ represents the product of 1, any user-provided weight
-  attaching to observation unit $i$, and, as requested by the user,
+\item $\owt[j]$ represents the product of $w_{i}$, a
+  frequency or importance weight
+  attaching to observation unit $i$ (or 1 if no such weight was
+  given) and, as requested by the user,
   odds- or inverse probability-based weights attaching to $i$'s
   assignment unit $[i]$ under assignment $j$;
 \item and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
