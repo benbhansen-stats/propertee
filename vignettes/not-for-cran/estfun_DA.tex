@@ -211,6 +211,10 @@ Let $\hat\beta$, $\hat\alpha$ and $\hat\tau$ solve
 \sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\tilde{\mathbf{Y}}_{j}; \tau,
 \alpha, \beta )  =0.
   \]
+In these expectations and those that follow, $\vec{x}_{i}$ and $w_{i}$
+are taken as fixed but $Z_{i}$ and/or potential outcomes $(Y_{i}[z]:
+z=0, \ldots, k)$ may be random according as we follow a design- or
+model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Writing
   \begin{align*}
 %    \label{eq:13}
@@ -440,8 +444,29 @@ calculating the bread matrix.   In the design-based formulation there
 would likely be approximate equality here, noting that in that setting
 $\hat{A}_{21}(\beta_{0})$ and $\hat{A}_{11}(\beta_{0})$ needn't
 coincide with ${A}_{21}(\beta_{0})$ and ${A}_{11}(\beta_{0})$, respectively.
+\subsection{Model- and Design-based}\label{sec:des-vs-mod-based}
+
+In the model-based perspective, expected value and covariance are
+conditional on
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, Z_{i}: i \in c): i \in
+      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
 
 
+In the design-based perspective, $\mathcal{Q}$ is partitioned into
+blocks $b$, and expected value and covariance are
+conditional on
+\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+  i \in c; c\}, \{\sum_{c
+    \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+where $z_{c}$ denotes the common treatment assignment of all $i\in
+c$. 
+To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
+definition, let each such cluster $c$ constitute a block unto itself,
+$\{c\}$. This has the consequence that observations $i
+\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
+contribute to $M_{11}$, $M_{12}$ or $M_{21}$.
+
+\section{Fixed effects and absorption}
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
