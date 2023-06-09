@@ -22,8 +22,9 @@ setValidity("Design", function(object) {
   }
   tr <- tr[, 1]
   if (is.null(tr) ||
-        (!is.numeric(tr) && !is.character(tr)) && !is.logical(tr)) {
-    return("Invalid treatment; must be numberic or character")
+        (!is.factor(tr) && !is.numeric(tr) &&
+         !is.character(tr)) && !is.logical(tr)) {
+    return("Invalid treatment; must be factor, numeric or character")
   }
   if (length(unique(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
@@ -171,32 +172,17 @@ setValidity("Design", function(object) {
                  "This may happen if treatment variable name has\n",
                  "'<', '>', or '=' in it. Rename variable to proceed."))
     }
-  }
-  else if (is.factor(treatment)) {
-    # Case 2: Input is a factor or ordinal. Warn user before converting to
-    # numeric if levels are numeric, otherwise return as character.
-    warning(paste("Factor treatment variables have their labels converted",
-                  "to numeric/character as appropriate.\nIt is suggested",
-                  "to do this conversion yourself to ensure it proceeds",
-                  "as you expect."))
-    newt <- levels(treatment)[treatment]
-    # if levels were numeric, convert to numeric. Otherwise leave as is
-    treatment <- tryCatch(as.numeric(newt),
-                     warning = function(w) {
-                       newt
-                     }, error = function(e) {
-                       newt # should never hit here (warning only)
-                     })
-  } else if (!is.numeric(treatment) &
+  } else if (!is.factor(treatment) &
+             !is.numeric(treatment) &
              !is.character(treatment) &
              !is.logical(treatment)) {
     # Case 3: Treatment is not a factor, a conditional, a numeric, a logical or
     # a character. It is some other type. Warn user before converting to
     # numeric.
-    warning(paste("Treatment variables which are not numeric or character are",
-                  "converted into numeric.\nIt is STRONGLY suggested to do",
-                  "this conversion yourself to ensure it proceeds",
-                  "as you expect."))
+    warning(paste("Treatment variables which are not factors, numeric or",
+                  " character are converted into numeric.\nIt is STRONGLY",
+                  "recommended to do this conversion yourself to ensure it",
+                  "proceeds as you expect."))
     treatment <- as.numeric(treatment)
   }
   # Case 0: treatment is numeric, logical, or character. No additional steps

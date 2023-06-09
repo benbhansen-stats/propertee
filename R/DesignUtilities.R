@@ -185,6 +185,11 @@ has_binary_treatment <- function(des) {
     stop("des must be a Design object.")
   }
 
+  if (is.factor(treatment(des)[, 1])) {
+    # Short circuit if treatment is a factor
+    return(FALSE)
+  }
+
   return(all(treatment(des)[, 1] %in% c(0, 1, TRUE, FALSE, NA)))
 }
 
