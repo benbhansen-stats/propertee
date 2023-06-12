@@ -44,8 +44,27 @@ test_that("DirectAdjusted print/show", {
   des <- obs_design(z ~ cluster(cid2, cid1) + block(bid), data = simdata)
   cmod <- lm(y ~ z, data = simdata)
 
+  ######## Pretend it comes from `as.lmitt`
   dalm <- new("DirectAdjusted",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
+                 offset = cov_adj(cmod)),
+              Design = des,
+              lmitt_fitted = FALSE)
+
+  aslm <- as(dalm, "lm")
+
+  expect_silent(invisible(capture.output(expect_identical(print(dalm), dalm))))
+  expect_silent(invisible(capture.output(expect_identical(show(dalm), dalm))))
+
+  # Expect "assigned()"
+  expect_output(print(dalm), "assigned()")
+  expect_output(show(dalm), "assigned()")
+
+  ######## Now pretend it comes from `lmitt.formula`
+  # Need `txt_` to match what comes out of a call like `lmitt(y ~ 1...)`
+  simdata$z. <- simdata$z
+  dalm <- new("DirectAdjusted",
+              lm(y ~ z., data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
               lmitt_fitted = TRUE)
@@ -56,8 +75,8 @@ test_that("DirectAdjusted print/show", {
   expect_silent(invisible(capture.output(expect_identical(show(dalm), dalm))))
 
   # Expect "assigned()"
-  expect_output(print(dalm), "assigned()")
-  expect_output(show(dalm), "assigned()")
+  expect_output(print(dalm), "z\\.")
+  expect_output(show(dalm), "z\\.")
 })
 
 test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
@@ -291,31 +310,33 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci1 <- confint(damod1, level = 0.9)
   expect_equal(ci1, vcovDA_ci.9)
 
-  vcovDA_z.95 <- matrix(damod1$coefficients[1] +
-                          sqrt(vcovDA(damod1)[1, 1]) *
-                          qt(c(0.025, 0.975), damod1$df.residual), nrow = 1)
+  vcovDA_z.95 <- matrix(rep(damod1$coef, 2), nrow = 2) +
+                          sqrt(diag(vcovDA(damod1))) %o%
+                          qt(c(0.025, 0.975), damod1$df.residual)
   ci1 <- confint(damod1)
   expect_true(all.equal(ci1, vcovDA_z.95, check.attributes = FALSE))
 
-  vcovDA_z.9 <- matrix(damod1$coefficients[1] +
-                         sqrt(vcovDA(damod1)[1, 1]) *
-                         qt(c(0.05, 0.95), damod1$df.residual), nrow = 1)
+  vcovDA_z.9 <- matrix(rep(damod1$coef, 2), nrow = 2) +
+                          sqrt(diag(vcovDA(damod1))) %o%
+                          qt(c(0.05, 0.95), damod1$df.residual)
   ci1 <- confint(damod1, level = 0.9)
   expect_true(all.equal(ci1, vcovDA_z.9, check.attributes = FALSE))
 
-  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
-  vcovlm.9 <- damod2$coefficients + sqrt(diag(sandwich::sandwich(damod2,
-                                                                 meat. = sandwich::meatCL,
-                                                                 cluster = uoas))) %o%
+  uoas <- apply(simdata[, c("cid1", "cid2")], 1,
+                function(...) {
+                  paste(..., collapse = "_")
+                })
+  vcovlm.9 <- damod2$coefficients +
+    sqrt(diag(sandwich::sandwich(damod2, meat. = sandwich::meatCL,
+                                 cluster = uoas))) %o%
     qt(c(0.05, 0.95), damod2$df.residual)
   ci1 <- confint(damod2, level = 0.9)
   expect_true(all.equal(ci1, vcovlm.9, check.attributes = FALSE))
 
-  vcovlm_z.95 <- matrix(damod2$coefficients[1] +
-                          sqrt(sandwich::sandwich(damod2,
-                                                  meat. = sandwich::meatCL,
-                                                  cluster = uoas)[1, 1]) *
-                          qt(c(0.025, 0.975), damod2$df.residual), nrow = 1)
+  vcovlm_z.95 <- damod2$coefficients +
+    sqrt(diag(sandwich::sandwich(damod2, meat. = sandwich::meatCL,
+                            cluster = uoas))) %o%
+    qt(c(0.025, 0.975), damod2$df.residual)
   ci1 <- confint(damod2)
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
 })
@@ -385,11 +406,9 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   ca <- cov_adj(cmod, newdata = simdata, design = des)
 
-  nolmittmod1 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
-                    simdata)
+  nolmittmod1 <- lm(y ~ z, simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
-  nolmittmod2 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
-                    data = simdata, offset = ca)
+  nolmittmod2 <- lm(y ~ z, data = simdata, offset = ca)
   mod2 <- lmitt(y ~ 1, data = simdata, design = des, offset = stats::predict(cmod))
 
   ef_expected1 <- estfun(nolmittmod1)
@@ -411,7 +430,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
   mod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, design = des, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 1))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
@@ -426,8 +445,8 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions when only",
   mod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, design = des, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 1))
-  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 1))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
+  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 2))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment",
@@ -444,7 +463,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
   mod1 <- lmitt(y ~ 1, data = Q_data, design = des, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, design = des, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 1))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
   expect_equal(estfun(mod1)[1:20,], estfun(mod2)[1:20,], tolerance = 1e8)
 })
 
@@ -462,7 +481,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   expect_equal(dim(estfun(mod)),
-               c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$cid1),]), 1))
+               c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$cid1),]), 2))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
@@ -477,7 +496,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 1))
+  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_data), 2))
 })
 
 test_that("estfun.DirectAdjusted returns correct dimensions for rectangular A11_inv", {
@@ -485,7 +504,7 @@ test_that("estfun.DirectAdjusted returns correct dimensions for rectangular A11_
   cmod <- robustbase::lmrob(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   dmod <- lmitt(lm(y ~ z.(des), simdata, offset = cov_adj(cmod)), design = des)
-  
+
   out <- estfun(dmod)
   expect_equal(dim(out), c(50, 2))
 })
@@ -611,7 +630,7 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q is",
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(ef1$phi, ef1$phi[sort(simdata$obs_id, index.return = TRUE)$ix,])
   expect_equal(ef1$phi, ef2$phi)
   expect_equal(ef1$psi, ef1$psi[sort(simdata$obs_id, index.return = TRUE)$ix,, drop = FALSE])
@@ -638,7 +657,7 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q is",
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(ef1$phi, ef1$phi[sort(simdata$obs_id, index.return = TRUE)$ix,])
   expect_equal(ef1$phi, ef2$phi)
   expect_equal(ef1$psi, ef1$psi[sort(simdata$obs_id, index.return = TRUE)$ix,, drop = FALSE])
@@ -666,7 +685,7 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q is",
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(ef1$phi, ef1$phi[sort(simdata$obs_id, index.return = TRUE)$ix,])
   expect_true(all(ef1$phi[30:50] == 0))
   expect_equal(ef1$phi, ef2$phi)
@@ -695,7 +714,7 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q is",
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all(ef1$phi[1:20,] == 0))
   expect_equal(ef1$phi, ef2$phi)
   expect_equal(ef1$psi, ef1$psi[sort(simdata$obs_id, index.return = TRUE)$ix,, drop = FALSE])
@@ -722,9 +741,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(dim(ef2$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef2$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef2$psi), c(nrow(simdata), 2))
 
   phi1_sorted <- lapply(split(ef1$phi, by_ix), sort)
   phi2_sorted <- lapply(split(ef2$phi, by_ix), sort)
@@ -758,9 +777,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(dim(ef2$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef2$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef2$psi), c(nrow(simdata), 2))
 
   phi1_sorted <- lapply(split(ef1$phi, by_ix), sort)
   phi2_sorted <- lapply(split(ef2$phi, by_ix), sort)
@@ -796,9 +815,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(dim(ef2$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef2$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef2$psi), c(nrow(simdata), 2))
 
   phi1_sorted <- lapply(split(ef1$phi, by_ix), sort)
   phi2_sorted <- lapply(split(ef2$phi, by_ix), sort)
@@ -835,9 +854,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_equal(dim(ef2$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef2$psi), c(nrow(simdata), 1))
+  expect_equal(dim(ef2$psi), c(nrow(simdata), 2))
 
   phi1_sorted <- lapply(split(ef1$phi, by_ix), sort)
   phi2_sorted <- lapply(split(ef2$phi, by_ix), sort)
@@ -1219,5 +1238,63 @@ test_that("lmitt_fitted object", {
 
   mod <- lmitt(lm(y ~ adopters(des), data = simdata), design = des)
   expect_false(mod@lmitt_fitted)
+
+})
+
+test_that("printed effects aren't confused by bad naming", {
+  data(simdata)
+  simdata$abz.c <- as.factor(simdata$o)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  mod <- lmitt(y ~ abz.c, data = simdata, design = des)
+  co <- capture.output(show(mod))
+  cos <- strsplit(trimws(co), "[[:space:]]+")
+
+  expect_true(all(vapply(cos, length, numeric(1)) == 4))
+  expect_true(all(!isTRUE(grepl("^abz", cos[[1]]))))
+  expect_true(all(grepl("^z", cos[[1]])))
+
+  # to force ` in variable names via as.factor
+  mod <- lmitt(y ~ as.factor(abz.c), data = simdata, design = des)
+  co <- capture.output(show(mod))
+  cos <- strsplit(trimws(co[c(1, 3)]), "[[:space:]]+")
+  cos <- Reduce("c", cos)
+  expect_length(cos, 4)
+  expect_true(all(!isTRUE(grepl("^as\\.factor", cos))))
+  expect_true(all(grepl("^`z", cos)))
+})
+
+
+test_that("as.lmitt call inside mapply", {
+  min_df <- data.frame(schoolid = seq_len(20),
+                       response_col = rnorm(20),
+                       grade = rep(3:4, each = 10),
+                       adsy = rep(rep(c(0, 1), each = 5), 2))
+
+  min_des <- rct_design(adsy ~ unitid(schoolid), min_df)
+
+  res <- mapply(function(fmla) {
+    as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+  },
+  list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+  SIMPLIFY = FALSE)
+
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
+
+  res <- lapply(list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+                function(fmla) {
+                  as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+                })
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
 
 })

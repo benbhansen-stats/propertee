@@ -16,11 +16,14 @@ test_that(".get_design", {
              offset = cov_adj(mod, design = des))
   mod6 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
              offset = cov_adj(mod, design = des))
+  mod7 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
+             offset = flexida::cov_adj(mod))
   expect_true(all(mod1$coef == mod2$coef))
   expect_true(all(mod1$coef == mod3$coef))
   expect_true(all(mod1$coef == mod4$coef))
   expect_true(all(mod1$coef == mod5$coef))
   expect_true(all(mod1$coef == mod6$coef))
+  expect_true(all(mod1$coef == mod7$coef))
 
   des2 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 

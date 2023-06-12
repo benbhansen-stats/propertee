@@ -27,10 +27,19 @@
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
 ##' into \code{lm()} or \code{lmitt()}.
 ##'
+##' To avoid variable name collision, the treatment variable defined in the
+##' \code{design} will have a "\code{.}" appended to it. For example, if you
+##' request a main treatment effect with a treatment variable named "txt", you
+##' can obtain it's estimate from the returned \code{DirectAdjusted} object via
+##' \code{$coefficients["txt."]}.
+##'
 ##' \code{lmitt()} will produce a message if the \code{design} passed in has
 ##' block information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
 ##' \code{options("flexida_message_on_unused_blocks" = FALSE)}.
+##'
+##' Note: \code{lmitt()} does not currently support \code{factor} or
+##' \code{ordered} treatment variables.
 ##' @param obj A \code{formula} or a \code{lm} object. See details.
 ##' @param design The \code{Design} to be used. Alternatively, a formula
 ##'   creating a design (of the type of that would be passed as the first
@@ -136,7 +145,19 @@ lmitt.formula <- function(obj,
       stop(paste("`design=` must be an object created by `*_design`",
                  "function, or a formula specifying such a design"))
     }
+
+    # #126 block on factor treatments
+    if (is.factor(treatment(design)[, 1])) {
+      if (is.ordered(treatment(design)[, 1])) {
+        fact_or_ord <- "Ordered"
+      } else {
+        fact_or_ord <- "Factor"
+      }
+      stop(paste(fact_or_ord, "treatment variables are not yet supported, use",
+                 "`dichotomy=` to define a binary treatment."))
+    }
   }
+
 
   # Extract formula bits
   rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
@@ -179,14 +200,14 @@ lmitt.formula <- function(obj,
                 "or `ett()`) but not the `lmitt()` call. Please pass the",
                 "`Design` into the `design=` argument of `lmitt()`. It is",
                 "not needed in `ate()` or `ett()` when passed as the",
-                "`weights=` argument to `lmitt()`."))
+                "`design=` argument to `lmitt()`."))
   }
 
   if (missing(design) & is(ofdes, "Design")) {
     stop(paste("You've passed a `Design` into the offset function",
                 " (`cov_adj()`) but not the `lmitt()` call. Please pass the",
                 "`Design` into the `design=` argument of `lmitt()`. It is",
-                "not needed in `cov_adj()` when passed as the `offset=`",
+                "not needed in `cov_adj()` when passed as the `design=`",
                 "argument to `lmitt()`."))
   }
 
@@ -260,131 +281,56 @@ lmitt.formula <- function(obj,
     # To be used below
   }
 
+  # Generate formula for the internal `lm`
   if (rhs == "1") {
-    # Define new RHS and obtain model.matrix
     new.form <- formula(~ a.())
-    mm.call <- lm.call
-    mm.call[[2]] <- str2lang(deparse(new.form))
-    # model.matrix.lm supports as `na.action` argument where
-    # model.matrix.default doesn't
-    mm.call[[1]] <- quote(stats::model.matrix.lm)
-    mm.call$na.action <- "na.pass"
-    names(mm.call)[2] <- "object"
-    mm <- eval(mm.call, parent.frame())
-
-    if (absorb) {
-      mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
-    }
-
     absorbed_moderators <- character()
-
   } else {
-
-    # Create model.matrix with subgroup main effects (to BE residualized out)
-    sbgrp.form <- stats::reformulate(paste0(paste(rhs,
-                                                  "a.()",
-                                                  sep = "+"),
-                                            "+ 0"))
-    sbgrp.call <- lm.call
-    sbgrp.call[[2]] <- str2lang(deparse(sbgrp.form))
-    sbgrp.call[[1]] <- quote(stats::model.matrix.lm)
-    names(sbgrp.call)[2] <- "object"
-    sbgrp.call$na.action <- "na.pass"
-    sbgrp.mm <- eval(sbgrp.call, parent.frame())
-    sbgrp.mm <- sbgrp.mm[, !grepl("a\\.\\(", colnames(sbgrp.mm)),
-                         drop = FALSE]
-
-    # Create model.matrix with treatment:subgroup interaction (to be kept in)
-    effect.form <- stats::reformulate(paste0("a.():", rhs, "+0"))
-    effect.call <- lm.call
-    effect.call[[2]] <- str2lang(deparse(effect.form))
-    effect.call[[1]] <- quote(stats::model.matrix.lm)
-    effect.call$na.action <- "na.pass"
-    names(effect.call)[2] <- "object"
-    effect.mm <- eval(effect.call, parent.frame())
-
-    if (absorb) {
-      sbgrp.mm <- apply(sbgrp.mm, 2, areg.center, as.factor(blocks),
-                        lm.call$weights)
-      effect.mm <- apply(effect.mm, 2, areg.center, as.factor(blocks),
-                         lm.call$weights)
-    }
-
-    # Using `__xx__` to try and ensure no collision with variable names
-    mm <- apply(effect.mm, 2, function(xx__) {
-      resid.call <- lm.call
-      resid.call$offset <- NULL #see issue #101
-      resid.call$formula <- stats::reformulate("sbgrp.mm", "xx__")
-      # By switching from `na.omit` to `na.exclude`, `residuals()` includes NAs
-      resid.call$na.action <- "na.exclude"
-      stats::residuals(eval(resid.call, parent.frame()))
-    })
-
+    new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
     absorbed_moderators <- rhs
   }
+  mm.call <- lm.call
+  mm.call[[2]] <- str2lang(deparse(new.form))
+  # model.matrix.lm supports as `na.action` argument where
+  # model.matrix.default doesn't
+  mm.call[[1]] <- quote(stats::model.matrix.lm)
+  mm.call$na.action <- "na.pass"
+  names(mm.call)[2] <- "object"
+  mm <- eval(mm.call, parent.frame())
 
+  if (absorb) {
+    mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
+  }
 
-  # Strip intercept from model
+  if (rhs == "1") {
+  } else {
+  }
+
+  # Strip intercept from data if it's in there
   mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
   # Make sure to keep it as a named matrix
 
-  # Center (weighted if needed)
-  .center <- function(x, wts, sbst) {
-    # If the user passed in `$subset`, we'll want to center by the mean of the
-    # subset, not the whole data.
-    if (!is.null(sbst)) {
-      xs <- x[sbst]
-    } else {
-      xs <- x
-    }
-    # `weighted.mean` with a NULL weights argument calls `mean`, but due to
-    # the below issue with NAs in the weights, don't try combining these two
-    # calls into one.
-    if (is.null(wts)) {
-      x - mean(xs, na.rm = TRUE)
-    } else {
-      # `weighted.mean` with `na.rm = TRUE` only drops `x` as NA, any NA weights
-      # will return an NA mean
-      x - weighted.mean(xs[!is.na(lm.call$weights)],
-                        lm.call$weights[!is.na(lm.call$weights)],
-                        na.rm = TRUE)
-    }
-  }
-  # Center variables to remove intercept
-  mm <- apply(mm, 2, .center, lm.call$weights, logicalsubset)
+  # Rename `a.()` to treatment named, adding a "." after to avoid conflict with
+  # original treatment variable.
   colnames(mm) <- gsub("a\\.\\(\\)",
-                       paste0(var_names(design, "t"), "_"),
+                       paste0(var_names(design, "t"), "."),
                        colnames(mm))
-  # Adding a _ after the treatment variable name to avoid conflict with original
-  # treatment variable.
 
   # Replace : with _ for interaction to try and avoid backticks
   colnames(mm) <- gsub("\\:", "_", colnames(mm))
   # This isn't foolproof as the sbgrp variable can cause them too
   # e.g. `as.factor(sbgrp)` forces backticks.
 
-  # get response
-  mr <- stats::model.response(mf)
+  # Rebuild RHS of formula: RHS is "txt_" or "txt_sbgrp", where "txt" has been
+  # replaced with the actual treatment name above.
+  lm.call$formula <- str2lang(paste(lm.call$formula[[2]], " ~ ",
+                                    paste(
+                                      paste0("`", colnames(mm), "`"),
+                                      collapse = "+"),
+                                    collapse = ""))
 
-  if (is.matrix(mr)) {
-    # if somehow user passes in a matrix outcome, handle centering appropriately
-    flexida_y <- apply(mr, 2, .center, lm.call$weights, logicalsubset)
-  } else {
-    flexida_y <- .center(mr, lm.call$weights, logicalsubset)
-  }
-
-  # Rebuild formula. LHS is updated outcome (`flexida_y`), RHS is 0 (everything
-  # is centered) and treatment name (from `var_names(design, "t")`) or treatment
-  # name:sbgrp
-  lm.call$formula <- formula(paste("flexida_y ~ 0 + ",
-                                   paste(
-                                     paste0("`", colnames(mm), "`"),
-                                     collapse = "+"),
-                                   collapse = ""))
-
-  # Data for model should be original data, plus updated outcome (flexida_y) and
-  # RHS (mm)
-  lm.call$data <- cbind(data, flexida_y, mm)
+  # Data for model should be original data, plus updated RHS (mm)
+  lm.call$data <- cbind(data, mm)
 
   # restore subset
   lm.call$subset <- savedsubset

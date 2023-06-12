@@ -24,7 +24,15 @@ setValidity("DirectAdjusted", function(object) {
 ##' @export
 setMethod("show", "DirectAdjusted", function(object) {
   coeffs <- object$coefficients
-  print(coeffs)
+  # Display only treatment effects
+  if (object@lmitt_fitted) {
+    # This should match any coefficients starting with the "txt." or "`txt."
+    toprint <- grepl(paste0("^\\`?", var_names(object@Design, "t"), "\\."),
+                     names(coeffs))
+    print(coeffs[toprint])
+  } else {
+    print(coeffs)
+  }
   invisible(object)
 })
 

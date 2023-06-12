@@ -66,6 +66,7 @@ as.lmitt <- function(x, design = NULL) {
     # If we're in `lmitt.lm()` via `lmitt()`, save the call to `lmitt`.
     lmitt_call <- sys.call(-2)
   } else if (sys.nframe() >= 2 &&
+             is.name(sys.call(-1)[[1]]) && # Catches mapply issue
              !is.null(sys.call(-1)) &&
              sys.call(-1)[[1]] == as.name("lmitt.lm")) {
     # If we're in `lmitt.lm()` directly, save that call.
@@ -141,6 +142,13 @@ as.DirectAdjusted <- as.lmitt
     stop("Cannot locate a `Design`, pass via it `design=` argument")
   }
 
+  # #123 Make PreSandwichLayer to SandwichLayer if necessary
+  ca <- .get_cov_adj(lm_model)
+  if (is(ca, "PreSandwichLayer") & !is(ca, "SandwichLayer")) {
+    lm_model$model$`(offset)` <- as.SandwichLayer(.get_cov_adj(lm_model),
+                                                  design = design)
+  }
+
   eval_env <- new.env(parent = environment(formula(lm_model)))
   assign("design", design, envir = eval_env)
   # Find data
@@ -152,10 +160,26 @@ as.DirectAdjusted <- as.lmitt
     quoted_call <- lmitt_call
     quoted_call[[1]] <- quote(stats::lm)
   } else {
-    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data
-    data <- eval(lm_model$call$data, envir = eval_env)
+    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data using a
+    # `fallback_data_search`-esque approach
+    data_call <- lm_model$call$data
+    #for (i in c(-1L, seq_len(sys.nframe()))) {
+    for (i in seq_len(length(sys.calls()))) {
+      try(data <- eval(data_call, envir = parent.frame(i)),
+          silent = TRUE)
+      if (!is.null(data) && is.data.frame(data)) {
+        break()
+      }
+    }
+    if (!inherits(data, "data.frame")) {
+      stop("Could not determine appropriate data")
+    }
+    if (!is.null(lm_model$call$subset)) {
+      sbst <- eval(lm_model$call$subset, data)
+      data <- subset(data, sbst)
+    }
     quoted_call <- lm_model$call
-  
+
     fcall <- eval(quoted_call[[2]], eval_env)
     treatment_aliases <- attr(terms(fcall, specials = c("assigned", "a.", "z.", "adopters")), "specials")
     which_alias <- names(which(!vapply(treatment_aliases, is.null, logical(1))))
@@ -177,7 +201,7 @@ as.DirectAdjusted <- as.lmitt
       if (inherits(weights_call, "character")) weights_call <- call(weights_call)
       m <- match(c("dichotomy", "by"), names(weights_call), 0L)
       weights_call <- weights_call[c(1L, m)]
-      
+
       # NOTE: We force the `data` argument to be the data used to fit the model--
       # how could a user possibly want weights generated from other data in this
       # context?
@@ -196,7 +220,7 @@ as.DirectAdjusted <- as.lmitt
         inherits(offset_call, "call")) {
       m <- match("by", names(offset_call), 0L)
       offset_call <- offset_call[c(1L, m)]
-      
+
       offset_call$model <- quote(cmod)
       # NOTE: Same note about `data` here as in the weights section above
       offset_call$newdata <- quote(data)

@@ -1101,10 +1101,11 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clusterin
 test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clustering", {
   data(simdata)
 
-  simdata$uid <- seq_len(nrow(simdata))
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ unitid(uid), data = simdata)
-  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
+  new_df <- simdata
+  new_df$uid <- seq_len(nrow(new_df))
+  cmod <- lm(y ~ x, new_df)
+  des <- rct_design(z ~ unitid(uid), data = new_df)
+  m <- as.lmitt(lm(y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod)))
 
   Qmat <- m$weights * stats::model.matrix(m)
   Cmat <- stats::model.matrix(cmod)
@@ -1966,4 +1967,41 @@ test_that("#119 flagging vcovDA entries as NaN", {
   expect_true(all(is.nan(vc[1, ])))
   expect_true(all(is.nan(vc[, 1])))
   expect_true(all(!is.nan(vc[-1, -1])))
+})
+
+test_that("#123 ensure PreSandwich are converted to Sandwich", {
+  data(simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  cmod <- lm(y ~ x, data = simdata)
+  # Make sure its PreSandwich prior
+  ca <- cov_adj(cmod, newdata = simdata)
+  expect_false(is(ca, "SandwichLayer"))
+  damod <- as.lmitt(lm(y ~ a.(des), data = simdata, offset = ca),
+                    design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+
+
+  copy_simdata <- simdata
+  copy_simdata$schoolid <- seq(900, 949)
+  C_df <- rbind(copy_simdata[, c("schoolid", "x", "y")],
+                data.frame(schoolid = seq(1000, 1049),
+                           x = rnorm(50),
+                           y = rnorm(50)))
+  cmod <- lm(y ~ x, C_df)
+  des <- rct_design(z ~ uoa(schoolid), copy_simdata)
+  lm1 <- lm(y ~ assigned(), copy_simdata, weights = ett(design = des),
+            offset = cov_adj(cmod, NULL, NULL, "schoolid"))
+  dmod1 <- lmitt(lm1, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v1 <- vcovDA(dmod1)
+
+  wts2 <- ett(des, data = copy_simdata)
+  offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid")
+  lm2 <- lm(y ~ assigned(), copy_simdata, weights = wts2, offset = offst2)
+  dmod2 <- lmitt(lm2, design = des)
+  expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
+  v2 <- vcovDA(dmod2)
+
+  expect_true(all.equal(v1, v2))
+
 })

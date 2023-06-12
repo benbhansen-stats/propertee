@@ -10,7 +10,7 @@
 
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
-\newcommand{\owt}[1][z_i]{\ensuremath{w_{i[#1]}}}
+\newcommand{\owt}[1][z_i]{\ensuremath{\check{w}_{i[#1]}}}
 \usepackage{natbib}
 \usepackage{bibentry}
 \bibliographystyle{plain}
@@ -65,12 +65,25 @@ There are random estimating functions $\Phi(\mathbf{Y}; \beta ) =
                   \rho_{k}]\indicator{z_{i}=k}\\
                 \end{array}\right)
 \end{equation}
-where $Y_{i}[j]$ represents $i$'s potential outcome following
-assignment to condition $i$; $\owt[j]$ represents the product of 1, any user-provided weight attaching to observation unit $i$, and, as requested by the user, odds- or inverse probability-based weights attaching to $i$'s assignment unit $[i]$ under assignment $j$; and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
-\ldots, k$. I say ``for now'' because \eqref{eq:14} will present a
+where
+\begin{itemize}
+\item $Y_{i}[j]$ represents $i$'s potential outcome following
+  assignment to condition $i$;
+\item $\owt[j]$ represents the product of $w_{i}$, a
+  frequency or importance weight
+  attaching to observation unit $i$ (or 1 if no such weight was
+  given) and, as requested by the user,
+  odds- or inverse probability-based weights attaching to $i$'s
+  assignment unit $[i]$ under assignment $j$;
+\item and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
+\ldots, k$.
+\end{itemize}
+(I say ``for now'' because \eqref{eq:14} will present a
 $\psi(\cdot)$ with equivalent solutions that is better aligned with
-\texttt{lm()}'s default treatment effect parameterizations and their
-adaptations involving ``absorption'' of intercept terms (also denoted $\psi(\tilde{\mathbf{Y}}_{i}; \tau, \alpha, \beta)$, see \eqref{eq:9} and following, and $\upsilon(\tilde{\mathbf{Y}}_{i}; \tau, \mathbf{p}, \beta)$, see \eqref{eq:upsilondef} and following; both in \S~\ref{sec:accomm-interc-via} below).  I've written ${\Psi}(\cdot)$ as
+\texttt{lm()}'s default treatment effect parameterizations, whereas
+\eqref{eq:9} in \S~\ref{sec:accomm-interc-via} below presents
+another $\psi()$ adding block-specific intercepts to \eqref{eq:14}.)
+I've written ${\Psi}(\cdot)$ as
 it would appear in the model-based interpretation; in design-based
 inference we would have
 \begin{equation*}
@@ -198,6 +211,10 @@ Let $\hat\beta$, $\hat\alpha$ and $\hat\tau$ solve
 \sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\tilde{\mathbf{Y}}_{j}; \tau,
 \alpha, \beta )  =0.
   \]
+In these expectations and those that follow, $\vec{x}_{i}$ and $w_{i}$
+are taken as fixed but $Z_{i}$ and/or potential outcomes $(Y_{i}[z]:
+z=0, \ldots, k)$ may be random according as we follow a design- or
+model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Writing
   \begin{align*}
 %    \label{eq:13}
@@ -427,8 +444,29 @@ calculating the bread matrix.   In the design-based formulation there
 would likely be approximate equality here, noting that in that setting
 $\hat{A}_{21}(\beta_{0})$ and $\hat{A}_{11}(\beta_{0})$ needn't
 coincide with ${A}_{21}(\beta_{0})$ and ${A}_{11}(\beta_{0})$, respectively.
+\subsection{Model- and Design-based}\label{sec:des-vs-mod-based}
+
+In the model-based perspective, expected value and covariance are
+conditional on
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, Z_{i}: i \in c): i \in
+      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
 
 
+In the design-based perspective, $\mathcal{Q}$ is partitioned into
+blocks $b$, and expected value and covariance are
+conditional on
+\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+  i \in c; c\}, \{\sum_{c
+    \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+where $z_{c}$ denotes the common treatment assignment of all $i\in
+c$. 
+To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
+definition, let each such cluster $c$ constitute a block unto itself,
+$\{c\}$. This has the consequence that observations $i
+\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
+contribute to $M_{11}$, $M_{12}$ or $M_{21}$.
+
+\section{Fixed effects and absorption}
 \subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
@@ -448,6 +486,7 @@ First, let's switch over to using $[\alpha_{1}, \ldots, \alpha_{s}]$
 as the intercept parameter(s), allowing for absorption of $s$ block or
 stratum fixed effects; if \texttt{absorb=FALSE}, then let $s=1$.
 Our estimating function \eqref{eq:14} becomes
+
 \begin{multline}
   \label{eq:9}
   \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
@@ -516,14 +555,14 @@ $0= \sum_{i}\upsilon(\tilde{\mathbf{y}}_{i}; \tau, \mathbf{p},
 \indicator{i \in \bigcup \mathcal{Q}}\owt{} \nonumber \\
 &\left(
                                              \begin{array}{c}                                               
-           [y_{i}[z_{i}]
+           \big[y_{i}[z_{i}]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               g(\vec{x}_{i}\beta)-\tau_{z_{i}}\indicator{z_{i}>0}\big](
                                                \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
-{}           [y_{i}[z_{i}]
+{}           \big[y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{k}](\indicator{z_{i}=k}
+                                               \tau_{z_{i}}\indicator{z_{i}>0}\big](\indicator{z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
@@ -692,19 +731,21 @@ without doing anything special, using an $\Upsilon$ given by
     \indicator{i \in \bigcup \mathcal{Q}}\owt{} \times \\
 \left(
                                              \begin{array}{c}                                               
-           [y_{i}[z_{i}]
+           \big[y_{i}[z_{i}]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               g(\vec{x}_{i}\beta)-\tau_{z_{i}}\indicator{z_{i}>0}\big](
                                                \indicator{z_{i}=1} -
                                                \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
                                                - \tilde{m}_{i}\gamma)\\
                   \vdots \\
-{}           [y_{i}[z_{i}]
+{}           \big[y_{i}[z_{i}]
                                                - g(\vec{x}_{i}\beta) -
-                                               \tau_{k}](\indicator{z_{i}=k}
+                                               \tau_{z_{i}}\indicator{z_{i}>0}\big](\indicator{z_{i}=k}
                                                -
                                                \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
-                                               - \tilde{m}_{i}\gamma)\\                                             \end{array}
+                                               -
+                                               \tilde{m}_{i}\gamma)\\
+                                             \end{array}
 \right) .
 \end{multline*}
 Because the covariance estimates will
@@ -830,7 +871,7 @@ on potential outcomes? If so, then as a consequence we can think of
 \eqref{eq:10} as having rows that are also of this form.
 \eqref{eq:11} says $\grave{\phi}(\tilde{\mathbf{Y}}_{i}; \mathbf{p})$
 has this form, so if we can get represent
-$\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in this way then \eqref{eq:12}
+$\phi(\tilde{\mathbf{Y}}_{i}; \beta)$ in this way then \eqref{eq:19}
 will have this form as well. That strikes me as likely to facilitate
 derivation, 
 presentation in print and coding in R of these design-based covariances. 
@@ -847,6 +888,36 @@ with covariates.
 
 \nobibliography{estfun_DA}
 \end{document}
+
+\begin{multline}
+  \label{eq:9}
+  \psi(\tilde{\mathbf{y}}; \tau, \alpha, \beta) =
+  \indicator{i \in \bigcup \mathcal{Q}} \owt{}\times \\  
+  \left(
+    \begin{array}{c}
+           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j}m_{j})\indicator{z_{i}=j} \\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j} m_{i})\indicator{z_{i}=j}
+      \big] m_{i}\\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta m_{i}-
+      (\tau_{1}+\delta_{1} m_{i}) \big](m_{i}\indicator{z_{i}=1})\\      
+\vdots \\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha - \beta  m_{i}-
+      (\tau_{k}+\delta_{k} m_{i}) \big](m_{i}\indicator{z_{i}=k})\\      
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
+                  \vdots \\
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
+    \end{array}
+\right).
+\end{multline}
+
 \subsubsection{Alt def of M's}
 \[
   \begin{array}{cc}
