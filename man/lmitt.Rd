@@ -80,4 +80,7 @@ can obtain it's estimate from the returned \code{DirectAdjusted} object via
 block information that is not being utilized in the model. Note that this is
 \emph{not} an error, but could be an oversight. To disable this message, run
 \code{options("flexida_message_on_unused_blocks" = FALSE)}.
+
+Note: \code{lmitt()} does not currently support \code{factor} or
+\code{ordered} treatment variables.
 }

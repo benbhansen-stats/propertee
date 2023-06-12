@@ -37,6 +37,9 @@
 ##' block information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
 ##' \code{options("flexida_message_on_unused_blocks" = FALSE)}.
+##'
+##' Note: \code{lmitt()} does not currently support \code{factor} or
+##' \code{ordered} treatment variables.
 ##' @param obj A \code{formula} or a \code{lm} object. See details.
 ##' @param design The \code{Design} to be used. Alternatively, a formula
 ##'   creating a design (of the type of that would be passed as the first
@@ -142,7 +145,19 @@ lmitt.formula <- function(obj,
       stop(paste("`design=` must be an object created by `*_design`",
                  "function, or a formula specifying such a design"))
     }
+
+    # #126 block on factor treatments
+    if (is.factor(treatment(design)[, 1])) {
+      if (is.ordered(treatment(design)[, 1])) {
+        fact_or_ord <- "Ordered"
+      } else {
+        fact_or_ord <- "Factor"
+      }
+      stop(paste(fact_or_ord, "treatment variables are not yet supported, use",
+                 "`dichotomy=` to define a binary treatment."))
+    }
   }
+
 
   # Extract formula bits
   rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
@@ -185,14 +200,14 @@ lmitt.formula <- function(obj,
                 "or `ett()`) but not the `lmitt()` call. Please pass the",
                 "`Design` into the `design=` argument of `lmitt()`. It is",
                 "not needed in `ate()` or `ett()` when passed as the",
-                "`weights=` argument to `lmitt()`."))
+                "`design=` argument to `lmitt()`."))
   }
 
   if (missing(design) & is(ofdes, "Design")) {
     stop(paste("You've passed a `Design` into the offset function",
                 " (`cov_adj()`) but not the `lmitt()` call. Please pass the",
                 "`Design` into the `design=` argument of `lmitt()`. It is",
-                "not needed in `cov_adj()` when passed as the `offset=`",
+                "not needed in `cov_adj()` when passed as the `design=`",
                 "argument to `lmitt()`."))
   }
 
