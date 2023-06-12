@@ -8,7 +8,7 @@
   vmat,
   model,
   cluster,
-  data = quote(data),
+  model_data = quote(data),
   envir = environment(formula(model))
 )
 }
@@ -20,9 +20,9 @@
 \item{cluster}{character or factor vector providing cluster ID's for the
 observations used to fit \code{model}}
 
-\item{envir}{environment to get \code{model_data} from if it is a quote object name}
-
 \item{model_data}{dataframe or name corresponding to the data used to fit \code{model}}
+
+\item{envir}{environment to get \code{model_data} from if it is a quote object name}
 }
 \value{
 \code{vmat} with NaN's in the entries lacking sufficient degrees of freedom

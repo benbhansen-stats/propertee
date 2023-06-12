@@ -73,7 +73,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
 #' @param model_data dataframe or name corresponding to the data used to fit `model`
 #' @param envir environment to get `model_data` from if it is a quote object name
 #' @return `vmat` with NaN's in the entries lacking sufficient degrees of freedom
-.check_df_moderator_estimates <- function(vmat, model, cluster, data = quote(data),
+.check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "DirectAdjusted")) {
     stop("`model` must be a DirectAdjusted object")
@@ -83,14 +83,14 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
     return(vmat)
   }
   
-  if (inherits(data, "name")) {
-    data <- get(as.character(data), envir)
+  if (inherits(model_data, "name")) {
+    model_data <- get(as.character(model_data), envir)
   } else if (!inherits(data, "data.frame")) {
     stop("`data` must be a dataframe or a quoted object name")
   }
 
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@absorbed_moderators)),
-                           data)
+                           model_data)
   mod_counts <- apply(
     mod_vars,
     2,
