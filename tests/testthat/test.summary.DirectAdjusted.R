@@ -134,27 +134,24 @@ test_that("catching bug with summary(as.lmitt", {
 })
 
 test_that("#119 flagging as NaN", {
+  ### factor moderator variable
   data(simdata)
-  simdata$o <- as.factor(simdata$o)
+  simdata$o_fac <- as.factor(simdata$o)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
 
   ### lmitt.formula
-  damod <- lmitt(y ~ o, data = simdata, design = des)
-  cf <- coefficients(summary(damod))
+  damod <- lmitt(y ~ o_fac, data = simdata, design = des)
+  expect_warning(cf <- coefficients(summary(damod)),
+                 "will be returned as NaN: o_fac1, o_fac3")
 
-  #****************************************
-  ### Setting these to NaN manually only for testing purposes!
-  cf[1, 2:4] <- NaN
-  ### Remove these once #119 is addressed!!!!!
-  #****************************************
-
-  # Issue is in subgroup o=1, so the first entry in the vcov matrix
-  expect_true(all(is.nan(cf[1, 2:4])))
+  # Issue is in subgroup o=1, so *find that* entry in the vcov matrix
+  nan_cf <- which(grepl("z._o_fac1", rownames(cf)))
+  expect_true(all(is.nan(cf[nan_cf, 2:4])))
   expect_true(all(!is.nan(cf[, 1])))
-  expect_true(all(!is.nan(cf[-1, ])))
+  expect_true(all(!is.nan(cf[-nan_cf, ])))
 
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = simdata), design = des)
   cf <- coefficients(summary(damod))
 
   #****************************************
@@ -168,6 +165,21 @@ test_that("#119 flagging as NaN", {
   expect_true(all(!is.nan(cf[, 1])))
   expect_true(all(!is.nan(cf[-1, ])))
 
+  ### valid continuous moderator variable
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  cf <- coefficients(summary(damod))
+  expect_true(all(!is.nan(cf)))
+  
+  ### invalid continuous moderator variable
+  simdata$invalid_o <- 0
+  simdata$invalid_o[(simdata$cid1 == 2 & simdata$cid2 == 2) |
+                      (simdata$cid1 == 2 & simdata$cid2 == 1)] <- 1
+  damod <- lmitt(y ~ invalid_o, data = simdata, design = des)
+  expect_warning(cf <- coefficients(summary(damod)), "will be returned as NaN: invalid_o")
+  nan_cf <- which(grepl("z._invalid_o", cf))
+  expect_true(all(is.nan(cf[nan_cf, 2:4])))
+  expect_true(all(!is.nan(cf[, nan_cf])))
+  expect_true(all(!is.nan(cf[-nan_cf, ])))
 })
 
 
@@ -177,7 +189,7 @@ test_that("print.summary isn't confused by bad naming", {
   des <- rct_design(z ~ unitid(cid1, cid2), simdata)
 
   mod <- lmitt(y ~ abz.c, data = simdata, design = des)
-  co <- capture.output(summary(mod))
+  expect_warning(co <- capture.output(summary(mod)), "enough degrees of freedom")
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
   expect_true(!any(grepl("^abz\\.", co)))
@@ -185,7 +197,7 @@ test_that("print.summary isn't confused by bad naming", {
 
   # to force ` in variable names via as.factor
   mod <- lmitt(y ~ as.factor(abz.c), data = simdata, design = des)
-  co <- capture.output(summary(mod))
+  expect_warning(co <- capture.output(summary(mod)), "enough degrees of freedom")
   expect_true(!any(grepl("^`abz\\.", co)))
   expect_equal(sum(grepl("^`z\\.", co)), 4)
 

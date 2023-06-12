@@ -57,6 +57,49 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   a22inv <- sandwich::bread(x)
   meat <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
+ 
+  # NA any invalid estimates due to degrees of freedom checks
+  if (length(x@absorbed_moderators) > 0) {
+    mod_vars <- model.matrix(as.formula(paste0("~-1+", x@absorbed_moderators)),
+                             get("data", environment(formula(x))))
+    mod_counts <- apply(
+      mod_vars,
+      2,
+      function(col) {
+        n_vals <- length(unique(col))
+        if (n_vals == 2) {
+          tapply(args$cluster, col, function(clusters) sum(table(clusters) > 0))
+        } else {
+          tapply(args$cluster, col, function(clusters) length(unique(clusters)))
+        }
+      },
+      simplify = FALSE)
+    
+    valid_mods <- vapply(mod_counts,
+                         function(counts) if (length(counts) == 2) all(counts > 2) else TRUE,
+                         logical(1L))
+    if (any(!valid_mods)) {
+      invalid_mods <- names(valid_mods)[!valid_mods]
+      warning(paste("The following subgroups do not have enough degrees of",
+                    "freedom for standard error estimates and will be returned",
+                    "as NaN:",
+                    paste(invalid_mods, collapse = ", ")),
+              call. = FALSE)
+      # find cells of the covariance matrix that correspond to txt/mod group
+      # interactions
+      invalid_cols <- paste0(paste0(var_names(x@Design, "t"), "."), "_", invalid_mods)
+      dims_to_na <- vapply(
+        invalid_cols,
+        grepl,
+        logical(length(colnames(meat))),
+        colnames(vmat),
+        fixed = TRUE
+      )
+      
+      vmat[apply(dims_to_na, 1, any), ] <- NaN
+      vmat[, apply(dims_to_na, 1, any)] <- NaN
+    }
+  }
 
   attr(vmat, "type") <- "CR0"
   return(vmat)

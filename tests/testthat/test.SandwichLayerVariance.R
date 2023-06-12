@@ -1932,28 +1932,23 @@ test_that("type attribute", {
 })
 
 test_that("#119 flagging vcovDA entries as NaN", {
+  ### factor moderator variable
   data(simdata)
-  simdata$o <- as.factor(simdata$o)
+  simdata$o_fac <- as.factor(simdata$o)
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
 
-  ### lmitt.formula
-  damod <- lmitt(y ~ o, data = simdata, design = des)
-  vc <- vcov(damod)
+  #### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NaN: o_fac1, o_fac3")
 
-  #****************************************
-  ### Setting these to NaN manually only for testing purposes!
-  vc[1, ] <- NaN
-  vc[, 1] <- NaN
-  ### Remove these once #119 is addressed!!!!!
-  #****************************************
-
-  # Issue is in subgroup o=1, so the first entry in the vcov matrix
-  expect_true(all(is.nan(vc[1, ])))
-  expect_true(all(is.nan(vc[, 1])))
-  expect_true(all(!is.nan(vc[-1, -1])))
+  # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
+  nan_dim <- which(grepl("z._o_fac1", colnames(vc)))
+  expect_true(all(is.nan(vc[nan_dim, ])))
+  expect_true(all(is.nan(vc[, nan_dim])))
+  expect_true(all(!is.nan(vc[-nan_dim, -nan_dim])))
 
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = simdata), design = des)
   vc <- vcov(damod)[5:7, 5:7]
 
   #****************************************
@@ -1963,10 +1958,25 @@ test_that("#119 flagging vcovDA entries as NaN", {
   ### Remove these once #119 is addressed!!!!!
   #****************************************
 
-  # Issue is in subgroup o=1, so the first entry in the vcov matrix
+  # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
   expect_true(all(is.nan(vc[1, ])))
   expect_true(all(is.nan(vc[, 1])))
   expect_true(all(!is.nan(vc[-1, -1])))
+  
+  ### valid continuous moderator variable
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  vc <- vcov(damod)
+  expect_true(all(!is.nan(vc)))
+  
+  ### invalid continuous moderator variable
+  simdata$invalid_o <- 0
+  simdata$invalid_o[simdata$cid1 == 1 & simdata$cid2 == 1] <- 1
+  damod <- lmitt(y ~ invalid_o, data = simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NaN: invalid_o")
+  nan_dim <- which(grepl("z._invalid_o", colnames(vc)))
+  expect_true(all(is.nan(vc[nan_dim, ])))
+  expect_true(all(is.nan(vc[, nan_dim])))
+  expect_true(all(!is.nan(vc[-nan_dim, -nan_dim])))
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
