@@ -136,11 +136,12 @@ test_that("catching bug with summary(as.lmitt", {
 test_that("#119 flagging as NaN", {
   ### factor moderator variable
   data(simdata)
-  simdata$o_fac <- as.factor(simdata$o)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
 
   ### lmitt.formula
-  damod <- lmitt(y ~ o_fac, data = simdata, design = des)
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
   expect_warning(cf <- coefficients(summary(damod)),
                  "will be returned as NaN: o_fac1, o_fac3")
 
@@ -151,7 +152,7 @@ test_that("#119 flagging as NaN", {
   expect_true(all(!is.nan(cf[-nan_cf, ])))
 
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = simdata), design = des)
+  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
   cf <- coefficients(summary(damod))
 
   #****************************************
@@ -166,15 +167,15 @@ test_that("#119 flagging as NaN", {
   expect_true(all(!is.nan(cf[-1, ])))
 
   ### valid continuous moderator variable
-  damod <- lmitt(y ~ o, data = simdata, design = des)
+  damod <- lmitt(y ~ o, data = copy_simdata, design = des)
   cf <- coefficients(summary(damod))
   expect_true(all(!is.nan(cf)))
   
   ### invalid continuous moderator variable
-  simdata$invalid_o <- 0
-  simdata$invalid_o[(simdata$cid1 == 2 & simdata$cid2 == 2) |
-                      (simdata$cid1 == 2 & simdata$cid2 == 1)] <- 1
-  damod <- lmitt(y ~ invalid_o, data = simdata, design = des)
+  copy_simdata$invalid_o <- 0
+  copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
+                      (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
+  damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
   expect_warning(cf <- coefficients(summary(damod)), "will be returned as NaN: invalid_o")
   nan_cf <- which(grepl("z._invalid_o", cf))
   expect_true(all(is.nan(cf[nan_cf, 2:4])))

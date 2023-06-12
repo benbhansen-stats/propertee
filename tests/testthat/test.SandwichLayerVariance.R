@@ -1934,11 +1934,12 @@ test_that("type attribute", {
 test_that("#119 flagging vcovDA entries as NaN", {
   ### factor moderator variable
   data(simdata)
-  simdata$o_fac <- as.factor(simdata$o)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
 
   #### lmitt.formula
-  damod <- lmitt(y ~ o_fac, data = simdata, design = des)
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
   expect_warning(vc <- vcov(damod), "will be returned as NaN: o_fac1, o_fac3")
 
   # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
@@ -1948,7 +1949,7 @@ test_that("#119 flagging vcovDA entries as NaN", {
   expect_true(all(!is.nan(vc[-nan_dim, -nan_dim])))
 
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = simdata), design = des)
+  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
   vc <- vcov(damod)[5:7, 5:7]
 
   #****************************************
@@ -1964,14 +1965,15 @@ test_that("#119 flagging vcovDA entries as NaN", {
   expect_true(all(!is.nan(vc[-1, -1])))
   
   ### valid continuous moderator variable
-  damod <- lmitt(y ~ o, data = simdata, design = des)
+  damod <- lmitt(y ~ o, data = copy_simdata, design = des)
   vc <- vcov(damod)
   expect_true(all(!is.nan(vc)))
   
   ### invalid continuous moderator variable
-  simdata$invalid_o <- 0
-  simdata$invalid_o[simdata$cid1 == 1 & simdata$cid2 == 1] <- 1
-  damod <- lmitt(y ~ invalid_o, data = simdata, design = des)
+  copy_simdata$invalid_o <- 0
+  copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
+                           (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
+  damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
   expect_warning(vc <- vcov(damod), "will be returned as NaN: invalid_o")
   nan_dim <- which(grepl("z._invalid_o", colnames(vc)))
   expect_true(all(is.nan(vc[nan_dim, ])))
