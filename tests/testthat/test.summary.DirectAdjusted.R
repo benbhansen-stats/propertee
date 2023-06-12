@@ -190,7 +190,7 @@ test_that("print.summary isn't confused by bad naming", {
   des <- rct_design(z ~ unitid(cid1, cid2), simdata)
 
   mod <- lmitt(y ~ abz.c, data = simdata, design = des)
-  expect_warning(co <- capture.output(summary(mod)), "enough degrees of freedom")
+  expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
   expect_true(!any(grepl("^abz\\.", co)))
@@ -198,7 +198,7 @@ test_that("print.summary isn't confused by bad naming", {
 
   # to force ` in variable names via as.factor
   mod <- lmitt(y ~ as.factor(abz.c), data = simdata, design = des)
-  expect_warning(co <- capture.output(summary(mod)), "enough degrees of freedom")
+  expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")
   expect_true(!any(grepl("^`abz\\.", co)))
   expect_equal(sum(grepl("^`z\\.", co)), 4)
 

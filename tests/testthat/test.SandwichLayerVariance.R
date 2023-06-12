@@ -1981,6 +1981,31 @@ test_that("#119 flagging vcovDA entries as NaN", {
   expect_true(all(!is.nan(vc[-nan_dim, -nan_dim])))
 })
 
+test_that(".check_df_moderator_estimates other warnings", {
+  data(simdata)
+  
+  # fail without a DirectAdjusted model
+  nodamod <- lm(y ~ x, simdata)
+  vmat <- vcov(nodamod)
+  cluster_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_error(.check_df_moderator_estimates(vmat, nodamod, cluster_ids),
+               "must be a DirectAdjusted")
+  
+  # invalid `data` arg
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ factor(o), design = des, data = simdata)
+  expect_error(.check_df_moderator_estimates(vmat, damod, cluster_ids,
+                                             cbind(y = simdata$y, z = simdata$z),
+                                             envir = parent.frame()),
+               "`data` must be a dataframe")
+  
+  # column names of vmat don't match moderator variable of model
+  expect_warning(
+    expect_warning(.check_df_moderator_estimates(vmat, damod, cluster_ids),
+                   "will be returned as NaN"),
+    "will not be returned as NaN")
+})
+
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)

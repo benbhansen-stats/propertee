@@ -59,49 +59,81 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
  
   # NA any invalid estimates due to degrees of freedom checks
-  if (length(x@absorbed_moderators) > 0) {
-    mod_vars <- model.matrix(as.formula(paste0("~-1+", x@absorbed_moderators)),
-                             get("data", environment(formula(x))))
-    mod_counts <- apply(
-      mod_vars,
-      2,
-      function(col) {
-        n_vals <- length(unique(col))
-        if (n_vals == 2) {
-          tapply(args$cluster, col, function(clusters) sum(table(clusters) > 0))
-        } else {
-          tapply(args$cluster, col, function(clusters) length(unique(clusters)))
-        }
-      },
-      simplify = FALSE)
-    
-    valid_mods <- vapply(mod_counts,
-                         function(counts) if (length(counts) == 2) all(counts > 2) else TRUE,
-                         logical(1L))
-    if (any(!valid_mods)) {
-      invalid_mods <- names(valid_mods)[!valid_mods]
-      warning(paste("The following subgroups do not have enough degrees of",
-                    "freedom for standard error estimates and will be returned",
-                    "as NaN:",
-                    paste(invalid_mods, collapse = ", ")),
-              call. = FALSE)
-      # find cells of the covariance matrix that correspond to txt/mod group
-      # interactions
-      invalid_cols <- paste0(paste0(var_names(x@Design, "t"), "."), "_", invalid_mods)
-      dims_to_na <- vapply(
-        invalid_cols,
-        grepl,
-        logical(length(colnames(meat))),
-        colnames(vmat),
-        fixed = TRUE
-      )
-      
-      vmat[apply(dims_to_na, 1, any), ] <- NaN
-      vmat[, apply(dims_to_na, 1, any)] <- NaN
-    }
-  }
+  vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
 
   attr(vmat, "type") <- "CR0"
+  return(vmat)
+}
+
+#' @title NaN vcovDA subgroup estimates that have insufficient degrees of freedom
+#' @param vmat variance-covariance matrix corresponding to `model`
+#' @param model \code{DirectAdjusted} object
+#' @param cluster character or factor vector providing cluster ID's for the
+#'  observations used to fit `model`
+#' @param model_data dataframe or name corresponding to the data used to fit `model`
+#' @param envir environment to get `model_data` from if it is a quote object name
+#' @return `vmat` with NaN's in the entries lacking sufficient degrees of freedom
+.check_df_moderator_estimates <- function(vmat, model, cluster, data = quote(data),
+                                          envir = environment(formula(model))) {
+  if (!inherits(model, "DirectAdjusted")) {
+    stop("`model` must be a DirectAdjusted object")
+  }
+
+  if (length(model@absorbed_moderators) == 0) {
+    return(vmat)
+  }
+  
+  if (inherits(data, "name")) {
+    data <- get(as.character(data), envir)
+  } else if (!inherits(data, "data.frame")) {
+    stop("`data` must be a dataframe or a quoted object name")
+  }
+
+  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@absorbed_moderators)),
+                           data)
+  mod_counts <- apply(
+    mod_vars,
+    2,
+    function(col) {
+      n_vals <- length(unique(col))
+      if (n_vals == 2) {
+        tapply(cluster, col, function(clusters) sum(table(clusters) > 0))
+      } else {
+        3 # necessarily enough degrees of freedom if there are at least 3 values 
+      }
+    },
+    simplify = FALSE)
+  
+  valid_mods <- vapply(mod_counts,
+                       function(counts) all(counts > 2),
+                       logical(1L))
+  if (any(!valid_mods)) {
+    invalid_mods <- names(valid_mods)[!valid_mods]
+    warning(paste("The following subgroups do not have sufficient degrees of",
+                  "freedom for standard error estimates and will be returned",
+                  "as NaN:",
+                  paste(invalid_mods, collapse = ", ")),
+            call. = FALSE)
+    # find cells of the covariance matrix that correspond to txt/mod group
+    # interactions
+    invalid_cols <- paste0(paste0(var_names(model@Design, "t"), "."), "_", invalid_mods)
+    dims_to_na <- apply(
+      vapply(invalid_cols, grepl, logical(length(colnames(vmat))),
+             colnames(vmat), fixed = TRUE),
+      1,
+      any
+    )
+    
+    if (all(!dims_to_na)) {
+      warning(paste("Could not find dimensions of `vmat` corresponding to",
+                    "degenerate standard error estimates. Degenerate standard",
+                    "error estimates will not be returned as NaN"))
+    }
+    
+    vmat[dims_to_na, ] <- NaN
+    vmat[, dims_to_na] <- NaN
+  }
+  
   return(vmat)
 }
 
