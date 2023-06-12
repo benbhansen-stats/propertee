@@ -324,8 +324,10 @@ bread.DirectAdjusted <- function(x, ...) {
   if (is.null(by)) {
     by <- var_names(x@Design, "u")
   }
-  ids <- tryCatch(
-    stats::expand.model.frame(x, by, na.expand = TRUE)[, by, drop = FALSE],
+  ids <- tryCatch({
+    expand_func <- if (inherits(x, "DirectAdjusted")) .expand.model.frame.DA else stats::expand.model.frame
+    expand_func(x, by, na.expand = TRUE)[, by, drop = FALSE]
+    },
     error = function(e) {
       mf <- eval(x$call$data, envir = environment(x))
       missing_cols <- setdiff(by, colnames(mf))

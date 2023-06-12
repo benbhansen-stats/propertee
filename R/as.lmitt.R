@@ -180,7 +180,17 @@ as.DirectAdjusted <- as.lmitt
     }
     quoted_call <- lm_model$call
 
-    fcall <- eval(quoted_call[[2]], eval_env)
+    fmla <- quoted_call[[2]]
+    if (is.name(fmla)) {
+      for (i in seq_len(length(sys.calls()))) {
+        try(fmla <- eval(fmla, envir = parent.frame(i)),
+            silent = TRUE)
+        if (!is.null(fmla) && inherits(fmla, "formula")) {
+          break()
+        }
+      }
+    }
+    fcall <- eval(fmla, eval_env)
     treatment_aliases <- attr(terms(fcall, specials = c("assigned", "a.", "z.", "adopters")), "specials")
     which_alias <- names(which(!vapply(treatment_aliases, is.null, logical(1))))
     assign(which_alias,

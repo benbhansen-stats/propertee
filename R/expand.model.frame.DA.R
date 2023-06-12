@@ -46,6 +46,7 @@
     ff[[2L]] <- f[[2L]]
     ff[[3L]][[2L]] <- f[[3L]]
     ff[[3L]][[3L]] <- gg[[2L]]
+    environment(ff) <- environment(f)
     if (!na.expand) {
       naa <- model$call$na.action
       subset <- model$call$subset
