@@ -89,6 +89,8 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
     stop("`data` must be a dataframe or a quoted object name")
   }
 
+  # For each moderator variable (whether it's been dichotomized or not), count
+  # the number of clusters with at least one member of each value
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@absorbed_moderators)),
                            model_data)
   mod_counts <- apply(
@@ -97,7 +99,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
     function(col) {
       n_vals <- length(unique(col))
       if (n_vals == 2) {
-        tapply(cluster, col, function(clusters) sum(table(clusters) > 0))
+        tapply(cluster, col, function(cluster_ids) length(unique(cluster_ids)))
       } else {
         3 # necessarily enough degrees of freedom if there are at least 3 values 
       }
