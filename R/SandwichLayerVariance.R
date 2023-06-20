@@ -65,14 +65,14 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @title NaN vcovDA subgroup estimates that have insufficient degrees of freedom
+#' @title NA vcovDA subgroup estimates that have insufficient degrees of freedom
 #' @param vmat variance-covariance matrix corresponding to `model`
 #' @param model \code{DirectAdjusted} object
 #' @param cluster character or factor vector providing cluster ID's for the
 #'  observations used to fit `model`
 #' @param model_data dataframe or name corresponding to the data used to fit `model`
 #' @param envir environment to get `model_data` from if it is a quote object name
-#' @return `vmat` with NaN's in the entries lacking sufficient degrees of freedom
+#' @return `vmat` with NA's in the entries lacking sufficient degrees of freedom
 .check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "DirectAdjusted")) {
@@ -113,7 +113,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
     invalid_mods <- names(valid_mods)[!valid_mods]
     warning(paste("The following subgroups do not have sufficient degrees of",
                   "freedom for standard error estimates and will be returned",
-                  "as NaN:",
+                  "as NA:",
                   paste(invalid_mods, collapse = ", ")),
             call. = FALSE)
     # find cells of the covariance matrix that correspond to txt/mod group
@@ -129,11 +129,11 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
     if (all(!dims_to_na)) {
       warning(paste("Could not find dimensions of `vmat` corresponding to",
                     "degenerate standard error estimates. Degenerate standard",
-                    "error estimates will not be returned as NaN"))
+                    "error estimates will not be returned as NA"))
     }
     
-    vmat[dims_to_na, ] <- NaN
-    vmat[, dims_to_na] <- NaN
+    vmat[dims_to_na, ] <- NA_real_
+    vmat[, dims_to_na] <- NA_real_
   }
   
   return(vmat)

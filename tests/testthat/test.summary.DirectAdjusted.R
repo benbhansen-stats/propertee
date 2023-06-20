@@ -133,7 +133,7 @@ test_that("catching bug with summary(as.lmitt", {
   expect_true(is(ss, "summary.DirectAdjusted"))
 })
 
-test_that("#119 flagging as NaN", {
+test_that("#119 flagging as NA", {
   ### factor moderator variable
   data(simdata)
   copy_simdata <- simdata
@@ -143,44 +143,44 @@ test_that("#119 flagging as NaN", {
   ### lmitt.formula
   damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
   expect_warning(cf <- coefficients(summary(damod)),
-                 "will be returned as NaN: o_fac1, o_fac3")
+                 "will be returned as NA: o_fac1, o_fac3")
 
   # Issue is in subgroup o=1, so *find that* entry in the vcov matrix
-  nan_cf <- which(grepl("z._o_fac1", rownames(cf)))
-  expect_true(all(is.nan(cf[nan_cf, 2:4])))
-  expect_true(all(!is.nan(cf[, 1])))
-  expect_true(all(!is.nan(cf[-nan_cf, ])))
+  na_cf <- which(grepl("z._o_fac1", rownames(cf)))
+  expect_true(all(is.na(cf[na_cf, 2:4])))
+  expect_true(all(!is.na(cf[, 1])))
+  expect_true(all(!is.na(cf[-na_cf, ])))
 
   #### lmitt.lm
   damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
   cf <- coefficients(summary(damod))
 
   #****************************************
-  ### Setting these to NaN manually only for testing purposes!
-  cf[1, 2:4] <- NaN
+  ### Setting these to NA manually only for testing purposes!
+  cf[1, 2:4] <- NA
   ### Remove these once #119 is addressed!!!!!
   #****************************************
 
   # Issue is in subgroup o=1, so the first entry in the vcov matrix
-  expect_true(all(is.nan(cf[1, 2:4])))
-  expect_true(all(!is.nan(cf[, 1])))
-  expect_true(all(!is.nan(cf[-1, ])))
+  expect_true(all(is.na(cf[1, 2:4])))
+  expect_true(all(!is.na(cf[, 1])))
+  expect_true(all(!is.na(cf[-1, ])))
 
   ### valid continuous moderator variable
   damod <- lmitt(y ~ o, data = copy_simdata, design = des)
   cf <- coefficients(summary(damod))
-  expect_true(all(!is.nan(cf)))
+  expect_true(all(!is.na(cf)))
   
   ### invalid continuous moderator variable
   copy_simdata$invalid_o <- 0
   copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
                       (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
   damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
-  expect_warning(cf <- coefficients(summary(damod)), "will be returned as NaN: invalid_o")
-  nan_cf <- which(grepl("z._invalid_o", cf))
-  expect_true(all(is.nan(cf[nan_cf, 2:4])))
-  expect_true(all(!is.nan(cf[, nan_cf])))
-  expect_true(all(!is.nan(cf[-nan_cf, ])))
+  expect_warning(cf <- coefficients(summary(damod)), "will be returned as NA: invalid_o")
+  na_cf <- which(grepl("z._invalid_o", cf))
+  expect_true(all(is.na(cf[na_cf, 2:4])))
+  expect_true(all(!is.na(cf[, na_cf])))
+  expect_true(all(!is.na(cf[-na_cf, ])))
 })
 
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.check_df_moderator_estimates}
 \alias{.check_df_moderator_estimates}
-\title{NaN vcovDA subgroup estimates that have insufficient degrees of freedom}
+\title{NA vcovDA subgroup estimates that have insufficient degrees of freedom}
 \usage{
 .check_df_moderator_estimates(
   vmat,
@@ -25,8 +25,8 @@ observations used to fit \code{model}}
 \item{envir}{environment to get \code{model_data} from if it is a quote object name}
 }
 \value{
-\code{vmat} with NaN's in the entries lacking sufficient degrees of freedom
+\code{vmat} with NA's in the entries lacking sufficient degrees of freedom
 }
 \description{
-NaN vcovDA subgroup estimates that have insufficient degrees of freedom
+NA vcovDA subgroup estimates that have insufficient degrees of freedom
 }
