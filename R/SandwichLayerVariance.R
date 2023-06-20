@@ -85,7 +85,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
-  } else if (!inherits(data, "data.frame")) {
+  } else if (!inherits(model_data, "data.frame")) {
     stop("`data` must be a dataframe or a quoted object name")
   }
 
