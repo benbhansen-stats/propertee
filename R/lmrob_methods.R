@@ -14,8 +14,8 @@
 ##' @exportS3Method 
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
-  if (!inherits(ctrl, "list")) {
-    stop("Model object must have a `control` element of type `list`")
+  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "lits")) {
+    stop("Model object must have a `control` element of type `lmrobCtrl` (robustbase 0.99-0 and newer) or `list`")
   }
   if (!(ctrl$method %in% c("SM", "MM"))) {
     stop("estfun.lmrob() supports only SM or MM estimates")
@@ -66,8 +66,8 @@ estfun.lmrob <- function(x, ...) {
 ##' @exportS3Method 
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control
-  if (!inherits(ctrl, "list")) {
-    stop("Model object must have a `control` element of type `list`")
+  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "lits")) {
+    stop("Model object must have a `control` element of type `lmrobCtrl` (robustbase 0.99-0 and newer) or `list`")
   }
   if (!(ctrl$method %in% c("SM", "MM"))) {
     stop("estfun.lmrob() supports only SM or MM estimates")
