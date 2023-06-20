@@ -1944,9 +1944,9 @@ test_that("#119 flagging vcovDA entries as NA", {
 
   # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
   na_dim <- which(grepl("z._o_fac1", colnames(vc)))
-  expect_true(all(is.nan(vc[na_dim, ])))
-  expect_true(all(is.nan(vc[, na_dim])))
-  expect_true(all(!is.nan(vc[-na_dim, -na_dim])))
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
 
   #### lmitt.lm
   damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
