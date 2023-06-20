@@ -1931,42 +1931,79 @@ test_that("type attribute", {
   expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
 })
 
-test_that("#119 flagging vcovDA entries as NaN", {
+test_that("#119 flagging vcovDA entries as NA", {
+  ### factor moderator variable
   data(simdata)
-  simdata$o <- as.factor(simdata$o)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
 
-  ### lmitt.formula
-  damod <- lmitt(y ~ o, data = simdata, design = des)
-  vc <- vcov(damod)
+  #### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NA: o_fac1, o_fac3")
 
-  #****************************************
-  ### Setting these to NaN manually only for testing purposes!
-  vc[1, ] <- NaN
-  vc[, 1] <- NaN
-  ### Remove these once #119 is addressed!!!!!
-  #****************************************
-
-  # Issue is in subgroup o=1, so the first entry in the vcov matrix
-  expect_true(all(is.nan(vc[1, ])))
-  expect_true(all(is.nan(vc[, 1])))
-  expect_true(all(!is.nan(vc[-1, -1])))
+  # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
+  na_dim <- which(grepl("z._o_fac1", colnames(vc)))
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
 
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o + o:assigned(des), data = simdata), design = des)
+  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
   vc <- vcov(damod)[5:7, 5:7]
 
   #****************************************
-  ### Setting these to NaN manually only for testing purposes!
-  vc[1, ] <- NaN
-  vc[, 1] <- NaN
+  ### Setting these to NA manually only for testing purposes!
+  vc[1, ] <- NA
+  vc[, 1] <- NA
   ### Remove these once #119 is addressed!!!!!
   #****************************************
 
-  # Issue is in subgroup o=1, so the first entry in the vcov matrix
-  expect_true(all(is.nan(vc[1, ])))
-  expect_true(all(is.nan(vc[, 1])))
-  expect_true(all(!is.nan(vc[-1, -1])))
+  # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
+  expect_true(all(is.na(vc[1, ])))
+  expect_true(all(is.na(vc[, 1])))
+  expect_true(all(!is.na(vc[-1, -1])))
+  
+  ### valid continuous moderator variable
+  damod <- lmitt(y ~ o, data = copy_simdata, design = des)
+  vc <- vcov(damod)
+  expect_true(all(!is.na(vc)))
+  
+  ### invalid continuous moderator variable
+  copy_simdata$invalid_o <- 0
+  copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
+                           (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
+  damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NA: invalid_o")
+  na_dim <- which(grepl("z._invalid_o", colnames(vc)))
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
+})
+
+test_that(".check_df_moderator_estimates other warnings", {
+  data(simdata)
+  
+  # fail without a DirectAdjusted model
+  nodamod <- lm(y ~ x, simdata)
+  vmat <- vcov(nodamod)
+  cluster_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expect_error(.check_df_moderator_estimates(vmat, nodamod, cluster_ids),
+               "must be a DirectAdjusted")
+  
+  # invalid `data` arg
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ factor(o), design = des, data = simdata)
+  expect_error(.check_df_moderator_estimates(vmat, damod, cluster_ids,
+                                             cbind(y = simdata$y, z = simdata$z),
+                                             envir = parent.frame()),
+               "`data` must be a dataframe")
+  
+  # column names of vmat don't match moderator variable of model
+  expect_warning(
+    expect_warning(.check_df_moderator_estimates(vmat, damod, cluster_ids),
+                   "will be returned as NA"),
+    "will not be returned as NA")
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
