@@ -267,10 +267,24 @@ test_that("#82 Informative error if design in weight/offset but not lmitt", {
 
 })
 
+test_that("#81 continuous moderator", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) , data = simdata)
+
+  mod <- lmitt(y ~ x, data = simdata, design = des)
+  expect_length(mod$coeff, 4)
+
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+
+  mod <- lmitt(y ~ x, data = simdata, design = des, absorb = TRUE)
+  expect_length(mod$coeff, 4)
+
+})
+
 options(save_options)
 #### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
 # This test below should NOT have `options()$flexida_message_on_unused_blocks`
-# step to FALSE. So it needs to sty below the restoration of options line above.
+# set to FALSE. So it needs to stay below the restoration of options line above.
 # Other tests should probably go above the restoration of options line.
 
 test_that("Message if design has block info but isn't used in lmitt", {
