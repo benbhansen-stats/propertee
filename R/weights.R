@@ -117,6 +117,9 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                              na.rm = TRUE)
     e_z <- block_tx_units / block_units
 
+    to_reset_to_0 <- e_z == 1 | e_z == 0
+    to_reset_to_0 <- to_reset_to_0[blocks(design)[, 1]]
+
     # Expand e_z to cluster-level
     e_z <- as.numeric(e_z[blocks(design)[, 1]])
 
@@ -125,6 +128,11 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     } else if (target == "ett") {
       weights <- txt + (1 - txt) * e_z / (1 - e_z)
     }
+
+    if (any(to_reset_to_0, na.rm = TRUE)) {
+      weights[to_reset_to_0] <- 0
+    }
+
   }
 
   return(.join_design_weights(weights, design, target = target, data = data))
