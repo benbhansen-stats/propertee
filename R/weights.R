@@ -1,4 +1,12 @@
 ##' @title Generate Direct Adjusted Weights
+##' @details In a block design, Weights are generated as a function of the ratio
+##'   of the number of treated units in a block versus the total number of units
+##'   in a block.
+##'
+##' In any blocks where that ratio is 0 or 1 (that is, all units in the block
+##' have the same treatment status), the weights will be 0. In effect this
+##' removes from the target population any block in which there is no basis for
+##' estimating either means under treatment or means under control.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},
 ##'   \code{rd_design()}, or \code{obs_design()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
