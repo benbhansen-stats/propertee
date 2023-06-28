@@ -281,6 +281,25 @@ test_that("#81 continuous moderator", {
 
 })
 
+test_that("non-integer units of assignment", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+
+  expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
+
+  simdata$cid1 <- as.character(simdata$cid1)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+
+  expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
+
+  simdata$cid1 <- as.factor(simdata$cid1)
+  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+
+  expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
+
+
+})
+
 options(save_options)
 #### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
 # This test below should NOT have `options()$flexida_message_on_unused_blocks`

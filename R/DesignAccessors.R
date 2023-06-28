@@ -628,8 +628,8 @@ setMethod("dichotomy<-", "Design", function(x, value) {
                                              collapse = "+"),
                                        " - 1"))
 
-  design_data <- stats::model.matrix(form_for_design, design@structure)
-  newdata_data <- stats::model.matrix(form_for_newdata, newdata)
+  design_data <- stats::model.frame(form_for_design, design@structure)
+  newdata_data <- stats::model.frame(form_for_newdata, newdata)
 
   merged <- merge(newdata_data, design_data, by = var_names(design, "u"),
                   sort = FALSE, ...)
