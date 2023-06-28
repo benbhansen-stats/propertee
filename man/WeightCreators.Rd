@@ -41,4 +41,6 @@ In any blocks where that ratio is 0 or 1 (that is, all units in the block
 have the same treatment status), the weights will be 0. In effect this
 removes from the target population any block in which there is no basis for
 estimating either means under treatment or means under control.
+
+If block is missing for a given observation, a weight of 0 is applied.
 }
