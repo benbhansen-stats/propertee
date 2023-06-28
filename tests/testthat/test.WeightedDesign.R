@@ -554,3 +554,15 @@ test_that("#130 zero weights with non-varying treatment in a block", {
   expect_true(sum(wts == 0) > 0)
 
 })
+
+test_that("#131 numeric blocks don't cause NA weights", {
+  data(simdata)
+  simdata$bid[simdata$bid == 3] <- 4
+
+  des <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  mod <-lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE, weights = "ate")
+  expect_length(mod$weights, nrow(simdata))
+  expect_true(all(!is.na(mod$weights)))
+
+
+})

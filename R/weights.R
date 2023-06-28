@@ -126,10 +126,10 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     e_z <- block_tx_units / block_units
 
     to_reset_to_0 <- e_z == 1 | e_z == 0
-    to_reset_to_0 <- to_reset_to_0[blocks(design)[, 1]]
+    to_reset_to_0 <- to_reset_to_0[as.character(blocks(design)[, 1])]
 
     # Expand e_z to cluster-level
-    e_z <- as.numeric(e_z[blocks(design)[, 1]])
+    e_z <- as.numeric(e_z[as.character(blocks(design)[, 1])])
 
     if (target == "ate") {
       weights <- txt / e_z + (1 - txt) / (1 - e_z)
