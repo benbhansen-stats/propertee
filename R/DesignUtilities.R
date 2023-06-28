@@ -122,10 +122,11 @@ forcing <- unit_of_assignment
 ##'   "unit_of_assignment"
 ##' @keywords internal
 .update_form_to_unit_of_assignment <- function(form) {
-  rename_list <- list("cluster" = as.name("unit_of_assignment"),
-                      "uoa" = as.name("unit_of_assignment"),
-                      "unitid" = as.name("unit_of_assignment"))
-  return(as.formula(do.call("substitute", list(form, rename_list))))
+  form <- deparse(form)
+  form <- gsub("cluster\\(", "unit_of_assignment(", form)
+  form <- gsub("uoa\\(", "unit_of_assignment(", form)
+  form <- gsub("unitid\\(", "unit_of_assignment(", form)
+  return(as.formula(form))
 }
 
 ##' Check if \code{Design} has access to a binary treatment
