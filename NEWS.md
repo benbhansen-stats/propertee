@@ -1,9 +1,15 @@
 # v0.3.2
 
+## Non-Breaking Changes
+* `vcovDA()` will return NA's for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA'd out.
+
 ## Bug Fixes
+* Functions for generating weights, `ate()` and `ett()`, return weights of 0 rather than infinity for blocks that contain treated units but no control units.
+* Prior covariate adjustment fits were previously incorporated into variance estimation differently depending on whether one created a `SandwichLayer` object before calling `lmitt()` or called `cov_adj()` in the `offset` argument of the `lmitt()` call. This has been corrected, and both ways return the same variance estimates.
 * Covariate adjustment models that admit rectangular bread matrices, such as those
 produced by `robustbase::lmrob`, are now accommodated given the reformulated estimating
-equations in versions `v0.1.1` and later
+equations in versions `v0.1.1` and later.
+* A contrasts error raised by `model.matrix()` in certain `cov_adj()` calls has been resolved.
 
 # v0.3.1
 
