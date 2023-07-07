@@ -131,9 +131,12 @@ setMethod("[", "PreSandwichLayer",
     }, error = function(e) {
       stats::model.frame(stats::delete.response(model_terms),
                          data = newdata,
-                         na.action = na.pass)
+                         na.action = na.pass,
+                         xlev = model$xlevels) # xlev arg follows `predict.lm`
   })
-  X <- stats::model.matrix(stats::delete.response(model_terms), data = newdata)
+  X <- stats::model.matrix(stats::delete.response(model_terms),
+                           data = newdata,
+                           contrasts.arg = model$contrasts) # contrasts.arg also follows `predict.lm`
   # use the `stats` package's method for handling model fits not of full rank
   p <- model$rank
   p1 <- seq_len(p)
