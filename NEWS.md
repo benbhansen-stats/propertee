@@ -1,5 +1,8 @@
 # v0.3.2
 
+# Added Features
+* Effect estimation for continuous moderator variables is now supported
+
 ## Non-Breaking Changes
 * `vcovDA()` will return NA's for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA'd out.
 
