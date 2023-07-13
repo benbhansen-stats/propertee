@@ -1921,7 +1921,7 @@ test_that(paste("HC0 binomial glm cmod",
                         check.attributes = FALSE))
 })
 
-test_that("HC1", {
+test_that("HC1/CR1/MB1", {
   set.seed(8431432)
   n <- 50
   Sigma <- diag(runif(n, 0.01, 2))
@@ -1935,13 +1935,24 @@ test_that("HC1", {
   dmod <- lmitt(lm(y ~ assigned(des), data = dat, weights = ate(des),
                    offset = cov_adj(cmod)), design = des)
   
+  # CR1
   expect_true(
-    all.equal(vmat <- vcovDA(dmod, type = "CR1"),
+    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
               50 / 48 * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod)),
               check.attributes = FALSE)
   )
-  expect_equal(attr(vmat, "type"), "CR1")
+  expect_equal(attr(cr1_vmat, "type"), "CR1")
   expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
+  
+  # HC1
+  expect_true(all.equal(hc1_vmat <- vcovDA(dmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
+  expect_equal(attr(hc1_vmat, "type"), "HC1")
+  expect_true(any(grepl("HC1", capture.output(summary(dmod, vcov.type = "HC1")))))
+  
+  # MB1
+  expect_true(all.equal(mb1_vmat <- vcovDA(dmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
+  expect_equal(attr(mb1_vmat, "type"), "MB1")
+  expect_true(any(grepl("MB1", capture.output(summary(dmod, vcov.type = "MB1")))))
 })
 
 test_that("type attribute", {
