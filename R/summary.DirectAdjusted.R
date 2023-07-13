@@ -13,7 +13,7 @@
 ##' @export
 ##' @method summary DirectAdjusted
 summary.DirectAdjusted <- function(object,
-                                   vcov.type = c("CR0", "MB0", "HC0"),
+                                   vcov.type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"),
                                    ...) {
   out <- summary(as(object, "lm"))
 

@@ -1215,7 +1215,7 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 lm w/o clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1298,7 +1298,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1375,7 +1375,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 lm w/ clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1484,7 +1484,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1579,7 +1579,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1649,7 +1649,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1741,7 +1741,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
+test_that(paste("HC0 binomial glm cmod",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
@@ -1818,7 +1818,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
+test_that(paste("HC0 binomial glm cmod",
                 "w/ clustering",
                 "imbalanced grps",
                 "damod is a strict subset of cmod data", sep = ", "), {
@@ -1919,6 +1919,29 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
+})
+
+test_that("HC1", {
+  set.seed(8431432)
+  n <- 50
+  Sigma <- diag(runif(n, 0.01, 2))
+  x1 <- rnorm(n)
+  z <- rep(c(0, 1), each = n / 2)
+  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
+  dat <- data.frame(x1=x1, z=z, y=y, c=sample(seq_len(n)))
+  
+  des <- rct_design(z ~ unitid(c), dat)
+  cmod <- lm(y ~ x1, dat)
+  dmod <- lmitt(lm(y ~ assigned(des), data = dat, weights = ate(des),
+                   offset = cov_adj(cmod)), design = des)
+  
+  expect_true(
+    all.equal(vmat <- vcovDA(dmod, type = "CR1"),
+              50 / 48 * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod)),
+              check.attributes = FALSE)
+  )
+  expect_equal(attr(vmat, "type"), "CR1")
+  expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
 })
 
 test_that("type attribute", {

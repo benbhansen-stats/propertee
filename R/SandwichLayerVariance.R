@@ -15,21 +15,24 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
+vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluster = NULL, ...) {
   type <- match.arg(type)
 
   var_func <- switch(
     type,
     "CR0" = .vcovMB_CR0,
     "MB0" = .vcovMB_CR0,
-    "HC0" = .vcovMB_CR0
+    "HC0" = .vcovMB_CR0,
+    "HC1" = .vcovMB_CR1,
+    "CR1" = .vcovMB_CR1,
+    "MB1" = .vcovMB_CR1
   )
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, cluster, ...)
 
   est <- do.call(var_func, args)
-  if (type %in% c("CR0", "MB0", "HC0")) {
+  if (type %in% c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1")) {
     # Since these are acronyms, need user input to distinguish which type to
     # print. Other methods should have their own functions so the type should be
     # assigned in those functions.
@@ -62,6 +65,22 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
 
   attr(vmat, "type") <- "CR0"
+  return(vmat)
+}
+
+#' Model-based standard errors with HC1 adjustment
+#' @keywords internal
+#' @rdname var_estimators
+.vcovMB_CR1 <- function(x, ...) {
+  args <- list(...)
+  
+  vmat <- .vcovMB_CR0(x, ...)
+  n <- length(args$cluster)
+  k <- ncol(estfun(x))
+  
+  vmat <- n / (n - k) * vmat
+  
+  attr(vmat, "type") <- "CR1"
   return(vmat)
 }
 
