@@ -147,24 +147,43 @@ vcov.DirectAdjustedPBPH <- function(object, ...) {
 }
 
 
-##' @importFrom sandwich bread meatCL
 .vcov_PBPH <- function(x, ...) {
   camod <- x$model$"(offset)"@fitted_covariance_model
 
-  b11 <- sandwich::bread(camod) / length(residuals(camod))
-  b22 <- sandwich::bread(x) / length(residuals(x))
   clstrs_ctrl <- x$model$"(offset)"@keys[,1]
   clstrs <- .make_uoa_ids(x)
   txt <- .bin_txt(x@Design)
 
 
-  m11 <-  sandwich::meatCL(camod, clstrs_ctrl) * length(residuals(camod))
-  m22 <-  sandwich::meatCL(x, clstrs) * length(residuals(x))
+  bnm <- .get_bread_and_meat_PBPH(camod, x, txt,
+                                  clstrs_ctrl,
+                                  clstrs)
 
-  b21 <- bread21(x, eta = x$coef[2])
 
-  covmat <- (b22 %*% (m22 + b21 %*% b11 %*% m11 %*% b11 %*% t(b21)) %*% b22)
+  covmat <- (bnm$b22 %*% (bnm$m22 + bnm$b21 %*% bnm$b11 %*% bnm$m11 %*% bnm$b11 %*% t(bnm$b21)) %*% bnm$b22)
   return(covmat)
+}
+
+##' @importFrom sandwich bread meatCL
+.get_bread_and_meat_PBPH <- function(mod1,
+                                     mod2,
+                                     treatment,
+                                     clusters_mod1,
+                                     clusters_mod2) {
+
+  b11 <- sandwich::bread(mod1) / length(residuals(mod1))
+  b22 <- sandwich::bread(mod2) / length(residuals(mod2))
+  b21 <- bread21(mod2, eta = mod2$coef[2])
+
+  m11 <-  sandwich::meatCL(mod1, clusters_mod1) * length(residuals(mod1))
+  m22 <-  sandwich::meatCL(mod2, clusters_mod2) * length(residuals(mod2))
+
+  return(list(b11 = b11,
+              b21 = b21,
+              b22 = b22,
+              m11 = m11,
+              m22 = m22))
+
 }
 
 ##' @importFrom stats model.response model.matrix
