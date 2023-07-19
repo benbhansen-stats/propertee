@@ -3,11 +3,19 @@
 \name{vcovDA}
 \alias{vcovDA}
 \alias{.vcovMB_CR0}
+\alias{.vcovMB_CR1}
 \title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
-vcovDA(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...)
+vcovDA(
+  x,
+  type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"),
+  cluster = NULL,
+  ...
+)
 
 .vcovMB_CR0(x, ...)
+
+.vcovMB_CR1(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model object}
@@ -31,5 +39,7 @@ given by the intercept and treatment variable terms in the ITT effect model
 Compute covariance-adjusted cluster-robust sandwich variance estimates
 
 Model-based standard errors with HC0 adjustment
+
+Model-based standard errors with HC1 adjustment
 }
 \keyword{internal}

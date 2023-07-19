@@ -42,7 +42,6 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
 }
 
 #' Model-based standard errors with HC0 adjustment
-#' @inheritParams vcovDA
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR0 <- function(x, ...) {
@@ -70,7 +69,6 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
 }
 
 #' Model-based standard errors with HC1 adjustment
-#' @inheritParams vcovDA
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR1 <- function(x, ...) {
