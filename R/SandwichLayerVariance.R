@@ -42,6 +42,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
 }
 
 #' Model-based standard errors with HC0 adjustment
+#' @inheritParams vcovDA
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR0 <- function(x, ...) {
@@ -69,16 +70,20 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
 }
 
 #' Model-based standard errors with HC1 adjustment
+#' @inheritParams vcovDA
 #' @keywords internal
 #' @rdname var_estimators
 .vcovMB_CR1 <- function(x, ...) {
   args <- list(...)
+  args$x <- x
+  args$cadjust <- FALSE
   
-  vmat <- .vcovMB_CR0(x, ...)
+  vmat <- do.call(.vcovMB_CR0, args)
   n <- length(args$cluster)
+  g <- length(unique(args$cluster))
   k <- ncol(estfun(x))
   
-  vmat <- n / (n - k) * vmat
+  vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
   
   attr(vmat, "type") <- "CR1"
   return(vmat)

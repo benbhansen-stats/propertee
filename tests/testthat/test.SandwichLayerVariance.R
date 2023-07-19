@@ -1923,6 +1923,7 @@ test_that(paste("HC0 binomial glm cmod",
 
 test_that("HC1/CR1/MB1", {
   set.seed(8431432)
+  # no clustering
   n <- 50
   Sigma <- diag(runif(n, 0.01, 2))
   x1 <- rnorm(n)
@@ -1932,13 +1933,13 @@ test_that("HC1/CR1/MB1", {
   
   des <- rct_design(z ~ unitid(c), dat)
   cmod <- lm(y ~ x1, dat)
-  dmod <- lmitt(lm(y ~ assigned(des), data = dat, weights = ate(des),
-                   offset = cov_adj(cmod)), design = des)
-  
+  dmod <- lmitt(y ~ 1, data = dat, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              50 / 48 * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod)),
+              50 / 48 * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
               check.attributes = FALSE)
   )
   expect_equal(attr(cr1_vmat, "type"), "CR1")
@@ -1953,6 +1954,36 @@ test_that("HC1/CR1/MB1", {
   expect_true(all.equal(mb1_vmat <- vcovDA(dmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
   expect_equal(attr(mb1_vmat, "type"), "MB1")
   expect_true(any(grepl("MB1", capture.output(summary(dmod, vcov.type = "MB1")))))
+
+  # clustering
+  n <- 50
+  g <- 5
+  icc <- 0.1
+  Sigma <- matrix(0, nrow = n, ncol = n)
+  for (i in seq_len(g)) {
+    Sigma[((i - 1) * n / g + 1):(i * (n / g)), ((i - 1) * n / g + 1):(i * (n / g))] <- (
+      (1-icc) * diag(1, nrow=n/g, ncol=n/g) + icc
+    )
+  }
+  x1 <- rnorm(n)
+  z <- rep(c(0, 1), c((g-2) * n/g, (g-3) * n/g))
+  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
+  dat <- data.frame(x1=x1, z=z, y=y, c=rep(seq_len(g), each = n/g))
+  
+  des <- rct_design(z ~ unitid(c), dat)
+  cmod <- lm(y ~ x1, dat)
+  dmod <- lmitt(y ~ 1, data = dat, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+  
+  # CR1
+  expect_true(
+    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
+              g / (g-1) * (n-1) / (n-2) * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod),
+                                                      cadjust=FALSE),
+              check.attributes = FALSE)
+  )
+  expect_equal(attr(cr1_vmat, "type"), "CR1")
+  expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
 })
 
 test_that("type attribute", {
