@@ -1,6 +1,6 @@
 # v0.3.2
 
-# Added Features
+## Added Features
 * Effect estimation for continuous moderator variables is now supported
 
 ## Non-Breaking Changes
