@@ -4,7 +4,7 @@
 \alias{summary.DirectAdjusted}
 \title{Create summary of \code{DirectAdjusted} object}
 \usage{
-\method{summary}{DirectAdjusted}(object, vcov.type = c("CR0", "MB0", "HC0"), ...)
+\method{summary}{DirectAdjusted}(object, vcov.type = c("CR0", "MB0", "HC0", "PBPH"), ...)
 }
 \arguments{
 \item{object}{DirectAdjusted object}

@@ -5,7 +5,7 @@
 \alias{.vcovMB_CR0}
 \title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
-vcovDA(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...)
+vcovDA(x, type = c("CR0", "MB0", "HC0", "PBPH"), cluster = NULL, ...)
 
 .vcovMB_CR0(x, ...)
 }

@@ -58,6 +58,7 @@ Collate:
     'lmitt.R'
     'lmrob_methods.R'
     'merge_preserve_order.R'
+    'pbph.R'
     'summary.Design.R'
     'summary.DirectAdjusted.R'
     'txt_fn.R'
