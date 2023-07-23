@@ -28,6 +28,6 @@ test_that("multiple variables in blocks", {
                    data = simdata)
 
   da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)
-  expect_true(length(da$coefficients) == 3)
+  expect_true(length(da$coefficients) == 4)
 
 })

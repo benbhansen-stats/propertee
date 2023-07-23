@@ -406,11 +406,9 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   ca <- cov_adj(cmod, newdata = simdata, design = des)
 
-  nolmittmod1 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
-                    simdata)
+  nolmittmod1 <- lm(y ~ z, simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
-  nolmittmod2 <- lm(scale(y, scale = FALSE) ~ scale(z, scale = FALSE) + 0,
-                    data = simdata, offset = ca)
+  nolmittmod2 <- lm(y ~ z, data = simdata, offset = ca)
   mod2 <- lmitt(y ~ 1, data = simdata, design = des, offset = stats::predict(cmod))
 
   ef_expected1 <- estfun(nolmittmod1)
@@ -1264,4 +1262,50 @@ test_that("printed effects aren't confused by bad naming", {
   expect_length(cos, 4)
   expect_true(all(!isTRUE(grepl("^as\\.factor", cos))))
   expect_true(all(grepl("^`z", cos)))
+})
+
+
+test_that("as.lmitt call inside mapply", {
+  min_df <- data.frame(schoolid = seq_len(20),
+                       response_col = rnorm(20),
+                       grade = rep(3:4, each = 10),
+                       adsy = rep(rep(c(0, 1), each = 5), 2))
+
+  min_des <- rct_design(adsy ~ unitid(schoolid), min_df)
+
+  res <- mapply(function(fmla) {
+    as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+  },
+  list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+  SIMPLIFY = FALSE)
+
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
+
+  res <- lapply(list(response_col ~ z.(), response_col ~ grade + grade:z.()),
+                function(fmla) {
+                  as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
+                })
+
+  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(sapply(sapply(res,
+                                       slot, "lmitt_call"),
+                                "[[", 1),
+                         deparse) == "as.lmitt"))
+
+})
+
+test_that("#81 continuous moderator shows appropriate coefficients", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) , data = simdata)
+
+  mod <- lmitt(y ~ x, data = simdata, design = des)
+  expect_length(mod$coeff, 4)
+  coefnames <- strsplit(capture.output(show(mod))[1], " +")[[1]]
+  coefnames <- coefnames[nchar(coefnames) > 0]
+  expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
 })

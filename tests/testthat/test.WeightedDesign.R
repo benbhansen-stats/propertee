@@ -452,3 +452,117 @@ test_that("subsetting of WeightedDesign", {
   expect_identical(ww[], ww)
   expect_identical(ww[1:10]@.Data, ww@.Data[1:10])
 })
+
+test_that("#130 zero weights with non-varying treatment in a block", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  # Make a block with no controls.
+  simdata$z[simdata$bid == 3] <- 1
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  # Make a block with no treatment
+  simdata$z[simdata$bid == 3] <- 0
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+
+  #### Data with an NA block doesn't break
+  data(STARdata)
+  STARdata$starkbinary <- STARdata$stark == "small"
+  STARdata$studentid <- seq_len(nrow(STARdata))
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  # Some students in STARdata do not have `schoolidk` and thus NA for a block
+
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  # Make a block with no controls.
+  STARdata$starkbinary[STARdata$schoolidk == 1] <- 1
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  # Make a block with no treatment
+  STARdata$starkbinary[STARdata$schoolidk == 1] <- 0
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+})
+
+test_that("#131 numeric blocks don't cause NA weights", {
+  data(simdata)
+  simdata$bid[simdata$bid == 3] <- 4
+
+  des <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  mod <-lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE, weights = "ate")
+  expect_length(mod$weights, nrow(simdata))
+  expect_true(all(!is.na(mod$weights)))
+
+
+})

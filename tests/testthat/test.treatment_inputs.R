@@ -5,53 +5,64 @@ test_that("Treatment inputs", {
   d <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   expect_true(is.numeric(treatment(d)[, 1]))
   expect_true(has_binary_treatment(d))
+  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = d))
 
   # numeric non-0/1
   d <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
   expect_true(is.numeric(treatment(d)[, 1]))
   expect_false(has_binary_treatment(d))
+  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = d))
 
   # factor 0/1
   simdata$foo <- as.factor(simdata$z)
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.numeric(treatment(d)[, 1]))
-  expect_true(has_binary_treatment(d))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
+  expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Factor treatment")
 
   # factor numeric non 0/1
   simdata$foo <- as.factor(simdata$o)
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.numeric(treatment(d)[, 1]))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
   expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Factor treatment")
 
   # factor string levels
   simdata$foo <- factor(letters[simdata$o])
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.character(treatment(d)[, 1]))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
   expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Factor treatment")
 
   # ordinal 0/1
   simdata$foo <- as.ordered(simdata$z)
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.numeric(treatment(d)[, 1]))
-  expect_true(has_binary_treatment(d))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
+  expect_true(is.ordered(treatment(d)[, 1]))
+  expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Ordered treatment")
 
   # ordinal numeric non 0/1
   simdata$foo <- as.ordered(simdata$o)
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.numeric(treatment(d)[, 1]))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
+  expect_true(is.ordered(treatment(d)[, 1]))
   expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Ordered treatment")
 
   # ordinal string levels
   simdata$foo <- ordered(letters[simdata$o])
-  expect_warning(d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata),
-                 "conversion")
-  expect_true(is.character(treatment(d)[, 1]))
+  d <- rct_design(foo ~ cluster(cid1, cid2), data = simdata)
+  expect_true(is.factor(treatment(d)[, 1]))
+  expect_true(is.ordered(treatment(d)[, 1]))
   expect_false(has_binary_treatment(d))
+  expect_error(lmitt(y ~ 1, data = simdata, design = d),
+               "Ordered treatment")
 
   # character
   simdata$foo <- letters[simdata$o]
@@ -94,6 +105,6 @@ test_that("Treatment inputs", {
                   unit = 1:4)
 
   expect_warning(rct_design(z ~ unitid(unit), data = d),
-                 "STRONGLY suggested")
+                 "STRONGLY")
 
 })

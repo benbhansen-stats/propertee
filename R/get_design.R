@@ -84,7 +84,7 @@
   if (sys.call(-1)[[1]] != ".weights_calc") {
     weight_design <- .find.design("weights")
   }
-  if (sys.call(-1)[[1]] != "cov_adj") {
+  if (sys.call(-1)[[1]] != "cov_adj" && sys.call(-1)[[1]] != "flexida::cov_adj") {
     covadj_design <- .find.design("offset")
   }
 

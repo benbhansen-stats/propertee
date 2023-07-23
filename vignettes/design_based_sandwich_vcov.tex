@@ -6,14 +6,9 @@ Often ``sandwich standard error'' conjures an expectation of standard
 errors that are model-based in the sense of assuming i.i.d.  data
 \((A_i,  W_{i}, X_i, Y_{0i}, \ldots Y_{Ki})\) and making inference conditional
 on the values of treatment assignments \(A \in
-\{0, \ldots, K\}\), weights \(W\) and covariates \(X\), if
-not the values of potential responses \(\{Y_k: k \leq K\}\).  (To
-simplify discussion we assume $i$ ranges over intact clusters, units
-assigned together to one or another of the treatment conditions; in
-the M-estimation context this assumption is
-non-restrictive. Particularly since we will allow case weights
-which may reflect differences in cluster
-size.)  With the i.i.d assumption, these model-based SEs are valid
+\{0, \ldots, K\}\), importance or frequency weights \(W\), and covariates \(X\), but
+not the values of potential responses \(\{Y_k: k \leq K\}\).  (This
+document takes $i$ to range over intact clusters.)  With the i.i.d assumption, these model-based SEs are valid
 even if the design specification isn't, provided that the outcome
 model is well-specified. The role of the study design is to provide
 analysis weights which, if respected, ensure desired interpretations
@@ -29,15 +24,18 @@ conditioning on
 
 where \(\mathcal{P}\) is a given partition of \{1,\ldots{}, n\} encoding
 a stratification. Of particular interest are standard errors for Hajek
-estimators, i.e.~estimators of form
-\[\hat{\mu}_k[\mathbf{v}] = \frac{\sum_i w_{ki} [\![A_i=k]\!] v_i}{\sum_i w_{ki}  [\![A_i=k]\!]}\]
+estimators, i.e. estimators of form
+\[\hat{\mu}_k[\mathbf{v}] = \frac{\sum_i \check{w}_{i[k]} [\![A_i=k]\!] v_i}{\sum_i \check{w}_{i[k]}  [\![A_i=k]\!]}\]
 and their differences
 \begin{equation}\label{eq:hajekdiff}
 \hat{\mu}_k[\mathbf{u}] - \hat{\mu}_0[\mathbf{v}].
 \end{equation}
-Note that the case weights $\{w_{ki}:i\leq n, k\leq K\}$ are permitted
-to differ by assigned condition.
-With $w_{ji} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
+The case weights $\{\check{w}_{i[k]}:i\leq n, k\leq K\}$ are the products of
+a frequency or importance weight $w_{i}$ and, as
+appopriate, a weighting factor representing a reciprocal of $i$'s
+probability (or odds) of assignment to $k$ (or to one of \{$k, \ldots,
+K$\}); in general differ by $k$.
+With $\check{w}_{i[j]} =[\mathbb{P}(A_{i}=j \mid \mathcal{Z}]^{-1}$ for
 $j=0, \ldots, K$,
 $\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ is the
 natural estimate of the effect of treatment $k$ within the
@@ -46,12 +44,12 @@ $n^{-1}\sum_{i=1}^{n}(y_{ki}-y_{k0})$.  This is also known as the
 sample average treatment effect. If the experimental observations are
 samples from a broader super-population, with sample inclusion
 probabilities $\pi_{1}, \ldots, \pi_{n}$, then setting
-$w_{ji} =\pi_{i}^{-1}[\mathbb{P}(A_{i}=j)]^{-1}$ for $j=0, \ldots, K$
+$\check{w}_{i[j]} =\pi_{i}^{-1}[\mathbb{P}(A_{i}=j)]^{-1}$ for $j=0, \ldots, K$
 makes $\hat{\mu}_k[\mathbf{y}_{k}] - \hat{\mu}_0[\mathbf{y}_{0}]$ into
 the corresponding natural\footnote{Neither of these estimators is unbiased, except in special
 cases where the conditioning and weighting structures are such that
-$\mathrm{Var}(\sum_i w_{ki} [\![A_i=k]\!] \mid \mathcal{Z}) = \mathrm{Var}(\sum_i
-w_{0i} [\![A_i=0]\!] \mid \mathcal{Z}) = 0$, but the biases are
+$\mathrm{Var}(\sum_i \check{w}_{i[k]} [\![A_i=k]\!] \mid \mathcal{Z}) = \mathrm{Var}(\sum_i
+\check{w}_{i[0]} [\![A_i=0]\!] \mid \mathcal{Z}) = 0$, but the biases are
 in various senses controlled. Under the i.i.d. sampling model that
 stands behind model-based variance estimates, for instance, they are
 consistent; taking the design perspective, BH and MF have preliminary
@@ -66,7 +64,7 @@ In one special case a design-based SE for \eqref{eq:hajekdiff} has been availabl
 \begin{itemize}
 \item  simple or complete random assignment within a single
 stratum, \(\mathcal{P} = \{\{1,\ldots,n\}\}\); with
-\item constant weights, i.e. there exist $w_0$ and $w_k$ s.t. $w_{ki}= w_k$ and $w_{0i}= w_0$ for each $i$; and
+\item constant weights, i.e. there exist $w_0$ and $w_k$ s.t. $\check{w}_{i[k]}= w_k$ and $\check{w}_{i[0]}= w_0$ for each $i$; and
 \item  \(\sum_i [\![a_i = k]\!]\geq 2\) and \(\sum_i [\![a_i = 0]\!] \geq 2\).
 \end{itemize}
 In this case the variance estimate used
@@ -108,7 +106,7 @@ has several important limitations.
 \item \label{it:prob-noweights}
   The unequal variances two-sample \(t\) statistic doesn't in itself accommodate
   clustering.  In particular, it doesn't allow weights figuring in \eqref{eq:hajekdiff},
-$\{w_{0i} :i\}$ or  $\{w_{ki} :i\}$, to vary, as is necessary
+$\{\check{w}_{i[0]} :i\}$ or  $\{\check{w}_{i[k]} :i\}$, to vary, as is necessary
 to address clustered treatment assignment by letting $v_{i}$, $u_{i}$,
 $y_{ki}$ and so on
 represent means over all observations clustered within unit of
@@ -185,9 +183,9 @@ multivariate root of the estimating function
 (\mu_{0}, \ldots, \mu_{K}) \mapsto
   \left[
 \begin{array}{c}
-\sum_i [\![a_i=K]\!] w_{Ki} (y_{Ki} - \mu_K) \\
+\sum_i [\![a_i=K]\!] \check{w}_{i[K]} (y_{Ki} - \mu_K) \\
 \vdots \\
-\sum_i [\![a_i=0]\!] w_{0i} (y_{0i} - \mu_0) 
+\sum_i [\![a_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0) 
 \end{array}
 \right]
 .
@@ -198,21 +196,21 @@ The information matrices $A(\mu_0, \ldots, \mu_K)$ corresponding to
 variance, then, we only need estimates of the covariance
 of~\eqref{eq:ee-hajekdiff}.  In the one-stratum case with multiple
 representatives of conditions $k$ and $0$, we can simply apply
-Neyman's two-sample unpooled variances SE to observations $\{ w_{ki}
-(y_{ki} - \mu_k) : A_i = k\}$ and $\{ w_{0i} (y_{0i} - \mu_0) : A_i =
+Neyman's two-sample unpooled variances SE to observations $\{ \check{w}_{i[k]}
+(y_{ki} - \mu_k) : A_i = k\}$ and $\{ \check{w}_{i[0]} (y_{0i} - \mu_0) : A_i =
 0\}$.  Impediment~\ref{it:prob-noweights} is solved.
 
 For standard errors of the difference of Hajek estimators within a
 subgroup $g$,
 \begin{equation*}
- \frac{\sum_i w_{ki} [\![A_i=k, G_{i} =g]\!] y_{ki}}{\sum_i w_{ki}
+ \frac{\sum_i \check{w}_{i[k]} [\![A_i=k, G_{i} =g]\!] y_{ki}}{\sum_i \check{w}_{i[k]}
      [\![A_i=k, G_{i}=g]\!]}
  -
-  \frac{\sum_i w_{0i} [\![A_i=0, G_{i} =g]\!] y_{0i}}{\sum_i w_{0i}
+  \frac{\sum_i \check{w}_{i[0]} [\![A_i=0, G_{i} =g]\!] y_{0i}}{\sum_i \check{w}_{i[0]}
      [\![A_i=0, G_{i}=g]\!]},
 \end{equation*}
 we can simply fold the subgroup indicator into the weights,
-weighting by $\{\tilde{w}_{ji}:j; i\} = \{w_{ji}[\![G_{i}=g]\!]: j; i\}$ as opposed to $\{w_{ji}:j;
+weighting by $\{\tilde{w}_{i[j]}:j; i\} = \{\check{w}_{i[j]}[\![G_{i}=g]\!]: j; i\}$ as opposed to $\{\check{w}_{i[j]}:j;
 i\}$. This solves the first part of
 Impediment~\ref{it:moderators-multiple-outcomes}.
 
@@ -220,12 +218,12 @@ Impediment~\ref{it:moderators-multiple-outcomes}.
 is the need for estimates of
 \begin{equation*}
   \mathrm{Cov}\left(
-    \frac{\sum_i w_{ki} [\![A_i=k]\!] v_{ki}}{\sum_i w_{ki}
+    \frac{\sum_i \check{w}_{i[k]} [\![A_i=k]\!] v_{ki}}{\sum_i \check{w}_{i[k]}
       [\![A_i=k]\!]} -
-    \frac{\sum_i w_{ki} [\![A_i=k]\!] v_{0i}}{\sum_i w_{ki}  [\![A_i=k]\!]},
-  \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{ki}}{\sum_i {w}_{ki}
+    \frac{\sum_i \check{w}_{i[k]} [\![A_i=k]\!] v_{0i}}{\sum_i \check{w}_{i[k]}  [\![A_i=k]\!]},
+  \frac{\sum_i \check{w}_{ki} [\![A_i=k]\!] u_{ki}}{\sum_i \check{w}_{ki}
       [\![A_i=k]\!]} -
-    \frac{\sum_i {w}_{ki} [\![A_i=k]\!] u_{0i}}{\sum_i {w}_{ki}  [\![A_i=k]\!]}
+    \frac{\sum_i \check{w}_{ki} [\![A_i=k]\!] u_{0i}}{\sum_i \check{w}_{ki}  [\![A_i=k]\!]}
   \right)
 \end{equation*}
 where $v_{ji}$ and $u_{ji}$ are observed only
@@ -263,33 +261,33 @@ stratum-wise contributions
 B_S((\mu_0, \ldots, \mu_K)) =
 \mathrm{Cov}\left(\left[
 \begin{array}{c}
-\sum_{i\in S} [\![A_i=K]\!] w_{ki} (y_{Ki} - \mu_K) \\
+\sum_{i\in S} [\![A_i=K]\!] \check{w}_{i[K]} (y_{Ki} - \mu_K) \\
 \vdots \\
-\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
+\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0)
 \end{array}
 \right] \mid \mathcal{Z}\right), \quad S \in \mathcal{P}.
 \end{equation}
-For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, $\mathrm{Var}\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}$ is not estimable, just as the variance $[(\# S)-1]^{-1}\sum_{i \in S} (y_{ki} - \bar{y}_k)^2$ is not estimable. On the other hand, the second moment
-\[ \mathbb{E}\left[\left\{ \sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\right]
+For any stratum $S$ and condition $k$ s.t.  $\sum_{i \in S}  [\![A_i=k]\!] =1$, $\mathrm{Var}\left\{ \sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k) \right\}$ is not estimable, just as the variance $[(\# S)-1]^{-1}\sum_{i \in S} (y_{ki} - \bar{y}_k)^2$ is not estimable. On the other hand, the second moment
+\[ \mathbb{E}\left[\left\{ \sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k) \right\}^2\right]
 \]
 \textit{is} estimable, by it sample realization \(\left\{ \sum_{i\in
-    S} [\![a_i=k]\!] w_{ki} (y_{ki} - \mu_k) \right\}^2\): in
+    S} [\![a_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k) \right\}^2\): in
 M-estimation, we're entitled to treat $\mu_k$ is a fixed constant, not
-a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.
+a random variable. Since the second moment  bounds the variance from above,  \(\{\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k)\}^2\) is a safe, conservative variance estimate.
 
 M-estimation doesn't help us to estimate
 \[
 \mathrm{Cov}\left\{
-\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k),
-\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
+\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k),
+\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0)
 \right\}
 \]
 but these terms aren't identified even for large strata with multiple
 representatives of either condition. When interest is in the
 difference $\hat{\mu}_k - \hat{\mu}_0$, conservatism leads us to
 ``impute'' the covariance value that maximizes the variance of that difference, that
-corresponding to a correlation of 1 between $\sum_{i\in S} [\![A_i=k]\!] w_{ki}
-(y_{ki} - \mu_k)$ and $\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} -
+corresponding to a correlation of 1 between $\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]}
+(y_{ki} - \mu_k)$ and $\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} -
 \mu_0)$. We can follow the same principle when approaching the problem
 from the perspective of $M$-estimation, whatever the representation of
 conditions $k$ and 0 within stratum $S$.
@@ -306,13 +304,13 @@ extending this work might be a suitable problem for a PhD student.
 1. Because we don't really estimate
 \begin{equation*}
   \mathrm{Cov}\left\{
-\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k),
-\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)
+\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k),
+\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0)
 \right\},
 \end{equation*}
 but only impute this covariance based on
-$\sum_{i\in S} [\![A_i=k]\!] w_{ki} (y_{ki} - \mu_k)$'s and
-$\sum_{i\in S} [\![A_i=0]\!] w_{0i} (y_{0i} - \mu_0)$'s estimated
+$\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k)$'s and
+$\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0)$'s estimated
 variances and presumed correlation of 1, we should consider software design that doesn't tempt the user into
 treating our stand-in for it as a real estimate, perhaps in some
 unanticipated situation.  This could be accomplished through a
@@ -346,7 +344,7 @@ among B-matrix estimation routines.
 \paragraph{Addressing Impediment~\ref{it:prob-covars}}
 If covariate \(X\)  are included in a linear regression specification
 \verb|y ~ a + x| with
-unit weights $\sum_{j=1}^{K}w_{ji}[\![a_{i}=j]\!]$ --- that is, the
+unit weights $\sum_{j=1}^{K}\check{w}_{i[j]}[\![a_{i}=j]\!]$ --- that is, the
 specification that without \(X\) would have engendered estimation
 of Hajek estimator differences as in \eqref{eq:ee-hajekdiff} ---
 then B-matrix estimation can still be done just
@@ -360,6 +358,7 @@ would indeed be interpretable as design-based SEs.%
 }.
 
 %<!-- init segment of document shared w/ Xinhe W, early Feb22, ends here-->
+
 Another approach to covariates is to have fit their coefficients in a separate and
 prior regression fit --- perhaps a robust linear fit; or perhaps a binary
 regression fit --- and then to contrast Hajek aggregates of residuals
@@ -434,7 +433,9 @@ calculation of \(A\) matrices.)
   \citep[p.373]{carroll2006measurement}.
 \end{quote}
 
+<!--
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "design_based_SEs_"
 %%% End:
+-->

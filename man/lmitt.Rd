@@ -47,9 +47,17 @@ accounting for the study design.
 }
 \details{
 The first argument to \code{lmitt()} should be a formula specifying the
-outcome on the left hand side. The right hand side should be either one of
-"1", requesting a singluar treatment effect, or a subgrouping variable,
-requesting a treatment effect be estimated for each subgroup.
+outcome on the left hand side. The right hand side of the formula can be any
+of the following:
+
+\itemize{
+\item \code{1}: Estimates a main treatment effect.
+\item a subgroup variable: Estimates a treatment effect within each level
+of your subgrouping variable.
+\item a contiuous moderator: Estimates a main treatment effect as well as
+a treatment by moderator interaciton. Note that the moderator is
+NOT automatically centered, if desired please center in your data.
+}
 
 Alternatively, \code{obj} can be a pre-created \code{lm} object. No
 modification is made to the formula of the object. See the help for
@@ -80,4 +88,7 @@ can obtain it's estimate from the returned \code{DirectAdjusted} object via
 block information that is not being utilized in the model. Note that this is
 \emph{not} an error, but could be an oversight. To disable this message, run
 \code{options("flexida_message_on_unused_blocks" = FALSE)}.
+
+Note: \code{lmitt()} does not currently support \code{factor} or
+\code{ordered} treatment variables.
 }
