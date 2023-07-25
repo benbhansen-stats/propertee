@@ -1198,7 +1198,7 @@ test_that(".vcovMB_CR0 doesn't accept `type` argument", {
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  expect_error(.vcovMB_CR0(m, type = "MB_CR0"), "Cannot override the `type`")
+  expect_error(.vcovMB_CR0(m, type = "CR0"), "Cannot override the `type`")
 })
 
 test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {

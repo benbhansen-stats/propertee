@@ -28,7 +28,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, cluster, ...)
-
+  
   est <- do.call(var_func, args)
   if (type %in% c("CR0", "MB0", "HC0")) {
     # Since these are acronyms, need user input to distinguish which type to
@@ -523,6 +523,67 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   return(out)
 }
 
+#' @keywords internal
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param ... arguments to pass to internal functions
+#' @return 
+.get_upsilon <- function(x, ...){
+  # weights
+  ws <- x$weights
+  # estimated treatment effect (tau_1)
+  tau1 <- x$coefficients
+  
+  # treatment assignments
+  design_obj <- x@Design
+  name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  df <- x$call$data
+  assignment <- df[, name_of_trt]
+  
+  # the indicators of z (treatment assignment)
+  n <- length(ws) # number of units in Q(?)
+  k <- length(c(0,1)) # unique(assignment)
+  z_ind <- matrix(nrow = n, ncol = k)
+  for (j in 1:k){
+    z_ind[,j] <- as.integer(assignment == c(0,1)[j])
+  }
+  
+  # stratum ids 
+  name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  stratum <- df[, name_of_blk]
+  # the indicators of b (stratum)
+  if (sum(x@Design@column_index == "b") == 1){
+    s <- length(unique(stratum)) # number of stratum
+    b_ind <- matrix(nrow = n, ncol = s)
+    for (j in 1:s){
+      b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
+    }
+  }
+  else{
+    blks <- unique(stratum)
+    s <- nrow(blks) # number of stratum
+    b_ind <- matrix(nrow = n, ncol = s)
+    for (j in 1:s){
+      b_ind[,j] <- cluster[,1] == blks[j,1]
+      for (i in 2:ncol(blks))
+        b_ind[,j] <- b_ind[,j] & (cluster[,i] == blks[j,i])
+      b_ind[,j] <- as.integer(b_ind[,j])
+    }
+  }
+  
+  # compute nuisance parameters p
+  wb <- matrix(replicate(s, ws), ncol = s) * b_ind
+  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
+  p1 <- p[2, ]
+  
+  if (is.null(x$call$offset))
+    resi <- x$call$data$y
+  else
+    resi <- x$call$offset@fitted_covariance_model$residuals
+  term1 <- ws * (resi - tau1)
+  term2 <- z_ind[,2] - b_ind %*% p1
+  mat <- term1 * term2
+  return(mat)
+}
 
 #' Design-based standard errors with HC0 adjustment
 #' @param x a fitted \code{DirectAdjusted} model
@@ -827,4 +888,3 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "DB0"), cluster = NULL, ...)
   }
   return(mat)
 }
-

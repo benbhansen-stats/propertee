@@ -24,7 +24,15 @@ setValidity("DirectAdjusted", function(object) {
 ##' @export
 setMethod("show", "DirectAdjusted", function(object) {
   coeffs <- object$coefficients
-  print(coeffs)
+  # Display only treatment effects
+  if (object@lmitt_fitted) {
+    # This should match any coefficients starting with the "txt." or "`txt."
+    toprint <- grepl(paste0("^\\`?", var_names(object@Design, "t"), "\\."),
+                     names(coeffs))
+    print(coeffs[toprint])
+  } else {
+    print(coeffs)
+  }
   invisible(object)
 })
 
@@ -39,7 +47,7 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
   cl <- match.call()
-  
+
   if (is.null(cl[["type"]])) {
     confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
     if (any(confint_calls)) {
@@ -48,12 +56,12 @@ vcov.DirectAdjusted <- function(object, ...) {
       cl$type <- type # will not append if type is NULL
     }
   }
-  
+
   cl$x <- cl$object
   argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
   new_cl <- cl[c(1L, argmatch)]
   new_cl[[1L]] <-  quote(vcovDA)
-  
+
   vmat <- eval(new_cl, parent.frame())
   return(vmat)
 }
@@ -70,7 +78,7 @@ vcov.DirectAdjusted <- function(object, ...) {
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   call <- match.call()
   call[[1L]] <- quote(stats::confint.lm)
-  
+
   ci <- eval(call, parent.frame())
   return(ci)
 }
@@ -142,16 +150,16 @@ bread.DirectAdjusted <- function(x, ...) {
     stop(paste("Cannot compute the Hessian of the ITT effect model estimating",
                "equations if the model fit does not have a `qr` element."))
   }
-  
+
   mm <- stats::model.matrix(x)
   # compute scaling factor
   nq <- nrow(mm)
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
-  
+
   out <- n * chol2inv(x$qr$qr)
   dimnames(out) <- list(colnames(mm), colnames(mm))
-  
+
   return(out)
 }
 
@@ -166,11 +174,11 @@ bread.DirectAdjusted <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted DirectAdjusted object with a SandwichLayer offset")
   }
-  
+
   # get the original estimating equations
   psi <- .base_S3class_estfun(x)
   phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
-  
+
   # define the row ordering using .order_samples() and insert rows of 0's into
   # the matrices where necessary while maintaining observation alignment
   ids <- .order_samples(x, verbose = FALSE)
@@ -182,7 +190,7 @@ bread.DirectAdjusted <- function(x, ...) {
   aligned_phi <- matrix(0, nrow = nrow(aligned_psi), ncol = ncol(phi),
                         dimnames = list(seq_len(nrow(aligned_psi)), colnames(phi)))
   aligned_phi[which(!is.na(ids$C_order)),] <- phi[ids$C_order[!is.na(ids$C_order)], ]
-  
+
   return(list(psi = aligned_psi, phi = aligned_phi))
 }
 
@@ -221,24 +229,24 @@ bread.DirectAdjusted <- function(x, ...) {
                "Design object (stored in a DirectAdjusted object) or a `cluster`",
                "argument specifying the columns with the units of assignment"))
   }
-  
+
   # Must be a DirectAdjusted object for this logic to occur
   if (!inherits(cluster, "character")) {
     cluster <- var_names(x@Design, "u")
   }
-  
+
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
     return(factor(Q_uoas, levels = unique(Q_uoas)))
   }
-  
+
   ids <- .order_samples(x, ...)
   Q_uoas <- .sanitize_Q_ids(x, cluster, ...)[ids$Q_order]
   C_uoas <- .sanitize_C_ids(x$model$`(offset)`, cluster, verbose = FALSE, ...)[
     ids$C_order[!is.na(ids$C_order)]]
   uoas <- c(Q_uoas, C_uoas[!(C_uoas %in% Q_uoas)])
-  
+
   return(factor(uoas, levels = unique(uoas)))
 }
 
@@ -276,12 +284,12 @@ bread.DirectAdjusted <- function(x, ...) {
   if (length(setdiff(by, var_names(x@Design, "u"))) > 0) {
     by <- setdiff(by, var_names(x@Design, "u"))
   }
-  
+
   # first sort the ID's in Q
   Q_ids <- .sanitize_Q_ids(x, by, sorted = TRUE, ...)
   Q_ix <- Q_ids$ix
   Q_ix <- stats::setNames(Q_ix, Q_ids$x)
-  
+
   # find the overlap of C and Q and dedupe the indices returned by `match()`
   C_ids <- .sanitize_C_ids(ca, by, verbose = verbose, sorted = TRUE, ...)
   Q_C_ix <- match(Q_ids$x, C_ids$x)
@@ -295,12 +303,12 @@ bread.DirectAdjusted <- function(x, ...) {
   }
 
   Q_C_ix <- C_ids$ix[Q_C_ix]
-  
+
   # append the remaining ID's in C if necessary
   C_ix <- C_ids$ix[!(C_ids$x %in% Q_ids$x)]
   C_ix <- c(Q_C_ix, C_ix)
   C_ix <- stats::setNames(C_ix, c(Q_ids$x, C_ids$x[!(C_ids$x %in% Q_ids$x)]))
-  
+
   return(list(Q_order = Q_ix, C_order = C_ix))
 }
 
@@ -335,7 +343,7 @@ bread.DirectAdjusted <- function(x, ...) {
     })
   out <- apply(ids, 1, function(...) paste(..., collapse = "_"))
   names(out) <- NULL
-  
+
   if (sorted) {
     if (suppressWarnings(any(is.na(as.numeric(out))))) {
       out <- sort(out, index.return = TRUE)
@@ -343,7 +351,7 @@ bread.DirectAdjusted <- function(x, ...) {
       out <- sort(as.numeric(out), index.return = TRUE)
     }
   }
-  
+
   return(out)
 }
 
@@ -360,7 +368,6 @@ update.DirectAdjusted <- function(object, ...) {
              "instead."))
 }
 
-
 #' Contributions to estimating equations from a \code{DirectAdjusted} model with
 #' absorbed intercepts
 #' @param x a fitted \code{DirectAdjusted} object
@@ -371,7 +378,6 @@ update.DirectAdjusted <- function(object, ...) {
 .estfun_DB_blockabsorb <- function (x, ...){
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
     # if the model involves covariance adjustment
-    # has a sandwich layer offset
     temp <- .align_and_extend_estfuns(x)[["psi"]]
   }
   else
@@ -403,3 +409,4 @@ update.DirectAdjusted <- function(object, ...) {
   mat <- cbind(matrix(0, nrow = nrow(mat), ncol = ncol(temp) - ncol(mat)), mat)
   return(mat)
 }
+
