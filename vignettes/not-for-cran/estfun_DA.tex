@@ -137,31 +137,31 @@ I conjecture these decisions can be made in such away that
 
 The estimating equation $\psi(\vec{z}; \rho, \beta)=0$,
 $\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\vec{z}_{i};
-  \alpha, \tau, \beta)=0$, with $\alpha=\rho_{0}$, $\tau_{j}=\rho_{j}-\alpha$ and $\psi(\cdot)$ now given by, writing $\owt[] \defeq \owt{}$, 
+  \alpha, \tau, \beta)=0$, with $\psi(\cdot; \cdot)$ as in \eqref{eq:14} immediately below.  Writing $\tau_{j}=\rho_{j}-\rho_{0}$ and introducing the intercept parameter ``$\alpha$,''  for the time being one-dimensional with $\alpha_{0}=\rho_{0}$, while abbreviating ``$\owt{}$'' as ``$\owt[]$,'' 
 \begin{equation} \label{eq:14}
          \psi(\vec{z}_{i};
   \alpha, \tau, \beta) =
          \left( \begin{array}{l}
            \indicator{i \in \bigcup \mathcal{Q}}\owt[] \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\\
+                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[1]}] [y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \alpha-\tau_{1}]\indicator{a_{i}=1}\\
+                  \alpha_{0}-\tau_{1}]\indicator{a_{i}=1}\\
                   \vdots \\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[k]}] [y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \alpha - \tau_{k}]\indicator{a_{i}=k}\\
+                 \alpha_{0} - \tau_{k}]\indicator{a_{i}=k}\\
                 \end{array}\right), 
 \end{equation}
 the omission of a ``$\indicator{a_{i}=0}$'' factor from the topmost
 expression being intentional and deliberate. It doesn't affect the solution
-$(\alpha, \tau_{1}, \ldots, \tau_{k})$ because this solution also satisfies
+$(\alpha_{0}, \tau_{1}, \ldots, \tau_{k})$ because this solution also satisfies
 \begin{equation} \label{eq:16}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt[][y_{i}[a_i] - g(\vec{x}_{i}\beta)-
-                  \alpha-\tau_{j}]\indicator{a_{i}=j}, \text{ each } j=1, \ldots, k;
+                  \alpha_{0}-\tau_{j}]\indicator{a_{i}=j}, \text{ each } j=1, \ldots, k;
 \end{equation}
 and therefore
 \begin{equation*}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt[]\big[y_{i}[a_i] - g(\vec{x}_{i}\beta)-
-                  \alpha-\sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\indicator{a_{i}
+                  \alpha_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\indicator{a_{i}
                   \neq 0}.
 \end{equation*}
 The complement of condition $\indicator{a\neq 0}$ being
@@ -169,11 +169,11 @@ $\indicator{a=0}$, under which
 $\sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}=0$, it follows from \eqref{eq:16} that
 \begin{align*}
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[{[0]}]\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \alpha\big]\indicator{a_{i}
+                  \alpha_{0}\big]\indicator{a_{i}
              =0}\\
            & \Updownarrow \\
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[]\big[y_{i}[a_i] - g(\vec{x}_{i}\beta)-
-                  \alpha - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big].
+                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big].
 \end{align*}
 One advantage of this representation is that it better represents what
 \texttt{lm()} ordinarily does, when given a factor treatment
@@ -183,13 +183,15 @@ we have no use for and will be done away with via absorption (\S~\ref{sec:accomm
 \subsection{The covariance we're trying to
   produce}\label{sec:covar-were-trying}
 
-Let $\hat\beta$, $\hat\alpha$ and $\hat\tau$ solve
+Let $\hat\beta$, $\hat{\alpha}$ and $\hat\tau$ solve
 \[\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{z}_{i}; \beta )
   =0\quad\text{and}\quad
 \sum_{j\in \bigcup \mathcal{Q}}\psi(\vec{z}_{j}; \tau,
 \alpha, \beta )  =0
   \]
-  in $\beta$ and $\tau$, whereas $\beta_{0}$, $\alpha_{0}$ and $\tau_{0}$ solve 
+  in $\beta$ and $\tau$, whereas $\beta_{(n)}$, $\alpha_{(n)}$ and $\tau_{(n)}$ solve or nearly solve\footnote{%
+In actuality we only need the estimator sequence to be consistent for the deterministic sequences $(\beta_{(n)}:n)$, $(\alpha_{(n)}:n)$ and $(\tau_{(n)}:n)$, i.e. $|\hat\beta - \beta_{(n)}|_{2}$, $|\hat\alpha - \alpha_{(n)}|_{2}$ and $|\hat\tau - \tau_{(n)}|_{2}$ are all $o_{P}(1)$.%
+}
 \[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\vec{Z}_{i}; \beta )
   =0\quad\text{and}\quad
 \sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\vec{Z}_{j}; \tau,
@@ -199,7 +201,7 @@ In these expectations and those that follow, $\vec{x}_{i}$ and $w_{i}$
 are taken as fixed but $A_{i}$ and/or potential outcomes $(Y_{i}[a]:
 a=0, \ldots, k)$ may be random according as we follow a design- or
 model-based framework; see \S~\ref{sec:des-vs-mod-based}.
-  Writing
+  Write
   \begin{align*}
 %    \label{eq:13}
     A(\alpha, \beta, \tau) &= \left(
@@ -222,37 +224,36 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
 \right),
   \end{align*}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
-that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively,
-  define 
+that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
   \begin{align*}
-   \tilde\beta
-    \defeq& \beta_{0} + A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{0})
+   \tilde{\beta}_{(n)}
+    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
   \quad \text{and}\\
-    \left(\begin{array}{c}\tilde\alpha\\ \tilde\tau \end{array}\right)
-    \defeq& \left(\begin{array}{c}\alpha_{0}\\
-                    \tau_{0} \end{array}\right)
-    + A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0})\left(
+    \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
+    \defeq& \left(\begin{array}{c}\alpha_{(n)}\\
+                    \tau_{(n)} \end{array}\right)
+    + A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{0})\\
+      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\\
       n^{-1}\sum_{j\in \bigcup
                  \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{0},\beta_{0} )
+                 \tau_{(n)},\beta_{(n)} )
     \end{array}
 \right)\\
     \\
-               &=\left(\begin{array}{c}\alpha_{0}\\
-                         \tau_{0} \end{array}\right) +
-    A_{22}^{-1}(\alpha_{0}, \tau_{0})\times \\
+               &=\left(\begin{array}{c}\alpha_{(n)}\\
+                         \tau_{(n)} \end{array}\right) +
+    A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
     & \left[
                  n^{-1}\sum_{j\in \bigcup
                  \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{0},\beta_{0} ) - A_{21}(\beta_{0}) A_{11}^{-1}(\beta_{0})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{0})\right],
+                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],
 \end{align*}
 known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
 
 
-Observe that these expressions define the same $\tilde\beta$ and $\tilde\tau$
+Observe that these expressions define the same $\tilde{\beta}_{(n)}$ and $\tilde{\tau}_{(n)}$
   irrespective of the choice of nonzero constants $n_{\mathcal{C}}$
   and $n$.  To promote alignment with existing \texttt{sandwich}
   functions%
@@ -271,23 +272,25 @@ $\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
 (not clusters) in the covariance and in the combined samples,
 respectively.
 
-Assuming that $|\hat\beta -\tilde\beta|_{2}$, 
-$|\hat\tau -\tilde\tau|_{2} \stackrel{P}{\rightarrow} 0$,
-$A_{11}(\beta_{0})$ and $A_{22}(\beta_{0}, \tau_{0})$ are nonsingular
-with eigenvalues bounded away from 0 and $A_{11}(\cdot)$, $A_{21}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
+Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
+$|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
+$A_{11}(\beta_{(n)})$ and $A_{22}(\beta_{(n)}, \tau_{(n)})$ are nonsingular
+with eigenvalues bounded away from 0; and $A_{11}(\cdot)$, $A_{21}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
 regular\footnote{E.g, they admit of Lipschitz constants: see \S~9.8,
   \bibentry{keener2010TheorStats}, while bearing in mind issues raised
-  by \bibentry{feng2014exact}.}, 
-we have the covariance approximation characteristic of M-estimation,
+  by \bibentry{feng2014exact}.}. 
+Then we have the covariance approximation characteristic of M-estimation,
 \begin{align*} \operatorname{Cov}([\hat\beta',\hat\alpha', \hat\tau']) \approx&
-  \operatorname{Cov}([\tilde\beta',\hat\alpha',\tilde\tau'])\\
+  \operatorname{Cov}([\tilde{\beta}_{(n)}',\hat{\alpha}_{(n)}',\tilde{\tau}_{(n)}'])\\
   &=
-  A^{-1}(\alpha_{0}, \beta_{0}, \tau_{0}) \operatorname{Cov}\left(
+    A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)}) \times \\
+  &\hspace{1.5em} \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{0} )\\
-       n^{-1}\sum_{j=1}^{n}\psi(\vec{Z}_{j}; \tau_{0}, \alpha_{0}, \beta_{0} )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)} )\\
+       n^{-1}\sum_{j=1}^{n}\psi(\vec{Z}_{j}; \tau_{(n)}, \alpha_{(n)}, \beta_{(n)} )
      \end{array}
-\right)A^{-t}(\alpha_{0}, \beta_{0}, \tau_{0})
+    \right)
+  A^{-t}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})
 \end{align*}
 (recalling that we have so defined $\psi(\cdot)$ that $\psi(\vec{Z}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
@@ -415,8 +418,8 @@ defining $\tilde{k}$ by 1 random matrices
 \end{equation}
 we have in the model-based formulation 
 \begin{multline*}
-  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \tilde{\psi}(\vec{Z}_{i}; \tau_{0},\alpha_{0},
-    \beta_{0})\right) = \\
+  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \tilde{\psi}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
+    \beta_{(n)})\right) = \\
   M_{22} -
                                  \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
@@ -426,8 +429,8 @@ regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply when
 calculating the bread matrix.   In the design-based formulation there
 would likely be approximate equality here, noting that in that setting
-$\hat{A}_{21}(\beta_{0})$ and $\hat{A}_{11}(\beta_{0})$ needn't
-coincide with ${A}_{21}(\beta_{0})$ and ${A}_{11}(\beta_{0})$, respectively.
+$\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
+coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.
 \subsection{Model- and Design-based}\label{sec:des-vs-mod-based}
 
 In the model-based perspective, expected value and covariance are
@@ -494,7 +497,7 @@ estimating function \eqref{eq:14} becomes
 \right).
 \end{multline}
 
-Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.  If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14} with ``$\alpha_0$'' for ``$\alpha$,'' i.e.
+Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.  If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14}, i.e.
 \begin{equation*}
          \psi(\vec{z}_{i};
   \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
@@ -943,18 +946,18 @@ with covariates.
   \left(
     \begin{array}{c}
            y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha - \beta m_{i}-
+                  \alpha_{0} - \beta m_{i}-
       \sum_{j=1}^{k}(\tau_{j}+\delta_{j}m_{j})\indicator{a_{i}=j} \\
       \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha - \beta m_{i}-
+                  \alpha_{0} - \beta m_{i}-
       \sum_{j=1}^{k}(\tau_{j}+\delta_{j} m_{i})\indicator{a_{i}=j}
       \big] m_{i}\\
       \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha - \beta m_{i}-
+                  \alpha_{0} - \beta m_{i}-
       (\tau_{1}+\delta_{1} m_{i}) \big](m_{i}\indicator{a_{i}=1})\\      
 \vdots \\
       \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha - \beta  m_{i}-
+                  \alpha_{0} - \beta  m_{i}-
       (\tau_{k}+\delta_{k} m_{i}) \big](m_{i}\indicator{a_{i}=k})\\      
          {}  [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
                   \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{a_{i}=1}\\
