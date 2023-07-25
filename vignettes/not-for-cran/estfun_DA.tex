@@ -53,9 +53,9 @@ There are random estimating functions $\Phi(\mathbf{Z}; \beta ) =
 \beta) : i]'$, an $n$ (number of elements) by $p$ matrix,  and 
        $\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i};
        \rho, \beta): i]'$, \textit{also} an $n$ by $k$ matrix, with 
-       $\phi(\vec{Z}_{i}; \beta)=$ covariance model estfun
-       contrib times $\indicator{i \in \bigcup \mathcal{C}}$ and, for
-       now:
+       $\phi(\vec{Z}_{i}; \beta)$ equal to the product of the covariance
+       regression estimating functions with $\indicator{i \in \bigcup \mathcal{C}}$
+       and $\grave{\Psi}(\cdot; \cdot)$ the estimating functions defining the comparison regression.  That is, for now:
 \begin{equation}
          \label{eq:5}
          \grave{\psi}(\vec{Z}_{i}; \rho, \beta) =\\
@@ -411,7 +411,7 @@ equivalence holds in general.)
 Alternately put,
 defining $\tilde{k}$ by 1 random matrices 
 \begin{equation}\label{eq:10}
-    \tilde{\psi}(\vec{Z}; \tau, \alpha, 
+    \psi_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
@@ -420,7 +420,7 @@ defining $\tilde{k}$ by 1 random matrices
 \end{equation}
 we have in the model-based formulation 
 \begin{multline*}
-  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \tilde{\psi}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
+  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
                                  \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
@@ -429,10 +429,24 @@ we have in the model-based formulation
                                \end{multline*}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
+
+
 In the design-based formulation there
-would likely be approximate equality here, noting that in that setting
+would likely be approximate equality here, as in that setting
 $\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
-coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.
+coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
+
+This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding $\tilde{A}_{21}(\cdot)$ to use
+\begin{equation*}
+      \tilde{\psi}_\text{DA}(\vec{Z}; \tau, \alpha, 
+    \beta) = \tilde{\psi} (\vec{Z}; \tau,\alpha, 
+    \beta) -
+    \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
+    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \beta)
+\end{equation*}
+in combination with $\tilde{A}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
+$\tilde{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing. 
 
 \subsection{Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
 
