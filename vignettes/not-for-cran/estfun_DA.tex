@@ -74,23 +74,21 @@ where
 \begin{itemize}
 \item $Y_{i}[j]$ represents $i$'s potential outcome following
   assignment to condition $i$;
-\item $A_i$ is the treatment assignment of $i$'s cluster $[i]$;
-\item $\vec{Z}_i = (Y_i[0],\ldots, Y_{i}[k], \vec{x}_i, m_{i}, w_i, A_i)$, where $\vec{x}_i$, $m_{i}$ and $w_i$ are covariates, an optional moderator variable and a
+\item $A_{i}$ is the treatment assignment of $i$'s cluster $[i]$;
+\item $\vec{Z}_{i} = (Y_{i}[0],\ldots, Y_{i}[k], \vec{x}_{i}, m_{i}, w_{i}, A_{i})$, where $\vec{x}_{i}$, $m_{i}$ and $w_{i}$ are covariates, an optional moderator variable and a
   frequency or importance weight associating with $i$ (1 if no such weight was
   given); 
 \item $\owt[{[j]}]$ is either $w_i$ or, 
    if requested by the user, $w_{i}$'s product with an
   odds- or inverse probability-based weight attaching to $i$'s
-  assignment unit $[i]$ under assignment $j$;
-\item and $\tau_{j} = \rho_{j}-\rho_{0}$, for $j=1,
-\ldots, k$.
+  assignment unit $[i]$ under assignment $j$.
 \end{itemize}
 (I say ``for now'' because \eqref{eq:14} will present a
 $\psi(\cdot)$ with equivalent solutions that is better aligned with
 \texttt{lm()}'s default treatment effect parameterizations, and
 \eqref{eq:9} in \S~\ref{sec:accomm-interc-via} below will generalize $\psi()$'s definition
 to add block-specific intercepts.)
-In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
+The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
 Suppose that we define \texttt{estfun.DirectAdjusted()} associating
 with a direct adjustment model a matrix of evaluated estimating function
@@ -139,8 +137,7 @@ I conjecture these decisions can be made in such away that
 
 The estimating equation $\psi(\vec{z}; \rho, \beta)=0$,
 $\psi(\cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\vec{z}_{i};
-  \alpha, \tau, \beta)=0$, with $\alpha=\rho_{0}$, $\tau_{j}=\rho_{j}-\alpha$ for
-$1\leq j \leq k$ and $\psi(\cdot)$ now given by, writing $\owt[] \defeq \owt{}$, 
+  \alpha, \tau, \beta)=0$, with $\alpha=\rho_{0}$, $\tau_{j}=\rho_{j}-\alpha$ and $\psi(\cdot)$ now given by, writing $\owt[] \defeq \owt{}$, 
 \begin{equation} \label{eq:14}
          \psi(\vec{z}_{i};
   \alpha, \tau, \beta) =
@@ -483,11 +480,11 @@ estimating function \eqref{eq:14} becomes
     \begin{array}{c}
            [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} -
-      \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}]\indicator{b_{i}=1}\\
+      \tau_{a_{i}}]\indicator{b_{i}=1}\\
       \vdots\\ 
           {} [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{s} -
-      \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}]\indicator{b_{i}=s}\\      
+      \tau_{a_{i}}]\indicator{b_{i}=s}\\      
          {}  [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
                   \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{a_{i}=1}\\
                   \vdots \\
@@ -497,13 +494,13 @@ estimating function \eqref{eq:14} becomes
 \right).
 \end{multline}
 
-If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14} with ``$\alpha_0$'' for ``$\alpha$,'' i.e.
+Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.  If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14} with ``$\alpha_0$'' for ``$\alpha$,'' i.e.
 \begin{equation*}
          \psi(\vec{z}_{i};
   \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
-         \left( \begin{array}{r}
+         \left( \begin{array}{l}
            y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha_0 - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\\
+                  \alpha_0 - \tau_{a_{i}}\\
            {}[y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \alpha_0-\tau_{1}]\cdot \indicator{a_{i}=1}\\
                   \vdots \\
@@ -543,32 +540,47 @@ $0= \sum_{i}\acute{\psi}(\vec{z}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
   \absorbInterceptsEF(\vec{z}; \mathbf{p}) &=
-                                                 \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
+                                             \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}\left(%
-                                                 \left(
-                                                 \begin{array}{ccc}
-                                                   (\indicator{a_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{a_{i}=1}-p_{1s})\indicator{b_{i}=s}
-                                                   \\
-                                                   \vdots & \vdots &
-                                                                     \vdots
-                                                   \\
-                                                   (\indicator{a_{i}=k}-p_{k1})\indicator{b_{i}=1}&\ldots&(\indicator{a_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                                   
-                                                 \end{array}
+    \left(
+    \begin{array}{ccc}
+      % (\indicator{a_{i}=0}-p_{01})\indicator{b_{i}=1}
+      % &\ldots
+      % &
+      %   (\indicator{a_{i}=0}-p_{0s})\indicator{b_{i}=s}
+      % \\
+      (\indicator{a_{i}=1}-p_{11})\indicator{b_{i}=1}
+      &\ldots
+      &
+        (\indicator{a_{i}=1}-p_{1s})\indicator{b_{i}=s}
+      \\
+      \vdots & \vdots & \vdots \\
+      (\indicator{a_{i}=k}-p_{k1})\indicator{b_{i}=1}
+      &\ldots
+      &
+        (\indicator{a_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
   \right)%
   \right) ;\nonumber \\
   \acute{\psi}(\vec{z}; \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber \\
 &\left(
-                                             \begin{array}{c}                                               
-           \big[y_{i}[a_{i}]
-                                               -
-                                               g(\vec{x}_{i}\beta)-\tau_{a_{i}}\indicator{a_{i}>0}\big](
-                                               \indicator{a_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
-                  \vdots \\
-{}           \big[y_{i}[a_{i}]
-                                               - g(\vec{x}_{i}\beta) -
-                                               \tau_{a_{i}}\indicator{a_{i}>0}\big](\indicator{a_{i}=k}
-                                               - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
+  \begin{array}{c}                                               
+    % \big[y_{i}[a_{i}]
+    % -
+    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    % (
+    % \indicator{a_{i}=0} - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r})\\
+    \big[y_{i}[a_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    (
+    \indicator{a_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
+    \vdots \\
+    {}\big[y_{i}[a_{i}]
+    - g(\vec{x}_{i}\beta) - \alpha_{0}-
+    \tau_{a_{i}}\big]
+    (\indicator{a_{i}=k}
+    - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
 
@@ -673,13 +685,19 @@ $\absorbInterceptsEF(\cdot)$ as above,
     \absorbModeratorEF(\vec{z}_{i}; \mathbf{\gamma})=
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
-                                                 \begin{array}{c}
-                                                   (\indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
-                                                   \tilde{m}_{i})m_{i} \\
-                                                   \vdots\\
-                                                   (\indicator{a_{i}=k}-p_{kb_{i}}
-                                                   - \gamma_{k} \tilde{m}_{i})m_{i}\\
-                                                 \end{array}
+       \begin{array}{c}
+         % (
+         % \indicator{a_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % \tilde{m}_{i}
+         % )m_{i} \\
+         (
+         \indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         \tilde{m}_{i}
+         )m_{i} \\
+         \vdots\\
+         (\indicator{a_{i}=k}-p_{kb_{i}}
+         - \gamma_{k} \tilde{m}_{i})m_{i}\\
+       \end{array}
   \right)%
 \end{equation}
 and $\tilde{m}$ is $m$ with block centering. Equivalently, $\gamma$
@@ -689,14 +707,16 @@ $\absorbModeratorEF(\vec{z}_{i}; \mathbf{\gamma})$ given by
 \begin{equation*}
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
-                                                 \begin{array}{c}
-                                                   (\indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
-                                                   \tilde{m}_{i})\tilde{m}_{i} \\
-                                                   \vdots\\
-                                                   (\indicator{a_{i}=k}-p_{kb_{i}}
-                                                   - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
-                                                 \end{array}
-  \right).
+       \begin{array}{c}
+         % (\indicator{a_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % \tilde{m}_{i})\tilde{m}_{i} \\
+         (\indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         \tilde{m}_{i})\tilde{m}_{i} \\
+         \vdots\\
+         (\indicator{a_{i}=k}-p_{kb_{i}}
+         - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
+       \end{array}
+     \right).
 \end{equation*}
 If there were no blocks,
 or no absorption of block intercepts, then $\tilde{m} = m -
@@ -716,6 +736,8 @@ corresponds to solving $0 = \sum
   &\operatorname{vec}  \left(%
                                                  \left(
                                                  \begin{array}{ccc}
+                                                   % (\indicator{a_{i}=0}-p_{0b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{a_{i}=0}-p_{0s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   % \\
                                                    (\indicator{a_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{a_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
                                                    \\
                                                    \vdots & \vdots &
@@ -727,7 +749,7 @@ corresponds to solving $0 = \sum
   \right) .  \label{eq:17}
 \end{align}
 
-In the model-based formulation neither of these demands and special
+In the model-based formulation neither of these demands any special
 accounting in covariance estimation, since both $A$ and the moderating
 variable are held fixed by conditioning. We get a legit covariance
 without doing anything special, using an $\acute{\psi}$ given by
@@ -735,22 +757,32 @@ without doing anything special, using an $\acute{\psi}$ given by
   \acute{\psi}(\vec{z}; \tau, \mathbf{p}, \beta) =
     \indicator{i \in \bigcup \mathcal{Q}}\owt[] \times \\
 \left(
-                                             \begin{array}{c}                                               
-           \big[y_{i}[a_{i}]
-                                               -
-                                               g(\vec{x}_{i}\beta)-\tau_{a_{i}}\indicator{a_{i}>0}\big](
-                                               \indicator{a_{i}=1} -
-                                               \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
-                                               - \tilde{m}_{i}\gamma)\\
-                  \vdots \\
-{}           \big[y_{i}[a_{i}]
-                                               - g(\vec{x}_{i}\beta) -
-                                               \tau_{a_{i}}\indicator{a_{i}>0}\big](\indicator{a_{i}=k}
-                                               -
-                                               \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
-                                               -
-                                               \tilde{m}_{i}\gamma)\\
-                                             \end{array}
+  \begin{array}{r}
+    % \big[y_{i}[a_{i}]
+    % -
+    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    % (
+    % \indicator{a_{i}=0} -
+    % \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}
+    % - \tilde{m}_{i}\gamma)\\
+    \big[y_{i}[a_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    (
+    \indicator{a_{i}=1}-
+    \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
+    - \tilde{m}_{i}\gamma)\\
+    \vdots \\
+    {}\big[y_{i}[a_{i}]
+    - g(\vec{x}_{i}\beta) -\alpha_{0} -
+    \tau_{a_{i}}\big]
+    (
+    \indicator{a_{i}=k}
+    -
+    \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
+    -
+    \tilde{m}_{i}\gamma)\\
+  \end{array}
 \right) .
 \end{multline*}
 Because the covariance estimates will
@@ -795,13 +827,17 @@ design-based covariances satisfy
                        \owt[{[A_{i}]}]
 \left(
                                              \begin{array}{c}                                               
-           [y_{i}[1]
+           % {}[y_{i}[0]
+           %                                     -
+           %                                     g(\vec{x}_{i}\beta)-\alpha_{0}](
+           %                                     \indicator{A_{i}=0} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
+           {}[y_{i}[1]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}](
+                                               g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{1}](
                                                \indicator{A_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
 {}           [y_{i}[k]
-                                               - g(\vec{x}_{i}\beta) -
+                                               - g(\vec{x}_{i}\beta) - \alpha_{0} -
                                                \tau_{k}](\indicator{A_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
@@ -809,13 +845,17 @@ design-based covariances satisfy
 \owt[{[A_{i}]}]
 \left(
                                              \begin{array}{c}                                               
-           [y_{i}[1]
+           % [y_{i}[0]
+           %                                     -
+           %                                     g(\vec{x}_{i}\beta)-\alpha_{0}]
+           %                                     \indicator{A_{i}=0}\\
+           {}[y_{i}[1]
                                                -
-                                               g(\vec{x}_{i}\beta)-\tau_{1}]
+                                               g(\vec{x}_{i}\beta)-\alpha_{0} -\tau_{1}]
                                                \indicator{A_{i}=1}\\
                   \vdots \\
 {}           [y_{i}[k]
-                                               - g(\vec{x}_{i}\beta) -
+                                               - g(\vec{x}_{i}\beta) - \alpha_{0}-
                                                \tau_{k}]\indicator{A_{i}=k}\\                                             \end{array}
 \right)
 \right].
@@ -844,6 +884,7 @@ Similar considerations yield
 &  \operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
+                                                   % (\indicator{A_{i}=0}-p_{01})\indicator{b_{i}=1}&\ldots&(\indicator{A_{i}=0}-p_{0s})\indicator{b_{i}=s}\\                           
                                                    (\indicator{A_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{A_{i}=1}-p_{1s})\indicator{b_{i}=s}\\
                                                    \vdots & \vdots &
                                                                      \vdots
@@ -859,6 +900,7 @@ Similar considerations yield
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
+                                                   % \indicator{A_{i}=0}\indicator{b_{i}=1}&\ldots&\indicator{A_{i}=0}\indicator{b_{i}=s}\\                                             
                                                    \indicator{A_{i}=1}\indicator{b_{i}=1}&\ldots&\indicator{A_{i}=1}\indicator{b_{i}=s}\\
                                                    \vdots & \vdots &
                                                                      \vdots
