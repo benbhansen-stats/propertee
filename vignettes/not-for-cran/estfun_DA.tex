@@ -24,14 +24,13 @@
 
 
 \author{BBH}
-
+\title{\texttt{sandwich::estfun()} method for DA objects}
 \begin{document}
 \nobibliography*
+\maketitle
+\section{Separate and combined estimating functions for covariance and comparison fits}
 
-\section{\texttt{sandwich::estfun()} method for DA objects (cf
-  \#79)}
-(BBH notes; \today)
-\subsection{Concept}
+\subsection{Setting}
 
 Let $\mathcal{C}$ and $\mathcal{Q}$ denote the covariance and
 quasiexperimental samples, respectively, expressed at the level of
@@ -90,12 +89,14 @@ $\psi(\cdot)$ with equivalent solutions that is better aligned with
 to add block-specific intercepts.)
 The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
-Suppose that we define \texttt{estfun.DirectAdjusted()} associating
+\subsection{Goal}
+We aim to define \texttt{estfun.DirectAdjusted()} associating
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
 \begin{equation*}
-  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}'.
+  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}',
 \end{equation*}
+and a corresponding \texttt{bread.DirectAdjusted()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
 $\mathcal{Q}$ sample, with columns corresponding to $\rho$.%
@@ -372,7 +373,8 @@ column for each cluster:
     \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}(F'\Psi)'(F'\Psi)\\
     \end{array}
   \end{equation}
-  
+
+\subsection{Realization of goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
 \texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
@@ -426,12 +428,13 @@ we have in the model-based formulation
                                  \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t},
                                \end{multline*}
 regardless of what adjustments for
-clustering or heteroskedasticity that we might seek to apply when
-calculating the bread matrix.   In the design-based formulation there
+clustering or heteroskedasticity that we might seek to apply.
+In the design-based formulation there
 would likely be approximate equality here, noting that in that setting
 $\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
 coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.
-\subsection{Model- and Design-based}\label{sec:des-vs-mod-based}
+
+\subsection{Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
 
 In the model-based perspective, expected value and covariance are
 conditional on
@@ -455,8 +458,7 @@ $\{c\}$. This has the consequence that observations $i
 \in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
 contribute to $M_{11}$, $M_{12}$ or $M_{21}$.
 
-\section{Fixed effects and absorption}
-\subsection{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
+\section{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
 Frisch-Waugh-Lovell (FWL) Theorem%
 \footnote{Or rather, we invoke the variant of the FWL theorem calling
@@ -675,8 +677,13 @@ consisting of the opposite of the $k\times k$ identity at the
 $b_{i}$th block and the 0 matrix for the $r$th $k \times k$ block whenever
 $r\neq b_{i}$.
 
+\section{Of possible future relevance}
+
+As of this writing, we do not plan to implement moderator effect estimation by way of moderatore absorption.  Should these plans change, Section~\ref{sec:accomm-moder-vari} may be of use.
 \subsection{Accommodating moderator variables via absorption}
 \label{sec:accomm-moder-vari}
+
+
 For a continuous moderator $m$, absorption of the moderator into the assignment variable
 corresponds to solving the system $0 = \sum
 \absorbModeratorEF(\vec{z}_{i}; \mathbf{p},{\gamma})$ for
