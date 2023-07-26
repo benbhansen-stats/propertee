@@ -17,7 +17,7 @@ test_that(".get_design", {
   mod6 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
              offset = cov_adj(mod, design = des))
   mod7 <- lm(y ~ assigned(), data = simdata, weights = ate(des),
-             offset = flexida::cov_adj(mod))
+             offset = propertee::cov_adj(mod))
   expect_true(all(mod1$coef == mod2$coef))
   expect_true(all(mod1$coef == mod3$coef))
   expect_true(all(mod1$coef == mod4$coef))
@@ -44,7 +44,7 @@ test_that(".get_design", {
 })
 
 test_that(".get_design returns NULL with NULL_on_error = TRUE", {
-  on.exit(cov_adj <- flexida::cov_adj)
+  on.exit(cov_adj <- propertee::cov_adj)
 
   cov_adj <- function(model, newdata = NULL) {
     design <- .get_design(TRUE)

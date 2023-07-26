@@ -1151,13 +1151,13 @@ test_that("checking proper errors in conversion from lm to DA", {
 
 
   # Take in either Design or WeightedDesign
-  mod1 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+  mod1 <- propertee:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
                                      des,
                                      FALSE,
                                      TRUE,
                                      "a",
                                      call("quote", call("ls")))
-  mod2 <- flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+  mod2 <- propertee:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
                                      ate(des, data = simdata),
                                      FALSE,
                                      TRUE,
@@ -1165,7 +1165,7 @@ test_that("checking proper errors in conversion from lm to DA", {
                                      call("quote", call("ls")))
   expect_identical(mod1@Design, mod2@Design)
 
-  expect_error(flexida:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
+  expect_error(propertee:::.convert_to_lmitt(lm(y ~ assigned(des), data = simdata),
                                      1,
                                      FALSE,
                                      TRUE,

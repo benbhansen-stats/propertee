@@ -126,7 +126,7 @@ $$
 As mentioned previously, Carroll et al. refer to the elements of the $A$ and $B$
 matrices as sums. For example, their $B_{11} = \sum_{i=1}^{n_{C}}\sum_{j\in{m_{i}}, t\in{T_{i}}}\phi_{ijt}\phi_{ijt}^{T}$, and
 their $A_{22}^{-1} = (\sum_{i=1}^{n_{Q}}\sum_{j\in{m_{i}}, t\in{T_{i}}}E[\frac{\partial\psi_{ijt}}{\partial\theta^{T}}])^{-1}$.
-`flexida`'s suite of internal functions for computing these elements block matrices follow
+`propertee`'s suite of internal functions for computing these elements block matrices follow
 Carroll et al.'s definitions, so the scaling factors need to be properly accounted for in
 the complete calculation of $\text{Cov}(\hat{\theta})$.
 We derive the covariance-adjusted sandwich variance estimate
@@ -222,8 +222,8 @@ B_{22} &=
 \end{split}
 $$
 
-### Validating the `flexida` Variance Estimates
-This section aims to validate `flexida`'s machinery for computing $\text{Cov}(\hat{\tau})$.
+### Validating the `propertee` Variance Estimates
+This section aims to validate `propertee`'s machinery for computing $\text{Cov}(\hat{\tau})$.
 
 #### Data Simulation and Model Fitting
 Suppose we have unit-level data for 4 evenly-sized clusters that comprise 2 identically matched pairs,
@@ -289,9 +289,9 @@ damod <- as.lmitt(
 )
 ```
 
-#### Verifying `flexida`'s Block Matrix Outputs with Expected Outputs
+#### Verifying `propertee`'s Block Matrix Outputs with Expected Outputs
 We derived the forms of the covariance-adjusted sandwich variance estimate matrix
-components previously, so we verify the outputs of `flexida`'s internal functions
+components previously, so we verify the outputs of `propertee`'s internal functions
 match those:
 ```{r verify, echo = TRUE, eval = TRUE}
 Xstar <- model.matrix(cmod)
@@ -331,7 +331,7 @@ test_that("sandwich components match derivations", {
 })
 ```
 
-#### Verifying `flexida`'s Block Matrix Outputs to the `sandwich` Package
+#### Verifying `propertee`'s Block Matrix Outputs to the `sandwich` Package
 We also verify our calculations with the `sandwich` package in the following
 three places:
 
@@ -360,11 +360,11 @@ test_that("compare with sandwich components", {
 })
 ```
 
-#### Verifying `flexida`'s Variance Estimate to `geex`
+#### Verifying `propertee`'s Variance Estimate to `geex`
 The `geex` package, developed by [Bradley Saul](https://bsaul.github.io/geex/),
 provides an interface for numerically approximating M-estimates and their
 variance-covariance matrices. This offers an apples-to-apples comparison to
-`flexida`'s variance estimates; we just need to define the estimating functions
+`propertee`'s variance estimates; we just need to define the estimating functions
 for the given setting as the `geex` package requires. Since the intercept terms
 in the covariance and direct adjustment models have perfect collinearity (and
 moreover, at the time of this writing a desirable analytical method for handling
@@ -419,7 +419,7 @@ test_that("compare with geex", {
 ```
 
 #### Heuristic Checks
-We now make heuristic checks of `flexida`'s covariance-adjusted variance
+We now make heuristic checks of `propertee`'s covariance-adjusted variance
 estimates. The covariance-adjusted estimate changes the sandwich variance
 estimate of the direct adjustment model parameters by three terms that include
 $A_{22}^{-1}A_{21}$, which can be viewed as linear regression coefficients of
@@ -433,7 +433,7 @@ is eliminated when the treatment is assigned in such a way that there *are* no
 compositional differences between the groups. Thus, in these scenarios, further
 covariance adjustment is unnecessary. The data we have simulated here represent
 one such scenario, since the clusters in the each matched pair are identical.
-As a result, `flexida`'s variance estimate for the treatment effect and the
+As a result, `propertee`'s variance estimate for the treatment effect and the
 `sandwich` package's estimate should be equivalent:
 
 ```{r no_change_reg_adjust, echo = TRUE, eval = TRUE}
@@ -473,8 +473,8 @@ treatment and covariates. Then, covariance adjustment's increase of the
 available degrees of freedom for variance estimation should result in a smaller
 variance estimate for the treatment effect than that from the larger model:
 
-```{r flexida_better, echo = TRUE, eval = TRUE}
-test_that("flexida has smaller variance estimate than big model", {
+```{r propertee_better, echo = TRUE, eval = TRUE}
+test_that("propertee has smaller variance estimate than big model", {
   onemod <- lm(y ~ (x1 + x2)*z, data = df, weights = ate(des))
 
   expect_true(sandwich::sandwich(onemod,
@@ -491,7 +491,7 @@ Now, suppose we have data where matched pairs are not comprised of identical
 clusters. Note that we change the covariate values of a single data point in
 each treated cluster so the coefficients estimated by the covariance model
 remain the same as before. As a result, we would only expect modifications to
-$A_{21}$, and $B_{22}$ in `flexida` (and `geex`'s) variance
+$A_{21}$, and $B_{22}$ in `propertee` (and `geex`'s) variance
 calculation:
 
 ```{r inexact_matched_pairs, echo = TRUE, eval = TRUE}
@@ -521,7 +521,7 @@ test_that("only A21 and B22 change from before", {
 })
 ```
 
-`flexida`'s estimated variance of the treatment effect estimate should be larger
+`propertee`'s estimated variance of the treatment effect estimate should be larger
 than the `sandwich` package's, since $A_{22}^{-1}A_{21} \neq 0$ in this case.
 It should still be equivalent to the `geex` package, however, and the comparison
 to the larger model mentioned in the previous section should, in all likelihood,
