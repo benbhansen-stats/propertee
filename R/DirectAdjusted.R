@@ -203,7 +203,7 @@ bread.DirectAdjusted <- function(x, ...) {
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
     stop(paste("ITT effect model must have been fitted using a function from the",
-               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+               "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
 }

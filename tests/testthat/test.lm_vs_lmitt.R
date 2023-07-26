@@ -10,7 +10,7 @@
 
 # To avoid a bunch of messages being printed:
 save_options <- options()
-options("flexida_message_on_unused_blocks" = FALSE)
+options("propertee_message_on_unused_blocks" = FALSE)
 
 test_that("equivalent of lm and lmitt calls - no subset", {
   data(simdata)

@@ -1,4 +1,4 @@
 library(testthat)
-library(flexida)
+library(propertee)
 
-test_check("flexida")
+test_check("propertee")

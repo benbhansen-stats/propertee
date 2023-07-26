@@ -44,7 +44,7 @@
 ##' \code{lmitt()} will produce a message if the \code{design} passed in has
 ##' block information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
-##' \code{options("flexida_message_on_unused_blocks" = FALSE)}.
+##' \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
 ##' Note: \code{lmitt()} does not currently support \code{factor} or
 ##' \code{ordered} treatment variables.
@@ -60,10 +60,10 @@
 ##'   assignemnt/clusters identified in the \code{Design}. Excluded in
 ##'   \code{FALSE}. Default is \code{FALSE}.
 ##' @param offset Offset of the kind which would be passed into \code{lm()}. To
-##'   utilize flexida's functionality, the output of \code{cov_adj()} should be
+##'   utilize propertee's functionality, the output of \code{cov_adj()} should be
 ##'   used.
 ##' @param weights Weight of the kind which would be passed into \code{lm()}. To
-##'   utilize flexida's functionality, the output of \code{ate()} or
+##'   utilize propertee's functionality, the output of \code{ate()} or
 ##'   \code{ett()}, or the strings \code{"ate"}/\code{"ett"}, should be used..
 ##' @param ... Additional arguments passed to \code{lm()}.
 ##' @return \code{DirectAdjusted} model.
@@ -115,7 +115,7 @@ lmitt.formula <- function(obj,
       warning(paste("Character other than \"ate\" or \"ett\" passed to",
                     "`weights=` argument.\nIf you are trying to pass a",
                     "character to the internal `lm` you can disregard this",
-                    "warning.\nIf you are attemping to use `flexida`\'s",
+                    "warning.\nIf you are attemping to use `propertee`\'s",
                     "weight generation, only \"ate\" and \"ett\" are",
                     "accepted."))
     }
@@ -235,7 +235,7 @@ lmitt.formula <- function(obj,
 
   if (!is(lm.call$weights, "WeightedDesign") & !absorb) {
     if ("b" %in% design@column_index) {
-      if (options()$flexida_message_on_unused_blocks) {
+      if (options()$propertee_message_on_unused_blocks) {
         message(paste("The Design object contains block-level information,",
                       "but it is not used in this model. Block information",
                       "is used when weights are defined via `ate()` or `ett()`",

@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r}
-library(flexida)
+library(propertee)
 ```
 
 ## Data and Design

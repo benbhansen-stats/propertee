@@ -5,7 +5,7 @@ output: html_document
 ---
 
 ```{r, include = FALSE}
-setwd("~/repositories/R/flexida")
+setwd("~/repositories/R/propertee")
 devtools::load_all()
 ```
 

@@ -320,7 +320,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- flexida::.expand.model.frame.DA(x,
+    uoas <- propertee::.expand.model.frame.DA(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
