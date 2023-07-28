@@ -5,15 +5,15 @@
 ##'
 ##' @title Create summary of \code{DirectAdjusted} object
 ##' @param object DirectAdjusted object
-##' @param vcov.type A string indicating the desired variance estimator.
-##'   Currently accepts "CR0", "MB0", or "HC0"
+##' @param vcov.type A string indicating the desired variance estimator. See
+##'   help for \code{vcovDA} for details on accepted types.
 ##' @param ... Additional arguments to \code{vcovDA()}, such as the desired
 ##'   finite sample heteroskedasticity-robust standard error adjustment.
 ##' @return object of class \code{summary.DirectAdjusted}
 ##' @export
 ##' @method summary DirectAdjusted
 summary.DirectAdjusted <- function(object,
-                                   vcov.type = c("CR0", "MB0", "HC0", "PBPH"),
+                                   vcov.type = "CR0",
                                    ...) {
   out <- summary(as(object, "lm"))
 
