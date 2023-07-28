@@ -14,7 +14,7 @@ test_that("vcovDA correctly dispatches", {
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
-  expect_equal(vmat1, suppressMessages(.vcovMB_CR0(damod, cluster = .make_uoa_ids(damod))))
+  expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod))))
 
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
@@ -61,7 +61,7 @@ test_that("variance helper functions fail without a DirectAdjusted model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(propertee:::.vcovMB_CR0(cmod), "must be a DirectAdjusted")
+  expect_error(propertee:::.vcov_CR0(cmod), "must be a DirectAdjusted")
   expect_error(propertee:::.get_b12(cmod), "must be a DirectAdjusted")
   expect_error(propertee:::.get_a22_inverse(cmod), "must be a DirectAdjusted")
   expect_error(propertee:::.get_b22(cmod), "must be a DirectAdjusted")
@@ -1180,28 +1180,28 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
-test_that("propertee:::.vcovMB_CR0 returns px2 matrix", {
+test_that("propertee:::.vcov_CR0 returns px2 matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  vmat <- propertee:::.vcovMB_CR0(m)
+  vmat <- propertee:::.vcov_CR0(m)
   expect_equal(dim(vmat), c(2, 2))
 })
 
-test_that(".vcovMB_CR0 doesn't accept `type` argument", {
+test_that(".vcov_CR0 doesn't accept `type` argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  expect_error(.vcovMB_CR0(m, type = "CR0"), "Cannot override the `type`")
+  expect_error(.vcov_CR0(m, type = "CR0"), "Cannot override the `type`")
 })
 
-test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
+test_that(".vcov_CR0 returns DA model sandwich if it has no SandwichLayer", {
   data(simdata)
 
   des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
@@ -1215,7 +1215,7 @@ test_that(".vcovMB_CR0 returns DA model sandwich if it has no SandwichLayer", {
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1284,8 +1284,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   expect_equal((a22inv %*% a21)[2,],
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- propertee:::.vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1298,7 +1298,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1361,8 +1361,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- propertee:::.vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1375,7 +1375,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1471,8 +1471,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   # with perfect group balance, a22inv %*% a21 should have 0's in the trt row
   expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- propertee:::.vcov_CR0(damod, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1484,7 +1484,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
@@ -1566,8 +1566,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1579,7 +1579,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1639,8 +1639,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- .vcovMB_CR0(damod, cluster = df$uid, cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- .vcov_CR0(damod, cluster = df$uid, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1649,7 +1649,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/o clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
@@ -1728,8 +1728,8 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1741,7 +1741,7 @@ test_that(paste("HC0 .vcovMB_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
+test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
@@ -1808,8 +1808,8 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- .vcovMB_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- .vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 
@@ -1818,7 +1818,7 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
+test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
                 "w/ clustering",
                 "imbalanced grps",
                 "damod is a strict subset of cmod data", sep = ", "), {
@@ -1908,8 +1908,8 @@ test_that(paste("HC0 .vcovMB_CR0 binomial glm cmod",
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((a22inv %*% a21)[2,] == 0))
 
-  # check .vcovMB_CR0 matches manual matrix multiplication
-  vmat <- .vcovMB_CR0(damod, cluster = ids, cadjust = FALSE)
+  # check .vcov_CR0 matches manual matrix multiplication
+  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
                         check.attributes = FALSE))
 

@@ -274,7 +274,7 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
   vmat1 <- vcov(damod1)
   vmat2 <- vcov(damod1, type = "CR0")
 
-  expect_error(vcov(damod1, type = "not_a_type"), "should be")
+  expect_error(vcov(damod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcovDA(damod1))
 
@@ -294,7 +294,7 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
                      offset = cov_adj(cmod))
   damod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
-  expect_error(confint(damod1, type = "not_a_type"), "should be")
+  expect_error(confint(damod1, type = "not_a_type"), "not defined")
 
   vcovDA_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
     qt(c(0.025, 0.975), damod1$df.residual)

@@ -2,6 +2,10 @@
 NULL
 
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
+#' @details Supported \code{type} include:
+#'
+#' - \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
+#' - Others...
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
 #' accepts "CR0", "MB0", or "HC0"
@@ -15,33 +19,25 @@ NULL
 #' given by the intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
-  type <- match.arg(type)
-
-  var_func <- switch(
-    type,
-    "CR0" = .vcovMB_CR0,
-    "MB0" = .vcovMB_CR0,
-    "HC0" = .vcovMB_CR0
-  )
+vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
+  if (!exists(paste0(".vcov_", type))) {
+    stop(paste0("covariance function .vcov_", type,
+                " not defined.\n"))
+  }
+  var_func <- get(paste0(".vcov_", type))
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, cluster, ...)
 
   est <- do.call(var_func, args)
-  if (type %in% c("CR0", "MB0", "HC0")) {
-    # Since these are acronyms, need user input to distinguish which type to
-    # print. Other methods should have their own functions so the type should be
-    # assigned in those functions.
-    attr(est, "type") <- type
-  }
+
   return(est)
 }
 
 #' Model-based standard errors with HC0 adjustment
 #' @keywords internal
 #' @rdname var_estimators
-.vcovMB_CR0 <- function(x, ...) {
+.vcov_CR0 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -63,6 +59,20 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...) {
 
   attr(vmat, "type") <- "CR0"
   return(vmat)
+}
+
+#' @rdname var_estimators
+.vcov_HC0 <- function(x, ...) {
+  out <- .vcov_CR0(x, ...)
+  attr(out, "type") <- "HC0"
+  return(out)
+}
+
+#' @rdname var_estimators
+.vcov_MB0 <- function(x, ...) {
+  out <- .vcov_CR0(x, ...)
+  attr(out, "type") <- "MB0"
+  return(out)
 }
 
 #' @title NA vcovDA subgroup estimates that have insufficient degrees of freedom

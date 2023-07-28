@@ -2,12 +2,18 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{vcovDA}
 \alias{vcovDA}
-\alias{.vcovMB_CR0}
+\alias{.vcov_CR0}
+\alias{.vcov_HC0}
+\alias{.vcov_MB0}
 \title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
-vcovDA(x, type = c("CR0", "MB0", "HC0"), cluster = NULL, ...)
+vcovDA(x, type = "CR0", cluster = NULL, ...)
 
-.vcovMB_CR0(x, ...)
+.vcov_CR0(x, ...)
+
+.vcov_HC0(x, ...)
+
+.vcov_MB0(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model object}
@@ -31,5 +37,12 @@ given by the intercept and treatment variable terms in the ITT effect model
 Compute covariance-adjusted cluster-robust sandwich variance estimates
 
 Model-based standard errors with HC0 adjustment
+}
+\details{
+Supported \code{type} include:
+\itemize{
+\item \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
+\item Others...
+}
 }
 \keyword{internal}
