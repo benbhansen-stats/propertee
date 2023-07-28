@@ -6,17 +6,23 @@ NULL
 #'
 #' - \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
 #' - Others...
+#'
+#' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
+#' \code{type = "XXX"} will now use your method. Your method should return a
+#' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "CR0", "MB0", or "HC0"
+#'   accepts "CR0", "MB0", or "HC0"
 #' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
-#' @param ... Arguments to be passed to the internal variance estimation function.
-#' @return A \eqn{2\times 2} matrix where the dimensions are
-#' given by the intercept and treatment variable terms in the ITT effect model
+#'   indicated in the Design will be used to generate clustered covariance
+#'   estimates. A non-NULL argument to `cluster` specifies a string or character
+#'   vector of column names appearing in both the covariance adjustment and
+#'   quasiexperimental samples that should be used for clustering covariance
+#'   estimates.
+#' @param ... Arguments to be passed to the internal variance estimation
+#'   function.
+#' @return A \eqn{2\times 2} matrix where the dimensions are given by the
+#'   intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
 vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {

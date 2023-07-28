@@ -22,16 +22,18 @@ vcovDA(x, type = "CR0", cluster = NULL, ...)
 accepts "CR0", "MB0", or "HC0"}
 
 \item{cluster}{Defaults to NULL, which means unit of assignment columns
-indicated in the Design will be used to generate clustered covariance estimates.
-A non-NULL argument to \code{cluster} specifies a string or character vector of
-column names appearing in both the covariance adjustment and quasiexperimental
-samples that should be used for clustering covariance estimates.}
+indicated in the Design will be used to generate clustered covariance
+estimates. A non-NULL argument to \code{cluster} specifies a string or character
+vector of column names appearing in both the covariance adjustment and
+quasiexperimental samples that should be used for clustering covariance
+estimates.}
 
-\item{...}{Arguments to be passed to the internal variance estimation function.}
+\item{...}{Arguments to be passed to the internal variance estimation
+function.}
 }
 \value{
-A \eqn{2\times 2} matrix where the dimensions are
-given by the intercept and treatment variable terms in the ITT effect model
+A \eqn{2\times 2} matrix where the dimensions are given by the
+intercept and treatment variable terms in the ITT effect model
 }
 \description{
 Compute covariance-adjusted cluster-robust sandwich variance estimates
@@ -44,5 +46,9 @@ Supported \code{type} include:
 \item \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
 \item Others...
 }
+
+To create your own \code{type}, simply define a function \code{.vcov_XXX}.
+\code{type = "XXX"} will now use your method. Your method should return a
+matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
 }
 \keyword{internal}
