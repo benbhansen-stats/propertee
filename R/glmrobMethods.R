@@ -1,5 +1,10 @@
 estfun.glmrob <- function(mod,...){
 
+  ## numbers refer to which lines in
+  ## https://github.com/cran/robustbase/blob/335b69f2310bd21ca4cdfc17a2a99ebbcad84017/R/glmrobMqle.R
+  ## the expressions were derived or copied from
+
+  ## this was copied verbatim from lines 121-155
   switch(family(mod)$family,
          "binomial" = {
            Epsi.init <- robustbase:::EpsiBin.init
@@ -51,20 +56,20 @@ estfun.glmrob <- function(mod,...){
   Vmu <- sVF^2 ## 163 (inverted)
 
 
-  ### robustbase code for calculating cpsi=psi_c - E[psi_c]
+ ### robustbase code for calculating cpsi=psi_c - E[psi_c]
   ##177-78
   K <- floor(mu*ni + tcc* sni*sV)
   H <- floor(mu*ni - tcc* sni*sV)
 
   eval(Epsi.init)
-  residPS <- mod$residual/sqrt(phi) # scaled Pearson residuals
+  residPS <- mod$residual/sqrt(phi) # scaled Pearson residuals (169)
   cpsi <- pmax.int(-tcc,pmin.int(residPS,tcc))-eval(Epsi) ## 210
 
   ### dPsi/dBeta=dPsi/d eta d eta/d Beta=dPsi/d eta X
-  dmu.deta <- family(mod)$mu.eta(mod$linear.predictors)
+  dmu.deta <- family(mod)$mu.eta(eta)
   X <- model.matrix(mod)
 
-  cpsi*w.x*sni/sV*dmu.deta*X
+  cpsi*mod$w.x*sni/sV*dmu.deta*X
 }
 
 bread.glmrob <- function(mod,...)
