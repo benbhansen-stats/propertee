@@ -153,7 +153,7 @@ setValidity("Design", function(object) {
   ########### Examine treatment variable.
   treatment <- m_collapse[, index == "t"]
 
-  if (options()$flexida_warn_on_conditional_treatment &
+  if (options()$propertee_warn_on_conditional_treatment &
                 grepl("[<>=]", deparse(form[[2]]))) {
     # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <,
     # = and if found, evaluate and convert to numeric, but warn users.

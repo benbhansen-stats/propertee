@@ -31,11 +31,11 @@ assignemnt/clusters identified in the \code{Design}. Excluded in
 \code{FALSE}. Default is \code{FALSE}.}
 
 \item{offset}{Offset of the kind which would be passed into \code{lm()}. To
-utilize flexida's functionality, the output of \code{cov_adj()} should be
+utilize propertee's functionality, the output of \code{cov_adj()} should be
 used.}
 
 \item{weights}{Weight of the kind which would be passed into \code{lm()}. To
-utilize flexida's functionality, the output of \code{ate()} or
+utilize propertee's functionality, the output of \code{ate()} or
 \code{ett()}, or the strings \code{"ate"}/\code{"ett"}, should be used..}
 }
 \value{
@@ -87,7 +87,7 @@ can obtain it's estimate from the returned \code{DirectAdjusted} object via
 \code{lmitt()} will produce a message if the \code{design} passed in has
 block information that is not being utilized in the model. Note that this is
 \emph{not} an error, but could be an oversight. To disable this message, run
-\code{options("flexida_message_on_unused_blocks" = FALSE)}.
+\code{options("propertee_message_on_unused_blocks" = FALSE)}.
 
 Note: \code{lmitt()} does not currently support \code{factor} or
 \code{ordered} treatment variables.

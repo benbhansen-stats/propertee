@@ -203,7 +203,7 @@ bread.DirectAdjusted <- function(x, ...) {
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
     stop(paste("ITT effect model must have been fitted using a function from the",
-               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+               "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
 }
@@ -290,10 +290,15 @@ bread.DirectAdjusted <- function(x, ...) {
   # find the overlap of C and Q and dedupe the indices returned by `match()`
   C_ids <- .sanitize_C_ids(ca, by, verbose = verbose, sorted = TRUE, ...)
   Q_C_ix <- match(Q_ids$x, C_ids$x)
-  for (start_loc in unique(Q_C_ix[!is.na(Q_C_ix)])) {
-    Q_C_ix[!is.na(Q_C_ix) & Q_C_ix == start_loc] <- start_loc - 1 + seq_along(
-      Q_C_ix[!is.na(Q_C_ix) & Q_C_ix == start_loc])
+  Q_C_ix_not_NA <- !is.na(Q_C_ix)
+
+  for (start_loc in unique(Q_C_ix[Q_C_ix_not_NA])) {
+    Q_C_ix_start_loc <- Q_C_ix == start_loc
+    which_Q_C <- Q_C_ix_not_NA & Q_C_ix_start_loc
+    Q_C_ix[which_Q_C] <- start_loc - 1 + seq_along(
+      Q_C_ix[which_Q_C])
   }
+
   Q_C_ix <- C_ids$ix[Q_C_ix]
 
   # append the remaining ID's in C if necessary

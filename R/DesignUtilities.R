@@ -122,10 +122,11 @@ forcing <- unit_of_assignment
 ##'   "unit_of_assignment"
 ##' @keywords internal
 .update_form_to_unit_of_assignment <- function(form) {
-  rename_list <- list("cluster" = as.name("unit_of_assignment"),
-                      "uoa" = as.name("unit_of_assignment"),
-                      "unitid" = as.name("unit_of_assignment"))
-  return(as.formula(do.call("substitute", list(form, rename_list))))
+  form <- deparse(form)
+  form <- gsub("cluster\\(", "unit_of_assignment(", form)
+  form <- gsub("uoa\\(", "unit_of_assignment(", form)
+  form <- gsub("unitid\\(", "unit_of_assignment(", form)
+  return(as.formula(form))
 }
 
 ##' Check if \code{Design} has access to a binary treatment
@@ -201,4 +202,24 @@ is_binary_or_dichotomized <- function(des) {
   }
 
   return(is_dichotomized(des) || has_binary_treatment(des))
+}
+
+##' Check if \code{Design} objects are identical
+##' @param x A \code{Design} object.
+##' @param y A \code{Design} object.
+##' @param dichotomy_force Logical, default \code{FALSE}. If \code{FALSE}, the
+##'   \code{dichotomy()} of \code{x} and \code{y} is ignored in the comparison.
+##'   (In other words, two \code{Design}s which differ only in their
+##'   \code{@dichotomy} slot will be considered identical.) If \code{TRUE}, the
+##'   \code{dichotomy} must also be in agreement between \code{x} and \code{y}.
+##' @return Logical, are \code{x} and \code{y} identical?
+##' @export
+identical_Designs <- function(x, y, dichotomy_force = FALSE) {
+  if (!dichotomy_force) {
+        x@dichotomy <- stats::formula(env = globalenv())
+        x@call$dichotomy <- NULL
+        y@dichotomy <- stats::formula(env = globalenv())
+        y@call$dichotomy <- NULL
+  }
+  return(identical(x, y))
 }

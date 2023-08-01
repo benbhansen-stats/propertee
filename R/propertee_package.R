@@ -7,6 +7,6 @@ NULL
 
 
 .onLoad <- function(lib, pkg) {
-  options("flexida_warn_on_conditional_treatment" = TRUE)
-  options("flexida_message_on_unused_blocks" = TRUE)
+  options("propertee_warn_on_conditional_treatment" = TRUE)
+  options("propertee_message_on_unused_blocks" = TRUE)
 }

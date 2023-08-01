@@ -1,4 +1,14 @@
 ##' @title Generate Direct Adjusted Weights
+##' @details In a block design, Weights are generated as a function of the ratio
+##'   of the number of treated units in a block versus the total number of units
+##'   in a block.
+##'
+##' In any blocks where that ratio is 0 or 1 (that is, all units in the block
+##' have the same treatment status), the weights will be 0. In effect this
+##' removes from the target population any block in which there is no basis for
+##' estimating either means under treatment or means under control.
+##'
+##' If block is missing for a given observation, a weight of 0 is applied.
 ##' @param design a \code{Design} object created by one of \code{rct_design()},
 ##'   \code{rd_design()}, or \code{obs_design()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
@@ -117,14 +127,22 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                              na.rm = TRUE)
     e_z <- block_tx_units / block_units
 
+    to_reset_to_0 <- e_z == 1 | e_z == 0
+    to_reset_to_0 <- to_reset_to_0[as.character(blocks(design)[, 1])]
+
     # Expand e_z to cluster-level
-    e_z <- as.numeric(e_z[blocks(design)[, 1]])
+    e_z <- as.numeric(e_z[as.character(blocks(design)[, 1])])
 
     if (target == "ate") {
       weights <- txt / e_z + (1 - txt) / (1 - e_z)
     } else if (target == "ett") {
       weights <- txt + (1 - txt) * e_z / (1 - e_z)
     }
+
+    if (any(to_reset_to_0, na.rm = TRUE)) {
+      weights[to_reset_to_0] <- 0
+    }
+
   }
 
   return(.join_design_weights(weights, design, target = target, data = data))
@@ -141,7 +159,6 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 ##' @return a \code{WeightedDesign}
 ##' @keywords internal
 .join_design_weights <- function(weights, design, target, data) {
-
   uoanames <- var_names(design, "u")
 
   # Merge uoa data with weights at uoa level
@@ -152,6 +169,10 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   weights <- .merge_preserve_order(data, uoadata,
                                    by = uoanames,
                                    all.x = TRUE)$design_weights
+
+  # Replace NA weights with 0 so they don't contribute to the model, but aren't
+  # droppde
+  weights[is.na(weights)] <- 0
 
   return(new("WeightedDesign",
              weights,

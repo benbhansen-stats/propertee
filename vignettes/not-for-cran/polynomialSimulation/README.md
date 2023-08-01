@@ -1,9 +1,9 @@
-### Polynomial Simulation Validation for `flexida`
+### Polynomial Simulation Validation for `propertee`
 
-The files in this folder comprise a workflow that validates the `flexida` standard
+The files in this folder comprise a workflow that validates the `propertee` standard
 error estimation process. It reproduces simulations run in
 [Sales and Hansen 2019](https://journals.sagepub.com/doi/full/10.3102/1076998619884904), calculates
-standard errors using `flexida`, and checks whether these standard errors produce confidence intervals
+standard errors using `propertee`, and checks whether these standard errors produce confidence intervals
 with similar coverage rates to the confidence intervals in the manuscript. The results can be viewed in
 [`polynomialSimulation.md`](polynomialSimulationl.md).
 

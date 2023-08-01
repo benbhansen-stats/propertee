@@ -2,7 +2,7 @@ test_that("internal weight function", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  wdes <- flexida:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
+  wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -15,7 +15,7 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  wdes <- flexida:::.weights_calc(des, data = simdata, by = NULL, target = "ett",
+  wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -28,15 +28,15 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_error(flexida:::.weights_calc(des, data = simdata, by = NULL,
+  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
                "Invalid weight target")
 
-  expect_error(flexida:::.weights_calc(des, data = 1, by = NULL, target = "ate",
+  expect_error(propertee:::.weights_calc(des, data = 1, by = NULL, target = "ate",
                              dichotomy = NULL),
                "`data` must be")
 
-  expect_error(flexida:::.weights_calc(des, data = simdata, by = NULL,
+  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = 1),
                "`dichotomy` must be")
 
@@ -47,13 +47,13 @@ test_that("dichotomy issues", {
   data(simdata)
   des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  expect_error(flexida:::.weights_calc(des, data = simdata, by = NULL,
+  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
                "must have a dichotomy")
 
   dichotomy(des) <- . ~ dose > 150
 
-  wdes <- flexida:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
+  wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
@@ -66,7 +66,7 @@ test_that("dichotomy issues", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
-  expect_warning(wdes <- flexida:::.weights_calc(des, data = simdata, by = NULL,
+  expect_warning(wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                                        target = "ate",
                                        dichotomy = dose > 200 ~ .),
                  "over-writing")
@@ -78,12 +78,12 @@ test_that("internal and external weight function agreement", {
   data(simdata)
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 
-  iwdes <- flexida:::.weights_calc(des, data = simdata, by = NULL,
+  iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
   ewdes <- ate(des, data = simdata)
   expect_identical(iwdes, ewdes)
 
-  iwdes <- flexida:::.weights_calc(des, data = simdata, by = NULL,
+  iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ett", dichotomy = NULL)
   ewdes <- ett(des, data = simdata)
   expect_identical(iwdes, ewdes)
@@ -451,4 +451,118 @@ test_that("subsetting of WeightedDesign", {
 
   expect_identical(ww[], ww)
   expect_identical(ww[1:10]@.Data, ww@.Data[1:10])
+})
+
+test_that("#130 zero weights with non-varying treatment in a block", {
+  data(simdata)
+
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  # Make a block with no controls.
+  simdata$z[simdata$bid == 3] <- 1
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  # Make a block with no treatment
+  simdata$z[simdata$bid == 3] <- 0
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+  wts <- lmitt(y ~ 1, data = simdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts[simdata$bid != 3] > 0))
+  expect_true(all(wts[simdata$bid == 3] == 0))
+
+
+  #### Data with an NA block doesn't break
+  data(STARdata)
+  STARdata$starkbinary <- STARdata$stark == "small"
+  STARdata$studentid <- seq_len(nrow(STARdata))
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  # Some students in STARdata do not have `schoolidk` and thus NA for a block
+
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
+  # Make a block with no controls.
+  STARdata$starkbinary[STARdata$schoolidk == 1] <- 1
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  # Make a block with no treatment
+  STARdata$starkbinary[STARdata$schoolidk == 1] <- 0
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ate")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  des <- obs_design(starkbinary ~ unit_of_assignment(studentid) +
+                      block(schoolidk),
+                    data = STARdata, na.fail = FALSE)
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               design = des, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+})
+
+test_that("#131 numeric blocks don't cause NA weights", {
+  data(simdata)
+  simdata$bid[simdata$bid == 3] <- 4
+
+  des <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  mod <-lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE, weights = "ate")
+  expect_length(mod$weights, nrow(simdata))
+  expect_true(all(!is.na(mod$weights)))
+
+
 })

@@ -86,8 +86,8 @@ kable(tab,format='html',caption='Full results for polynomial simulation',digits=
   kable_styling() %>%
   column_spec(6,border_right=TRUE) %>%
   column_spec(11,border_right=TRUE) %>%
-  # add_header_above(c(" " = 1, "flexida" = 5, "OLS" = 5, "Loc. Lin." = 1))%>%
-  add_header_above(c(" " = 1, "flexida" = 5, "OLS" = 5))%>%
+  # add_header_above(c(" " = 1, "propertee" = 5, "OLS" = 5, "Loc. Lin." = 1))%>%
+  add_header_above(c(" " = 1, "propertee" = 5, "OLS" = 5))%>%
   #group_rows("$t_3$ Error",1,12)%>%group_rows("N(0,1) Error",13,24)%>%
   group_rows("linear",1,5) %>%
   group_rows('antiSym',6,10) %>%

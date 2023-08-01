@@ -572,3 +572,11 @@ test_that("NA's in data to create Design", {
   expect_equal(nrow(des@structure), 9)
 
 })
+
+test_that("column name 'cluster' doesn't cause issues", {
+  data(simdata)
+  simdata$cluster <- simdata$cid1
+
+  expect_no_error(rct_design(z ~ cluster(cluster, cid2), data = simdata))
+
+})

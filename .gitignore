@@ -4,7 +4,7 @@
 *.o
 .local
 src-*
-./flexida_*
+./propertee_*
 *.swp
 .pkgexclude
 inst/doc
