@@ -1,4 +1,4 @@
-library(flexida)
+library(propertee)
 
 ## NOT CLUSTERED DATA
 set.seed(980)
@@ -30,7 +30,7 @@ b12 <- .get_b12(damod)
 a21 <- .get_a21(damod)
 a11inv <- .get_a11_inverse(damod)
 b11 <- .get_b11(damod, type = "HC0", cadjust = FALSE)
-flexida_meat <- (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
+propertee_meat <- (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                    a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
 
 ## JOSH GEEX
@@ -59,9 +59,9 @@ geexRes <- geex::m_estimate(estFun,
                             root_control = geex::setup_root_control(start = rep(0.1,4)))
 print("geex returns cov_hat(tau_hat):")
 geexRes@vcov[4,4]
-print("multiplying flexida internal matrices manually returns cov_hat(tau_hat):")
-a22inv %*% flexida_meat %*% a22inv
-print("flexida vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
+print("multiplying propertee internal matrices manually returns cov_hat(tau_hat):")
+a22inv %*% propertee_meat %*% a22inv
+print("propertee vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
 vcovDA(damod, type = "CR0", cadjust = FALSE)
 print("sandwich::sandwich (no clustering) returns cov_hat(tau_hat):")
 sandwich::sandwich(damod, type = "HC0", cadjust = FALSE)
@@ -117,7 +117,7 @@ b12 <- .get_b12(damod)
 a21 <- .get_a21(damod)
 a11inv <- .get_a11_inverse(damod)
 b11 <- .get_b11(damod, type = "HC0", cadjust = FALSE)
-flexida_meat <- (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
+propertee_meat <- (b22 - a21 %*% a11inv %*% b12 - t(b12) %*% a11inv %*% t(a21) +
                    a21 %*% a11inv %*% b11 %*% a11inv %*% t(a21))
 
 clusterEstFunc <- function(data){
@@ -150,9 +150,9 @@ geexRes <- geex::m_estimate(clusterEstFunc,
 
 print("geex returns cov_hat(tau_hat):")
 geexRes@vcov[4,4]
-print("multiplying flexida internal matrices manually returns cov_hat(tau_hat):")
-a22inv %*% flexida_meat %*% a22inv
-print("flexida vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
+print("multiplying propertee internal matrices manually returns cov_hat(tau_hat):")
+a22inv %*% propertee_meat %*% a22inv
+print("propertee vcovDA function (multiplied by n_Q) returns cov_hat(tau_hat):")
 vcovDA(damod, type = "CR0", cadjust = FALSE)
 print("sandwich::sandwich (no clustering) returns cov_hat(tau_hat):")
 sandwich::sandwich(damod, meat. = sandwich::meatCL, cluster = df$cid,

@@ -1,6 +1,6 @@
 old_opt <- options()
 on.exit(options(old_opt))
-options(flexida_warn_on_conditional_treatment = FALSE)
+options(propertee_warn_on_conditional_treatment = FALSE)
 
 data(simdata)
 data(STARdata)

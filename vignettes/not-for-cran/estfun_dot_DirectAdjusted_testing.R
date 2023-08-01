@@ -12,7 +12,7 @@
 
 library(sandwich)
 library(testthat)
-library(flexida)
+library(propertee)
 
 # DEFINE CLASSES AND FUNCTIONS FOR TESTING
 # Create placeholder classes for this script so these tests will hold regardless
@@ -20,7 +20,7 @@ library(flexida)
 # `newPsiTildeDAClass` will be use new `estfun.DirectAdjusted` method, the
 # `oldPsiTildeDAClass` will use the base class's `DirectAdjusted` method, and
 # the rest of the functions we re-write here because they will no longer be
-# exported as part of the `flexida` package
+# exported as part of the `propertee` package
 setClass("newPsiTildeDAClass",
          contains = "DirectAdjusted")
 
@@ -31,7 +31,7 @@ estfun.newPsiTildeDAClass <- function(object) {
   base_class <- match(object@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
     stop(paste("ITT effect model must have been fitted using a function from the",
-               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+               "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
   
@@ -94,7 +94,7 @@ estfun.oldPsiTildeDAClass <- function(object) {
   base_class <- match(object@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
     stop(paste("ITT effect model must have been fitted using a function from the",
-               "`flexida`, `stats`, `robustbase`, or `survey` package"))
+               "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
   
@@ -102,7 +102,7 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 #' The following submatrix computation functions are as they appeared in the
-#' `flexida` package prior to Feb. 2023
+#' `propertee` package prior to Feb. 2023
 .get_a11_inverse <- function(x) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
@@ -395,7 +395,7 @@ new_vcovMB_CR0 <- function(object, ...) {
 }
 
 #' This function computes the model-based sandwich variance estimate using
-#' the submatrix computation functions that were used in the `flexida` package
+#' the submatrix computation functions that were used in the `propertee` package
 #' prior to Feb. 2023.
 old_vcovMB_CR0 <- function(x, ...) {
   # compute blocks
@@ -425,7 +425,7 @@ old_vcovMB_CR0 <- function(x, ...) {
 # 4) nonlinear covariance adjustment model
 # For each model, verify:
 #  1) crossprod of new est. eqns. returns what we expect
-#  2) new vcovDA estimates are the same estimates output by the `flexida`
+#  2) new vcovDA estimates are the same estimates output by the `propertee`
 #     package prior to Feb. 2023
 #  3) new vcovDA estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
 #     with appropriate scaling for the `bread` function and an appropriate

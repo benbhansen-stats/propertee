@@ -1,5 +1,5 @@
 save_options <- options()
-options("flexida_message_on_unused_blocks" = FALSE)
+options("propertee_message_on_unused_blocks" = FALSE)
 
 test_that("lmitt", {
 
@@ -302,7 +302,7 @@ test_that("non-integer units of assignment", {
 
 options(save_options)
 #### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
-# This test below should NOT have `options()$flexida_message_on_unused_blocks`
+# This test below should NOT have `options()$propertee_message_on_unused_blocks`
 # set to FALSE. So it needs to stay below the restoration of options line above.
 # Other tests should probably go above the restoration of options line.
 

@@ -46,7 +46,7 @@ units described in `Q`; the offset is similar to what `predict(cmod, newdata=Q, 
 At this point `m` has class `lm`, but with
 additional information tucked away in `m[['model']]`: this data frame
 will have special columns `(weights)` and
-`offset(cov_adj(cmod))`.  As of this writing, the flexida package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two planned classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information. 
+`offset(cov_adj(cmod))`.  As of this writing, the propertee package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two planned classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information. 
 
 Standard errors will be obtained through subsequent steps, e.g. 
 ```{r eval=FALSE}
