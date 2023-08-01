@@ -377,7 +377,7 @@ update.DirectAdjusted <- function(object, ...) {
 #' @keywords internal
 .estfun_DB_blockabsorb <- function (x, ...){
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
-    # if the model involves covariance adjustment
+    # if the model involves SandwichLayer covariance adjustment
     temp <- .align_and_extend_estfuns(x)[["psi"]]
   }
   else
