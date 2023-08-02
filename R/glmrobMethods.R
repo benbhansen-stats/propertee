@@ -1,53 +1,61 @@
-estfun.glmrob <- function(mod,...){
+##' @title Extract empirical estimating equations from a \code{glmbrob} model fit
+##' @param x a fitted \code{glmrob} object
+##' @param ... arguments passed to methods
+##' @return Details needed
+##' @importFrom stats family model.matrix
+##' @importFrom utils getFromNamespace
+##' @exportS3Method
+estfun.glmrob <- function(x, ...) {
 
-  switch(family(mod)$family,
+  switch(stats::family(x)$family,
          "binomial" = {
-           Epsi.init <- robustbase:::EpsiBin.init
-           Epsi <- robustbase:::EpsiBin
-           EpsiS <- robustbase:::EpsiSBin
-           Epsi2 <- robustbase:::Epsi2Bin
+           Epsi.init <- utils::getFromNamespace("EpsiBin.init", "robustbase")
+           Epsi <- utils::getFromNamespace("EpsiBin", "robustbase")
+           EpsiS <- utils::getFromNamespace("EpsiSBin", "robustbase")
+           Epsi2 <- utils::getFromNamespace("Epsi2Bin", "robustbase")
            phiEst <- phiEst.cl <- 1
          },
          "poisson" = {
-           Epsi.init <- robustbase:::EpsiPois.init
-           Epsi <- robustbase:::EpsiPois
-           EpsiS <- robustbase:::EpsiSPois
-           Epsi2 <- robustbase:::Epsi2Pois
+           Epsi.init <- utils::getFromNamespace("EpsiPois.init", "robustbase")
+           Epsi <- utils::getFromNamespace("EpsiPois", "robustbase")
+           EpsiS <- utils::getFromNamespace("EpsiSPois", "robustbase")
+           Epsi2 <- utils::getFromNamespace("Epsi2Pois", "robustbase")
            phiEst <- phiEst.cl <- expression({1})
          },
          "gaussian" = {
-           Epsi.init <- robustbase:::EpsiGaussian.init
-           Epsi <- robustbase:::EpsiGaussian
-           EpsiS <- robustbase:::EpsiSGaussian
-           Epsi2 <- robustbase:::Epsi2Gaussian
-           phiEst.cl <- robustbase:::phiGaussianEst.cl
-           phiEst <- robustbase:::phiGaussianEst
+           Epsi.init <- utils::getFromNamespace("EpsiGaussian.init", "robustbase")
+           Epsi <- utils::getFromNamespace("EpsiGaussian", "robustbase")
+           EpsiS <- utils::getFromNamespace("EpsiSGaussian", "robustbase")
+           Epsi2 <- utils::getFromNamespace("Epsi2Gaussian", "robustbase")
+           phiEst.cl <- utils::getFromNamespace("phiGaussianEst.cl", "robustbase")
+           phiEst <- utils::getFromNamespace("phiGaussianEst", "robustbase")
          },
          "Gamma" = { ## added by ARu
-           Epsi.init <- robustbase:::EpsiGamma.init
-           Epsi <- robustbase:::EpsiGamma
-           EpsiS <- robustbase:::EpsiSGamma
-           Epsi2 <- robustbase:::Epsi2Gamma
-           phiEst.cl <- robustbase:::phiGammaEst.cl
-           phiEst <- robustbase:::phiGammaEst
+           Epsi.init <- utils::getFromNamespace("EpsiGamma.init", "robustbase")
+           Epsi <- utils::getFromNamespace("EpsiGamma", "robustbase")
+           EpsiS <- utils::getFromNamespace("EpsiSGamma", "robustbase")
+           Epsi2 <- utils::getFromNamespace("Epsi2Gamma", "robustbase")
+           phiEst.cl <- utils::getFromNamespace("phiGammaEst.cl", "robustbase")
+           phiEst <- utils::getFromNamespace("phiGammaEst", "robustbase")
            },
          ## else
          stop(gettextf("family '%s' not yet implemented", family$family),
               domain=NA)
          )
 
-  ### change names of returned objects to what they were in original robustbase code
-  ni <- mod$ni
-  tcc <- mod$tcc
-  eta <- mod$linear.predictors
-  phi <- mod$dispersion
-  mu <- mod$fitted.values
+  ### change names of returned objects to what they were in original robustbase
+  ### code
+  ni <- x$ni
+  tcc <- x$tcc
+  eta <- x$linear.predictors
+  phi <- x$dispersion
+  mu <- x$fitted.values
 
   ### get V(mu)
-  rr <- mod$y-mu
+  rr <- x$y-mu
   sni <- sqrt(ni)
-  sVF <- sni*rr/mod$residuals ## 164 (inverted)
-  sV <- sVF*sqrt(mod$dispersion) #168
+  sVF <- sni*rr/x$residuals ## 164 (inverted)
+  sV <- sVF*sqrt(x$dispersion) #168
   Vmu <- sVF^2 ## 163 (inverted)
 
 
@@ -57,15 +65,21 @@ estfun.glmrob <- function(mod,...){
   H <- floor(mu*ni - tcc* sni*sV)
 
   eval(Epsi.init)
-  residPS <- mod$residual/sqrt(phi) # scaled Pearson residuals
+  residPS <- x$residual/sqrt(phi) # scaled Pearson residuals
   cpsi <- pmax.int(-tcc,pmin.int(residPS,tcc))-eval(Epsi) ## 210
 
   ### dPsi/dBeta=dPsi/d eta d eta/d Beta=dPsi/d eta X
-  dmu.deta <- family(mod)$mu.eta(mod$linear.predictors)
-  X <- model.matrix(mod)
+  dmu.deta <- stats::family(x)$mu.eta(x$linear.predictors)
+  X <- stats::model.matrix(x)
 
-  cpsi*w.x*sni/sV*dmu.deta*X
+  return(cpsi*w.x*sni/sV*dmu.deta*X)
 }
 
-bread.glmrob <- function(mod,...)
-  return(solve(mod$matM))
+##' @title Extract bread matrix from an \code{lmrob()} fit
+##' @param x a fitted \code{lmrob} object
+##' @param ... arguments passed to methods
+##' @return Details needed
+##' @exportS3Method
+bread.glmrob <- function(x, ...) {
+  return(solve(x$matM))
+}
