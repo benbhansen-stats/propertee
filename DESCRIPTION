@@ -54,6 +54,7 @@ Collate:
     'get_cov_adj.R'
     'get_data_from_model.R'
     'get_design.R'
+    'glmrobMethods.R'
     'lmitt.R'
     'lmrob_methods.R'
     'merge_preserve_order.R'
