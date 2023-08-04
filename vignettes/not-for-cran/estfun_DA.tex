@@ -452,14 +452,14 @@ $\tilde{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()}
 
 In the model-based perspective, expected value and covariance are
 conditional on
-\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, A_{i}: i \in c): c \in
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, A_{i}: i \in c): c \in
       \mathcal{C}\cup \mathcal{Q} \right]\right)\]
 
 
 In the design-based perspective, $\mathcal{Q}$ is partitioned into
 blocks $b$, and expected value and covariance are
 conditional on
-\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
   i \in c; c\}, \{\sum_{c
     \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
 where $a_{c}$ denotes the common treatment assignment of all $i\in
