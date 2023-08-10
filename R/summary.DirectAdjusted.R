@@ -81,7 +81,7 @@ print.summary.DirectAdjusted <- function(x,
                               var_names(x$DirectAdjusted@Design, "t"), "\\."),
                        rownames(coefs))
     } else {
-      toprint <- nrow(coefs)
+      toprint <- rep(TRUE, nrow(coefs))
     }
     stats::printCoefmat(coefs[toprint, , drop = FALSE],
                         digits = digits,
