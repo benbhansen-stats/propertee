@@ -103,6 +103,15 @@ test_that("lmitt.form vs as.lmitt", {
                                         design = des)))
   expect_false(any(grepl("Treatment Effects", co)))
   expect_true(any(grepl("Coefficients", co)))
+
+
+  ### With interactions, `as.lmitt` should report all coefficients
+  co <- capture.output(summary(mod <- as.lmitt(lm(
+    y ~ as.factor(o) + as.factor(o):z.(des), data = simdata),
+    design = des)))
+  expect_equal(sum(grepl("as.factor(o)", co, fixed = TRUE)),
+               length(mod$coefficients))
+
 })
 
 test_that("issues with coefficients", {
