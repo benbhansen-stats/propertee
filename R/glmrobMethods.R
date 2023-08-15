@@ -12,7 +12,7 @@ estfun.glmrob <- function(x, ...) {
   ## the expressions were derived or copied from
 
   ## this was copied verbatim from lines 121-155
-  switch(family(mod)$family,
+  switch(family(x)$family,
          "binomial" = {
            Epsi.init <- utils::getFromNamespace("EpsiBin.init", "robustbase")
            Epsi <- utils::getFromNamespace("EpsiBin", "robustbase")
@@ -70,14 +70,14 @@ estfun.glmrob <- function(x, ...) {
   H <- floor(mu*ni - tcc* sni*sV)
 
   eval(Epsi.init)
-  residPS <- mod$residual/sqrt(phi) # scaled Pearson residuals (169)
+  residPS <- x$residual/sqrt(phi) # scaled Pearson residuals (169)
   cpsi <- pmax.int(-tcc,pmin.int(residPS,tcc))-eval(Epsi) ## 210
 
   ### dPsi/dBeta=dPsi/d eta d eta/d Beta=dPsi/d eta X
-  dmu.deta <- family(mod)$mu.eta(eta)
-  X <- model.matrix(mod)
+  dmu.deta <- family(x)$mu.eta(eta)
+  X <- model.matrix(x)
 
-  cpsi*mod$w.x*sni/sV*dmu.deta*X
+  cpsi*x$w.x*sni/sV*dmu.deta*X
 }
 
 ##' @title Extract bread matrix from an \code{lmrob()} fit
