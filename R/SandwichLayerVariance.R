@@ -2,49 +2,48 @@
 NULL
 
 #' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
+#' @details Supported \code{type} include:
+#'
+#' - \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
+#' - Others...
+#'
+#' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
+#' \code{type = "XXX"} will now use your method. Your method should return a
+#' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
 #' @param x a fitted \code{DirectAdjusted} model object
 #' @param type A string indicating the desired variance estimator. Currently
-#' accepts "CR0", "MB0", or "HC0"
+#'   accepts "CR0", "MB0", or "HC0"
 #' @param cluster Defaults to NULL, which means unit of assignment columns
-#' indicated in the Design will be used to generate clustered covariance estimates.
-#' A non-NULL argument to `cluster` specifies a string or character vector of
-#' column names appearing in both the covariance adjustment and quasiexperimental
-#' samples that should be used for clustering covariance estimates.
-#' @param ... Arguments to be passed to the internal variance estimation function.
-#' @return A \eqn{2\times 2} matrix where the dimensions are
-#' given by the intercept and treatment variable terms in the ITT effect model
+#'   indicated in the Design will be used to generate clustered covariance
+#'   estimates. A non-NULL argument to `cluster` specifies a string or character
+#'   vector of column names appearing in both the covariance adjustment and
+#'   quasiexperimental samples that should be used for clustering covariance
+#'   estimates.
+#' @param ... Arguments to be passed to the internal variance estimation
+#'   function.
+#' @return A \eqn{2\times 2} matrix where the dimensions are given by the
+#'   intercept and treatment variable terms in the ITT effect model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluster = NULL, ...) {
-  type <- match.arg(type)
-
-  var_func <- switch(
-    type,
-    "CR0" = .vcovMB_CR0,
-    "MB0" = .vcovMB_CR0,
-    "HC0" = .vcovMB_CR0,
-    "HC1" = .vcovMB_CR1,
-    "CR1" = .vcovMB_CR1,
-    "MB1" = .vcovMB_CR1
-  )
+vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
+  if (!exists(paste0(".vcov_", type))) {
+    stop(paste0("covariance function .vcov_", type,
+                " not defined.\n"))
+  }
+  var_func <- get(paste0(".vcov_", type))
   args <- list(...)
   args$x <- x
   args$cluster <- .make_uoa_ids(x, cluster, ...)
 
   est <- do.call(var_func, args)
-  if (type %in% c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1")) {
-    # Since these are acronyms, need user input to distinguish which type to
-    # print. Other methods should have their own functions so the type should be
-    # assigned in those functions.
-    attr(est, "type") <- type
-  }
+
   return(est)
 }
 
 #' Model-based standard errors with HC0 adjustment
 #' @keywords internal
 #' @rdname var_estimators
-.vcovMB_CR0 <- function(x, ...) {
+.vcov_CR0 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
@@ -60,12 +59,26 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
   a22inv <- sandwich::bread(x)
   meat <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
- 
+
   # NA any invalid estimates due to degrees of freedom checks
   vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
 
   attr(vmat, "type") <- "CR0"
   return(vmat)
+}
+
+#' @rdname var_estimators
+.vcov_HC0 <- function(x, ...) {
+  out <- .vcov_CR0(x, ...)
+  attr(out, "type") <- "HC0"
+  return(out)
+}
+
+#' @rdname var_estimators
+.vcov_MB0 <- function(x, ...) {
+  out <- .vcov_CR0(x, ...)
+  attr(out, "type") <- "MB0"
+  return(out)
 }
 
 #' Model-based standard errors with HC1 adjustment
@@ -75,14 +88,14 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
   args <- list(...)
   args$x <- x
   args$cadjust <- FALSE
-  
+
   vmat <- do.call(.vcovMB_CR0, args)
   n <- length(args$cluster)
   g <- length(unique(args$cluster))
   k <- ncol(estfun(x))
-  
+
   vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
-  
+
   attr(vmat, "type") <- "CR1"
   return(vmat)
 }
@@ -104,7 +117,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
   if (length(model@absorbed_moderators) == 0) {
     return(vmat)
   }
-  
+
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
   } else if (!inherits(model_data, "data.frame")) {
@@ -123,11 +136,11 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
       if (n_vals == 2) {
         tapply(cluster, col, function(cluster_ids) length(unique(cluster_ids)))
       } else {
-        3 # necessarily enough degrees of freedom if there are at least 3 values 
+        3 # necessarily enough degrees of freedom if there are at least 3 values
       }
     },
     simplify = FALSE)
-  
+
   valid_mods <- vapply(mod_counts,
                        function(counts) all(counts > 2),
                        logical(1L))
@@ -147,17 +160,17 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
       1,
       any
     )
-    
+
     if (all(!dims_to_na)) {
       warning(paste("Could not find dimensions of `vmat` corresponding to",
                     "degenerate standard error estimates. Degenerate standard",
                     "error estimates will not be returned as NA"))
     }
-    
+
     vmat[dims_to_na, ] <- NA_real_
     vmat[, dims_to_na] <- NA_real_
   }
-  
+
   return(vmat)
 }
 
@@ -342,7 +355,7 @@ vcovDA <- function(x, type = c("CR0", "MB0", "HC0", "HC1", "CR1", "MB1"), cluste
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- flexida::.expand.model.frame.DA(x,
+    uoas <- propertee::.expand.model.frame.DA(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {

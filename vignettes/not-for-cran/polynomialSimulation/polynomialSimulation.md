@@ -27,8 +27,8 @@ kable(tab,format='html',caption='Full results for polynomial simulation',digits=
   kable_styling() %>%
   column_spec(6,border_right=TRUE) %>%
   column_spec(11,border_right=TRUE) %>%
-  # add_header_above(c(" " = 1, "flexida" = 5, "OLS" = 5, "Loc. Lin." = 1))%>%
-  add_header_above(c(" " = 1, "flexida" = 5, "OLS" = 5))%>%
+  # add_header_above(c(" " = 1, "propertee" = 5, "OLS" = 5, "Loc. Lin." = 1))%>%
+  add_header_above(c(" " = 1, "propertee" = 5, "OLS" = 5))%>%
   #group_rows("$t_3$ Error",1,12)%>%group_rows("N(0,1) Error",13,24)%>%
   group_rows("linear",1,5) %>%
   group_rows('antiSym',6,10) %>%
@@ -47,7 +47,7 @@ Full results for polynomial simulation
 
 <div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
 
-flexida
+propertee
 
 </div>
 
@@ -686,7 +686,7 @@ sessionInfo()
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] flexida_0.0.0.9000 testthat_3.1.4     kableExtra_1.3.4   knitr_1.39        
+    ## [1] propertee_0.0.0.9000 testthat_3.1.4     kableExtra_1.3.4   knitr_1.39        
     ## 
     ## loaded via a namespace (and not attached):
     ##  [1] Rcpp_1.0.7        svglite_2.1.0     lattice_0.20-45   prettyunits_1.1.1

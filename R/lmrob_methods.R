@@ -11,10 +11,10 @@
 ##' coefficients
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
-##' @exportS3Method 
+##' @exportS3Method
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
-  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "lits")) {
+  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "list")) {
     stop("Model object must have a `control` element of type `lmrobCtrl` (robustbase 0.99-0 and newer) or `list`")
   }
   if (!(ctrl$method %in% c("SM", "MM"))) {
@@ -23,7 +23,7 @@ estfun.lmrob <- function(x, ...) {
   if (is.null(ctrl$psi)) {
     stop("parameter psi is not defined")
   }
-  
+
   xmat <- stats::model.matrix(x)
   xmat <- stats::naresid(x$na.action, xmat)
   psi <- chi <- ctrl$psi
@@ -45,7 +45,7 @@ estfun.lmrob <- function(x, ...) {
   rval <- cbind(Usigma, Ubeta)
   attr(rval, "assign") <- NULL
   attr(rval, "contrasts") <- NULL
-  
+
   return(rval)
 }
 
@@ -63,10 +63,10 @@ estfun.lmrob <- function(x, ...) {
 ##' coefficients
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
-##' @exportS3Method 
+##' @exportS3Method
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control
-  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "lits")) {
+  if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "list")) {
     stop("Model object must have a `control` element of type `lmrobCtrl` (robustbase 0.99-0 and newer) or `list`")
   }
   if (!(ctrl$method %in% c("SM", "MM"))) {
@@ -75,7 +75,7 @@ bread.lmrob <- function(x, ...) {
   if (is.null(ctrl$psi)) {
     stop("parameter psi is not defined")
   }
-  
+
   psi <- chi <- ctrl$psi
   stopifnot(is.numeric(c.chi <- ctrl$tuning.chi),
             is.numeric(c.psi <- ctrl$tuning.psi))
@@ -101,16 +101,16 @@ bread.lmrob <- function(x, ...) {
       stop("X'WX is singular", call. = FALSE)
     })
   })
-  
+
   # At this point A has no sample size scaling, as in robustbase:::.vcov.avar1
   # The lack of scaling there precisely compensates for the lack of scaling of
   # the crossproduct
   a <- A %*% (crossprod(xmat, w * r.s) / mean(w0 * r0.s))
   colnames(a) <- "sigma"
-  
+
   # Now we restore sample size scaling to A
   A <- n * A
   rval <- cbind(a, A)
-  
+
   return(rval)
 }

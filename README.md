@@ -1,17 +1,18 @@
-# flexida
+# propertee: **P**rognostic **R**egression **O**ffsets with **P**ropagation of **ER**rors, for **T**reatment **E**ffect **E**stimation
+
 
 <!-- badges: start -->
-[![R-build-check](https://github.com/benbhansen-stats/flexida/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/flexida/actions)
+[![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
 <!-- badges: end -->
 
 ## Overview
 
-Flexida enables flexible direct adjustment with design-informed standard errors
+Propertee enables flexible direct adjustment with design-informed standard errors
 and optional prior covariance adjustment.
 
 Random trials often utilize clustering and blocking in assigning treatment
 status as a way to simplify implementation. This design information must be
-utilized in future analyses. Using Flexida, a user can generate a Design object
+utilized in future analyses. Using Propertee, a user can generate a Design object
 which will keep track of the design structure.
 
     des <- rct_design(txt ~ cluster(teacher) + block(school), data = teacherdata)
@@ -40,7 +41,7 @@ Optionally, we can also include a covariance adjustment model through the
 
 # Contributing
 
-You may use RStudio to develop for flexida, by opening the `flexida.Rproj` file.
+You may use RStudio to develop for propertee, by opening the `propertee.Rproj` file.
 We suggest you ensure all required dependencies are installed by running
 
     devtools::install_deps(dependencies = TRUE)
@@ -58,22 +59,22 @@ You can generate all `.Rd` documents from the `Roxygen` code using Build ->
 Document, or using Make as describe below.
 
 Finally, you can use Build -> Build and Reload or Build -> Clean and Rebuild to
-load an updated version of `flexida` in your current RStudio session.
+load an updated version of `propertee` in your current RStudio session.
 Alternatively, to install the developed version permanently, use Build -> Build
 Binary Version, followed by
 
-    install.packages("../flexida_VERSION.tgz", repo=NULL)
+    install.packages("../propertee_VERSION.tgz", repo=NULL)
 
 You can revert back to the current CRAN version by
 
-    remove.packages("flexida")
-    install.packages("flexida")
+    remove.packages("propertee")
+    install.packages("propertee")
 
 If you prefer not to use RStudio, you can develop using Make.
 
 - `make test`: Run the full test suite.
 - `make document`: Update all documentation from Roxygen inline comments.
-- `make interactive`: Start up an interactive session with `flexida` loaded.
+- `make interactive`: Start up an interactive session with `propertee` loaded.
   (`make interactive-emacs` starts the session inside emacs.)
 - `make check`: Run `R CMD check` on the package
 - `make build`: Build a binary package.
@@ -114,7 +115,7 @@ get indexed. (Generally internally functions should not be `@export`'d but
 exceptions may arise.)
 
 During this period of development, after documenting an internal function, add
-it to the "_pkgdown.yml" file in the appropriate category. Once flexida goes
+it to the "_pkgdown.yml" file in the appropriate category. Once propertee goes
 public, we will remove those.
 
 ### Referring to functions
@@ -128,14 +129,14 @@ E.g. `\code{lm()}` or `\code{cov_adj()}` or `\code{lme4::lmer()}`.
 ### Vignettes or simulations
 
 Vignettes and simulations should go in the
-[/vignettes/](https://github.com/benbhansen-stats/flexida/tree/main/vignettes)
+[/vignettes/](https://github.com/benbhansen-stats/propertee/tree/main/vignettes)
 folder. Anything that should not be built by R check (especially anything that
 builds very slowly, or introduces dependencies not specified in
-[DESCRIPTION](https://github.com/benbhansen-stats/flexida/blob/main/DESCRIPTION))
+[DESCRIPTION](https://github.com/benbhansen-stats/propertee/blob/main/DESCRIPTION))
 should go in the
-[/vignettes/not-for-cran](https://github.com/benbhansen-stats/flexida/tree/main/vignettes/not-for-cran).
+[/vignettes/not-for-cran](https://github.com/benbhansen-stats/propertee/tree/main/vignettes/not-for-cran).
 (The not-for-cran folder is in the
-[.Rbuildignore](https://github.com/benbhansen-stats/flexida/blob/main/.Rbuildignore)
+[.Rbuildignore](https://github.com/benbhansen-stats/propertee/blob/main/.Rbuildignore)
 file.)
 
 Note that ALL .Rmd files in /vignettes/ get built during building of the

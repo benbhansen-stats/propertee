@@ -1,10 +1,10 @@
 ---
-title: "Introduction to the 'flexida' package"
-author: "flexida authors"
+title: "Introduction to the 'propertee' package"
+author: "propertee authors"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to the 'flexida' package}
+  %\VignetteIndexEntry{Introduction to the 'propertee' package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,12 +14,12 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(flexida)
+library(propertee)
 ```
 
 # Main Features
 
-The `{flexida}` package offers a two step approach to treatment effect
+The `{propertee}` package offers a two step approach to treatment effect
 estimation.
 
 1. Generate a `Design` object which encodes the study design, including the unit
@@ -31,7 +31,7 @@ either average treatment effect or effect of the treatment on the treated), or
 can include a externally fit covariance adjustment model.
 
 While both the weights and and covariance adjustment can be used in a stock R
-model (e.g. `lm()`), `{flexida}` offers the `lmitt()` function which can be used
+model (e.g. `lm()`), `{propertee}` offers the `lmitt()` function which can be used
 to directly estimate the desired treatment effect, along with properly
 calculated standard errors accounting for the design features and covariance
 adjustment first stage model.
@@ -56,7 +56,7 @@ treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
 STARdata$starkbinary <- STARdata$stark == "small"
 table(STARdata$starkbinary)
 ```
-After this basic example, we will see how `{flexida}` makes it easy to handle
+After this basic example, we will see how `{propertee}` makes it easy to handle
 non-binary treatment variables by introducing `dichotomy`s.
 
 The outcome of interest is a reading score at the end of kindergarten.
@@ -126,7 +126,7 @@ units of assignment. (Note that if the variable names differ, the `by=` argument
 can be used to link them.) For example, school may be the unit of treatment
 assignment level, so the data set creating the `Design` is school-level.
 However, the outcome could be at the student level. As long as the student-level
-data had school identifiers, `{flexida}` can match them up.
+data had school identifiers, `{propertee}` can match them up.
 
 The formula entering `lmitt()` can take on one of two forms:
 
@@ -163,7 +163,7 @@ summary(te_s)
 
 ## Including design weights
 
-Design weights can be easily included in this estimation. `{flexida}` supports
+Design weights can be easily included in this estimation. `{propertee}` supports
 average treatment effect (ATE) and effect of the treatment on the treated (ETT)
 weights.
 

@@ -84,7 +84,7 @@ test_that("Treatment inputs", {
 
   old_opt <- options()
   on.exit(options(old_opt))
-  options(flexida_warn_on_conditional_treatment = FALSE)
+  options(propertee_warn_on_conditional_treatment = FALSE)
   d <- rct_design(o > 2 ~ uoa(cid1, cid2), data = simdata)
   expect_true(is.logical(treatment(d)[, 1]))
   expect_true(has_binary_treatment(d))
