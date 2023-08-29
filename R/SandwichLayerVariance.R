@@ -59,7 +59,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   a22inv <- sandwich::bread(x)
   meat <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
- 
+
   # NA any invalid estimates due to degrees of freedom checks
   vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
 
@@ -81,6 +81,39 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
+#' Model-based standard errors with HC1 adjustment
+#' @keywords internal
+#' @rdname var_estimators
+.vcov_CR1 <- function(x, ...) {
+  args <- list(...)
+  args$x <- x
+  args$cadjust <- FALSE
+
+  vmat <- do.call(.vcov_CR0, args)
+  n <- length(args$cluster)
+  g <- length(unique(args$cluster))
+  k <- ncol(estfun(x))
+
+  vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
+
+  attr(vmat, "type") <- "CR1"
+  return(vmat)
+}
+
+#' @rdname var_estimators
+.vcov_HC1 <- function(x, ...) {
+  out <- .vcov_CR1(x, ...)
+  attr(out, "type") <- "HC1"
+  return(out)
+}
+
+#' @rdname var_estimators
+.vcov_MB1 <- function(x, ...) {
+  out <- .vcov_CR1(x, ...)
+  attr(out, "type") <- "MB1"
+  return(out)
+}
+
 #' @title NA vcovDA subgroup estimates that have insufficient degrees of freedom
 #' @param vmat variance-covariance matrix corresponding to `model`
 #' @param model \code{DirectAdjusted} object
@@ -98,7 +131,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   if (length(model@absorbed_moderators) == 0) {
     return(vmat)
   }
-  
+
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
   } else if (!inherits(model_data, "data.frame")) {
@@ -117,11 +150,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       if (n_vals == 2) {
         tapply(cluster, col, function(cluster_ids) length(unique(cluster_ids)))
       } else {
-        3 # necessarily enough degrees of freedom if there are at least 3 values 
+        3 # necessarily enough degrees of freedom if there are at least 3 values
       }
     },
     simplify = FALSE)
-  
+
   valid_mods <- vapply(mod_counts,
                        function(counts) all(counts > 2),
                        logical(1L))
@@ -141,17 +174,17 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       1,
       any
     )
-    
+
     if (all(!dims_to_na)) {
       warning(paste("Could not find dimensions of `vmat` corresponding to",
                     "degenerate standard error estimates. Degenerate standard",
                     "error estimates will not be returned as NA"))
     }
-    
+
     vmat[dims_to_na, ] <- NA_real_
     vmat[, dims_to_na] <- NA_real_
   }
-  
+
   return(vmat)
 }
 

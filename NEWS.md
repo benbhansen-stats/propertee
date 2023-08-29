@@ -1,3 +1,10 @@
+# v0.3.3
+
+## Added Features
+* `vcovDA()` can accept user-created variance estimation functions that start with the prefix `.vcov_`; the `type` argument should take the rest of the function name as an input
+* Variance estimation for robust GLM's (models fit using `robustbase::glmrob`) is now accommodated
+* HC1 variance estimates are now accommodated
+
 # v0.3.2
 
 ## Added Features
