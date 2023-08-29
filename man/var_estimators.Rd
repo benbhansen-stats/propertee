@@ -5,7 +5,9 @@
 \alias{.vcov_CR0}
 \alias{.vcov_HC0}
 \alias{.vcov_MB0}
-\alias{.vcovMB_CR1}
+\alias{.vcov_CR1}
+\alias{.vcov_HC1}
+\alias{.vcov_MB1}
 \title{Compute covariance-adjusted cluster-robust sandwich variance estimates}
 \usage{
 vcovDA(x, type = "CR0", cluster = NULL, ...)
@@ -16,7 +18,11 @@ vcovDA(x, type = "CR0", cluster = NULL, ...)
 
 .vcov_MB0(x, ...)
 
-.vcovMB_CR1(x, ...)
+.vcov_CR1(x, ...)
+
+.vcov_HC1(x, ...)
+
+.vcov_MB1(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model object}
