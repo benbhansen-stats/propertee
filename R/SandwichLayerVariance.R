@@ -84,12 +84,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' Model-based standard errors with HC1 adjustment
 #' @keywords internal
 #' @rdname var_estimators
-.vcovMB_CR1 <- function(x, ...) {
+.vcov_CR1 <- function(x, ...) {
   args <- list(...)
   args$x <- x
   args$cadjust <- FALSE
 
-  vmat <- do.call(.vcovMB_CR0, args)
+  vmat <- do.call(.vcov_CR0, args)
   n <- length(args$cluster)
   g <- length(unique(args$cluster))
   k <- ncol(estfun(x))
@@ -98,6 +98,20 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   attr(vmat, "type") <- "CR1"
   return(vmat)
+}
+
+#' @rdname var_estimators
+.vcov_HC1 <- function(x, ...) {
+  out <- .vcov_CR1(x, ...)
+  attr(out, "type") <- "HC1"
+  return(out)
+}
+
+#' @rdname var_estimators
+.vcov_MB1 <- function(x, ...) {
+  out <- .vcov_CR1(x, ...)
+  attr(out, "type") <- "MB1"
+  return(out)
 }
 
 #' @title NA vcovDA subgroup estimates that have insufficient degrees of freedom

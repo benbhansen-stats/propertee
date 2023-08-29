@@ -1939,7 +1939,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              50 / 48 * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
+              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
               check.attributes = FALSE)
   )
   expect_equal(attr(cr1_vmat, "type"), "CR1")
@@ -1978,7 +1978,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              g / (g-1) * (n-1) / (n-2) * .vcovMB_CR0(dmod, cluster = .make_uoa_ids(dmod),
+              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod),
                                                       cadjust=FALSE),
               check.attributes = FALSE)
   )
