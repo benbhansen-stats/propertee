@@ -1309,3 +1309,14 @@ test_that("#81 continuous moderator shows appropriate coefficients", {
   coefnames <- coefnames[nchar(coefnames) > 0]
   expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
 })
+
+test_that("#81 continuous moderator shows appropriate coefficients", {
+  data(simdata)
+  des <- obs_design(z ~ uoa(cid1, cid2) , data = simdata)
+  
+  mod <- lmitt(y ~ x, data = simdata, design = des)
+  expect_length(mod$coeff, 4)
+  coefnames <- strsplit(capture.output(show(mod))[1], " +")[[1]]
+  coefnames <- coefnames[nchar(coefnames) > 0]
+  expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
+})
