@@ -1,5 +1,5 @@
 Package: propertee
-Version: 0.3.3.9001
+Version: 0.3.4.9001
 Title: Direct Adjustment with Design-Informed Standard Errors and Optional Prior Covariance Adjustment
 Description: Enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.
 Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
