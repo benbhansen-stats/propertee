@@ -1310,13 +1310,28 @@ test_that("#81 continuous moderator shows appropriate coefficients", {
   expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
 })
 
-test_that("#81 continuous moderator shows appropriate coefficients", {
+test_that(".estfun_DB_blockabsorb returns 0 if not asking for 
+          design-based SE or DA model does not absorb intercepts", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) , data = simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
   
-  mod <- lmitt(y ~ x, data = simdata, design = des)
-  expect_length(mod$coeff, 4)
-  coefnames <- strsplit(capture.output(show(mod))[1], " +")[[1]]
-  coefnames <- coefnames[nchar(coefnames) > 0]
-  expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
+  expect_true(all(.estfun_DB_blockabsorb(damod) == 0))
+  expect_true(all(.estfun_DB_blockabsorb(damod, db = TRUE) == 0))
+  expect_true(all(.estfun_DB_blockabsorb(damod_abs) == 0))
+})
+
+test_that(".estfun_DB_blockabsorb returns correct value", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  
+  expect_false(all(.estfun_DB_blockabsorb(damod_abs, db = TRUE) == 0))
+  
+  
 })
