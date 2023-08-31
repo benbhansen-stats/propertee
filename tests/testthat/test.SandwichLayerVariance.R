@@ -1836,7 +1836,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
 
-  df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2, "uid" = paste0("u", seq_len(NC * MI + NQ * MI)))
 
   # generate clustered errors
   error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
@@ -1866,7 +1866,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   cmod <- glm(cmod_form, data = df, family = stats::binomial())
   des <- rct_design(z ~ uoa(cid), df[!is.na(df$z),])
   damod <- lmitt(
-    lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod))
+    lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod, by = "uid"))
   )
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
@@ -1886,12 +1886,16 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
-  ids <- c(df$cid[!is.na(df$z)], df$cid[is.na(df$z)])
-  ef_cmod <- estfun(cmod)
-  nonzero_ef_damod <- estfun(as(damod, "lm"))
-  ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(nonzero_ef_damod))
-  colnames(ef_damod) <- colnames(nonzero_ef_damod)
-  ef_damod[!is.na(df$z), ] <- nonzero_ef_damod
+  ids <- c(df$cid[!is.na(df$z)][sort(df$uid[!is.na(df$z)], index.return = TRUE)$ix],
+           df$cid[is.na(df$z)][sort(df$uid[is.na(df$z)], index.return = TRUE)$ix])
+  ids <- factor(ids, levels = unique(ids))
+  Q_ids_order <- sort(df$uid[!is.na(df$z)], index.return = TRUE)$ix
+  order_ix <- c(sapply(sort(df$uid[!is.na(df$z)]), function(c) which(df$uid == c)),
+                sapply(sort(df$uid[is.na(df$z)]), function(c) which(df$uid == c)))
+  ef_cmod <- estfun(cmod)[order_ix,]
+  ef_damod <- estfun(as(damod, "lm"))[Q_ids_order,]
+  ef_damod <- rbind(ef_damod,
+                    matrix(0, nrow = nrow(ef_cmod) - nrow(ef_damod), ncol = ncol(ef_damod)))
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),

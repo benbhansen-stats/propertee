@@ -192,8 +192,12 @@ bread.DirectAdjusted <- function(x, ...) {
   
   aligned_phi <- matrix(0, nrow = nrow(aligned_psi), ncol = ncol(phi),
                         dimnames = list(seq_len(nrow(aligned_psi)), colnames(phi)))
-  aligned_phi[ids$Q_union_C_order[names(ids$Q_union_C_order) %in% names(ids$C_order)],] <- phi[
-    ids$C_order[names(ids$C_order) %in% names(ids$Q_union_C_order)],]
+  insert_aligned_phi_ix <- ids$Q_union_C_order[names(ids$Q_union_C_order) %in% names(ids$C_order)]
+  retrieve_original_phi_ix <- Reduce(
+    c,
+    lapply(unique(names(insert_aligned_phi_ix)), function(c) which(c == names(ids$C_order)))
+  )
+  aligned_phi[insert_aligned_phi_ix,] <- phi[ids$C_order[retrieve_original_phi_ix],]
 
   return(list(psi = aligned_psi, phi = aligned_phi))
 }
@@ -240,15 +244,30 @@ bread.DirectAdjusted <- function(x, ...) {
   }
 
   # If there's no covariance adjustment info, return the ID's found in Q
-  if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
+  if (!inherits(x, "DirectAdjusted") | !inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
     return(factor(Q_uoas, levels = unique(Q_uoas)))
   }
 
-  # the "Q_union_C_order" element of the output of .order_samples() provides the
-  # order for the output of estfun, which we want the ID's to align with
-  ids <- .order_samples(x, by = cluster, ...)
-  uoas <- names(ids$Q_union_C_order)
+  # `keys` may have columns in addition to "in_Q" and the uoa columns if a
+  # `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
+  # does, use the columns exclusively specified in `by` to produce the order
+  by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
+  if (length(by) == 0) {
+    by <- cluster
+  }
+  ids <- .order_samples(x, by = by, ...)
+  
+  # get the UOA's and order them by the "by" ordering
+  if (length(setdiff(cluster, by)) == 0) {
+    uoas <- names(ids$Q_union_C_order)
+  } else {
+    Q_ids <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
+    ordered_Q_ids <- Q_ids[ids$Q_order]
+    C_ids <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
+    ordered_not_Q_ids <- C_ids[ids$C_order[!(names(ids$C_order) %in% names(ids$Q_order))]]
+    uoas <- c(ordered_Q_ids, ordered_not_Q_ids)
+  }
 
   return(factor(uoas, levels = unique(uoas)))
 }
@@ -286,11 +305,13 @@ bread.DirectAdjusted <- function(x, ...) {
   ## `keys` may have additional columns beyond "in_Q" and the uoa columns if a
   ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
   ## does, use the columns exclusively specified in `by` to merge.
-  if (is.null(by)) {
-    by <- setdiff(colnames(ca@keys), "in_Q")
-    if (length(setdiff(by, var_names(x@Design, "u"))) > 0) {
-      by <- setdiff(by, var_names(x@Design, "u"))
-    }
+  if (is.null(by) | length(setdiff(colnames(ca@keys),
+                                   c(var_names(x@Design, "u"), "in_Q"))) > 0) {
+    by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
+  }
+
+  if (length(by) == 0) {
+    by <- var_names(x@Design, "u")
   }
 
   # first sort the ID's in Q
@@ -302,15 +323,16 @@ bread.DirectAdjusted <- function(x, ...) {
   not_in_Q_ids <- C_ids[!ca@keys$in_Q]
   if (suppressWarnings(any(is.na(as.numeric(C_ids))))) {
     C_ix <- sort(C_ids, index.return = TRUE)
+    not_in_Q_ids <- sort(not_in_Q_ids)
   } else {
     C_ix <- sort(as.numeric(C_ids), index.return = TRUE)
-    not_in_Q_ids <- as.numeric(not_in_Q_ids)
+    not_in_Q_ids <- sort(as.numeric(not_in_Q_ids))
   }
   C_ix <- stats::setNames(C_ix$ix, C_ix$x)
 
   # append the remaining ID's in C if necessary
-  Q_union_C_ix <- setNames(seq_along(c(Q_ix, not_in_Q_ids)),
-                           c(names(Q_ix), not_in_Q_ids))
+  Q_union_C_ix <- stats::setNames(seq_along(c(Q_ix, not_in_Q_ids)),
+                                  c(names(Q_ix), not_in_Q_ids))
 
   return(list(Q_order = Q_ix, C_order = C_ix, Q_union_C_order = Q_union_C_ix))
 }

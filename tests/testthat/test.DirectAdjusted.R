@@ -464,7 +464,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, design = des, offset = cov_adj(cmod, by = "uid"))
 
   expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
-  expect_equal(estfun(mod1)[1:20,], estfun(mod2)[1:20,], tolerance = 1e8)
+  expect_equal(estfun(mod1), estfun(mod2))
 })
 
 test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
