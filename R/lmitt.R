@@ -347,6 +347,11 @@ lmitt.formula <- function(obj,
                                       collapse = "+"),
                                     collapse = ""))
 
+  # If the moderators already exist in the passed-in data, remove them to avoid
+  # either a) overloading variable names, or b) an error if data is a
+  # `grouped_df` (see #137)
+  data <- data[, !(names(data) %in% colnames(mm))]
+
   # Data for model should be original data, plus updated RHS (mm)
   lm.call$data <- cbind(data, mm)
 
