@@ -1000,12 +1000,15 @@ test_that(".order_samples when the samples fully overlap", {
 
   expect_equal(length(out$Q_order), nrow(simdata))
   expect_equal(length(out$C_order), nrow(simdata))
+  expect_equal(length(out$Q_union_C_order), nrow(simdata))
 
   expect_equal(names(out$Q_order), as.character(seq_len(nrow(simdata))))
   expect_equal(names(out$C_order), as.character(seq_len(nrow(simdata))))
-
-  expect_equal(sum(is.na(out$Q_order)), 0)
-  expect_equal(sum(is.na(out$C_order)), 0)
+  expect_equal(names(out$Q_union_C_order), as.character(seq_len(nrow(simdata))))
+  
+  expect_true(all.equal(out$Q_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
 })
 
 test_that(".order_samples when Q is a subset of C", {
@@ -1013,8 +1016,11 @@ test_that(".order_samples when Q is a subset of C", {
   data(simdata)
 
   simdata$uid <- seq_len(nrow(simdata))
-  cmod_data <- data.frame(x = rnorm(30), y = rnorm(30), cid1 = NA, cid2 = NA,
-                          uid = seq_len(30) + nrow(simdata))
+  cmod_data <- rbind(
+    simdata[, c("x", "y", "cid1", "cid2", "uid")],
+    data.frame(x = rnorm(30), y = rnorm(30), cid1 = NA, cid2 = NA,
+               uid = seq_len(30) + nrow(simdata))
+  )
   cmod <- lm(y ~ x, cmod_data)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
@@ -1023,12 +1029,15 @@ test_that(".order_samples when Q is a subset of C", {
 
   expect_equal(length(out$Q_order), nrow(simdata))
   expect_equal(length(out$C_order), nrow(simdata) + 30)
+  expect_equal(length(out$Q_union_C_order), nrow(simdata) + 30)
 
   expect_equal(names(out$Q_order), as.character(seq_len(nrow(simdata))))
   expect_equal(names(out$C_order), as.character(seq_len(nrow(simdata) + 30)))
-
-  expect_equal(sum(is.na(out$Q_order)), 0)
-  expect_equal(sum(is.na(out$C_order)), nrow(simdata))
+  expect_equal(names(out$Q_union_C_order), as.character(seq_len(nrow(simdata) + 30)))
+  
+  expect_true(all.equal(out$Q_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$C_order, seq_len(nrow(simdata) + 30), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata) + 30), check.attributes = FALSE))
 })
 
 
@@ -1045,13 +1054,16 @@ test_that(".order_samples when C is a subset of Q", {
   out <- .order_samples(mod)
 
   expect_equal(length(out$Q_order), nrow(simdata))
-  expect_equal(length(out$C_order), nrow(simdata))
+  expect_equal(length(out$C_order), 20)
+  expect_equal(length(out$Q_union_C_order), nrow(simdata))
 
   expect_equal(names(out$Q_order), as.character(seq_len(50)))
-  expect_equal(names(out$C_order), as.character(seq_len(50)))
+  expect_equal(names(out$C_order), as.character(seq_len(20)))
+  expect_equal(names(out$Q_union_C_order), as.character(seq_len(50)))
 
-  expect_equal(sum(is.na(out$Q_order)), 0)
-  expect_equal(sum(is.na(out$C_order)), 30)
+  expect_true(all.equal(out$Q_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$C_order, seq_len(20), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
 })
 
 test_that(".order_samples when the samples do not overlap", {
@@ -1068,13 +1080,16 @@ test_that(".order_samples when the samples do not overlap", {
   out <- .order_samples(mod)
 
   expect_equal(length(out$Q_order), 30)
-  expect_equal(length(out$C_order), nrow(simdata))
+  expect_equal(length(out$C_order), 20)
+  expect_equal(length(out$Q_union_C_order), nrow(simdata))
 
   expect_equal(names(out$Q_order), as.character(seq(21, 50)))
-  expect_equal(names(out$C_order), as.character(c(seq(21, 50), seq_len(20))))
+  expect_equal(names(out$C_order), as.character(seq_len(20)))
+  expect_equal(names(out$Q_union_C_order), as.character(c(seq(21, 50), seq_len(20))))
 
-  expect_equal(sum(is.na(out$Q_order)), 0)
-  expect_equal(sum(is.na(out$C_order)), 30)
+  expect_true(all.equal(out$Q_order, seq_len(30), check.attributes = FALSE))
+  expect_true(all.equal(out$C_order, seq_len(20), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
 })
 
 test_that(".order_samples when no `by` argument provided", {
@@ -1096,13 +1111,16 @@ test_that(".order_samples when no `by` argument provided", {
   names(C_uoas) <- NULL
 
   expect_equal(length(out$Q_order), 30)
-  expect_equal(length(out$C_order), nrow(simdata))
+  expect_equal(length(out$C_order), 20)
+  expect_equal(length(out$Q_union_C_order), nrow(simdata))
 
   expect_equal(names(out$Q_order), Q_uoas)
-  expect_equal(names(out$C_order), c(Q_uoas, C_uoas))
+  expect_equal(names(out$C_order), C_uoas)
+  expect_equal(names(out$Q_union_C_order), c(Q_uoas, C_uoas))
 
-  expect_equal(sum(is.na(out$Q_order)), 0)
-  expect_equal(sum(is.na(out$C_order)), 30)
+  expect_true(all.equal(out$Q_order, seq_len(30), check.attributes = FALSE))
+  expect_true(all.equal(out$C_order, seq_len(20), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
 })
 
 test_that("sanitize_Q_ids fails with invalid cluster argument", {
