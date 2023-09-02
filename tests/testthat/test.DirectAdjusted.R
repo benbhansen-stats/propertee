@@ -1333,5 +1333,10 @@ test_that(".estfun_DB_blockabsorb returns correct value", {
   
   expect_false(all(.estfun_DB_blockabsorb(damod_abs, db = TRUE) == 0))
   
-  
+  phi <- .get_phi_tilde(damod_abs, db = TRUE)
+  aa <- .get_appinv_atp(damod_abs, db = TRUE)
+  expect_true(all.equal(
+    cbind(0, phi %*% aa), 
+    .estfun_DB_blockabsorb(damod_abs, db = TRUE)
+  ))
 })

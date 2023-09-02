@@ -723,7 +723,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 
-#' 
+#' This function calculates grave{phi}
 #' @keywords internal
 #' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
@@ -779,32 +779,23 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(phitilde)
 }
 
-#' This function
+#' This function calculates the product of two matrices A_{pp}^{-1} A_{tau p}^T
 #' @keywords internal
 #' @param x a fitted \code{DirectAdjusted} model
 #' @param ... arguments to pass to internal functions
-#' @return An \eqn{s\times k} matrix
+#' @return An \eqn{s\times k} matrix A_{pp}^{-1} A_{tau p}^T
 .get_appinv_atp <- function(x, ...){
   ws <- x$weights
   # estimated treatment effect tau1 <- x$coefficients
   
-  # treatment assignments
+  # stratum ids
   design_obj <- x@Design
-  name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  df <- x$call$data
-  assignment <- df[, name_of_trt]
-  
-  # the indicators of z (treatment assignment)
-  n <- length(ws) # number of units in Q(?)
-  k <- length(c(0,1)) # unique(assignment)
-  z_ind <- matrix(nrow = n, ncol = k)
-  for (j in 1:k){
-    z_ind[,j] <- as.integer(assignment == c(0,1)[j])
-  }
-  
-  # stratum ids 
   name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  df <- x$call$data
   stratum <- df[, name_of_blk]
+  n <- length(ws) # number of units in Q(?)
+  k <- 2 # number of assignments
+  
   # the indicators of b (stratum)
   if (sum(x@Design@column_index == "b") == 1){
     s <- length(unique(stratum)) # number of stratum

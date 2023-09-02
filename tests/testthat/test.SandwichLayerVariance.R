@@ -2042,3 +2042,54 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
   expect_true(all.equal(v1, v2))
 
 })
+
+test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
+          for DA models with absorbed intercept", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  damod_abs_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                         offset = cov_adj(cmod), absorb = TRUE)
+  
+  bid <- simdata$bid
+  B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
+  goal <- matrix(0, nrow = 3, ncol = 1)
+  for (blk in 1:3){
+    goal[blk] <- sum(damod_abs$weights * damod_abs$residuals * B[,blk]) / 
+      sum(damod_abs$weights * B[,blk])
+  }
+  expect_true(all.equal(goal, .get_appinv_atp(damod_abs, db = TRUE)))
+  
+  for (blk in 1:3){
+    goal[blk] <- sum(damod_abs_off$weights * damod_abs_off$residuals * B[,blk]) / 
+      sum(damod_abs_off$weights * B[,blk])
+  }
+  expect_true(all.equal(goal, .get_appinv_atp(damod_abs_off, db = TRUE)))
+})
+
+test_that(".get_phi_tilde returns correct grave{phi}
+          for DA models with absorbed intercept", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  
+  bid <- simdata$bid
+  B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
+  Z <- cbind(as.integer(simdata$z == 0), as.integer(simdata$z == 1))
+  
+  ws <- damod_abs$weights
+  p <- matrix(0, nrow = 2, ncol = 3)
+  for (k in 1:2)
+    for (j in 1:3){
+      p[k, j] <- sum(ws * Z[,k] * B[,j]) / sum(ws * B[,j])
+    }
+  goal <- matrix(0, nrow = 50, ncol = 3)
+  for (s in 1:3){
+    goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
+  }
+  expect_true(all.equal(goal, .get_phi_tilde(damod_abs, db = TRUE)))
+})
