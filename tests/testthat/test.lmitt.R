@@ -338,3 +338,15 @@ test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
   
   expect_equal(dim(model.matrix(absorb_mod)), dim(model.matrix(no_absorb_mod)))
 })
+
+test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
+                "(some strata only have untreated clusters)"), {
+  data(simdata)
+  simdata[simdata$cid1 == 4 & simdata$cid2 == 2, "bid"] <- 4
+  
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = TRUE)
+  no_absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = FALSE)
+  
+  expect_equal(dim(model.matrix(absorb_mod)), dim(model.matrix(no_absorb_mod)))
+})
