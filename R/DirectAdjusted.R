@@ -116,16 +116,17 @@ estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(x$model$`(offset)`) | !inherits(x$model$`(offset)`, "SandwichLayer")) {
-    return(.base_S3class_estfun(x))
+    return(.calc_fe_correction(x, ...) * .base_S3class_estfun(x))
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   estmats <- .align_and_extend_estfuns(x, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
-
+  
   ## form matrix of estimating equations
-  mat <- estmats[["psi"]] - estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat <- .calc_fe_correction(x, ...) * (
+    estmats[["psi"]] - estmats[["phi"]] %*% t(a11_inv) %*% t(a21))
 
   return(mat)
 }
@@ -356,7 +357,7 @@ bread.DirectAdjusted <- function(x, ...) {
     error = function(e) {
       mf <- eval(x$call$data, envir = environment(x))
       missing_cols <- setdiff(by, colnames(mf))
-      stop(paste("Could not find unit of assignment columns",
+      stop(paste("Could not find columns",
                  paste(missing_cols, collapse = ", "), "in ITT effect model data"),
            call. = FALSE)
     })
@@ -372,6 +373,72 @@ bread.DirectAdjusted <- function(x, ...) {
   }
 
   return(out)
+}
+
+#' Calculate meat matrix correction under fixed effects absorption
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param cluster character vector or list; optional. Specifies column names that appear
+#' in both the covariance adjustment dataframe C and quasiexperimental dataframe
+#' Q. Defaults to NULL, in which case unit of assignment columns indicated in
+#' the Design will be used to generate clustered covariance estimates.
+#' @param by character vector or list; optional. Specifies column names that appear in
+#' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+#' Defaults to NULL, in which case unit of assignment columns indicated in the
+#' Design will be used to generate ID's.
+#' @param ... arguments passed to methods
+.calc_fe_correction <- function(x, cluster = NULL, by = NULL, ...) {
+  if (!x@absorbed_intercepts) {
+    return(1)
+  }
+  
+  if (is.null(cluster)) {
+    cluster <- var_names(x@Design, "u")
+  }
+
+  # get cluster ID's, stratum ID's, and weights
+  cluster_ids <- .make_uoa_ids(x, cluster = cluster, ...)
+  
+  stratum_cols <- var_names(x@Design, "b")
+  stratum_ids <- .sanitize_Q_ids(x, stratum_cols, sorted = FALSE, ...)
+
+  if (inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+    ## `keys` may have additional columns beyond "in_Q" and the uoa columns if a
+    ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
+    ## does, use the columns exclusively specified in `by` to merge.
+    if (is.null(by) | length(setdiff(colnames(ca@keys),
+                                     c(var_names(x@Design, "u"), "in_Q"))) > 0) {
+      by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
+    }
+    
+    if (length(by) == 0) {
+      by <- var_names(x@Design, "u")
+    }
+    
+    C_stratum_ids <- .sanitize_C_ids(ca, stratum_cols, verbose = FALSE, sorted = FALSE, ...)
+    not_in_Q_stratum_ids <- C_stratum_ids[!ca@keys$in_Q]
+    Q_union_C_stratum_ids <- c(stratum_ids, not_in_Q_stratum_ids)
+    
+    ids <- .order_samples(x, by = by, ...)
+    stratum_ids <- Q_union_C_stratum_ids[ids$Q_union_C_order]
+  }
+  
+  stratum_wts <- drop(rowsum(rep(1, length(stratum_ids)), stratum_ids))
+  cluster_wts <- drop(rowsum(rep(1, length(stratum_ids)), cluster_ids))
+
+  corrections <- sqrt(
+    stratum_wts[stratum_ids] / (stratum_wts[stratum_ids] - cluster_wts[cluster_ids])
+  )
+  corrections[is.nan(corrections)] <- 0
+  
+  if (any(corrections == Inf)) {
+    warning(paste("Cannot compute a variance estimate when any strata only have",
+                  "one cluster; covariance matrix will return NaN's"))
+  }
+  if (any(corrections == 0)) {
+    warning("Fixed effects corrections for some observations are 0")
+  }
+  
+  return(corrections)
 }
 
 #' @exportS3Method getCall DirectAdjusted

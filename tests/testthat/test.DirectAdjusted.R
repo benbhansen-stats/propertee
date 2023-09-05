@@ -1357,3 +1357,7 @@ test_that("#81 continuous moderator shows appropriate coefficients", {
   coefnames <- coefnames[nchar(coefnames) > 0]
   expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
 })
+
+test_that("#110 meat matrix correction for fixed effects absorption", {
+  
+})
