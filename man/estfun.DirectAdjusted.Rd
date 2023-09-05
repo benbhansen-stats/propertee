@@ -22,9 +22,7 @@ observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
 \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
 contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
 contribution to the covariance adjustment model fit, and the \eqn{A} matrices
-are given by typical sandwich calculations. The output matrix is orderded
-such that the units used to fit the latter comprise the initial rows, and
-any additional observations used to fit the former are stacked below.\cr\cr
+are given by typical sandwich calculations.\cr\cr
 Note that the formulation of the output matrix \eqn{\tilde{\Psi}} requires
 information about each observation's contributions to both the covariance
 adjustment and ITT effect models (where some observations may not contribute

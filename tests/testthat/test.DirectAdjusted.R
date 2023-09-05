@@ -715,10 +715,10 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q is",
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  expect_true(all(ef1$phi[1:20,] == 0))
+  expect_true(all(ef1$phi[21:50,] == 0))
   expect_equal(ef1$phi, ef2$phi)
   expect_equal(ef1$psi, ef1$psi[sort(simdata$obs_id, index.return = TRUE)$ix,, drop = FALSE])
-  expect_true(all(ef1$psi[31:50,] == 0))
+  expect_true(all(ef1$psi[1:20,] == 0))
   expect_equal(ef1$psi, ef2$psi)
 })
 
@@ -862,15 +862,15 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
   phi2_sorted <- lapply(split(ef2$phi, by_ix), sort)
   expect_true(all(sapply(unique(by_ix),
                          function(id) all.equal(phi1_sorted[[id]], phi2_sorted[[id]]))))
-  expect_true(all(ef1$phi[1:20,] == 0))
-  expect_true(all(ef2$phi[1:20,] == 0))
+  expect_true(all(ef1$phi[21:50,] == 0))
+  expect_true(all(ef2$phi[21:50,] == 0))
 
   psi1_sorted <- lapply(split(ef1$psi, by_ix), sort)
   psi2_sorted <- lapply(split(ef2$psi, by_ix), sort)
   expect_true(all(sapply(unique(by_ix),
                          function(id) all.equal(psi1_sorted[[id]], psi2_sorted[[id]]))))
-  expect_true(all(ef1$psi[31:50,] == 0))
-  expect_true(all(ef2$psi[31:50,] == 0))
+  expect_true(all(ef1$psi[1:20,] == 0))
+  expect_true(all(ef2$psi[1:20,] == 0))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model", {
@@ -971,6 +971,36 @@ test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
 
   expect_true(all.equal(ids[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
 
+  expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
+})
+
+test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by' argument",
+                "provides a different ordering"), {
+  data(simdata)
+  simdata$id <- sample(seq_len(nrow(simdata)))
+  
+  set.seed(300)
+  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "cid1" = NA, "cid2" = NA,
+                        "id" = seq(51, 70))
+  cmod_data <- rbind(simdata[, colnames(C_not_Q)], C_not_Q)
+  
+  cmod <- lm(y ~ x, cmod_data)
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "id"))
+  
+  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+                  function(...) paste(..., collapse = "_"))
+  
+  ids <- .make_uoa_ids(dmod)
+  
+  expect_true(is.factor(ids))
+  
+  expect_equal(length(ids), nrow(simdata) + 20)
+  
+  expect_true(all.equal(ids[1:nrow(simdata)],
+                        factor(Q_uoas)[sort(simdata$id, index.return = TRUE)$ix],
+                        check.attributes = FALSE))
+  
   expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
 })
 
@@ -1085,11 +1115,11 @@ test_that(".order_samples when the samples do not overlap", {
 
   expect_equal(names(out$Q_order), as.character(seq(21, 50)))
   expect_equal(names(out$C_order), as.character(seq_len(20)))
-  expect_equal(names(out$Q_union_C_order), as.character(c(seq(21, 50), seq_len(20))))
+  expect_equal(names(out$Q_union_C_order), as.character(seq_len(nrow(simdata))))
 
   expect_true(all.equal(out$Q_order, seq_len(30), check.attributes = FALSE))
   expect_true(all.equal(out$C_order, seq_len(20), check.attributes = FALSE))
-  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, c(seq(31, 50), seq_len(30)), check.attributes = FALSE))
 })
 
 test_that(".order_samples when no `by` argument provided", {
@@ -1116,11 +1146,11 @@ test_that(".order_samples when no `by` argument provided", {
 
   expect_equal(names(out$Q_order), Q_uoas)
   expect_equal(names(out$C_order), C_uoas)
-  expect_equal(names(out$Q_union_C_order), c(Q_uoas, C_uoas))
+  expect_equal(names(out$Q_union_C_order), sort(c(Q_uoas, C_uoas)))
 
   expect_true(all.equal(out$Q_order, seq_len(30), check.attributes = FALSE))
   expect_true(all.equal(out$C_order, seq_len(20), check.attributes = FALSE))
-  expect_true(all.equal(out$Q_union_C_order, seq_len(nrow(simdata)), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_union_C_order, c(seq(31, 50), seq_len(30)), check.attributes = FALSE))
 })
 
 test_that("sanitize_Q_ids fails with invalid cluster argument", {

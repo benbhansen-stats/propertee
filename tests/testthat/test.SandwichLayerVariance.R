@@ -1886,16 +1886,15 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
-  ids <- c(df$cid[!is.na(df$z)][sort(df$uid[!is.na(df$z)], index.return = TRUE)$ix],
-           df$cid[is.na(df$z)][sort(df$uid[is.na(df$z)], index.return = TRUE)$ix])
-  ids <- factor(ids, levels = unique(ids))
-  Q_ids_order <- sort(df$uid[!is.na(df$z)], index.return = TRUE)$ix
-  order_ix <- c(sapply(sort(df$uid[!is.na(df$z)]), function(c) which(df$uid == c)),
-                sapply(sort(df$uid[is.na(df$z)]), function(c) which(df$uid == c)))
-  ef_cmod <- estfun(cmod)[order_ix,]
-  ef_damod <- estfun(as(damod, "lm"))[Q_ids_order,]
-  ef_damod <- rbind(ef_damod,
-                    matrix(0, nrow = nrow(ef_cmod) - nrow(ef_damod), ncol = ncol(ef_damod)))
+  uids_sorted <- sort(df$uid, index.return = TRUE)
+  ids <- factor(df$cid, levels = unique(df$cid))[uids_sorted$ix]
+  Q_ids_sorted <- sort(df$uid[!is.na(df$z)], index.return = TRUE)
+  ef_cmod <- estfun(cmod)[uids_sorted$ix,]
+  unextended_ef_damod <- estfun(as(damod, "lm"))
+  ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_damod),
+                     dimnames = list(rownames = seq_len(nrow(ef_cmod)),
+                                     colnames = colnames(unextended_ef_damod)))
+  ef_damod[uids_sorted$x %in% Q_ids_sorted$x,] <- estfun(as(damod, "lm"))[Q_ids_sorted$ix,]
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),

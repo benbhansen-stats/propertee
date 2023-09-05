@@ -96,9 +96,7 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
 ##' contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
 ##' contribution to the covariance adjustment model fit, and the \eqn{A} matrices
-##' are given by typical sandwich calculations. The output matrix is orderded
-##' such that the units used to fit the latter comprise the initial rows, and
-##' any additional observations used to fit the former are stacked below.\cr\cr
+##' are given by typical sandwich calculations.\cr\cr
 ##' Note that the formulation of the output matrix \eqn{\tilde{\Psi}} requires
 ##' information about each observation's contributions to both the covariance
 ##' adjustment and ITT effect models (where some observations may not contribute
@@ -184,20 +182,13 @@ bread.DirectAdjusted <- function(x, ...) {
   # documentation
   ids <- .order_samples(x, by = by, verbose = FALSE)
   
-  aligned_psi <- rbind(
-    psi[ids$Q_order, , drop = FALSE],
-    matrix(0, nrow = length(ids$Q_union_C_order) - length(ids$Q_order), ncol = ncol(psi))
-  )
-  rownames(aligned_psi) <- NULL
+  aligned_psi <- matrix(0, nrow = length(ids$Q_union_C_order), ncol = ncol(psi),
+                        dimnames = list(seq_along(ids$Q_union_C_order), colnames(psi)))
+  aligned_psi[ids$Q_union_C_order %in% ids$Q_order,] <- psi[ids$Q_order,,drop = FALSE]
   
   aligned_phi <- matrix(0, nrow = nrow(aligned_psi), ncol = ncol(phi),
                         dimnames = list(seq_len(nrow(aligned_psi)), colnames(phi)))
-  insert_aligned_phi_ix <- ids$Q_union_C_order[names(ids$Q_union_C_order) %in% names(ids$C_order)]
-  retrieve_original_phi_ix <- Reduce(
-    c,
-    lapply(unique(names(insert_aligned_phi_ix)), function(c) which(c == names(ids$C_order)))
-  )
-  aligned_phi[insert_aligned_phi_ix,] <- phi[ids$C_order[retrieve_original_phi_ix],]
+  aligned_phi[names(ids$Q_union_C_order) %in% names(ids$C_order),] <- phi[ids$C_order,,drop=FALSE]
 
   return(list(psi = aligned_psi, phi = aligned_phi))
 }
@@ -258,15 +249,16 @@ bread.DirectAdjusted <- function(x, ...) {
   }
   ids <- .order_samples(x, by = by, ...)
   
-  # get the UOA's and order them by the "by" ordering
+  # if no "by" was specified in cov_adj(), UOA's were used for ordering, so we
+  # can take the names of the sorted vector. Otherwise, we need to get the UOA's
+  # associated with the ordering given by the "by" argument
   if (length(setdiff(cluster, by)) == 0) {
     uoas <- names(ids$Q_union_C_order)
   } else {
-    Q_ids <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
-    ordered_Q_ids <- Q_ids[ids$Q_order]
-    C_ids <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
-    ordered_not_Q_ids <- C_ids[ids$C_order[!(names(ids$C_order) %in% names(ids$Q_order))]]
-    uoas <- c(ordered_Q_ids, ordered_not_Q_ids)
+    Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
+    C_uoas <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
+    not_in_Q_uoas <- C_uoas[!ca@keys$in_Q]
+    uoas <- c(Q_uoas, not_in_Q_uoas)[ids$Q_union_C_order]
   }
 
   return(factor(uoas, levels = unique(uoas)))
@@ -315,24 +307,26 @@ bread.DirectAdjusted <- function(x, ...) {
   }
 
   # first sort the ID's in Q
-  Q_ids <- .sanitize_Q_ids(x, by, sorted = TRUE, ...)
-  Q_ix <- stats::setNames(Q_ids$ix, Q_ids$x)
+  Q_ids <- .sanitize_Q_ids(x, by, sorted = FALSE, ...)
 
   # find the ID's in the intersection of C and Q's complement
   C_ids <- .sanitize_C_ids(ca, by, verbose = verbose, sorted = FALSE, ...)
   not_in_Q_ids <- C_ids[!ca@keys$in_Q]
-  if (suppressWarnings(any(is.na(as.numeric(C_ids))))) {
-    C_ix <- sort(C_ids, index.return = TRUE)
-    not_in_Q_ids <- sort(not_in_Q_ids)
+  Q_union_C_ids <- c(Q_ids, not_in_Q_ids)
+  
+  if (suppressWarnings(any(is.na(as.numeric(Q_union_C_ids))))) {
+    Q_union_C_sorted <- sort(Q_union_C_ids, index.return = TRUE)
+    Q_sorted <- sort(Q_ids, index.return = TRUE)
+    C_sorted <- sort(C_ids, index.return = TRUE)
   } else {
-    C_ix <- sort(as.numeric(C_ids), index.return = TRUE)
-    not_in_Q_ids <- sort(as.numeric(not_in_Q_ids))
+    Q_union_C_sorted <- sort(as.numeric(Q_union_C_ids), index.return = TRUE)
+    Q_sorted <- sort(as.numeric(Q_ids), index.return = TRUE)
+    C_sorted <- sort(as.numeric(C_ids), index.return = TRUE)
   }
-  C_ix <- stats::setNames(C_ix$ix, C_ix$x)
-
-  # append the remaining ID's in C if necessary
-  Q_union_C_ix <- stats::setNames(seq_along(c(Q_ix, not_in_Q_ids)),
-                                  c(names(Q_ix), not_in_Q_ids))
+  
+  Q_union_C_ix <- stats::setNames(Q_union_C_sorted$ix, Q_union_C_sorted$x)
+  Q_ix <- stats::setNames(Q_sorted$ix, Q_sorted$x)
+  C_ix <- stats::setNames(C_sorted$ix, C_sorted$x)
 
   return(list(Q_order = Q_ix, C_order = C_ix, Q_union_C_order = Q_union_C_ix))
 }
