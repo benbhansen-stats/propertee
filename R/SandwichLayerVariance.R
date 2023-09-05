@@ -33,7 +33,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   var_func <- get(paste0(".vcov_", type))
   args <- list(...)
   args$x <- x
-  args$cluster <- .make_uoa_ids(x, cluster, ...)
+  args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  args$cluster <- .make_uoa_ids(x, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
 

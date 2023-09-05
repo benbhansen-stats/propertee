@@ -5,10 +5,14 @@
 \title{(Internal) Align the dimensions and rows of estimating equations matrices
 from the ITT effect and covariance adjustment models}
 \usage{
-.align_and_extend_estfuns(x, ...)
+.align_and_extend_estfuns(x, by = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
+
+\item{by}{character vector; indicates unit of assignment columns to generate
+ID's from; default is NULL, which uses the unit of assignment columns specified
+in the \code{DirectAdjusted} object's \code{Design} slot}
 
 \item{...}{arguments passed to methods}
 }

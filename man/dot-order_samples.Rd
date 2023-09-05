@@ -5,10 +5,14 @@
 \title{Order observations used to fit a \code{DirectAdjusted} model and its
 covariance adjustment model}
 \usage{
-.order_samples(x, verbose = TRUE, ...)
+.order_samples(x, by = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
+
+\item{by}{character vector; indicates unit of assignment columns to generate
+ID's from; default is NULL, which uses the unit of assignment columns specified
+in the \code{DirectAdjusted} object's \code{Design} slot}
 
 \item{verbose}{boolean; optional. Defaults to TRUE, which will produce rather
 than swallow any warnings about the coding of the units of assignment in the
