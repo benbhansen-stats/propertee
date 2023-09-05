@@ -264,7 +264,8 @@ lmitt.formula <- function(obj,
 
       df <- data.frame(var = var, wts = wts)
       var - sapply(split(df, grp), function(x) {
-        stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
+        if (is.nan(grp_mean <- stats::weighted.mean(x$var, x$wts, na.rm = TRUE))) grp_mean <- 0
+        grp_mean
       })[as.character(grp)] +
         stats::weighted.mean(var2, w = wts[!is.na(wts)], na.rm = TRUE)
     } else {
