@@ -1,3 +1,8 @@
+# Untagged Changes
+
+## Improvements
+* Computational performance for `estfun.DirectAdjusted` has been improved
+
 # v0.3.3
 
 ## Added Features
