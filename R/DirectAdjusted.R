@@ -116,7 +116,10 @@ estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(x$model$`(offset)`) | !inherits(x$model$`(offset)`, "SandwichLayer")) {
-    return(.calc_fe_correction(x, ...) * .base_S3class_estfun(x))
+    psi <- .base_S3class_estfun(x)
+    fe_correction <- .calc_fe_correction(x, ...)
+    hc_corrections <- .calc_hc_corrections(psi, ...)$psi_adj
+    return(fe_correction * hc_corrections * psi)
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -178,6 +181,9 @@ bread.DirectAdjusted <- function(x, ...) {
   # get the original estimating equations
   psi <- .base_S3class_estfun(x)
   phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
+  
+  # calculate HC corrections
+  ef_adjs <- .calc_hc_corrections(psi, phi, ...)
 
   # the ordering output by `.order_samples()` is explained in that function's
   # documentation
@@ -190,6 +196,9 @@ bread.DirectAdjusted <- function(x, ...) {
   aligned_phi <- matrix(0, nrow = nrow(aligned_psi), ncol = ncol(phi),
                         dimnames = list(seq_len(nrow(aligned_psi)), colnames(phi)))
   aligned_phi[names(ids$Q_union_C_order) %in% names(ids$C_order),] <- phi[ids$C_order,,drop=FALSE]
+  
+  aligned_phi <- aligned_phi * ef_adjs$phi_adj
+  aligned_psi <- aligned_psi * ef_adjs$psi_adj
 
   return(list(psi = aligned_psi, phi = aligned_phi))
 }
@@ -209,6 +218,24 @@ bread.DirectAdjusted <- function(x, ...) {
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
+}
+
+#' Calculate HC corrections
+#' @param psi matrix, estimating equations for the ITT effect model
+#' @param phi matrix, estimating equations for the covariance adjustment model
+#' model
+#' @param correction_type character, HC correction type for the variance
+#' estimate. Default is NULL, which returns no correction (an HC0 estimate)
+.calc_hc_corrections <- function(psi, phi = NULL, correction_type = NULL, ...) {
+  phi_adj <- NULL
+  if (is.null(correction_type)) {
+    psi_adj <- phi_adj <- 1
+  } else if (correction_type == "HC1") {
+    psi_adj <- sqrt((nrow(psi) - 1) / (nrow(psi) - ncol(psi)))
+    if (!is.null(phi)) phi_adj <- sqrt((nrow(phi) - 1) / (nrow(phi) - ncol(phi)))
+  }
+  
+  return(list(phi_adj = phi_adj, psi_adj = psi_adj))
 }
 
 #' Make unit of assignment ID's to pass to \code{sandwich::meatCL} `cluster`

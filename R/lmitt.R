@@ -323,6 +323,7 @@ lmitt.formula <- function(obj,
 
   if (absorb) {
     mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
+    data$y <- areg.center(data$y, as.factor(blocks), lm.call$weights)
   }
 
   # Strip intercept from data if it's in there

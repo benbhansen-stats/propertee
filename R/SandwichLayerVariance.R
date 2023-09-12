@@ -89,13 +89,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   args <- list(...)
   args$x <- x
   args$cadjust <- FALSE
+  args$correction_type <- "HC1"
 
   vmat <- do.call(.vcov_CR0, args)
   n <- length(args$cluster)
   g <- length(unique(args$cluster))
   k <- ncol(estfun(x))
 
-  vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
+  vmat <- g / (g-1) * vmat # Hansen (2022) provides this generalization
 
   attr(vmat, "type") <- "CR1"
   return(vmat)
