@@ -579,7 +579,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with moderators"))
     }
-    vmat <- .get_design_based_variance(x)
+    vmat <- .get_DB_variance(x)
   }
   name <- colnames(x$model)[grep("z", colnames(x$model))]
   colnames(vmat) <- name
@@ -589,11 +589,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' This function calculates the design-based variance estimate
-#' for ITT effect models without covariance adjustment and without absorbed effects
+#' This function calculates the design-based variance estimate for
+#' ITT effect models without covariance adjustment and without absorbed effects
 #' @param x a fitted \code{DirectAdjusted} model
 #' @keywords internal
-.get_design_based_variance <- function(x, ...){
+.get_DB_variance <- function(x, ...){
   ws <- x$weights
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
@@ -614,22 +614,19 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
   )
   data_aggr$wy <- data_aggr$wy / data_aggr$weight
-  var <- .get_db_var_from_df(data = data_aggr, z = name_trt, block = name_blk)
+  var <- .get_DB_var_from_df(data = data_aggr, z = name_trt, block = name_blk)
   return(var)
 }
 
+# Calculate the mean of squared contrasts of entries of two vectors
 #' @param a a numeric vector
 #' @param b a numeric vector
 #' @return the mean of squared contrasts between elements of the input vectors
 #' @keywords internal
 .get_ms_contrast <- function(a,b){
-  # calculate the cross term difference squared
   t = 0
-  for (i in 1:length(a)){
-    for (j in 1:length(b)){
-      t = t + (a[i] - b[j])^2
-    }
-  }
+  for (i in 1:length(b))
+    t = t + sum((a - b[i])^2)
   return (t/length(a)/length(b))
 }
 
@@ -640,7 +637,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param block a character, the name of the block indicator column
 #' @return the design-based variance estimate
 #' @keywords internal
-.get_db_var_from_df <- function(data, z, block){
+.get_DB_var_from_df <- function(data, z, block){
   weight <- "weight"
   ws <- data[[weight]]
   
@@ -667,7 +664,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   B <- length(nbs)  # number of blocks
   K <- ncol(nbk)  # number of treatments
-  
   pi <- t(t(nbk) / t(nbs)[1,])
   # pi_b,k propensity score of each block and treatment, B by K
   
@@ -695,7 +691,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
         gamsbk[b,k] = 0
       else
         gamsbk[b,k] = sd(gammas[in_b,k][indbk])^2
-      
       sigmab[b,k] <- gamsbk[b,k] * (nbs[b] - nbs[b]*pi[b,k]) / nbs[b]^2 / pi[b,k]
       
       # variance estimators by block
@@ -703,8 +698,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
         indb0 <- (zobs[in_b] == 0)
         if (sigmab[b,1] == 0 | sigmab[b,k] == 0){
           # in this case, nu1 is invalid, fill in with nu3 instead
-          nu1[b,k-1] <- .get_ms_contrast(gammas[in_b,k][indbk],
-                                         gammas[in_b,1][indb0]) -
+          nu1[b,k-1] <- 
+            .get_ms_contrast(gammas[in_b,k][indbk], gammas[in_b,1][indb0]) -
             (nbk[b,1]-1) / nbk[b,1] * gamsbk[b,1] -
             (nbk[b,k]-1) / nbk[b,k] * gamsbk[b,k]
         }
