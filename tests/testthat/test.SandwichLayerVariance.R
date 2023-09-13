@@ -1836,7 +1836,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
 
-  df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2, "uid" = paste0("u", seq_len(NC * MI + NQ * MI)))
 
   # generate clustered errors
   error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
@@ -1866,7 +1866,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   cmod <- glm(cmod_form, data = df, family = stats::binomial())
   des <- rct_design(z ~ uoa(cid), df[!is.na(df$z),])
   damod <- lmitt(
-    lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod))
+    lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod, by = "uid"))
   )
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
@@ -1886,12 +1886,15 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
-  ids <- c(df$cid[!is.na(df$z)], df$cid[is.na(df$z)])
-  ef_cmod <- estfun(cmod)
-  nonzero_ef_damod <- estfun(as(damod, "lm"))
-  ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(nonzero_ef_damod))
-  colnames(ef_damod) <- colnames(nonzero_ef_damod)
-  ef_damod[!is.na(df$z), ] <- nonzero_ef_damod
+  uids_sorted <- sort(df$uid, index.return = TRUE)
+  ids <- factor(df$cid, levels = unique(df$cid))[uids_sorted$ix]
+  Q_ids_sorted <- sort(df$uid[!is.na(df$z)], index.return = TRUE)
+  ef_cmod <- estfun(cmod)[uids_sorted$ix,]
+  unextended_ef_damod <- estfun(as(damod, "lm"))
+  ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_damod),
+                     dimnames = list(rownames = seq_len(nrow(ef_cmod)),
+                                     colnames = colnames(unextended_ef_damod)))
+  ef_damod[uids_sorted$x %in% Q_ids_sorted$x,] <- estfun(as(damod, "lm"))[Q_ids_sorted$ix,]
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
@@ -1919,6 +1922,71 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
+})
+
+test_that("HC1/CR1/MB1", {
+  set.seed(8431432)
+  # no clustering
+  n <- 50
+  Sigma <- diag(runif(n, 0.01, 2))
+  x1 <- rnorm(n)
+  z <- rep(c(0, 1), each = n / 2)
+  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
+  dat <- data.frame(x1=x1, z=z, y=y, c=sample(seq_len(n)))
+
+  des <- rct_design(z ~ unitid(c), dat)
+  cmod <- lm(y ~ x1, dat)
+  dmod <- lmitt(y ~ 1, data = dat, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+
+  # CR1
+  expect_true(
+    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
+              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
+              check.attributes = FALSE)
+  )
+  expect_equal(attr(cr1_vmat, "type"), "CR1")
+  expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
+
+  # HC1
+  expect_true(all.equal(hc1_vmat <- vcovDA(dmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
+  expect_equal(attr(hc1_vmat, "type"), "HC1")
+  expect_true(any(grepl("HC1", capture.output(summary(dmod, vcov.type = "HC1")))))
+
+  # MB1
+  expect_true(all.equal(mb1_vmat <- vcovDA(dmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
+  expect_equal(attr(mb1_vmat, "type"), "MB1")
+  expect_true(any(grepl("MB1", capture.output(summary(dmod, vcov.type = "MB1")))))
+
+  # clustering
+  n <- 50
+  g <- 5
+  icc <- 0.1
+  Sigma <- matrix(0, nrow = n, ncol = n)
+  for (i in seq_len(g)) {
+    Sigma[((i - 1) * n / g + 1):(i * (n / g)), ((i - 1) * n / g + 1):(i * (n / g))] <- (
+      (1-icc) * diag(1, nrow=n/g, ncol=n/g) + icc
+    )
+  }
+  x1 <- rnorm(n)
+  z <- rep(c(0, 1), c((g-2) * n/g, (g-3) * n/g))
+  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
+  dat <- data.frame(x1=x1, z=z, y=y, c=rep(seq_len(g), each = n/g))
+
+  des <- rct_design(z ~ unitid(c), dat)
+  cmod <- lm(y ~ x1, dat)
+  dmod <- lmitt(y ~ 1, data = dat, design = des,
+                weights = ate(des), offset = cov_adj(cmod))
+
+  # CR1
+  expect_true(
+    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
+              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod),
+                                                      cadjust=FALSE),
+              check.attributes = FALSE)
+  )
+  expect_equal(attr(cr1_vmat, "type"), "CR1")
+  expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
 })
 
 test_that("type attribute", {
@@ -1963,12 +2031,12 @@ test_that("#119 flagging vcovDA entries as NA", {
   expect_true(all(is.na(vc[1, ])))
   expect_true(all(is.na(vc[, 1])))
   expect_true(all(!is.na(vc[-1, -1])))
-  
+
   ### valid continuous moderator variable
   damod <- lmitt(y ~ o, data = copy_simdata, design = des)
   vc <- vcov(damod)
   expect_true(all(!is.na(vc)))
-  
+
   ### invalid continuous moderator variable
   copy_simdata$invalid_o <- 0
   copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
@@ -1983,14 +2051,14 @@ test_that("#119 flagging vcovDA entries as NA", {
 
 test_that(".check_df_moderator_estimates other warnings", {
   data(simdata)
-  
+
   # fail without a DirectAdjusted model
   nodamod <- lm(y ~ x, simdata)
   vmat <- vcov(nodamod)
   cluster_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
   expect_error(.check_df_moderator_estimates(vmat, nodamod, cluster_ids),
                "must be a DirectAdjusted")
-  
+
   # invalid `data` arg
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   damod <- lmitt(y ~ factor(o), design = des, data = simdata)
@@ -1998,7 +2066,7 @@ test_that(".check_df_moderator_estimates other warnings", {
                                              cbind(y = simdata$y, z = simdata$z),
                                              envir = parent.frame()),
                "`data` must be a dataframe")
-  
+
   # column names of vmat don't match moderator variable of model
   expect_warning(
     expect_warning(.check_df_moderator_estimates(vmat, damod, cluster_ids),

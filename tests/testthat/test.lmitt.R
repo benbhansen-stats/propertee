@@ -300,6 +300,28 @@ test_that("non-integer units of assignment", {
 
 })
 
+test_that("#137 ensure absorb is using the correct moderator", {
+  data(simdata)
+
+  mod1 <- lmitt(y ~ o, data = simdata,
+                design = z ~ cluster(cid1, cid2) + block(bid))
+  mod2 <- lmitt(y ~ o, data = simdata,
+                design = z ~ cluster(cid1, cid2) + block(bid),
+                absorb = TRUE)
+
+  o1 <- model.matrix(mod1)[, "o"]
+  o2 <- model.matrix(mod2)[, "o"]
+
+  # o1 and o2 should be different, since the latter should have been
+  # group-centered due to `absorb = TRUE`. Due to a bug discovered in #137, the
+  # un-centered version of the continuous moderator was being using previously,
+  # leading o1 and o2 to be identical (incorrectly).
+
+  expect_true(!(all.equal(o1, o2, check.attributes = FALSE) == TRUE))
+
+
+})
+
 options(save_options)
 #### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
 # This test below should NOT have `options()$propertee_message_on_unused_blocks`
@@ -326,3 +348,27 @@ test_that("Message if design has block info but isn't used in lmitt", {
 })
 
 ### READ COMMENT ABOUT LAST TEST!
+
+test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
+                "(some strata only have treated clusters)"), {
+  data(simdata)
+  simdata[simdata$cid1 == 5 & simdata$cid2 == 2, "bid"] <- 4
+  
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = TRUE)
+  no_absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = FALSE)
+  
+  expect_equal(dim(model.matrix(absorb_mod)), dim(model.matrix(no_absorb_mod)))
+})
+
+test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
+                "(some strata only have untreated clusters)"), {
+  data(simdata)
+  simdata[simdata$cid1 == 4 & simdata$cid2 == 2, "bid"] <- 4
+  
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = TRUE)
+  no_absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = FALSE)
+  
+  expect_equal(dim(model.matrix(absorb_mod)), dim(model.matrix(no_absorb_mod)))
+})

@@ -264,7 +264,8 @@ lmitt.formula <- function(obj,
 
       df <- data.frame(var = var, wts = wts)
       var - sapply(split(df, grp), function(x) {
-        stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
+        if (is.nan(grp_mean <- stats::weighted.mean(x$var, x$wts, na.rm = TRUE))) grp_mean <- 0
+        grp_mean
       })[as.character(grp)] +
         stats::weighted.mean(var2, w = wts[!is.na(wts)], na.rm = TRUE)
     } else {
@@ -346,6 +347,11 @@ lmitt.formula <- function(obj,
                                       paste0("`", colnames(mm), "`"),
                                       collapse = "+"),
                                     collapse = ""))
+
+  # If the moderators already exist in the passed-in data, remove them to avoid
+  # either a) overloading variable names, or b) an error if data is a
+  # `grouped_df` (see #137)
+  data <- data[, !(names(data) %in% colnames(mm))]
 
   # Data for model should be original data, plus updated RHS (mm)
   lm.call$data <- cbind(data, mm)
