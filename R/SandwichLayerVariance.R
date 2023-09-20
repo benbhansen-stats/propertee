@@ -719,7 +719,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     matrix(ws, nrow = nrow(nbk_all), ncol = ncol(nbk_all), byrow = FALSE)
   # gamma (or xps and yps) for variance estimation, n by K
   gamsbk <- matrix(nrow=B, ncol=K)  # s^2_b,j, sample variance
-  sigmab <- matrix(nrow=B, ncol=K)  # hat sigma b,j
   
   nu1 <- matrix(nrow=B, ncol=K-1)  # nu1_b,0k
   theta <- vector(length=K)  # Hajek estimators
@@ -738,12 +737,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
         gamsbk[b,k] = 0
       else
         gamsbk[b,k] = sd(gammas[in_b,k][indbk])^2
-      sigmab[b,k] <- gamsbk[b,k] * (nbs[b] - nbs[b]*pi[b,k]) / nbs[b]^2 / pi[b,k]
       
       # variance estimators by block
       if (k > 1){
         indb0 <- (zobs[in_b] == 0)
-        if (sigmab[b,1] == 0 | sigmab[b,k] == 0){
+        if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){
           # in this case, nu1 is invalid, fill in with nu3 instead
           nu1[b,k-1] <- 
             .get_ms_contrast(gammas[in_b,k][indbk], gammas[in_b,1][indb0]) -
@@ -751,8 +749,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
             (nbk[b,k]-1) / nbk[b,k] * gamsbk[b,k]
         }
         else{
-          nu1[b,k-1] <- nbs[b] / (nbs[b] - nbk[b,1]) * sigmab[b,1] +
-            nbs[b] / (nbs[b] - nbk[b,k]) * sigmab[b,k]
+          nu1[b,k-1] <- gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k]
         }
       }
     }
