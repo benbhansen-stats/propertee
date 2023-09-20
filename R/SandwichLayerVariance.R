@@ -638,9 +638,13 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
   
-  eq_blk <- paste(name_blk, collapse = ", ")
+  if(length(name_blk) > 1){
+    data_temp <- .combine_block_ID(data_temp, name_blk)
+    name_blk <- "bid"
+  }
+  
   eq_clu <- paste(name_clu, collapse = " + ")
-  form <- paste("cbind(", name_trt, ", ", eq_blk, ") ~ ", eq_clu, sep = "")
+  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
   form2 <- paste("cbind(wy, weight) ~ ", eq_clu, sep = "")
   
   data_aggr <- cbind(
@@ -650,6 +654,25 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   data_aggr$wy <- data_aggr$wy / data_aggr$weight
   var <- .get_DB_var_from_df(data = data_aggr, z = name_trt, block = name_blk)
   return(var)
+}
+
+# Combine multiple block IDs to one column 
+#' @details
+#' the returned data frame has a new column named "bid", it
+#' contains unique numbers based on the combinations of the values
+#' in the multiple block ID columns
+#' @param df a data frame 
+#' @param ids a vector of block IDs, column names of df
+#' @return data frame df with a new column "bid" that contains unique numbers
+#' @keywords internal
+.combine_block_ID <- function(df, ids){
+  df$ID <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
+  unique_ids <- data.frame(ID = unique(df$ID))
+  unique_ids$bid <- seq_len(nrow(unique_ids))
+  
+  df <- merge(df, unique_ids, by = "ID", all.x = TRUE)
+  df$ID <- NULL
+  return(df)
 }
 
 # Calculate the mean of squared contrasts of entries of two vectors
@@ -683,16 +706,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   nbk <- cbind(as.vector(table(data[data[[z]] == 0, block])),
                as.vector(table(data[data[[z]] == 1, block])))
   # nbk, number of units in each block and treatment, B by K
-  if (length(block) == 1)
-    nbk_all <- nbk[data[, block], ]
-  else {
-    tab_all <- table(data[, c(block, z)])
-    nbk_all <- matrix(0, nrow = nrow(data), ncol = 2)
-    for (row in 1:nrow(as.matrix(data[, block]))) {
-      rownum <- as.matrix(data[, block])[row, ]
-      nbk_all[row, ] <- tab_all[rownum[1], rownum[2], ]
-    }
-  }
+  nbk_all <- nbk[data[, block], ]
   # nbk, number of units in each block and treatment
   # corresponding to each unit, n by K
   
@@ -701,9 +715,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   pi <- t(t(nbk) / t(nbs)[1,])
   # pi_b,k propensity score of each block and treatment, B by K
   
-  gammas <- nbk_all[,1] * ws
-  for (k in 2:K)
-    gammas <- cbind(gammas, nbk_all[,k] * ws)
+  gammas <- nbk_all * 
+    matrix(ws, nrow = nrow(nbk_all), ncol = ncol(nbk_all), byrow = FALSE)
   # gamma (or xps and yps) for variance estimation, n by K
   gamsbk <- matrix(nrow=B, ncol=K)  # s^2_b,j, sample variance
   sigmab <- matrix(nrow=B, ncol=K)  # hat sigma b,j
@@ -750,7 +763,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   return(varest)
 }
-
 
 #' This function calculates grave{phi}
 #' @keywords internal
