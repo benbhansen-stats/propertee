@@ -253,27 +253,6 @@ lmitt.formula <- function(obj,
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
-  areg.center <- function(var, grp, wts = NULL) {
-    if (!is.null(wts)) {
-      # weighted.mean produces NA if any weights are NA
-      if (any(is.na(wts))) {
-        var2 <- var[!is.na(wts)]
-      } else {
-        var2 <- var
-      }
-
-      df <- data.frame(var = var, wts = wts)
-      var - sapply(split(df, grp), function(x) {
-        if (is.nan(grp_mean <- stats::weighted.mean(x$var, x$wts, na.rm = TRUE))) grp_mean <- 0
-        grp_mean
-      })[as.character(grp)] +
-        stats::weighted.mean(var2, w = wts[!is.na(wts)], na.rm = TRUE)
-    } else {
-      var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
-        mean(var, na.rm = TRUE)
-    }
-  }
-
   if (absorb) {
     if (length(var_names(design, "b")) == 0) {
       stop("No blocks found in Design, cannot absorb")
