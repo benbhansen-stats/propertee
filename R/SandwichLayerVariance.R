@@ -638,10 +638,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
   
-  if(length(name_blk) > 1){
-    data_temp <- .combine_block_ID(data_temp, name_blk)
-    name_blk <- "bid"
-  }
+  data_temp <- .combine_block_ID(data_temp, name_blk)
+  name_blk <- name_blk[1]
   
   eq_clu <- paste(name_clu, collapse = " + ")
   form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
@@ -658,20 +656,22 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
 # Combine multiple block IDs to one column 
 #' @details
-#' the returned data frame has a new column named "bid", it
+#' the returned data frame has a new column named as ids[1], it
 #' contains unique numbers based on the combinations of the values
 #' in the multiple block ID columns
 #' @param df a data frame 
 #' @param ids a vector of block IDs, column names of df
-#' @return data frame df with a new column "bid" that contains unique numbers
+#' @return data frame df with a new column that contains unique block number IDs
 #' @keywords internal
 .combine_block_ID <- function(df, ids){
-  df$ID <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
-  unique_ids <- data.frame(ID = unique(df$ID))
-  unique_ids$bid <- seq_len(nrow(unique_ids))
+  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
+  unique_ids <- data.frame(unique(df[,ids[1]]))
+  colnames(unique_ids) <- ids[1]
+  unique_ids$.ID <- seq_len(nrow(unique_ids))
   
-  df <- merge(df, unique_ids, by = "ID", all.x = TRUE)
-  df$ID <- NULL
+  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
+  df[,ids[1]] <- df$.ID
+  df$.ID <- NULL
   return(df)
 }
 
@@ -688,13 +688,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @param data a dataframe of weights, outcomes, treatment assignments, and block indicators
-#' @param weight a character, the name of the weight column
-#' @param y a character, the name of the outcome column
 #' @param z a character, the name of the treatment indicator column
 #' @param block a character, the name of the block indicator column
 #' @return the design-based variance estimate
 #' @keywords internal
 .get_DB_var_from_df <- function(data, z, block){
+  data <- data[order(data[,block]), ]
   weight <- "weight"
   ws <- data[[weight]]
   
@@ -703,8 +702,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   zobs <- data[[z]]  # observed zs (random assignment)
   nbs <- as.numeric(table(data[, block]))  # block sizes
   
-  nbk <- cbind(as.vector(table(data[data[[z]] == 0, block])),
-               as.vector(table(data[data[[z]] == 1, block])))
+  nbk <- cbind(as.vector(table(data[zobs == 0, block])),
+               as.vector(table(data[zobs == 1, block])))
   # nbk, number of units in each block and treatment, B by K
   nbk_all <- nbk[data[, block], ]
   # nbk, number of units in each block and treatment
@@ -712,51 +711,41 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   B <- length(nbs)  # number of blocks
   K <- ncol(nbk)  # number of treatments
-  pi <- t(t(nbk) / t(nbs)[1,])
-  # pi_b,k propensity score of each block and treatment, B by K
+  pi <- t(t(nbk) / t(nbs)[1,]) # pi_b,k assignment probabilities, B by K
   
   gammas <- nbk_all * 
     matrix(ws, nrow = nrow(nbk_all), ncol = ncol(nbk_all), byrow = FALSE)
   # gamma (or xps and yps) for variance estimation, n by K
-  gamsbk <- matrix(nrow=B, ncol=K)  # s^2_b,j, sample variance
+  gamsbk <- list()  # s^2_b,j, sample variance
   
   nu1 <- matrix(nrow=B, ncol=K-1)  # nu1_b,0k
-  theta <- vector(length=K)  # Hajek estimators
   varest <- matrix(nrow=1, ncol=K-1)  # variance estimators
   
   for (k in 1:K){
     indk <- (zobs == k-1)
-    theta[k] <- sum(ws[indk] * yobs[indk]) / sum(ws[indk])  # ratio estimates
-    gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - theta[k])
-    
+    thetak <- sum(ws[indk] * yobs[indk]) / sum(ws[indk])  # ratio estimate rho_z
+    gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - thetak)
+    gamsbk[[k]] <- aggregate(gammas[indk,k], by = list(data[indk,block]), FUN = var)
+  }
+  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:(K+1)]  # B by K
+  gamsbk[is.na(gamsbk)] <- 0
+  
+  for (k in 2:K){
     for (b in 1:B){
-      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b]))  # indices of units in block b
+      in_b <- (data[,block] == b)  # indices of units in block b
+      indb0 <- (zobs[in_b] == 0)
       indbk <- (zobs[in_b] == k-1)  # indices of units in block b, treatment k
       
-      if (sum(indbk) == 1)
-        gamsbk[b,k] = 0
-      else
-        gamsbk[b,k] = sd(gammas[in_b,k][indbk])^2
-      
-      # variance estimators by block
-      if (k > 1){
-        indb0 <- (zobs[in_b] == 0)
-        if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){
-          # in this case, nu1 is invalid, fill in with nu3 instead
-          nu1[b,k-1] <- 
-            .get_ms_contrast(gammas[in_b,k][indbk], gammas[in_b,1][indb0]) -
-            (nbk[b,1]-1) / nbk[b,1] * gamsbk[b,1] -
-            (nbk[b,k]-1) / nbk[b,k] * gamsbk[b,k]
-        }
-        else{
-          nu1[b,k-1] <- gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k]
-        }
+      if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){ # small block
+        nu1[b,k-1] <- 
+          .get_ms_contrast(gammas[in_b,k][indbk], gammas[in_b,1][indb0]) -
+          sum((nbk[b,c(1,k)]-1) / nbk[b,c(1,k)] * gamsbk[b,c(1,k)])
+      }
+      else{
+        nu1[b,k-1] <- sum(gamsbk[b,c(1,k)] / nbk[b,c(1,k)])
       }
     }
-    # variance estimators
-    if (k > 1){
-      varest[1,k-1] <- sum(nu1[,k-1]) / sum(ws)^2
-    }
+    varest[1,k-1] <- sum(nu1[,k-1]) / sum(ws)^2  # variance estimators
   }
   return(varest)
 }
@@ -770,9 +759,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   # treatment assignments
   design_obj <- x@Design
-  name_of_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
   df <- x$call$data
-  assignment <- df[[name_of_trt]]
+  assignment <- df[[name_trt]]
   # indicators of treatment assignment
   n <- length(ws) # number of units in Q
   k <- length(unique(assignment))
@@ -782,8 +771,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   
   # stratum ids 
-  name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  stratum <- df[[name_of_blk]]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  stratum <- df[[name_blk]]
   # indicators of block
   if (sum(x@Design@column_index == "b") == 1){
     s <- length(unique(stratum)) # number of stratum
@@ -828,9 +817,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   # stratum ids
   design_obj <- x@Design
-  name_of_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   df <- x$call$data
-  stratum <- df[, name_of_blk]
+  stratum <- df[, name_blk]
   n <- length(ws) # number of units in Q(?)
   k <- 2 # number of assignments
   
@@ -871,3 +860,4 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   return(mat)
 }
+
