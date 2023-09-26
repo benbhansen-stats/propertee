@@ -654,14 +654,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(var)
 }
 
-# Combine multiple block IDs to one column 
+#' Combine multiple block IDs to one column 
 #' @details
-#' the returned data frame has a new column named as ids[1], it
+#' the returned data frame has a column named as ids[1] that
 #' contains unique numbers based on the combinations of the values
 #' in the multiple block ID columns
 #' @param df a data frame 
 #' @param ids a vector of block IDs, column names of df
-#' @return data frame df with a new column that contains unique block number IDs
+#' @return data frame df with a column that contains unique block number IDs
 #' @keywords internal
 .combine_block_ID <- function(df, ids){
   df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
@@ -675,7 +675,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(df)
 }
 
-# Calculate the mean of squared contrasts of entries of two vectors
+#' Calculate the mean of squared contrasts of entries of two vectors
 #' @param a a numeric vector
 #' @param b a numeric vector
 #' @return the mean of squared contrasts between elements of the input vectors
@@ -756,41 +756,29 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param ... arguments to pass to internal functions
 .get_phi_tilde <- function(x, ...){
   ws <- x$weights
+  n <- length(ws) # number of units in Q
+  design_obj <- x@Design
+  df <- x$call$data
   
   # treatment assignments
-  design_obj <- x@Design
   name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  df <- x$call$data
   assignment <- df[[name_trt]]
-  # indicators of treatment assignment
-  n <- length(ws) # number of units in Q
   k <- length(unique(assignment))
-  z_ind <- matrix(nrow = n, ncol = k)
+  z_ind <- matrix(nrow = n, ncol = k) # indicators of treatment assignment
   for (j in 1:k){
     z_ind[,j] <- as.integer(assignment == c(0,1)[j])
   }
   
   # stratum ids 
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  df <- .combine_block_ID(df, name_blk)
+  name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
-  # indicators of block
-  if (sum(x@Design@column_index == "b") == 1){
-    s <- length(unique(stratum)) # number of stratum
-    b_ind <- matrix(nrow = n, ncol = s)
-    for (j in 1:s){
-      b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
-    }
-  }
-  else{
-    blks <- unique(stratum)
-    s <- nrow(blks) # number of stratum
-    b_ind <- matrix(nrow = n, ncol = s)
-    for (j in 1:s){
-      b_ind[,j] <- stratum[,1] == blks[j,1]
-      for (i in 2:ncol(blks))
-        b_ind[,j] <- b_ind[,j] & (stratum[,i] == blks[j,i])
-      b_ind[,j] <- as.integer(b_ind[,j])
-    }
+  
+  s <- length(unique(stratum)) # number of blocks
+  b_ind <- matrix(nrow = n, ncol = s) # indicators of block
+  for (j in 1:s){
+    b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
   }
   
   # nuisance parameters p
@@ -814,35 +802,25 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 .get_appinv_atp <- function(x, ...){
   ws <- x$weights
   # estimated treatment effect tau1 <- x$coefficients
-  
-  # stratum ids
-  design_obj <- x@Design
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  df <- x$call$data
-  stratum <- df[, name_blk]
   n <- length(ws) # number of units in Q(?)
-  k <- 2 # number of assignments
+  design_obj <- x@Design
+  df <- x$call$data
   
-  # the indicators of b (stratum)
-  if (sum(x@Design@column_index == "b") == 1){
-    s <- length(unique(stratum)) # number of stratum
-    b_ind <- matrix(nrow = n, ncol = s)
-    for (j in 1:s){
-      b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
-    }
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  assignment <- df[[name_trt]]
+  k <- length(unique(assignment))
+  
+  # stratum ids 
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  df <- .combine_block_ID(df, name_blk)
+  name_blk <- name_blk[1]
+  stratum <- df[[name_blk]]
+  
+  s <- length(unique(stratum)) # number of blocks
+  b_ind <- matrix(nrow = n, ncol = s) # indicators of block
+  for (j in 1:s){
+    b_ind[,j] <- as.integer(stratum == unique(stratum)[j])
   }
-  else{
-    blks <- unique(stratum)
-    s <- nrow(blks) # number of stratum
-    b_ind <- matrix(nrow = n, ncol = s)
-    for (j in 1:s){
-      b_ind[,j] <- stratum[,1] == blks[j,1]
-      for (i in 2:ncol(blks))
-        b_ind[,j] <- b_ind[,j] & (stratum[,i] == blks[j,i])
-      b_ind[,j] <- as.integer(b_ind[,j])
-    }
-  }
-  #resi <- x$call$offset@fitted_covariance_model$residuals
   
   app <- list()
   atp <- list()
@@ -860,4 +838,3 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   return(mat)
 }
-
