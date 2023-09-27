@@ -2111,6 +2111,65 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
 })
 
+test_that("vcovDA errors when asking for design-based SE for model
+          with covariance adjustment but without absorbed block effects",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod))
+  expect_error(
+  vcovDA(damod_off, type = "DB0"), 
+    "cannot be computed for ITT effect models with covariance adjustment"
+  )
+})
+
+test_that("vcovDA errors when asking for design-based SE for model
+          with moderators",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_sub <- lmitt(y ~ dose, design = des, data = simdata, weights = ate(des))
+  expect_error(
+    vcovDA(damod_sub, type = "DB0"), 
+    "cannot be computed for ITT effect models with moderators"
+  )
+})
+
+test_that(".combine_block_ID correctly combines multiple block columns", {
+  df <- data.frame(
+    block1 = c("A", "A", "B", "B", "B", "B"),
+    block2 = c(1, 1, 1, 1, 2, 2)
+  )
+  df_comb <- data.frame(
+    block1 = c(1, 1, 2, 2, 3, 3)
+  )
+  expect_equal(
+    propertee:::.combine_block_ID(df=df, ids=c("block1", "block2"))$block1,
+    df_comb$block1
+    )
+})
+
+test_that(".get_ms_contrast returns correct value", {
+  set.seed(10)
+  a <- rnorm(5)
+  b <- rnorm(10)
+  msc <- 0
+  for (i in 1:5)
+    for (j in 1:10)
+      msc <- msc + (a[i]-b[j])^2
+  expect_equal(propertee:::.get_ms_contrast(a, b), msc / 50)
+})
+
+test_that(".get_DB_variance returns correct value",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+  
+  expect_true(vcovDA(damod, type = "DB0")[1,1] > 0) # place-holder
+})
+
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
           for DA models with absorbed intercept", {
   data(simdata)
