@@ -330,7 +330,7 @@ test_that("#140 handling 0 weights", {
   simdata$weight <- 1
   simdata$weight[1] <- 0
 
-  des <- rct_design(z ~ uoa(id1, id2), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                weights = simdata$weight)
   ee <- propertee:::estfun.DirectAdjusted(mod)
@@ -340,25 +340,25 @@ test_that("#140 handling 0 weights", {
   # estimating equation
   data(simdata)
   simdata$weight <- 1
-  simdata$weight[simdata$blk == 1] <- 0
-  simdata$weight[simdata$blk == 1][1] <- 1
+  simdata$weight[simdata$bid == 1] <- 0
+  simdata$weight[simdata$bid == 1][1] <- 1
 
-  des <- rct_design(z ~ uoa(id1, id2) + block(blk), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
   ee <- propertee:::estfun.DirectAdjusted(mod)
-  ee[simdata$blk == 1, ]
-  #expect_true(all(ee[simdata$blk == 1, ] == 0))
+  ee[simdata$bid == 1, ]
+  #expect_true(all(ee[simdata$bid == 1, ] == 0))
 
   data(simdata)
-  simdata$z[simdata$blk == 1] <- 1
+  simdata$z[simdata$bid == 1] <- 1
   simdata$weights <- 1
-  des <- rct_design(z ~ uoa(id1, id2) + block(blk), data = simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
   # Block 1 has 0 variance in treatment
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
   ee <- propertee:::estfun.DirectAdjusted(mod)
-  #expect_true(all(ee[simdata$blk == 1, ] == 0))
+  #expect_true(all(ee[simdata$bid == 1, ] == 0))
 
 })
 
