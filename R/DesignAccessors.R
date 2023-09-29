@@ -38,10 +38,11 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##'   unit of assignment variable is found in \code{newdata}, then the requested
 ##'   variable type for each unit of \code{newdata} is returned. See \code{by}
 ##'   argument if the name of the unit of assignment differs.
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{x} to cluster/unit of assignment variables
-##'   in \code{data}. Names represent variables in the Design; values represent
-##'   variables in the data. Only needed if variable names differ.
+##' @param by optional; named vector or list connecting names of unit of
+##'   assignment/unitid/cluster variables in \code{x} to unit of
+##'   assignment/unitid/cluster variables in \code{data}. Names represent
+##'   variables in the Design; values represent variables in the data. Only
+##'   needed if variable names differ.
 ##' @param ... ignored.
 ##' @return \code{data.frame} containing requested variable, or an updated
 ##'   \code{Design}.
@@ -49,7 +50,7 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##' @rdname Design_extractreplace
 ##' @examples
 ##' data(simdata)
-##' des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+##' des <- obs_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
 ##' blocks(des) # empty
 ##' blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
 ##' blocks(des)
@@ -604,10 +605,11 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 ##'   and will appropriately merge with the \code{design} the blocks, treatment
 ##'   or forcings.
 ##' @param type One of "t", "f", or "b".
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data. Only needed if variable names differ.
+##' @param by optional; named vector or list connecting names of unit of
+##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{data}. Names represent
+##'   variables in the Design; values represent variables in the data. Only
+##'   needed if variable names differ.
 ##' @param ... Additional arguments to \code{merge()}.
 ##' @return The column(s) belonging to the requested \code{type} in
 ##' @keywords internal

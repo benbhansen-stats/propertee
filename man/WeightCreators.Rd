@@ -17,8 +17,8 @@ ate(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
 variable if it isn't already \code{0}/\code{1}. See details of help for
 \code{rct_design()} e.g. for details.}
 
-\item{by}{optional; named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
+\item{by}{optional; named vector or list connecting names of unit of
+assignment/ variables in \code{design} to unit of assignment/cluster
 variables in \code{data}. Names represent variables in the Design; values
 represent variables in the data. Only needed if variable names differ.}
 

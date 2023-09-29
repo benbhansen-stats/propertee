@@ -28,12 +28,12 @@ design_table(
 \arguments{
 \item{design}{A \code{Design}}
 
-\item{x}{One of "treatment", "cluster", "unit of assignent", "uoa", "block".
-Abbreviations are accepted.}
+\item{x}{One of "treatment", "unit of assignent", "uoa", "unitid",
+"cluster", "block". Abbreviations are accepted.}
 
-\item{y}{Optionally, another of "treatment", "cluster", "unit of assignent",
-"uoa", "block". Abbreviations are accepted. A 1-dimensional table is
-produced if \code{y} is left at its default, \code{NULL}.}
+\item{y}{Optionally, another of "treatment", "unit of assignent", "uoa",
+"unitid", "cluster", "block". Abbreviations are accepted. A 1-dimensional
+table is produced if \code{y} is left at its default, \code{NULL}.}
 
 \item{sort}{Ignored if \code{y} is not \code{NULL}. If \code{FALSE}
 (default), one-way table is sorted according to "names" of levels. If set

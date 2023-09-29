@@ -1,11 +1,11 @@
 ##' Produces the requested table
 ##' @title Table from \code{Design}
 ##' @param design A \code{Design}
-##' @param x One of "treatment", "cluster", "unit of assignent", "uoa", "block".
-##'   Abbreviations are accepted.
-##' @param y Optionally, another of "treatment", "cluster", "unit of assignent",
-##'   "uoa", "block". Abbreviations are accepted. A 1-dimensional table is
-##'   produced if \code{y} is left at its default, \code{NULL}.
+##' @param x One of "treatment", "unit of assignent", "uoa", "unitid",
+##'   "cluster", "block". Abbreviations are accepted.
+##' @param y Optionally, another of "treatment", "unit of assignent", "uoa",
+##'   "unitid", "cluster", "block". Abbreviations are accepted. A 1-dimensional
+##'   table is produced if \code{y} is left at its default, \code{NULL}.
 ##' @param sort Ignored if \code{y} is not \code{NULL}. If \code{FALSE}
 ##'   (default), one-way table is sorted according to "names" of levels. If set
 ##'   to \code{TRUE}, one-way table is sorted according to values.

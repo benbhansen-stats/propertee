@@ -114,7 +114,7 @@ forcing <- unit_of_assignment
 }
 
 
-##' Internally, we always refer to cluster/unitid/uoa as "unit_of_assignment"
+##' Internally, we always refer to uoa/cluster/unitid as "unit_of_assignment"
 ##' @title (Internal) Rename cluster/unitid/uoa in a formula to
 ##'   unit_of_assignment for internal consistency
 ##' @param form A formula passed to \code{.new_Design()}

@@ -26,13 +26,13 @@ RCT design must be created using \code{rct_design()}.}
 
 \item{...}{Additional arguments passed to \code{lm()}.}
 
-\item{absorb}{If \code{TRUE}, fixed effects are included for units of
-assignemnt/clusters identified in the \code{Design}. Excluded in
-\code{FALSE}. Default is \code{FALSE}.}
+\item{absorb}{If \code{TRUE}, fixed effects are included for blocks
+identified in the \code{Design}. Excluded in \code{FALSE}. Default is
+\code{FALSE}.}
 
 \item{offset}{Offset of the kind which would be passed into \code{lm()}. To
-utilize propertee's functionality, the output of \code{cov_adj()} should be
-used.}
+utilize propertee's functionality, the output of \code{cov_adj()} should
+be used.}
 
 \item{weights}{Weight of the kind which would be passed into \code{lm()}. To
 utilize propertee's functionality, the output of \code{ate()} or
@@ -70,9 +70,9 @@ creation of the \code{Design}, this is \bold{not} the same as the
 \code{subset=} argument when creating a \code{Design} restricts the data
 used to generate the \code{Design}, but has no direct impact on the future
 \code{lm()} or \code{lmitt()} calls using that \code{Design}. (It can
-indirectly have an impact by excluding particular clusters/units of
-assignment from recieving a treatment assignment and thus complete case
-analysis removes them from the model.)
+indirectly have an impact by excluding particular units of
+assignment/unitids/clusters from recieving a treatment assignment and thus
+complete case analysis removes them from the model.)
 
 On the other hand, the \code{subset=} argument in \code{lm()} or
 \code{lmitt()} refers only to subsetting the \code{data} argument passed

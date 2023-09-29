@@ -11,13 +11,16 @@ to model formula}
 \item{model}{Any model that inherits from a \code{glm}, \code{lm}, or
 \code{robustbase::lmrob} object}
 
-\item{by}{optional; vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in the covariance adjustment data. If a named vector, names should
-represent variables in the \code{Design} object and values should represent
-variables in the data. Only needed if: 1) columns not related to the design should
-be used for merging the covariance adjustment and quasiexperimental samples, or
-2) the column names differ between the datasets used to fit both models.}
+\item{by}{optional; vector or list connecting names of unit of
+assignment/unitid/cluster variables in \code{design} to unit of
+assignment/unitid/cluster variables in the covariance adjustment data. If
+a named vector, names should represent variables in the \code{Design}
+object and values should represent variables in the data. Only needed if:
+\enumerate{
+\item columns not related to the design should be used for merging the
+covariance adjustment and quasiexperimental samples, or 2) the column
+names differ between the datasets used to fit both models.
+}}
 
 \item{design}{Optional \code{Design}. If not provided, the function will
 search through the call stack to find one.}

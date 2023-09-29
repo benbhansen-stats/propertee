@@ -15,6 +15,6 @@ The formula with "cluster"/"unitid"/"uoa" replace with
 "unit_of_assignment"
 }
 \description{
-Internally, we always refer to cluster/unitid/uoa as "unit_of_assignment"
+Internally, we always refer to uoa/cluster/unitid as "unit_of_assignment"
 }
 \keyword{internal}

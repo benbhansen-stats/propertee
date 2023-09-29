@@ -14,20 +14,21 @@ NULL
 ##'   \code{robustbase::lmrob} object
 ##' @param newdata Optional; a data.frame of new data
 ##' @param design Optional \code{Design}. If not provided, the function will
-##' search through the call stack to find one.
-##' @param by optional; vector or list connecting names of cluster/unit of
-##' assignment variables in \code{design} to cluster/unit of assignment
-##' variables in the covariance adjustment data. If a named vector, names should
-##' represent variables in the \code{Design} object and values should represent
-##' variables in the data. Only needed if: 1) columns not related to the design should
-##' be used for merging the covariance adjustment and quasiexperimental samples, or
-##' 2) the column names differ between the datasets used to fit both models.
-##' @return \code{SandwichLayer} or \code{PreSandwichLayer} object; the former if
-##' `design` is provided or a `design` can be found in the call stack, otherwise
-##' the latter. The values represent the covariance adjustments for the
-##' observations in `newdata`, if `newdata` is provided or found as an argument to
-##' \code{lmitt.formula}, or the fitted values from `model`. The length of the
-##' output of \code{cov_adj()} varies depending on this logic.
+##'   search through the call stack to find one.
+##' @param by optional; vector or list connecting names of unit of
+##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in the covariance adjustment data. If
+##'   a named vector, names should represent variables in the \code{Design}
+##'   object and values should represent variables in the data. Only needed if:
+##'   1) columns not related to the design should be used for merging the
+##'   covariance adjustment and quasiexperimental samples, or 2) the column
+##'   names differ between the datasets used to fit both models.
+##' @return \code{SandwichLayer} or \code{PreSandwichLayer} object; the former
+##'   if `design` is provided or a `design` can be found in the call stack,
+##'   otherwise the latter. The values represent the covariance adjustments for
+##'   the observations in `newdata`, if `newdata` is provided or found as an
+##'   argument to \code{lmitt.formula}, or the fitted values from `model`. The
+##'   length of the output of \code{cov_adj()} varies depending on this logic.
 ##' @export
 ##' @example inst/examples/cov_adj.R
 cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {

@@ -14,8 +14,8 @@
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
 ##'   variable if it isn't already \code{0}/\code{1}. See details of help for
 ##'   \code{rct_design()} e.g. for details.
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
+##' @param by optional; named vector or list connecting names of unit of
+##'   assignment/ variables in \code{design} to unit of assignment/cluster
 ##'   variables in \code{data}. Names represent variables in the Design; values
 ##'   represent variables in the data. Only needed if variable names differ.
 ##' @param data optionally the data for the analysis to be performed on. May be
@@ -51,8 +51,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 ##'   \code{rct_design()} e.g. for details.
 ##' @param target One of "ate" or "ett"; \code{ate()} and \code{ett()} chooses
 ##'   these automatically.
-##' @param by optional; named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
+##' @param by optional; named vector or list connecting names of unit of
+##'   assignment/ variables in \code{design} to unit of assignment/cluster
 ##'   variables in \code{data}. Names represent variables in the Design; values
 ##'   represent variables in the data. Only needed if variable names differ.
 ##' @param data optionally the data for the analysis to be performed on. May be
