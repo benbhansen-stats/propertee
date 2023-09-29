@@ -283,13 +283,13 @@ lmitt.formula <- function(obj,
   # Generate formula for the internal `lm`
   if (rhstype == "intercept") {
     new.form <- formula(~ a.())
-    absorbed_moderators <- character()
+    moderator <- character()
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
-    absorbed_moderators <- rhs
+    moderator <- rhs
   } else {
     new.form <- stats::reformulate(paste0("a.() + a.():", rhs, "+", rhs))
-    absorbed_moderators <- rhs
+    moderator <- rhs
   }
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(deparse(new.form))
@@ -353,7 +353,7 @@ lmitt.formula <- function(obj,
   return(.convert_to_lmitt(model,
                            design,
                            lmitt_fitted = TRUE,
-                           absorbed_moderators = absorbed_moderators,
+                           moderator = moderator,
                            absorbed_intercepts = absorb,
                            lmitt_call = lmitt_call))
 }

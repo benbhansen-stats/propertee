@@ -365,7 +365,7 @@ test_that("absorbed_intercepts", {
   expect_false(noblocks_lmitt_fitted_not_absorbed@absorbed_intercepts)
 })
 
-test_that("absorbed_moderators", {
+test_that("@moderator slot", {
   data(simdata)
 
   blockeddes <- rct_design(z ~ block(bid) + cluster(cid1, cid2), data = simdata)
@@ -381,11 +381,11 @@ test_that("absorbed_moderators", {
   not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(noblocksdes), data = simdata),
                                design = noblocksdes)
 
-  expect_equal(noblocks_lmitt_fittedsbgrp@absorbed_moderators, "force")
-  expect_equal(blocked_lmitt_fittedsbgrp@absorbed_moderators, "force")
-  expect_equal(lmitt_fitted_nosbgrp@absorbed_moderators, vector("character"))
-  expect_equal(blocked_lmitt_fitted_nosbgrp@absorbed_moderators, vector("character"))
-  expect_equal(not_lmitt_fitted@absorbed_moderators, vector("character"))
+  expect_equal(noblocks_lmitt_fittedsbgrp@moderator, "force")
+  expect_equal(blocked_lmitt_fittedsbgrp@moderator, "force")
+  expect_equal(lmitt_fitted_nosbgrp@moderator, vector("character"))
+  expect_equal(blocked_lmitt_fitted_nosbgrp@moderator, vector("character"))
+  expect_equal(not_lmitt_fitted@moderator, vector("character"))
 })
 
 test_that("estfun.DirectAdjusted requires a certain model class", {
