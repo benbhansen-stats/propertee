@@ -609,7 +609,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with covariance adjustment"))
     }
-    if (length(x@absorbed_moderators) > 0){
+    if (length(x@moderator) > 0){
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with moderators"))
     }
