@@ -79,7 +79,7 @@ as.lmitt <- function(x, design = NULL) {
                            design,
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
-                           absorbed_moderators = vector("character"),
+                           moderator = vector("character"),
                            lmitt_call = lmitt_call))
 }
 
@@ -91,7 +91,7 @@ as.DirectAdjusted <- as.lmitt
                               design,
                               lmitt_fitted,
                               absorbed_intercepts,
-                              absorbed_moderators,
+                              moderator,
                               lmitt_call) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
@@ -188,7 +188,7 @@ as.DirectAdjusted <- as.lmitt
              lm_model,
              Design = design,
              absorbed_intercepts = absorbed_intercepts,
-             absorbed_moderators = absorbed_moderators,
+             moderator = moderator,
              lmitt_call = call("quote", lmitt_call),
              lmitt_fitted = lmitt_fitted))
 

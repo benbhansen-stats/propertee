@@ -97,7 +97,7 @@ instead of simply using \code{dichotomy(design) <-} or passing
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid), data = simdata)
 
 data(schooldata)
 des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),

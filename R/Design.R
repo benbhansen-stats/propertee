@@ -293,7 +293,7 @@ setValidity("Design", function(object) {
 ##' @rdname Design_objects
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid), data = simdata)
 ##'
 ##' data(schooldata)
 ##' des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),
@@ -459,9 +459,9 @@ var_names <- function(x, type) {
 ##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
 ##' rows (when the \code{design} is an RCT or Obs) or 4 rows (when the
 ##' \code{design} is a RD), with empty variable entries as appropriate. When
-##' \code{FALSE}, the matrix will have minimum 2 rows (treatment and
-##' cluster/unitid/unit of assignment), with additional rows for blocks and
-##' forcing if included in the \code{Design}.
+##' \code{FALSE}, the matrix will have minimum 2 rows (treatment and unit of
+##' assignment/unitid/cluster), with additional rows for blocks and forcing if
+##' included in the \code{Design}.
 ##' @title Table of variables identifying a \code{Design}
 ##' @param design a \code{Design} object
 ##' @param compress should multiple variables be compressed into a
@@ -540,8 +540,8 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
 ##'
 ##' Consider the following scenario: A \code{Design} is generated from some
 ##' dataset, "data1", which includes a block variable "b1". Within each unique
-##' cluster/unit of assignment of "data1", it must be the case that "b1" is
-##' constant. (Otherwise the creation of the \code{Design} will fail.)
+##' unit of assignment/unitid/cluster of "data1", it must be the case that "b1"
+##' is constant. (Otherwise the creation of the \code{Design} will fail.)
 ##'
 ##' Next, a model is fit which includes weights generated from the
 ##' \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
@@ -576,9 +576,9 @@ design_data_concordance <- function(design,
     design <- .update_by(design, data, by)
   }
 
-  if (!all(var_names(design, "u") %in% names(data))) {
-    stop(paste("Missing cluster/unit of assignment variables in data set.\n",
-               "Are you missing a `by=` argument?"))
+  if (!all(var_names(design, "u" ) %in% names(data))) {
+    stop(paste("Missing unit of assignment/unitid/cluster variables",
+               "in data set.\nAre you missing a `by=` argument?"))
   }
 
   merged <- merge(design@structure, data,

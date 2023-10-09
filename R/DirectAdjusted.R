@@ -8,7 +8,7 @@ setClass("DirectAdjusted",
          slots = c(Design = "Design",
                    lmitt_fitted = "logical",
                    absorbed_intercepts = "logical",
-                   absorbed_moderators = "character",
+                   moderator = "character",
                    lmitt_call = "call"))
 
 setValidity("DirectAdjusted", function(object) {

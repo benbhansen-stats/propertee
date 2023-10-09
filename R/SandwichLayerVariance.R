@@ -129,7 +129,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("`model` must be a DirectAdjusted object")
   }
 
-  if (length(model@absorbed_moderators) == 0) {
+  if (length(model@moderator) == 0) {
     return(vmat)
   }
 
@@ -141,7 +141,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   # For each moderator variable (whether it's been dichotomized or not), count
   # the number of clusters with at least one member of each value
-  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@absorbed_moderators)),
+  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)),
                            model_data)
   mod_counts <- apply(
     mod_vars,

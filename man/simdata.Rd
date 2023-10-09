@@ -3,12 +3,12 @@
 \docType{data}
 \name{simdata}
 \alias{simdata}
-\title{Simulated data with cluster-level treatment assignment}
+\title{Simulated data with unit of assignment level treatment assignment}
 \format{
 A data.frame with 100 rows and 7 columns.
 \itemize{
-\item cid1 First level clustering ID
-\item cid2 Second level clustering ID
+\item cid1 First level unit of assignment ID
+\item cid2 Second level unit of assignment ID
 \item bid Block ID
 \item force Forcing variable
 \item z Binary treatment indicator
@@ -22,6 +22,6 @@ A data.frame with 100 rows and 7 columns.
 simdata
 }
 \description{
-Simulated data with cluster-level treatment assignment
+Simulated data with unit of assignment level treatment assignment
 }
 \keyword{dataset}

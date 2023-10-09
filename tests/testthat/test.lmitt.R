@@ -322,6 +322,47 @@ test_that("#137 ensure absorb is using the correct moderator", {
 
 })
 
+test_that("#140 handling 0 weights", {
+
+  # A single 0 weight observation in a larger block - that observation's
+  # conbributiont to the estimating equation should be 0
+  data(simdata)
+  simdata$weight <- 1
+  simdata$weight[1] <- 0
+
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  mod <- lmitt(y ~ x, data = simdata, design = des,
+               weights = simdata$weight)
+  ee <- propertee:::estfun.DirectAdjusted(mod)
+  expect_true(all(ee[1, ] == 0))
+
+  # A block with only a single non-zero weight should contribute nothing to the
+  # estimating equation
+  data(simdata)
+  simdata$weight <- 1
+  simdata$weight[simdata$bid == 1] <- 0
+  simdata$weight[simdata$bid == 1][1] <- 1
+
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  mod <- lmitt(y ~ x, data = simdata, design = des,
+               absorb = TRUE, weights = simdata$weight)
+  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee[simdata$bid == 1, ]
+  #expect_true(all(ee[simdata$bid == 1, ] == 0))
+
+  data(simdata)
+  simdata$z[simdata$bid == 1] <- 1
+  simdata$weights <- 1
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  # Block 1 has 0 variance in treatment
+  mod <- lmitt(y ~ x, data = simdata, design = des,
+               absorb = TRUE, weights = simdata$weight)
+  ee <- propertee:::estfun.DirectAdjusted(mod)
+  #expect_true(all(ee[simdata$bid == 1, ] == 0))
+
+})
+
+
 options(save_options)
 #### !!!!!!!!!!!NOTE!!!!!!!!!!!!!
 # This test below should NOT have `options()$propertee_message_on_unused_blocks`
