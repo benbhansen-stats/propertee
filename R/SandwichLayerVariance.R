@@ -653,7 +653,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   ws <- x$weights
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, weight = ws, wy = ws * data_temp[, name_y])
+  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=x$call$data),
+                     .wy = ws * data_temp[, name_y])
   
   design_obj <- x@Design
   name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
@@ -665,13 +666,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   eq_clu <- paste(name_clu, collapse = " + ")
   form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
-  form2 <- paste("cbind(wy, weight) ~ ", eq_clu, sep = "")
+  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
   
+  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
   data_aggr <- cbind(
     do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
     do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
   )
-  data_aggr$wy <- data_aggr$wy / data_aggr$weight
+  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
   return(list(data = data_aggr, z = name_trt, block = name_blk))
 }
 
@@ -699,9 +701,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   block <- res[[3]]
   
   data <- data[order(data[, block]), ]
-  ws <- data$weight
-  yobs <- data$wy  # observed ys
-  zobs <- data[[z]]  # observed zs
+  ws <- data$.w
+  yobs <- data$.wy  # observed ys
+  zobs <- data[,z]  # observed zs
   
   nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, block])))
   # number of units in each block and treatment, B by K
@@ -720,7 +722,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   varest <- matrix(nrow=1, ncol=K-1)  # variance estimators
   
   for (k in 1:K){
-    indk <- (zobs == k-1)
+    indk <- zobs == (k-1)
     thetak <- sum(ws[indk] * yobs[indk]) / sum(ws[indk])  # ratio estimate rho_z
     gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - thetak)
     gamsbk[[k]] <- aggregate(gammas[indk,k], by = list(data[indk,block]), FUN = var)
@@ -730,22 +732,66 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   for (k in 2:K){
     for (b in 1:B){
-      in_b <- (data[,block] == b)  # indices of units in block b
-      indb0 <- (zobs[in_b] == 0)
-      indbk <- (zobs[in_b] == k-1)  # indices of units in block b, treatment k
+      indb0 <- (zobs == 0) & (data[,block] == b)
+      indbk <- (zobs == k-1) & (data[,block] == b)  # units in block b, treatment k
       
       if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){ # small block
         nu1[b,k-1] <- 
-          .get_ms_contrast(gammas[in_b,k][indbk], gammas[in_b,1][indb0]) -
+          .get_ms_contrast(gammas[indbk,k], gammas[indb0,1]) -
           sum((nbk[b,c(1,k)]-1) / nbk[b,c(1,k)] * gamsbk[b,c(1,k)])
       }
       else{ # large block
         nu1[b,k-1] <- sum(gamsbk[b,c(1,k)] / nbk[b,c(1,k)])
       }
     }
-    varest[1,k-1] <- sum(nu1[,k-1]) / sum(ws)^2  # variance estimators
+    varest[1,k-1] <- sum(nu1[,k-1]) / sum(data$.w0)^2  # variance estimators
   }
   return(varest)
+}
+
+.get_DB_variance2 <- function(x, ...){
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  z <- res[[2]]
+  block <- res[[3]]
+  
+  data <- data[order(data[, block]), ]
+  ws <- data$w
+  yobs <- data$wy # observed ys
+  zobs <- data[,z] # observed zs
+  bid <- data[,block] # block ids
+  
+  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
+           sum(zobs * ws * yobs) / sum(zobs * ws))
+  W <- sum(ws)
+  
+  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, block])))
+  # number of units in each block and treatment, B by K
+  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
+  delbk <- (nbk - 1) / (rowSums(nbk) - 1)
+  
+  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
+  ws_agg <- aggregate(ws, by = list(bid), FUN = sum)[,2]
+  A[1,1] <- sum(pbk[,1] * ws_agg) / W
+  A[2,2] <- sum(pbk[,2] * ws_agg) / W
+  
+  B <- matrix(0, nrow = 3, ncol = 3)
+  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
+  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
+  
+  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
+                        by = list(bid[zobs == 0]), FUN = var)[,2]
+  wyy0_agg <- wyy0_agg * nbk[,1] * (nbk[,1] - 1)
+  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
+                        by = list(bid[zobs == 1]), FUN = var)[,2]
+  wyy1_agg <- wyy1_agg * nbk[,2] * (nbk[,2] - 1)
+  
+  sigma0 <- sum((1-pbk[,1]) * wy0_agg) / W + sum((delbk[,1] - pbk[,1]) * wyy0_agg) / W
+  sigma1 <- sum((1-pbk[,2]) * wy1_agg) / W + sum((delbk[,2] - pbk[,2]) * wyy1_agg) / W
+  
+  mat <- matrix((1/A[2,2] + 1/A[1,1]) * (sigma1/A[2,2] + sigma0/A[1,1]), 
+                nrow = 1, ncol = 1)
+  return(mat)
 }
 
 #' This function calculates grave{phi}

@@ -2161,13 +2161,83 @@ test_that(".get_ms_contrast returns correct value", {
   expect_equal(propertee:::.get_ms_contrast(a, b), msc / 50)
 })
 
-test_that(".get_DB_variance returns correct value",{
-  data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
-  cmod <- lm(y ~ x, simdata)
-  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+test_that(".get_DB_variance returns correct value for data with many small blocks",{
+  # generate data
+  nbs <- c(rep(2, 10))
+  n <- sum(nbs) # sample size
+  B <- length(nbs) # number of blocks
+  ws <- round(rnorm(n=n, mean=50, sd=10))
   
-  expect_true(vcovDA(damod, type = "DB0")[1,1] > 0) # place-holder
+  yobs <- rnorm(n=n) # observed y's
+  zobs <- c() # treatment assignment, 1 or 2
+  for (b in 1:B){
+    zobs <- c(zobs, sample(c(1,2)))
+  }
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=2), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  
+  # verify the result
+  pi_all <- matrix(rep(1/2,2*n), nrow=n) # assignment probabilities, n by 2
+  nbk_all <- matrix(rep(1,2*n), nrow=n) # nbk for all units, n by 2
+  thetak <- c(0, 0)
+  gammas <- cbind(nbk_all[,1] * ws, nbk_all[,2] * ws) # gamma, n by K
+  nu3 <- matrix(nrow=B, ncol=1) # nu3_b,02
+  
+  for (k in 1:2){
+    indk <- (zobs == k)
+    thetak[k] <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k]) # ratio estimates
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak[k])
+    for (b in 1:B){
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
+      indbk <- (zobs[in_b] == k)
+      if (k > 1){
+        indb0 <- (zobs[in_b] == 1)
+        nu3[b,k-1] <- (gammas[in_b,k][indbk] - gammas[in_b,1][indb0])^2
+      }
+    }
+  }
+  expect_equal(.get_DB_variance(damod)[1,1], sum(nu3[,k-1]) / sum(ws)^2) 
+})
+
+test_that(".get_DB_variance returns correct value for data with a few large blocks",{
+  # generate data
+  nbs <- c(rep(10, 2))
+  n <- sum(nbs) # sample size
+  B <- length(nbs) # number of blocks
+  ws <- round(rnorm(n=n, mean=50, sd=10))
+  
+  yobs <- rnorm(n=n) # observed y's
+  zobs <- rep(1, n) # treatment assignment, 1 or 2
+  zobs[sample(1:10, 5)] <- 2
+  zobs[sample(11:20, 5)] <- 2
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  
+  # verify the result
+  pi_all <- matrix(rep(1/2,2*n), nrow=n) # assignment probabilities, n by 2
+  nbk <- matrix(rep(5, B*2), nrow=B) # nbk, B by 2
+  thetak <- c(0, 0)
+  gammas <- cbind(rep(5, n) * ws, rep(5, n) * ws) # gamma, n by K
+  gamsbk <- matrix(nrow=B, ncol=2)  # s^2 b,j
+  nu1 <- matrix(nrow=B, ncol=1) # nu1_b,02
+  
+  for (k in 1:2){
+    indk <- (zobs == k)
+    thetak[k] <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k]) # ratio estimates
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak[k])
+    for (b in 1:B){
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
+      gamsbk[b,k] <- var(gammas[in_b,k][zobs[in_b] == k])
+      if (k > 1){
+        nu1[b,k-1] <- gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k]
+      }
+    }
+  }
+  expect_equal(.get_DB_variance(damod)[1,1], sum(nu1[,k-1]) / sum(ws)^2) 
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
