@@ -2151,7 +2151,6 @@ test_that(".combine_block_ID correctly combines multiple block columns", {
 })
 
 test_that(".get_ms_contrast returns correct value", {
-  set.seed(10)
   a <- rnorm(5)
   b <- rnorm(10)
   msc <- 0
@@ -2163,81 +2162,76 @@ test_that(".get_ms_contrast returns correct value", {
 
 test_that(".get_DB_variance returns correct value for data with many small blocks",{
   # generate data
-  nbs <- c(rep(2, 10))
+  nbs <- rep(2, 10)
   n <- sum(nbs) # sample size
   B <- length(nbs) # number of blocks
   ws <- round(rnorm(n=n, mean=50, sd=10))
-  
   yobs <- rnorm(n=n) # observed y's
   zobs <- c() # treatment assignment, 1 or 2
   for (b in 1:B){
     zobs <- c(zobs, sample(c(1,2)))
   }
-  data <- data.frame(cid = 1:n, bid = rep(1:B, each=2), y = yobs, z = zobs-1, w = ws)
-  des <- rct_design(z ~ cluster(cid) + block(bid), data)
-  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
   
-  # verify the result
+  # calculate variance
   pi_all <- matrix(rep(1/2,2*n), nrow=n) # assignment probabilities, n by 2
   nbk_all <- matrix(rep(1,2*n), nrow=n) # nbk for all units, n by 2
-  thetak <- c(0, 0)
   gammas <- cbind(nbk_all[,1] * ws, nbk_all[,2] * ws) # gamma, n by K
-  nu3 <- matrix(nrow=B, ncol=1) # nu3_b,02
+  nu <- c() # nu_b
   
   for (k in 1:2){
     indk <- (zobs == k)
-    thetak[k] <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
-      sum(ws[indk] / pi_all[indk, k]) # ratio estimates
-    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak[k])
+    thetak <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k]) # Hajek estimators
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
     for (b in 1:B){
       in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
       indbk <- (zobs[in_b] == k)
       if (k > 1){
         indb0 <- (zobs[in_b] == 1)
-        nu3[b,k-1] <- (gammas[in_b,k][indbk] - gammas[in_b,1][indb0])^2
+        nu <- c(nu, (gammas[in_b,k][indbk] - gammas[in_b,1][indb0])^2)
       }
     }
   }
-  expect_equal(.get_DB_variance(damod)[1,1], sum(nu3[,k-1]) / sum(ws)^2) 
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=2), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  expect_equal(propertee:::.get_DB_variance(damod)[1,1], sum(nu) / sum(ws)^2) 
 })
 
 test_that(".get_DB_variance returns correct value for data with a few large blocks",{
   # generate data
-  nbs <- c(rep(10, 2))
+  nbs <- rep(10, 2)
   n <- sum(nbs) # sample size
   B <- length(nbs) # number of blocks
   ws <- round(rnorm(n=n, mean=50, sd=10))
-  
   yobs <- rnorm(n=n) # observed y's
   zobs <- rep(1, n) # treatment assignment, 1 or 2
-  zobs[sample(1:10, 5)] <- 2
-  zobs[sample(11:20, 5)] <- 2
-  data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
-  des <- rct_design(z ~ cluster(cid) + block(bid), data)
-  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  zobs[c(sample(1:10, 5), sample(11:20, 5))] <- 2
   
-  # verify the result
-  pi_all <- matrix(rep(1/2,2*n), nrow=n) # assignment probabilities, n by 2
-  nbk <- matrix(rep(5, B*2), nrow=B) # nbk, B by 2
-  thetak <- c(0, 0)
-  gammas <- cbind(rep(5, n) * ws, rep(5, n) * ws) # gamma, n by K
+  # calculate variance
+  pi_all <- matrix(rep(1/2,2*n), nrow=n)  # assignment probabilities, n by 2
+  nbk <- matrix(rep(5, B*2), nrow=B)  # nbk, B by 2
+  gammas <- cbind(rep(5, n) * ws, rep(5, n) * ws)  # gamma, n by K
   gamsbk <- matrix(nrow=B, ncol=2)  # s^2 b,j
-  nu1 <- matrix(nrow=B, ncol=1) # nu1_b,02
+  nu <- c()
   
   for (k in 1:2){
     indk <- (zobs == k)
-    thetak[k] <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
-      sum(ws[indk] / pi_all[indk, k]) # ratio estimates
-    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak[k])
+    thetak <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k])  # Hajek estimator
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
     for (b in 1:B){
       in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
       gamsbk[b,k] <- var(gammas[in_b,k][zobs[in_b] == k])
       if (k > 1){
-        nu1[b,k-1] <- gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k]
+        nu <- c(nu, gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k])
       }
     }
   }
-  expect_equal(.get_DB_variance(damod)[1,1], sum(nu1[,k-1]) / sum(ws)^2) 
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  expect_equal(propertee:::.get_DB_variance(damod)[1,1], sum(nu) / sum(ws)^2) 
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
@@ -2263,7 +2257,7 @@ test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
     goal[blk] <- sum(damod_abs_off$weights * damod_abs_off$residuals * B[,blk]) / 
       sum(damod_abs_off$weights * B[,blk])
   }
-  expect_true(all.equal(goal, .get_appinv_atp(damod_abs_off, db = TRUE)))
+  expect_true(all.equal(goal, propertee:::.get_appinv_atp(damod_abs_off, db = TRUE)))
 })
 
 test_that(".get_phi_tilde returns correct grave{phi}
@@ -2288,5 +2282,5 @@ test_that(".get_phi_tilde returns correct grave{phi}
   for (s in 1:3){
     goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
   }
-  expect_true(all.equal(goal, .get_phi_tilde(damod_abs, db = TRUE)))
+  expect_true(all.equal(goal, propertee:::.get_phi_tilde(damod_abs, db = TRUE)))
 })
