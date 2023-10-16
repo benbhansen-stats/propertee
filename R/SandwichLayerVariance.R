@@ -613,7 +613,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with moderators"))
     }
-    vmat <- .get_DB_variance(x)
+    ainv <- .get_DB_a_inverse(x)
+    meat <- .get_DB_meat(x)
+    vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+    if (is.na(vmat)) # if small strata are present
+      vmat <- .get_DB_small_strata(x)
   }
   name <- colnames(x$model)[grep("z", colnames(x$model))]
   colnames(vmat) <- name
@@ -623,25 +627,65 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' Combine multiple block IDs to one column 
-#' @details
-#' the returned data frame has a column named as ids[1] that
-#' contains unique numbers based on the combinations of the values
-#' in the multiple block ID columns
-#' @param df a data frame 
-#' @param ids a vector of block IDs, column names of df
-#' @return data frame df with a column that contains unique block number IDs
+#' Calculate bread matrix for design-based variance estimate for ITT effect 
+#' models without covariance adjustment and without absorbed effects
+#' when only moderate or large strata are present
+#' @param x a fitted \code{DirectAdjusted} model
+#' @return inverse of bread matrix 
 #' @keywords internal
-.combine_block_ID <- function(df, ids){
-  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
-  unique_ids <- data.frame(unique(df[,ids[1]]))
-  colnames(unique_ids) <- ids[1]
-  unique_ids$.ID <- seq_len(nrow(unique_ids))
+.get_DB_a_inverse <- function(x, ...){
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  bid <- data[, res[[2]]] # block ids
+  zobs <- data[, res[[3]]] # observed zs
   
-  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
-  df[,ids[1]] <- df$.ID
-  df$.ID <- NULL
-  return(df)
+  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
+  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
+  
+  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
+  ws_agg <- aggregate(data$.w, by = list(bid), FUN = sum)[,2]
+  A[1,1] <- sum(pbk[,1] * ws_agg)
+  A[2,2] <- sum(pbk[,2] * ws_agg)
+  return(solve(A))
+}
+
+#' Calculate meat matrix for design-based variance estimate for ITT effect 
+#' models without covariance adjustment and without absorbed effects
+#' when only moderate or large strata are present
+#' @param x a fitted \code{DirectAdjusted} model
+#' @return 3 by 3 meat matrix 
+#' @keywords internal
+.get_DB_meat <- function(x, ...){
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  
+  ws <- data$.w
+  yobs <- data$.wy # observed ys
+  bid <- data[, res[[2]]] # block ids
+  zobs <- data[, res[[3]]] # observed zs
+  
+  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
+           sum(zobs * ws * yobs) / sum(zobs * ws))
+  
+  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
+  # number of units in each block and treatment, B by K
+  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
+  delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
+  
+  B <- matrix(0, nrow = 3, ncol = 3)
+  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
+  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
+  
+  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
+                        by = list(bid[zobs == 0]), FUN = .prod_sum)[,2]
+  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
+                        by = list(bid[zobs == 1]), FUN = .prod_sum)[,2]
+  
+  B[1,1] <- sum((1-pbk[,1]) * wy0_agg) + sum((1-pbk[,1]^2/delbk[,1]) * wyy0_agg)
+  B[2,2] <- sum((1-pbk[,2]) * wy1_agg) + sum((1-pbk[,2]^2/delbk[,2]) * wyy1_agg)
+  B[1,2] <- - (B[1,1] + B[2,2]) / 2
+  B[2,1] <- B[1,2]
+  return(B)
 }
 
 #' Aggregate individual-level weights and outcomes to cluster-level
@@ -674,43 +718,58 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
   )
   data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
-  return(list(data = data_aggr, z = name_trt, block = name_blk))
+  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
+  return(list(data = data_aggr, block = name_blk, z = name_trt))
 }
 
-#' Calculate the mean of squared contrasts of entries of two vectors
-#' @param a a numeric vector
-#' @param b a numeric vector
-#' @return the mean of squared contrasts between elements of the input vectors
+#' Combine multiple block IDs to one column 
+#' @details
+#' the returned data frame has a column named as ids[1] that
+#' contains unique numbers based on the combinations of the values
+#' in the multiple block ID columns
+#' @param df a data frame 
+#' @param ids a vector of block IDs, column names of df
+#' @return data frame df with a column that contains unique block number IDs
 #' @keywords internal
-.get_ms_contrast <- function(a,b){
-  t = 0
-  for (i in 1:length(b))
-    t = t + sum((a - b[i])^2)
-  return (t/length(a)/length(b))
+.combine_block_ID <- function(df, ids){
+  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
+  unique_ids <- data.frame(unique(df[,ids[1]]))
+  colnames(unique_ids) <- ids[1]
+  unique_ids$.ID <- seq_len(nrow(unique_ids))
+  
+  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
+  df[,ids[1]] <- df$.ID
+  df$.ID <- NULL
+  return(df)
+}
+
+#' Calculate sum of x[i] * x[j] with i not equal to j
+#' @param x a numeric vector
+#' @keywords internal
+.prod_sum <- function(x){
+  return(sum(x * sum(x)) - sum(x^2))
 }
 
 #' Design-based variance estimate for ITT effect models 
 #' without covariance adjustment and without absorbed effects
+#' when small strata are present
 #' @param x a fitted \code{DirectAdjusted} model
 #' @return the design-based variance estimate
 #' @keywords internal
-.get_DB_variance <- function(x, ...){
+.get_DB_small_strata <- function(x, ...){
   res <- .aggregate_individuals(x)
   data <- res[[1]]
-  z <- res[[2]]
-  block <- res[[3]]
+  block <- res[[2]]
   
-  data <- data[order(data[, block]), ]
   ws <- data$.w
   yobs <- data$.wy  # observed ys
-  zobs <- data[,z]  # observed zs
+  zobs <- data[, res[[3]]]  # observed zs
+  bid <- data[, block] # block ids
   
   nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, block])))
   # number of units in each block and treatment, B by K
-  nbk_all <- nbk[data[, block], ]
-  # number of units in each block and treatment corresponding to each unit, n by K
-  
-  B <- length(unique(data[, block]))  # number of blocks
+  nbk_all <- nbk[bid, ]  # n by K
+  B <- length(unique(bid))  # number of blocks
   K <- ncol(nbk)  # number of treatments
   
   gammas <- nbk_all * 
@@ -732,8 +791,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   for (k in 2:K){
     for (b in 1:B){
-      indb0 <- (zobs == 0) & (data[,block] == b)
-      indbk <- (zobs == k-1) & (data[,block] == b)  # units in block b, treatment k
+      indb0 <- (zobs == 0) & (bid == b)
+      indbk <- (zobs == k-1) & (bid == b)  # units in block b, treatment k
       
       if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){ # small block
         nu1[b,k-1] <- 
@@ -749,49 +808,16 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(varest)
 }
 
-.get_DB_variance2 <- function(x, ...){
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  z <- res[[2]]
-  block <- res[[3]]
-  
-  data <- data[order(data[, block]), ]
-  ws <- data$w
-  yobs <- data$wy # observed ys
-  zobs <- data[,z] # observed zs
-  bid <- data[,block] # block ids
-  
-  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
-           sum(zobs * ws * yobs) / sum(zobs * ws))
-  W <- sum(ws)
-  
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, block])))
-  # number of units in each block and treatment, B by K
-  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
-  delbk <- (nbk - 1) / (rowSums(nbk) - 1)
-  
-  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
-  ws_agg <- aggregate(ws, by = list(bid), FUN = sum)[,2]
-  A[1,1] <- sum(pbk[,1] * ws_agg) / W
-  A[2,2] <- sum(pbk[,2] * ws_agg) / W
-  
-  B <- matrix(0, nrow = 3, ncol = 3)
-  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
-  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
-  
-  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
-                        by = list(bid[zobs == 0]), FUN = var)[,2]
-  wyy0_agg <- wyy0_agg * nbk[,1] * (nbk[,1] - 1)
-  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
-                        by = list(bid[zobs == 1]), FUN = var)[,2]
-  wyy1_agg <- wyy1_agg * nbk[,2] * (nbk[,2] - 1)
-  
-  sigma0 <- sum((1-pbk[,1]) * wy0_agg) / W + sum((delbk[,1] - pbk[,1]) * wyy0_agg) / W
-  sigma1 <- sum((1-pbk[,2]) * wy1_agg) / W + sum((delbk[,2] - pbk[,2]) * wyy1_agg) / W
-  
-  mat <- matrix((1/A[2,2] + 1/A[1,1]) * (sigma1/A[2,2] + sigma0/A[1,1]), 
-                nrow = 1, ncol = 1)
-  return(mat)
+#' Calculate the mean of squared contrasts of entries of two vectors
+#' @param a a numeric vector
+#' @param b a numeric vector
+#' @return the mean of squared contrasts between elements of the input vectors
+#' @keywords internal
+.get_ms_contrast <- function(a,b){
+  t = 0
+  for (i in 1:length(b))
+    t = t + sum((a - b[i])^2)
+  return (t/length(a)/length(b))
 }
 
 #' This function calculates grave{phi}
@@ -815,7 +841,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   df <- .combine_block_ID(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
-  
   s <- length(unique(stratum)) # number of blocks
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val)) 
   
@@ -853,7 +878,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   df <- .combine_block_ID(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
-  
   s <- length(unique(stratum)) # number of blocks
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val)) 
   

@@ -2160,7 +2160,8 @@ test_that(".get_ms_contrast returns correct value", {
   expect_equal(propertee:::.get_ms_contrast(a, b), msc / 50)
 })
 
-test_that(".get_DB_variance returns correct value for data with many small blocks",{
+test_that(".get_DB_variance returns correct value for data 
+          with many small blocks",{
   # generate data
   nbs <- rep(2, 10)
   n <- sum(nbs) # sample size
@@ -2184,7 +2185,7 @@ test_that(".get_DB_variance returns correct value for data with many small block
       sum(ws[indk] / pi_all[indk, k]) # Hajek estimators
     gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
     for (b in 1:B){
-      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of block b
       indbk <- (zobs[in_b] == k)
       if (k > 1){
         indb0 <- (zobs[in_b] == 1)
@@ -2195,10 +2196,11 @@ test_that(".get_DB_variance returns correct value for data with many small block
   data <- data.frame(cid = 1:n, bid = rep(1:B, each=2), y = yobs, z = zobs-1, w = ws)
   des <- rct_design(z ~ cluster(cid) + block(bid), data)
   damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
-  expect_equal(propertee:::.get_DB_variance(damod)[1,1], sum(nu) / sum(ws)^2) 
+  expect_equal(vcovDA(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
 })
 
-test_that(".get_DB_variance returns correct value for data with a few large blocks",{
+test_that(".get_DB_variance returns correct value for data 
+          with a few large blocks",{
   # generate data
   nbs <- rep(10, 2)
   n <- sum(nbs) # sample size
@@ -2221,7 +2223,7 @@ test_that(".get_DB_variance returns correct value for data with a few large bloc
       sum(ws[indk] / pi_all[indk, k])  # Hajek estimator
     gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
     for (b in 1:B){
-      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of units in block b
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of block b
       gamsbk[b,k] <- var(gammas[in_b,k][zobs[in_b] == k])
       if (k > 1){
         nu <- c(nu, gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k])
@@ -2231,7 +2233,8 @@ test_that(".get_DB_variance returns correct value for data with a few large bloc
   data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
   des <- rct_design(z ~ cluster(cid) + block(bid), data)
   damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
-  expect_equal(propertee:::.get_DB_variance(damod)[1,1], sum(nu) / sum(ws)^2) 
+  expect_equal(vcovDA(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
+  expect_equal(propertee:::.get_DB_small_strata(damod)[1,1], sum(nu) / sum(ws)^2) 
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
