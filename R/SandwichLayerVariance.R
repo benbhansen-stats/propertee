@@ -428,6 +428,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
+  if(nc==0) nc <- length(cmod$resid)
 
   out <- sandwich::bread(cmod) / nc
   return(out)
