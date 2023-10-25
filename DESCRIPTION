@@ -45,6 +45,7 @@ Collate:
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
     'DirectAdjusted.R'
+    'areg.center.R'
     'as.lmitt.R'
     'assigned.R'
     'cov_adj.R'

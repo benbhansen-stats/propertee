@@ -1,3 +1,12 @@
+# v0.3.4
+
+## Improvements
+* Computational performance for `estfun.DirectAdjusted` has been improved
+
+## Bug Fixes
+* No more errors due to under-the-hood duplication of a moderator variable
+* `absorb=TRUE` estimates have been corrected in the case when all observations in a stratum have 0 weights due to only treated or control units of assignment existing in the stratum
+
 # v0.3.3
 
 ## Added Features

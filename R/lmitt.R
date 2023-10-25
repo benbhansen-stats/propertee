@@ -27,9 +27,9 @@
 ##' \code{subset=} argument when creating a \code{Design} restricts the data
 ##' used to generate the \code{Design}, but has no direct impact on the future
 ##' \code{lm()} or \code{lmitt()} calls using that \code{Design}. (It can
-##' indirectly have an impact by excluding particular clusters/units of
-##' assignment from recieving a treatment assignment and thus complete case
-##' analysis removes them from the model.)
+##' indirectly have an impact by excluding particular units of
+##' assignment/unitids/clusters from recieving a treatment assignment and thus
+##' complete case analysis removes them from the model.)
 ##'
 ##' On the other hand, the \code{subset=} argument in \code{lm()} or
 ##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
@@ -56,12 +56,12 @@
 ##'   an RD design is created. Otherwise an observational design is created. An
 ##'   RCT design must be created using \code{rct_design()}.
 ##' @param data Data frame such as would be passed into \code{lm()}.
-##' @param absorb If \code{TRUE}, fixed effects are included for units of
-##'   assignemnt/clusters identified in the \code{Design}. Excluded in
-##'   \code{FALSE}. Default is \code{FALSE}.
+##' @param absorb If \code{TRUE}, fixed effects are included for blocks
+##'   identified in the \code{Design}. Excluded in \code{FALSE}. Default is
+##'   \code{FALSE}.
 ##' @param offset Offset of the kind which would be passed into \code{lm()}. To
-##'   utilize propertee's functionality, the output of \code{cov_adj()} should be
-##'   used.
+##'   utilize propertee's functionality, the output of \code{cov_adj()} should
+##'   be used.
 ##' @param weights Weight of the kind which would be passed into \code{lm()}. To
 ##'   utilize propertee's functionality, the output of \code{ate()} or
 ##'   \code{ett()}, or the strings \code{"ate"}/\code{"ett"}, should be used..
@@ -253,26 +253,6 @@ lmitt.formula <- function(obj,
   mf.call$na.action <- "na.pass"
   mf <- eval(mf.call, parent.frame())
 
-  areg.center <- function(var, grp, wts = NULL) {
-    if (!is.null(wts)) {
-      # weighted.mean produces NA if any weights are NA
-      if (any(is.na(wts))) {
-        var2 <- var[!is.na(wts)]
-      } else {
-        var2 <- var
-      }
-
-      df <- data.frame(var = var, wts = wts)
-      var - sapply(split(df, grp), function(x) {
-        stats::weighted.mean(x$var, x$wts, na.rm = TRUE)
-      })[as.character(grp)] +
-        stats::weighted.mean(var2, w = wts[!is.na(wts)], na.rm = TRUE)
-    } else {
-      var - tapply(var, grp, mean, na.rm = TRUE)[as.character(grp)] +
-        mean(var, na.rm = TRUE)
-    }
-  }
-
   if (absorb) {
     if (length(var_names(design, "b")) == 0) {
       stop("No blocks found in Design, cannot absorb")
@@ -303,13 +283,13 @@ lmitt.formula <- function(obj,
   # Generate formula for the internal `lm`
   if (rhstype == "intercept") {
     new.form <- formula(~ a.())
-    absorbed_moderators <- character()
+    moderator <- character()
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
-    absorbed_moderators <- rhs
+    moderator <- rhs
   } else {
     new.form <- stats::reformulate(paste0("a.() + a.():", rhs, "+", rhs))
-    absorbed_moderators <- rhs
+    moderator <- rhs
   }
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(deparse(new.form))
@@ -347,6 +327,11 @@ lmitt.formula <- function(obj,
                                       collapse = "+"),
                                     collapse = ""))
 
+  # If the moderators already exist in the passed-in data, remove them to avoid
+  # either a) overloading variable names, or b) an error if data is a
+  # `grouped_df` (see #137)
+  data <- data[, !(names(data) %in% colnames(mm))]
+
   # Data for model should be original data, plus updated RHS (mm)
   lm.call$data <- cbind(data, mm)
 
@@ -368,7 +353,7 @@ lmitt.formula <- function(obj,
   return(.convert_to_lmitt(model,
                            design,
                            lmitt_fitted = TRUE,
-                           absorbed_moderators = absorbed_moderators,
+                           moderator = moderator,
                            absorbed_intercepts = absorb,
                            lmitt_call = lmitt_call))
 }

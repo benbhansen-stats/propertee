@@ -32,8 +32,8 @@ variables in the \code{Design} and data.
 \details{
 Consider the following scenario: A \code{Design} is generated from some
 dataset, "data1", which includes a block variable "b1". Within each unique
-cluster/unit of assignment of "data1", it must be the case that "b1" is
-constant. (Otherwise the creation of the \code{Design} will fail.)
+unit of assignment/unitid/cluster of "data1", it must be the case that "b1"
+is constant. (Otherwise the creation of the \code{Design} will fail.)
 
 Next, a model is fit which includes weights generated from the
 \code{Design}, but on dataset "data2". In "data2", the block variable "b1"

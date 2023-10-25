@@ -33,7 +33,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   var_func <- get(paste0(".vcov_", type))
   args <- list(...)
   args$x <- x
-  args$cluster <- .make_uoa_ids(x, cluster, ...)
+  args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  args$cluster <- .make_uoa_ids(x, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
 
@@ -128,7 +129,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("`model` must be a DirectAdjusted object")
   }
 
-  if (length(model@absorbed_moderators) == 0) {
+  if (length(model@moderator) == 0) {
     return(vmat)
   }
 
@@ -140,7 +141,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   # For each moderator variable (whether it's been dichotomized or not), count
   # the number of clusters with at least one member of each value
-  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@absorbed_moderators)),
+  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)),
                            model_data)
   mod_counts <- apply(
     mod_vars,

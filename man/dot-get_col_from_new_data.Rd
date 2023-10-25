@@ -17,10 +17,11 @@ or forcings.}
 
 \item{type}{One of "t", "f", or "b".}
 
-\item{by}{optional; named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in \code{data}. Names represent variables in the Design; values
-represent variables in the data. Only needed if variable names differ.}
+\item{by}{optional; named vector or list connecting names of unit of
+assignment/unitid/cluster variables in \code{design} to unit of
+assignment/unitid/cluster variables in \code{data}. Names represent
+variables in the Design; values represent variables in the data. Only
+needed if variable names differ.}
 
 \item{...}{Additional arguments to \code{merge()}.}
 }

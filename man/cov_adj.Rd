@@ -15,21 +15,24 @@ cov_adj(model, newdata = NULL, design = NULL, by = NULL)
 \item{design}{Optional \code{Design}. If not provided, the function will
 search through the call stack to find one.}
 
-\item{by}{optional; vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in the covariance adjustment data. If a named vector, names should
-represent variables in the \code{Design} object and values should represent
-variables in the data. Only needed if: 1) columns not related to the design should
-be used for merging the covariance adjustment and quasiexperimental samples, or
-2) the column names differ between the datasets used to fit both models.}
+\item{by}{optional; vector or list connecting names of unit of
+assignment/unitid/cluster variables in \code{design} to unit of
+assignment/unitid/cluster variables in the covariance adjustment data. If
+a named vector, names should represent variables in the \code{Design}
+object and values should represent variables in the data. Only needed if:
+\enumerate{
+\item columns not related to the design should be used for merging the
+covariance adjustment and quasiexperimental samples, or 2) the column
+names differ between the datasets used to fit both models.
+}}
 }
 \value{
-\code{SandwichLayer} or \code{PreSandwichLayer} object; the former if
-\code{design} is provided or a \code{design} can be found in the call stack, otherwise
-the latter. The values represent the covariance adjustments for the
-observations in \code{newdata}, if \code{newdata} is provided or found as an argument to
-\code{lmitt.formula}, or the fitted values from \code{model}. The length of the
-output of \code{cov_adj()} varies depending on this logic.
+\code{SandwichLayer} or \code{PreSandwichLayer} object; the former
+if \code{design} is provided or a \code{design} can be found in the call stack,
+otherwise the latter. The values represent the covariance adjustments for
+the observations in \code{newdata}, if \code{newdata} is provided or found as an
+argument to \code{lmitt.formula}, or the fitted values from \code{model}. The
+length of the output of \code{cov_adj()} varies depending on this logic.
 }
 \description{
 Prior to obtaining predicted values, \code{cov_adj()} tries to identify the
