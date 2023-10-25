@@ -463,7 +463,7 @@ test_that("Basics of replacing treatment variable with reference level", {
 
   manual <- predict(camod, newdata = simdata2)
   expect_true(all(manual == ca))
-3
+
   # Factor treatment
   ## simdata$dose <- as.factor(simdata$dose)
   ## des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
