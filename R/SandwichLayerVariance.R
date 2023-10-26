@@ -606,8 +606,10 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   else {
     if (!is.null(x$call$offset)){
-      stop(paste("Design-based standard errors cannot be computed for ITT effect",
-                 "models with covariance adjustment"))
+      vmat <- .get_DB_covadj(x)
+      if (is.na(vmat))
+        stop(paste("Design-based standard errors cannot be computed for ITT effect",
+                   "models with covariance adjustment if small strata are present"))
     }
     if (length(x@moderator) > 0){
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
@@ -627,10 +629,30 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' Calculate bread matrix for design-based variance estimate for ITT effect 
-#' models without covariance adjustment and without absorbed effects
-#' when only moderate or large strata are present
+#' @title (Internal) Compute design-based variance estimate
 #' @param x a fitted \code{DirectAdjusted} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  ITT effect models with covariance adjustment and without absorbed effects
+#'  when only moderate or large strata are present
+#' @return design-based estimation of variance 
+#' @keywords internal
+.get_DB_covadj <- function(x, ...){
+  a11inv <- .get_a11_inverse(x)
+  a21 <- .get_a21(x)
+  a22inv <- .get_a22_inverse(x)
+  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
+  
+  bread1 <- a22inv %*% a21 %*% a11inv
+  bread2 <- - a22inv %*% C
+  
+  return(0)
+}
+
+#' @title (Internal) Compute design-based variance blocks
+#' @param x a fitted \code{DirectAdjusted} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  ITT effect models without covariance adjustment and without absorbed effects
+#'  when only moderate or large strata are present
 #' @return inverse of bread matrix 
 #' @keywords internal
 .get_DB_a_inverse <- function(x, ...){
@@ -649,11 +671,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(solve(A))
 }
 
-#' Calculate meat matrix for design-based variance estimate for ITT effect 
-#' models without covariance adjustment and without absorbed effects
-#' when only moderate or large strata are present
+#' @title (Internal) Compute design-based variance blocks
 #' @param x a fitted \code{DirectAdjusted} model
-#' @return 3 by 3 meat matrix 
+#' @details Calculate meat matrix for design-based variance estimate for 
+#'  ITT effect models without covariance adjustment and without absorbed effects
+#'  when only moderate or large strata are present
+#' @return meat matrix 
 #' @keywords internal
 .get_DB_meat <- function(x, ...){
   res <- .aggregate_individuals(x)
@@ -667,7 +690,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
            sum(zobs * ws * yobs) / sum(zobs * ws))
   
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
+  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs==z, res[[2]]])))
   # number of units in each block and treatment, B by K
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
   delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
@@ -694,7 +717,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #'    the name of the treatment id column; the name of the block id column
 #' @keywords internal
 .aggregate_individuals <- function(x, ...){
-  ws <- x$weights
+  ws <- if (is.null(x$weights)) 1 else x$weights
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
   data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=x$call$data),
