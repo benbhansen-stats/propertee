@@ -611,15 +611,17 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
         stop(paste("Design-based standard errors cannot be computed for ITT effect",
                    "models with covariance adjustment if small strata are present"))
     }
-    if (length(x@moderator) > 0){
+    else if (length(x@moderator) > 0){
       stop(paste("Design-based standard errors cannot be computed for ITT effect",
                  "models with moderators"))
     }
-    ainv <- .get_DB_a_inverse(x)
-    meat <- .get_DB_meat(x)
-    vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
-    if (is.na(vmat)) # if small strata are present
-      vmat <- .get_DB_small_strata(x)
+    else {
+      ainv <- .get_DB_a_inverse(x)
+      meat <- .get_DB_meat(x)
+      vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+      if (is.na(vmat)) # if small strata are present
+        vmat <- .get_DB_small_strata(x)
+    }
   }
   name <- colnames(x$model)[grep("z", colnames(x$model))]
   colnames(vmat) <- name
@@ -645,7 +647,69 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   bread1 <- a22inv %*% a21 %*% a11inv
   bread2 <- - a22inv %*% C
   
-  return(0)
+  signs1 <- ifelse(t(t(bread1[2,])) %*% bread1[2,] > 0, 1, 0)
+  signs2 <- ifelse(t(t(bread1[2,])) %*% bread2[2,] > 0, 1, 0)
+  signs3 <- ifelse(t(t(bread2[2,])) %*% bread2[2,] > 0, 1, 0)
+  
+  design_obj <- x@Design
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  data <- x$call$data
+  zobs <- data[, name_trt]
+  bid <- data[, name_blk]
+  cid <- .combine_block_ID(data, name_clu)[, name_clu[1]]
+  
+  name_y <- as.character(x$terms[[2]]) # name of the outcome column
+  X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
+  p <- ncol(X1)
+  
+  wc <- x$call$offset@fitted_covariance_model$weight
+  if (is.null(wc)) wc <- 1
+  X1 <- matrix(rep(wc * (x$call$data[,name_y] - x$offset), p),
+               ncol = p) * X1  # n by p, wic * residual * xi
+  wi <- x$weights
+  X2 <- wi * x$residuals  # n by 2 wi[z] * (residual - rhoz) * z
+  XX <- cbind(X1, X2)
+  XX <- aggregate(XX, by = list(cid), FUN = sum)[, 2:(p+2)]
+  
+  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], 
+                 function(s) cov(XX[zobs==0,][s,]))
+  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], 
+                 function(s) cov(XX[zobs==1,][s,]))
+
+  V00 <- Reduce('+', cov0)
+  V11 <- Reduce('+', cov1)
+  
+  Veta00 <- V00[1:p, 1:p]
+  Veta11 <- V11[1:p, 1:p]
+  Veta00diag <- matrix(rep(diag(Veta00), 2), ncol = 2, byrow = FALSE)
+  Veta11diag <- matrix(rep(diag(Veta11), nrow(Veta00)), ncol = 2, byrow = TRUE)
+  Veta01 <- (Veta00diag + Veta11diag) / 2
+  
+  Vez00 <- V00[1:p, p+1]
+  Vez11 <- V11[1:p, p+1]
+  Vzeta00 <- V00[p+1, p+1]
+  Vzeta11 <- V11[p+1, p+1]
+  
+  Vez01 <- (diag(Veta00) + Vzeta11) / 2
+  Vez10 <- (diag(Veta11) + Vzeta00) / 2
+  Vzeta01 <- (Vzeta00 + Vzeta11) / 2
+  
+  meat1u <- Veta00 + Veta01 + t(Veta01) + Veta11
+  meat1l <- Veta00 - Veta01 - t(Veta01) + Veta11
+  term1 <- bread1 %*% (meat1u * signs1 + meat1l * (1 - signs1)) %*% t(bread1)
+  
+  meat2u <- cbind(Vez00, Vez01) + cbind(Vez10, Vez11)
+  meat2l <- cbind(Vez00, - Vez01) + cbind(- Vez10, Vez11)
+  term2 <- bread2 %*% (meat2u * signs2 + meat2l * (1 - signs2)) %*% t(bread1)
+  
+  meat3u <- matrix(c(Vzeta00, Vzeta01, Vzeta01, Vzeta11), ncol = 2)
+  meat3l <- matrix(c(Vzeta00, - Vzeta01, - Vzeta01, Vzeta11), ncol = 2)
+  term3 <- bread2 %*% (meat3u * signs3 + meat3l * (1 - signs3)) %*% t(bread2)
+  
+  vmat <- term1 + 2*term2 + term3
+  return(as.matrix(vmat[2,2]))
 }
 
 #' @title (Internal) Compute design-based variance blocks
