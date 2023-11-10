@@ -652,13 +652,15 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   signs3 <- ifelse(t(t(bread2[2,])) %*% bread2[2,] > 0, 1, 0)
   
   design_obj <- x@Design
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
   data <- x$call$data
-  zobs <- data[, name_trt]
-  bid <- data[, name_blk]
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
   cid <- .combine_block_ID(data, name_clu)[, name_clu[1]]
+  
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  bid <- data[, res[[2]]] # block ids
+  zobs <- data[, res[[3]]] # observed zs
+  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
   X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
@@ -669,32 +671,35 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   X1 <- matrix(rep(wc * (x$call$data[,name_y] - x$offset), p),
                ncol = p) * X1  # n by p, wic * residual * xi
   wi <- x$weights
-  X2 <- wi * x$residuals  # n by 2 wi[z] * (residual - rhoz) * z
+  X2 <- wi * x$residuals  # n by 2, wi[z] * (residual - rhoz) * z
   XX <- cbind(X1, X2)
   XX <- aggregate(XX, by = list(cid), FUN = sum)[, 2:(p+2)]
   
-  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], 
-                 function(s) cov(XX[zobs==0,][s,]))
-  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], 
-                 function(s) cov(XX[zobs==1,][s,]))
+  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
+  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], function(s) cov(XX[zobs==1,][s,]))
+  cov01 <- lapply(1:length(cov0), function(s) .add_mat_diag(cov0[[s]], cov1[[s]]))
+  
+  const <- nbk[,1] * nbk[,2] / rowSums(nbk)
+  cov0 <- lapply(1:length(cov0), function(s) const[s] * cov0[[s]])
+  cov1 <- lapply(1:length(cov1), function(s) const[s] * cov1[[s]])
+  cov01 <- lapply(1:length(cov01), function(s) const[s] * cov01[[s]])
 
   V00 <- Reduce('+', cov0)
   V11 <- Reduce('+', cov1)
+  V01 <- Reduce('+', cov01)
   
   Veta00 <- V00[1:p, 1:p]
   Veta11 <- V11[1:p, 1:p]
-  Veta00diag <- matrix(rep(diag(Veta00), 2), ncol = 2, byrow = FALSE)
-  Veta11diag <- matrix(rep(diag(Veta11), nrow(Veta00)), ncol = 2, byrow = TRUE)
-  Veta01 <- (Veta00diag + Veta11diag) / 2
+  Veta01 <- V01[1:p, 1:p]
   
   Vez00 <- V00[1:p, p+1]
   Vez11 <- V11[1:p, p+1]
+  Vez01 <- V01[1:p, p+1]
+  Vez10 <- V01[p+1, 1:p]
+  
   Vzeta00 <- V00[p+1, p+1]
   Vzeta11 <- V11[p+1, p+1]
-  
-  Vez01 <- (diag(Veta00) + Vzeta11) / 2
-  Vez10 <- (diag(Veta11) + Vzeta00) / 2
-  Vzeta01 <- (Vzeta00 + Vzeta11) / 2
+  Vzeta01 <- V01[p+1, p+1]
   
   meat1u <- Veta00 + Veta01 + t(Veta01) + Veta11
   meat1l <- Veta00 - Veta01 - t(Veta01) + Veta11
@@ -710,6 +715,13 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   vmat <- term1 + 2*term2 + term3
   return(as.matrix(vmat[2,2]))
+}
+
+.add_mat_diag <- function(A, B){
+  d <- nrow(A)
+  A <- matrix(rep(diag(A), d), nrow = d, byrow = FALSE)
+  B <- matrix(rep(diag(B), d), nrow = d, byrow = TRUE)
+  return((A + B) / 2)
 }
 
 #' @title (Internal) Compute design-based variance blocks
