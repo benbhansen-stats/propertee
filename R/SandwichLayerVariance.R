@@ -672,49 +672,46 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                ncol = p) * X1  # n by p, wic * residual * xi
   wi <- x$weights
   X2 <- wi * x$residuals  # n by 2, wi[z] * (residual - rhoz) * z
+  
   XX <- cbind(X1, X2)
   XX <- aggregate(XX, by = list(cid), FUN = sum)[, 2:(p+2)]
+  const <- sqrt(nbk[,1] * nbk[,2] / rowSums(nbk))
+  XX <- sweep(XX, 1, const[bid], '*')
   
-  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
-  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], function(s) cov(XX[zobs==1,][s,]))
-  cov01 <- lapply(1:length(cov0), function(s) .add_mat_diag(cov0[[s]], cov1[[s]]))
+  V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
+  V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
+  V01 <- .cov01_est(XX, zobs, bid)
   
-  const <- nbk[,1] * nbk[,2] / rowSums(nbk)
-  cov0 <- lapply(1:length(cov0), function(s) const[s] * cov0[[s]])
-  cov1 <- lapply(1:length(cov1), function(s) const[s] * cov1[[s]])
-  cov01 <- lapply(1:length(cov01), function(s) const[s] * cov01[[s]])
-
-  V00 <- Reduce('+', cov0)
-  V11 <- Reduce('+', cov1)
-  V01 <- Reduce('+', cov01)
-  
-  Veta00 <- V00[1:p, 1:p]
-  Veta11 <- V11[1:p, 1:p]
-  Veta01 <- V01[1:p, 1:p]
-  
-  Vez00 <- V00[1:p, p+1]
-  Vez11 <- V11[1:p, p+1]
-  Vez01 <- V01[1:p, p+1]
-  Vez10 <- V01[p+1, 1:p]
-  
-  Vzeta00 <- V00[p+1, p+1]
-  Vzeta11 <- V11[p+1, p+1]
-  Vzeta01 <- V01[p+1, p+1]
-  
-  meat1u <- Veta00 + Veta01 + t(Veta01) + Veta11
-  meat1l <- Veta00 - Veta01 - t(Veta01) + Veta11
+  idl <- (p+2):(2*p+1)
+  meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
+  meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
   term1 <- bread1 %*% (meat1u * signs1 + meat1l * (1 - signs1)) %*% t(bread1)
   
-  meat2u <- cbind(Vez00, Vez01) + cbind(Vez10, Vez11)
-  meat2l <- cbind(Vez00, - Vez01) + cbind(- Vez10, Vez11)
+  meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
+  meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
   term2 <- bread2 %*% (meat2u * signs2 + meat2l * (1 - signs2)) %*% t(bread1)
   
-  meat3u <- matrix(c(Vzeta00, Vzeta01, Vzeta01, Vzeta11), ncol = 2)
-  meat3l <- matrix(c(Vzeta00, - Vzeta01, - Vzeta01, Vzeta11), ncol = 2)
+  meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
+  meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
   term3 <- bread2 %*% (meat3u * signs3 + meat3l * (1 - signs3)) %*% t(bread2)
   
   vmat <- term1 + 2*term2 + term3
   return(as.matrix(vmat[2,2]))
+}
+
+.cov_mat_est <- function(XXz, bidz){
+  cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
+  covuu <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,]))
+  covll <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,], add=FALSE))
+    
+  cov0u <- lapply(1:length(cov0), 
+                  function(s) if (is.na(cov0[[s]][1,1])) covuu[[s]] else cov0[[s]])
+  cov0l <- lapply(1:length(cov0), 
+                  function(s) if (is.na(cov0[[s]][1,1])) covll[[s]] else cov0[[s]])
+  
+  V00u <- Reduce('+', cov0u)
+  V00l <- Reduce('+', cov0l)
+  return(rbind(V00u, V00l))
 }
 
 .add_mat_diag <- function(A, B){
@@ -722,6 +719,45 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   A <- matrix(rep(diag(A), d), nrow = d, byrow = FALSE)
   B <- matrix(rep(diag(B), d), nrow = d, byrow = TRUE)
   return((A + B) / 2)
+}
+
+.add_vec <- function(a, add = TRUE){
+  if (nrow(a) > 1) return(0)
+  a <- as.numeric(a)
+  d <- length(a)
+  A <- matrix(rep(a, d), nrow = d, byrow = FALSE)
+  B <- matrix(rep(a, d), nrow = d, byrow = TRUE)
+  if (add) return((A + B)^2 / 2)
+  else return(- (A - B)^2 / 2)
+}
+
+.cov01_est <- function(XX, zobs, bid){
+  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
+  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], function(s) cov(XX[zobs==1,][s,]))
+  cov01 <- lapply(1:length(cov0), function(s) .add_mat_diag(cov0[[s]], cov1[[s]]))
+  
+  cov01u <- lapply(1:length(cov0), 
+                   function(s) if (!is.na(cov01[[s]][1,1])) cov01[[s]]
+                   else .add_mat_sqdif(XX, zobs, bid, s))
+  cov01l <- lapply(1:length(cov0), 
+                   function(s) if (!is.na(cov01[[s]][1,1])) -cov01[[s]]
+                   else -.add_mat_sqdif(XX, zobs, bid, s, add=FALSE))
+  V01u <- Reduce('+', cov01u)
+  V01l <- Reduce('+', cov01l)
+  return(rbind(V01u, V01l))
+}
+
+.add_mat_sqdif <- function(X, zobs, bid, b, add = TRUE){
+  A <- X[zobs==0 & bid==b, ]
+  if (add) B <- X[zobs==1 & bid==b, ] else B <- -X[zobs==1 & bid==b, ]
+  cov01u <- matrix(0, nrow=ncol(A), ncol=ncol(A))
+  for (j in 1:ncol(B)){
+    for (h in 1:nrow(B)){
+      cov01u[,j] <- cov01u[,j] + colSums((A + B[h,j])^2)
+    }
+  }
+  cov01u <- cov01u / nrow(A) / nrow(B)
+  return(cov01u)
 }
 
 #' @title (Internal) Compute design-based variance blocks
