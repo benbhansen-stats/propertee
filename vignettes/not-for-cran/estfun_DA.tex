@@ -618,11 +618,11 @@ $\Psi$ in \eqref{eq:15}.  That is, for a
 \mathtt{estfun.DirectAdjusted(DA)} = 
   \begin{cases}
   \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'& \mathtt{DA} \text{ absorbs
     intercepts}\\
 \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'  & \text{ otherwise}.
 \end{cases}
 \end{equation*}
@@ -659,11 +659,11 @@ estimation one uses as estimating function
   \mathtt{estfun\_DB\_blockabsorb(DA)} =\\
 \begin{cases}
 \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'  - \AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' & \mathtt{DA} \text{ absorbs intercepts}\\
  \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}' 
  & \text{ otherwise}.\\
 \end{cases}
@@ -825,7 +825,7 @@ For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
  \begin{equation}
    \label{eq:19}
   \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}' - \AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
   \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'
