@@ -308,43 +308,43 @@ We have
      \end{array}
 \right) = \left(
   \begin{array}{cc}
-    n_{\mathcal{C}}^{-1}M_{11}& n_{\mathcal{C}}^{-1/2}n^{-1/2} M_{12}\\
-    n_{\mathcal{C}}^{-1/2}n^{-1/2} M_{21} & n^{-1}M_{22}
+    n_{\mathcal{C}}^{-2}M_{11}& (n_{\mathcal{C}}n)^{-1}M_{12}\\
+    (n_{\mathcal{C}}n)^{-1}M_{21} & n^{-2}M_{22}
   \end{array}
 \right),
 \]
 where
 \[
   \begin{array}{cc}
-    M_{11}  = n_{\mathcal{C}}^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
+    M_{11}  = \operatorname{Cov}[\sum_{i\in \bigcup
              \mathcal{C}} \phi(\vec{Z}_{i}; \beta )] &
                                                                   M_{12}=
-                                                                  (n_{\mathcal{C}}n)^{-1/2} \operatorname{Cov}[\sum_{i\in \bigcup
+                                                                  \operatorname{Cov}[\sum_{i\in \bigcup
              \mathcal{C}}\phi(\vec{Z}_{i};
                                                                   \beta
                                                                   ), \sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
-    M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{j}\psi(\vec{Z}_{j};
+    M_{21}=M_{12}' & M_{22} = \operatorname{Cov}[\sum_{j}\psi(\vec{Z}_{j};
                      \tau, \alpha, \beta )] .
     \end{array}
 \]
-Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
-$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than $(\# \bigcup
-\mathcal{Q})^{-1}$ (or just $(\# \mathcal{Q})^{-1}$) in $M_{22}$'s
-case and $(n_{\mathcal{C}}n)^{-1/2}$ not $[n (\# \bigcup
-\mathcal{Q})]^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
+Note that $n_{\mathcal{C}}^{-1}M_{11}$ is a natural meat matrix, while $n^{-1}M_{22}$'s and
+$(n_{\mathcal{C}}n)^{-1}M_{12}$/$(n_{\mathcal{C}}n)^{-1}M_{21}$'s scaling constants --- $n^{-1}$ rather than $(\# \bigcup
+\mathcal{Q})^{-1}$ (or just $(\# \mathcal{Q})^{-1}$) in $n^{-1}M_{22}$'s
+case and $(n_{\mathcal{C}}n)^{-1}$ not $[n (\# \bigcup
+\mathcal{Q})]^{-1}$ in $(n_{\mathcal{C}}n)^{-1}M_{12}$/$(n_{\mathcal{C}}n)^{-1}M_{21}$'s --- are progressively more weird.
 
 With these definitions,
 \begin{align}
-  \operatorname{Cov}(\hat\tau) \approx& A_{22}^{-1}\{n^{-1} M_{22} -
-                                 n_{\mathcal{C}}^{-1/2}n^{-1/2}[M_{21}A_{11}^{-t}A_{21}^t
+  \operatorname{Cov}(\hat\tau) \approx& A_{22}^{-1}\{n^{-2} M_{22} -
+                                 (n_{\mathcal{C}}n)^{-1}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}\nonumber
+                                 n_C^{-2}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}\nonumber
   \\
                                &= n^{-1}A_{22}^{-1}\{
-                                 M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 n^{-1}M_{22} -
+                                 n_{\mathcal{C}}^{-1}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
+                                 \frac{n}{n_{\mathcal{C}}^{2}}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
                                 . \label{eq:6}
 \end{align}
 An advantage of the expression with leading factor $n^{-1}$ is that
@@ -358,8 +358,8 @@ For model-based estimation with units of observation and of assignment being
 the same, $M$'s are estimated as follows. 
 \begin{equation}\label{eq:7}
   \begin{array}{cc}
-  \hat{M}_{11} =n_{\mathcal{C}}^{-1} \Phi'\Phi & \hat{M}_{12} = (n_{\mathcal{C}}^{-1/2}\Phi)'(n^{-1/2} \Psi)\\
-    \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}\Psi'\Psi.\\
+  \hat{M}_{11} =\Phi'\Phi & \hat{M}_{12} = \Phi'\Psi\\
+    \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= \Psi'\Psi\\
     \end{array} 
   \end{equation}
   In the more general case with potentially clustering of observation
@@ -369,8 +369,8 @@ $F$ for the \{0,1\}-valued $n \times m$ matrix with an indicator
 column for each cluster:
 \begin{equation} \label{eq:8}
   \begin{array}{cc}
-  \hat{M}_{11} =n_{\mathcal{C}}^{-1} (F'\Phi)'(F'\Phi) & \hat{M}_{12} = [n_{\mathcal{C}}^{-1/2} (F'\Phi)]'[n^{-1/2} (F'\Psi)]\\
-    \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}(F'\Psi)'(F'\Psi)\\
+  \hat{M}_{11} =(F'\Phi)'(F'\Phi) & \hat{M}_{12} = (F'\Phi)'(F'\Psi)\\
+    \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= (F'\Psi)'(F'\Psi)\\
     \end{array}
   \end{equation}
 
@@ -379,9 +379,7 @@ Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
 \texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
-  \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{A}_{21}', 
+  \Psi - \Phi\hat{A}_{11}^{-t}\hat{A}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
 \texttt{DirectAdjusted} objects to return only
@@ -414,7 +412,6 @@ defining $\tilde{k}$ by 1 random matrices
     \psi_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
-    \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
     \hat{A}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta), 
 \end{equation}
@@ -422,10 +419,10 @@ we have in the model-based formulation
 \begin{multline*}
   \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
-  M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
+  n^{-1}M_{22} -
+                                 n_{\mathcal{C}}^{-1}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t},
+                                 \frac{n}{n_{\mathcal{C}}^{2}}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t},
                                \end{multline*}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
@@ -441,7 +438,6 @@ This generalizes readily beyond comparison regressions of the type encoded in \e
       \tilde{\psi}_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \tilde{\psi} (\vec{Z}; \tau,\alpha, 
     \beta) -
-    \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
     \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta)
 \end{equation*}
