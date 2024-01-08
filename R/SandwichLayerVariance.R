@@ -573,7 +573,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 
-#' Design-based standard errors with HC0 adjustment
+#' @title Design-based standard errors with HC0 adjustment
 #' @param x a fitted \code{DirectAdjusted} model
 #' @keywords internal
 #' @rdname var_estimators
@@ -616,9 +616,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                  "models with moderators"))
     }
     else {
-      ainv <- .get_DB_a_inverse(x)
-      meat <- .get_DB_meat(x)
-      vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+      ainv <- .get_DB_a_inverse(x) * n
+      meat <- .get_DB_meat(x) / n
+      vmat <- as.matrix((1 / n) * (ainv %*% meat %*% t(ainv))[3,3])
       if (is.na(vmat)) # if small strata are present
         vmat <- .get_DB_small_strata(x)
     }
@@ -661,6 +661,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   bid <- data[, res[[2]]] # block ids
   zobs <- data[, res[[3]]] # observed zs
   nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
+  nbk <- matrix(nbk, ncol=2)
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
   X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
@@ -774,6 +775,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   zobs <- data[, res[[3]]] # observed zs
   
   nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
+  nbk <- matrix(nbk, ncol=2)
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
   
   A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
@@ -803,6 +805,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
            sum(zobs * ws * yobs) / sum(zobs * ws))
   
   nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs==z, res[[2]]])))
+  nbk <- matrix(nbk, ncol=2)
   # number of units in each block and treatment, B by K
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
   delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
@@ -917,7 +920,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   for (k in 1:K){
     indk <- zobs == (k-1)
-    ipwk <- (1 / nbk_all[,k] * rowSums(nbk_all))[indk]    thetak <- sum(ws[indk] * yobs[indk] / ipwk) / sum(ws[indk] / ipwk)  # ratio estimate rho_z
+    ipwk <- (1 / nbk_all[,k] * rowSums(nbk_all))[indk]
+    thetak <- sum(ws[indk] * yobs[indk] / ipwk) / sum(ws[indk] / ipwk)  # ratio estimate rho_z
     gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - thetak)
     gamsbk[[k]] <- aggregate(gammas[indk,k], by = list(data[indk,block]), FUN = var)
   }
