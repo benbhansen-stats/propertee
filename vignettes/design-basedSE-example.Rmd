@@ -1,0 +1,28 @@
+---
+title: "Design-Based Standard Errors"
+author: "Xinhe Wang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Design-Based Standard Errors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+#library(propertee)
+```
+
+## Example Data
+
+The data came from a clustered randomized controlled trial conducted to evaluate the effects of an intervention designed to encourage water consumption among children in after school programs at Boston. A total of 20 sites were recruited and matched into 10 pairs. Within each pair, one site was randomly selected to receive the treatment, OSNAP (``Out of School Nutrition and Physical Activity"), and the other received the control. 
+
+```{r, results = 'hide', message = FALSE, error = FALSE, warning = FALSE}
+data(afterschool)
+```
+
+
