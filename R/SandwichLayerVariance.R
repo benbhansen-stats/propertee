@@ -917,7 +917,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   for (k in 1:K){
     indk <- zobs == (k-1)
-    thetak <- sum(ws[indk] * yobs[indk]) / sum(ws[indk])  # ratio estimate rho_z
+    ipwk <- (1 / nbk_all[,k] * rowSums(nbk_all))[indk]    thetak <- sum(ws[indk] * yobs[indk] / ipwk) / sum(ws[indk] / ipwk)  # ratio estimate rho_z
     gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - thetak)
     gamsbk[[k]] <- aggregate(gammas[indk,k], by = list(data[indk,block]), FUN = var)
   }
@@ -933,8 +933,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
         nu1[b,k-1] <- 
           .get_ms_contrast(gammas[indbk,k], gammas[indb0,1]) -
           sum((nbk[b,c(1,k)]-1) / nbk[b,c(1,k)] * gamsbk[b,c(1,k)])
-      }
-      else{ # large block
+      } else { # large block
         nu1[b,k-1] <- sum(gamsbk[b,c(1,k)] / nbk[b,c(1,k)])
       }
     }
