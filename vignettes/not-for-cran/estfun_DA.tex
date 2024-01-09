@@ -46,16 +46,23 @@ single element.  (Additional structure: any clusters $c, c' \in \mathcal{C}
 \cup \mathcal{Q}$ that are distinct, $c  \neq c'$, are nonoverlapping, $c \cap c' = \emptyset$.) This permits us to write $\mathcal{Q}$ for the
 quasiexperimental sample as expressed in terms of clusters, and $\bigcup
 \mathcal{Q}$ for the collection of all elements belonging to the
-quasiexperimental sample.
+quasiexperimental sample.  
 
-There are random estimating functions $\Phi(\mathbf{Z}; \beta ) =
-[\phi(\vec{Z}_{i};
-\beta) : i]'$, an $n$ (number of elements) by $p$ matrix,  and 
-       $\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i};
-       \rho, \beta): i]'$, \textit{also} an $n$ by $k$ matrix, with 
-       $\phi(\vec{Z}_{i}; \beta)$ equal to the product of the covariance
-       regression estimating functions with $\indicator{i \in \bigcup \mathcal{C}}$
-       and $\grave{\Psi}(\cdot; \cdot)$ the estimating functions defining the comparison regression.  That is, for now:
+Denote by $n_{\mathcal{C}}= \# \left( \bigcup \mathcal{C}\right)$,
+$n_{\mathcal{Q}}= \# \left( \bigcup \mathcal{Q}\right)$ and
+$n = \# \left[\left( \bigcup \mathcal{C}\right) \cup \left(\bigcup
+    \mathcal{Q}\right)\right]$ the numbers of elements in the 3
+overlapping samples. There are random estimating functions
+$\Phi(\mathbf{Z}; \beta ) = [\indicator{ i \in
+  \mathcal{C}}\phi(\vec{Z}_{i}; \beta) : i]'$ that define the covariance
+regression, padding with rows of zeroes in
+the complement of the covariance sample so
+as to have dimension $n \times p$ rather than $n_{\mathcal{C}}\times
+p$; and estimating functions 
+$\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i}; \rho,
+\beta): i]'$, padded with zeroes on the complement of $\bigcup
+\mathcal{Q}$ in order also to have row extent $n$, to define the
+treatment condition comparison.  For now, let
 \begin{equation}
          \label{eq:5}
          \grave{\psi}(\vec{Z}_{i}; \rho, \beta) =\\
@@ -67,7 +74,7 @@ There are random estimating functions $\Phi(\mathbf{Z}; \beta ) =
                   \vdots \\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[k]}] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
                   \rho_{k}]\indicator{A_{i}=k}\\
-                \end{array}\right)
+                \end{array}\right),
 \end{equation}
 where
 \begin{itemize}
@@ -254,24 +261,23 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
 known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
 
 
-Observe that these expressions define the same $\tilde{\beta}_{(n)}$ and $\tilde{\tau}_{(n)}$
-  irrespective of the choice of nonzero constants $n_{\mathcal{C}}$
-  and $n$.  To promote alignment with existing \texttt{sandwich}
-  functions%
-  \footnote{%
-    This $n_{\mathcal{C}}$ is the constant that \texttt{sandwich} functions
-will select for the covariance model, given its sample size.  It's
-incumbent on us to supply \texttt{sandwich::estfun()} and/or
-\texttt{sandwich::bread()} methods for \texttt{DirectAdjusted} objects
-with compatible implicit
-scaling constants. \texttt{sandwich::bread()} and
-\texttt{sandwich::breadCL()} take the scaling constant to be the
-reciprocal of the number of rows in whatever
-\texttt{sandwich::estfun()} returns; it will fall to us to ensure our
-$\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
-, we set $n_{\mathcal{C}}$ and $n$ to be the number of elements
-(not clusters) in the covariance and in the combined samples,
-respectively.
+Observe that if we were to replace ``$n_{\mathcal{C}}$'' and ``$n$''
+with arbitrary nonzero constants, these expressions would define the
+same $\tilde{\beta}_{(n)}$ and $\tilde{\tau}_{(n)}$. 
+Taking $n_{\mathcal{C}}$ and $n$ to be the numbers of elements (not
+clusters) in the covariance and in the combined samples, respectively,
+promotes alignment with existing \texttt{sandwich} functions%
+\footnote{%
+  This $n_{\mathcal{C}}$ is the constant that \texttt{sandwich}
+  functions will select for the covariance model, given its sample
+  size.  It's incumbent on us to supply \texttt{sandwich::estfun()}
+  and/or \texttt{sandwich::bread()} methods for
+  \texttt{DirectAdjusted} objects with compatible implicit scaling
+  constants. \texttt{sandwich::bread()} and
+  \texttt{sandwich::breadCL()} take the scaling constant to be the
+  reciprocal of the number of rows in whatever
+  \texttt{sandwich::estfun()} returns; it will fall to us to ensure
+  our $\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
 
 Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
 $|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
@@ -328,10 +334,9 @@ where
     \end{array}
 \]
 Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
-$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than $(\# \bigcup
-\mathcal{Q})^{-1}$ (or just $(\# \mathcal{Q})^{-1}$) in $M_{22}$'s
-case and $(n_{\mathcal{C}}n)^{-1/2}$ not $[n (\# \bigcup
-\mathcal{Q})]^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
+$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than
+$n_{\mathcal{Q}}^{-1}$ in $M_{22}$'s
+case and $(n_{\mathcal{C}}n)^{-1/2}$ not $(n_{\mathcal{C}} n_{\mathcal{Q}})^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
 
 With these definitions,
 \begin{align}
