@@ -322,18 +322,18 @@ We have
 where
 \[
   \begin{array}{cc}
-    M_{11}  = n_{\mathcal{C}}^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
+    M_{11}  = \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
              \mathcal{C}} \phi(\vec{Z}_{i}; \beta )] &
                                                                   M_{12}=
-                                                                  (n_{\mathcal{C}}n)^{-1/2} \operatorname{Cov}[\sum_{i\in \bigcup
+                                                                  \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
              \mathcal{C}}\phi(\vec{Z}_{i};
                                                                   \beta
-                                                                  ), \sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
-    M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{j}\psi(\vec{Z}_{j};
+                                                                  ), n^{-1/2}\sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
+    M_{21}=M_{12}' & M_{22} = \operatorname{Cov}[n^{-1/2}\sum_{j}\psi(\vec{Z}_{j};
                      \tau, \alpha, \beta )] .
     \end{array}
 \]
-Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
+Note that $M_{11}$ is scaled just as in estimates of $\operatorname{Cov}(\hat\beta)$, while $M_{22}$'s and
 $M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than
 $n_{\mathcal{Q}}^{-1}$ in $M_{22}$'s
 case and $(n_{\mathcal{C}}n)^{-1/2}$ not $(n_{\mathcal{C}} n_{\mathcal{Q}})^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
@@ -368,7 +368,7 @@ the same, $M$'s are estimated as follows.
     \end{array} 
   \end{equation}
   In the more general case with potentially clustering of observation
-units, by units of assigment and maybe more, we can express HC0
+units, by units of assignment and maybe more, we can express HC0
 type estimators with matrix rather than summation notation by using
 $F$ for the \{0,1\}-valued $n \times m$ matrix with an indicator
 column for each cluster:
