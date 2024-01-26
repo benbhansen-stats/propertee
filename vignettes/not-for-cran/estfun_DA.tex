@@ -210,8 +210,8 @@ are taken as fixed but $A_{i}$ and/or potential outcomes $(Y_{i}[a]:
 a=0, \ldots, k)$ may be random according as we follow a design- or
 model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Write
-  \begin{align*}
-%    \label{eq:13}
+  \begin{align}
+\nonumber
     A(\alpha, \beta, \tau) &= \left(
       \begin{array}{cc}
         n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
@@ -223,14 +223,15 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
         \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
         \tau, \alpha, \beta )]
       \end{array}
-    \right)\\
+                                  \right)\\
+    \label{eq:13}    
     &\eqdef \left(
       \begin{array}{cc}
         A_{11}(\beta)& 0\\
         A_{21}(\beta) & A_{22}(\alpha, \tau)
       \end{array}
 \right),
-  \end{align*}
+  \end{align}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
 that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
   \begin{align*}
@@ -357,8 +358,74 @@ that way it parallels the calculation of
 \texttt{sandwich::sandwich()} and, I think, other \texttt{sandwich}
 functions. (Assuming that we write
 \texttt{estfun.DirectAdjusted()}  to return a matrix of row extent
-$n$.) 
+$n$.)  A potential disadvantage is that it makes $A_{21}$ and
+$A_{22}$ not means of estimating equation contributions but rather
+means down-scaled by $n_{\mathcal{Q}}/n$, a potentially small factor;
+more on this presently.  
 
+  \subsection{Plain-vanilla estimation of $A$s and $M$s}
+\subsubsection {Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
+
+In the model-based perspective, expected value and covariance are
+conditional on
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, A_{i}: i \in c): c \in
+      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
+
+
+In the design-based perspective, $\mathcal{Q}$ is partitioned into
+blocks $b$, and expected value and covariance are
+conditional on
+\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+  i \in c; c\}, \{\sum_{c
+    \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+where $a_{c}$ denotes the common treatment assignment of all $i\in
+c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
+clusters $c \ni i$.)
+
+To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
+definition, let each such cluster $c$ constitute a block unto itself,
+$\{c\}$. This has the consequence that observations $i
+\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
+contribute to $M_{11}$, $M_{12}$ or $M_{21}$, at least in the
+design-based perspective.
+
+  \subsubsection{Conceptual vs practical bread estimates}
+  \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices}%
+In general $\EE
+[\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha, \tau )$; for many types of
+covariance model one also has $\EE
+[\nabla_{\beta}\phi(\vec{Z}_{i};  \beta ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\phi(\vec{Z}_{i};  \beta )$. As a result, under the
+model-based perspective
+$A_{11}(\beta)$ and perhaps $A_{21}(\beta)$ are essentially observed,
+i.e.  $\hat{A}_{11}(\beta) \equiv A_{11}(\beta)$ and (perhaps)
+$\hat{A}_{21}(\beta) \equiv A_{21}(\beta)$.   These equivalences don't
+hold under the design-based perspective, but under that perspective
+the same matrices do serve as estimates of $A_{11}(\beta)$ and
+$A_{21}(\beta)$ as given in \eqref{eq:13}. 
+
+  \paragraph{$\tilde{A}_{21}$ and $\tilde{A}_{22}$, rescalings of
+    ${A}_{21}$/${A}_{22}$ for numerical stability}
+  In situations with $n_{\mathcal{C}} \gg n_{\mathcal{Q}}$, scaling
+  ${A}_{21}$ and ${A}_{22}$ by $n^{-1}$, as called for above, may
+  invite numerical instability; $n_{\mathcal{Q}}$ seems more
+  appropriate. Write $\tilde{A}_{21} = (n/n_{\mathcal{Q}}) {A}_{21}$ and
+  $\tilde{A}_{22} = (n/n_{\mathcal{Q}}){A}_{22}$, i.e.
+  \begin{align*}
+    \tilde{A}_{21}(\beta) &= n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{Z}_{j};
+        \tau, \alpha, \beta )] \\
+    \tilde{A}_{22}(\alpha, \tau) &= n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
+        \tau, \alpha, \beta )].
+  \end{align*}
+  Due to mutual cancelation of $n/n_{\mathcal{Q}}$ and
+  $(n/n_{\mathcal{Q}})^{-1}$ factors, \eqref{eq:6}
+  continues to hold with $\tilde{A}_{21}$ and $\tilde{A}_{22}$
+  substituted for ${A}_{21}$ and ${A}_{22}$.
+  
+  \subsubsection{Clustered estimation of meat matrices}
 For model-based estimation with units of observation and of assignment being
 the same, $M$'s are estimated as follows. 
 \begin{equation}\label{eq:7}
@@ -378,7 +445,7 @@ column for each cluster:
     \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}(F'\Psi)'(F'\Psi)\\
     \end{array}
   \end{equation}
-
+  
 \subsection{Realization of goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
@@ -453,29 +520,6 @@ This generalizes readily beyond comparison regressions of the type encoded in \e
 in combination with $\tilde{A}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
 $\tilde{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing. 
 
-\subsection{Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
-
-In the model-based perspective, expected value and covariance are
-conditional on
-\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, A_{i}: i \in c): c \in
-      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
-
-
-In the design-based perspective, $\mathcal{Q}$ is partitioned into
-blocks $b$, and expected value and covariance are
-conditional on
-\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
-  i \in c; c\}, \{\sum_{c
-    \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
-where $a_{c}$ denotes the common treatment assignment of all $i\in
-c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
-clusters $c \ni i$.)
-
-To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
-definition, let each such cluster $c$ constitute a block unto itself,
-$\{c\}$. This has the consequence that observations $i
-\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
-contribute to $M_{11}$, $M_{12}$ or $M_{21}$.
 
 \section{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
