@@ -395,13 +395,13 @@ With these definitions,
   \operatorname{Cov}(\hat\tau) \approx& \tilde{A}_{22}^{-1}\{n^{-1} M_{22} -
                                  n_{\mathcal{C}}^{-1/2}n^{-1/2}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
                                  + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
-                                 n_C^{-1}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-1}\nonumber
+                                 n_C^{-1}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-t}\nonumber
   \\
                                &= n^{-1}\tilde{A}_{22}^{-1}\{
                                  M_{22} -
                                  \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
                                  + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-1}
+                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-t}
                                 . \label{eq:6}
 \end{align}
 An advantage of the expression with leading factor $n^{-1}$ is that
@@ -470,7 +470,7 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
   &A_{22}^{-1}\{\frac{n}{n_{\mathcal{Q}}^{2}} M_{22} -
                                  \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}\nonumber
+                                 n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-t}\nonumber
   \\
                                =& n^{-1}A_{22}^{-1} \times\\
                                  &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
@@ -478,14 +478,14 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
                                  + A_{21}A_{11}^{-1}M_{12}] +
                                  \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
     &
-                                 \times A_{22}^{-1}\\
+                                 \times A_{22}^{-t}\\
                                =& n^{-1}A_{22}^{-1} \times\\
                                  &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
                                  \left(\frac{n}{n_{\mathcal{Q}}}\right)\left(\frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}\right)[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
                                  \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
     &
-                                 \times A_{22}^{-1}
+                                 \times A_{22}^{-t}
                                 . 
 \end{align*}
 In computations we may combine $\psi$-\texttt{estfun}'s of dimension
@@ -1123,7 +1123,7 @@ with covariates.
 \]
 With these definitions,
 \[
-  \operatorname{Cov}(\hat\tau) \approx n^{-1}A_{22}^{-1}\{M_{22} - [M_{12}A_{11}^{-t}A_{21}^t + A_{21}A_{11}^{-1}M_{21}] + (n/n_C)A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
+  \operatorname{Cov}(\hat\tau) \approx n^{-1}A_{22}^{-1}\{M_{22} - [M_{12}A_{11}^{-t}A_{21}^t + A_{21}A_{11}^{-1}M_{21}] + (n/n_C)A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-t}
 \]
 
 
