@@ -234,7 +234,7 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   \end{align}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
 that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
-  \begin{align*}
+  \begin{align}
     \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
                     \tau_{(n)} \end{array}\right)
@@ -246,19 +246,19 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
-    \right),\, \text{i.e.}\\
-    \\
+    \right),\, \text{i.e.} \nonumber \\
+   \nonumber \\
        \tilde{\beta}_{(n)}
     \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
-  \quad \text{and}\\
+  \, \text{and} \nonumber\\
 \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)               &=\left(\begin{array}{c}\alpha_{(n)}\\
                          \tau_{(n)} \end{array}\right) +
-    A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
+    A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:20}\\
     & \left[
                  n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
                  \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],
-\end{align*}
+                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],\nonumber
+\end{align}
 known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
 
 The constants $n_{\mathcal{C}}$ and
@@ -301,20 +301,20 @@ define
               \end{array}
 \right).
 \end{align*}
-Substitution into the above expressions for
+Substitution into  expression \eqref{eq:20} for
 $\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
-\begin{align*}
+\begin{align}
       \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)         &=\left(\begin{array}{c}\alpha_{(n)}\\
                          \tau_{(n)} \end{array}\right) +
-    \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
+    \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:21}\\
     & \left[
                  n^{-1}\sum_{j\in \bigcup
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} ) -
       \tilde{A}_{21}(\beta_{(n)})
       {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right]
-\end{align*}
+      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right] \nonumber
+\end{align}
 and in turn
 \begin{equation*}
 \left(\begin{array}{c}\tilde{\beta}_{(n)}\\ \tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
@@ -441,7 +441,7 @@ $\{c\}$. This has the consequence that observations $i
 contribute to $M_{11}$, $M_{12}$ or $M_{21}$, at least in the
 design-based perspective.
 
-  \subsubsection{Conceptual vs practical bread estimates}
+  \subsubsection{Conceptual vs practical bread estimates} \label{sec:conc-vs-pract}
   \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices.}%
 In general $\EE
 [\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
@@ -467,16 +467,25 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
   A_{22}^{-1}A_{21}$.   As a result, in parallel with \eqref{eq:6} we
   have $\operatorname{Cov}(\hat\tau) \approx$
   \begin{align*}
-  &A_{22}^{-1}\{n^{-1} M_{22} -
-                                 n_{\mathcal{C}}^{-1/2}n^{-1/2}[M_{21}A_{11}^{-t}A_{21}^t
+  &A_{22}^{-1}\{\frac{n}{n_{\mathcal{Q}}^{2}} M_{22} -
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
                                  n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}\nonumber
   \\
-                               &= n^{-1}A_{22}^{-1}\{
-                                 M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                               =& n^{-1}A_{22}^{-1} \times\\
+                                 &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
+                                 \frac{n^{3/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+    &
+                                 \times A_{22}^{-1}\\
+                               =& n^{-1}A_{22}^{-1} \times\\
+                                 &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
+                                 \left(\frac{n}{n_{\mathcal{Q}}}\right)\left(\frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}\right)[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+    &
+                                 \times A_{22}^{-1}
                                 . 
 \end{align*}
 In computations we may combine $\psi$-\texttt{estfun}'s of dimension
