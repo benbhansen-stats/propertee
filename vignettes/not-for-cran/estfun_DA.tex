@@ -235,11 +235,8 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
 that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
   \begin{align*}
-   \tilde{\beta}_{(n)}
-    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
-  \quad \text{and}\\
-    \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
-    \defeq& \left(\begin{array}{c}\alpha_{(n)}\\
+    \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
+    \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
                     \tau_{(n)} \end{array}\right)
     + A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
@@ -249,9 +246,12 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
-\right)\\
+    \right),\, \text{i.e.}\\
     \\
-               &=\left(\begin{array}{c}\alpha_{(n)}\\
+       \tilde{\beta}_{(n)}
+    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
+  \quad \text{and}\\
+\left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)               &=\left(\begin{array}{c}\alpha_{(n)}\\
                          \tau_{(n)} \end{array}\right) +
     A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
     & \left[
@@ -301,10 +301,24 @@ define
               \end{array}
 \right).
 \end{align*}
-The linearizations defined above then also satisfy
+Substitution into the above expressions for
+$\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
 \begin{align*}
-      \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
-    \defeq& \left(\begin{array}{c}\alpha_{(n)}\\
+      \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)         &=\left(\begin{array}{c}\alpha_{(n)}\\
+                         \tau_{(n)} \end{array}\right) +
+    \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
+    & \left[
+                 n^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \tau_{(n)},\beta_{(n)} ) -
+      \tilde{A}_{21}(\beta_{(n)})
+      {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right]
+\end{align*}
+and in turn
+\begin{equation*}
+\left(\begin{array}{c}\tilde{\beta}_{(n)}\\ \tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
+    = \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
                     \tau_{(n)} \end{array}\right)
     + \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
@@ -314,16 +328,8 @@ The linearizations defined above then also satisfy
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
-\right)\\
-    \\
-               &=\left(\begin{array}{c}\alpha_{(n)}\\
-                         \tau_{(n)} \end{array}\right) +
-    \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
-    & \left[
-                 n^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{(n)},\beta_{(n)} ) - \tilde{A}_{21}(\beta_{(n)}) {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right].
-\end{align*}
+\right).
+\end{equation*}
 
 Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
 $|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
