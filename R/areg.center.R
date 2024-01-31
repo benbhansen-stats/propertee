@@ -9,14 +9,14 @@
 ##' @param grand_mean_center Optional center output at \code{mean(var)}
 ##' @return Vector of group-centered values
 ##' @keywords internal
-##' @importFrom stats weighted.mean
 areg.center <- function(mm, grp, wts = NULL, grand_mean_center = TRUE) {
   if (is.null(wts)) {
     wts <- rep(1, nrow(mm))
   }
   mm2 <- mm[!is.na(wts),,drop=FALSE]
-  group_means <- sweep(rowsum(wts * mm2, grp, na.rm = TRUE), 1,
-                       rowsum(wts, grp, na.rm = TRUE), FUN = "/")
+  grp_keep <- !is.na(grp)
+  group_means <- sweep(rowsum((wts * mm2)[grp_keep,], grp[grp_keep], na.rm = TRUE),
+                       1, rowsum(wts[grp_keep], grp[grp_keep], na.rm = TRUE), FUN = "/")
   group_means[is.nan(group_means)] <- 0
   out <- mm2 - group_means[grp,]
   if (grand_mean_center) {
