@@ -549,15 +549,15 @@ column for each cluster:
 \subsection{Realization of goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
+\texttt{sandwich::estfun.DirectAdjusted()} to return an $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{A}_{21}', 
+  \hat{A}_{11}^{-t}\hat{\tilde{A}}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
-\texttt{DirectAdjusted} objects to return only
-the lower $A_{22}^{-1}$ matrix, then the effect of this will be for \texttt{sandwich::sandwich()}
+\texttt{DirectAdjusted} objects to return an (appropriately scaled)
+inverted estimate of $A_{22}$, then the effect of this will be for \texttt{sandwich::sandwich()}
 and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
 $\hat{M}$'s,  as
 given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
@@ -569,15 +569,15 @@ we use
   \hat{A}_{11}(\beta) &\defeq  n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
         \mathcal{C}}\nabla_{\beta}\phi(\vec{z}_{i};
         \beta ),\\
-  \hat{A}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
+  \hat{\tilde{A}}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\nabla_{\beta}\psi(\vec{z}_{j};
         \tau, \alpha, \beta ),\\
-  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{A}_{21}\defeq \hat{A}_{21}(\hat\beta).
+  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{\tilde{A}}_{21}\defeq \hat{\tilde{A}}_{21}(\hat\beta).
 \end{align*}
 Under the model based
-formulation, $\hat{A}_{21}(\cdot) \equiv {A}_{21}(\cdot)$; when the
+formulation, $\hat{\tilde{A}}_{21}(\cdot) \equiv \tilde{A}_{21}(\cdot)$; when the
 first-stage model is a glm, also $\hat{A}_{11}(\cdot) \equiv
-{A}_{11}(\cdot)$.  However, in design based formulations neither
+\tilde{A}_{11}(\cdot)$.  However, in design based formulations neither
 equivalence holds in general.)
 
 Alternately put,
@@ -587,7 +587,7 @@ defining $\tilde{k}$ by 1 random matrices
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    \hat{A}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta), 
 \end{equation}
 we have in the model-based formulation 
@@ -595,9 +595,9 @@ we have in the model-based formulation
   \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
-                                 + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}, \label{eq:12}
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}, \label{eq:12}
                                \end{multline}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
@@ -605,8 +605,8 @@ clustering or heteroskedasticity that we might seek to apply.
 
 In the design-based formulation there
 would likely be approximate equality here, as in that setting
-$\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
-coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
+$\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
+coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
 This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}
