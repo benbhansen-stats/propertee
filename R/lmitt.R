@@ -98,7 +98,6 @@ lmitt.formula <- function(obj,
 
   # Save the subset and remove it from `lm.call`, to be re-added at the enc
   savedsubset <- lm.call$subset
-  logicalsubset <- eval(savedsubset, data)
   lm.call$subset <- NULL
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
@@ -243,15 +242,6 @@ lmitt.formula <- function(obj,
       }
     }
   }
-
-  # Evaluate model.frame
-  mf.call <- lm.call
-  mf.call[[1]] <- quote(stats::model.frame)
-  # Add assigned() to the model so it utilizes Design characteristics (primarly
-  # concerned about subset)
-  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + a.())
-  mf.call$na.action <- "na.pass"
-  mf <- eval(mf.call, parent.frame())
 
   if (absorb) {
     if (length(var_names(design, "b")) == 0) {
