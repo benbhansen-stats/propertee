@@ -4,14 +4,16 @@
 \alias{areg.center}
 \title{Group-center akin to Stata's \code{areg}}
 \usage{
-areg.center(var, grp, wts = NULL)
+areg.center(mm, grp, wts = NULL, grand_mean_center = TRUE)
 }
 \arguments{
-\item{var}{Variable to center}
+\item{mm}{Matrix of variables to center}
 
 \item{grp}{Group to center on}
 
 \item{wts}{Optional weights}
+
+\item{grand_mean_center}{Optional center output at \code{mean(var)}}
 }
 \value{
 Vector of group-centered values
