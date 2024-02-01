@@ -1180,6 +1180,21 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
+test_that(".get_a21 returns only full rank columns for less than full rank model", {
+  data(simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  
+  ### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des, offset = cov_adj(cmod))
+  expect_equal(dim(a21 <- .get_a21(damod)),
+               c(damod$rank, damod$model$`(offset)`@fitted_covariance_model$rank))
+  keep_ix <- damod$qr$pivot[1L:damod$rank]
+  expect_equal(rownames(a21), colnames(model.matrix(damod))[keep_ix])
+})
+
 test_that("propertee:::.vcov_CR0 returns px2 matrix", {
   data(simdata)
 

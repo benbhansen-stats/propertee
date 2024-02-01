@@ -556,18 +556,18 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
-               "for direct adjustment standard errors"))
+               "to propagate covariance adjustment model error"))
   }
 
   # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
 
-  damod_mm <- stats::model.matrix(formula(x),
-                                  stats::model.frame(x, na.action = na.pass))
+  damod_mm <- stats::model.matrix(
+    formula(x), stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
 
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
+  out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
