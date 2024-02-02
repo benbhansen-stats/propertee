@@ -106,9 +106,10 @@ test_that("lmitt.form vs as.lmitt", {
 
 
   ### With interactions, `as.lmitt` should report all coefficients
-  expect_warning(co <- capture.output(summary(as.lmitt(lm(
+  mod <- as.lmitt(lm(
     y ~ as.factor(o) + as.factor(o):z.(des), data = simdata),
-    design = des)), "NaNs"))
+    design = des)
+  expect_warning(co <- capture.output(summary(mod), "NaNs"))
   expect_equal(sum(grepl("as.factor(o)", co, fixed = TRUE)),
                length(mod$coefficients))
 
