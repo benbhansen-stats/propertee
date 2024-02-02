@@ -151,7 +151,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                         rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
     valid_mods <- colSums(mod_counts != 0) > 2
   } else {
-    valid_mods <- setNames(length(unique(cluster)) > 2, model@moderator)
+    valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
   }
     
 
