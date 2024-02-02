@@ -139,48 +139,36 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("`data` must be a dataframe or a quoted object name")
   }
 
-  # For each moderator variable (whether it's been dichotomized or not), count
-  # the number of clusters with at least one member of each value
-  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)),
-                           model_data)
-  mod_counts <- apply(
-    mod_vars,
-    2,
-    function(col) {
-      n_vals <- length(unique(col))
-      if (n_vals == 2) {
-        tapply(cluster, col, function(cluster_ids) length(unique(cluster_ids)))
-      } else {
-        3 # necessarily enough degrees of freedom if there are at least 3 values
-      }
-    },
-    simplify = FALSE)
+  # For categorical moderators, count the clusters contributing to estimation
+  # for each level of the moderator variable; for continuous moderators, just
+  # count the number of clusters. The moderator variable (or any level of the
+  # moderator variable) must have at least three clusters contributing to
+  # estimation for valid SE estimation.
+  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
+  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(model.frame(model)),,drop=FALSE]
+  if (ncol(mod_vars) > 1) {
+    mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
+                        rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
+    valid_mods <- colSums(mod_counts != 0) > 2
+  } else {
+    valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
+  }
+    
 
-  valid_mods <- vapply(mod_counts,
-                       function(counts) all(counts > 2),
-                       logical(1L))
+  # Replace SE's for moderator variable/levels with <= 2 clusters with NA's
   if (any(!valid_mods)) {
-    invalid_mods <- names(valid_mods)[!valid_mods]
+    invalid_mods <- gsub("\\)", "\\\\)", gsub("\\(", "\\\\(", names(valid_mods)[!valid_mods]))
     warning(paste("The following subgroups do not have sufficient degrees of",
                   "freedom for standard error estimates and will be returned",
                   "as NA:",
-                  paste(invalid_mods, collapse = ", ")),
+                  paste(names(valid_mods)[!valid_mods], collapse = ", ")),
             call. = FALSE)
     # find cells of the covariance matrix that correspond to txt/mod group
     # interactions
-    invalid_cols <- paste0(paste0(var_names(model@Design, "t"), "."), "_", invalid_mods)
-    dims_to_na <- apply(
-      vapply(invalid_cols, grepl, logical(length(colnames(vmat))),
-             colnames(vmat), fixed = TRUE),
-      1,
-      any
-    )
-
-    if (all(!dims_to_na)) {
-      warning(paste("Could not find dimensions of `vmat` corresponding to",
-                    "degenerate standard error estimates. Degenerate standard",
-                    "error estimates will not be returned as NA"))
-    }
+    if (!(valid_mods[1])) invalid_mods <- c("\\(Intercept\\)", invalid_mods)
+    dims_to_na <- which(grepl(paste0("(", paste(invalid_mods, collapse = "|"), ")"),
+                              colnames(vmat),
+                              perl = TRUE))
 
     vmat[dims_to_na, ] <- NA_real_
     vmat[, dims_to_na] <- NA_real_
@@ -556,18 +544,18 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
-               "for direct adjustment standard errors"))
+               "to propagate covariance adjustment model error"))
   }
 
   # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
 
-  damod_mm <- stats::model.matrix(formula(x),
-                                  stats::model.frame(x, na.action = na.pass))
+  damod_mm <- stats::model.matrix(
+    formula(x), stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
 
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
+  out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
 
   return(out)
