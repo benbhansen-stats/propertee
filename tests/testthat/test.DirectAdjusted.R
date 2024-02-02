@@ -602,6 +602,24 @@ test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
   expect_equal(sandwich::bread(m), expected_out)
 })
 
+test_that("bread.DirectAdjusted handles model with less than full rank", {
+  data(simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  
+  ### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des, offset = cov_adj(cmod))
+  keep_ix <- damod$qr$pivot[1L:damod$rank]
+  expect_true(
+    all.equal(
+      bread(damod),
+      nrow(simdata) * solve(crossprod(model.matrix(damod))[keep_ix,keep_ix])
+    )
+  )
+})
+
 test_that(paste(".align_and_extend_estfuns fails if not a DirectAdjusted object",
                 "with a SandwichLayer offset"), {
   data(simdata)

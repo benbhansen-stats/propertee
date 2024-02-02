@@ -152,8 +152,9 @@ bread.DirectAdjusted <- function(x, ...) {
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
 
-  out <- n * chol2inv(x$qr$qr)
-  dimnames(out) <- list(colnames(mm), colnames(mm))
+  p1 <- 1L:x$rank
+  out <- n * chol2inv(x$qr$qr[p1, p1, drop = FALSE]) # taken from summary.lm
+  dimnames(out) <- list(colnames(mm)[x$qr$pivot[p1]], colnames(mm)[x$qr$pivot[p1]])
 
   return(out)
 }

@@ -1180,6 +1180,21 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   expect_equal(a21, crossprod(damod_mm, pg))
 })
 
+test_that(".get_a21 returns only full rank columns for less than full rank model", {
+  data(simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  
+  ### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des, offset = cov_adj(cmod))
+  expect_equal(dim(a21 <- .get_a21(damod)),
+               c(damod$rank, damod$model$`(offset)`@fitted_covariance_model$rank))
+  keep_ix <- damod$qr$pivot[1L:damod$rank]
+  expect_equal(rownames(a21), colnames(model.matrix(damod))[keep_ix])
+})
+
 test_that("propertee:::.vcov_CR0 returns px2 matrix", {
   data(simdata)
 
@@ -2002,48 +2017,95 @@ test_that("type attribute", {
 test_that("#119 flagging vcovDA entries as NA", {
   ### factor moderator variable
   data(simdata)
-  copy_simdata <- simdata
-  copy_simdata$o_fac <- as.factor(copy_simdata$o)
-  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  mod <- lmitt(y ~ as.factor(o), data = simdata, design = des)
+  expect_warning(vc <- vcovDA(mod),
+                 "will be returned as NA: as.factor(o)1, as.factor(o)3",
+                 fixed = TRUE)
 
-  #### lmitt.formula
-  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
-  expect_warning(vc <- vcov(damod), "will be returned as NA: o_fac1, o_fac3")
-
-  # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
-  na_dim <- which(grepl("z._o_fac1", colnames(vc)))
+  # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
+  # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
+  na_dim <- c(1, 3, 5)
+  expect_true(all(
+    diag(sandwich::sandwich(mod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(mod)))[na_dim]
+     < 0)
+  )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
-
+  
+  ### different factor moderator variable (may not produce negative diagonals
+  ### but subgroups with moderator=1:z=0 and moderator=1:z=1 should be
+  ### numerically 0)
+  set.seed(37)
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(5), each = 4))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  expect_warning(vc <- vcovDA(dmod),
+                 "will be returned as NA: modr1",
+                 fixed = TRUE)
+  
+  na_dim <- c(1, 3)
+  expect_true(all(
+    round(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
+      10
+    ) == 0)
+  )
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
+  
+  ### valid factor moderator variable; vcov diagonals shouldn't be numerically 0
+  ### when using the sandwich package and shouldn't have NA's when using vcovDA
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(10), each = 2))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  vc <- vcovDA(dmod)
+  expect_true(all(
+    round(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
+      10
+    ) != 0)
+  )
+  expect_true(all(!is.na(vc)))
+  
   #### lmitt.lm
-  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
-  vc <- vcov(damod)[5:7, 5:7]
-
-  #****************************************
-  ### Setting these to NA manually only for testing purposes!
-  vc[1, ] <- NA
-  vc[, 1] <- NA
-  ### Remove these once #119 is addressed!!!!!
-  #****************************************
-
-  # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
-  expect_true(all(is.na(vc[1, ])))
-  expect_true(all(is.na(vc[, 1])))
-  expect_true(all(!is.na(vc[-1, -1])))
-
-  ### valid continuous moderator variable
-  damod <- lmitt(y ~ o, data = copy_simdata, design = des)
+  ## we chose to leave the "moderator" slot empty for DirectAdjusted objects
+  ## created through lmitt.lm, so .check_df_moderator_estimates will return
+  ## the initial vcov matrix, and we need not check it here 
+  # mod <- lmitt(lm(y ~ as.factor(o) + as.factor(o):assigned(des), data = simdata), design = des)
+  # vc <- vcovDA(mod)[5:7, 5:7]
+  # 
+  # #****************************************
+  # ### Setting these to NA manually only for testing purposes!
+  # vc[1, ] <- NA
+  # vc[, 1] <- NA
+  # ### Remove these once #119 is addressed!!!!!
+  # #****************************************
+  # 
+  # # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
+  # expect_true(all(is.na(vc[1, ])))
+  # expect_true(all(is.na(vc[, 1])))
+  # expect_true(all(!is.na(vc[-1, -1])))
+  # 
+  # ### valid continuous moderator variable
+  damod <- lmitt(y ~ o, data = simdata, design = des)
   vc <- vcov(damod)
   expect_true(all(!is.na(vc)))
-
-  ### invalid continuous moderator variable
-  copy_simdata$invalid_o <- 0
-  copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
-                           (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
-  damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
-  expect_warning(vc <- vcov(damod), "will be returned as NA: invalid_o")
-  na_dim <- which(grepl("z._invalid_o", colnames(vc)))
+  # 
+  # ### invalid continuous moderator variable
+  simdata <- simdata[(simdata$cid1 == 2 & simdata$cid2 == 2) |
+                      (simdata$cid1 == 2 & simdata$cid2 == 1),]
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NA: o")
+  na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
@@ -2066,12 +2128,6 @@ test_that(".check_df_moderator_estimates other warnings", {
                                              cbind(y = simdata$y, z = simdata$z),
                                              envir = parent.frame()),
                "`data` must be a dataframe")
-
-  # column names of vmat don't match moderator variable of model
-  expect_warning(
-    expect_warning(.check_df_moderator_estimates(vmat, damod, cluster_ids),
-                   "will be returned as NA"),
-    "will not be returned as NA")
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {

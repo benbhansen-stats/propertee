@@ -15,7 +15,7 @@ simdata <- data.frame(cid1 = rep(1:5, each = 10),
                       dose = rep(rep(c(50, 250, 100, 200, 300), 2),
                                  times = rep(c(4, 6),
                                              times = 5)),
-                      x = rnorm(1:50),
-                      y = rnorm(1:50))
+                      x = round(rnorm(1:50), 2),
+                      y = round(rnorm(1:50), 2))
 
 usethis::use_data(simdata, overwrite = TRUE)
