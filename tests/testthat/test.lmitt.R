@@ -417,3 +417,21 @@ test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
   
   expect_equal(dim(model.matrix(absorb_mod)), dim(model.matrix(no_absorb_mod)))
 })
+
+test_that("#147 lmitt.formula accepts references to formula objects", {
+  data(simdata)
+  lmitt_form <- y ~ 1
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  expect_equal(
+    co <- capture.output(lmitt(lmitt_form, data = simdata, design = des)),
+    capture.output(lmitt(y ~ 1, data = simdata, design = des))
+  )
+  
+  make_lmitt <- function(data, dv_col) {
+    lmitt_form <- as.formula(paste0(dv_col, "~1"))
+    des <- rct_design(z ~ unitid(cid1, cid2), data)
+    lmitt(lmitt_form, design = des, data = data)
+  }
+  expect_equal(capture.output(make_lmitt(simdata, "y")), co)
+  
+})
