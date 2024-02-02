@@ -4,7 +4,7 @@
 \alias{areg.center}
 \title{Group-center akin to Stata's \code{areg}}
 \usage{
-areg.center(mm, grp, wts = NULL, grand_mean_center = TRUE)
+areg.center(mm, grp, wts = NULL, grand_mean_center = FALSE)
 }
 \arguments{
 \item{mm}{Matrix of variables to center}
