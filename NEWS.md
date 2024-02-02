@@ -1,3 +1,8 @@
+# v0.3.5
+
+## Improvements
+* Diagonal elements of `vcovDA()` matrices lacking sufficient degrees of freedom for estimation are returned as NA's rather than numeric zeros. This is a deviation from the `sandwich` package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix
+
 # v0.3.4
 
 ## Improvements

@@ -96,13 +96,13 @@ $\psi(\cdot)$ with equivalent solutions that is better aligned with
 to add block-specific intercepts.)
 The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
-\subsection{Goal}
+\subsection{Goal} \label{sec:goal}
 We aim to define \texttt{estfun.DirectAdjusted()} associating
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
-\begin{equation*}
-  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}',
-\end{equation*}
+\begin{equation} \label{eq:22}
+  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}^{t},
+\end{equation}
 and a corresponding \texttt{bread.DirectAdjusted()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
@@ -330,7 +330,6 @@ and in turn
     \end{array}
 \right).
 \end{equation*}
-
 Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
 $|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
 $A_{11}(\beta_{(n)})$ and $A_{22}(\beta_{(n)}, \tau_{(n)})$ are nonsingular
@@ -457,14 +456,22 @@ hold under the design-based perspective, but under that perspective
 the same matrices do serve as estimates of $A_{11}(\beta)$ and
 $A_{21}(\beta)$ as given in \eqref{eq:13}. 
 
-  \paragraph{${A}_{21}$ and ${A}_{22}$ as rescalings  for numerical
-    stability of $\tilde{A}_{21}$ and $\tilde{A}_{22}$.}
+\paragraph{Numerical stability by combining ${A}_{21}$ and $\tilde{A}_{22}$, rather than either
+  ${A}_{21}$ and ${A}_{22}$ or $\tilde{A}_{21}$ and $\tilde{A}_{22}$.}
   In situations with $n_{\mathcal{C}} \gg n_{\mathcal{Q}}$, scaling
   by $n^{-1}$, as $\tilde{A}_{21}$ and $\tilde{A}_{22}$ do, may
-  invite numerical instability; $n_{\mathcal{Q}}$ seems more
-  appropriate. Since ${A}_{21} = (n/n_{\mathcal{Q}}) \tilde{A}_{21}$ and
-  ${A}_{22} = (n/n_{\mathcal{Q}})\tilde{A}_{22}$, one has $\tilde{A}_{22}^{-1}\tilde{A}_{21} =
-  A_{22}^{-1}A_{21}$.   As a result, in parallel with \eqref{eq:6} we
+  invite numerical instability. In setups with $n_{\mathcal{C}} \gg
+  n_{\mathcal{Q}}$, $n^{-1}$-scaling may lead to underflows,
+  collapsing of distinct values into numeric zeroes, if performed
+  before taking sums; even if we don't scale before summing,
+  $n_{\mathcal{Q}}^{-1}$ scaling of these matrices could faciliated improved
+  use of numerically optimized mean and weighted mean functions in
+  these calculations.  (By application of such functions only to the
+  $n_{\mathcal{Q}}$ contributions to $\hat{A}_{2*}$  from $i \in \bigcup \mathcal{Q}$, not the broader set of $n = \#\left[\bigcup (\mathcal{C}\cup
+    \mathcal{Q}) \right]$, which includes $n - n_{\mathcal{Q}}$ structural
+  zeroes.)
+
+  In parallel with \eqref{eq:6} we
   have $\operatorname{Cov}(\hat\tau) \approx$
   \begin{align*}
   &A_{22}^{-1}\{\frac{n}{n_{\mathcal{Q}}^{2}} M_{22} -
@@ -488,9 +495,35 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
                                  \times A_{22}^{-t}
                                 . 
 \end{align*}
-In computations we may combine $\psi$-\texttt{estfun}'s of dimension
+In computations that assemble the three inner summands separately, we may combine $\psi$-\texttt{estfun}'s of dimension
 $n$ with $\hat{A}_{21}$ and $\hat{A}_{22}$ that have been scaled by
-$n_{\mathcal{Q}}$, as opposed to $n$.
+$n_{\mathcal{Q}}$, as opposed to $n$.  However, for Section~\ref{sec:goal}'s purpose of
+associating \texttt{DirectAdjusted} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
+A_{11}^{-1}A_{21}^{t}$, this formula invites unhelpful
+complication. It seems to call for $c_{2}=({n}/{n_{\mathcal{Q}}})$
+and as well as a $c_{1}=({n}/{n_C})^{1/2}$.  An $A$/$\tilde{A}$
+compromise will allow us to keep $c_{2}=1$. 
+
+To this end, substituting $(n_{\mathcal{Q}}/n)A_{21}$ for $\tilde{A}_{21}$ in \eqref{eq:6} while leaving
+$\tilde{A}_{22}$ in place, $\operatorname{Cov}(\hat\tau) \approx$
+  \begin{align*}
+  &\tilde{A}_{22}^{-1}\{\frac{1}{n} M_{22} -
+                                 \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{3/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n_{\mathcal{Q}}^{2}}{n_{\mathcal{C}}n^{2}}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}\tilde{A}_{22}^{-t}\nonumber
+    \\
+  &= \frac{1}{n}\tilde{A}_{22}^{-1}\{M_{22} -
+                                 \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n_{\mathcal{Q}}^{2}}{n_{\mathcal{C}}n}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}\tilde{A}_{22}^{-t} .\nonumber
+  \end{align*}
+ We engender corresponding estimates of $\operatorname{Cov}(\hat\tau)$ by setting \eqref{eq:22}'s
+ $(c_{2}, c_{1})$ to $(1, n_{\mathcal{Q}}n_{\mathcal{C}}^{-1/2}n^{-1/2})$, that is having
+ \texttt{estfun.DA()} return $\Psi -
+ \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{1/2}}\Psi
+ \hat{A}_{11}^{-1}\hat{A}_{21}^{t}$, or simply $\Psi$ if $n_{\mathcal{C}}=0$, while having \texttt{bread.DA()}
+ return $\tilde{A}_{22}^{-1}$.
+
 
   \subsubsection{Clustered estimation of meat matrices}
 For model-based estimation with units of observation and of assignment being
@@ -516,15 +549,15 @@ column for each cluster:
 \subsection{Realization of goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
+\texttt{sandwich::estfun.DirectAdjusted()} to return an $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{A}_{21}', 
+  \hat{A}_{11}^{-t}\hat{\tilde{A}}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
-\texttt{DirectAdjusted} objects to return only
-the lower $A_{22}^{-1}$ matrix, then the effect of this will be for \texttt{sandwich::sandwich()}
+\texttt{DirectAdjusted} objects to return an (appropriately scaled)
+inverted estimate of $A_{22}$, then the effect of this will be for \texttt{sandwich::sandwich()}
 and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
 $\hat{M}$'s,  as
 given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
@@ -536,15 +569,15 @@ we use
   \hat{A}_{11}(\beta) &\defeq  n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
         \mathcal{C}}\nabla_{\beta}\phi(\vec{z}_{i};
         \beta ),\\
-  \hat{A}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
+  \hat{\tilde{A}}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\nabla_{\beta}\psi(\vec{z}_{j};
         \tau, \alpha, \beta ),\\
-  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{A}_{21}\defeq \hat{A}_{21}(\hat\beta).
+  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{\tilde{A}}_{21}\defeq \hat{\tilde{A}}_{21}(\hat\beta).
 \end{align*}
 Under the model based
-formulation, $\hat{A}_{21}(\cdot) \equiv {A}_{21}(\cdot)$; when the
+formulation, $\hat{\tilde{A}}_{21}(\cdot) \equiv \tilde{A}_{21}(\cdot)$; when the
 first-stage model is a glm, also $\hat{A}_{11}(\cdot) \equiv
-{A}_{11}(\cdot)$.  However, in design based formulations neither
+\tilde{A}_{11}(\cdot)$.  However, in design based formulations neither
 equivalence holds in general.)
 
 Alternately put,
@@ -554,7 +587,7 @@ defining $\tilde{k}$ by 1 random matrices
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    \hat{A}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta), 
 \end{equation}
 we have in the model-based formulation 
@@ -562,9 +595,9 @@ we have in the model-based formulation
   \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
-                                 + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}, \label{eq:12}
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}, \label{eq:12}
                                \end{multline}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
@@ -572,8 +605,8 @@ clustering or heteroskedasticity that we might seek to apply.
 
 In the design-based formulation there
 would likely be approximate equality here, as in that setting
-$\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
-coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
+$\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
+coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
 This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}
