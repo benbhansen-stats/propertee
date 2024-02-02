@@ -3,6 +3,9 @@
 ## Improvements
 * Diagonal elements of `vcovDA()` matrices lacking sufficient degrees of freedom for estimation are returned as NA's rather than numeric zeros. This is a deviation from the `sandwich` package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix
 
+## Bug Fixes
+* `absorb=TRUE` does not center block-centered assignment, moderator, or assignment:moderator interaction columns on the grand mean of the column. This ensures that blocks that do not satisfy positivity of the assignment variable (or positivity within a factor level) do not contribute to effect estimation. 
+
 # v0.3.4
 
 ## Improvements
