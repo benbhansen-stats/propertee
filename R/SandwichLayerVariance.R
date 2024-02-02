@@ -145,6 +145,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # moderator variable) must have at least three clusters contributing to
   # estimation for valid SE estimation.
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
+  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(model.frame(model)),]
   if (ncol(mod_vars) > 1) {
     mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
                         rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
