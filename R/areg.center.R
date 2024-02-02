@@ -9,7 +9,7 @@
 ##' @param grand_mean_center Optional center output at \code{mean(var)}
 ##' @return Vector of group-centered values
 ##' @keywords internal
-areg.center <- function(mm, grp, wts = NULL, grand_mean_center = TRUE) {
+areg.center <- function(mm, grp, wts = NULL, grand_mean_center = FALSE) {
   if (is.null(wts)) {
     wts <- rep(1, nrow(mm))
   }
