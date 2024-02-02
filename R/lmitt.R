@@ -311,7 +311,8 @@ lmitt.formula <- function(obj,
 
   # Rebuild RHS of formula: RHS is "txt_" or "txt_sbgrp", where "txt" has been
   # replaced with the actual treatment name above.
-  lm.call$formula <- str2lang(paste(lm.call$formula[[2]], " ~ ",
+  lm_form <- eval(lm.call$formula, envir = parent.frame())
+  lm.call$formula <- str2lang(paste(lm_form[[2]], " ~ ",
                                     paste(
                                       paste0("`", colnames(mm), "`"),
                                       collapse = "+"),
