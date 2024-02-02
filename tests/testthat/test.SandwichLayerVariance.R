@@ -2023,12 +2023,59 @@ test_that("#119 flagging vcovDA entries as NA", {
                  "will be returned as NA: as.factor(o)1, as.factor(o)3",
                  fixed = TRUE)
 
-  # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
+  # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
+  # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
   na_dim <- c(1, 3, 5)
+  expect_true(all(
+    diag(sandwich::sandwich(mod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(mod)))[na_dim]
+     < 0)
+  )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
-
+  
+  ### different factor moderator variable (may not produce negative diagonals
+  ### but subgroups with moderator=1:z=0 and moderator=1:z=1 should be
+  ### numerically 0)
+  set.seed(37)
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(5), each = 4))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  expect_warning(vc <- vcovDA(dmod),
+                 "will be returned as NA: modr1",
+                 fixed = TRUE)
+  
+  na_dim <- c(1, 3)
+  expect_true(all(
+    round(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
+      10
+    ) == 0)
+  )
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
+  
+  ### valid factor moderator variable; vcov diagonals shouldn't be numerically 0
+  ### when using the sandwich package and shouldn't have NA's when using vcovDA
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(10), each = 2))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  vc <- vcovDA(dmod)
+  expect_true(all(
+    round(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
+      10
+    ) != 0)
+  )
+  expect_true(all(!is.na(vc)))
+  
   #### lmitt.lm
   ## we chose to leave the "moderator" slot empty for DirectAdjusted objects
   ## created through lmitt.lm, so .check_df_moderator_estimates will return
