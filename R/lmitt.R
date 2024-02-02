@@ -291,7 +291,7 @@ lmitt.formula <- function(obj,
   mm <- eval(mm.call, parent.frame())
 
   if (absorb) {
-    mm <- areg.center(mm, as.factor(blocks), lm.call$weights)
+    mm <- areg.center(mm, as.factor(blocks), lm.call$weights, FALSE)
   }
 
   # Strip intercept from data if it's in there
