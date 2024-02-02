@@ -644,7 +644,7 @@ setMethod("dichotomy<-", "Design", function(x, value) {
 ##' @title (Internal) Checks newdata/by argument for design accessors
 ##' @param newdata newdata argument from e.g. \code{treatment()},
 ##'   \code{blocks()}, etc
-##' @param byargument from e.g. \code{treatment()},
+##' @param by from e.g. \code{treatment()},
 ##'   \code{blocks()}, etc. See \code{.check_by()}
 ##' @return Invisibly \code{TRUE}. Warns or errors as appropriate.
 ##' @keywords internal
