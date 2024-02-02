@@ -325,7 +325,7 @@ test_that("#137 ensure absorb is using the correct moderator", {
 test_that("#140 handling 0 weights", {
 
   # A single 0 weight observation in a larger block - that observation's
-  # conbributiont to the estimating equation should be 0
+  # conbribution to the estimating equation should be 0
   data(simdata)
   simdata$weight <- 1
   simdata$weight[1] <- 0
@@ -347,18 +347,22 @@ test_that("#140 handling 0 weights", {
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
   ee <- propertee:::estfun.DirectAdjusted(mod)
-  ee[simdata$bid == 1, ]
-  #expect_true(all(ee[simdata$bid == 1, ] == 0))
+  expect_true(all(ee[simdata$bid == 1, 2:ncol(ee)] == 0))
+  expect_true(all(ee[simdata$bid == 1 & simdata$weight == 0, 1] == 0))
 
   data(simdata)
   simdata$z[simdata$bid == 1] <- 1
-  simdata$weights <- 1
+  simdata$weight <- 1
   des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
   # Block 1 has 0 variance in treatment
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
   ee <- propertee:::estfun.DirectAdjusted(mod)
-  #expect_true(all(ee[simdata$bid == 1, ] == 0))
+  expect_true(all(ee[simdata$bid == 1, "z."] == 0))
+  expect_true(all(
+    sapply(ee[simdata$bid == 1, c("(Intercept)", "x", "z._x")],
+           function(vals) any(vals != 0))
+  ))
 
 })
 
