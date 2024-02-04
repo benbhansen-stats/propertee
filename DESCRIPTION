@@ -22,13 +22,14 @@ RoxygenNote: 7.3.1
 Suggests:
     knitr,
     rmarkdown,
-    robustbase,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports:
     stats,
     methods,
     sandwich
+Enhances:
+    robustbase
 Depends:
     R (>= 2.10)
 VignetteBuilder: knitr
