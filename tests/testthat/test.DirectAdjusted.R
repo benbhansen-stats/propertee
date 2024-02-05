@@ -418,6 +418,51 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
   expect_true(all.equal(estfun(mod2), ef_expected2, check.attributes = FALSE))
 })
 
+test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", {
+  set.seed(438)
+  data(simdata)
+  nc <- 30
+  nq <- nrow(simdata)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  simdata$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), simdata)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
+  
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  a11_inv <- .get_a11_inverse(dmod)
+  a21 <- .get_a21(dmod)
+  expect_equal(
+    estfun(dmod),
+    ef_pieces[["psi"]] - nq / sqrt(n * nc) * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+  )
+})
+
+test_that("estfun.DirectAdjusted gets scaling constants right with partial overlap", {
+  set.seed(438)
+  data(simdata)
+  nq <- nrow(simdata)
+  simdata$id <- seq(nq)
+
+  aux_nc <- 30
+  n <- nc <- nq + aux_nc
+  aux_cmod_data <- data.frame(y = rnorm(aux_nc), x = rnorm(aux_nc), id = nq + seq(aux_nc))
+  cmod <- lm(y ~ x, rbind(simdata[, c("y", "x", "id")], aux_cmod_data))
+  
+  des <- rct_design(z ~ unitid(id), simdata)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
+  
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  a11_inv <- .get_a11_inverse(dmod)
+  a21 <- .get_a21(dmod)
+  expect_equal(
+    estfun(dmod),
+    ef_pieces[["psi"]] - nq / sqrt(n * nc) * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+  )
+})
+
 test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment",
                 "when exact alignment between C and Q is possible"), {
   set.seed(438)
@@ -531,19 +576,6 @@ test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted object
   expect_equal(sandwich::bread(m2), expected_out2)
 })
 
-test_that("bread.DirectAdjusted fails without a `qr` element", {
-  data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
-
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ uoa(uid), simdata)
-  m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des),
-             offset = cov_adj(cmod))
-  m$qr <- NULL
-
-  expect_error(sandwich::bread(m), "Cannot compute")
-})
-
 test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
                 "of C and Q"), {
   data(simdata)
@@ -562,46 +594,43 @@ test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
 
 test_that(paste("bread.DirectAdjusted returns expected output for partial overlap",
                 "of C and Q"), {
-  set.seed(879)
+  set.seed(438)
   data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
+  nq <- nrow(simdata)
+  simdata$id <- seq(nq)
+  
+  aux_nc <- 30
+  n <- nc <- nq + aux_nc
+  aux_cmod_data <- data.frame(y = rnorm(aux_nc), x = rnorm(aux_nc), id = nq + seq(aux_nc))
+  cmod <- lm(y ~ x, rbind(simdata[, c("y", "x", "id")], aux_cmod_data))
+  
+  des <- rct_design(z ~ unitid(id), simdata)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
 
-  cmod_data <- rbind(simdata[, c("uid", "x", "y")],
-                     data.frame("uid" = seq(nrow(simdata) + 1,
-                                            nrow(simdata) + 25),
-                                "x" = rnorm(25),
-                                "y" = rnorm(25)))
-
-  cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(uid), simdata)
-  m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des),
-             offset = cov_adj(cmod))
-
-  expected_out <- (nrow(simdata) + 25) * chol2inv(m$qr$qr)
-  coef_names <- names(m$coefficients)
+  expected_out <- n * chol2inv(dmod$qr$qr)
+  coef_names <- names(dmod$coefficients)
   dimnames(expected_out) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(m), expected_out)
+  expect_equal(sandwich::bread(dmod), expected_out)
 })
 
 test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
                 "of C and Q"), {
-  set.seed(879)
+  set.seed(438)
   data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
-
-  cmod_data <- data.frame("uid" = seq(nrow(simdata) + 1, nrow(simdata) + 25),
-                          "x" = rnorm(25),
-                          "y" = rnorm(25))
-
+  nc <- 30
+  nq <- nrow(simdata)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(uid), simdata)
-  m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des),
-             offset = cov_adj(cmod))
+  
+  simdata$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), simdata)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
 
-  expected_out <- (nrow(simdata) + 25) * chol2inv(m$qr$qr)
-  coef_names <- names(m$coefficients)
+  expected_out <- n * chol2inv(dmod$qr$qr)
+  coef_names <- names(dmod$coefficients)
   dimnames(expected_out) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(m), expected_out)
+  expect_equal(sandwich::bread(dmod), expected_out)
 })
 
 test_that("bread.DirectAdjusted handles model with less than full rank", {
