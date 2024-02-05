@@ -7,10 +7,12 @@
 \method{bread}{DirectAdjusted}(x, ...)
 }
 \arguments{
+\item{x}{a fitted \code{DirectAdjusted} model}
+
 \item{...}{
   Arguments passed on to \code{\link[=.get_a22_inverse]{.get_a22_inverse}}
   \describe{
-    \item{\code{x}}{a fitted \code{DirectAdjusted} model}
+    \item{\code{}}{}
   }}
 }
 \value{

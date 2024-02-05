@@ -137,6 +137,7 @@ estfun.DirectAdjusted <- function(x, ...) {
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
 ##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
+##' @inheritParams .get_a22_inverse
 ##' @inheritDotParams .get_a22_inverse
 ##' @inherit .get_a22_inverse return
 ##' @exportS3Method
