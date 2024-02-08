@@ -2077,9 +2077,13 @@ test_that("#119 flagging vcovDA entries as NA", {
   expect_true(all(!is.na(vc)))
   
   #### lmitt.lm
-  ## we chose to leave the "moderator" slot empty for DirectAdjusted objects
-  ## created through lmitt.lm, so .check_df_moderator_estimates will return
-  ## the initial vcov matrix, and we need not check it here 
+  ## we chose to implement special logic for subgroup-level d.f. only
+  ## for lmitt objects created with lmitt.formula; the commented-out
+  ## tests that follow would have tested similar logic for lmitt.lm
+  ##objects. (this distinction is reflected in `lmitt.lm()`'s leaving
+  ## the "moderator" slot empty for DirectAdjusted objects,
+  ## so .check_df_moderator_estimates will return
+  ## the initial vcov matrix, and we need not check it here.)
   # mod <- lmitt(lm(y ~ as.factor(o) + as.factor(o):assigned(des), data = simdata), design = des)
   # vc <- vcovDA(mod)[5:7, 5:7]
   # 
