@@ -33,7 +33,7 @@ which one might expect for an ordering function, \code{.order_samples}
 returns a list of vectors, which is explained in the Return section. Ultimately,
 the order is given by concatenating the vectors stored in \code{Q_not_C},
 \code{Q_in_C}, and \code{C_not_q} (\code{Q_in_C} and \code{C_in_Q} are
-interchangeable in terms of deriving the order).\n\n The names of the
+interchangeable in terms of deriving the order). The names of the
 \code{Q_not_C} and \code{Q_in_C} vectors correspond to row indices of the
 matrix of estimating equations for the ITT effect model, while the names of
 the \code{C_in_Q} and \code{C_not_Q} vectors correspond to row indices of

@@ -294,7 +294,7 @@ bread.DirectAdjusted <- function(x, ...) {
 #' returns a list of vectors, which is explained in the Return section. Ultimately,
 #' the order is given by concatenating the vectors stored in \code{Q_not_C},
 #' \code{Q_in_C}, and \code{C_not_q} (\code{Q_in_C} and \code{C_in_Q} are
-#' interchangeable in terms of deriving the order).\n\n The names of the
+#' interchangeable in terms of deriving the order). The names of the
 #' \code{Q_not_C} and \code{Q_in_C} vectors correspond to row indices of the
 #' matrix of estimating equations for the ITT effect model, while the names of
 #' the \code{C_in_Q} and \code{C_not_Q} vectors correspond to row indices of
@@ -337,16 +337,16 @@ bread.DirectAdjusted <- function(x, ...) {
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
   
   # need Q_in_C and C_in_Q to have the same order so contributions are aligned
-  Q_in_C <- setNames(Q_ids[which(Q_ids %in% C_ids)], which(Q_ids %in% C_ids))
+  Q_in_C <- stats::setNames(Q_ids[which(Q_ids %in% C_ids)], which(Q_ids %in% C_ids))
   Q_in_C <- sort(Q_in_C)
-  C_in_Q <- setNames(C_ids[which(ca@keys$in_Q)], which(ca@keys$in_Q))
+  C_in_Q <- stats::setNames(C_ids[which(ca@keys$in_Q)], which(ca@keys$in_Q))
   C_in_Q <- sort(C_in_Q)
 
   out <- list(
-    Q_not_C = setNames(Q_ids[!(Q_ids %in% C_ids)], which(!(Q_ids %in% C_ids))),
+    Q_not_C = stats::setNames(Q_ids[!(Q_ids %in% C_ids)], which(!(Q_ids %in% C_ids))),
     Q_in_C = Q_in_C,
     C_in_Q = C_in_Q,
-    C_not_Q = setNames(C_ids[!ca@keys$in_Q], which(!ca@keys$in_Q))
+    C_not_Q = stats::setNames(C_ids[!ca@keys$in_Q], which(!ca@keys$in_Q))
   )
   
   return(out)
