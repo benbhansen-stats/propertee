@@ -37,7 +37,7 @@ interchangeable in terms of deriving the order). The names of the
 \code{Q_not_C} and \code{Q_in_C} vectors correspond to row indices of the
 matrix of estimating equations for the ITT effect model, while the names of
 the \code{C_in_Q} and \code{C_not_Q} vectors correspond to row indices of
-the matrix of estimating equations for the covariance adjustment model.\n\n
+the matrix of estimating equations for the covariance adjustment model.
 When a \code{by} argument is provided to \code{cov_adj}, it is used to
 deduce the order.
 }
