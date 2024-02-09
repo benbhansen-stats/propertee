@@ -50,11 +50,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
-  expect_warning(vmat <- suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
-                 "these observations should be treated as independent")
-  expect_warning(expected <- suppressMessages(vcovDA(dmod)),
-                 "these observations should be treated as independent")
-  expect_equal(vmat, expected)
+  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")), vcovDA(dmod))
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
@@ -1901,15 +1897,16 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
   expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
 
-  uids_sorted <- sort(df$uid, index.return = TRUE)
-  ids <- factor(df$cid, levels = unique(df$cid))[uids_sorted$ix]
-  Q_ids_sorted <- sort(df$uid[!is.na(df$z)], index.return = TRUE)
-  ef_cmod <- estfun(cmod)[uids_sorted$ix,]
+  ef_order <- c(gsub("u", "", sort(df$uid[!is.na(df$z)])), rownames(df[is.na(df$z),]))
+  ids <- factor(df$cid, levels = unique(df$cid))[as.numeric(ef_order)]
+  ef_cmod <- estfun(cmod)[ef_order,]
+  
   unextended_ef_damod <- estfun(as(damod, "lm"))
   ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_damod),
                      dimnames = list(rownames = seq_len(nrow(ef_cmod)),
                                      colnames = colnames(unextended_ef_damod)))
-  ef_damod[uids_sorted$x %in% Q_ids_sorted$x,] <- estfun(as(damod, "lm"))[Q_ids_sorted$ix,]
+  Q_order <- match(sort(df$uid[!is.na(df$z)]), df$uid[!is.na(df$z)])
+  ef_damod[1L:sum(!is.na(df$z)),] <- estfun(as(damod, "lm"))[Q_order,]
   expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),

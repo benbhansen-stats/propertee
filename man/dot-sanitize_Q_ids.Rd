@@ -10,7 +10,7 @@
 \item{x}{a fitted \code{DirectAdjusted} object}
 
 \item{by}{character vector or list; optional. Specifies column names that appear in
-botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
+both the covariance adjustment dataframe C and quasiexperimental dataframe Q.
 Defaults to NULL, in which case unit of assignment columns indicated in the
 Design will be used to generate ID's.}
 
