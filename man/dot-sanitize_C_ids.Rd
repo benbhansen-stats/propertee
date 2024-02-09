@@ -4,7 +4,7 @@
 \alias{.sanitize_C_ids}
 \title{Return ID's for observations in the covariance adjustment sample C}
 \usage{
-.sanitize_C_ids(x, by = NULL, verbose = TRUE, sorted = FALSE, ...)
+.sanitize_C_ids(x, by = NULL, sorted = FALSE, ...)
 }
 \arguments{
 \item{x}{a \code{SandwichLayer} object.}
@@ -13,10 +13,6 @@
 botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
 Defaults to NULL, in which case unit of assignment columns indicated in the
 Design will be used to generate ID's.}
-
-\item{verbose}{Boolean defaulting to TRUE, which will produce rather than
-swallow any warnings about the coding of the units of assignment in the
-covariance adjustment model data}
 
 \item{...}{arguments passed to methods}
 }

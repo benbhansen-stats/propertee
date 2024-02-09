@@ -237,7 +237,7 @@ test_that("as.SandwichLayer used correctly with NULL `by` and `Q_data`", {
   expect_equal(sl3@keys$uid, df$uid)
 })
 
-test_that("as.SandwichLayer used correctly with unnamed `by` and non-NULL `Q_data`", {
+test_that("as.SandwichLayer matches on `by` column when uoa columns don't (`by` has no names)", {
   set.seed(20)
   N <- 100
   cmod_df <- data.frame(x = rnorm(N), y = rnorm(N), uid = seq_len(N), clust = rep(NA_integer_, N))
@@ -257,10 +257,10 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and non-NULL `Q_dat
 
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(length(setdiff(colnames(sl@keys), c("clust", "uid", "in_Q"))), 0)
-  expect_true(all(sl@keys$in_Q == 0))
+  expect_true(all(sl@keys$in_Q))
 })
 
-test_that("as.SandwichLayer used correctly with named `by` and non-NULL `Q_data`", {
+test_that("as.SandwichLayer matches on `by` column when uoa columns don't (`by` has names)", {
   set.seed(20)
   N <- 100
   cmod_df <- data.frame(x = rnorm(N), y = rnorm(N), uid = seq_len(N), clust = rep(NA_integer_, N))
@@ -281,7 +281,7 @@ test_that("as.SandwichLayer used correctly with named `by` and non-NULL `Q_data`
 
   expect_true(inherits(sl, "SandwichLayer"))
   expect_equal(length(setdiff(colnames(sl@keys), c("clust", "uid", "in_Q"))), 0)
-  expect_true(all(sl@keys$in_Q == 0))
+  expect_true(all(sl@keys$in_Q))
 })
 
 test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`", {
@@ -619,7 +619,7 @@ test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
                "uid could not be found")
 })
 
-test_that(".sanitize_C_ids succeeds with with full UOA info", {
+test_that(".sanitize_C_ids with full UOA info", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
@@ -631,7 +631,7 @@ test_that(".sanitize_C_ids succeeds with with full UOA info", {
   expect_equal(ids, expected_ids)
 })
 
-test_that(".sanitize_C_ids succeeds with warning with partial UOA info", {
+test_that(".sanitize_C_ids with partial UOA info", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
                           "cid1" = rep(c(1, 2), each = 5),  "cid2" = NA)
@@ -641,15 +641,12 @@ test_that(".sanitize_C_ids succeeds with warning with partial UOA info", {
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
 
-  # expect_warning(ids <- .sanitize_C_uoas(dmod$model$`(offset)`), "ID's will be clustered")
-  expect_warning(ids <- .sanitize_C_ids(dmod$model$`(offset)`),
-                 "should be treated as independent")
+  ids <- .sanitize_C_ids(dmod$model$`(offset)`)
   expect_equal(length(ids), nrow(cmod_data))
-  # expect_equal(length(unique(ids)), 2)
-  expect_equal(length(unique(ids)), nrow(cmod_data))
+  expect_equal(length(unique(ids)), 2)
 })
 
-test_that(".sanitize_C_ids succeeds with warning with no UOA info", {
+test_that(".sanitize_C_ids with no UOA info", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "cid1" = NA,  "cid2" = NA)
 
@@ -658,8 +655,7 @@ test_that(".sanitize_C_ids succeeds with warning with no UOA info", {
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
 
-  expect_warning(ids <- .sanitize_C_ids(dmod$model$`(offset)`),
-                 "should be treated as independent")
+  ids <- .sanitize_C_ids(dmod$model$`(offset)`)
   expect_equal(length(ids), nrow(cmod_data))
-  expect_equal(length(unique(ids)), nrow(cmod_data))
+  expect_equal(length(unique(ids)), 1)
 })
