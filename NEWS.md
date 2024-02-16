@@ -1,3 +1,8 @@
+# v0.3.6
+
+## Bug Fixes
+* Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA's. Outputs of `vcovDA()` were liable to change from call to call as a result. This has been fixed.
+
 # v0.3.5
 
 ## Improvements

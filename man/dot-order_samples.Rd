@@ -5,7 +5,7 @@
 \title{Order observations used to fit a \code{DirectAdjusted} model and its
 covariance adjustment model}
 \usage{
-.order_samples(x, by = NULL, verbose = TRUE, ...)
+.order_samples(x, by = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
@@ -14,31 +14,31 @@ covariance adjustment model}
 ID's from; default is NULL, which uses the unit of assignment columns specified
 in the \code{DirectAdjusted} object's \code{Design} slot}
 
-\item{verbose}{boolean; optional. Defaults to TRUE, which will produce rather
-than swallow any warnings about the coding of the units of assignment in the
-covariance adjustment model data.}
-
 \item{...}{arguments passed to methods}
 }
 \value{
-a list of two named vectors. The first element \code{Q_order} corresponds
-to the order of the observations in Q with names corresponding to their ID's.
-The second, \code{C_order}, corresponds to the order of observations in C but with
-any observations in Q that do not appear in C appended as NA's to the front
-(names still correspond to the observations' ID's). This vector has length
-\eqn{|Q| + |C} \ \eqn{Q|}.
+a list of four named vectors
 }
 \description{
 Order observations used to fit a \code{DirectAdjusted} model and its
 covariance adjustment model
 }
 \details{
-\code{.order_samples} underpins the ordering for both \code{.make_uoa_ids}
-and \code{estfun.DirectAdjusted}, which need to be aligned for proper
-clustering to occur in \code{vcovDA} calls. Since \code{estfun.DirectAdjusted}
-returns a matrix with a row count equal to \eqn{|Q| + |C} \ \eqn{Q|},
-\code{.order_samples} must not only order the rows in Q and C, but also
-provide information about which observations appear in both samples. How this
-manifests is explained below.
+\code{.order_samples} underpins the ordering for \code{.make_uoa_ids}
+and \code{estfun.DirectAdjusted}. This function needs to order the rows in
+in \eqn{\mathcal{Q}\cup\mathcal{C}}, but it also needs to explain how the
+original matrices of estimating equations should be indexed so the contributions
+from both sets of equations match. So instead of returning a numeric vector,
+which one might expect for an ordering function, \code{.order_samples}
+returns a list of vectors, which is explained in the Return section. Ultimately,
+the order is given by concatenating the vectors stored in \code{Q_not_C},
+\code{Q_in_C}, and \code{C_not_q} (\code{Q_in_C} and \code{C_in_Q} are
+interchangeable in terms of deriving the order). The names of the
+\code{Q_not_C} and \code{Q_in_C} vectors correspond to row indices of the
+matrix of estimating equations for the ITT effect model, while the names of
+the \code{C_in_Q} and \code{C_not_Q} vectors correspond to row indices of
+the matrix of estimating equations for the covariance adjustment model.
+When a \code{by} argument is provided to \code{cov_adj}, it is used to
+deduce the order.
 }
 \keyword{internal}
