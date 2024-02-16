@@ -1,3 +1,8 @@
+# v0.3.7
+
+## Breaking Changes
+* `vcovDA()` scales estimating equations using different constants than it did before
+
 # v0.3.6
 
 ## Bug Fixes
