@@ -57,9 +57,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   args$x <- x
   n <- length(args$cluster)
 
-  a22inv <- sandwich::bread(x)
-  meat <- do.call(sandwich::meatCL, args)
-  vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
+  bread. <- sandwich::bread(x)
+  meat. <- do.call(sandwich::meatCL, args)
+  vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
   vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
@@ -145,7 +145,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # moderator variable) must have at least three clusters contributing to
   # estimation for valid SE estimation.
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
-  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(model.frame(model)),,drop=FALSE]
+  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(stats::model.frame(model)),,drop=FALSE]
   if (ncol(mod_vars) > 1) {
     mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
                         rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
@@ -290,32 +290,21 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Compute variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details The \bold{A22 block} is the diagonal element of the inverse expected
-#'   Fisher Information matrix corresponding to the treatment estimate. As shown
-#'   in the Details of \code{.get_b22()}, the estimating equations for a
-#'   generalized linear model with a canonical link function can be written as
-#'   \deqn{\psi_i = (r_i / Var(y_i)) * (d\mu_i/d\eta_i) * x_i} The expected
-#'   information matrix A22 is then the negative Jacobian of \eqn{\psi_i}, which
-#'   by likelihood theory is the variance-covariance matrix of \eqn{\psi_i}:
-#'   \deqn{\psi_{i}\psi_{i}^{T} = E[(r_i / Var(y_i) * (d\mu_i/d\eta_i))^{2}] *
-#'   x_ix_i' = (d\mu_i/d\eta_i)^{2} / Var(y_i) * x_ix_i'} Considering the whole
-#'   sample, this can be expressed in matrix form as \eqn{X'WX}. The output of
-#'   this function is the inverse of the diagonal element corresponding to the
-#'   treatment estimate.
-#' @return \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
-#' dimensions are given by the intercept and treatment variable terms in the
-#' ITT effect model
+#' @details \eqn{A_{22}^{-1}} is the inverse observed Fisher information of the
+#' ITT effect estimating equations scaled by \eqn{n_{\mathcal{Q}}}.
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param ... arguments passed to methods
+#' @return \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
+#' \eqn{k\times k} matrix where k denotes the number of parameters in the ITT
+#' effect model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
-.get_a22_inverse <- function(x) {
+.get_a22_inverse <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-
-  # Get expected information per sandwich_infrastructure vignette
-  w <- if (is.null(x$weights)) 1 else x$weights
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
+  
+  out <- utils::getS3method("bread", "lm")(x)
 
   return(out)
 }
@@ -393,15 +382,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details The \bold{A11 block} is the \eqn{p\times p} matrix corresponding to
-#'   the unscaled inverse of the observed Fisher information of the covariance
-#'   adjustment model. The observed information is given by the estimate of the negative
-#'   Jacobian of the model's estimating equations. The unscaled version provided
-#'   here divides by the number of observations used to fit the covariance
-#'   adjustment model.
+#' @details \eqn{A_{11}^{-1}} is the inverse of the gradient of the covariance
+#'   adjustment model estimating equations scaled by \eqn{n_{\mathcal{C}}^{-1}}.
 #' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-#'   dimensions are given by the number of terms in the covariance adjustment model
-#'   including an intercept
+#'   \eqn{p} is the dimension of the covariance adjustment model including an
+#'   intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a11_inverse <- function(x) {
@@ -415,11 +400,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                "for direct adjustment standard errors"))
   }
 
-  cmod <- sl@fitted_covariance_model
-  nc <- sum(summary(cmod)$df[1L:2L])
-  if(nc==0) nc <- length(cmod$resid)
-
-  out <- sandwich::bread(cmod) / nc
+  out <- sandwich::bread(sl@fitted_covariance_model)
+  
   return(out)
 }
 
@@ -517,23 +499,16 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details The \bold{A21 block} is the block of the sandwich variance estimator
-#'   corresponding to the gradient of the ITT effect model with respect
-#'   to the covariates. Some of the information needed for this calculation is
-#'   stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
-#'   block is the crossproduct of the prediction gradient and the gradient of
-#'   the conditional mean vector for the ITT effect model summed to the
-#'   cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
-#'   / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
-#'   (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'} where \eqn{\mu} and
-#'   \eqn{\eta_i} are the conditional mean function and linear predictor for the
-#'   ith cluster in the ITT effect model, and \eqn{\upsilon} and
-#'   \eqn{\zeta_i} are the conditional mean function and linear predictor for
-#'   the ith cluster in the covariance adjustment model.
-#' @return \code{.get_a12()}: A \eqn{2\times p} matrix where the number of
-#'   rows are given by intercept and treatment variable terms in the ITT effect
-#'   model, and the number of columns are given by the number of terms
-#'   in the covariance adjustment model
+#' @details \eqn{A_{21}} is the gradient of the ITT effect estimating equations
+#'   scaled by \eqn{n_{\mathcal{Q}}^{-1}} taken with respect to the covariance
+#'   adjustment model parameters. This matrix is the crossproduct of the
+#'   prediction gradient for the units of observation in \eqn{\mathcal{Q}} and
+#'   the model matrix of the ITT effect estimating eqations.
+#' @param x a fitted \code{DirectAdjusted} model
+#' @return \code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
+#'   where the number of rows are given by the dimension of the ITT effect
+#'   estimating equations and the number of columns are given by the number of
+#'   terms in the covariance adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
@@ -557,6 +532,52 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
+  # scale by nq
+  nq <- sum(msk)
 
+  return(out / nq)
+}
+
+##' @details \eqn{\tilde{A}_{22}^{-1}} is the inverse observed Fisher
+##' information of the ITT effect estimating equations scaled by \eqn{n}. This
+##' function wraps around the function \code{.get_a22_inverse()} that produces
+##' \eqn{A_{22}^{-1}}, where \eqn{A_{22}=\frac{n}{n_{\mathcal{Q}}}\tilde{A}_{22}}.
+##' @inheritDotParams .get_a22_inverse
+##' @inherit .get_a22_inverse return
+##' @keywords internal
+##' @rdname sandwich_elements_calc
+.get_tilde_a22_inverse <- function(x, ...) {
+  out <- .get_a22_inverse(x, ...)
+  
+  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+    return(out)
+  }
+
+  nq <- nrow(stats::model.frame(x))
+  nc_not_q <- sum(!ca@keys$in_Q)
+  n <- nq + nc_not_q
+  
+  out <- out * n / nq
+  
   return(out)
+}
+
+##' @details \eqn{\tilde{A}_{21}} is the gradient of the ITT effect estimating
+##'   equations scaled by \eqn{n^{-1}} taken with respect to the covariance
+##'   adjustment model parameters. This function wraps around \code{.get_a21()},
+##'   which produces \eqn{A_{21}}, where \eqn{A_{21} = \frac{n_{\mathcal{Q}}}{n}
+##'   \tilde{A}_{21}}.
+##' @inheritDotParams .get_a21
+##' @inherit .get_a21 return
+##' @keywords internal
+##' @rdname sandwich_elements_calc
+.get_tilde_a21 <- function(x) {
+  out <- .get_a21(x)
+  
+  nq <- nrow(stats::model.frame(x))
+  sl <- x$model$`(offset)`
+  nc_not_q <- sum(!sl@keys$in_Q)
+  n <- nq + nc_not_q
+  
+  out <- nq / n * out
 }

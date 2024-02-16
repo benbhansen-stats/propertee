@@ -115,7 +115,7 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
-  if (is.null(x$model$`(offset)`) | !inherits(x$model$`(offset)`, "SandwichLayer")) {
+  if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
     return(.base_S3class_estfun(x))
   }
 
@@ -124,40 +124,24 @@ estfun.DirectAdjusted <- function(x, ...) {
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
 
+  ## get scaling constants
+  nq <- nrow(stats::model.frame(x))
+  nc <- nrow(stats::model.frame(sl@fitted_covariance_model))
+  n <- nrow(estmats[["psi"]])
+
   ## form matrix of estimating equations
-  mat <- estmats[["psi"]] - estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat <- estmats[["psi"]] - (nq / sqrt(nc * n)) * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
 
   return(mat)
 }
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
-##' @param x a fitted \code{DirectAdjusted} object
-##' @param ... arguments passed to methods
-##' @return A \eqn{k\times k} matrix where k denotes the number of parameters
-##' in the ITT effect model. This corresponds to the Hessian of the ITT effect
-##' model estimating equations defined in our accompanying documentation.
+##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
+##' @inheritParams .get_a22_inverse
+##' @inheritDotParams .get_a22_inverse
+##' @inherit .get_a22_inverse return
 ##' @exportS3Method
-bread.DirectAdjusted <- function(x, ...) {
-  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
-    return(utils::getS3method("bread", "lm")(x))
-  }
-  if (is.null(x$qr)) {
-    stop(paste("Cannot compute the Hessian of the ITT effect model estimating",
-               "equations if the model fit does not have a `qr` element."))
-  }
-
-  mm <- stats::model.matrix(x)
-  # compute scaling factor
-  nq <- nrow(mm)
-  nc_not_q <- sum(!ca@keys$in_Q)
-  n <- nq + nc_not_q
-
-  p1 <- 1L:x$rank
-  out <- n * chol2inv(x$qr$qr[p1, p1, drop = FALSE]) # taken from summary.lm
-  dimnames(out) <- list(colnames(mm)[x$qr$pivot[p1]], colnames(mm)[x$qr$pivot[p1]])
-
-  return(out)
-}
+bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
 ##' (Internal) Align the dimensions and rows of estimating equations matrices
 ##' from the ITT effect and covariance adjustment models

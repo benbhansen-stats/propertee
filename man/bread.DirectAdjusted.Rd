@@ -7,15 +7,31 @@
 \method{bread}{DirectAdjusted}(x, ...)
 }
 \arguments{
-\item{x}{a fitted \code{DirectAdjusted} object}
+\item{x}{a fitted \code{DirectAdjusted} model}
 
-\item{...}{arguments passed to methods}
+\item{...}{
+  Arguments passed on to \code{\link[=.get_a22_inverse]{.get_a22_inverse}}
+  \describe{
+    \item{\code{}}{}
+  }}
 }
 \value{
-A \eqn{k\times k} matrix where k denotes the number of parameters
-in the ITT effect model. This corresponds to the Hessian of the ITT effect
-model estimating equations defined in our accompanying documentation.
+\code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
+\eqn{k\times k} matrix where k denotes the number of parameters in the ITT
+effect model
+
+\code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
+\eqn{p} is the dimension of the covariance adjustment model including an
+intercept
+
+\code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
+where the number of rows are given by the dimension of the ITT effect
+estimating equations and the number of columns are given by the number of
+terms in the covariance adjustment model
 }
 \description{
 Extract bread matrix from a \code{DirectAdjusted} model fit
+}
+\details{
+This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
 }
