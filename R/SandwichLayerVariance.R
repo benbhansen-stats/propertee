@@ -660,8 +660,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   data <- res[[1]]
   bid <- data[, res[[2]]] # block ids
   zobs <- data[, res[[3]]] # observed zs
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
-  nbk <- matrix(nbk, ncol=2)
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
   X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
@@ -774,8 +773,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   bid <- data[, res[[2]]] # block ids
   zobs <- data[, res[[3]]] # observed zs
   
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, res[[2]]])))
-  nbk <- matrix(nbk, ncol=2)
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
   
   A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
@@ -804,8 +802,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
            sum(zobs * ws * yobs) / sum(zobs * ws))
   
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs==z, res[[2]]])))
-  nbk <- matrix(nbk, ncol=2)
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
   # number of units in each block and treatment, B by K
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
   delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
@@ -904,46 +901,33 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   zobs <- data[, res[[3]]]  # observed zs
   bid <- data[, block] # block ids
   
-  nbk <- sapply(c(0,1), function(z) as.vector(table(data[zobs == z, block])))
-  # number of units in each block and treatment, B by K
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  # number of units by block and treatment, B by K
+  small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
+  
+  nb <- rowSums(nbk)
   nbk_all <- nbk[bid, ]  # n by K
-  B <- length(unique(bid))  # number of blocks
-  K <- ncol(nbk)  # number of treatments
+  ipw <- (1 / nbk_all) * rowSums(nbk)[bid]
+  ipw <- ipw[,1] * (1-zobs) + ipw[,2] * zobs
+  theta <- c(sum(ws * yobs * ipw * (1-zobs)) / sum(ws * ipw * (1-zobs)),
+             sum(ws * yobs * ipw * zobs) / sum(ws * ipw * zobs))
   
-  gammas <- nbk_all * 
-    matrix(ws, nrow = nrow(nbk_all), ncol = ncol(nbk_all), byrow = FALSE)
-  # gamma for variance estimation, n by K
+  gammas <- (nbk_all[,1]*(1-zobs) + nbk_all[,2]*zobs) * ws # pseudo outcomes
   gamsbk <- list()  # s^2_b,j, sample variance
-  
-  nu1 <- matrix(nrow=B, ncol=K-1)  # nu1_b,0k
-  varest <- matrix(nrow=1, ncol=K-1)  # variance estimators
-  
-  for (k in 1:K){
+  for (k in 1:2){
     indk <- zobs == (k-1)
-    ipwk <- (1 / nbk_all[,k] * rowSums(nbk_all))[indk]
-    thetak <- sum(ws[indk] * yobs[indk] / ipwk) / sum(ws[indk] / ipwk)  # ratio estimate rho_z
-    gammas[indk,k] <- gammas[indk,k] * (yobs[indk] - thetak)
-    gamsbk[[k]] <- aggregate(gammas[indk,k], by = list(data[indk,block]), FUN = var)
+    gammas[indk] <- gammas[indk] * (yobs[indk] - theta[k])
+    gamsbk[[k]] <- aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
   }
-  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:(K+1)]  # B by K
+  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
   gamsbk[is.na(gamsbk)] <- 0
+  gamsb <- aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
   
-  for (k in 2:K){
-    for (b in 1:B){
-      indb0 <- (zobs == 0) & (bid == b)
-      indbk <- (zobs == k-1) & (bid == b)  # units in block b, treatment k
-      
-      if (gamsbk[b,1] == 0 | gamsbk[b,k] == 0){ # small block
-        nu1[b,k-1] <- 
-          .get_ms_contrast(gammas[indbk,k], gammas[indb0,1]) -
-          sum((nbk[b,c(1,k)]-1) / nbk[b,c(1,k)] * gamsbk[b,c(1,k)])
-      } else { # large block
-        nu1[b,k-1] <- sum(gamsbk[b,c(1,k)] / nbk[b,c(1,k)])
-      }
-    }
-    varest[1,k-1] <- sum(nu1[,k-1]) / sum(data$.w0)^2  # variance estimators
-  }
-  return(varest)
+  nu1 <- rowSums(gamsbk / nbk)
+  nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb - 
+    (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
+  varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
+  return(as.matrix(varest))
 }
 
 #' Calculate the mean of squared contrasts of entries of two vectors
