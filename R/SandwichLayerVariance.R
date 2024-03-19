@@ -616,9 +616,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                  "models with moderators"))
     }
     else {
-      ainv <- .get_DB_a_inverse(x) * n
-      meat <- .get_DB_meat(x) / n
-      vmat <- as.matrix((1 / n) * (ainv %*% meat %*% t(ainv))[3,3])
+      ainv <- .get_DB_a_inverse(x)
+      meat <- .get_DB_meat(x)
+      vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
       if (is.na(vmat)) # if small strata are present
         vmat <- .get_DB_small_strata(x)
     }
@@ -660,7 +660,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   data <- res[[1]]
   bid <- data[, res[[2]]] # block ids
   zobs <- data[, res[[3]]] # observed zs
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  nbk <- design_table(design=design_obj, x="treatment",y="block")
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
   X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
@@ -771,7 +771,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   res <- .aggregate_individuals(x)
   data <- res[[1]]
   bid <- data[, res[[2]]] # block ids
-  zobs <- data[, res[[3]]] # observed zs
   
   nbk <- design_table(design=x@Design, x="treatment",y="block")
   pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
@@ -906,17 +905,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
   
   nb <- rowSums(nbk)
-  nbk_all <- nbk[bid, ]  # n by K
-  ipw <- (1 / nbk_all) * rowSums(nbk)[bid]
-  ipw <- ipw[,1] * (1-zobs) + ipw[,2] * zobs
-  theta <- c(sum(ws * yobs * ipw * (1-zobs)) / sum(ws * ipw * (1-zobs)),
-             sum(ws * yobs * ipw * zobs) / sum(ws * ipw * zobs))
+  rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
+             sum(ws * yobs * zobs) / sum(ws * zobs))
   
-  gammas <- (nbk_all[,1]*(1-zobs) + nbk_all[,2]*zobs) * ws # pseudo outcomes
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
   gamsbk <- list()  # s^2_b,j, sample variance
   for (k in 1:2){
     indk <- zobs == (k-1)
-    gammas[indk] <- gammas[indk] * (yobs[indk] - theta[k])
+    gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
     gamsbk[[k]] <- aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
   }
   gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
