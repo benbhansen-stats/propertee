@@ -125,3 +125,63 @@ test_that("identify_small_blocks", {
   expect_equal(names(small_blocks), LETTERS[1:3])
   expect_true(all.equal(small_blocks, c(FALSE, FALSE, TRUE), check.attributes = FALSE))
 })
+
+test_that("make_uoa_cluster_df", {
+  des_data <- data.frame(id = letters[1:20],
+                         uid1 = rep(letters[1:4], each = 5),
+                         uid2 = rep(letters[1:4], each = 5),
+                         bid = rep(LETTERS[1:2], each = 10),
+                         a = rep(rep(c(0, 1), each = 5), 2))
+  
+  # test design creation using `cluster()`, `unitid()`, and `unit_of_assignment()`
+  cluster_des <- rct_design(a ~ cluster(uid1), des_data)
+  unitid_des <- rct_design(a ~ unitid(uid1), des_data)
+  uoa_des <- rct_design(a ~ unit_of_assignment(uid1), des_data)
+  
+  expect_true(all.equal(uc_df <- make_uoa_cluster_df(cluster_des),
+                        make_uoa_cluster_df(unitid_des),
+                        check.attributes = FALSE))
+  expect_true(all.equal(uc_df,
+                        make_uoa_cluster_df(uoa_des),
+                        check.attributes = FALSE))
+  expect_equal(uc_df[,1,drop=FALSE], clusters(cluster_des))
+  expect_equal(colnames(uc_df), c("uid1", "cluster"))
+  expect_true(all.equal(uc_df$cluster, paste0("uid1", letters[1:4]),
+                        check.attributes = FALSE))
+  
+  # test cluster arg specification when level is coarser than assignment level
+  expect_equal(dim(uc_df <- make_uoa_cluster_df(cluster_des, "bid")),
+               c(4, 2))
+  expect_equal(uc_df[,1,drop=FALSE], clusters(cluster_des))
+  expect_equal(colnames(uc_df), c("uid1", "cluster"))
+  expect_true(all.equal(uc_df$cluster, paste0("bid", rep(LETTERS[1:2], each = 2)),
+                        check.attributes = FALSE))
+  
+  # test cluster arg specification when level is finer than assignment level
+  expect_equal(dim(uc_df <- make_uoa_cluster_df(cluster_des, "id")),
+               c(20, 2))
+  expect_true(all.equal(uc_df[,1], rep(clusters(cluster_des)[,1], each = 5),
+                        check.attributes = FALSE))
+  expect_equal(colnames(uc_df), c("uid1", "cluster"))
+  expect_true(all.equal(uc_df$cluster, paste0("id", letters[1:20]),
+                        check.attributes = FALSE))
+  
+  # test cluster arg specification with multiple columns
+  expect_equal(dim(uc_df <- make_uoa_cluster_df(cluster_des, c("uid2", "bid"))),
+               c(4, 2))
+  expect_true(all.equal(uc_df$cluster,
+                        paste(paste0("uid2", letters[1:4]), paste0("bid", rep(LETTERS[1:2], each = 2)),
+                              sep = "_"),
+                        check.attributes = FALSE))
+  
+  # test design with multiple unit of assignment columns
+  cluster_des <- rct_design(a ~ cluster(uid1, uid2), des_data)
+  expect_equal(dim(uc_df <- make_uoa_cluster_df(cluster_des)),
+               c(4, 3))
+  expect_equal(uc_df[,1:2,drop=FALSE], clusters(cluster_des))
+  expect_equal(colnames(uc_df), c("uid1", "uid2", "cluster"))
+  expect_true(all.equal(uc_df$cluster,
+                        paste(paste0("uid1", letters[1:4]), paste0("uid2", letters[1:4]),
+                              sep = "_"),
+                        check.attributes = FALSE))
+})

@@ -1,3 +1,6 @@
+#' @include Design.R DesignAccessors.R
+NULL
+
 ##' These are special functions used only in the definition of \code{Design}
 ##' objects. They identify the units of assignment, blocks and forcing
 ##' variables.
@@ -233,4 +236,47 @@ identify_small_blocks <- function(des) {
   blk_txt_cts <- design_table(des, "t", "b")
   is_small_blk <- apply(blk_txt_cts, 1, function(blk) any(blk == 1))
   return(is_small_blk)
+}
+
+##' @title Make a dataframe that links units of assignment with clusters
+##' @param des A \code{Design} object.
+##' @param cluster A character vector of column names to use as clusters. Columns
+##' must exist in the dataframe used to create the \code{Design} object. Defaults
+##' to NULL, in which case the column names specified in the \code{unitid()},
+##' \code{unit_of_assignment()}, or \code{cluster()} function in the \code{Design}
+##' formula will be used.
+##' @return A dataframe where the number of rows coincides with the number of
+##' distinct unit of assignment/cluster combinations and the number of columns
+##' coincides with the number of unit of assignment columns + a cluster column
+##' named "cluster".
+##' @export
+make_uoa_cluster_df <- function(des, cluster = NULL) {
+  grab_uoas_fn <- switch(
+    des@unit_of_assignment_type,
+    "unitid" = unitids,
+    "unit_of_assignment" = units_of_assignment,
+    "cluster" = clusters
+  )
+  uoas <- grab_uoas_fn(des)
+  
+  uoa_cols <- var_names(des, "u")
+  q_df <- eval(des@call$data, envir = parent.frame())[, c(uoa_cols, cluster), drop = FALSE]
+  
+  out <- unique(merge(uoas, q_df, by = uoa_cols, all.y = TRUE))
+  rownames(out) <- NULL
+  if (nrow(out) < nrow(uoas)) warning(paste("Some units of assignment in the Design",
+                                            "were not found in the data used to",
+                                            "create the Design object. Ensure",
+                                            "the original data has not been",
+                                            "modified."))
+
+  if (is.null(cluster_cols <- cluster)) cluster_cols <- uoa_cols
+  out$cluster <- apply(
+    out[, cluster_cols, drop = FALSE],
+    1,
+    function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = "_"),
+    nms = cluster_cols
+  )
+
+  return(out[, c(uoa_cols, "cluster")])
 }
