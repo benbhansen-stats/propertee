@@ -113,3 +113,15 @@ test_that("identical_Designs function", {
   expect_no_error(lmitt(y ~ 1, design = des2, data = simdata, weights = "ate"))
 
 })
+
+test_that("identify_small_blocks", {
+  des_data <- data.frame(uid = letters[1:12],
+                         bid = rep(LETTERS[1:3], each = 4),
+                         a = c(rep(rep(c(0, 1), each = 2), 2), 0, rep(1, 3)))
+  des <- rct_design(a ~ unitid(uid) + block(bid), des_data)
+  
+  small_blocks <- identify_small_blocks(des)
+  expect_equal(length(small_blocks), 3)
+  expect_equal(names(small_blocks), LETTERS[1:3])
+  expect_true(all.equal(small_blocks, c(FALSE, FALSE, TRUE), check.attributes = FALSE))
+})

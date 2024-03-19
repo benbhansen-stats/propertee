@@ -223,3 +223,14 @@ identical_Designs <- function(x, y, dichotomy_force = FALSE) {
   }
   return(identical(x, y))
 }
+
+##' @title Identify "small" blocks (one treated or one control unit of assignment)
+##' @param des A \code{Design} object.
+##' @return Logical vector with length given by the number of blocks in the
+##' Design
+##' @export
+identify_small_blocks <- function(des) {
+  blk_txt_cts <- design_table(des, "t", "b")
+  is_small_blk <- apply(blk_txt_cts, 1, function(blk) any(blk == 1))
+  return(is_small_blk)
+}
