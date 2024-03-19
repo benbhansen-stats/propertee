@@ -836,3 +836,13 @@ test_that("convert_to_data.frame add'l testing", {
 
   expect_error(.convert_to_data.frame(lm(1~1), des, "u"))
 })
+
+test_that("has_blocks", {
+  data(simdata)
+  
+  blocked_des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  no_blocks_des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  
+  expect_true(has_blocks(blocked_des))
+  expect_false(has_blocks(no_blocks_des))
+})

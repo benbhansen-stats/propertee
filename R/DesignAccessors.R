@@ -405,6 +405,12 @@ setMethod("blocks<-", "Design", function(x, value) {
   return(x)
 })
 
+##' @export
+##' @rdname Design_extractreplace
+has_blocks <- function(x) {
+  return("b" %in% x@column_index)
+}
+
 ############### Forcing
 
 ##' @export
