@@ -251,6 +251,25 @@ identify_small_blocks <- function(des) {
 ##' named "cluster".
 ##' @export
 make_uoa_cluster_df <- function(des, cluster = NULL) {
+  if (!inherits(des, "Design")) stop("Must be provided a valid `Design` object")
+  uoa_cols <- var_names(des, "u")
+  q_df <- NULL
+  for (f in seq_len(sys.nframe())) {
+    q_df <- tryCatch({
+      eval(des@call$data, envir = parent.frame(f))
+    }, error = function(e) return(NULL))
+    if (!is.null(q_df)) break
+  }
+  
+  if (is.null(q_df)) {
+    stop("Could not find design data in the call stack")
+  }
+  
+  if (!is.null(cluster) & !all(cluster %in% colnames(q_df))) {
+    stop(paste("Could not find", cluster, "column in the design data"))
+  }
+  
+  q_df <- q_df[, c(uoa_cols, cluster), drop = FALSE]
   grab_uoas_fn <- switch(
     des@unit_of_assignment_type,
     "unitid" = unitids,
@@ -258,9 +277,6 @@ make_uoa_cluster_df <- function(des, cluster = NULL) {
     "cluster" = clusters
   )
   uoas <- grab_uoas_fn(des)
-  
-  uoa_cols <- var_names(des, "u")
-  q_df <- eval(des@call$data, envir = parent.frame())[, c(uoa_cols, cluster), drop = FALSE]
   
   out <- unique(merge(uoas, q_df, by = uoa_cols, all.y = TRUE))
   rownames(out) <- NULL
@@ -274,8 +290,7 @@ make_uoa_cluster_df <- function(des, cluster = NULL) {
   out$cluster <- apply(
     out[, cluster_cols, drop = FALSE],
     1,
-    function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = "_"),
-    nms = cluster_cols
+    function(...) paste(..., collapse = "_")
   )
 
   return(out[, c(uoa_cols, "cluster")])
