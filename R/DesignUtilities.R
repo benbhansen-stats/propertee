@@ -254,11 +254,17 @@ make_uoa_cluster_df <- function(des, cluster = NULL) {
   if (!inherits(des, "Design")) stop("Must be provided a valid `Design` object")
   uoa_cols <- var_names(des, "u")
   q_df <- NULL
+  des_cl <- des@call
+  if (is.null(subset_cl <- des_cl$subset)) desdata_cl <- des_cl$data else {
+    desdata_cl <- quote(subset(x = df, subset_arg))
+    desdata_cl$x <- des_cl$data
+    desdata_cl[[3]] <- subset_cl
+  }
   for (f in seq_len(sys.nframe())) {
     q_df <- tryCatch({
-      eval(des@call$data, envir = parent.frame(f))
+      eval(desdata_cl, envir = parent.frame(f))
     }, error = function(e) return(NULL))
-    if (!is.null(q_df)) break
+    if (!is.null(q_df) & inherits(q_df, "data.frame")) break
   }
   
   if (is.null(q_df)) {

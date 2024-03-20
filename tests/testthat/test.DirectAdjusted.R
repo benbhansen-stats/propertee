@@ -1054,12 +1054,14 @@ test_that("model-based .make_uoa_ids replaces uoa ID's in small blocks with bloc
   suppressMessages(dmod <- lmitt(y ~ 1, design = des, data = simdata))
   
   expect_equal(
-    .make_uoa_ids(dmod, "CR"),
+    out <- .make_uoa_ids(dmod, "CR"),
     factor(paste0("bid",
                   c(rep("1", sum(simdata$bid == 1)), rep("2", sum(simdata$bid == 2)),
                     rep("3", sum(simdata$bid == 3)))),
                   levels = paste0("bid", c("1", "2", "3")))
   )
+  expect_equal(out, .make_uoa_ids(dmod, "MB"))
+  expect_equal(out, .make_uoa_ids(dmod, "HC"))
   expect_equal(
     .make_uoa_ids(dmod, "DB"),
     factor(apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_")))

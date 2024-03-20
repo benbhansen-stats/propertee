@@ -242,7 +242,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # for model-based vcov calls on blocked designs when clustering is called for
   # at the assignment level, replace unit of assignment ID's with block ID's
   # for small blocks
-  if (vcov_type %in% c("CR", "HC") & has_blocks(x@Design)) {
+  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@Design)) {
     uoa_cols <- var_names(x@Design, "u")
     if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
       des_blocks <- blocks(x@Design)
