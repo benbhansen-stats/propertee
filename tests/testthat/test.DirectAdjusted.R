@@ -421,15 +421,16 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
 test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", {
   set.seed(438)
   data(simdata)
+  simdata_copy <- simdata
   nc <- 30
-  nq <- nrow(simdata)
+  nq <- nrow(simdata_copy)
   n <- nc + nq
   cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
   cmod <- lm(y ~ x, cmod_data)
   
-  simdata$id <- seq(nq)
-  des <- rct_design(z ~ unitid(id), simdata)
-  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
+  simdata_copy$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), simdata_copy)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata_copy, offset = cov_adj(cmod))
   
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
   a11_inv <- .get_a11_inverse(dmod)
@@ -443,16 +444,17 @@ test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", 
 test_that("estfun.DirectAdjusted gets scaling constants right with partial overlap", {
   set.seed(438)
   data(simdata)
-  nq <- nrow(simdata)
-  simdata$id <- seq(nq)
+  simdata_copy <- simdata
+  nq <- nrow(simdata_copy)
+  simdata_copy$id <- seq(nq)
 
   aux_nc <- 30
   n <- nc <- nq + aux_nc
   aux_cmod_data <- data.frame(y = rnorm(aux_nc), x = rnorm(aux_nc), id = nq + seq(aux_nc))
-  cmod <- lm(y ~ x, rbind(simdata[, c("y", "x", "id")], aux_cmod_data))
+  cmod <- lm(y ~ x, rbind(simdata_copy[, c("y", "x", "id")], aux_cmod_data))
   
-  des <- rct_design(z ~ unitid(id), simdata)
-  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
+  des <- rct_design(z ~ unitid(id), simdata_copy)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata_copy, offset = cov_adj(cmod))
   
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
   a11_inv <- .get_a11_inverse(dmod)
@@ -467,15 +469,16 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
                 "when exact alignment between C and Q is possible"), {
   set.seed(438)
   data(simdata)
-  simdata$uid <- rownames(simdata)
+  simdata_copy <- simdata
+  simdata_copy$uid <- rownames(simdata_copy)
 
-  shuffled_simdata <- simdata[sample(rownames(simdata)),]
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
+  shuffled_simdata <- simdata_copy[sample(rownames(simdata_copy)),]
+  cmod <- lm(y ~ x, simdata_copy)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
+  mod1 <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, design = des, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata_copy), 2))
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
@@ -665,14 +668,15 @@ test_that(paste(".align_and_extend_estfuns fails if not a DirectAdjusted object"
 test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overlap"), {
   set.seed(438)
   data(simdata)
+  simdata_copy <- simdata
 
-  simdata$obs_id <- seq_len(nrow(simdata))
-  shuffle_ix <- sample(rownames(simdata))
-  shuffled_simdata <- simdata[shuffle_ix,]
-  cmod1 <- lm(y ~ x, simdata)
+  simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
+  shuffle_ix <- sample(rownames(simdata_copy))
+  shuffled_simdata <- simdata_copy[shuffle_ix,]
+  cmod1 <- lm(y ~ x, simdata_copy)
   cmod2 <- lm(y ~ x, shuffled_simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod1, by = "obs_id"))
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
+  mod1 <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod1, by = "obs_id"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, design = des, offset = cov_adj(cmod2, by = "obs_id"))
 
   cmod_ef <- estfun(cmod1)
@@ -686,15 +690,15 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   #     phi and psi?
   # 3) are variance estimates invariant to the original order of the data,
   #     even when we change the clustering level?
-  expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
+  expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
+  expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
   expect_true(all.equal(
     ef1$phi,
-    cmod_ef[sort(as.character(seq(nrow(simdata)))),],
+    cmod_ef[sort(as.character(seq(nrow(simdata_copy)))),],
     check.attributes = FALSE))
   expect_true(all.equal(
     ef1$psi,
-    mod_lm_ef[sort(as.character(seq(nrow(simdata)))),],
+    mod_lm_ef[sort(as.character(seq(nrow(simdata_copy)))),],
     check.attributes = FALSE))
   expect_equal(vcovDA(mod1), vcovDA(mod2))
   expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
@@ -736,18 +740,19 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
 test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   set.seed(438)
   data(simdata)
+  simdata_copy <- simdata
 
-  simdata$obs_id <- seq_len(nrow(simdata))
-  simdata_shuffle_ix <- sample(rownames(simdata))
-  shuffled_simdata <- simdata[simdata_shuffle_ix,]
-  C_data <- simdata[1:20,]
+  simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
+  simdata_shuffle_ix <- sample(rownames(simdata_copy))
+  shuffled_simdata <- simdata_copy[simdata_shuffle_ix,]
+  C_data <- simdata_copy[1:20,]
   C_shuffle_ix <- sample(rownames(C_data))
   shuffled_C_data <- C_data[C_shuffle_ix,]
   cmod1 <- lm(y ~ x, C_data)
   cmod2 <- lm(y ~ x, shuffled_C_data)
-  des1 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des1 <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
   des2 <- rct_design(z ~ cluster(cid1, cid2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, design = des1, offset = cov_adj(cmod1, by = "obs_id"))
+  mod1 <- lmitt(y ~ 1, data = simdata_copy, design = des1, offset = cov_adj(cmod1, by = "obs_id"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, design = des2, offset = cov_adj(cmod2, by = "obs_id"))
 
   cmod_ef <- estfun(cmod1)
@@ -755,8 +760,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
-  expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
-  expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
+  expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
+  expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
   nonzero_ix <- 31L:50L
   zero_ix <- 1L:30L
   expect_true(all(ef1$phi[1L:30L] == 0))
@@ -930,17 +935,6 @@ test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model"
   expect_error(.make_uoa_ids(mod), "Cannot deduce")
 })
 
-test_that(".make_uoa_ids returns correct ID's for non-DirectAdjusted model", {
-  data(simdata)
-
-  mod <- lm(y ~ z, data = simdata)
-  expected_out <- factor(
-    apply(simdata[, "cid1", drop = FALSE], 1, function(...) paste(..., collapse = "_"))
-  )
-
-  expect_equal(.make_uoa_ids(mod, cluster = "cid1"), expected_out)
-})
-
 test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
   data(simdata)
 
@@ -950,7 +944,7 @@ test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
   expected_out <- factor(
     apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
   )
-  expect_equal(.make_uoa_ids(mod), expected_out)
+  expect_equal(.make_uoa_ids(mod, vcov_type = "CR"), expected_out)
 })
 
 test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
@@ -963,7 +957,7 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
   expected_out <- factor(
     apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
   )
-  out <- .make_uoa_ids(dmod)
+  out <- .make_uoa_ids(dmod, vcov_type = "CR")
 
   expect_true(all.equal(out, expected_out, check.attributes = FALSE))
 })
@@ -984,8 +978,8 @@ test_that(".make_uoa_ids for no overlap of C and Q", {
   Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
 
-  ids1 <- .make_uoa_ids(dmod1)
-  ids2 <- .make_uoa_ids(dmod2)
+  ids1 <- .make_uoa_ids(dmod1, vcov_type = "CR")
+  ids2 <- .make_uoa_ids(dmod2, vcov_type = "CR")
 
   expect_true(is.factor(ids1))
   expect_true(is.factor(ids2))
@@ -1013,7 +1007,7 @@ test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
   Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
 
-  ids <- .make_uoa_ids(dmod)
+  ids <- .make_uoa_ids(dmod, vcov_type = "CR")
 
   expect_true(is.factor(ids))
 
@@ -1028,28 +1022,48 @@ test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by' argument
                 "provides a different ordering"), {
   set.seed(300)
   data(simdata)
-  simdata$id <- sample(seq_len(nrow(simdata)))
+  simdata_copy <- simdata
+  simdata_copy$id <- sample(seq_len(nrow(simdata_copy)))
   
   C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "cid1" = NA, "cid2" = NA,
                         "id" = seq(51, 70))
-  cmod_data <- rbind(simdata[, colnames(C_not_Q)], C_not_Q)
+  cmod_data <- rbind(simdata_copy[, colnames(C_not_Q)], C_not_Q)
   
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "id"))
+  des <- rct_design(z ~ uoa(cid1, cid2), simdata_copy)
+  dmod <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod, by = "id"))
   
-  Q_uoas <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+  Q_uoas <- apply(simdata_copy[, c("cid1", "cid2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
   
-  ids <- .make_uoa_ids(dmod)
+  ids <- .make_uoa_ids(dmod, vcov_type = "CR")
   
   expect_true(is.factor(ids))
-  expect_equal(length(ids), nrow(simdata) + 20)
+  expect_equal(length(ids), nrow(simdata_copy) + 20)
   expect_true(all.equal(
-    ids[1L:nrow(simdata)],
-    factor(Q_uoas)[match(sort(as.character(simdata$id)), simdata$id)],
+    ids[1L:nrow(simdata_copy)],
+    factor(Q_uoas)[match(sort(as.character(simdata_copy$id)), simdata_copy$id)],
     check.attributes = FALSE))
   expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
+})
+
+test_that("model-based .make_uoa_ids replaces uoa ID's in small blocks with block ID's", {
+  data(simdata)
+  
+  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  suppressMessages(dmod <- lmitt(y ~ 1, design = des, data = simdata))
+  
+  expect_equal(
+    .make_uoa_ids(dmod, "CR"),
+    factor(paste0("bid",
+                  c(rep("1", sum(simdata$bid == 1)), rep("2", sum(simdata$bid == 2)),
+                    rep("3", sum(simdata$bid == 3)))),
+                  levels = paste0("bid", c("1", "2", "3")))
+  )
+  expect_equal(
+    .make_uoa_ids(dmod, "DB"),
+    factor(apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_")))
+  )
 })
 
 test_that(paste(".order_samples fails without a DirectAdjusted object or",
@@ -1068,20 +1082,21 @@ test_that(paste(".order_samples fails without a DirectAdjusted object or",
 test_that(".order_samples when the samples fully overlap", {
   set.seed(300)
   data(simdata)
+  simdata_copy <- simdata
 
-  simdata$uid <- seq_len(nrow(simdata))
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
+  cmod <- lm(y ~ x, simdata_copy)
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
+  mod <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
   expect_equal(length(out$Q_not_C), 0)
-  expect_equal(length(out$Q_in_C), nrow(simdata))
-  expect_equal(length(out$C_in_Q), nrow(simdata))
+  expect_equal(length(out$Q_in_C), nrow(simdata_copy))
+  expect_equal(length(out$C_in_Q), nrow(simdata_copy))
   expect_equal(length(out$C_not_Q), 0)
 
-  expect_equal(names(out$Q_in_C), ord <- sort(as.character(seq(nrow(simdata)))))
+  expect_equal(names(out$Q_in_C), ord <- sort(as.character(seq(nrow(simdata_copy)))))
   expect_equal(names(out$C_in_Q), ord)
   
   expect_true(all.equal(out$Q_in_C, ord, check.attributes = FALSE))
@@ -1091,25 +1106,26 @@ test_that(".order_samples when the samples fully overlap", {
 test_that(".order_samples when Q is a subset of C", {
   set.seed(300)
   data(simdata)
+  simdata_copy <- simdata
 
-  simdata$uid <- seq_len(nrow(simdata))
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
   cmod_data <- rbind(
-    simdata[, c("x", "y", "cid1", "cid2", "uid")],
+    simdata_copy[, c("x", "y", "cid1", "cid2", "uid")],
     data.frame(x = rnorm(30), y = rnorm(30), cid1 = NA, cid2 = NA,
-               uid = seq_len(30) + nrow(simdata))
+               uid = seq_len(30) + nrow(simdata_copy))
   )
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
+  mod <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
   expect_equal(length(out$Q_not_C), 0)
-  expect_equal(length(out$Q_in_C), nrow(simdata))
-  expect_equal(length(out$C_in_Q), nrow(simdata))
+  expect_equal(length(out$Q_in_C), nrow(simdata_copy))
+  expect_equal(length(out$C_in_Q), nrow(simdata_copy))
   expect_equal(length(out$C_not_Q), 30)
 
-  expect_equal(names(out$Q_in_C), overlap_ord <- sort(as.character(seq(nrow(simdata)))))
+  expect_equal(names(out$Q_in_C), overlap_ord <- sort(as.character(seq(nrow(simdata_copy)))))
   expect_equal(names(out$C_in_Q), overlap_ord)
   expect_equal(names(out$C_not_Q), as.character(seq(51, 80)))
   
@@ -1122,12 +1138,13 @@ test_that(".order_samples when Q is a subset of C", {
 test_that(".order_samples when C is a subset of Q", {
   set.seed(300)
   data(simdata)
+  simdata_copy <- simdata
 
-  simdata$uid <- seq_len(nrow(simdata))
-  cmod_data <- simdata[1:20,]
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
+  cmod_data <- simdata_copy[1:20,]
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  mod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod, by = "uid"))
+  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata_copy)
+  mod <- lmitt(y ~ 1, data = simdata_copy, design = des, offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
@@ -1140,7 +1157,7 @@ test_that(".order_samples when C is a subset of Q", {
   expect_equal(names(out$Q_in_C), overlap_ord <- sort(as.character(seq(20))))
   expect_equal(names(out$C_in_Q), overlap_ord)
 
-  expect_true(all.equal(out$Q_not_C, as.character(seq(21, nrow(simdata))), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_not_C, as.character(seq(21, nrow(simdata_copy))), check.attributes = FALSE))
   expect_true(all.equal(out$Q_in_C, overlap_ord, check.attributes = FALSE))
   expect_true(all.equal(out$C_in_Q, overlap_ord, check.attributes = FALSE))
 })
@@ -1198,28 +1215,17 @@ test_that(".order_samples when no `by` argument provided", {
   expect_true(all.equal(out$C_not_Q, C_uoas, check.attributes = FALSE))
 })
 
-test_that("sanitize_Q_ids fails with invalid cluster argument", {
-  data(simdata)
-  mod <- lm(y ~ z, data = simdata)
-  expect_error(.sanitize_Q_ids(mod, by = "not_uoas"),
-               "columns not_uoas in ITT effect model data")
-
-  invalid_ids <- apply(simdata[, c("cid1", "cid2")], 1,
-                       function(...) paste(..., collapse = "_"))
-  expect_error(.sanitize_Q_ids(mod, by = invalid_ids),
-               ", 5_2 in ITT effect model data")
-})
-
 test_that("sanitize_Q_ids succeeds with valid `by` argument", {
   data(simdata)
+  
+  simdata_copy <- simdata
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
+  cmod <- lm(y ~ z, data = simdata_copy)
+  des <- rct_design(z ~ unitid(cid1, cid2, uid), simdata_copy)
+  dmod <- lmitt(y ~ 1, design = des, data = simdata_copy, offset = cov_adj(cmod))
+  out <- .sanitize_Q_ids(dmod, c("cid1", "cid2"))$cluster
 
-  simdata$uid <- seq_len(nrow(simdata))
-  cmod <- lm(y ~ z, data = simdata)
-  des <- rct_design(z ~ unitid(cid1, cid2, uid), simdata)
-  dmod <- lmitt(y ~ 1, design = des, data = simdata, offset = cov_adj(cmod))
-  out <- .sanitize_Q_ids(dmod, by = c("cid1", "cid2"))
-
-  expected_out <- apply(simdata[, c("cid1", "cid2"), drop = FALSE], 1,
+  expected_out <- apply(simdata_copy[, c("cid1", "cid2"), drop = FALSE], 1,
                         function(...) paste(..., collapse = "_"))
   expect_equal(out, expected_out)
 })
