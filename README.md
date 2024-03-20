@@ -39,7 +39,7 @@ Optionally, we can also include a covariance adjustment model through the
        offset = cov_adj(covadjmod, data = studentdata)
     )
 
-# Contributing
+## Contributing
 
 You may use RStudio to develop for propertee, by opening the `propertee.Rproj` file.
 We suggest you ensure all required dependencies are installed by running
