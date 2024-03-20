@@ -1,3 +1,8 @@
+# v0.3.8
+
+## Breaking Changes
+* When model-based standard errors clustered at the level of assignment are called for in a blocked design, `vcovDA()` clusters units of assignment in small blocks, blocks with only one treated or control unit, together.
+
 # v0.3.7
 
 ## Breaking Changes
