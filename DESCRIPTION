@@ -63,6 +63,5 @@ Collate:
     'propertee_package.R'
     'summary.Design.R'
     'summary.DirectAdjusted.R'
-    'txt_fn.R'
     'update_by.R'
     'weights.R'
