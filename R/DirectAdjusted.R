@@ -208,7 +208,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' with that ordering.
 #' @param x a fitted \code{DirectAdjusted} object
 #' @param vcov_type a string indicating model-based or design-based covariance
-#' estimation. Currently, "CR" and "HC" are the only strings registered as
+#' estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
 #' indicating model-based estimation.
 #' @param cluster character vector or list; optional. Specifies column names that appear
 #' in both the covariance adjustment dataframe C and quasiexperimental dataframe
@@ -220,10 +220,8 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' @return A vector of length \eqn{|\mathcal{Q}| + |\mathcal{C} \ \mathcal{Q}|}
 #' @keywords internal
 .make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
-  if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
-    stop(paste("Cannot deduce units of assignment for clustering without a",
-               "Design object (stored in a DirectAdjusted object) or a `cluster`",
-               "argument specifying the columns with the units of assignment"))
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("Must be provided a DirectAdjusted object")
   }
 
   # Must be a DirectAdjusted object for this logic to occur
@@ -234,10 +232,6 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # get observation-level unit of assignment and cluster ID's for observations in Q
   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
   Q_obs_ids <- Q_obs$cluster
-  
-  if (!inherits(x, "DirectAdjusted")) {
-    return(factor(Q_obs_ids, levels = unique(Q_obs_ids)))
-  }
   
   # for model-based vcov calls on blocked designs when clustering is called for
   # at the assignment level, replace unit of assignment ID's with block ID's
@@ -369,14 +363,14 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(out)
 }
 
-#' Return ID's for observations in the quasiexperimental sample Q
+#' @title Return ID's for observations in \eqn{Q}
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param id_col character vector or list; optional. Specifies column names that appear in
-#' both the covariance adjustment dataframe C and quasiexperimental dataframe Q.
-#' Defaults to NULL, in which case unit of assignment columns indicated in the
-#' Design will be used to generate ID's.
+#' @param id_col character vector; optional. Specifies column(s) whose ID's will
+#' be returned. The column must exist in the data that created the \code{Design}
+#' object. Default is NULL, in which case unit of assignment columns indicated
+#' in the design will be used to generate ID's.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|Q|}, where Q is the quasiexperimental sample.
+#' @return A vector of length \eqn{|Q|}
 #' @keywords internal
 .sanitize_Q_ids <- function(x, id_col = NULL, ...) {
   # link the units of assignment in the Design with desired cluster ID's
@@ -389,15 +383,9 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     expand_cols <- by.y <- uoa_cols
   }
   
-  obs_uoa_ids <- tryCatch(
-    stats::expand.model.frame(x, expand_cols, na.expand = TRUE)[, expand_cols, drop = FALSE],
-    error = function(e) {
-      mf <- eval(x$call$data, envir = environment(x))
-      missing_cols <- setdiff(by, colnames(mf))
-      stop(paste("Could not find unit of assignment columns",
-                 paste(missing_cols, collapse = ", "), "in ITT effect model data"),
-           call. = FALSE)
-    })
+  obs_uoa_ids <- stats::expand.model.frame(x,
+                                           expand_cols,
+                                           na.expand = TRUE)[, expand_cols, drop = FALSE]
 
   out <- merge(cbind(obs_uoa_ids, .order_id = seq_len(nrow(obs_uoa_ids))),
                uoa_cls_df, by.x = expand_cols, by.y = by.y, all.x = TRUE, sort = FALSE)

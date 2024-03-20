@@ -11,7 +11,7 @@ argument}
 \item{x}{a fitted \code{DirectAdjusted} object}
 
 \item{vcov_type}{a string indicating model-based or design-based covariance
-estimation. Currently, "CR" and "HC" are the only strings registered as
+estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
 indicating model-based estimation.}
 
 \item{cluster}{character vector or list; optional. Specifies column names that appear

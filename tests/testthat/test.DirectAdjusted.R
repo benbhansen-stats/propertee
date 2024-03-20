@@ -932,7 +932,7 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
 test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model", {
   data(simdata)
   mod <- lm(y ~ z, data = simdata)
-  expect_error(.make_uoa_ids(mod), "Cannot deduce")
+  expect_error(.make_uoa_ids(mod), "Must be provided")
 })
 
 test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {

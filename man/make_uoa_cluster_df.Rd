@@ -17,9 +17,10 @@ formula will be used.}
 }
 \value{
 A dataframe where the number of rows coincides with the number of
-distinct unit of assignment/cluster combinations and the number of columns
-coincides with the number of unit of assignment columns + a cluster column
-named "cluster".
+distinct unit of assignment or cluster combinations (depending on whether
+\code{cluster} is a more or less granular level than the assignment level) and
+the columns correspond to the unit of assignment columns and a "cluster"
+column
 }
 \description{
 Make a dataframe that links units of assignment with clusters

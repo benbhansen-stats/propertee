@@ -246,9 +246,10 @@ identify_small_blocks <- function(des) {
 ##' \code{unit_of_assignment()}, or \code{cluster()} function in the \code{Design}
 ##' formula will be used.
 ##' @return A dataframe where the number of rows coincides with the number of
-##' distinct unit of assignment/cluster combinations and the number of columns
-##' coincides with the number of unit of assignment columns + a cluster column
-##' named "cluster".
+##' distinct unit of assignment or cluster combinations (depending on whether
+##' `cluster` is a more or less granular level than the assignment level) and
+##' the columns correspond to the unit of assignment columns and a "cluster"
+##' column
 ##' @export
 make_uoa_cluster_df <- function(des, cluster = NULL) {
   if (!inherits(des, "Design")) stop("Must be provided a valid `Design` object")
