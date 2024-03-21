@@ -130,3 +130,38 @@ test_that("forcing with `newdata`", {
 
   expect_identical(dim(forcings(des, newdata = simdata2)), c(100L, 2L))
 })
+
+test_that(".design_accessors_newdata_validate", {
+  expect_warning(.design_accessors_newdata_validate(1, NULL))
+
+  data(simdata)
+
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  names(simdata)[names(simdata) == "cid1"] <- "ccc"
+  names(simdata)[names(simdata) == "force"] <- "fff"
+
+  expect_true(.design_accessors_newdata_validate(simdata,
+                                                 by = list(force = "fff",
+                                                           cid1 = "ccc")))
+
+})
+
+test_that(".get_col_from_new_data", {
+  data(simdata)
+
+  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+                   data = simdata)
+
+  simdata2 <- simdata
+  names(simdata2)[names(simdata2) == "cid1"] <- "ccc"
+  names(simdata2)[names(simdata2) == "force"] <- "fff"
+
+  expect_identical(.get_col_from_new_data(des, simdata, type = "b"),
+                   .get_col_from_new_data(des, simdata2, type = "b",
+                                          by = list(force = "fff",
+                                                    cid1 = "ccc")))
+
+
+})

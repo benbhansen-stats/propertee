@@ -124,3 +124,14 @@ test_that("2 way tables", {
   expect_equal(names(dimnames(tbl)), c("bid", "z"))
 
 })
+
+test_that("Passing dnn", {
+  data(simdata)
+  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  tbl <- dtable(des, "trea", "bl", dnn = c("a", "b"))
+  expect_identical(names(attr(tbl, "dimnames")),
+                   c("a", "b"))
+
+
+
+})

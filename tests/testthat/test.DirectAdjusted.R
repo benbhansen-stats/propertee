@@ -1402,3 +1402,13 @@ test_that("#81 continuous moderator shows appropriate coefficients", {
   coefnames <- coefnames[nchar(coefnames) > 0]
   expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
 })
+
+test_that("Invalid input to .convert_to_lmitt", {
+  data(simdata)
+  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+
+  expect_error(.convert_to_lmitt(1, des, FALSE, TRUE, "a",
+                                 call("quote", call("ls"))))
+
+
+})
