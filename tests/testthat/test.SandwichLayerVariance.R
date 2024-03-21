@@ -2160,8 +2160,7 @@ test_that(".get_ms_contrast returns correct value", {
   expect_equal(propertee:::.get_ms_contrast(a, b), msc / 50)
 })
 
-test_that(".get_DB_variance returns correct value for data 
-          with many small blocks",{
+test_that(".get_DB_se returns correct value for designs with small blocks",{
   # generate data
   nbs <- rep(2, 10)
   n <- sum(nbs) # sample size
@@ -2199,8 +2198,7 @@ test_that(".get_DB_variance returns correct value for data
   expect_equal(vcovDA(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
 })
 
-test_that(".get_DB_variance returns correct value for data 
-          with a few large blocks",{
+test_that(".get_DB_se returns correct value for designs with a few large blocks",{
   # generate data
   nbs <- rep(10, 2)
   n <- sum(nbs) # sample size
@@ -2208,12 +2206,14 @@ test_that(".get_DB_variance returns correct value for data
   ws <- round(rnorm(n=n, mean=50, sd=10))
   yobs <- rnorm(n=n) # observed y's
   zobs <- rep(1, n) # treatment assignment, 1 or 2
-  zobs[c(sample(1:10, 5), sample(11:20, 5))] <- 2
+  zobs[c(sample(1:10, 5), sample(11:20, 4))] <- 2
   
   # calculate variance
-  pi_all <- matrix(rep(1/2,2*n), nrow=n)  # assignment probabilities, n by 2
-  nbk <- matrix(rep(5, B*2), nrow=B)  # nbk, B by 2
-  gammas <- cbind(rep(5, n) * ws, rep(5, n) * ws)  # gamma, n by K
+  pi_all <- matrix(c(rep(1/2,n), rep(c(0.6,0.4),10)), nrow=n, byrow = TRUE)  
+  # assignment probabilities, n by 2
+  nbk <- matrix(c(5,6,5,4), nrow=B)  # nbk, B by 2
+  gammas <- cbind(c(rep(5,10),rep(6,10)) * ws, 
+                  c(rep(5,10),rep(4,10)) * ws) # gamma, n by K
   gamsbk <- matrix(nrow=B, ncol=2)  # s^2 b,j
   nu <- c()
   
@@ -2233,8 +2233,13 @@ test_that(".get_DB_variance returns correct value for data
   data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
   des <- rct_design(z ~ cluster(cid) + block(bid), data)
   damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  
+  ainv <- .get_DB_a_inverse(damod)
+  meat <- .get_DB_meat(damod)
+  vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+  
   expect_equal(vcovDA(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
-  expect_equal(propertee:::.get_DB_small_strata(damod)[1,1], sum(nu) / sum(ws)^2) 
+  expect_true(vmat[1,1] != sum(nu) / sum(ws)^2) 
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
