@@ -606,7 +606,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   else {
     if (!is.null(x$call$offset)){
-      vmat <- .get_DB_covadj(x)
+      vmat <- .get_DB_covadj_se(x)
       if (is.na(vmat))
         stop(paste("Design-based standard errors cannot be computed for ITT effect",
                    "models with covariance adjustment if small strata are present"))
@@ -616,11 +616,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                  "models with moderators"))
     }
     else {
-      ainv <- .get_DB_a_inverse(x)
-      meat <- .get_DB_meat(x)
-      vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
-      if (is.na(vmat)) # if small strata are present
-        vmat <- .get_DB_small_strata(x)
+      vmat <- .get_DB_se(x)
     }
   }
   name <- colnames(x$model)[grep("z", colnames(x$model))]
@@ -638,7 +634,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #'  when only moderate or large strata are present
 #' @return design-based estimation of variance 
 #' @keywords internal
-.get_DB_covadj <- function(x, ...){
+.get_DB_covadj_se <- function(x, ...){
   a11inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
   a22inv <- .get_a22_inverse(x)
@@ -760,137 +756,13 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(cov01u)
 }
 
-#' @title (Internal) Compute design-based variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details Calculate bread matrix for design-based variance estimate for 
-#'  ITT effect models without covariance adjustment and without absorbed effects
-#'  when only moderate or large strata are present
-#' @return inverse of bread matrix 
-#' @keywords internal
-.get_DB_a_inverse <- function(x, ...){
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  bid <- data[, res[[2]]] # block ids
-  
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
-  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
-  
-  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
-  ws_agg <- aggregate(data$.w, by = list(bid), FUN = sum)[,2]
-  A[1,1] <- sum(pbk[,1] * ws_agg)
-  A[2,2] <- sum(pbk[,2] * ws_agg)
-  return(solve(A))
-}
-
-#' @title (Internal) Compute design-based variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details Calculate meat matrix for design-based variance estimate for 
-#'  ITT effect models without covariance adjustment and without absorbed effects
-#'  when only moderate or large strata are present
-#' @return meat matrix 
-#' @keywords internal
-.get_DB_meat <- function(x, ...){
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  
-  ws <- data$.w
-  yobs <- data$.wy # observed ys
-  bid <- data[, res[[2]]] # block ids
-  zobs <- data[, res[[3]]] # observed zs
-  
-  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
-           sum(zobs * ws * yobs) / sum(zobs * ws))
-  
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
-  # number of units in each block and treatment, B by K
-  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
-  delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
-  
-  B <- matrix(0, nrow = 3, ncol = 3)
-  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
-  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
-  
-  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
-                        by = list(bid[zobs == 0]), FUN = .prod_sum)[,2]
-  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
-                        by = list(bid[zobs == 1]), FUN = .prod_sum)[,2]
-  
-  B[1,1] <- sum((1-pbk[,1]) * wy0_agg) + sum((1-pbk[,1]^2/delbk[,1]) * wyy0_agg)
-  B[2,2] <- sum((1-pbk[,2]) * wy1_agg) + sum((1-pbk[,2]^2/delbk[,2]) * wyy1_agg)
-  B[1,2] <- - (B[1,1] + B[2,2]) / 2
-  B[2,1] <- B[1,2]
-  return(B)
-}
-
-#' Aggregate individual-level weights and outcomes to cluster-level
-#' @param x a fitted \code{DirectAdjusted} model
-#' @return a list of a data frame of weights, outcomes, treatments, and block ids;
-#'    the name of the treatment id column; the name of the block id column
-#' @keywords internal
-.aggregate_individuals <- function(x, ...){
-  ws <- if (is.null(x$weights)) 1 else x$weights
-  data_temp <- x$call$data
-  name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=x$call$data),
-                     .wy = ws * data_temp[, name_y])
-  
-  design_obj <- x@Design
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
-  
-  data_temp <- .combine_block_ID(data_temp, name_blk)
-  name_blk <- name_blk[1]
-  
-  eq_clu <- paste(name_clu, collapse = " + ")
-  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
-  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
-  
-  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
-  data_aggr <- cbind(
-    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
-    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
-  )
-  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
-  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
-  return(list(data = data_aggr, block = name_blk, z = name_trt))
-}
-
-#' Combine multiple block IDs to one column 
-#' @details
-#' the returned data frame has a column named as ids[1] that
-#' contains unique numbers based on the combinations of the values
-#' in the multiple block ID columns
-#' @param df a data frame 
-#' @param ids a vector of block IDs, column names of df
-#' @return data frame df with a column that contains unique block number IDs
-#' @keywords internal
-.combine_block_ID <- function(df, ids){
-  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
-  unique_ids <- data.frame(unique(df[,ids[1]]))
-  colnames(unique_ids) <- ids[1]
-  unique_ids$.ID <- seq_len(nrow(unique_ids))
-  
-  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
-  df[,ids[1]] <- df$.ID
-  df$.ID <- NULL
-  return(df)
-}
-
-#' Calculate sum of x[i] * x[j] with i not equal to j
-#' @param x a numeric vector
-#' @keywords internal
-.prod_sum <- function(x){
-  return(sum(x * sum(x)) - sum(x^2))
-}
-
 #' Design-based variance estimate for ITT effect models 
 #' without covariance adjustment and without absorbed effects
 #' when small strata are present
 #' @param x a fitted \code{DirectAdjusted} model
 #' @return the design-based variance estimate
 #' @keywords internal
-.get_DB_small_strata <- function(x, ...){
+.get_DB_se <- function(x, ...){
   res <- .aggregate_individuals(x)
   data <- res[[1]]
   block <- res[[2]]
@@ -924,18 +796,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
   varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
   return(as.matrix(varest))
-}
-
-#' Calculate the mean of squared contrasts of entries of two vectors
-#' @param a a numeric vector
-#' @param b a numeric vector
-#' @return the mean of squared contrasts between elements of the input vectors
-#' @keywords internal
-.get_ms_contrast <- function(a,b){
-  t = 0
-  for (i in 1:length(b))
-    t = t + sum((a - b[i])^2)
-  return (t/length(a)/length(b))
 }
 
 #' This function calculates grave{phi}
@@ -1015,3 +875,126 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   return(mat)
 }
+
+#' Aggregate individual-level weights and outcomes to cluster-level
+#' @param x a fitted \code{DirectAdjusted} model
+#' @return a list of a data frame of weights, outcomes, treatments, and block ids;
+#'    the name of the treatment id column; the name of the block id column
+#' @keywords internal
+.aggregate_individuals <- function(x, ...){
+  ws <- if (is.null(x$weights)) 1 else x$weights
+  data_temp <- x$call$data
+  name_y <- as.character(x$terms[[2]]) # the column of y
+  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=x$call$data),
+                     .wy = ws * data_temp[, name_y])
+  
+  design_obj <- x@Design
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  
+  data_temp <- .combine_block_ID(data_temp, name_blk)
+  name_blk <- name_blk[1]
+  
+  eq_clu <- paste(name_clu, collapse = " + ")
+  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
+  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
+  
+  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
+  data_aggr <- cbind(
+    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
+    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
+  )
+  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
+  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
+  return(list(data = data_aggr, block = name_blk, z = name_trt))
+}
+
+#' Combine multiple block IDs to one column 
+#' @details
+#' the returned data frame has a column named as ids[1] that
+#' contains unique numbers based on the combinations of the values
+#' in the multiple block ID columns
+#' @param df a data frame 
+#' @param ids a vector of block IDs, column names of df
+#' @return data frame df with a column that contains unique block number IDs
+#' @keywords internal
+.combine_block_ID <- function(df, ids){
+  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
+  unique_ids <- data.frame(unique(df[,ids[1]]))
+  colnames(unique_ids) <- ids[1]
+  unique_ids$.ID <- seq_len(nrow(unique_ids))
+  
+  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
+  df[,ids[1]] <- df$.ID
+  df$.ID <- NULL
+  return(df)
+}
+
+#' @title (Internal) Compute design-based variance blocks
+#' @param x a fitted \code{DirectAdjusted} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  ITT effect models without covariance adjustment and without absorbed effects
+#'  when only moderate or large strata are present
+#' @return inverse of bread matrix 
+#' @keywords internal
+.get_DB_a_inverse <- function(x, ...){
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  bid <- data[, res[[2]]] # block ids
+  
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
+  
+  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
+  ws_agg <- aggregate(data$.w, by = list(bid), FUN = sum)[,2]
+  A[1,1] <- sum(pbk[,1] * ws_agg)
+  A[2,2] <- sum(pbk[,2] * ws_agg)
+  return(solve(A))
+}
+
+#' @title (Internal) Compute design-based variance blocks
+#' @param x a fitted \code{DirectAdjusted} model
+#' @details Calculate meat matrix for design-based variance estimate for 
+#'  ITT effect models without covariance adjustment and without absorbed effects
+#'  when only moderate or large strata are present
+#' @return meat matrix 
+#' @keywords internal
+.get_DB_meat <- function(x, ...){
+  # Calculate sum of x[i] * x[j] with i not equal to j
+  # x is a numeric vector
+  .prod_sum <- function(x){
+    return(sum(x * sum(x)) - sum(x^2))
+  }
+  res <- .aggregate_individuals(x)
+  data <- res[[1]]
+  
+  ws <- data$.w
+  yobs <- data$.wy # observed ys
+  bid <- data[, res[[2]]] # block ids
+  zobs <- data[, res[[3]]] # observed zs
+  
+  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
+           sum(zobs * ws * yobs) / sum(zobs * ws))
+  
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  # number of units in each block and treatment, B by K
+  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
+  delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
+  
+  B <- matrix(0, nrow = 3, ncol = 3)
+  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
+  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
+  
+  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
+                        by = list(bid[zobs == 0]), FUN = .prod_sum)[,2]
+  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
+                        by = list(bid[zobs == 1]), FUN = .prod_sum)[,2]
+  
+  B[1,1] <- sum((1-pbk[,1]) * wy0_agg) + sum((1-pbk[,1]^2/delbk[,1]) * wyy0_agg)
+  B[2,2] <- sum((1-pbk[,2]) * wy1_agg) + sum((1-pbk[,2]^2/delbk[,2]) * wyy1_agg)
+  B[1,2] <- - (B[1,1] + B[2,2]) / 2
+  B[2,1] <- B[1,2]
+  return(B)
+}
+
