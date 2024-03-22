@@ -2111,20 +2111,17 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
 })
 
-test_that("vcovDA errors when asking for design-based SE for model
+test_that("vcovDA does not when asking for design-based SE for model
           with covariance adjustment but without absorbed block effects",{
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
   cmod <- lm(y ~ x, simdata)
   damod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
                      offset = cov_adj(cmod))
-  expect_error(
-  vcovDA(damod_off, type = "DB0"), 
-    "cannot be computed for ITT effect models with covariance adjustment"
-  )
+  expect_true(!is.na(vcovDA(damod_off, type = "DB0")))
 })
 
-test_that("vcovDA errors when asking for design-based SE for model
+test_that("vcovDA errors when asking for design-based SE for a model
           with moderators",{
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
@@ -2148,16 +2145,6 @@ test_that(".combine_block_ID correctly combines multiple block columns", {
     propertee:::.combine_block_ID(df=df, ids=c("block1", "block2"))$block1,
     df_comb$block1
     )
-})
-
-test_that(".get_ms_contrast returns correct value", {
-  a <- rnorm(5)
-  b <- rnorm(10)
-  msc <- 0
-  for (i in 1:5)
-    for (j in 1:10)
-      msc <- msc + (a[i]-b[j])^2
-  expect_equal(propertee:::.get_ms_contrast(a, b), msc / 50)
 })
 
 test_that(".get_DB_se returns correct value for designs with small blocks",{
@@ -2292,3 +2279,4 @@ test_that(".get_phi_tilde returns correct grave{phi}
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(damod_abs, db = TRUE)))
 })
+

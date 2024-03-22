@@ -698,7 +698,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 .cov_mat_est <- function(XXz, bidz){
   cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
   covuu <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,]))
-  covll <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,], add=FALSE))
+  covll <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,], upper=FALSE))
     
   cov0u <- lapply(1:length(cov0), 
                   function(s) if (is.na(cov0[[s]][1,1])) covuu[[s]] else cov0[[s]])
@@ -714,16 +714,19 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   d <- nrow(A)
   A <- matrix(rep(diag(A), d), nrow = d, byrow = FALSE)
   B <- matrix(rep(diag(B), d), nrow = d, byrow = TRUE)
+  return(sqrt(abs(A * B)))
   return((A + B) / 2)
 }
 
-.add_vec <- function(a, add = TRUE){
+.add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
   a <- as.numeric(a)
   d <- length(a)
   A <- matrix(rep(a, d), nrow = d, byrow = FALSE)
   B <- matrix(rep(a, d), nrow = d, byrow = TRUE)
-  if (add) return((A + B)^2 / 2)
+  if (upper) return(A*B + sqrt(abs(A*B)))
+  else return(A*B - sqrt(abs(A*B)))
+  if (upper) return((A + B)^2 / 2)
   else return(- (A - B)^2 / 2)
 }
 
@@ -737,15 +740,15 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                    else .add_mat_sqdif(XX, zobs, bid, s))
   cov01l <- lapply(1:length(cov0), 
                    function(s) if (!is.na(cov01[[s]][1,1])) -cov01[[s]]
-                   else -.add_mat_sqdif(XX, zobs, bid, s, add=FALSE))
+                   else -.add_mat_sqdif(XX, zobs, bid, s, upper=FALSE))
   V01u <- Reduce('+', cov01u)
   V01l <- Reduce('+', cov01l)
   return(rbind(V01u, V01l))
 }
 
-.add_mat_sqdif <- function(X, zobs, bid, b, add = TRUE){
+.add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
   A <- X[zobs==0 & bid==b, ]
-  if (add) B <- X[zobs==1 & bid==b, ] else B <- -X[zobs==1 & bid==b, ]
+  if (upper) B <- X[zobs==1 & bid==b, ] else B <- -X[zobs==1 & bid==b, ]
   cov01u <- matrix(0, nrow=ncol(A), ncol=ncol(A))
   for (j in 1:ncol(B)){
     for (h in 1:nrow(B)){
@@ -758,7 +761,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' Design-based variance estimate for ITT effect models 
 #' without covariance adjustment and without absorbed effects
-#' when small strata are present
 #' @param x a fitted \code{DirectAdjusted} model
 #' @return the design-based variance estimate
 #' @keywords internal
