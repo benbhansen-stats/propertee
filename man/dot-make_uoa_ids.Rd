@@ -5,10 +5,14 @@
 \title{Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
 argument}
 \usage{
-.make_uoa_ids(x, cluster = NULL, ...)
+.make_uoa_ids(x, vcov_type, cluster = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
+
+\item{vcov_type}{a string indicating model-based or design-based covariance
+estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
+indicating model-based estimation.}
 
 \item{cluster}{character vector or list; optional. Specifies column names that appear
 in both the covariance adjustment dataframe C and quasiexperimental dataframe

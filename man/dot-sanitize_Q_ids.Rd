@@ -2,32 +2,24 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.sanitize_Q_ids}
 \alias{.sanitize_Q_ids}
-\title{Return ID's for observations in the quasiexperimental sample Q}
+\title{Return ID's for observations in \eqn{Q}}
 \usage{
-.sanitize_Q_ids(x, by = NULL, sorted = FALSE, ...)
+.sanitize_Q_ids(x, id_col = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
 
-\item{by}{character vector or list; optional. Specifies column names that appear in
-both the covariance adjustment dataframe C and quasiexperimental dataframe Q.
-Defaults to NULL, in which case unit of assignment columns indicated in the
-Design will be used to generate ID's.}
-
-\item{sorted}{boolean defaulting to FALSE, which provides ID's in the same
-order as the model frame. If TRUE, ID's will be sorted alphanumerically and
-returned as a list, as given by \code{sort.int} with \code{index.return = TRUE}.}
+\item{id_col}{character vector; optional. Specifies column(s) whose ID's will
+be returned. The column must exist in the data that created the \code{Design}
+object. Default is NULL, in which case unit of assignment columns indicated
+in the design will be used to generate ID's.}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-If not \code{sorted}, a vector of length \eqn{|Q|}, where Q is the
-quasiexperimental sample. If \code{sorted}, a list whose elements are vectors of
-length \eqn{\{|i : i \in Q|\}}. The sorted output will be used to align observations'
-contributions to the ITT effect model with their contributions to the covariance
-adjustment model in \code{estfun.DirectAdjusted}.
+A vector of length \eqn{|Q|}
 }
 \description{
-Return ID's for observations in the quasiexperimental sample Q
+Return ID's for observations in \eqn{Q}
 }
 \keyword{internal}

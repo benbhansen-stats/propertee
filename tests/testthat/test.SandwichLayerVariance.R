@@ -14,7 +14,7 @@ test_that("vcovDA correctly dispatches", {
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
-  expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod))))
+  expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod, "CR"))))
 
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
@@ -28,11 +28,11 @@ test_that("vcovDA correctly dispatches", {
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have no NA's"), {
   data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
-  uid <- factor(simdata$uid)
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+  simdata_copy <- simdata
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
+  cmod <- lm(y ~ x, simdata_copy)
+  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata_copy)
+  dmod <- lmitt(y ~ 1, data = simdata_copy, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
   # check default clustering level is the same when specified using cluster arg
@@ -2064,7 +2064,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
+              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"), cadjust=FALSE),
               check.attributes = FALSE)
   )
   expect_equal(attr(cr1_vmat, "type"), "CR1")
@@ -2103,7 +2103,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod),
+              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"),
                                                       cadjust=FALSE),
               check.attributes = FALSE)
   )
@@ -2134,8 +2134,9 @@ test_that("#119 flagging vcovDA entries as NA", {
   # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
   na_dim <- c(1, 3, 5)
   expect_true(all(
-    diag(sandwich::sandwich(mod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(mod)))[na_dim]
-     < 0)
+    abs(diag(sandwich::sandwich(mod, meat. = sandwich::meatCL,
+                                cluster = .make_uoa_ids(mod, "CR")))[na_dim])
+     < .Machine$double.eps)
   )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
@@ -2157,10 +2158,10 @@ test_that("#119 flagging vcovDA entries as NA", {
 
   na_dim <- c(1, 3)
   expect_true(all(
-    round(
-      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
-      10
-    ) == 0)
+    abs(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL,
+                              cluster = .make_uoa_ids(dmod, "CR")))[na_dim]
+    ) < .Machine$double.eps)
   )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
@@ -2176,10 +2177,9 @@ test_that("#119 flagging vcovDA entries as NA", {
   dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
   vc <- vcovDA(dmod)
   expect_true(all(
-    round(
-      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL, cluster = .make_uoa_ids(dmod)))[na_dim],
-      10
-    ) != 0)
+    abs(diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL,
+                                cluster = .make_uoa_ids(dmod, "CR")))[na_dim])
+    > .Machine$double.eps)
   )
   expect_true(all(!is.na(vc)))
 
@@ -2214,6 +2214,7 @@ test_that("#119 flagging vcovDA entries as NA", {
   # ### invalid continuous moderator variable
   simdata <- simdata[(simdata$cid1 == 2 & simdata$cid2 == 2) |
                       (simdata$cid1 == 2 & simdata$cid2 == 1),]
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
   damod <- lmitt(y ~ o, data = simdata, design = des)
   expect_warning(vc <- vcov(damod), "will be returned as NA: o")
   na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
@@ -2276,4 +2277,18 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
   expect_true(all.equal(v1, v2))
 
+})
+
+test_that("model-based SE's cluster units of assignment in small blocks at block level", {
+  desdata <- data.frame(bid = rep(c(1, 2), each = 20),
+                        uoa_id = c(rep(c(1, 2), each = 10), rep(seq(3, 6), each = 5)),
+                        a = c(rep(c(0, 1), each = 10), rep(rep(c(0, 1), each = 5), 2)))
+  desdata$y <- rnorm(40)
+  des <- rct_design(a ~ unitid(uoa_id) + block(bid), desdata)
+  suppressMessages(mod <- lmitt(y ~ 1, design = des, data = desdata))
+  vc_w_small_block_clusters <- vcovDA(mod)
+  vc_w_no_small_block_clusters <- .vcov_CR0(mod,
+                                            cluster = .make_uoa_ids(mod, "DB"),
+                                            by = "uoa_id")
+  expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
 })

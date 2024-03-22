@@ -207,6 +207,9 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' will return the values of the columns specified in \code{cluster} associated
 #' with that ordering.
 #' @param x a fitted \code{DirectAdjusted} object
+#' @param vcov_type a string indicating model-based or design-based covariance
+#' estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
+#' indicating model-based estimation.
 #' @param cluster character vector or list; optional. Specifies column names that appear
 #' in both the covariance adjustment dataframe C and quasiexperimental dataframe
 #' Q. Defaults to NULL, in which case unit of assignment columns indicated in
@@ -216,11 +219,9 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' @param ... arguments passed to methods
 #' @return A vector of length \eqn{|\mathcal{Q}| + |\mathcal{C} \ \mathcal{Q}|}
 #' @keywords internal
-.make_uoa_ids <- function(x, cluster = NULL, ...) {
-  if (!inherits(cluster, "character") & !inherits(x, "DirectAdjusted")) {
-    stop(paste("Cannot deduce units of assignment for clustering without a",
-               "Design object (stored in a DirectAdjusted object) or a `cluster`",
-               "argument specifying the columns with the units of assignment"))
+.make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
+  if (!inherits(x, "DirectAdjusted")) {
+    stop("Must be provided a DirectAdjusted object")
   }
 
   # Must be a DirectAdjusted object for this logic to occur
@@ -228,10 +229,37 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     cluster <- var_names(x@Design, "u")
   }
 
+  # get observation-level unit of assignment and cluster ID's for observations in Q
+  Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
+  Q_obs_ids <- Q_obs$cluster
+  
+  # for model-based vcov calls on blocked designs when clustering is called for
+  # at the assignment level, replace unit of assignment ID's with block ID's
+  # for small blocks
+  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@Design)) {
+    uoa_cols <- var_names(x@Design, "u")
+    if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
+      des_blocks <- blocks(x@Design)
+      # uoa_block_ids <- apply(des_blocks, 1, function(...) paste(..., collapse = ","))
+      uoa_block_ids <- apply(des_blocks, 1,
+                             function(...) paste(..., collapse = ","))
+      small_blocks <- identify_small_blocks(x@Design)
+      structure_w_small_blocks <- cbind(
+        x@Design@structure,
+        small_block = small_blocks[uoa_block_ids],
+        block_replace_id = apply(des_blocks, 1,
+                                 function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
+                                 nms = colnames(des_blocks))
+      )
+      Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
+      Q_obs$cluster[Q_obs$small_block] <- Q_obs$block_replace_id[Q_obs$small_block]
+      Q_obs_ids <- Q_obs$cluster
+    }
+  }
+  
   # If there's no covariance adjustment info, return the ID's found in Q
-  if (!inherits(x, "DirectAdjusted") | !inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
-    Q_uoas <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
-    return(factor(Q_uoas, levels = unique(Q_uoas)))
+  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+    return(factor(Q_obs_ids, levels = unique(Q_obs_ids)))
   }
 
   # `keys` may have columns in addition to "in_Q" and the uoa columns if a
@@ -249,11 +277,10 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (length(setdiff(cluster, by)) == 0) {
     ids <- Reduce(c, id_order[c("Q_not_C", "Q_in_C", "C_not_Q")])
   } else {
-    Q_ids <- .sanitize_Q_ids(x, cluster, sorted = FALSE, ...)
     C_ids <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
     ids <- c(
-      Q_ids[as.numeric(names(id_order$Q_not_C))],
-      Q_ids[as.numeric(names(id_order$Q_in_C))],
+      Q_obs_ids[as.numeric(names(id_order$Q_not_C))],
+      Q_obs_ids[as.numeric(names(id_order$Q_in_C))],
       C_ids[as.numeric(names(id_order$C_not_Q))]
     )
   }
@@ -315,7 +342,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # the rows to pull from the original estfun matrices
   
   # get all ID's in Q
-  Q_ids <- .sanitize_Q_ids(x, by, sorted = FALSE, ...)
+  Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
 
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
@@ -336,45 +363,38 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(out)
 }
 
-#' Return ID's for observations in the quasiexperimental sample Q
+#' @title Return ID's for observations in \eqn{Q}
 #' @param x a fitted \code{DirectAdjusted} object
-#' @param by character vector or list; optional. Specifies column names that appear in
-#' both the covariance adjustment dataframe C and quasiexperimental dataframe Q.
-#' Defaults to NULL, in which case unit of assignment columns indicated in the
-#' Design will be used to generate ID's.
-#' @param sorted boolean defaulting to FALSE, which provides ID's in the same
-#' order as the model frame. If TRUE, ID's will be sorted alphanumerically and
-#' returned as a list, as given by \code{sort.int} with `index.return = TRUE`.
+#' @param id_col character vector; optional. Specifies column(s) whose ID's will
+#' be returned. The column must exist in the data that created the \code{Design}
+#' object. Default is NULL, in which case unit of assignment columns indicated
+#' in the design will be used to generate ID's.
 #' @param ... arguments passed to methods
-#' @return If not `sorted`, a vector of length \eqn{|Q|}, where Q is the
-#' quasiexperimental sample. If `sorted`, a list whose elements are vectors of
-#' length \eqn{\{|i : i \in Q|\}}. The sorted output will be used to align observations'
-#' contributions to the ITT effect model with their contributions to the covariance
-#' adjustment model in \code{estfun.DirectAdjusted}.
+#' @return A vector of length \eqn{|Q|}
 #' @keywords internal
-.sanitize_Q_ids <- function(x, by = NULL, sorted = FALSE, ...) {
-  if (is.null(by)) {
-    by <- var_names(x@Design, "u")
+.sanitize_Q_ids <- function(x, id_col = NULL, ...) {
+  # link the units of assignment in the Design with desired cluster ID's
+  uoa_cls_df <- make_uoa_cluster_df(x@Design, id_col)
+  uoa_cols <- var_names(x@Design, "u")
+  if (nrow(uoa_cls_df) == nrow(x$model)) {
+    expand_cols <- unique(c(uoa_cols, id_col))
+    by.y <- if (length(expand_cols) == length(uoa_cols)) uoa_cols else c(uoa_cols, "cluster")
+  } else {
+    expand_cols <- by.y <- uoa_cols
   }
-  ids <- tryCatch(
-    stats::expand.model.frame(x, by, na.expand = TRUE)[, by, drop = FALSE],
-    error = function(e) {
-      mf <- eval(x$call$data, envir = environment(x))
-      missing_cols <- setdiff(by, colnames(mf))
-      stop(paste("Could not find unit of assignment columns",
-                 paste(missing_cols, collapse = ", "), "in ITT effect model data"),
-           call. = FALSE)
-    })
-  out <- apply(ids, 1, function(...) paste(..., collapse = "_"))
-  names(out) <- NULL
+  
+  obs_uoa_ids <- stats::expand.model.frame(x,
+                                           expand_cols,
+                                           na.expand = TRUE)[, expand_cols, drop = FALSE]
 
-  if (sorted) {
-    if (suppressWarnings(any(is.na(as.numeric(out))))) {
-      out <- sort(out, index.return = TRUE)
-    } else {
-      out <- sort(as.numeric(out), index.return = TRUE)
-    }
-  }
+  out <- merge(cbind(obs_uoa_ids, .order_id = seq_len(nrow(obs_uoa_ids))),
+               uoa_cls_df, by.x = expand_cols, by.y = by.y, all.x = TRUE, sort = FALSE)
+  
+  out <- out[sort(out$.order_id, index.return = TRUE)$ix,]
+  out$.order_id <- NULL
+  colnames(out) <- unique(c(by.y, "cluster"))
+  out$cluster <- as.character(out$cluster)
+  rownames(out) <- NULL
 
   return(out)
 }

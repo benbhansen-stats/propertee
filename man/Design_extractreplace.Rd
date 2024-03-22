@@ -21,6 +21,7 @@
 \alias{blocks,Design-method}
 \alias{blocks<-}
 \alias{blocks<-,Design-method}
+\alias{has_blocks}
 \alias{forcings}
 \alias{forcings,Design-method}
 \alias{forcings<-}
@@ -66,6 +67,8 @@ blocks(x, newdata = NULL, by = NULL)
 blocks(x) <- value
 
 \S4method{blocks}{Design}(x) <- value
+
+has_blocks(x)
 
 forcings(x, newdata = NULL, by = NULL)
 
