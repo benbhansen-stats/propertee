@@ -685,7 +685,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
   meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
-  term2 <- bread2 %*% (meat2u * signs2 + meat2l * (1 - signs2)) %*% t(bread1)
+  term2 <- bread2 %*% t(meat2u * signs2 + meat2l * (1 - signs2)) %*% t(bread1)
   
   meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
   meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
