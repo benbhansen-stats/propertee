@@ -1,0 +1,126 @@
+---
+title: "Applying Dichotomies to Non-Binary Treatments"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r, include = FALSE}
+devtools::load_all()
+```
+
+## Binary Treatment
+
+When creating a Design, handling binary treatment variables is straightforward:
+
+```{r}
+des1 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+head(ate(des1, data = simdata))
+```
+
+## Non-binary Treatment
+
+However, while Design objects support non-binary treatment variables, attempting
+to utilize those non-binary treatment variables will result in an error:
+
+```{r, error= TRUE}
+head(simdata$dose)
+des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+ate(des2, data = simdata)
+```
+
+### Applying a `dichotomy`
+
+Instead, you need to define a `dichotomy`. A `dichotomy` is presented as a
+formula, where the left-hand side is a logical statement defining inclusion in
+the treatment group, and the rihgt-hand side is a logical statement defining
+inclusion in the control group. For example,
+
+```{r, eval = FALSE}
+dose > 200 ~ dose <= 200
+```
+
+defines that all units of assignment with `dose` above 200 are treated units,
+and all units of assignment with `dose` of 200 or below are control units.
+
+A `.` can be used to define either group as the inverse of the other. For
+example, the above dichotomy could be defined as either of
+
+```{r, eval = FALSE}
+dose > 200 ~ .
+. ~ dose <= 200
+```
+
+Note that all units need to be assigned to treatment or control; any units who
+are not captured in either logical statement are assumed to be excluded from the
+trial.
+
+```{r, eval = FALSE}
+dose > 200 ~ dose <= 200 & dose >= 100
+```
+
+In this `dichotomy`, only units of assignment above 100 are considered in the
+trial.
+
+Let's see these passed to the `ate()`/`ett()` functions:
+
+```{r}
+head(ate(des2, data = simdata,
+         dichotomy = dose > 200 ~ dose <= 200))
+head(ate(des2, data = simdata,
+         dichotomy = dose > 200 ~ .))
+head(ate(des2, data = simdata,
+         dichotomy = .~ dose <= 200))
+head(ate(des2, data = simdata,
+         dose > 200 ~ dose <= 200 & dose >= 100))
+```
+
+The first four units of assignment have `dose` of 50, notice their corresponding
+weight of 0 in the last example.
+
+Alternatively, we could place the dichotomy directly in the `Design` object
+instead.
+
+```{r}
+dichotomy(des2) <- dose > 200 ~ dose <= 200 & dose >= 100
+head(ate(des2, data = simdata))
+des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
+                   dichotomy = dose > 200 ~ dose <= 200 & dose >= 100)
+head(ate(des3, data = simdata))
+```
+### Storage of non-binary treatment
+
+When a design's treatment is dichotomized, we keep the orignal treatment in
+place, but add a slot for the `dichotomy`:
+
+```{r}
+des3
+```
+
+We can obtain the `dichotomy` with the `dichotomy()` function, or apply it to
+the treatment with the `treatment()` function and it's `binary=` argument.
+
+```{r}
+dichotomy(des3)
+treatment(des3)
+treatment(des3, binary = TRUE)
+```
+
+### Helper Functions
+
+There are three helper functions:
+
+- `has_binary_treatment()` identifies whether a `Design` has a binary treatment
+  variable.
+- `is_dichotomized()` identifies whether a `Design` has a `dichotomy`
+  applied to it.
+- `is_binary_or_dichotomized()` identifies whether either a `Design` is binary
+  **or** has a `dichotomy` applied to it.
+
+```{r}
+c(is_dichotomized(des1),
+  has_binary_treatment(des1),
+  is_binary_or_dichotomized(des1))
+c(is_dichotomized(des2),
+  has_binary_treatment(des2),
+  is_binary_or_dichotomized(des2))
+```
