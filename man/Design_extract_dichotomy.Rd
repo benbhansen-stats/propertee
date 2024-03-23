@@ -5,7 +5,7 @@
 \alias{dichotomy,Design-method}
 \alias{dichotomy<-}
 \alias{dichotomy<-,Design-method}
-\title{Extract or replace dichotomy}
+\title{Extract or replace \code{dichotomy}}
 \usage{
 dichotomy(x)
 
@@ -25,5 +25,43 @@ dichomization formula, or a \code{Design} with the
 \code{dichomization} replaces with \code{x}.
 }
 \description{
-Extract or replace dichotomy
+Used to add, modify, or read the \code{dichotomy} attached to a
+\code{Design}.
+}
+\details{
+A \code{dichotomy} is specified by a formula consisting of a
+conditional statement on both the left-hand side (identifying treatment
+levels associated with "treatment") and the right hand side (identifying
+treatment levels associated with "control"). For example, if your
+treatment variable was called \code{dose}, you might write:
+
+\code{dichotomy = dose > 250 ~ dose <= 250}
+
+The period (\code{.}) can be used to assign all other units of assignment.
+For example, we could have written the above example as
+
+\code{dichotomy = dose > 250 ~ .}
+
+or
+
+\code{dichotomy = . ~ dose <= 250}
+
+The \code{dichotomy} formula supports all Relational Operators, Logical
+Operators, and \code{\%in\%}.
+
+The conditionals need not assign all values of treatment to control or
+treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
+\code{200 <= dose <= 300} to either treatment or control. This would be
+equivalent to manually generating a binary variable with \code{NA} whenever
+\code{dose} is between 200 and 300. Units not assigned to treatment or
+control will be maintained in the Design for proper standard error
+calculations.
+
+Note that you can specify a conditional logic treatment directly in the
+\code{Design} creation (e.g. \code{rct_design(dose > 250 ~
+unitOfAssignment(...}) but we would strongly suggest instead passing the
+treatment variable directly and using \code{dichotomy}. Otherwise changing
+the dichotomy will require re-creating the Design, instead of simply using
+\code{dichotomy(design) <-} or passing \code{dichotomy} to \code{ate()} or
+\code{ett()}.
 }

@@ -1,5 +1,8 @@
-##' Produces the requested table
-##' @title Table from \code{Design}
+##' @title Table of elements from a \code{Design}
+##'
+##' @description Produces a table (1-dimensional, or 2-dimensional if \code{y}
+##'   is specified) of the elements of the \code{Design}.
+##'
 ##' @param design A \code{Design}
 ##' @param x One of "treatment", "unit of assignent", "uoa", "unitid",
 ##'   "cluster", "block". Abbreviations are accepted.
