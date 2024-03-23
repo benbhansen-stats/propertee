@@ -227,7 +227,7 @@ identical_Designs <- function(x, y, dichotomy_force = FALSE) {
   return(identical(x, y))
 }
 
-##' @title Identify "small" blocks (one treated or one control unit of assignment)
+##' @title Identify fine strata (blocks with one treated or one control unit of assignment)
 ##' @param des A \code{Design} object.
 ##' @return Logical vector with length given by the number of blocks in the
 ##' Design
