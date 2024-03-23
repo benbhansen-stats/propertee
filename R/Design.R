@@ -26,8 +26,14 @@ setValidity("Design", function(object) {
          !is.character(tr)) && !is.logical(tr)) {
     return("Invalid treatment; must be factor, numeric or character")
   }
-  if (length(unique(tr)) < 2) {
+  if (length(table(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
+  }
+  if (is_dichotomized(object)) {
+    if (length(table(treatment(object, binary = TRUE))) < 2) {
+      return(paste("Invalid treatment and/or dichotomy; dichotomized treatment",
+                   "can not be constant"))
+    }
   }
   if (ncol(object@structure) != length(object@column_index)) {
     return("@column_index does not agree with number of columns in @structure")

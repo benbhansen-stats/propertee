@@ -846,3 +846,15 @@ test_that("has_blocks", {
   expect_true(has_blocks(blocked_des))
   expect_false(has_blocks(no_blocks_des))
 })
+
+test_that("dichotimization should error if if makes treatment constant", {
+  data(simdata)
+
+  des <- obs_design(dose ~ uoa(cid1, cid2), data = simdata)
+  expect_error(dichotomy(des) <- dose  > 1000 ~ .,
+               "constant")
+  expect_error(dichotomy(des) <- dose > 200 ~ dose < 0,
+               "constant")
+  expect_error(ate(des, dose > 1000 ~ ., data = simdata),
+               "constant")
+})
