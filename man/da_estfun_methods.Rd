@@ -2,9 +2,12 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{estfun.DirectAdjusted}
 \alias{estfun.DirectAdjusted}
+\alias{bread.DirectAdjusted}
 \title{Extract empirical estimating equations from a \code{DirectAdjusted} model fit}
 \usage{
 \method{estfun}{DirectAdjusted}(x, ...)
+
+\method{bread}{DirectAdjusted}(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
@@ -40,4 +43,9 @@ to any \code{sandwich::meatCL} calls.
 }
 \description{
 Extract empirical estimating equations from a \code{DirectAdjusted} model fit
+
+Extract bread matrix from a \code{DirectAdjusted} model fit
+}
+\details{
+This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
 }

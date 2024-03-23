@@ -2,18 +2,25 @@
 % Please edit documentation in R/glmrobMethods.R
 \name{estfun.glmrob}
 \alias{estfun.glmrob}
+\alias{bread.glmrob}
 \title{Extract empirical estimating equations from a \code{glmbrob} model fit}
 \usage{
 \method{estfun}{glmrob}(x, ...)
+
+\method{bread}{glmrob}(x, ...)
 }
 \arguments{
-\item{x}{a fitted \code{glmrob} object}
+\item{x}{a fitted \code{lmrob} object}
 
 \item{...}{arguments passed to methods}
 }
 \value{
 Details needed
+
+Details needed
 }
 \description{
 Extract empirical estimating equations from a \code{glmbrob} model fit
+
+Extract bread matrix from an \code{lmrob()} fit
 }

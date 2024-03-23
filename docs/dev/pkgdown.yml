@@ -1,0 +1,15 @@
+pandoc: 3.1.12.3
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
+  RDD: RDD.html
+  design_based_SEs: design_based_SEs.html
+  intro-to-propertee: intro-to-propertee.html
+  non-binary-treatment: non-binary-treatment.html
+  sandwich_infrastructure: sandwich_infrastructure.html
+last_built: 2024-03-23T16:40Z
+urls:
+  reference: www.github.com/reference
+  article: www.github.com/articles
+

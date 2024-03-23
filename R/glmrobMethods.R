@@ -4,6 +4,7 @@
 ##' @return Details needed
 ##' @importFrom stats family model.matrix
 ##' @importFrom utils getFromNamespace
+##' @rdname glmrob_methods
 ##' @exportS3Method
 estfun.glmrob <- function(x, ...) {
 
@@ -97,6 +98,7 @@ estfun.glmrob <- function(x, ...) {
 ##' @param x a fitted \code{lmrob} object
 ##' @param ... arguments passed to methods
 ##' @return Details needed
+##' @rdname glmrob_methods
 ##' @exportS3Method
 bread.glmrob <- function(x, ...) {
   return(solve(x$matM))

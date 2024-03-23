@@ -111,6 +111,7 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##' observations in the two matrices, however, when using \code{vcovDA},
 ##' variance estimates will ultimately be the same due to the clustering passed
 ##' to any \code{sandwich::meatCL} calls.
+##' @rdname da_estfun_methods
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
@@ -137,9 +138,10 @@ estfun.DirectAdjusted <- function(x, ...) {
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
 ##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
-##' @inheritParams .get_a22_inverse
-##' @inheritDotParams .get_a22_inverse
+##' @param x a fitted \code{DirectAdjusted} object
+##' @param ... arguments passed to methods
 ##' @inherit .get_a22_inverse return
+##' @rdname da_estfun_methods
 ##' @exportS3Method
 bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
