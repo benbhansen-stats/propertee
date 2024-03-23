@@ -4,10 +4,10 @@
 ##'   names
 ##' @param design A \code{Design}
 ##' @param data \code{Data set}
-##' @param by named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data.
+##' @param by named vector or list connecting names of unit of
+##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{data}. Names represent
+##'   variables in the Design; values represent variables in the data.
 ##' @return A \code{Design} with updated variable names
 ##' @keywords internal
 .update_by <- function(design, data, by) {
@@ -46,10 +46,10 @@
 ##' and consists of only unique entries.
 ##'
 ##' @title (Internal) A few checks to ensure \code{by=} is valid
-##' @param by named vector or list connecting names of cluster/unit of
-##'   assignment variables in \code{design} to cluster/unit of assignment
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data.
+##' @param by named vector or list connecting names of unit of
+##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{data}. Names represent
+##'   variables in the Design; values represent variables in the data.
 ##' @return \code{NULL} if no errors are found
 ##' @keywords internal
 .check_by <- function(by) {

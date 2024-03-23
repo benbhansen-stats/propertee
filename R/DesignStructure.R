@@ -16,7 +16,7 @@ setValidity("DesignStructure", function(object) {
 ######### Structure
 
 ##' Creates a \code{data.frame} containing the information at the unit of
-##' assignment/cluster level.
+##' assignment/unitid/cluster level.
 ##' @title Returns \code{Design} Structure Information
 ##' @param design a \code{Design} object
 ##' @param binary default \code{FALSE}. If \code{TRUE} and the design contains a

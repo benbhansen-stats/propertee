@@ -12,10 +12,10 @@ names}
 
 \item{data}{\code{Data set}}
 
-\item{by}{named vector or list connecting names of cluster/unit of
-assignment variables in \code{design} to cluster/unit of assignment
-variables in \code{data}. Names represent variables in the Design; values
-represent variables in the data.}
+\item{by}{named vector or list connecting names of unit of
+assignment/unitid/cluster variables in \code{design} to unit of
+assignment/unitid/cluster variables in \code{data}. Names represent
+variables in the Design; values represent variables in the data.}
 }
 \value{
 A \code{Design} with updated variable names

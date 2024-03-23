@@ -34,7 +34,7 @@ assigned <- function(design = NULL, data = NULL) {
     design <- .get_design()
   }
 
-  # Only thing we need from the data is cluster info to enable later merge
+  # Only thing we need from the data is uoa info to enable later merge
   form <- as.formula(paste("~", paste(var_names(design, "u"),
                                       collapse = "+")))
 

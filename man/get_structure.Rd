@@ -18,5 +18,5 @@ A \code{data.frame} containing the structure of the \code{design}.
 }
 \description{
 Creates a \code{data.frame} containing the information at the unit of
-assignment/cluster level.
+assignment/unitid/cluster level.
 }

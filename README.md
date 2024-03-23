@@ -10,12 +10,12 @@
 Propertee enables flexible direct adjustment with design-informed standard errors
 and optional prior covariance adjustment.
 
-Random trials often utilize clustering and blocking in assigning treatment
-status as a way to simplify implementation. This design information must be
-utilized in future analyses. Using Propertee, a user can generate a Design object
-which will keep track of the design structure.
+Random trials often utilize units of assignment and blocking in assigning
+treatment status as a way to simplify implementation. This design information
+must be utilized in future analyses. Using Propertee, a user can generate a
+Design object which will keep track of the design structure.
 
-    des <- rct_design(txt ~ cluster(teacher) + block(school), data = teacherdata)
+    des <- rct_design(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
 
 (Also supported are observational studies (`obs_design`) and regression
 discontinuity designs (`rdd_design` which requires a `forcing()` variable as
