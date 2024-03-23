@@ -1,11 +1,19 @@
 ---
 title: "Applying Dichotomies to Non-Binary Treatments"
 date: "`r Sys.Date()`"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Applying Dichotomies to Non-Binary Treatments}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-devtools::load_all()
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(propertee)
 ```
 
 ## Binary Treatment
