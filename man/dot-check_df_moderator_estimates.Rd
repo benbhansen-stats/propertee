@@ -30,3 +30,4 @@ observations used to fit \code{model}}
 \description{
 NA vcovDA subgroup estimates that have insufficient degrees of freedom
 }
+\keyword{internal}

@@ -59,6 +59,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
 ##' @return a \code{WeightedDesign} object
+##' @keywords internal
 .weights_calc <- function(design, target, dichotomy, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")

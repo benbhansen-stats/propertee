@@ -21,3 +21,4 @@ parameters of the covariance adjustment model (a list of a numeric vector and a 
 (Internal) Get the a vector of "response" predictions from a covariance adjustment model
 and its gradient with respect to the fitted coefficients
 }
+\keyword{internal}

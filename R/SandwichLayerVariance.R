@@ -123,6 +123,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param model_data dataframe or name corresponding to the data used to fit `model`
 #' @param envir environment to get `model_data` from if it is a quote object name
 #' @return `vmat` with NA's in the entries lacking sufficient degrees of freedom
+#' @keywords internal
 .check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "DirectAdjusted")) {
@@ -347,7 +348,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- propertee::.expand.model.frame.DA(x,
+    uoas <- .expand.model.frame.DA(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {

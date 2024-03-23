@@ -112,6 +112,7 @@ setMethod("[", "PreSandwichLayer",
 ##' @param newdata Optional; a data.frame of new data
 ##' @return Covariate adjusted outcomes and their gradient with respect to the
 ##' parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
+##' @keywords internal
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
   if (is.null(newdata)) {
     newdata <- stats::model.frame(model)

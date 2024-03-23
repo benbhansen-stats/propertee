@@ -32,3 +32,4 @@ a \code{WeightedDesign} object
 \description{
 Called from \code{ate()} or \code{ett()}.
 }
+\keyword{internal}
