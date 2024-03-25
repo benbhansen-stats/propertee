@@ -50,7 +50,6 @@ reference:
     - estfun.DirectAdjusted
     - estfun.lmrob
     - estfun.glmrob
-    - make_uoa_cluster_df
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the Design
 - contents:

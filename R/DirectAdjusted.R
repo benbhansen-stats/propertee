@@ -171,7 +171,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
   nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
-  
+
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
   aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi),
                         dimnames = list(seq(n), colnames(psi)))
@@ -234,7 +234,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # get observation-level unit of assignment and cluster ID's for observations in Q
   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
   Q_obs_ids <- Q_obs$cluster
-  
+
   # for model-based vcov calls on blocked designs when clustering is called for
   # at the assignment level, replace unit of assignment ID's with block ID's
   # for small blocks
@@ -258,7 +258,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
       Q_obs_ids <- Q_obs$cluster
     }
   }
-  
+
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(factor(Q_obs_ids, levels = unique(Q_obs_ids)))
@@ -272,7 +272,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     by <- cluster
   }
   id_order <- .order_samples(x, by = by, ...)
-  
+
   # if no "by" was specified in cov_adj(), cluster variable was used for ordering,
   # so we can take the names of the sorted vector. Otherwise, we need to get
   # ID's associated with the ordering
@@ -286,13 +286,13 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
       C_ids[as.numeric(names(id_order$C_not_Q))]
     )
   }
-  
+
   na_ids <- is.na(ids)
   ids[na_ids] <- apply(
     matrix(sample(c(letters, LETTERS), 8 * sum(na_ids), replace = TRUE), ncol = 8),
     1, function(...) paste(..., collapse = "")
   )
-  
+
   return(factor(ids, levels = unique(ids)))
 }
 
@@ -342,13 +342,13 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # The order, given by the names of the output vector, will be:
   # Q not in C --> Q in C --> C not in Q. The values in the vector correspond to
   # the rows to pull from the original estfun matrices
-  
+
   # get all ID's in Q
   Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
 
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
-  
+
   # need Q_in_C and C_in_Q to have the same order so contributions are aligned
   Q_in_C <- stats::setNames(Q_ids[which(Q_ids %in% C_ids)], which(Q_ids %in% C_ids))
   Q_in_C <- sort(Q_in_C)
@@ -361,7 +361,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     C_in_Q = C_in_Q,
     C_not_Q = stats::setNames(C_ids[!ca@keys$in_Q], which(!ca@keys$in_Q))
   )
-  
+
   return(out)
 }
 
@@ -376,7 +376,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' @keywords internal
 .sanitize_Q_ids <- function(x, id_col = NULL, ...) {
   # link the units of assignment in the Design with desired cluster ID's
-  uoa_cls_df <- make_uoa_cluster_df(x@Design, id_col)
+  uoa_cls_df <- .make_uoa_cluster_df(x@Design, id_col)
   uoa_cols <- var_names(x@Design, "u")
   if (nrow(uoa_cls_df) == nrow(x$model)) {
     expand_cols <- unique(c(uoa_cols, id_col))
@@ -384,14 +384,14 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   } else {
     expand_cols <- by.y <- uoa_cols
   }
-  
+
   obs_uoa_ids <- stats::expand.model.frame(x,
                                            expand_cols,
                                            na.expand = TRUE)[, expand_cols, drop = FALSE]
 
   out <- merge(cbind(obs_uoa_ids, .order_id = seq_len(nrow(obs_uoa_ids))),
                uoa_cls_df, by.x = expand_cols, by.y = by.y, all.x = TRUE, sort = FALSE)
-  
+
   out <- out[sort(out$.order_id, index.return = TRUE)$ix,]
   out$.order_id <- NULL
   colnames(out) <- unique(c(by.y, "cluster"))

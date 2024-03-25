@@ -250,8 +250,8 @@ identify_small_blocks <- function(des) {
 ##' `cluster` is a more or less granular level than the assignment level) and
 ##' the columns correspond to the unit of assignment columns and a "cluster"
 ##' column
-##' @export
-make_uoa_cluster_df <- function(des, cluster = NULL) {
+##' @keywords internal
+.make_uoa_cluster_df <- function(des, cluster = NULL) {
   if (!inherits(des, "Design")) stop("Must be provided a valid `Design` object")
   uoa_cols <- var_names(des, "u")
   q_df <- NULL
@@ -267,15 +267,15 @@ make_uoa_cluster_df <- function(des, cluster = NULL) {
     }, error = function(e) return(NULL))
     if (!is.null(q_df) & inherits(q_df, "data.frame")) break
   }
-  
+
   if (is.null(q_df)) {
     stop("Could not find design data in the call stack")
   }
-  
+
   if (!is.null(cluster) & !all(cluster %in% colnames(q_df))) {
     stop(paste("Could not find", cluster, "column in the design data"))
   }
-  
+
   q_df <- q_df[, c(uoa_cols, cluster), drop = FALSE]
   grab_uoas_fn <- switch(
     des@unit_of_assignment_type,
@@ -284,7 +284,7 @@ make_uoa_cluster_df <- function(des, cluster = NULL) {
     "cluster" = clusters
   )
   uoas <- grab_uoas_fn(des)
-  
+
   out <- unique(merge(uoas, q_df, by = uoa_cols, all.y = TRUE))
   rownames(out) <- NULL
   if (nrow(out) < nrow(uoas)) warning(paste("Some units of assignment in the Design",
