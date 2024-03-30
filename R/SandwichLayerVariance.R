@@ -582,10 +582,10 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("x must be a DirectAdjusted model")
   }
   
-  #if (!x@lmitt_fitted){
-  #  stop("x must have been fitted using lmitt.formula")
-  #}
-  # x@lmitt_fitted is false if someone created x using as.lmitt
+  if (!x@lmitt_fitted){
+    # x@lmitt_fitted is false if someone created x using as.lmitt
+    stop("x must have been fitted using lmitt.formula")
+  }
   
   args <- list(...)
   if ("type" %in% names(args)) {
