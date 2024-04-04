@@ -316,6 +316,36 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`",
   expect_equal(sl@keys$uoa1, cmod_df$uoa1)
 })
 
+test_that("as.SandwichLayer failed by", {
+  set.seed(20)
+  N <- 100
+  cmod_df <- data.frame("x" = rnorm(N), "y" = rnorm(N), "uoa1" = seq_len(N))
+  cmod <- lm(y ~ x, cmod_df)
+  design_df <- data.frame("uoa1" = seq_len(N), "z" = rbinom(N, 1, 0.5))
+  des <- rct_design(z ~ unit_of_assignment(uoa1), design_df)
+  
+  offset <- rep(1, N)
+  pred_gradient <- matrix(1, nrow = N, ncol = 2)
+  
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+  expect_error(
+    expect_warning(
+      expect_warning(
+        expect_warning(
+          as.SandwichLayer(psl, design = des, by = "not_uoa"),
+          "No call to"
+        ),
+        "Unable to detect"
+      ),
+      "Could not find quasiexperimental data"
+    ),
+    "Could not find columns"
+  )
+})
+
 test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's",
                 "not starting at 1"), {
   set.seed(20)
@@ -608,6 +638,21 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
                pred_gradient[seq_len(N-1),])
 })
 
+test_that(".get_ca_and_prediction_gradient miscellaneous errors", {
+  set.seed(789)
+  n <- 30
+  df <- data.frame(x1 = runif(n))
+  df$x2 <- 1 - df$x1
+  df$y <- df$x1 + df$x2 + rnorm(n)
+  suppressWarnings(mod <- lm(y ~ x1 + x2, df))
+  expect_warning(.get_ca_and_prediction_gradient(mod),
+                 "prediction from a rank-deficient fit")
+  
+  class(mod) <- "new_lm"
+  expect_error(suppressWarnings(.get_ca_and_prediction_gradient(mod)),
+               "must inherit from a")
+})
+
 test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
   data(simdata)
 
@@ -658,4 +703,24 @@ test_that(".sanitize_C_ids with no UOA info", {
   ids <- .sanitize_C_ids(dmod$model$`(offset)`)
   expect_equal(length(ids), nrow(cmod_data))
   expect_equal(length(unique(ids)), 1)
+})
+
+test_that(".sanitize_C_ids miscellaneous errors", {
+  expect_error(.sanitize_C_ids(2), "x must be a `SandwichLayer`")
+  
+  n <- 10
+  df <- data.frame("x" = rnorm(n), "a" = rep(c(0, 1), each = 5), "y" = rnorm(n),
+                   "cid" = sample(seq_len(n)))
+  cmod <- lm(y ~ x, df)
+  des <- rct_design(a ~ cluster(cid), df)
+  sl <- cov_adj(cmod, newdata = df, design = des)
+  num_C_ids <- .sanitize_C_ids(sl, sorted = TRUE)
+  expect_true(all.equal(num_C_ids$x, seq_len(n), check.attributes = FALSE))
+  
+  df$cid <- sample(letters[1:n])
+  cmod <- lm(y ~ x, df)
+  des <- rct_design(a ~ cluster(cid), df)
+  sl <- cov_adj(cmod, newdata = df, design = des)
+  char_C_ids <- .sanitize_C_ids(sl, sorted = TRUE)
+  expect_true(all.equal(char_C_ids$x, letters[1:n], check.attributes = FALSE))
 })
