@@ -253,6 +253,22 @@ test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmo
   test_ca(ca, cmod, Q_wo_nulls)
 })
 
+test_that("cov_adj coltypes for treatment", {
+  set.seed(52)
+  n <- 10
+  cmod_data <- data.frame(x = rnorm(n), y = rnorm(n), uid = 10 + seq_len(10))
+  cmod <- lm(y ~ x, cmod_data)
+  desdata <- data.frame(x = rnorm(n), a = factor(rep(c(0, 1), each = 5)),
+                        uid = seq_len(10))
+  des <- rct_design(a ~ unitid(uid), desdata)
+  ca <- cov_adj(cmod, desdata, des)
+  expect_true(inherits(ca, "SandwichLayer"))
+  
+  desdata$a <- as.character(desdata$a)
+  des <- rct_design(a ~ unitid(uid), desdata)
+  expect_warning(cov_adj(cmod, desdata, des))
+})
+
 test_that(paste(".update_ca_model_formula with NULL `by` and NULL `design` returns",
                 "returns original model formula"), {
   set.seed(819)
