@@ -5,10 +5,11 @@ articles:
   LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
   RDD: RDD.html
   design_based_SEs: design_based_SEs.html
+  geex_vs_propertee: geex_vs_propertee.html
   intro-to-propertee: intro-to-propertee.html
   non-binary-treatment: non-binary-treatment.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2024-03-25T10:38Z
+last_built: 2024-04-04T21:47Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
