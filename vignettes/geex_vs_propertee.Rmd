@@ -4,7 +4,7 @@ author: "Joshua Wasserman"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{propertee vs. geex}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -51,7 +51,7 @@ estFun <- function(data){
     # covariance model eqns
     Xstar <- model.matrix(y ~ x1 + x2, data)
     cmod_eqns <- drop(data$y - Xstar %*% theta[1:3]) * Xstar
-    
+
     # itt model eqns
     X <- model.matrix(y ~ x1 + x2, data)
     Z <- model.matrix(y ~ z, data)
@@ -60,7 +60,7 @@ estFun <- function(data){
     } else {
       damod_eqns <- rep(0, 2)
     }
-    
+
     out <- c(cmod_eqns, damod_eqns)
     return(out)
   }
@@ -114,7 +114,7 @@ clusterEstFunc <- function(data){
     Xstar <- model.matrix(y ~ x1 + x2, data)
     cmod_agg_func <- ifelse(dim(Xstar)[2] > 1, colSums, sum)
     cmod_eqns <- cmod_agg_func(drop(data$y - Xstar %*% theta[1:3]) * Xstar)
-    
+
     # itt model eqns
     X <- model.matrix(y ~ x1 + x2, data)
     Z <- model.matrix(y ~ z, data)
@@ -125,7 +125,7 @@ clusterEstFunc <- function(data){
     } else {
       damod_eqns <- rep(0, 2)
     }
-    
+
     out <- c(cmod_eqns, damod_eqns)
     return(out)
   }
