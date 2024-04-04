@@ -137,3 +137,6 @@ print(paste("geex estimate of var(tau_hat):", round(geexRes@vcov[5,5], 8)))
 print(paste("propertee estimate of var(tau_hat):",
             round(vcovDA(damod, type = "CR0", cadjust = FALSE)[2,2], 8)))
 ```
+
+## References
+Saul BC, Hudgens MG (2020). “The Calculus of M-Estimation in R with geex.” Journal of Statistical Software, 92(2), 1–15. doi: 10.18637/jss.v092.i02.
