@@ -15,8 +15,11 @@ knitr::opts_chunk$set(
   comment = "#>",
   eval = requireNamespace("geex")
 )
+```
+
+```{r install, message = FALSE, warning = FALSE}
 library(propertee)
-if (!require(geex)) install.packages("geex")
+library("geex")
 ```
 
 ## Overview
