@@ -5,8 +5,6 @@
 [![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
 <!-- badges: end -->
 
-## Overview
-
 Propertee enables flexible direct adjustment with design-informed standard errors
 and optional prior covariance adjustment.
 

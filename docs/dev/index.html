@@ -105,9 +105,6 @@
 </div>
 <!-- badges: start -->
 
-<div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h2>
 <p>Propertee enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.</p>
 <p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. This design information must be utilized in future analyses. Using Propertee, a user can generate a Design object which will keep track of the design structure.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>des <span class="ot">&lt;-</span> <span class="fu">rct_design</span>(txt <span class="sc">~</span> <span class="fu">unit_of_assignment</span>(teacher) <span class="sc">+</span> <span class="fu">block</span>(school), <span class="at">data =</span> teacherdata)</span></code></pre></div>
@@ -120,7 +117,6 @@
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">lm</span>(y <span class="sc">~</span> txt, studentdata, <span class="at">weights =</span> <span class="fu">ett</span>(des),</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>   <span class="at">offset =</span> <span class="fu">cov_adj</span>(covadjmod, <span class="at">data =</span> studentdata)</span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>)</span></code></pre></div>
-</div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
