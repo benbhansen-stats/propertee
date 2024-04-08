@@ -695,6 +695,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(as.matrix(vmat[2,2]))
 }
 
+#' @title (Internal) Design-based variance estimate helper function
+#' @keywords internal
 .cov_mat_est <- function(XXz, bidz){
   cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
   covuu <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,]))
@@ -710,26 +712,32 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V00u, V00l))
 }
 
+#' @title (Internal) Design-based variance estimate helper function
+#' @keywords internal
 .add_mat_diag <- function(A, B){
   d <- nrow(A)
   A <- matrix(rep(diag(A), d), nrow = d, byrow = FALSE)
   B <- matrix(rep(diag(B), d), nrow = d, byrow = TRUE)
-  return(sqrt(abs(A * B)))
+  #return(sqrt(abs(A * B)))
   return((A + B) / 2)
 }
 
+#' @title (Internal) Design-based variance estimate helper function
+#' @keywords internal
 .add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
   a <- as.numeric(a)
   d <- length(a)
   A <- matrix(rep(a, d), nrow = d, byrow = FALSE)
   B <- matrix(rep(a, d), nrow = d, byrow = TRUE)
-  if (upper) return(A*B + sqrt(abs(A*B)))
-  else return(A*B - sqrt(abs(A*B)))
+  #if (upper) return(A*B + sqrt(abs(A*B)))
+  #else return(A*B - sqrt(abs(A*B)))
   if (upper) return((A + B)^2 / 2)
   else return(- (A - B)^2 / 2)
 }
 
+#' @title (Internal) Design-based variance estimate helper function
+#' @keywords internal
 .cov01_est <- function(XX, zobs, bid){
   cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
   cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], function(s) cov(XX[zobs==1,][s,]))
@@ -746,6 +754,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V01u, V01l))
 }
 
+#' @title (Internal) Design-based variance estimate helper function
+#' @keywords internal
 .add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
   A <- X[zobs==0 & bid==b, ]
   if (upper) B <- X[zobs==1 & bid==b, ] else B <- -X[zobs==1 & bid==b, ]
