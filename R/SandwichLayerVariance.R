@@ -680,7 +680,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   a11inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
   a22inv <- .get_a22_inverse(x)
-  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
+  a21 <- matrix(0, nrow = nrow(a21), ncol = ncol(a21))
+  a22inv <- matrix(c(1,0,-1,1), nrow = 2, byrow = TRUE)
+  C <- matrix(c(1,0,0,1), nrow = 2, byrow = TRUE)
   
   bread1 <- a22inv %*% a21 %*% a11inv / n
   bread2 <- - a22inv %*% C / n
