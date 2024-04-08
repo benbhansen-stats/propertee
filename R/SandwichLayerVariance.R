@@ -34,7 +34,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   args <- list(...)
   args$x <- x
   args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
-  args$cluster <- .make_uoa_ids(x, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  args$cluster <- .make_uoa_ids(x, vcov_type = substr(type, 1, 2), cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
   
@@ -56,10 +56,10 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   args$x <- x
   n <- length(args$cluster)
-  
-  a22inv <- sandwich::bread(x)
-  meat <- do.call(sandwich::meatCL, args)
-  vmat <- (1 / n) * a22inv %*% meat %*% t(a22inv)
+
+  bread. <- sandwich::bread(x)
+  meat. <- do.call(sandwich::meatCL, args)
+  vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
   vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
@@ -123,6 +123,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param model_data dataframe or name corresponding to the data used to fit `model`
 #' @param envir environment to get `model_data` from if it is a quote object name
 #' @return `vmat` with NA's in the entries lacking sufficient degrees of freedom
+#' @keywords internal
 .check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "DirectAdjusted")) {
@@ -139,48 +140,36 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("`data` must be a dataframe or a quoted object name")
   }
 
-  # For each moderator variable (whether it's been dichotomized or not), count
-  # the number of clusters with at least one member of each value
-  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)),
-                           model_data)
-  mod_counts <- apply(
-    mod_vars,
-    2,
-    function(col) {
-      n_vals <- length(unique(col))
-      if (n_vals == 2) {
-        tapply(cluster, col, function(cluster_ids) length(unique(cluster_ids)))
-      } else {
-        3 # necessarily enough degrees of freedom if there are at least 3 values
-      }
-    },
-    simplify = FALSE)
+  # For categorical moderators, count the clusters contributing to estimation
+  # for each level of the moderator variable; for continuous moderators, just
+  # count the number of clusters. The moderator variable (or any level of the
+  # moderator variable) must have at least three clusters contributing to
+  # estimation for valid SE estimation.
+  mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
+  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(stats::model.frame(model)),,drop=FALSE]
+  if (ncol(mod_vars) > 1) {
+    mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
+                        rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
+    valid_mods <- colSums(mod_counts != 0) > 2
+  } else {
+    valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
+  }
+    
 
-  valid_mods <- vapply(mod_counts,
-                       function(counts) all(counts > 2),
-                       logical(1L))
+  # Replace SE's for moderator variable/levels with <= 2 clusters with NA's
   if (any(!valid_mods)) {
-    invalid_mods <- names(valid_mods)[!valid_mods]
+    invalid_mods <- gsub("\\)", "\\\\)", gsub("\\(", "\\\\(", names(valid_mods)[!valid_mods]))
     warning(paste("The following subgroups do not have sufficient degrees of",
                   "freedom for standard error estimates and will be returned",
                   "as NA:",
-                  paste(invalid_mods, collapse = ", ")),
+                  paste(names(valid_mods)[!valid_mods], collapse = ", ")),
             call. = FALSE)
     # find cells of the covariance matrix that correspond to txt/mod group
     # interactions
-    invalid_cols <- paste0(paste0(var_names(model@Design, "t"), "."), "_", invalid_mods)
-    dims_to_na <- apply(
-      vapply(invalid_cols, grepl, logical(length(colnames(vmat))),
-             colnames(vmat), fixed = TRUE),
-      1,
-      any
-    )
-
-    if (all(!dims_to_na)) {
-      warning(paste("Could not find dimensions of `vmat` corresponding to",
-                    "degenerate standard error estimates. Degenerate standard",
-                    "error estimates will not be returned as NA"))
-    }
+    if (!(valid_mods[1])) invalid_mods <- c("\\(Intercept\\)", invalid_mods)
+    dims_to_na <- which(grepl(paste0("(", paste(invalid_mods, collapse = "|"), ")"),
+                              colnames(vmat),
+                              perl = TRUE))
 
     vmat[dims_to_na, ] <- NA_real_
     vmat[, dims_to_na] <- NA_real_
@@ -302,32 +291,21 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Compute variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details The \bold{A22 block} is the diagonal element of the inverse expected
-#'   Fisher Information matrix corresponding to the treatment estimate. As shown
-#'   in the Details of \code{.get_b22()}, the estimating equations for a
-#'   generalized linear model with a canonical link function can be written as
-#'   \deqn{\psi_i = (r_i / Var(y_i)) * (d\mu_i/d\eta_i) * x_i} The expected
-#'   information matrix A22 is then the negative Jacobian of \eqn{\psi_i}, which
-#'   by likelihood theory is the variance-covariance matrix of \eqn{\psi_i}:
-#'   \deqn{\psi_{i}\psi_{i}^{T} = E[(r_i / Var(y_i) * (d\mu_i/d\eta_i))^{2}] *
-#'   x_ix_i' = (d\mu_i/d\eta_i)^{2} / Var(y_i) * x_ix_i'} Considering the whole
-#'   sample, this can be expressed in matrix form as \eqn{X'WX}. The output of
-#'   this function is the inverse of the diagonal element corresponding to the
-#'   treatment estimate.
-#' @return \code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
-#' dimensions are given by the intercept and treatment variable terms in the
-#' ITT effect model
+#' @details \eqn{A_{22}^{-1}} is the inverse observed Fisher information of the
+#' ITT effect estimating equations scaled by \eqn{n_{\mathcal{Q}}}.
+#' @param x a fitted \code{DirectAdjusted} object
+#' @param ... arguments passed to methods
+#' @return \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
+#' \eqn{k\times k} matrix where k denotes the number of parameters in the ITT
+#' effect model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
-.get_a22_inverse <- function(x) {
+.get_a22_inverse <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-
-  # Get expected information per sandwich_infrastructure vignette
-  w <- if (is.null(x$weights)) 1 else x$weights
-  out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
+  
+  out <- utils::getS3method("bread", "lm")(x)
 
   return(out)
 }
@@ -370,7 +348,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- propertee::.expand.model.frame.DA(x,
+    uoas <- .expand.model.frame.DA(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
@@ -405,15 +383,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details The \bold{A11 block} is the \eqn{p\times p} matrix corresponding to
-#'   the unscaled inverse of the observed Fisher information of the covariance
-#'   adjustment model. The observed information is given by the estimate of the negative
-#'   Jacobian of the model's estimating equations. The unscaled version provided
-#'   here divides by the number of observations used to fit the covariance
-#'   adjustment model.
+#' @details \eqn{A_{11}^{-1}} is the inverse of the gradient of the covariance
+#'   adjustment model estimating equations scaled by \eqn{n_{\mathcal{C}}^{-1}}.
 #' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-#'   dimensions are given by the number of terms in the covariance adjustment model
-#'   including an intercept
+#'   \eqn{p} is the dimension of the covariance adjustment model including an
+#'   intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a11_inverse <- function(x) {
@@ -427,10 +401,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                "for direct adjustment standard errors"))
   }
 
-  cmod <- sl@fitted_covariance_model
-  nc <- sum(summary(cmod)$df[1L:2L])
-
-  out <- sandwich::bread(cmod) / nc
+  out <- sandwich::bread(sl@fitted_covariance_model)
+  
   return(out)
 }
 
@@ -528,23 +500,16 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details The \bold{A21 block} is the block of the sandwich variance estimator
-#'   corresponding to the gradient of the ITT effect model with respect
-#'   to the covariates. Some of the information needed for this calculation is
-#'   stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
-#'   block is the crossproduct of the prediction gradient and the gradient of
-#'   the conditional mean vector for the ITT effect model summed to the
-#'   cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
-#'   / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
-#'   (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'} where \eqn{\mu} and
-#'   \eqn{\eta_i} are the conditional mean function and linear predictor for the
-#'   ith cluster in the ITT effect model, and \eqn{\upsilon} and
-#'   \eqn{\zeta_i} are the conditional mean function and linear predictor for
-#'   the ith cluster in the covariance adjustment model.
-#' @return \code{.get_a12()}: A \eqn{2\times p} matrix where the number of
-#'   rows are given by intercept and treatment variable terms in the ITT effect
-#'   model, and the number of columns are given by the number of terms
-#'   in the covariance adjustment model
+#' @details \eqn{A_{21}} is the gradient of the ITT effect estimating equations
+#'   scaled by \eqn{n_{\mathcal{Q}}^{-1}} taken with respect to the covariance
+#'   adjustment model parameters. This matrix is the crossproduct of the
+#'   prediction gradient for the units of observation in \eqn{\mathcal{Q}} and
+#'   the model matrix of the ITT effect estimating eqations.
+#' @param x a fitted \code{DirectAdjusted} model
+#' @return \code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
+#'   where the number of rows are given by the dimension of the ITT effect
+#'   estimating equations and the number of columns are given by the number of
+#'   terms in the covariance adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
@@ -555,23 +520,68 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
-               "for direct adjustment standard errors"))
+               "to propagate covariance adjustment model error"))
   }
 
   # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
 
-  damod_mm <- stats::model.matrix(formula(x),
-                                  stats::model.frame(x, na.action = na.pass))
+  damod_mm <- stats::model.matrix(
+    formula(x), stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
 
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
+  out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
+  # scale by nq
+  nq <- sum(msk)
 
+  return(out / nq)
+}
+
+##' @details \eqn{\tilde{A}_{22}^{-1}} is the inverse observed Fisher
+##' information of the ITT effect estimating equations scaled by \eqn{n}. This
+##' function wraps around the function \code{.get_a22_inverse()} that produces
+##' \eqn{A_{22}^{-1}}, where \eqn{A_{22}=\frac{n}{n_{\mathcal{Q}}}\tilde{A}_{22}}.
+##' @inheritDotParams .get_a22_inverse
+##' @inherit .get_a22_inverse return
+##' @keywords internal
+##' @rdname sandwich_elements_calc
+.get_tilde_a22_inverse <- function(x, ...) {
+  out <- .get_a22_inverse(x, ...)
+  
+  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+    return(out)
+  }
+
+  nq <- nrow(stats::model.frame(x))
+  nc_not_q <- sum(!ca@keys$in_Q)
+  n <- nq + nc_not_q
+  
+  out <- out * n / nq
+  
   return(out)
 }
 
+##' @details \eqn{\tilde{A}_{21}} is the gradient of the ITT effect estimating
+##'   equations scaled by \eqn{n^{-1}} taken with respect to the covariance
+##'   adjustment model parameters. This function wraps around \code{.get_a21()},
+##'   which produces \eqn{A_{21}}, where \eqn{A_{21} = \frac{n_{\mathcal{Q}}}{n}
+##'   \tilde{A}_{21}}.
+##' @inheritDotParams .get_a21
+##' @inherit .get_a21 return
+##' @keywords internal
+##' @rdname sandwich_elements_calc
+.get_tilde_a21 <- function(x) {
+  out <- .get_a21(x)
+  
+  nq <- nrow(stats::model.frame(x))
+  sl <- x$model$`(offset)`
+  nc_not_q <- sum(!sl@keys$in_Q)
+  n <- nq + nc_not_q
+  
+  out <- nq / n * out
+}
 
 #' @title Design-based standard errors with HC0 adjustment
 #' @param x a fitted \code{DirectAdjusted} model
@@ -635,18 +645,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @return design-based estimation of variance 
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
-  a11inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x)
-  a22inv <- .get_a22_inverse(x)
-  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
-  
-  bread1 <- a22inv %*% a21 %*% a11inv
-  bread2 <- - a22inv %*% C
-  
-  signs1 <- ifelse(t(t(bread1[2,])) %*% bread1[2,] > 0, 1, 0)
-  signs2 <- ifelse(t(t(bread1[2,])) %*% bread2[2,] > 0, 1, 0)
-  signs3 <- ifelse(t(t(bread2[2,])) %*% bread2[2,] > 0, 1, 0)
-  
   design_obj <- x@Design
   data <- x$call$data
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
@@ -661,13 +659,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
   X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
   p <- ncol(X1)
+  n <- nrow(X1)
   
   wc <- x$call$offset@fitted_covariance_model$weight
   if (is.null(wc)) wc <- 1
   X1 <- matrix(rep(wc * (x$call$data[,name_y] - x$offset), p),
                ncol = p) * X1  # n by p, wic * residual * xi
   wi <- x$weights
-  X2 <- wi * x$residuals  # n by 2, wi[z] * (residual - rhoz) * z
+  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
   
   XX <- cbind(X1, X2)
   XX <- aggregate(XX, by = list(cid), FUN = sum)[, 2:(p+2)]
@@ -677,6 +676,18 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
   V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
   V01 <- .cov01_est(XX, zobs, bid)
+  
+  a11inv <- .get_a11_inverse(x)
+  a21 <- .get_a21(x)
+  a22inv <- .get_a22_inverse(x)
+  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
+  
+  bread1 <- a22inv %*% a21 %*% a11inv / n
+  bread2 <- - a22inv %*% C / n
+  
+  signs1 <- ifelse(t(t(bread1[2,])) %*% bread1[2,] > 0, 1, 0)
+  signs2 <- ifelse(t(t(bread1[2,])) %*% bread2[2,] > 0, 1, 0)
+  signs3 <- ifelse(t(t(bread2[2,])) %*% bread2[2,] > 0, 1, 0)
   
   idl <- (p+2):(2*p+1)
   meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
@@ -1009,4 +1020,3 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   B[2,1] <- B[1,2]
   return(B)
 }
-

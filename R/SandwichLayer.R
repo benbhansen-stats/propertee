@@ -112,6 +112,7 @@ setMethod("[", "PreSandwichLayer",
 ##' @param newdata Optional; a data.frame of new data
 ##' @return Covariate adjusted outcomes and their gradient with respect to the
 ##' parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
+##' @keywords internal
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
   if (is.null(newdata)) {
     newdata <- stats::model.frame(model)
@@ -219,8 +220,6 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
           
         })
     }
-    by <- c(by, stats::setNames(var_names(design, "u"), var_names(design, "u")))
-    by <- by[!duplicated(by)]
   }
 
   data_call <- x@fitted_covariance_model$call$data
@@ -228,12 +227,11 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
     stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
   }
 
-  covmoddata <- eval(data_call,
-                     envir = environment(formula(x@fitted_covariance_model)))
-
   keys <- tryCatch(
     stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
     error = function(e) {
+      covmoddata <- eval(data_call,
+                         envir = environment(formula(x@fitted_covariance_model)))
       stop(paste("Columns",
                  paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
                  "are missing from the covariance adjustment model dataset"),
@@ -265,13 +263,10 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
 #' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
 #' Defaults to NULL, in which case unit of assignment columns indicated in the
 #' Design will be used to generate ID's.
-#' @param verbose Boolean defaulting to TRUE, which will produce rather than
-#' swallow any warnings about the coding of the units of assignment in the
-#' covariance adjustment model data
 #' @param ... arguments passed to methods
 #' @return A vector of length \eqn{|C|}
 #' @keywords internal
-.sanitize_C_ids <- function(x, by = NULL, verbose = TRUE, sorted = FALSE, ...) {
+.sanitize_C_ids <- function(x, by = NULL, sorted = FALSE, ...) {
   if (!inherits(x, "SandwichLayer")) {
     stop("x must be a `SandwichLayer` object")
   }
@@ -296,78 +291,11 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
              call. = FALSE)
       })
     })
-  
-  ## NOTE: This code has been updated because of the lingering issue that we
-  ## can't cluster on partially known unit of assignment information without
-  ## being provided a notion of nesting levels for the units of assignment.
-  ## Commented out code in the remaining lines pertain to this issue. For the time
-  ## being, we treat any observations that couldn't be fully matched to the
-  ## quasiexperimental sample as independent.
-  # check_nas_funcs <- list(all = all, any_not_all = function(row) any(row) & !all(row))
-  check_nas_funcs <- list(any = any)
-  nas <- lapply(check_nas_funcs,
-                function(f) which(apply(is.na(C_ids), 1, f)))
+
+  nas <- apply(is.na(C_ids), 1, all)
   out <- apply(C_ids, 1, function(...) paste(..., collapse = "_"))
+  out[nas] <- NA_character_
   names(out) <- NULL
-
-  # warn if verbose
-  if (verbose) {
-    # if (length(nas[["any_not_all"]]) > 0) {
-    #   warning(paste("Some rows in the covariance adjustment model dataset have",
-    #                 "NA's for some but not all clustering columns. Rows sharing",
-    #                 "the same non-NA cluster ID's will be clustered together.",
-    #                 "If this is not intended, provide unique non-NA cluster ID's",
-    #                 "for these rows."))
-    # }
-    # if (length(nas[["all"]]) > 0) {
-    if (length(nas[["any"]]) > 0) {
-      warning(paste("Some or all rows in the covariance adjustment model could",
-                    # "are found to have NA's for the given clustering columns.",
-                    "not be matched to the quasiexperimental sample.",
-                    "This is taken to mean these observations should be treated",
-                    "as independent. To avoid this warning, provide unique non-NA cluster",
-                    "ID's for each row."))
-    }
-  }
-  
-  # function for creating new uoa ID's for observations in C but not Q: create
-  # "_"-separated randomly generated collections of 4 upper- or lower-case letters,
-  # with the number of separations given by the number of uoa columns - 1. This
-  # will maintain structure if future strsplit calls are desired
-  create_new_ids <- function(n_ids, n_id_cols) {
-    new_ids <- split(sample(c(letters, LETTERS), n_ids * n_id_cols * 4, replace = TRUE),
-                     seq_len(n_ids))
-    mapply(
-      function(id) {
-        split_ids <- tapply(id, rep(seq_len(n_id_cols), each = 4),
-                            function(...) paste(..., collapse = ""))
-        paste(split_ids, collapse = "_")
-      },
-      new_ids,
-      USE.NAMES = FALSE
-    )
-  }
-
-  # since we use available unit of assignment information, we make sure to assign
-  # new uoa ID's to all observations that fall in the same uoa
-  # if (length(nas$any_not_all) > 0) {
-  #   replace_ids <- unique(out[nas$any_not_all])
-  #   n_uoa_cols <- length(cluster)
-  #   new_ids <- create_new_ids(length(replace_ids), n_uoa_cols)
-  #   names(new_ids) <- replace_ids
-  #   out[nas$any_not_all] <- new_ids[out[nas$any_not_all]]
-  # }
-  # for observations with no unit of assignment information, we create unique uoa
-  # ID's
-  # if (length(nas$all) > 0) {
-  if (length(nas[["any"]]) > 0) {
-    # n_replace_ids <- length(nas$all)
-    n_replace_ids <- length(nas$any)
-    n_id_cols <- length(by)
-    new_ids <- create_new_ids(n_replace_ids, n_id_cols)
-    # out[nas$all] <- new_ids
-    out[nas$any] <- new_ids
-  }
 
   if (sorted) {
     if (suppressWarnings(any(is.na(as.numeric(out))))) {

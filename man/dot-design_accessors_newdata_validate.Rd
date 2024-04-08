@@ -10,7 +10,7 @@
 \item{newdata}{newdata argument from e.g. \code{treatment()},
 \code{blocks()}, etc}
 
-\item{byargument}{from e.g. \code{treatment()},
+\item{by}{from e.g. \code{treatment()},
 \code{blocks()}, etc. See \code{.check_by()}}
 }
 \value{

@@ -59,6 +59,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
 ##' @return a \code{WeightedDesign} object
+##' @keywords internal
 .weights_calc <- function(design, target, dichotomy, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
@@ -80,7 +81,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
 
   if (is.null(data)) {
-    # Only thing we need from the data is cluster info to enable later merge
+    # Only thing we need from the data is unit of assignment info to enable
+    # later merge
     form <- as.formula(paste("~", paste(var_names(design, "u"),
                                         collapse = "+")))
 
@@ -106,8 +108,8 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   txt <- .bin_txt(design)
 
   if (length(var_names(design, "b")) == 0) {
-    # If no block is specified, then e_z is the proportion of clusters who
-    # receive the treatment.
+    # If no block is specified, then e_z is the proportion of units of
+    # assignment who receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
 
     if (target == "ate") {
@@ -117,7 +119,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     }
   } else {
     # If a block is specified, then e_z varies by block and is the proportion
-    # of clusters within the block that receive the treatment.
+    # of units of assignments within the block that receive the treatment.
 
     # Identify number of units per block, and number of treated units per block
     block_units <- table(blocks(design)[!is.na(txt), ])
@@ -130,7 +132,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     to_reset_to_0 <- e_z == 1 | e_z == 0
     to_reset_to_0 <- to_reset_to_0[as.character(blocks(design)[, 1])]
 
-    # Expand e_z to cluster-level
+    # Expand e_z to unit of assignment level
     e_z <- as.numeric(e_z[as.character(blocks(design)[, 1])])
 
     if (target == "ate") {

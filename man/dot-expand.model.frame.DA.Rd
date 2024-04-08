@@ -49,3 +49,4 @@ Trivial modifications from \code{stats::expand.model.frame()} include
 ensuring \code{model} is a \code{Directadjusted} object, and using the
 \code{::} syntax as appropriate.
 }
+\keyword{internal}

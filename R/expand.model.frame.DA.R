@@ -27,7 +27,7 @@
 ##' @param envir an environment to evaluate things in
 ##' @param na.expand logical; see \code{stats::expand.model.frame} for details
 ##' @return A \code{data.frame}
-##' @export
+##' @keywords internal
 .expand.model.frame.DA <- function (model,
                                     extras,
                                     envir = environment(formula(model)),

@@ -98,7 +98,6 @@ lmitt.formula <- function(obj,
 
   # Save the subset and remove it from `lm.call`, to be re-added at the enc
   savedsubset <- lm.call$subset
-  logicalsubset <- eval(savedsubset, data)
   lm.call$subset <- NULL
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
@@ -244,15 +243,6 @@ lmitt.formula <- function(obj,
     }
   }
 
-  # Evaluate model.frame
-  mf.call <- lm.call
-  mf.call[[1]] <- quote(stats::model.frame)
-  # Add assigned() to the model so it utilizes Design characteristics (primarly
-  # concerned about subset)
-  mf.call[[2]] <- stats::update(eval(mf.call[[2]]), . ~ . + a.())
-  mf.call$na.action <- "na.pass"
-  mf <- eval(mf.call, parent.frame())
-
   if (absorb) {
     if (length(var_names(design, "b")) == 0) {
       stop("No blocks found in Design, cannot absorb")
@@ -301,7 +291,7 @@ lmitt.formula <- function(obj,
   mm <- eval(mm.call, parent.frame())
 
   if (absorb) {
-    mm <- apply(mm, 2, areg.center, as.factor(blocks), lm.call$weights)
+    mm <- areg.center(mm, as.factor(blocks), lm.call$weights)
   }
 
   # Strip intercept from data if it's in there
@@ -321,7 +311,8 @@ lmitt.formula <- function(obj,
 
   # Rebuild RHS of formula: RHS is "txt_" or "txt_sbgrp", where "txt" has been
   # replaced with the actual treatment name above.
-  lm.call$formula <- str2lang(paste(lm.call$formula[[2]], " ~ ",
+  lm_form <- eval(lm.call$formula, envir = parent.frame())
+  lm.call$formula <- str2lang(paste(lm_form[[2]], " ~ ",
                                     paste(
                                       paste0("`", colnames(mm), "`"),
                                       collapse = "+"),

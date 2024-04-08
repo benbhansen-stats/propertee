@@ -3,7 +3,7 @@
 \name{dtable}
 \alias{dtable}
 \alias{design_table}
-\title{Table from \code{Design}}
+\title{Table of elements from a \code{Design}}
 \usage{
 dtable(
   design,
@@ -53,5 +53,6 @@ variable names. If \code{FALSE} (default), name by their function (e.g.
 table
 }
 \description{
-Produces the requested table
+Produces a table (1-dimensional, or 2-dimensional if \code{y}
+is specified) of the elements of the \code{Design}.
 }

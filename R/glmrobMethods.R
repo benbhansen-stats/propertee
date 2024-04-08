@@ -4,6 +4,7 @@
 ##' @return Details needed
 ##' @importFrom stats family model.matrix
 ##' @importFrom utils getFromNamespace
+##' @rdname glmrob_methods
 ##' @exportS3Method
 estfun.glmrob <- function(x, ...) {
 
@@ -36,7 +37,20 @@ estfun.glmrob <- function(x, ...) {
            phiEst <- utils::getFromNamespace("phiGaussianEst", "robustbase")
          },
          "Gamma" = { ## added by ARu
-           Epsi.init <- utils::getFromNamespace("EpsiGamma.init", "robustbase")
+           # Epsi.init <- utils::getFromNamespace("EpsiGamma.init", "robustbase")
+           #### The `Gmn` function inside `EpsiGamma.init` was not being
+           #### properly found. Bringing it in here manually and using
+           #### `getFromNamespace` to locate it. JE 3/2024.
+           Epsi.init <- expression({
+             nu <- 1/phi
+             snu <- 1/sqrt(phi)
+             pPtc <- pgamma(snu + c(-tcc, tcc), shape = nu, rate = snu)
+             pMtc <- pPtc[1]
+             pPtc <- pPtc[2]
+             aux2 <- tcc * snu
+             GLtcc <- getFromNamespace("Gmn", "robustbase")(-tcc, nu)
+             GUtcc <- getFromNamespace("Gmn", "robustbase")(tcc, nu)
+           })
            Epsi <- utils::getFromNamespace("EpsiGamma", "robustbase")
            EpsiS <- utils::getFromNamespace("EpsiSGamma", "robustbase")
            Epsi2 <- utils::getFromNamespace("Epsi2Gamma", "robustbase")
@@ -84,6 +98,7 @@ estfun.glmrob <- function(x, ...) {
 ##' @param x a fitted \code{lmrob} object
 ##' @param ... arguments passed to methods
 ##' @return Details needed
+##' @rdname glmrob_methods
 ##' @exportS3Method
 bread.glmrob <- function(x, ...) {
   return(solve(x$matM))

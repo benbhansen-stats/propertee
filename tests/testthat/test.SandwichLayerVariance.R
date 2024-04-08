@@ -14,7 +14,7 @@ test_that("vcovDA correctly dispatches", {
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
-  expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod))))
+  expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod, "CR"))))
 
   vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
@@ -28,11 +28,11 @@ test_that("vcovDA correctly dispatches", {
 test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have no NA's"), {
   data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
-  uid <- factor(simdata$uid)
-  cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, design = des,
+  simdata_copy <- simdata
+  simdata_copy$uid <- seq_len(nrow(simdata_copy))
+  cmod <- lm(y ~ x, simdata_copy)
+  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata_copy)
+  dmod <- lmitt(y ~ 1, data = simdata_copy, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
   # check default clustering level is the same when specified using cluster arg
@@ -50,11 +50,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
-  expect_warning(vmat <- suppressMessages(vcovDA(dmod, cluster = c("cid1", "cid2"))),
-                 "these observations should be treated as independent")
-  expect_warning(expected <- suppressMessages(vcovDA(dmod)),
-                 "these observations should be treated as independent")
-  expect_equal(vmat, expected)
+  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")), vcovDA(dmod))
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
@@ -502,59 +498,83 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                t(cmod_eqns) %*% m_eqns)
 })
 
-test_that(".get_a22_inverse returns correct value for lm", {
+test_that(".get_a22_inverse correct w/o covariance adjustment", {
   data(simdata)
 
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
+  m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
-  mm <- stats::model.matrix(m)
-  fim <- solve(crossprod(mm * m$weights, mm))
+  nq <- nrow(stats::model.frame(m_as.lmitt))
+  inv_fim <- nq * chol2inv(m_as.lmitt$qr$qr)
 
-  expect_equal(propertee:::.get_a22_inverse(m), fim)
+  expect_true(all.equal(propertee:::.get_a22_inverse(m_as.lmitt), inv_fim,
+                        check.attributes = FALSE))
+  expect_true(all.equal(propertee:::.get_a22_inverse(m_lmitt.form), inv_fim,
+                        check.attributes = FALSE))
 })
 
-test_that(".get_a22_inverse returns correct value for glm fit with Gaussian family", {
+test_that(".get_a22_inverse correct w/ covariance adjustment", {
+  set.seed(438)
   data(simdata)
+  nc <- 30
+  nq <- nrow(simdata)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.lmitt(glm(y ~ assigned(), data = simdata, weights = ate(des)))
+  simdata$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), simdata)
 
-  mm <- stats::model.matrix(m)
-  fim <- solve(crossprod(mm * sqrt(m$weights)))
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
-  expect_equal(propertee:::.get_a22_inverse(m), fim)
+  inv_fim <- nq * chol2inv(m_as.lmitt$qr$qr)
+
+  expect_true(all.equal(propertee:::.get_a22_inverse(m_as.lmitt), inv_fim,
+                        check.attributes = FALSE))
+  expect_true(all.equal(propertee:::.get_a22_inverse(m_lmitt.form), inv_fim,
+                        check.attributes = FALSE))
 })
 
-test_that(".get_a22_inverse returns correct value for glm fit with poisson family", {
+test_that(".get_tilde_a22_inverse correct w/o covariance adjustment", {
   data(simdata)
 
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.lmitt(
-    glm(round(exp(y)) ~ assigned(), data = simdata, weights = ate(des),
-        family = stats::poisson())
-  )
+  m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
-  mm <- stats::model.matrix(m)
-  fim <- solve(crossprod(mm * sqrt(m$weights)))
-
-  expect_equal(propertee:::.get_a22_inverse(m), fim)
+  expect_equal(.get_tilde_a22_inverse(m_as.lmitt), .get_a22_inverse(m_as.lmitt))
+  expect_equal(.get_tilde_a22_inverse(m_lmitt.form), .get_a22_inverse(m_lmitt.form))
 })
 
-test_that(".get_a22_inverse returns correct value for glm fit with quasipoisson family", {
+test_that(".get_a22_inverse correct w/o covariance adjustment", {
+  set.seed(438)
   data(simdata)
+  nc <- 30
+  nq <- nrow(simdata)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-  m <- as.lmitt(
-    glm(round(exp(y)) ~ assigned(), data = simdata, weights = ate(des),
-        family = stats::quasipoisson())
-  )
+  simdata$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), simdata)
 
-  dispersion <- sum((m$weights * m$residuals)^2) / sum(m$weights)
-  mm <- stats::model.matrix(m)
-  fim <- solve(crossprod(mm * sqrt(m$weights)))
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
-  expect_equal(propertee:::.get_a22_inverse(m), fim)
+  inv_fim <- n * chol2inv(m_as.lmitt$qr$qr)
+
+  expect_true(all.equal(propertee:::.get_tilde_a22_inverse(m_as.lmitt), inv_fim,
+                        check.attributes = FALSE))
+  expect_true(all.equal(propertee:::.get_tilde_a22_inverse(m_lmitt.form), inv_fim,
+                        check.attributes = FALSE))
 })
 
 test_that(".get_b22 returns correct value for lm object w/o offset", {
@@ -773,12 +793,16 @@ test_that(".get_a11_inverse returns correct value for lm cmod", {
   cmod <- lm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.lmitt(
+  m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
+  nc <- nrow(stats::model.frame(cmod))
   fim <- crossprod(stats::model.matrix(cmod))
-  expect_equal(propertee:::.get_a11_inverse(m), solve(fim))
+  expect_equal(propertee:::.get_a11_inverse(m_as.lmitt), nc * solve(fim))
+  expect_equal(propertee:::.get_a11_inverse(m_lmitt.form), nc * solve(fim))
 })
 
 test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
@@ -786,13 +810,17 @@ test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
   cmod <- glm(y ~ x, data = simdata)
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.lmitt(
+  m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
+  nc <- nrow(stats::model.frame(cmod))
   dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
   fim <- crossprod(stats::model.matrix(cmod), stats::model.matrix(cmod))
-  expect_equal(propertee:::.get_a11_inverse(m), dispersion * solve(fim))
+  expect_equal(propertee:::.get_a11_inverse(m_as.lmitt), nc * dispersion * solve(fim))
+  expect_equal(propertee:::.get_a11_inverse(m_lmitt.form), nc * dispersion * solve(fim))
 })
 
 test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
@@ -800,14 +828,18 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.lmitt(
-    glm(round(exp(y)) ~ assigned(), data = simdata, weights = ate(des),
-        offset = cov_adj(cmod), family = stats::poisson())
+  m_as.lmitt <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
+  nc <- nrow(stats::model.frame(cmod))
   fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
                    stats::model.matrix(cmod))
-  expect_equal(propertee:::.get_a11_inverse(m), solve(fim), tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+  # tol due to diffs from chol2inv vs. solve(crossprod)
+  expect_equal(propertee:::.get_a11_inverse(m_as.lmitt), nc * solve(fim), tolerance = 1e-4)
+  expect_equal(propertee:::.get_a11_inverse(m_lmitt.form), nc * solve(fim), tolerance = 1e-4)
 })
 
 test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
@@ -815,33 +847,42 @@ test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::quasipoisson())
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- as.lmitt(
-    glm(round(exp(y)) ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod),
-        family = stats::poisson())
+  m_as.lmitt <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
   )
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
+  nc <- nrow(stats::model.frame(cmod))
   dispersion <- sum((cmod$weights * cmod$residuals)^2) / sum(cmod$weights)
   fim <- crossprod(stats::model.matrix(cmod) * exp(cmod$linear.predictors),
                    stats::model.matrix(cmod))
-  expect_equal(propertee:::.get_a11_inverse(m), dispersion * solve(fim),
-               tolerance = 1e-4) # tol due to diffs from chol2inv vs. solve(crossprod)
+  # tol due to diffs from chol2inv vs. solve(crossprod)
+  expect_equal(propertee:::.get_a11_inverse(m_as.lmitt), nc * dispersion * solve(fim),
+               tolerance = 1e-4)
+  expect_equal(propertee:::.get_a11_inverse(m_lmitt.form), nc * dispersion * solve(fim),
+               tolerance = 1e-4)
 })
 
-test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
+test_that(".get_a11_inverse returns correct value for binomial glm cmod", {
   data(simdata)
   cmod <- suppressWarnings(
     glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
   )
   des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
 
-  m <- suppressWarnings(as.lmitt(
-    glm(round(exp(y) / (1 + exp(y))) ~ assigned(), data = simdata, weights = ate(des),
-        offset = cov_adj(cmod), family = stats::binomial())
-  ))
+  m_as.lmitt <- as.lmitt(
+    lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
+  )
+  m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des,
+                        weights = ate(des), offset = cov_adj(cmod))
 
+  nc <- nrow(stats::model.frame(cmod))
   fim <- crossprod(stats::model.matrix(cmod) * cmod$fitted.values * (1 - cmod$fitted.values),
                    stats::model.matrix(cmod))
-  expect_equal(propertee:::.get_a11_inverse(m), solve(fim), tolerance = 1e-6)
+  # tol due to diffs from chol2inv vs. solve(crossprod)
+  expect_equal(propertee:::.get_a11_inverse(m_as.lmitt), nc * solve(fim), tolerance = 1e-6)
+  expect_equal(propertee:::.get_a11_inverse(m_lmitt.form), nc * solve(fim), tolerance = 1e-6)
 })
 
 test_that(".get_b11 returns correct B_11 for one cluster column", {
@@ -1079,62 +1120,86 @@ test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
                matrix(0, nrow = 2, ncol = 2))
 })
 
-test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/ clustering", {
-  data(simdata)
-
-  cmod <- lm(y ~ x + force, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
-
-  uoanames <- var_names(des, "u")
-  uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
-                        stats::expand.model.frame(m, uoanames)[, uoanames]))
-
-  Qmat <- m$weights * stats::model.matrix(m)
-  Cmat <- stats::model.matrix(cmod)
-
-  a21 <- propertee:::.get_a21(m)
-  expect_equal(dim(a21), c(2, 3))
-  expect_equal(a21, crossprod(Qmat, Cmat))
-})
-
-test_that(".get_a21 returns correct matrix for lm cmod and lm damod w/o clustering", {
+test_that(".get_a21 returns correct matrix for lm cmod and lm damod", {
   data(simdata)
 
   new_df <- simdata
   new_df$uid <- seq_len(nrow(new_df))
   cmod <- lm(y ~ x, new_df)
   des <- rct_design(z ~ unitid(uid), data = new_df)
-  m <- as.lmitt(lm(y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod)))
 
-  Qmat <- m$weights * stats::model.matrix(m)
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod)
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, design = des, data = new_df,
+                        weights = ate(des), offset = cov_adj(cmod))
+
+  Qmat <- m_as.lmitt$weights * stats::model.matrix(m_as.lmitt)
   Cmat <- stats::model.matrix(cmod)
+  nq <- nrow(stats::model.frame(m_as.lmitt))
 
-  a21 <- propertee:::.get_a21(m)
-  expect_equal(dim(a21), c(2, 2))
-  expect_equal(a21, crossprod(Qmat, Cmat))
+  a21_as.lmitt <- propertee:::.get_a21(m_as.lmitt)
+  expect_equal(dim(a21_as.lmitt), c(2, 2))
+  expect_true(all.equal(a21_as.lmitt, crossprod(Qmat, Cmat) / nq,
+                        check.atrributes = FALSE))
+
+  a21_lmitt.form <- propertee:::.get_a21(m_lmitt.form)
+  expect_equal(dim(a21_lmitt.form), c(2, 2))
+  expect_true(all.equal(a21_lmitt.form, crossprod(Qmat, Cmat) / nq,
+                        check.attributes = FALSE))
 })
 
-test_that(".get_a21 returns correct matrix for lm cmod and glm damod w/ clustering", {
+test_that(".get_a21 returns correct matrix for glm cmod and lm damod", {
+  data(simdata)
+  new_df <- simdata
+  new_df$id <- seq(nrow(new_df))
+  new_df$bin_y <- rbinom(nrow(new_df), 1, round(1 / (1 + exp(-new_df$x))))
+
+  cmod <- suppressWarnings(glm(bin_y ~ x + force, data = new_df, family = stats::binomial()))
+  des <- rct_design(z ~ unitid(id), new_df)
+  m_as.lmitt <- as.lmitt(lm(
+    bin_y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod, by = "id")
+  ))
+  m_lmitt.form <- lmitt(bin_y ~ 1, design = des, data = new_df,
+                        weights = ate(des), offset = cov_adj(cmod, by = "id"))
+
+  Qmat <- stats::model.matrix(m_as.lmitt)
+  Cmat <- cmod$prior.weights * cmod$family$mu.eta(cmod$linear.predictors) * stats::model.matrix(cmod)
+  nq <- nrow(stats::model.frame(m_as.lmitt))
+
+  a21_as.lmitt <- propertee:::.get_a21(m_as.lmitt)
+  expect_equal(dim(a21_as.lmitt), c(2, 3))
+  expect_true(all.equal(a21_as.lmitt, crossprod(Qmat, Cmat) / nq,
+                        check.atrributes = FALSE))
+
+  a21_lmitt.form <- propertee:::.get_a21(m_lmitt.form)
+  expect_equal(dim(a21_lmitt.form), c(2, 3))
+  expect_true(all.equal(a21_lmitt.form, crossprod(Qmat, Cmat) / nq,
+                        check.attributes = FALSE))
+})
+
+test_that(".get_tilde_a21 correct values", {
+  set.seed(438)
   data(simdata)
 
-  cmod <- lm(round(exp(y) / (1 + exp(y))) ~ x + force, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  m <- suppressWarnings(as.lmitt(
-    glm(round(exp(y) / (1 + exp(y))) ~ assigned(), simdata, weights = ate(des),
-        offset = cov_adj(cmod), family = stats::binomial())
+  new_df <- simdata
+  nc <- 30
+  nq <- nrow(new_df)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
+
+  new_df$id <- seq(nq)
+  des <- rct_design(z ~ unitid(id), new_df)
+
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), new_df, weights = ate(des), offset = cov_adj(cmod, by = "id")
   ))
+  m_lmitt.form <- lmitt(y ~ 1, design = des, data = new_df,
+                        weights = ate(des), offset = cov_adj(cmod, by = "id"))
 
-  uoanames <- var_names(des, "u")
-  uoas <- factor(Reduce(function(...) paste(..., sep = "_"),
-                        stats::expand.model.frame(m, uoanames)[, uoanames]))
-
-  Qmat <- m$prior.weights * m$family$mu.eta(m$linear.predictors) * stats::model.matrix(m)
-  Cmat <- stats::model.matrix(cmod)
-
-  a21 <- propertee:::.get_a21(m)
-  expect_equal(dim(a21), c(2, 3))
-  expect_equal(a21, crossprod(Qmat, Cmat))
+  expect_equal(.get_tilde_a21(m_as.lmitt), nq / n * .get_a21(m_as.lmitt))
+  expect_equal(.get_tilde_a21(m_lmitt.form), nq / n * .get_a21(m_lmitt.form))
 })
 
 test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
@@ -1146,23 +1211,25 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
   cmod <- lm(y ~ x, data = cmod_data)
   des <- rct_design(z ~ cluster(cid1, cid2), m_data)
 
-  expect_warning(expect_warning(
-    lmitt(lm(y ~ assigned(), m_data, offset = cov_adj(cmod, design = des))),
-    "covariance adjustments are NA"), "covariance adjustments are NA")
   # warning procs twice
-  m <- suppressWarnings(
-    lmitt(lm(y ~ assigned(), m_data, weights = ate(des),
-             offset = cov_adj(cmod, design = des)))
+  expect_warning(expect_warning(
+    m_as.lmitt <- lmitt(lm(y ~ assigned(), m_data, offset = cov_adj(cmod, design = des))),
+    "covariance adjustments are NA"), "covariance adjustments are NA")
+  expect_warning(
+    m_lmitt.form <- lmitt(y ~ 1, design = des, data = m_data, offset = cov_adj(cmod)),
+    "covariance adjustments are NA"
   )
 
-  damod_mm <- suppressWarnings(
-    m$weights * stats::model.matrix(
-      formula(m), stats::model.frame(m, na.action = na.pass))[!is.na(m_data$x),]
-  )
+  damod_mm <- stats::model.matrix(m_as.lmitt)
   pg <- stats::model.matrix(formula(cmod), m_data)
+  nq <- nrow(damod_mm)
 
-  a21 <- suppressWarnings(propertee:::.get_a21(m))
-  expect_equal(a21, crossprod(damod_mm, pg))
+  a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
+  expect_true(all.equal(a21_as.lmitt, crossprod(damod_mm, pg) / nq,
+                        check.attributes = FALSE))
+  a21_lmitt.form <- suppressWarnings(propertee:::.get_a21(m_lmitt.form))
+  expect_true(all.equal(a21_lmitt.form, crossprod(damod_mm, pg) / nq,
+                        check.attributes = FALSE))
 })
 
 test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
@@ -1171,13 +1238,34 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   simdata[simdata$cid1 %in% c(2, 4), "z"] <- NA_integer_
   cmod <- lm(y ~ x, data = simdata, subset = cid1 %in% c(2, 4))
   des <- rct_design(z ~ cluster(cid1, cid2), simdata)
-  m <- lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
+  m_as.lmitt <- lmitt(lm(y ~ assigned(), simdata, offset = cov_adj(cmod, design = des)))
+  m_lmitt.form <- lmitt(y ~ 1, simdata, design = des, offset = cov_adj(cmod))
 
-  damod_mm <- m$weights * stats::model.matrix(m)
+  damod_mm <- stats::model.matrix(m_as.lmitt)
   pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
+  nq <- nrow(damod_mm)
 
-  a21 <- propertee:::.get_a21(m)
-  expect_equal(a21, crossprod(damod_mm, pg))
+  a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
+  expect_true(all.equal(a21_as.lmitt, crossprod(damod_mm, pg) / nq,
+                        check.attributes = FALSE))
+  a21_lmitt.form <- suppressWarnings(propertee:::.get_a21(m_lmitt.form))
+  expect_true(all.equal(a21_lmitt.form, crossprod(damod_mm, pg) / nq,
+                        check.attributes = FALSE))
+})
+
+test_that(".get_a21 returns only full rank columns for less than full rank model", {
+  data(simdata)
+  copy_simdata <- simdata
+  copy_simdata$o_fac <- as.factor(copy_simdata$o)
+  cmod <- lm(y ~ x, simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+
+  ### lmitt.formula
+  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des, offset = cov_adj(cmod))
+  expect_equal(dim(a21 <- .get_a21(damod)),
+               c(damod$rank, damod$model$`(offset)`@fitted_covariance_model$rank))
+  keep_ix <- damod$qr$pivot[1L:damod$rank]
+  expect_equal(rownames(a21), colnames(model.matrix(damod))[keep_ix])
 })
 
 test_that("propertee:::.vcov_CR0 returns px2 matrix", {
@@ -1246,51 +1334,55 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   damod_form <- y ~ assigned()
   cmod <- lm(cmod_form, df, subset = is.na(uid))
   des <- rct_design(z ~ uoa(uid), df, subset = !is.na(df$uid))
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, subset = !is.na(uid), weights = ate(des),
        offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, design = des, data = df, subset = !is.na(uid),
+                           weights = ate(des), offset = cov_adj(cmod))
   onemod <- lm(y ~ x1 + x2 + z, data = df, subset = !is.na(uid),
                weights = ate(des))
 
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(cmod_form, df[!is.na(df$uid),])
   nc <- nrow(Xstar)
-  n <- nc + nrow(Z)
+  nq <- nrow(Z)
+  n <- nc + nq
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
-  expect_equal(meat <- crossprod(estfun(damod)) / n,
-               (crossprod(ef_damod) -
-                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
-                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
+               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
 
   # with perfect group balance, a22inv %*% a21 ((Z'WZ)^(-1)Z'WX) should be 0
   # for the trt row
-  expect_equal((a22inv %*% a21)[2,],
+  expect_equal((bread. %*% a21)[2,],
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
-  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+  vmat <- propertee:::.vcov_CR0(dmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be equal to the outputs of sandwich
-  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+  expect_true(all.equal(vmat, sandwich::sandwich(dmod_as.lmitt),
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
@@ -1324,51 +1416,55 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   damod_form <- y ~ assigned()
   cmod <- lm(cmod_form, df, subset = is.na(uid))
   des <- rct_design(z ~ uoa(uid), df, subset = !is.na(df$uid))
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, subset = !is.na(uid), weights = ate(des),
        offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, design = des, data = df, subset = !is.na(uid),
+                           weights = ate(des), offset = cov_adj(cmod))
   onemod <- lm(y ~ x1 + x2 + z, data = df, subset = !is.na(uid),
                weights = ate(des))
 
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(cmod_form, df[!is.na(df$uid),])
   nc <- nrow(Xstar)
-  n <- nc + nrow(Z)
+  nq <- nrow(Z)
+  n <- nc + nq
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
-  expect_equal(meat <- crossprod(estfun(damod)) / n,
-               (crossprod(ef_damod) -
-                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
-                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
+               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
-  expect_true(all.equal(vmat, (1/n) * a22inv %*% meat %*% a22inv,
+  vmat <- propertee:::.vcov_CR0(dmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
-  expect_true(all.equal(vmat, sandwich::sandwich(damod),
+  expect_true(all.equal(vmat, sandwich::sandwich(dmod_as.lmitt),
                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
+                        check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
   expect_true(all(diag(vmat) <
@@ -1379,16 +1475,16 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "balanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
-  NC <- NQ <- 4
+  nclusts_C <- nclusts_Q <- 4
   MI <- 16
 
   # trt variable
-  z <- c(rep(rep(c(0, 1), each = MI), NC / 2),
-         rep(rep(c(0, 1), each = MI), NQ / 2))
+  z <- c(rep(rep(c(0, 1), each = MI), nclusts_C / 2),
+         rep(rep(c(0, 1), each = MI), nclusts_Q / 2))
 
   # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
+  px1 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nclusts_C) / 2, 55, 90))
   x1 <- c(
     mapply(function(x) {
       rep(c(rep(0, round(MI * x)), rep(1, round(MI * (1 - x)))), 2)
@@ -1409,11 +1505,11 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
 
   # generate clustered errors
-  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
+  error_sd <- round(stats::runif(nclusts_C + nclusts_Q, 1, 3), 1)
   icc <- 0.2
   eps <- stats::rnorm(nrow(df))
   Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(NC + NQ) - 1)) {
+  for (i in (seq_len(nclusts_C + nclusts_Q) - 1)) {
     msk <- (1 + i * MI):((i + 1) * MI)
     Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
   }
@@ -1423,62 +1519,64 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   # generate y
   theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + eps
-  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
+  df$cid <- c(rep(NA_integer_, nclusts_C * MI), rep(seq_len(nclusts_Q), each = MI))
 
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ assigned()
 
   cmod <- lm(cmod_form, df, subset = is.na(cid))
   des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, subset = !is.na(cid), weights = ate(des),
        offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, design = des, data = df, subset = !is.na(cid),
+                           weights = ate(des), offset = cov_adj(cmod))
 
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(cmod_form, df[!is.na(df$cid),])
+  nq <- nrow(Z)
   nc <- nrow(Xstar)
-  n <- nc + nrow(Z)
-
+  n <- nc + nq
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(a11inv <- propertee:::.get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- propertee:::.get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- propertee:::.get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- propertee:::.get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
   ids <- c(df$cid[!is.na(df$cid)],
            paste0(length(df$cid[!is.na(df$cid)]) + seq_len(length(df$cid[is.na(df$cid)])),
                   "*"))
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
-  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
-                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
-                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
-                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
-                  a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
+               crossprod(Reduce(
+                 rbind,
+                 by(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
 
   # with perfect group balance, a22inv %*% a21 should have 0's in the trt row
-  expect_equal((a22inv %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
+  expect_equal((bread. %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(damod, cluster = ids, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- propertee:::.vcov_CR0(dmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
   expect_true(all.equal(vmat,
-                        sandwich::sandwich(damod,
+                        sandwich::sandwich(dmod_as.lmitt,
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
@@ -1488,27 +1586,27 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/damod data overlap", sep = ", "), {
   set.seed(50)
-  NC <- NQ <- 4
+  nclusts_C <- nclusts_Q <- 4
   MI <- 16
 
   # trt variable
-  z <- c(rep(rep(c(0, 1), each = MI), NC / 2),
-         rep(rep(c(0, 1), each = MI), NQ / 2))
+  z <- c(rep(rep(c(0, 1), each = MI), nclusts_C / 2),
+         rep(rep(c(0, 1), each = MI), nclusts_Q / 2))
 
   # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
+  px1 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 55, 90))
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
 
   df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
 
   # generate clustered errors
-  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
+  error_sd <- round(stats::runif(nclusts_C + nclusts_Q, 1, 3), 1)
   icc <- 0.2
   eps <- stats::rnorm(nrow(df))
   Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(NC + NQ) - 1)) {
+  for (i in (seq_len(nclusts_C + nclusts_Q) - 1)) {
     msk <- (1 + i * MI):((i + 1) * MI)
     Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
   }
@@ -1518,62 +1616,65 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   # generate y
   theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + eps
-  df$cid <- c(rep(NA_integer_, NC * MI), rep(seq_len(NQ), each = MI))
+  df$cid <- c(rep(NA_integer_, nclusts_C * MI), rep(seq_len(nclusts_Q), each = MI))
 
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ assigned()
 
   cmod <- lm(cmod_form, df, subset = is.na(cid))
   des <- rct_design(z ~ cluster(cid), df, subset = !is.na(df$cid))
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, subset = !is.na(cid), weights = ate(des),
        offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, data = df, design = des, subset = !is.na(cid),
+                           weights = ate(des), offset = cov_adj(cmod))
 
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(cmod_form, df[!is.na(df$cid),])
   nc <- nrow(Xstar)
-  n <- nc + nrow(Z)
+  nq <- nrow(Z)
+  n <- nc + nq
 
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
   ids <- c(df$cid[!is.na(df$cid)],
            paste0(length(df$cid[!is.na(df$cid)]) + seq_len(length(df$cid[is.na(df$cid)])),
                   "*"))
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   ef_damod <- rbind(ef_damod, matrix(0, nrow = nc, ncol = ncol(ef_damod)))
   ef_cmod <- estfun(cmod)
-  ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
-  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
-                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
-                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
-                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
-                  a11inv %*% t(a21)
-               ) / n)
+  ef_cmod <- rbind(matrix(0, nrow = nq, ncol = ncol(ef_cmod)), ef_cmod)
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
+               crossprod(Reduce(
+                 rbind,
+                 by(ef_damod -  nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- .vcov_CR0(dmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat,
-                        sandwich::sandwich(damod,
+                        sandwich::sandwich(dmod_as.lmitt,
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
@@ -1605,47 +1706,50 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   cmod_idx <- df$z == 0
   cmod <- lm(cmod_form, df[cmod_idx,])
   des <- rct_design(z ~ uoa(uid), df)
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, data = df, design = des, weights = ate(des),
+                           offset = cov_adj(cmod))
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
   nc <- nrow(Xstar)
-  n <- nrow(Z)
+  nq <- n <- nrow(Z)
 
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod),
-               n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
   ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
-  expect_equal(meat <- crossprod(estfun(damod)) / n,
-               (crossprod(ef_damod) -
-                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
-                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
+               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% a11inv %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(damod, cluster = df$uid, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- .vcov_CR0(dmod_as.lmitt, cluster = df$uid, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = df$uid, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+  expect_true(all.equal(vmat, sandwich::sandwich(dmod_as.lmitt, adjust = FALSE),
                         check.attributes = FALSE))
 })
 
@@ -1653,27 +1757,27 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of damod data", sep = ", "), {
   set.seed(50)
-  NC <- NQ <- 4
+  nclusts_C <- nclusts_Q <- 4
   MI <- 16
 
   # trt variable
-  z <- c(rep(rep(c(0, 1), each = MI), NC / 2),
-         rep(rep(c(0, 1), each = MI), NQ / 2))
+  z <- c(rep(rep(c(0, 1), each = MI), nclusts_C / 2),
+         rep(rep(c(0, 1), each = MI), nclusts_Q / 2))
 
   # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
+  px1 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nclusts_C) / 2, 55, 90))
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
 
   df <- data.frame("z" = z, "x1" = x1, "x2" = x2)
 
   # generate clustered errors
-  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
+  error_sd <- round(stats::runif(nclusts_C + nclusts_Q, 1, 3), 1)
   icc <- 0.2
   eps <- stats::rnorm(nrow(df))
   Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(NC + NQ) - 1)) {
+  for (i in (seq_len(nclusts_C + nclusts_Q) - 1)) {
     msk <- (1 + i * MI):((i + 1) * MI)
     Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
   }
@@ -1683,7 +1787,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   # generate y
   theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   df$y <- stats::model.matrix(~ x1 + x2 + z, df) %*% theta + eps
-  df$cid <- rep(seq_len(NC + NQ), each = MI)
+  df$cid <- rep(seq_len(nclusts_C + nclusts_Q), each = MI)
 
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ assigned()
@@ -1691,51 +1795,54 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
 
   cmod <- lm(cmod_form, df[cmod_idx,])
   des <- rct_design(z ~ cluster(cid), df)
-  damod <- as.lmitt(
+  dmod_as.lmitt <- as.lmitt(
     lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, data = df, design = des, weights = ate(des),
+                           offset = cov_adj(cmod))
 
   Xstar <- stats::model.matrix(cmod)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
   nc <- nrow(Xstar)
-  n <- nrow(Z)
+  nq <- n <- nrow(Z)
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar)))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * damod$weights))
-  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * damod$weights, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar)))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * dmod_as.lmitt$weights) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt),
+               n * solve(crossprod(Z * dmod_as.lmitt$weights, Z)))
 
   ids <- df$cid
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
   ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
-  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
-               (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
-                  crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
-                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
-                                               Reduce(rbind, by(ef_damod, ids, colSums))) +
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
-                  a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
+               crossprod(Reduce(
+                 rbind,
+                 by(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meatCL
-  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- .vcov_CR0(dmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat,
-                        sandwich::sandwich(damod,
+                        sandwich::sandwich(dmod_as.lmitt,
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
@@ -1769,52 +1876,57 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   damod_form <- y ~ assigned()
   cmod <- glm(cmod_form, data = df, subset = z == 0, family = stats::binomial())
   des <- rct_design(z ~ uoa(uid), df)
-  damod <- lmitt(
+  dmod_as.lmitt <- lmitt(
     lm(damod_form, data = df, weights = ate(des), offset = cov_adj(cmod))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, data = df, design = des, weights = ate(des),
+                           offset = cov_adj(cmod))
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   Xstar <- stats::model.matrix(cmod)
   fit_wstar <- cmod$weights
   rstar <- cmod$residuals
   mu_etastar <- cmod$family$mu.eta(cmod$linear.predictors)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df)
-  w <- damod$weights
-  r <- damod$residuals
+  w <- dmod_as.lmitt$weights
+  r <- dmod_as.lmitt$residuals
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
   nc <- nrow(Xstar)
-  n <- nrow(Z)
+  nq <- n <- nrow(Z)
 
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
-  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar * sqrt(fit_wstar))))
+  expect_true(all.equal(a21 <- .get_a21(dmod_lmitt.form),
+                        crossprod(Z, X * w * mu_eta) / nq,
+                        check.attributes = FALSE))
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt), n * solve(crossprod(Z * w, Z)))
 
-  ef_damod <- utils::getS3method("estfun", "lm")(damod)
+  ef_damod <- utils::getS3method("estfun", "lm")(dmod_as.lmitt)
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_damod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
   ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
-  expect_equal(meat <- crossprod(estfun(damod)) / n,
-               (crossprod(ef_damod) -
-                  crossprod(ef_damod, ef_cmod) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(ef_cmod, ef_damod) +
-                  a21 %*% a11inv %*% crossprod(ef_cmod) %*% a11inv %*% t(a21)
-               ) / n)
+  expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
+               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
-  expect_equal(meat, sandwich::meat(damod, adjust = FALSE))
+  expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(damod, cluster = seq_len(n), cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- .vcov_CR0(dmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = seq(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
-  expect_true(all.equal(vmat, sandwich::sandwich(damod, adjust = FALSE),
+  expect_true(all.equal(vmat, sandwich::sandwich(dmod_as.lmitt, adjust = FALSE),
                         check.attributes = FALSE))
 })
 
@@ -1823,27 +1935,28 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
                 "imbalanced grps",
                 "damod is a strict subset of cmod data", sep = ", "), {
   set.seed(50)
-  NC <- NQ <- 4
+  nclusts_C <- nclusts_Q <- 4
   MI <- 16
 
   # trt variable
-  z <- c(rep(rep(0, MI * 2), NC / 2),
-         rep(rep(c(0, 1), each = MI), NQ / 2))
+  z <- c(rep(rep(0, MI * 2), nclusts_C / 2),
+         rep(rep(c(0, 1), each = MI), nclusts_Q / 2))
 
   # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((NC + NQ) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((NC + NQ) / 2, 55, 90))
+  px1 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 0.05, 0.94), 1)
+  mux2 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 55, 90))
   x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
   x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
 
-  df <- data.frame("z" = z, "x1" = x1, "x2" = x2, "uid" = paste0("u", seq_len(NC * MI + NQ * MI)))
+  df <- data.frame("z" = z, "x1" = x1, "x2" = x2,
+                   "uid" = paste0("u", seq_len(nclusts_C * MI + nclusts_Q * MI)))
 
   # generate clustered errors
-  error_sd <- round(stats::runif(NC + NQ, 1, 3), 1)
+  error_sd <- round(stats::runif(nclusts_C + nclusts_Q, 1, 3), 1)
   icc <- 0.2
   eps <- stats::rnorm(nrow(df))
   Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(NC + NQ) - 1)) {
+  for (i in (seq_len(nclusts_C + nclusts_Q) - 1)) {
     msk <- (1 + i * MI):((i + 1) * MI)
     Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
   }
@@ -1854,71 +1967,80 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
   py <- 1 / (1 + exp(-scale(stats::model.matrix(~ x1 + x2 + z, df),
                             scale = FALSE) %*% theta))
-  df$y <- rbinom((NC + NQ) * MI, 1, py)
-  df$cid <- rep(seq_len(NC + NQ), each = MI)
+  df$y <- rbinom((nclusts_C + nclusts_Q) * MI, 1, py)
+  df$cid <- rep(seq_len(nclusts_C + nclusts_Q), each = MI)
 
   # set trt to NA for cmod rows
-  df[1:(NC * MI), "z"] <- NA_integer_
+  df[1:(nclusts_C * MI), "z"] <- NA_integer_
 
   # model
   cmod_form <- y ~ x1 + x2
   damod_form <- y ~ assigned()
   cmod <- glm(cmod_form, data = df, family = stats::binomial())
   des <- rct_design(z ~ uoa(cid), df[!is.na(df$z),])
-  damod <- lmitt(
+  dmod_as.lmitt <- lmitt(
     lm(damod_form, data = df[!is.na(df$z),], weights = ate(des), offset = cov_adj(cmod, by = "uid"))
   )
+  dmod_lmitt.form <- lmitt(y ~ 1, data = df[!is.na(df$z),], design = des,
+                           weights = ate(des), offset = cov_adj(cmod, by = "uid"))
 
   ## COMPARE BLOCKS TO MANUAL DERIVATIONS
   Xstar <- stats::model.matrix(cmod)
   fit_wstar <- cmod$weights
   rstar <- cmod$residuals
   mu_etastar <- cmod$family$mu.eta(cmod$linear.predictors)
-  Z <- stats::model.matrix(damod)
+  Z <- stats::model.matrix(dmod_as.lmitt)
   X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df[!is.na(df$z),])
-  w <- damod$weights
-  r <- damod$residuals
+  w <- dmod_as.lmitt$weights
+  r <- dmod_as.lmitt$residuals
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
+  nq <- nrow(Z)
   nc <- nrow(Xstar)
   n <- nrow(Xstar)
 
-  expect_equal(a11inv <- .get_a11_inverse(damod), solve(crossprod(Xstar * sqrt(fit_wstar))))
-  expect_equal(a21 <- .get_a21(damod), crossprod(Z, X * w * mu_eta))
-  expect_equal(a22inv <- sandwich::bread(damod), n * solve(crossprod(Z * w, Z)))
+  expect_equal(a11inv <- .get_a11_inverse(dmod_as.lmitt), nc * solve(crossprod(Xstar * sqrt(fit_wstar))))
+  expect_equal(a21 <- .get_a21(dmod_as.lmitt), crossprod(Z, X * w * mu_eta) / nq)
+  expect_equal(bread. <- sandwich::bread(dmod_as.lmitt), n * solve(crossprod(Z * w, Z)))
 
-  uids_sorted <- sort(df$uid, index.return = TRUE)
-  ids <- factor(df$cid, levels = unique(df$cid))[uids_sorted$ix]
-  Q_ids_sorted <- sort(df$uid[!is.na(df$z)], index.return = TRUE)
-  ef_cmod <- estfun(cmod)[uids_sorted$ix,]
-  unextended_ef_damod <- estfun(as(damod, "lm"))
+  ef_order <- c(gsub("u", "", sort(df$uid[!is.na(df$z)])), rownames(df[is.na(df$z),]))
+  ids <- factor(df$cid, levels = unique(df$cid))[as.numeric(ef_order)]
+  ef_cmod <- estfun(cmod)[ef_order,]
+
+  unextended_ef_damod <- estfun(as(dmod_as.lmitt, "lm"))
   ef_damod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_damod),
                      dimnames = list(rownames = seq_len(nrow(ef_cmod)),
                                      colnames = colnames(unextended_ef_damod)))
-  ef_damod[uids_sorted$x %in% Q_ids_sorted$x,] <- estfun(as(damod, "lm"))[Q_ids_sorted$ix,]
-  expect_equal(meat <- crossprod(Reduce(rbind, by(estfun(damod), ids, colSums))) / n,
+  Q_order <- match(sort(df$uid[!is.na(df$z)]), df$uid[!is.na(df$z)])
+  ef_damod[1L:sum(!is.na(df$z)),] <- estfun(as(dmod_as.lmitt, "lm"))[Q_order,]
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
                (crossprod(Reduce(rbind, by(ef_damod, ids, colSums))) -
                   crossprod(Reduce(rbind, by(ef_damod, ids, colSums)),
-                            Reduce(rbind, by(ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums)),
+                            Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums)),
                                                Reduce(rbind, by(ef_damod, ids, colSums))) +
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(ef_cmod, ids, colSums))) %*%
+                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums))) %*%
                   a11inv %*% t(a21)
                ) / n)
 
   # meat should be the same as the output of sandwich::meatCL
-  expect_equal(meat, sandwich::meatCL(damod, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((a22inv %*% a21)[2,] == 0))
+  expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(damod, cluster = ids, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * a22inv %*% meat %*% a22inv,
+  vmat <- .vcov_CR0(dmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
+                        check.attributes = FALSE))
+
+  # vmat should be the same for both lmitt calls
+  expect_true(all.equal(vmat,
+                        .vcov_CR0(dmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat,
-                        sandwich::sandwich(damod,
+                        sandwich::sandwich(dmod_as.lmitt,
                                            meat. = sandwich::meatCL,
                                            cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
@@ -1942,7 +2064,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod), cadjust=FALSE),
+              50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"), cadjust=FALSE),
               check.attributes = FALSE)
   )
   expect_equal(attr(cr1_vmat, "type"), "CR1")
@@ -1981,7 +2103,7 @@ test_that("HC1/CR1/MB1", {
   # CR1
   expect_true(
     all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
-              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod),
+              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"),
                                                       cadjust=FALSE),
               check.attributes = FALSE)
   )
@@ -2002,48 +2124,100 @@ test_that("type attribute", {
 test_that("#119 flagging vcovDA entries as NA", {
   ### factor moderator variable
   data(simdata)
-  copy_simdata <- simdata
-  copy_simdata$o_fac <- as.factor(copy_simdata$o)
-  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  mod <- lmitt(y ~ as.factor(o), data = simdata, design = des)
+  expect_warning(vc <- vcovDA(mod),
+                 "will be returned as NA: as.factor(o)1, as.factor(o)3",
+                 fixed = TRUE)
 
-  #### lmitt.formula
-  damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des)
-  expect_warning(vc <- vcov(damod), "will be returned as NA: o_fac1, o_fac3")
-
-  # Issue is in subgroup o_fac=1, so *find that* entry in the vcov matrix
-  na_dim <- which(grepl("z._o_fac1", colnames(vc)))
+  # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
+  # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
+  na_dim <- c(1, 3, 5)
+  expect_true(all(
+    abs(diag(sandwich::sandwich(mod, meat. = sandwich::meatCL,
+                                cluster = .make_uoa_ids(mod, "CR")))[na_dim])
+     < .Machine$double.eps)
+  )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
 
-  #### lmitt.lm
-  damod <- lmitt(lm(y ~ o_fac + o_fac:assigned(des), data = copy_simdata), design = des)
-  vc <- vcov(damod)[5:7, 5:7]
+  ### different factor moderator variable (may not produce negative diagonals
+  ### but subgroups with moderator=1:z=0 and moderator=1:z=1 should be
+  ### numerically 0)
+  set.seed(37)
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(5), each = 4))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  expect_warning(vc <- vcovDA(dmod),
+                 "will be returned as NA: modr1",
+                 fixed = TRUE)
 
-  #****************************************
-  ### Setting these to NA manually only for testing purposes!
-  vc[1, ] <- NA
-  vc[, 1] <- NA
-  ### Remove these once #119 is addressed!!!!!
-  #****************************************
+  na_dim <- c(1, 3)
+  expect_true(all(
+    abs(
+      diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL,
+                              cluster = .make_uoa_ids(dmod, "CR")))[na_dim]
+    ) < .Machine$double.eps)
+  )
+  expect_true(all(is.na(vc[na_dim, ])))
+  expect_true(all(is.na(vc[, na_dim])))
+  expect_true(all(!is.na(vc[-na_dim, -na_dim])))
 
-  # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
-  expect_true(all(is.na(vc[1, ])))
-  expect_true(all(is.na(vc[, 1])))
-  expect_true(all(!is.na(vc[-1, -1])))
-
-  ### valid continuous moderator variable
-  damod <- lmitt(y ~ o, data = copy_simdata, design = des)
-  vc <- vcov(damod)
+  ### valid factor moderator variable; vcov diagonals shouldn't be numerically 0
+  ### when using the sandwich package and shouldn't have NA's when using vcovDA
+  ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
+                      y = rnorm(20),
+                      z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
+                      ass_id = rep(seq(10), each = 2))
+  ddes <- rct_design(z ~ unitid(ass_id), ddata)
+  dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
+  vc <- vcovDA(dmod)
+  expect_true(all(
+    abs(diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL,
+                                cluster = .make_uoa_ids(dmod, "CR")))[na_dim])
+    > .Machine$double.eps)
+  )
   expect_true(all(!is.na(vc)))
 
-  ### invalid continuous moderator variable
-  copy_simdata$invalid_o <- 0
-  copy_simdata$invalid_o[(copy_simdata$cid1 == 2 & copy_simdata$cid2 == 2) |
-                           (copy_simdata$cid1 == 2 & copy_simdata$cid2 == 1)] <- 1
-  damod <- lmitt(y ~ invalid_o, data = copy_simdata, design = des)
-  expect_warning(vc <- vcov(damod), "will be returned as NA: invalid_o")
-  na_dim <- which(grepl("z._invalid_o", colnames(vc)))
+  #### lmitt.lm
+  ## we chose to implement special logic for subgroup-level d.f. only
+  ## for lmitt objects created with lmitt.formula; the commented-out
+  ## tests that follow would have tested similar logic for lmitt.lm
+  ##objects. (this distinction is reflected in `lmitt.lm()`'s leaving
+  ## the "moderator" slot empty for DirectAdjusted objects,
+  ## so .check_df_moderator_estimates will return
+  ## the initial vcov matrix, and we need not check it here.)
+  # mod <- lmitt(lm(y ~ as.factor(o) + as.factor(o):assigned(des), data = simdata), design = des)
+  # vc <- vcovDA(mod)[5:7, 5:7]
+  #
+  # #****************************************
+  # ### Setting these to NA manually only for testing purposes!
+  # vc[1, ] <- NA
+  # vc[, 1] <- NA
+  # ### Remove these once #119 is addressed!!!!!
+  # #****************************************
+  #
+  # # Issue is in subgroup o_fac=1, so the first entry in the vcov matrix
+  # expect_true(all(is.na(vc[1, ])))
+  # expect_true(all(is.na(vc[, 1])))
+  # expect_true(all(!is.na(vc[-1, -1])))
+  #
+  # ### valid continuous moderator variable
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  vc <- vcov(damod)
+  expect_true(all(!is.na(vc)))
+  #
+  # ### invalid continuous moderator variable
+  simdata <- simdata[(simdata$cid1 == 2 & simdata$cid2 == 2) |
+                      (simdata$cid1 == 2 & simdata$cid2 == 1),]
+  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  damod <- lmitt(y ~ o, data = simdata, design = des)
+  expect_warning(vc <- vcov(damod), "will be returned as NA: o")
+  na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
@@ -2066,12 +2240,6 @@ test_that(".check_df_moderator_estimates other warnings", {
                                              cbind(y = simdata$y, z = simdata$z),
                                              envir = parent.frame()),
                "`data` must be a dataframe")
-
-  # column names of vmat don't match moderator variable of model
-  expect_warning(
-    expect_warning(.check_df_moderator_estimates(vmat, damod, cluster_ids),
-                   "will be returned as NA"),
-    "will not be returned as NA")
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
@@ -2109,6 +2277,20 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
   expect_true(all.equal(v1, v2))
 
+})
+
+test_that("model-based SE's cluster units of assignment in small blocks at block level", {
+  desdata <- data.frame(bid = rep(c(1, 2), each = 20),
+                        uoa_id = c(rep(c(1, 2), each = 10), rep(seq(3, 6), each = 5)),
+                        a = c(rep(c(0, 1), each = 10), rep(rep(c(0, 1), each = 5), 2)))
+  desdata$y <- rnorm(40)
+  des <- rct_design(a ~ unitid(uoa_id) + block(bid), desdata)
+  suppressMessages(mod <- lmitt(y ~ 1, design = des, data = desdata))
+  vc_w_small_block_clusters <- vcovDA(mod)
+  vc_w_no_small_block_clusters <- .vcov_CR0(mod,
+                                            cluster = .make_uoa_ids(mod, "DB"),
+                                            by = "uoa_id")
+  expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
 })
 
 test_that("vcovDA does not when asking for design-based SE for model
@@ -2279,4 +2461,3 @@ test_that(".get_phi_tilde returns correct grave{phi}
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(damod_abs, db = TRUE)))
 })
-

@@ -4,67 +4,68 @@
 \alias{.get_a22_inverse}
 \alias{.get_a11_inverse}
 \alias{.get_a21}
+\alias{.get_tilde_a22_inverse}
+\alias{.get_tilde_a21}
 \title{(Internal) Compute variance blocks}
 \usage{
-.get_a22_inverse(x)
+.get_a22_inverse(x, ...)
 
 .get_a11_inverse(x)
 
 .get_a21(x)
+
+.get_tilde_a22_inverse(x, ...)
+
+.get_tilde_a21(x)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model}
+
+\item{...}{
+  Arguments passed on to \code{\link[=.get_a22_inverse]{.get_a22_inverse}}, \code{\link[=.get_a21]{.get_a21}}
+  \describe{
+    \item{\code{}}{}
+  }}
 }
 \value{
-\code{.get_a22_inverse()}: A \eqn{2\times 2} matrix where the
-dimensions are given by the intercept and treatment variable terms in the
-ITT effect model
+\code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
+\eqn{k\times k} matrix where k denotes the number of parameters in the ITT
+effect model
 
 \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-dimensions are given by the number of terms in the covariance adjustment model
-including an intercept
+\eqn{p} is the dimension of the covariance adjustment model including an
+intercept
 
-\code{.get_a12()}: A \eqn{2\times p} matrix where the number of
-rows are given by intercept and treatment variable terms in the ITT effect
-model, and the number of columns are given by the number of terms
-in the covariance adjustment model
+\code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
+where the number of rows are given by the dimension of the ITT effect
+estimating equations and the number of columns are given by the number of
+terms in the covariance adjustment model
 }
 \description{
 (Internal) Compute variance blocks
 }
 \details{
-The \bold{A22 block} is the diagonal element of the inverse expected
-Fisher Information matrix corresponding to the treatment estimate. As shown
-in the Details of \code{.get_b22()}, the estimating equations for a
-generalized linear model with a canonical link function can be written as
-\deqn{\psi_i = (r_i / Var(y_i)) * (d\mu_i/d\eta_i) * x_i} The expected
-information matrix A22 is then the negative Jacobian of \eqn{\psi_i}, which
-by likelihood theory is the variance-covariance matrix of \eqn{\psi_i}:
-\deqn{\psi_{i}\psi_{i}^{T} = E[(r_i / Var(y_i) * (d\mu_i/d\eta_i))^{2}] *
-  x_ix_i' = (d\mu_i/d\eta_i)^{2} / Var(y_i) * x_ix_i'} Considering the whole
-sample, this can be expressed in matrix form as \eqn{X'WX}. The output of
-this function is the inverse of the diagonal element corresponding to the
-treatment estimate.
+\eqn{A_{22}^{-1}} is the inverse observed Fisher information of the
+ITT effect estimating equations scaled by \eqn{n_{\mathcal{Q}}}.
 
-The \bold{A11 block} is the \eqn{p\times p} matrix corresponding to
-the unscaled inverse of the observed Fisher information of the covariance
-adjustment model. The observed information is given by the estimate of the negative
-Jacobian of the model's estimating equations. The unscaled version provided
-here divides by the number of observations used to fit the covariance
-adjustment model.
+\eqn{A_{11}^{-1}} is the inverse of the gradient of the covariance
+adjustment model estimating equations scaled by \eqn{n_{\mathcal{C}}^{-1}}.
 
-The \bold{A21 block} is the block of the sandwich variance estimator
-corresponding to the gradient of the ITT effect model with respect
-to the covariates. Some of the information needed for this calculation is
-stored in the \code{DirectAdjusted} object's \code{SandwichLayer} offset. This
-block is the crossproduct of the prediction gradient and the gradient of
-the conditional mean vector for the ITT effect model summed to the
-cluster level. In other words, we take this matrix to be \deqn{\sum(d\psi_i
-  / d\alpha) = -\sum(w_i/\phi) * (d\mu(\eta_i) / d\eta_i) *
-  (d\upsilon(\zeta_i) / d\zeta_i) * (x_i c_i)x_i'} where \eqn{\mu} and
-\eqn{\eta_i} are the conditional mean function and linear predictor for the
-ith cluster in the ITT effect model, and \eqn{\upsilon} and
-\eqn{\zeta_i} are the conditional mean function and linear predictor for
-the ith cluster in the covariance adjustment model.
+\eqn{A_{21}} is the gradient of the ITT effect estimating equations
+scaled by \eqn{n_{\mathcal{Q}}^{-1}} taken with respect to the covariance
+adjustment model parameters. This matrix is the crossproduct of the
+prediction gradient for the units of observation in \eqn{\mathcal{Q}} and
+the model matrix of the ITT effect estimating eqations.
+
+\eqn{\tilde{A}_{22}^{-1}} is the inverse observed Fisher
+information of the ITT effect estimating equations scaled by \eqn{n}. This
+function wraps around the function \code{.get_a22_inverse()} that produces
+\eqn{A_{22}^{-1}}, where \eqn{A_{22}=\frac{n}{n_{\mathcal{Q}}}\tilde{A}_{22}}.
+
+\eqn{\tilde{A}_{21}} is the gradient of the ITT effect estimating
+equations scaled by \eqn{n^{-1}} taken with respect to the covariance
+adjustment model parameters. This function wraps around \code{.get_a21()},
+which produces \eqn{A_{21}}, where \eqn{A_{21} = \frac{n_{\mathcal{Q}}}{n}
+  \tilde{A}_{21}}.
 }
 \keyword{internal}

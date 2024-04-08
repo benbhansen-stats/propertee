@@ -1,21 +1,19 @@
-# propertee: **P**rognostic **R**egression **O**ffsets with **P**ropagation of **ER**rors, for **T**reatment **E**ffect **E**stimation
 
+# propertee: **P**rognostic **R**egression **O**ffsets with **P**ropagation of **ER**rors, for **T**reatment **E**ffect **E**stimation <img src="man/figures/logo.png" align="right" alt="propertee website" style="width: 150px;"/>
 
 <!-- badges: start -->
 [![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
 <!-- badges: end -->
 
-## Overview
-
 Propertee enables flexible direct adjustment with design-informed standard errors
 and optional prior covariance adjustment.
 
-Random trials often utilize clustering and blocking in assigning treatment
-status as a way to simplify implementation. This design information must be
-utilized in future analyses. Using Propertee, a user can generate a Design object
-which will keep track of the design structure.
+Random trials often utilize units of assignment and blocking in assigning
+treatment status as a way to simplify implementation. This design information
+must be utilized in future analyses. Using Propertee, a user can generate a
+Design object which will keep track of the design structure.
 
-    des <- rct_design(txt ~ cluster(teacher) + block(school), data = teacherdata)
+    des <- rct_design(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
 
 (Also supported are observational studies (`obs_design`) and regression
 discontinuity designs (`rdd_design` which requires a `forcing()` variable as
@@ -39,7 +37,7 @@ Optionally, we can also include a covariance adjustment model through the
        offset = cov_adj(covadjmod, data = studentdata)
     )
 
-# Contributing
+## Contributing
 
 You may use RStudio to develop for propertee, by opening the `propertee.Rproj` file.
 We suggest you ensure all required dependencies are installed by running

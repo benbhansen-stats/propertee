@@ -5,27 +5,35 @@
 \title{Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
 argument}
 \usage{
-.make_uoa_ids(x, cluster = NULL, ...)
+.make_uoa_ids(x, vcov_type, cluster = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} object}
 
+\item{vcov_type}{a string indicating model-based or design-based covariance
+estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
+indicating model-based estimation.}
+
 \item{cluster}{character vector or list; optional. Specifies column names that appear
 in both the covariance adjustment dataframe C and quasiexperimental dataframe
 Q. Defaults to NULL, in which case unit of assignment columns indicated in
-the Design will be used to generate clustered covariance estimates.}
+the Design will be used to generate clustered covariance estimates. If there
+are multiple clustering columns, they are concatenated together for each row
+and separated by "_".}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|Q| + |C} \ \eqn{Q|}
+A vector of length \eqn{|\mathcal{Q}| + |\mathcal{C} \ \mathcal{Q}|}
 }
 \description{
 Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
 argument
 }
 \details{
-These ID's should align with the output of \code{estfun.DirectAdjusted},
-which stacks the rows from Q atop the rows in C that don't overlap with Q.
+These ID's align with the output of \code{estfun.DirectAdjusted}. If
+a \code{by} argument was used for \code{.order_samples}, \code{.make_uoa_ids}
+will return the values of the columns specified in \code{cluster} associated
+with that ordering.
 }
 \keyword{internal}

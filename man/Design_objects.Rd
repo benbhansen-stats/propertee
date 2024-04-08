@@ -21,7 +21,8 @@ obs_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 object}
 
 \item{dichotomy}{optional, a formula defining the dichotomy of the treatment
-variable if it isn't already 0/1 or \code{logical}. See details.}
+variable if it isn't already 0/1 or \code{logical}. See the
+\code{dichotomy()} function for details.}
 
 \item{na.fail}{If \code{TRUE} (default), any missing data found in the
 variables specified in \code{formula} (excluding treatment) will trigger
@@ -59,41 +60,7 @@ argument must be used to identify the treatment and control groups. The
 \code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
 \code{obs_design()}) all support the \code{dichotomy} argument, or instead
 \code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
-
-The \code{dichotomy} argument should be a formula consisting of a
-conditional statement on both the left-hand side (identifying treatment
-levels associated with "treatment") and the right hand side (identifying
-treatment levels associated with "control"). For example, if your treatment
-variable was called \code{dose}, you might write:
-
-\code{dichotomy = dose > 250 ~ dose <= 250}
-
-The conditionals need not assign all values of treatment to control or
-treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
-\code{200 <= dose <= 300} to either treatment or control. This would be
-equivalent to manually generating a binary variable with \code{NA} whenever
-\code{dose} is between 200 and 300. Units not assigned to treatment or
-control will be maintained in the Design for proper standard error
-calculations.
-
-The period (\code{.}) can be used to assign all other units of assignment.
-For example, we could have written the above example as
-
-\code{dichotomy = dose > 250 ~ .}
-
-or
-
-\code{dichotomy = . ~ dose <= 250}
-
-The \code{dichotomy} formula supports all Relational Operators, Logical
-Operators, and \code{\%in\%}.
-
-Note that you can specify a conditional logic treatment in the formula (e.g.
-\code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
-instead passing the treatment variable directly and using \code{dichotomy}.
-Otherwise changing the dichotomy will require re-creating the Design,
-instead of simply using \code{dichotomy(design) <-} or passing
-\code{dichotomy} to \code{ate()} or \code{ett()}.
+See \code{dichotomy()} for more details on specifying a \code{dichotomy}.
 }
 \examples{
 data(simdata)

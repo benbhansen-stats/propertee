@@ -5,9 +5,9 @@
 ##'
 ##' The \code{form} specifies what columns of the data are needed. For current
 ##' use cases (\code{ate()}/\code{ett()} and \code{assigned()}), this will be
-##' only the unit of assignment variables, so e.g. \code{form = ~ clustervar},
-##' to enable merging of UOA level variables to the model data. However, this
-##' can easily be expanded if other variables are needed.
+##' only the unit of assignment variables, so e.g. \code{form = ~ uoavar}, to
+##' enable merging of UOA level variables to the model data. However, this can
+##' easily be expanded if other variables are needed.
 ##' @title (Internal) Locate data in call stack
 ##' @param which_fn Identify calling function, "weights" or "assigned", helps
 ##'   separate logic for the two functions.

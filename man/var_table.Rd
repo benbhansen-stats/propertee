@@ -2,7 +2,7 @@
 % Please edit documentation in R/Design.R
 \name{var_table}
 \alias{var_table}
-\title{Table of variables identifying a \code{Design}}
+\title{Table of variable names and their role in the \code{Design}.}
 \usage{
 var_table(design, compress = TRUE, report_all = FALSE)
 }
@@ -19,14 +19,16 @@ don't exist in the \code{Design}? Default \code{FALSE}.}
 a \code{matrix} of variables in the \code{Design} structure
 }
 \description{
-Returns a table containing the variables identified in each structure
+Generates a table identifying each element of the structure of
+the \code{Design} (e.g. treatment, unit of analysis, etc) and which
+variable(s) are associated with that element.
 }
 \details{
-When \code{compress} is \code{TRUE}, the result will always have two
-columns. When \code{FALSE}, the result will have number of columns equal to
-the largest number of variables in a particular role, plus one. E.g., a call
-such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
-in the output matrix with \code{compress = FALSE}.
+When \code{compress} is \code{TRUE}, the result will always have
+two columns. When \code{FALSE}, the result will have number of columns
+equal to the largest number of variables in a particular role, plus one.
+E.g., a call such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will
+have 4+1=5 columns in the output matrix with \code{compress = FALSE}.
 
 When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
 rows (when the \code{design} is an RCT or Obs) or 4 rows (when the

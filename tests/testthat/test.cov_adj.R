@@ -189,7 +189,7 @@ test_that("cov_adj as offset specified w/ no newdata nor design, no weights, dat
 test_that("cov_adj with named `by` argument called within `lmitt`", {
   on.exit(Q_wo_nulls <- Q_wo_nulls[, !(colnames(Q_wo_nulls) == "obs_id")])
   Q_wo_nulls$obs_id <- seq_len(nrow(Q_wo_nulls))
-  
+
   cmod <- lm(y ~ x, Q_wo_nulls)
   des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
   m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
@@ -235,7 +235,7 @@ test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmo
   C_data <- Q_wo_nulls[, !(colnames(Q_wo_nulls) %in% c("cid1", "cid2"))]
   C_data$c1 <- Q_wo_nulls$cid1
   C_data$c2 <- Q_wo_nulls$cid2
-  
+
   cmod <- lm(y ~ x, Q_wo_nulls)
   des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
 
@@ -249,15 +249,31 @@ test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmo
     ),
     "Could not find quasiexperimental data"
   )
-  
+
   test_ca(ca, cmod, Q_wo_nulls)
+})
+
+test_that("cov_adj coltypes for treatment", {
+  set.seed(52)
+  n <- 10
+  cmod_data <- data.frame(x = rnorm(n), y = rnorm(n), uid = 10 + seq_len(10))
+  cmod <- lm(y ~ x, cmod_data)
+  desdata <- data.frame(x = rnorm(n), a = factor(rep(c(0, 1), each = 5)),
+                        uid = seq_len(10))
+  des <- rct_design(a ~ unitid(uid), desdata)
+  ca <- cov_adj(cmod, desdata, des)
+  expect_true(inherits(ca, "SandwichLayer"))
+  
+  desdata$a <- as.character(desdata$a)
+  des <- rct_design(a ~ unitid(uid), desdata)
+  expect_warning(cov_adj(cmod, desdata, des))
 })
 
 test_that(paste(".update_ca_model_formula with NULL `by` and NULL `design` returns",
                 "returns original model formula"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
-  
+
   model <- lm(y ~ x, df)
   expect_equal(deparse(.update_ca_model_formula(model)), "y ~ x")
 })
@@ -265,7 +281,7 @@ test_that(paste(".update_ca_model_formula with NULL `by` and NULL `design` retur
 test_that(paste(".update_ca_model_formula with named `by`"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
-  
+
   model <- lm(y ~ x, df)
   expect_equal(deparse(.update_ca_model_formula(model, by = c("uoa1" = "uid"))),
                "y ~ x + uoa1")
@@ -274,7 +290,7 @@ test_that(paste(".update_ca_model_formula with named `by`"), {
 test_that(paste(".update_ca_model_formula with unnamed `by`"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
-  
+
   model <- lm(y ~ x, df)
   expect_equal(deparse(.update_ca_model_formula(model, by = "uid")),
                "y ~ x + uid")
@@ -285,7 +301,7 @@ test_that(paste(".update_ca_model_formula with NULL `by` and non-NULL `design`")
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
   design_df <- data.frame(z = rep(c(0, 1), each = 5), uid = seq_len(10))
   des <- rct_design(z ~ unitid(uid), design_df)
-  
+
   model <- lm(y ~ x, df)
   expect_equal(deparse(.update_ca_model_formula(model, design = des)),
                "y ~ x + uid")
@@ -296,7 +312,7 @@ test_that(paste(".update_ca_model_formula with non-NULL `by` and non-NULL `desig
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
   design_df <- data.frame(z = rep(c(0, 1), each = 5), clust = rep(c(1, 2), each = 5), uid = seq_len(10))
   des <- rct_design(z ~ cluster(clust), design_df)
-  
+
   model <- lm(y ~ x, df)
   expect_equal(deparse(.update_ca_model_formula(model, by = "uid", design = des)),
                "y ~ x + clust + uid")
@@ -477,4 +493,35 @@ test_that("Basics of replacing treatment variable with reference level", {
   ## expect_true(all(manual == ca))
   # Current build does NOT allow factor treatment so this will fail
 
+})
+
+test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
+  n <- 1000
+  Rslope <- 0.5
+  Xslope <- 0.2
+  R <- sample(seq(-1,1,length.out=30),n,replace=TRUE)
+  Z <- R>0
+  x <- rnorm(n)
+  P <- plogis(Rslope*R+Xslope*x)
+
+  Y <- rbinom(1000,1,P)
+  dat <- data.frame(R=R,Z=Z,x=x,Y=Y)
+
+  dat$id=1:nrow(dat)
+  des=rd_design(Z~forcing(R)+unitid(id),data=dat)
+
+  modHet=glm(Y~R+Z*x,family=binomial,data=dat)
+
+  ## propertee cov_adj
+  ##(offset is in the @.Data slot)
+  ca=cov_adj(modHet, newdata=dat,design=des )
+
+  ##what we want cov_adj to be
+  mm0 = model.matrix(modHet)
+  mm0[,'ZTRUE'] <- 0
+  mm0[,'ZTRUE:x'] <- 0
+
+  myca=plogis(crossprod(t(mm0),coef(modHet))[,1])
+
+  expect_true(all.equal(myca,ca@.Data, check.attributes=FALSE, check.names=FALSE))
 })

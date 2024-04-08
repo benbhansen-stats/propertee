@@ -26,8 +26,14 @@ setValidity("Design", function(object) {
          !is.character(tr)) && !is.logical(tr)) {
     return("Invalid treatment; must be factor, numeric or character")
   }
-  if (length(unique(tr)) < 2) {
+  if (length(table(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
+  }
+  if (is_dichotomized(object)) {
+    if (length(table(treatment(object, binary = TRUE))) < 2) {
+      return(paste("Invalid treatment and/or dichotomy; dichotomized treatment",
+                   "can not be constant"))
+    }
   }
   if (ncol(object@structure) != length(object@column_index)) {
     return("@column_index does not agree with number of columns in @structure")
@@ -240,41 +246,7 @@ setValidity("Design", function(object) {
 ##' \code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
 ##' \code{obs_design()}) all support the \code{dichotomy} argument, or instead
 ##' \code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
-##'
-##' The \code{dichotomy} argument should be a formula consisting of a
-##' conditional statement on both the left-hand side (identifying treatment
-##' levels associated with "treatment") and the right hand side (identifying
-##' treatment levels associated with "control"). For example, if your treatment
-##' variable was called \code{dose}, you might write:
-##'
-##' \code{dichotomy = dose > 250 ~ dose <= 250}
-##'
-##' The conditionals need not assign all values of treatment to control or
-##' treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
-##' \code{200 <= dose <= 300} to either treatment or control. This would be
-##' equivalent to manually generating a binary variable with \code{NA} whenever
-##' \code{dose} is between 200 and 300. Units not assigned to treatment or
-##' control will be maintained in the Design for proper standard error
-##' calculations.
-##'
-##' The period (\code{.}) can be used to assign all other units of assignment.
-##' For example, we could have written the above example as
-##'
-##' \code{dichotomy = dose > 250 ~ .}
-##'
-##' or
-##'
-##' \code{dichotomy = . ~ dose <= 250}
-##'
-##' The \code{dichotomy} formula supports all Relational Operators, Logical
-##' Operators, and \code{%in%}.
-##'
-##' Note that you can specify a conditional logic treatment in the formula (e.g.
-##' \code{rct_design(dose > 250 ~ unitOfAssignment(...}) but we would suggest
-##' instead passing the treatment variable directly and using \code{dichotomy}.
-##' Otherwise changing the dichotomy will require re-creating the Design,
-##' instead of simply using \code{dichotomy(design) <-} or passing
-##' \code{dichotomy} to \code{ate()} or \code{ett()}.
+##' See \code{dichotomy()} for more details on specifying a \code{dichotomy}.
 ##'
 ##' @title Generates a \code{Design} object with the given specifications.
 ##' @param formula defines the \code{Design} components
@@ -282,7 +254,8 @@ setValidity("Design", function(object) {
 ##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
 ##' @param dichotomy optional, a formula defining the dichotomy of the treatment
-##'   variable if it isn't already 0/1 or \code{logical}. See details.
+##'   variable if it isn't already 0/1 or \code{logical}. See the
+##'   \code{dichotomy()} function for details.
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
@@ -448,13 +421,17 @@ var_names <- function(x, type) {
               index = index))
 }
 
-##' Returns a table containing the variables identified in each structure
+##' @title Table of variable names and their role in the \code{Design}.
 ##'
-##' When \code{compress} is \code{TRUE}, the result will always have two
-##' columns. When \code{FALSE}, the result will have number of columns equal to
-##' the largest number of variables in a particular role, plus one. E.g., a call
-##' such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will have 4+1=5 columns
-##' in the output matrix with \code{compress = FALSE}.
+##' @description Generates a table identifying each element of the structure of
+##'   the \code{Design} (e.g. treatment, unit of analysis, etc) and which
+##'   variable(s) are associated with that element.
+##'
+##' @details When \code{compress} is \code{TRUE}, the result will always have
+##'   two columns. When \code{FALSE}, the result will have number of columns
+##'   equal to the largest number of variables in a particular role, plus one.
+##'   E.g., a call such as \code{rct_design(z ~ unitid(a, b, c, d) ...} will
+##'   have 4+1=5 columns in the output matrix with \code{compress = FALSE}.
 ##'
 ##' When \code{report_all} is \code{TRUE}, the matrix is guaranteed to have 3
 ##' rows (when the \code{design} is an RCT or Obs) or 4 rows (when the

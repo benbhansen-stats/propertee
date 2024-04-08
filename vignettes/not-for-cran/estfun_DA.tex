@@ -46,16 +46,23 @@ single element.  (Additional structure: any clusters $c, c' \in \mathcal{C}
 \cup \mathcal{Q}$ that are distinct, $c  \neq c'$, are nonoverlapping, $c \cap c' = \emptyset$.) This permits us to write $\mathcal{Q}$ for the
 quasiexperimental sample as expressed in terms of clusters, and $\bigcup
 \mathcal{Q}$ for the collection of all elements belonging to the
-quasiexperimental sample.
+quasiexperimental sample.  
 
-There are random estimating functions $\Phi(\mathbf{Z}; \beta ) =
-[\phi(\vec{Z}_{i};
-\beta) : i]'$, an $n$ (number of elements) by $p$ matrix,  and 
-       $\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i};
-       \rho, \beta): i]'$, \textit{also} an $n$ by $k$ matrix, with 
-       $\phi(\vec{Z}_{i}; \beta)$ equal to the product of the covariance
-       regression estimating functions with $\indicator{i \in \bigcup \mathcal{C}}$
-       and $\grave{\Psi}(\cdot; \cdot)$ the estimating functions defining the comparison regression.  That is, for now:
+Denote by $n_{\mathcal{C}}= \# \left( \bigcup \mathcal{C}\right)$,
+$n_{\mathcal{Q}}= \# \left( \bigcup \mathcal{Q}\right)$ and
+$n = \# \left[\left( \bigcup \mathcal{C}\right) \cup \left(\bigcup
+    \mathcal{Q}\right)\right]$ the numbers of elements in the 3
+overlapping samples. There are random estimating functions
+$\Phi(\mathbf{Z}; \beta ) = [\indicator{ i \in
+  \mathcal{C}}\phi(\vec{Z}_{i}; \beta) : i]'$ that define the covariance
+regression, padding with rows of zeroes in
+the complement of the covariance sample so
+as to have dimension $n \times p$ rather than $n_{\mathcal{C}}\times
+p$; and estimating functions 
+$\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i}; \rho,
+\beta): i]'$, padded with zeroes on the complement of $\bigcup
+\mathcal{Q}$ in order also to have row extent $n$, to define the
+treatment condition comparison.  For now, let
 \begin{equation}
          \label{eq:5}
          \grave{\psi}(\vec{Z}_{i}; \rho, \beta) =\\
@@ -67,7 +74,7 @@ There are random estimating functions $\Phi(\mathbf{Z}; \beta ) =
                   \vdots \\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[k]}] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
                   \rho_{k}]\indicator{A_{i}=k}\\
-                \end{array}\right)
+                \end{array}\right),
 \end{equation}
 where
 \begin{itemize}
@@ -89,13 +96,13 @@ $\psi(\cdot)$ with equivalent solutions that is better aligned with
 to add block-specific intercepts.)
 The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
-\subsection{Goal}
+\subsection{Goal} \label{sec:goal}
 We aim to define \texttt{estfun.DirectAdjusted()} associating
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
-\begin{equation*}
-  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}',
-\end{equation*}
+\begin{equation} \label{eq:22}
+  \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}^{t},
+\end{equation}
 and a corresponding \texttt{bread.DirectAdjusted()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
@@ -203,37 +210,117 @@ are taken as fixed but $A_{i}$ and/or potential outcomes $(Y_{i}[a]:
 a=0, \ldots, k)$ may be random according as we follow a design- or
 model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Write
-  \begin{align*}
-%    \label{eq:13}
+  \begin{align}
+\nonumber
     A(\alpha, \beta, \tau) &= \left(
       \begin{array}{cc}
         n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
         \mathcal{C}}\EE [\nabla_{\beta}\phi(\vec{Z}_{i};
         \beta )]&0\\
-        n^{-1}\sum_{j\in \bigcup
+        n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{Z}_{j};
-        \tau, \alpha, \beta )]  & n^{-1}\sum_{j\in \bigcup
+        \tau, \alpha, \beta )]  & n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
         \tau, \alpha, \beta )]
       \end{array}
-    \right)\\
+                                  \right)\\
+    \label{eq:13}    
     &\eqdef \left(
       \begin{array}{cc}
         A_{11}(\beta)& 0\\
         A_{21}(\beta) & A_{22}(\alpha, \tau)
       \end{array}
 \right),
-  \end{align*}
+  \end{align}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
 that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
-  \begin{align*}
-   \tilde{\beta}_{(n)}
-    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
-  \quad \text{and}\\
-    \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
-    \defeq& \left(\begin{array}{c}\alpha_{(n)}\\
+  \begin{align}
+    \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
+    \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
                     \tau_{(n)} \end{array}\right)
     + A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
+    \begin{array}{c}
+      n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\\
+      n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \tau_{(n)},\beta_{(n)} )
+    \end{array}
+    \right),\, \text{i.e.} \nonumber \\
+   \nonumber \\
+       \tilde{\beta}_{(n)}
+    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
+  \, \text{and} \nonumber\\
+\left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)               &=\left(\begin{array}{c}\alpha_{(n)}\\
+                         \tau_{(n)} \end{array}\right) +
+    A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:20}\\
+    & \left[
+                 n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],\nonumber
+\end{align}
+known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
+
+The constants $n_{\mathcal{C}}$ and
+$n_{\mathcal{Q}}$ in the above are somewhat
+arbitrary.  Provided they're positive, replacing them throughout with any other
+positive constants defines the same linearizations (although there may
+be numerical differences).  
+Using the numbers of elements (not
+clusters) in the covariance and in the comparison samples,
+respectively, aligns the expressions with the computing procedures
+generating $\hat\beta$, $\hat\alpha$ and $\hat\tau$ from specific
+datasets, but our strategy for invoking the \texttt{sandwich} package
+in standard error computations calls for  $\psi()$ \texttt{estfun}'s
+of dimension $n$ rather than $n_{\mathcal{Q}}$.%
+\footnote{%
+  The constant that \texttt{sandwich}
+  functions will select for the covariance model is $n_{\mathcal{C}}$, given its sample
+  size.  It's incumbent on us to supply \texttt{sandwich::estfun()}
+  and/or \texttt{sandwich::bread()} methods for
+  \texttt{DirectAdjusted} objects with compatible implicit scaling
+  constants. \texttt{sandwich::bread()} and
+  \texttt{sandwich::breadCL()} take the scaling constant to be the
+  reciprocal of the number of rows in whatever
+  \texttt{sandwich::estfun()} returns; it will fall to us to ensure
+  our $\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
+ This leads us to
+define
+\begin{align*}
+  \tilde{A}_{21}(\beta) &= n^{-1} \sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{Z}_{j};
+        \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n} {A}_{21}(\beta),\\
+  \tilde{A}_{22}(\alpha, \tau) &= n^{-1} \sum_{j\in \bigcup
+        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
+        \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n}
+                                 {A}_{22}(\alpha, \tau),\\
+  \tilde{A} &= \left(
+              \begin{array}{cc}
+                A_{11} & 0 \\
+                \tilde{A}_{21} & \tilde{A}_{22}\\
+              \end{array}
+\right).
+\end{align*}
+Substitution into  expression \eqref{eq:20} for
+$\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
+\begin{align}
+      \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)         &=\left(\begin{array}{c}\alpha_{(n)}\\
+                         \tau_{(n)} \end{array}\right) +
+    \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:21}\\
+    & \left[
+                 n^{-1}\sum_{j\in \bigcup
+                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \tau_{(n)},\beta_{(n)} ) -
+      \tilde{A}_{21}(\beta_{(n)})
+      {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
+      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right] \nonumber
+\end{align}
+and in turn
+\begin{equation*}
+\left(\begin{array}{c}\tilde{\beta}_{(n)}\\ \tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
+    = \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
+                    \tau_{(n)} \end{array}\right)
+    + \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
       \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\\
@@ -241,38 +328,8 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
-\right)\\
-    \\
-               &=\left(\begin{array}{c}\alpha_{(n)}\\
-                         \tau_{(n)} \end{array}\right) +
-    A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \\
-    & \left[
-                 n^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],
-\end{align*}
-known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
-
-
-Observe that these expressions define the same $\tilde{\beta}_{(n)}$ and $\tilde{\tau}_{(n)}$
-  irrespective of the choice of nonzero constants $n_{\mathcal{C}}$
-  and $n$.  To promote alignment with existing \texttt{sandwich}
-  functions%
-  \footnote{%
-    This $n_{\mathcal{C}}$ is the constant that \texttt{sandwich} functions
-will select for the covariance model, given its sample size.  It's
-incumbent on us to supply \texttt{sandwich::estfun()} and/or
-\texttt{sandwich::bread()} methods for \texttt{DirectAdjusted} objects
-with compatible implicit
-scaling constants. \texttt{sandwich::bread()} and
-\texttt{sandwich::breadCL()} take the scaling constant to be the
-reciprocal of the number of rows in whatever
-\texttt{sandwich::estfun()} returns; it will fall to us to ensure our
-$\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
-, we set $n_{\mathcal{C}}$ and $n$ to be the number of elements
-(not clusters) in the covariance and in the combined samples,
-respectively.
-
+\right).
+\end{equation*}
 Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
 $|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
 $A_{11}(\beta_{(n)})$ and $A_{22}(\beta_{(n)}, \tau_{(n)})$ are nonsingular
@@ -284,20 +341,20 @@ Then we have the covariance approximation characteristic of M-estimation,
 \begin{align*} \operatorname{Cov}([\hat\beta',\hat\alpha', \hat\tau']) \approx&
   \operatorname{Cov}([\tilde{\beta}_{(n)}',\hat{\alpha}_{(n)}',\tilde{\tau}_{(n)}'])\\
   &=
-    A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)}) \times \\
+    \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)}) \times \\
   &\hspace{1.5em} \operatorname{Cov}\left(
      \begin{array}{c}
        n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)} )\\
        n^{-1}\sum_{j=1}^{n}\psi(\vec{Z}_{j}; \tau_{(n)}, \alpha_{(n)}, \beta_{(n)} )
      \end{array}
     \right)
-  A^{-t}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})
+  \tilde{A}^{-t}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})
 \end{align*}
 (recalling that we have so defined $\psi(\cdot)$ that $\psi(\vec{Z}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
 
 
-To help mark our nonstandard scaling constants, as well as the difference from the package's first implementations of these estimating equation stacks (which took pains to avoid scaling constants), 
+To help mark the difference from the package's first implementations of these estimating equation stacks (which took pains to avoid scaling constants), 
 meat matrices will be denoted with the letter ``M,'' not ``B.''
 We have
 \[
@@ -316,35 +373,34 @@ We have
 where
 \[
   \begin{array}{cc}
-    M_{11}  = n_{\mathcal{C}}^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
+    M_{11}  = \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
              \mathcal{C}} \phi(\vec{Z}_{i}; \beta )] &
                                                                   M_{12}=
-                                                                  (n_{\mathcal{C}}n)^{-1/2} \operatorname{Cov}[\sum_{i\in \bigcup
+                                                                  \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
              \mathcal{C}}\phi(\vec{Z}_{i};
                                                                   \beta
-                                                                  ), \sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
-    M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{j}\psi(\vec{Z}_{j};
+                                                                  ), n^{-1/2}\sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
+    M_{21}=M_{12}' & M_{22} = \operatorname{Cov}[n^{-1/2}\sum_{j}\psi(\vec{Z}_{j};
                      \tau, \alpha, \beta )] .
     \end{array}
 \]
-Note that $M_{11}$ is a natural meat matrix, while $M_{22}$'s and
-$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than $(\# \bigcup
-\mathcal{Q})^{-1}$ (or just $(\# \mathcal{Q})^{-1}$) in $M_{22}$'s
-case and $(n_{\mathcal{C}}n)^{-1/2}$ not $[n (\# \bigcup
-\mathcal{Q})]^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
+Note that $M_{11}$ is scaled just as in estimates of $\operatorname{Cov}(\hat\beta)$, while $M_{22}$'s and
+$M_{12}$/$M_{21}$'s scaling constants --- $n^{-1}$ rather than
+$n_{\mathcal{Q}}^{-1}$ in $M_{22}$'s
+case and $(n_{\mathcal{C}}n)^{-1/2}$ not $(n_{\mathcal{C}} n_{\mathcal{Q}})^{-1/2}$ in $M_{12}$/$M_{21}$'s --- are progressively more weird.
 
 With these definitions,
 \begin{align}
-  \operatorname{Cov}(\hat\tau) \approx& A_{22}^{-1}\{n^{-1} M_{22} -
-                                 n_{\mathcal{C}}^{-1/2}n^{-1/2}[M_{21}A_{11}^{-t}A_{21}^t
-                                 + A_{21}A_{11}^{-1}M_{12}] +
-                                 n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}\nonumber
+  \operatorname{Cov}(\hat\tau) \approx& \tilde{A}_{22}^{-1}\{n^{-1} M_{22} -
+                                 n_{\mathcal{C}}^{-1/2}n^{-1/2}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
+                                 n_C^{-1}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-t}\nonumber
   \\
-                               &= n^{-1}A_{22}^{-1}\{
+                               &= n^{-1}\tilde{A}_{22}^{-1}\{
                                  M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
-                                 + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}\}\tilde{A}_{22}^{-t}
                                 . \label{eq:6}
 \end{align}
 An advantage of the expression with leading factor $n^{-1}$ is that
@@ -352,8 +408,124 @@ that way it parallels the calculation of
 \texttt{sandwich::sandwich()} and, I think, other \texttt{sandwich}
 functions. (Assuming that we write
 \texttt{estfun.DirectAdjusted()}  to return a matrix of row extent
-$n$.) 
+$n$.)
+% A potential disadvantage is that it makes $A_{21}$ and
+% $A_{22}$ not means of estimating equation contributions but rather
+% means down-scaled by $n_{\mathcal{Q}}/n$, a potentially small factor;
+% more on this presently.  
 
+  \subsection{Plain-vanilla estimation of $A$s and $M$s}
+\subsubsection {Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
+
+In the model-based perspective, expected value and covariance are
+conditional on
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, A_{i}: i \in c): c \in
+      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
+
+
+In the design-based perspective, $\mathcal{Q}$ is partitioned into
+blocks $b$, and expected value and covariance are
+conditional on
+\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+  i \in c; c\}, \{\sum_{c
+    \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+where $a_{c}$ denotes the common treatment assignment of all $i\in
+c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
+clusters $c \ni i$.)
+
+To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
+definition, let each such cluster $c$ constitute a block unto itself,
+$\{c\}$. This has the consequence that observations $i
+\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
+contribute to $M_{11}$, $M_{12}$ or $M_{21}$, at least in the
+design-based perspective.
+
+  \subsubsection{Conceptual vs practical bread estimates} \label{sec:conc-vs-pract}
+  \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices.}%
+In general $\EE
+[\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha, \tau )$; for many types of
+covariance model one also has $\EE
+[\nabla_{\beta}\phi(\vec{Z}_{i};  \beta ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\phi(\vec{Z}_{i};  \beta )$. As a result, under the
+model-based perspective
+$A_{11}(\beta)$ and perhaps $A_{21}(\beta)$ are essentially observed,
+i.e.  $\hat{A}_{11}(\beta) \equiv A_{11}(\beta)$ and (perhaps)
+$\hat{A}_{21}(\beta) \equiv A_{21}(\beta)$.   These equivalences don't
+hold under the design-based perspective, but under that perspective
+the same matrices do serve as estimates of $A_{11}(\beta)$ and
+$A_{21}(\beta)$ as given in \eqref{eq:13}. 
+
+\paragraph{Numerical stability by combining ${A}_{21}$ and $\tilde{A}_{22}$, rather than either
+  ${A}_{21}$ and ${A}_{22}$ or $\tilde{A}_{21}$ and $\tilde{A}_{22}$.}
+  In situations with $n_{\mathcal{C}} \gg n_{\mathcal{Q}}$, scaling
+  by $n^{-1}$, as $\tilde{A}_{21}$ and $\tilde{A}_{22}$ do, may
+  invite numerical instability. In setups with $n_{\mathcal{C}} \gg
+  n_{\mathcal{Q}}$, $n^{-1}$-scaling may lead to underflows,
+  collapsing of distinct values into numeric zeroes, if performed
+  before taking sums; even if we don't scale before summing,
+  $n_{\mathcal{Q}}^{-1}$ scaling of these matrices could faciliated improved
+  use of numerically optimized mean and weighted mean functions in
+  these calculations.  (By application of such functions only to the
+  $n_{\mathcal{Q}}$ contributions to $\hat{A}_{2*}$  from $i \in \bigcup \mathcal{Q}$, not the broader set of $n = \#\left[\bigcup (\mathcal{C}\cup
+    \mathcal{Q}) \right]$, which includes $n - n_{\mathcal{Q}}$ structural
+  zeroes.)
+
+  In parallel with \eqref{eq:6} we
+  have $\operatorname{Cov}(\hat\tau) \approx$
+  \begin{align*}
+  &A_{22}^{-1}\{\frac{n}{n_{\mathcal{Q}}^{2}} M_{22} -
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 n_C^{-1}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-t}\nonumber
+  \\
+                               =& n^{-1}A_{22}^{-1} \times\\
+                                 &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
+                                 \frac{n^{3/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+    &
+                                 \times A_{22}^{-t}\\
+                               =& n^{-1}A_{22}^{-1} \times\\
+                                 &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
+                                 \left(\frac{n}{n_{\mathcal{Q}}}\right)\left(\frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}\right)[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+    &
+                                 \times A_{22}^{-t}
+                                . 
+\end{align*}
+In computations that assemble the three inner summands separately, we may combine $\psi$-\texttt{estfun}'s of dimension
+$n$ with $\hat{A}_{21}$ and $\hat{A}_{22}$ that have been scaled by
+$n_{\mathcal{Q}}$, as opposed to $n$.  However, for Section~\ref{sec:goal}'s purpose of
+associating \texttt{DirectAdjusted} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
+A_{11}^{-1}A_{21}^{t}$, this formula invites unhelpful
+complication. It seems to call for $c_{2}=({n}/{n_{\mathcal{Q}}})$
+and as well as a $c_{1}=({n}/{n_C})^{1/2}$.  An $A$/$\tilde{A}$
+compromise will allow us to keep $c_{2}=1$. 
+
+To this end, substituting $(n_{\mathcal{Q}}/n)A_{21}$ for $\tilde{A}_{21}$ in \eqref{eq:6} while leaving
+$\tilde{A}_{22}$ in place, $\operatorname{Cov}(\hat\tau) \approx$
+  \begin{align*}
+  &\tilde{A}_{22}^{-1}\{\frac{1}{n} M_{22} -
+                                 \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{3/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n_{\mathcal{Q}}^{2}}{n_{\mathcal{C}}n^{2}}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}\tilde{A}_{22}^{-t}\nonumber
+    \\
+  &= \frac{1}{n}\tilde{A}_{22}^{-1}\{M_{22} -
+                                 \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
+                                 + A_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n_{\mathcal{Q}}^{2}}{n_{\mathcal{C}}n}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}\tilde{A}_{22}^{-t} .\nonumber
+  \end{align*}
+ We engender corresponding estimates of $\operatorname{Cov}(\hat\tau)$ by setting \eqref{eq:22}'s
+ $(c_{2}, c_{1})$ to $(1, n_{\mathcal{Q}}n_{\mathcal{C}}^{-1/2}n^{-1/2})$, that is having
+ \texttt{estfun.DA()} return $\Psi -
+ \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{1/2}}\Psi
+ \hat{A}_{11}^{-1}\hat{A}_{21}^{t}$, or simply $\Psi$ if $n_{\mathcal{C}}=0$, while having \texttt{bread.DA()}
+ return $\tilde{A}_{22}^{-1}$.
+
+
+  \subsubsection{Clustered estimation of meat matrices}
 For model-based estimation with units of observation and of assignment being
 the same, $M$'s are estimated as follows. 
 \begin{equation}\label{eq:7}
@@ -362,8 +534,8 @@ the same, $M$'s are estimated as follows.
     \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}\Psi'\Psi.\\
     \end{array} 
   \end{equation}
-  In the more general case with potentially clustering of observation
-units, by units of assigment and maybe more, we can express HC0
+  In the more general case with potential clustering of observation
+units, by units of assignment and maybe more, we can express HC0
 type estimators with matrix rather than summation notation by using
 $F$ for the \{0,1\}-valued $n \times m$ matrix with an indicator
 column for each cluster:
@@ -373,19 +545,19 @@ column for each cluster:
     \hat{M}_{21} =\hat{M}_{12}' & \hat{M}_{22}= n^{-1}(F'\Psi)'(F'\Psi)\\
     \end{array}
   \end{equation}
-
+  
 \subsection{Realization of goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return the $n \times \tilde{k}$ matrix
+\texttt{sandwich::estfun.DirectAdjusted()} to return an $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
   \Psi -
   \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{A}_{21}', 
+  \hat{A}_{11}^{-t}\hat{\tilde{A}}_{21}', 
 \end{equation}
 while continuing to allow \texttt{sandwich::bread()} as applied to
-\texttt{DirectAdjusted} objects to return only
-the lower $A_{22}^{-1}$ matrix, then the effect of this will be for \texttt{sandwich::sandwich()}
+\texttt{DirectAdjusted} objects to return an (appropriately scaled)
+inverted estimate of $A_{22}$, then the effect of this will be for \texttt{sandwich::sandwich()}
 and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
 $\hat{M}$'s,  as
 given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
@@ -397,15 +569,15 @@ we use
   \hat{A}_{11}(\beta) &\defeq  n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
         \mathcal{C}}\nabla_{\beta}\phi(\vec{z}_{i};
         \beta ),\\
-  \hat{A}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
+  \hat{\tilde{A}}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\nabla_{\beta}\psi(\vec{z}_{j};
         \tau, \alpha, \beta ),\\
-  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{A}_{21}\defeq \hat{A}_{21}(\hat\beta).
+  \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{\tilde{A}}_{21}\defeq \hat{\tilde{A}}_{21}(\hat\beta).
 \end{align*}
 Under the model based
-formulation, $\hat{A}_{21}(\cdot) \equiv {A}_{21}(\cdot)$; when the
+formulation, $\hat{\tilde{A}}_{21}(\cdot) \equiv \tilde{A}_{21}(\cdot)$; when the
 first-stage model is a glm, also $\hat{A}_{11}(\cdot) \equiv
-{A}_{11}(\cdot)$.  However, in design based formulations neither
+\tilde{A}_{11}(\cdot)$.  However, in design based formulations neither
 equivalence holds in general.)
 
 Alternately put,
@@ -415,62 +587,39 @@ defining $\tilde{k}$ by 1 random matrices
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    \hat{A}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta), 
 \end{equation}
 we have in the model-based formulation 
-\begin{multline*}
-  \operatorname{Cov}\left(n^{-1}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
+\begin{multline}
+  \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}A_{21}^t
-                                 + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t},
-                               \end{multline*}
+                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
+                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}, \label{eq:12}
+                               \end{multline}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
 
 
 In the design-based formulation there
 would likely be approximate equality here, as in that setting
-$\hat{A}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
-coincide with ${A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
+$\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
+coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
-This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding $\tilde{A}_{21}(\cdot)$ to use
+This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}
       \tilde{\psi}_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \tilde{\psi} (\vec{Z}; \tau,\alpha, 
     \beta) -
     \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{\mathrm{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta)
 \end{equation*}
-in combination with $\tilde{A}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
-$\tilde{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing. 
+in combination with $\hat{A}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
+$\mathrm{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing. 
 
-\subsection{Aside: ``Model-based'' vs. ``Design-based''}\label{sec:des-vs-mod-based}
-
-In the model-based perspective, expected value and covariance are
-conditional on
-\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, A_{i}: i \in c): c \in
-      \mathcal{C}\cup \mathcal{Q} \right]\right)\]
-
-
-In the design-based perspective, $\mathcal{Q}$ is partitioned into
-blocks $b$, and expected value and covariance are
-conditional on
-\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, Y_{i}[1], \ldots Y_{i}[k]):
-  i \in c; c\}, \{\sum_{c
-    \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
-where $a_{c}$ denotes the common treatment assignment of all $i\in
-c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
-clusters $c \ni i$.)
-
-To incorporate $c\in \mathcal{C}\setminus\mathcal{Q}$ into this
-definition, let each such cluster $c$ constitute a block unto itself,
-$\{c\}$. This has the consequence that observations $i
-\in \bigcup\left(\mathcal{C}\setminus\mathcal{Q}\right)$ do not
-contribute to $M_{11}$, $M_{12}$ or $M_{21}$.
 
 \section{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
 As $\alpha$ is a nuisance parameter, let's use the
@@ -1007,7 +1156,7 @@ with covariates.
 \]
 With these definitions,
 \[
-  \operatorname{Cov}(\hat\tau) \approx n^{-1}A_{22}^{-1}\{M_{22} - [M_{12}A_{11}^{-t}A_{21}^t + A_{21}A_{11}^{-1}M_{21}] + (n/n_C)A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-1}
+  \operatorname{Cov}(\hat\tau) \approx n^{-1}A_{22}^{-1}\{M_{22} - [M_{12}A_{11}^{-t}A_{21}^t + A_{21}A_{11}^{-1}M_{21}] + (n/n_C)A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}^{-t}
 \]
 
 
