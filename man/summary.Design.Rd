@@ -4,12 +4,16 @@
 \alias{summary.Design}
 \title{Create summary of \code{Design} object}
 \usage{
-\method{summary}{Design}(object, ...)
+\method{summary}{Design}(object, ..., treatment_binary = TRUE)
 }
 \arguments{
 \item{object}{Design object}
 
 \item{...}{Other args}
+
+\item{treatment_binary}{Should the treatment be dichotomized of
+\code{object} contains a \code{dichotomy}? Ignored if \code{object} does
+not contain a \code{dichotomy}.}
 }
 \value{
 object of class \code{summary.Design}

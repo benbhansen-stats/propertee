@@ -135,3 +135,34 @@ test_that("Passing dnn", {
 
 
 })
+
+test_that("dichotomies", {
+  data(simdata)
+  # No dichotomy is identical
+  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  expect_identical(dtable(des, "treatment", treatment_binary = TRUE),
+                   dtable(des, "treatment", treatment_binary = FALSE))
+
+
+  # No dichotomy with non-binary treatment is identical
+  des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  expect_identical(dtable(des2, "treatment", treatment_binary = TRUE),
+                   dtable(des2, "treatment", treatment_binary = FALSE))
+
+  # Dichotomy differs
+  des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
+                     dichotomy = dose > 200 ~ dose <= 200)
+  expect_length(dtable(des3, "treatment"), 2) # check default
+  expect_length(dtable(des3, "treatment", treatment_binary = TRUE), 2)
+  expect_length(dtable(des3, "treatment", treatment_binary = FALSE), length(unique(simdata$dose)))
+
+  # Ensure summary.Design passes down argument as well
+
+  expect_identical(summary(des3)$treatment_table,
+                   dtable(des3, "treat"))
+  expect_identical(summary(des3, treatment_binary = TRUE)$treatment_table,
+                   dtable(des3, "treat", treatment_binary = TRUE))
+  expect_identical(summary(des3, treatment_binary = FALSE)$treatment_table,
+                   dtable(des3, "treat", treatment_binary = FALSE))
+
+})

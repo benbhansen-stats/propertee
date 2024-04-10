@@ -1,13 +1,17 @@
 ##' @title Create summary of \code{Design} object
 ##' @param object Design object
 ##' @param ... Other args
+##' @param treatment_binary Should the treatment be dichotomized of
+##'   \code{object} contains a \code{dichotomy}? Ignored if \code{object} does
+##'   not contain a \code{dichotomy}.
 ##' @return object of class \code{summary.Design}
 ##' @export
 ##' @method summary Design
-summary.Design <- function(object, ...) {
+summary.Design <- function(object, ..., treatment_binary = TRUE) {
   out <- list()
   out$Design <- object
-  out$treatment_table <- dtable(object, "treatment")
+  out$treatment_table <- dtable(object, "treatment",
+                                treatment_binary = treatment_binary)
   class(out) <- "summary.Design"
   return(out)
 }
