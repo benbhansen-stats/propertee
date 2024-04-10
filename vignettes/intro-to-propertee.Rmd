@@ -14,8 +14,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-devtools::load_all("~/repositories/_r/propertee/")
-#library(propertee)
+#devtools::load_all("~/repositories/_r/propertee/")
+library(propertee)
 ```
 
 ## Main Features
