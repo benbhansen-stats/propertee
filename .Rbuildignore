@@ -18,3 +18,4 @@ lib/*
 vignettes/not-for-cran/*
 _pkgdown.yml
 docs
+hexsticker
