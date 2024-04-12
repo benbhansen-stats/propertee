@@ -233,7 +233,11 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
 \right),
   \end{align}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
-that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
+that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$
+are functions only of $\beta$ and of $(\alpha, \tau)$
+respectively. Assuming $A_{11}(\beta_{(n)})$ and $A_{22}(\alpha_{(n)},
+\tau_{(n)})$ to be invertible, define \textit{linearizations} (of
+$\hat\beta$ and $(\hat\alpha, \hat\tau)$) as follows:
   \begin{align}
     \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
@@ -259,7 +263,14 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],\nonumber
 \end{align}
-known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
+where we've used the block inversion relationship
+\begin{equation*}
+  \label{eq:23}
+  \left(\begin{array}{cc}U & 0 \\ V & W \end{array} \right)^{-1} =
+  \left(\begin{array}{cc}U^{-1} & 0 \\ 0 & W^{-1} \end{array} \right)
+  \left(\begin{array}{cc} I & 0 \\ -VU^{-1} & I \end{array} \right)
+\end{equation*}
+(a special case of factorization and inversion based on Schur complements).
 
 The constants $n_{\mathcal{C}}$ and
 $n_{\mathcal{Q}}$ in the above are somewhat
@@ -315,7 +326,7 @@ $\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
       {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
       \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right] \nonumber
 \end{align}
-and in turn
+or equivalently
 \begin{equation*}
 \left(\begin{array}{c}\tilde{\beta}_{(n)}\\ \tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     = \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
