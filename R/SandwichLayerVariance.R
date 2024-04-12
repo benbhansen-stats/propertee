@@ -597,6 +597,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("x must have been fitted using lmitt.formula")
   }
   
+  if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
+    if (!all(os@keys$in_Q)){
+      stop(paste("Design-based standard errors cannot be computed for DirectAdjusted",
+                 "models with external sample for covariance adjustment"))
+  }
+  
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -617,12 +623,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   else {
     if (!is.null(x$call$offset)){
       vmat <- .get_DB_covadj_se(x)
-      if (is.na(vmat))
-        stop(paste("Design-based standard errors cannot be computed for ITT effect",
-                   "models with covariance adjustment if small strata are present"))
     }
     else if (length(x@moderator) > 0){
-      stop(paste("Design-based standard errors cannot be computed for ITT effect",
+      stop(paste("Design-based standard errors cannot be computed for DirectAdjusted",
                  "models with moderators"))
     }
     else {

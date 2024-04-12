@@ -2293,7 +2293,7 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
 })
 
-test_that("vcovDA does not when asking for design-based SE for model
+test_that("vcovDA does not error when asking for design-based SE for model
           with covariance adjustment but without absorbed block effects",{
   data(simdata)
   des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
@@ -2311,7 +2311,7 @@ test_that("vcovDA errors when asking for design-based SE for a model
   damod_sub <- lmitt(y ~ dose, design = des, data = simdata, weights = ate(des))
   expect_error(
     vcovDA(damod_sub, type = "DB0"), 
-    "cannot be computed for ITT effect models with moderators"
+    "cannot be computed for DirectAdjusted models with moderators"
   )
 })
 
@@ -2461,3 +2461,4 @@ test_that(".get_phi_tilde returns correct grave{phi}
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(damod_abs, db = TRUE)))
 })
+
