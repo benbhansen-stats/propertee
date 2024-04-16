@@ -1,15 +1,15 @@
-pandoc: 3.1.12.3
-pkgdown: 2.0.7
+pandoc: 3.1.13
+pkgdown: 2.0.8
 pkgdown_sha: ~
 articles:
-  LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
-  RDD: RDD.html
   design_based_SEs: design_based_SEs.html
-  geex_vs_propertee: geex_vs_propertee.html
+  geex_vs_propertee: not-for-cran/geex_vs_propertee.html
   intro-to-propertee: intro-to-propertee.html
+  LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
   non-binary-treatment: non-binary-treatment.html
+  RDD: RDD.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2024-04-04T21:47Z
+last_built: 2024-04-16T15:41Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
