@@ -1,20 +1,20 @@
-##' These functions convert a \code{Design} between RD, RCT and Obs types.
-##' Converting to RD requires the addition of a forcing variable (see
-##' \code{forcing=} argument), while converting from RD requires consenting to
-##' dropping the forcing variable (see \code{loseforcing=} argument).
-##'
 ##' @title Convert \code{Design} between types
+##'
+##' @description Convert a \code{Design} between a observational study, a
+##'   randomized control trial, and a regression discontinuity (created from
+##'   [obs_design()], [rct_design()] and [rd_design()] respectively).
+##'
 ##' @param Design a \code{Design} to convert
 ##' @param data converting to an RD requires adding a \code{forcing} variable,
 ##'   which requires access to the original data.
-##' @param ... No additional options at present
+##' @param ... Ignored.
 ##' @param loseforcing converting from RD to another \code{Design} type will
 ##'   error to avoid losing the forcing variable. Setting \code{loseforcing =
 ##'   TRUE} allows the conversion to automatically drop the forcing variable.
 ##'   Default \code{FALSE}.
 ##' @param forcing converting to an RD requires adding a \code{forcing}
-##'   variable. This should be entered as the update to a formula, e.g.
-##'   \code{"~ . + forcing(forcevar)"}.
+##'   variable. This should be entered as a formula which would be passed to
+##'   [update()], e.g. \code{forcing = . ~ . + forcing(forcevar)}.
 ##' @return \code{Design} of the updated type
 ##' @export
 ##' @importFrom stats as.formula update

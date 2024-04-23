@@ -330,9 +330,11 @@ obs_design <- function(formula,
                      na.fail = na.fail))
 }
 
-##' @title Display a \code{Design}
-##' @param object a \code{Design} object
-##' @return an invisible copy of \code{object}
+##' @title Show a \code{Design}
+##' @description Display information about a \code{Design} object
+##' @param object \code{Design} object, usually a result of a call to
+##'   [rct_design()], [obs_design()], or [rd_design()].
+##' @return \code{object}, invisibly.
 ##' @export
 setMethod("show", "Design", function(object) {
   destype <- switch(object@type,
@@ -363,24 +365,6 @@ setMethod("show", "Design", function(object) {
   cat("\n")
   invisible(object)
 })
-
-##' @title Return names of variables defining the \code{Design}
-##' @param x a \code{Design} object
-##' @param type one of "t", "u", "b", "f"; for "treatment",
-##'   "unit_of_assignment", "block", and "forcing" respectively
-##' @return character vector of variable names of the given type
-##' @export
-##' @examples
-##' des <- obs_design(o ~ unitid(cid1, cid2), data = simdata)
-##' var_names(des, "t")
-##' var_names(des, "u")
-##' var_names(des, "b")
-var_names <- function(x, type) {
-  stopifnot(inherits(x, "Design"))
-  stopifnot(length(type) == 1)
-  stopifnot(type %in% c("t", "u", "b", "f"))
-  return(names(x@structure)[x@column_index == type])
-}
 
 ##' After calling \code{model.frame()} on the formula input to
 ##' \code{.new_Design()}, the names of the columns will include function names,
@@ -428,11 +412,10 @@ var_names <- function(x, type) {
               index = index))
 }
 
-##' @title Table of variable names and their role in the \code{Design}.
+##' @title Extract Variable Names from \code{Design}
 ##'
-##' @description Generates a table identifying each element of the structure of
-##'   the \code{Design} (e.g. treatment, unit of analysis, etc) and which
-##'   variable(s) are associated with that element.
+##' @description Methods to extract the variable names to the elements of the
+##'   structure of the \code{Design} (e.g. treatment, unit of analysis, etc)
 ##'
 ##' @details When \code{compress} is \code{TRUE}, the result will always have
 ##'   two columns. When \code{FALSE}, the result will have number of columns
@@ -446,18 +429,24 @@ var_names <- function(x, type) {
 ##' \code{FALSE}, the matrix will have minimum 2 rows (treatment and unit of
 ##' assignment/unitid/cluster), with additional rows for blocks and forcing if
 ##' included in the \code{Design}.
-##' @title Table of variables identifying a \code{Design}
 ##' @param design a \code{Design} object
 ##' @param compress should multiple variables be compressed into a
-##'   comma-separated string? Default \code{TRUE}.
+##'   comma-separated string? Default \code{TRUE}. If \code{FALSE}, multiple
+##'   columns can be created instead.
 ##' @param report_all should we report all possible structures even if they
 ##'   don't exist in the \code{Design}? Default \code{FALSE}.
-##' @return a \code{matrix} of variables in the \code{Design} structure
+##' @return [var_table()] returns the requested table. [var_names()] returns a
+##'   vector of variable names.
 ##' @export
+##' @rdname Design_var_names
+##' @order 1
 ##' @examples
 ##' des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 ##' var_table(des)
 ##' var_table(des, compress = FALSE)
+##' var_names(des, "t")
+##' var_names(des, "u")
+##' var_names(des, "b")
 var_table <- function(design, compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
                     "unit_of_assignment" = "Unit of Assignment",
@@ -517,6 +506,18 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
   }
   rownames(out) <- NULL
   return(out)
+}
+
+##' @param type one of "t", "u", "b", "f"; for "treatment",
+##'   "unit_of_assignment", "block", and "forcing" respectively
+##' @export
+##' @rdname Design_var_names
+##' @order 2
+var_names <- function(design, type) {
+  stopifnot(inherits(design, "Design"))
+  stopifnot(length(type) == 1)
+  stopifnot(type %in% c("t", "u", "b", "f"))
+  return(names(design@structure)[design@column_index == type])
 }
 
 ##' Useful for debugging purposes to ensure that there is concordance between

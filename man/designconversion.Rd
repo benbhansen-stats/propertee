@@ -15,7 +15,7 @@ as_rd_design(Design, data, ..., forcing)
 \arguments{
 \item{Design}{a \code{Design} to convert}
 
-\item{...}{No additional options at present}
+\item{...}{Ignored.}
 
 \item{loseforcing}{converting from RD to another \code{Design} type will
 error to avoid losing the forcing variable. Setting \code{loseforcing =
@@ -26,17 +26,16 @@ Default \code{FALSE}.}
 which requires access to the original data.}
 
 \item{forcing}{converting to an RD requires adding a \code{forcing}
-variable. This should be entered as the update to a formula, e.g.
-\code{"~ . + forcing(forcevar)"}.}
+variable. This should be entered as a formula which would be passed to
+\code{\link[=update]{update()}}, e.g. \code{forcing = . ~ . + forcing(forcevar)}.}
 }
 \value{
 \code{Design} of the updated type
 }
 \description{
-These functions convert a \code{Design} between RD, RCT and Obs types.
-Converting to RD requires the addition of a forcing variable (see
-\code{forcing=} argument), while converting from RD requires consenting to
-dropping the forcing variable (see \code{loseforcing=} argument).
+Convert a \code{Design} between a observational study, a
+randomized control trial, and a regression discontinuity (created from
+\code{\link[=obs_design]{obs_design()}}, \code{\link[=rct_design]{rct_design()}} and \code{\link[=rd_design]{rd_design()}} respectively).
 }
 \examples{
 des <- rct_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)

@@ -2,26 +2,33 @@
 % Please edit documentation in R/Design.R
 \name{var_table}
 \alias{var_table}
-\title{Table of variable names and their role in the \code{Design}.}
+\alias{var_names}
+\title{Extract Variable Names from \code{Design}}
 \usage{
 var_table(design, compress = TRUE, report_all = FALSE)
+
+var_names(design, type)
 }
 \arguments{
 \item{design}{a \code{Design} object}
 
 \item{compress}{should multiple variables be compressed into a
-comma-separated string? Default \code{TRUE}.}
+comma-separated string? Default \code{TRUE}. If \code{FALSE}, multiple
+columns can be created instead.}
 
 \item{report_all}{should we report all possible structures even if they
 don't exist in the \code{Design}? Default \code{FALSE}.}
+
+\item{type}{one of "t", "u", "b", "f"; for "treatment",
+"unit_of_assignment", "block", and "forcing" respectively}
 }
 \value{
-a \code{matrix} of variables in the \code{Design} structure
+\code{\link[=var_table]{var_table()}} returns the requested table. \code{\link[=var_names]{var_names()}} returns a
+vector of variable names.
 }
 \description{
-Generates a table identifying each element of the structure of
-the \code{Design} (e.g. treatment, unit of analysis, etc) and which
-variable(s) are associated with that element.
+Methods to extract the variable names to the elements of the
+structure of the \code{Design} (e.g. treatment, unit of analysis, etc)
 }
 \details{
 When \code{compress} is \code{TRUE}, the result will always have
@@ -41,4 +48,7 @@ included in the \code{Design}.
 des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
 var_table(des)
 var_table(des, compress = FALSE)
+var_names(des, "t")
+var_names(des, "u")
+var_names(des, "b")
 }

@@ -3,11 +3,11 @@
 ##' @description Produces a table (1-dimensional, or 2-dimensional if \code{y}
 ##'   is specified) of the elements of the \code{Design}.
 ##'
-##' @param design A \code{Design}
-##' @param x One of "treatment", "unit of assignent", "uoa", "unitid",
-##'   "cluster", "block". Abbreviations are accepted.
-##' @param y Optionally, another of "treatment", "unit of assignent", "uoa",
-##'   "unitid", "cluster", "block". Abbreviations are accepted. A 1-dimensional
+##' @param design A \code{Design} object
+##' @param x One of "treatment", "unit of assignment", (synonym "uoa"), "block".
+##'   Abbreviations are accepted. "unit of assignment" can be replaced by
+##'   "unitid" or "cluster" if the \code{Design} was created with that element.
+##' @param y Optionally, another string similar to \code{x}. A 1-dimensional
 ##'   table is produced if \code{y} is left at its default, \code{NULL}.
 ##' @param sort Ignored if \code{y} is not \code{NULL}. If \code{FALSE}
 ##'   (default), one-way table is sorted according to "names" of levels. If set
@@ -17,15 +17,22 @@
 ##' @param use_var_names If \code{TRUE}, name dimensions of table returned by
 ##'   variable names. If \code{FALSE} (default), name by their function (e.g.
 ##'   "treatment" or "blocks"). Passing the \code{dnn} argument in \code{...}
-##'   (an argument of \code{table()}) overrides whatever is requested here.
+##'   (an argument of [table()]) overrides whatever is requested here.
 ##' @param treatment_binary Should the treatment (if requested) be dichotomized
 ##'   of \code{design} contains a \code{dichotomy}? Ignored if \code{design}
 ##'   does not contain a \code{dichotomy}, or if neither \code{x} or \code{y} is
 ##'   "treatment".
-##' @param ... other arguments to \code{table}
-##' @return table
+##' @param ... additional arguments [table()]
+##' @return A table of the requested variables.
 ##' @export
 ##' @rdname design_table
+##' @order 2
+##' @examples
+##' data(simdata)
+##' des <- obs_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+##'                   data = simdata)
+##' design_table(des, "treatment")
+##' design_table(des, "treatment", "block", sort = TRUE, use_var_names = TRUE)
 dtable <- function(design,
                    x,
                    y = NULL,
@@ -152,4 +159,5 @@ dtable <- function(design,
 
 ##' @export
 ##' @rdname design_table
+##' @order 1
 design_table <- dtable

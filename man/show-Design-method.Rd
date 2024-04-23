@@ -2,16 +2,17 @@
 % Please edit documentation in R/Design.R
 \name{show,Design-method}
 \alias{show,Design-method}
-\title{Display a \code{Design}}
+\title{Show a \code{Design}}
 \usage{
 \S4method{show}{Design}(object)
 }
 \arguments{
-\item{object}{a \code{Design} object}
+\item{object}{\code{Design} object, usually a result of a call to
+\code{\link[=rct_design]{rct_design()}}, \code{\link[=obs_design]{obs_design()}}, or \code{\link[=rd_design]{rd_design()}}.}
 }
 \value{
-an invisible copy of \code{object}
+\code{object}, invisibly.
 }
 \description{
-Display a \code{Design}
+Display information about a \code{Design} object
 }
