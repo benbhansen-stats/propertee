@@ -78,6 +78,6 @@ dichotomy(des2)
 dichotomy(des1) <- dose > 250 ~ .
 }
 \seealso{
-\code{\link[=treated]{treated()}} for extracting the treatment variable, using
+\code{\link[=treatment]{treatment()}} for extracting the treatment variable, using
 \code{binary = TRUE} argument to apply the dichotomy before extracting.
 }

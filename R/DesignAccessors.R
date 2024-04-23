@@ -519,7 +519,7 @@ setMethod("forcings<-", "Design", function(x, value) {
 ##' the \code{dichomization} replaced with \code{x}.
 ##' @export
 ##' @rdname Design_extract_dichotomy
-##' @seealso [treated()] for extracting the treatment variable, using
+##' @seealso [treatment()] for extracting the treatment variable, using
 ##'   \code{binary = TRUE} argument to apply the dichotomy before extracting.
 ##' @examples
 ##' data(simdata)
