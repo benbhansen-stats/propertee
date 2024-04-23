@@ -1,24 +1,31 @@
 #' @include Design.R DesignAccessors.R
 NULL
 
-##' These are special functions used only in the definition of \code{Design}
-##' objects. They identify the units of assignment, blocks and forcing
-##' variables.
-##'
-##' These functions have no use outside of the formula in creating a
-##' \code{Design}.
-##'
-##' \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are
-##' all aliases of each other; you must include one and only one in each
-##' \code{Design}. The choice of which to use will have no impact on any
-##' analysis, only on some output display.
-##'
-##' See \code{rct_design}, \code{obs_design}, or \code{rd_design} for examples
-##' of their usage.
-##'
 ##' @title Special terms in \code{Design} creation formula
+##'
+##' @description These are special functions used only in the definition of
+##'   \code{Design} objects. They identify the units of assignment, blocks and
+##'   forcing variables. They should never be used outside of the \code{formula}
+##'   argument to [obs_design()], [rct_design()], or [rd_design()].
+##'
+##' @details These functions have no use outside of the formula in creating a
+##'   \code{Design}.
+##'
+##'   \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid}
+##'   are synonyms; you must include one and only one in each \code{Design}. The
+##'   choice of which to use will have no impact on any analysis, only on some
+##'   output and the name of the stored element in the \code{Design}. Accessors/
+##'   replacers ([units_of_assignment()], [unitids()], [clusters()]) respect the
+##'   choice made at the point of creation of the \code{Design}, and only the
+##'   appropriate function will work.
+##'
+##'   See [rct_design()], [obs_design()], or [rd_design()] for examples
+##'   of their usage.
+##'
 ##' @param ... any number of variables of the same length.
-##' @return the variables with appropriate labels
+##' @return the variables with appropriate labels. No use outside of their
+##'   inclusion in the \code{formula} argument to [obs_design()],
+##'   [rct_design()], or [rd_design()]
 ##' @export
 ##' @rdname DesignSpecials
 unit_of_assignment <- function(...) {

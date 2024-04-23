@@ -79,16 +79,10 @@ forcings(x) <- value
 \S4method{forcings}{Design}(x) <- value
 }
 \arguments{
-\item{x}{\code{Design} object}
+\item{x}{a \code{Design} object}
 
-\item{binary}{if \code{FALSE} (default), return a \code{data.frame}
-containing the named treatment variable. If \code{TRUE} and \code{x} has a
-formula in \code{@dichotomy}, return a \code{data.frame} containing a
-binary treatment variable with the name \code{"z__"}. Errors on
-\code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL}.
-If \code{"ifany"}, returns a binary treatment if possible (if treatment is
-already binary, or there's a valid \code{@dichotomy}), otherwise return
-original treatment.}
+\item{binary}{Controls whether a \code{dichotomy} is applied before
+returning the treatment variable. See \code{Details}.}
 
 \item{newdata}{optional; an additional \code{data.frame}. If passed, and the
 unit of assignment variable is found in \code{newdata}, then the requested
@@ -98,39 +92,59 @@ argument if the name of the unit of assignment differs.}
 \item{by}{optional; named vector or list connecting names of unit of
 assignment/unitid/cluster variables in \code{x} to unit of
 assignment/unitid/cluster variables in \code{data}. Names represent
-variables in the Design; values represent variables in the data. Only
+variables in \code{x}; values represent variables in \code{newdata}. Only
 needed if variable names differ.}
 
 \item{...}{ignored.}
 
 \item{value}{replacement. Either a \code{vector}/\code{matrix} of
 appropriate dimension, or a named \code{data.frame} if renaming variable
-as well.}
+as well. See \code{Details}.}
 }
 \value{
 \code{data.frame} containing requested variable, or an updated
-\code{Design}.
+\code{Design}. \code{\link[=treatment]{treatment()}} works slightly differently, see
+\code{Details}.
 }
 \description{
-Allows access to the elements which define a \code{Design}, enabling their
-extraction or replacement.
+Allows access to the elements which define a \code{Design},
+enabling their extraction or replacement.
 }
 \details{
-For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the
-treatment variable passed into the \code{Design} is returned as a one-column
-\code{data.frame}. If \code{binary = TRUE} is passed, and the \code{Design}
-either has a binary treatment variable, or has a \code{dichotomy}, a binary
-one-column \code{data.frame} will be returned. If the \code{Design} does not
-have access to binary treatment (non-binary treatment and no
-\code{dichotomy} specified), passing \code{binary = TRUE} will error.
+For \code{\link[=treatment]{treatment()}}, when argument \code{binary} is \code{FALSE}, the
+treatment variable passed into the \code{Design} is returned as a
+one-column \code{data.frame} regardless of whether it is binary or
+\code{x} has a \code{dichotomy}
 
-\code{binary = "ifany"} is the most permissible; returning the dichotomized
-treatment variable if \code{@dichotomy} exists, otherwise returning the
-original treatment without error.
+If \code{binary = TRUE} is passed, and the \code{Design} either has a
+binary treatment variable, or has a \code{dichotomy}, a binary one-column
+\code{data.frame} will be returned. If the \code{Design} does not have
+access to binary treatment (non-binary treatment and no \code{dichotomy}
+specified), passing \code{binary = TRUE} will error.
 
-The one-column \code{data.frame} returned by \code{treatment()} is named as
+\code{binary = "ifany"} is the most permissible; returning the
+dichotomized treatment variable if \code{@dichotomy} exists, otherwise
+returning the original treatment without error.
+
+The one-column \code{data.frame} returned by \code{\link[=treatment]{treatment()}} is named as
 entered in the \code{Design} creation, but if a \code{dichotomy} is in the
-\code{Design}, the column name is \code{"__z"}.
+\code{Design}, the column name is \code{"__z"} to try and avoid any name
+conflicts.
+
+For the \code{value} when using replacers, the replacement must have the
+same number of rows as the \code{Design} (the same number of units of
+assignment). The number of columns can differ (e.g. if the \code{Design}
+were defined with two variable uniquely identifying blocks, you can
+replace that with a single variable uniquely identifying blocks, as long
+as it respects other restrictions.)
+
+If the replacement value is a \code{data.frame}, the name of the columns
+is used as the new variable names. If the replacement is a \code{matrix}
+or \code{vector}, the original names are retained. If reducing the number
+of variables (e.g., moving from two variables uniquely identifying to a
+single variable), the appropriate number of variable names are retained.
+If increasing the number of variables, a \code{data.frame} with names must
+be provided.
 }
 \examples{
 data(simdata)
@@ -138,4 +152,6 @@ des <- obs_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
 blocks(des) # empty
 blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
 blocks(des)
+blocks(des) <- c(5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
+blocks(des) # notice that variable is not renamed
 }

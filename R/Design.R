@@ -239,7 +239,7 @@ setValidity("Design", function(object) {
 ##'
 ##'   The treatment variable passed into the left-hand side of \code{formula}
 ##'   can either be \code{logical}, \code{numeric}, or \code{character}. If it
-##'   is anything else, it is attemped to be converted to one of those (for
+##'   is anything else, it attempts conversion to one of those types (for
 ##'   example, \code{factor} and \code{ordered} are converted to \code{numeric}
 ##'   if the levels are \code{numeric}, otherwise to \code{character}). If the
 ##'   treatment is not \code{logical} or \code{numeric} with only values 0 and
@@ -256,7 +256,7 @@ setValidity("Design", function(object) {
 ##' @param data the data set from which to build the Design. Note that this data
 ##'   need not be the same as used to estimate the treatment effect; rather the
 ##'   \code{data} passed should contain information about the units of treatment
-##'   assignment (as oppposed to the units of analysis).
+##'   assignment (as opposed to the units of analysis).
 ##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
 ##' @param dichotomy optional, a formula defining the dichotomy of the treatment
