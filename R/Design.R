@@ -221,52 +221,59 @@ setValidity("Design", function(object) {
              dichotomy = dichotomy))
 }
 
-##' Generates a randomized control treatment Design (\code{rct_design()}), or an
-##' observational Design (\code{obs_design()}), or a regression discontinuity
-##' Design (\code{rd_design()}).
-##'
-##' The formula must include exactly one of \code{unit_of_assignment()},
-##' \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
-##' assignment (one or more variables). These are all synonyms; the choice of
-##' which has no impact on the analysis. If defining an \code{rd_design}, the
-##' formula must also include a \code{forcing()} entry. The formula may
-##' optionally include a \code{block()} as well. Each of these can take in
-##' multiple variables, e.g. to pass both a hosuehold ID and individual ID as
-##' unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
-##' uoa(iid)}.
-##'
-##' The treatment variable passed into the left-hand side of \code{formula} can
-##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
-##' anything else, it is attemped to be converted to one of those (for example,
-##' \code{factor} and \code{ordered} are converted to \code{numeric} if the
-##' levels are \code{numeric}, otherwise to \code{character}. If the treatment
-##' is not \code{logical} or \code{numeric} with only values 0 and 1, in order
-##' to generate weights with \code{ate()} or \code{ett()}, the \code{dichotomy}
-##' argument must be used to identify the treatment and control groups. The
-##' \code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
-##' \code{obs_design()}) all support the \code{dichotomy} argument, or instead
-##' \code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
-##' See \code{dichotomy()} for more details on specifying a \code{dichotomy}.
-##'
 ##' @title Generates a \code{Design} object with the given specifications.
-##' @param formula defines the \code{Design} components
-##' @param data the data set.
+##'
+##' @description Generate a randomized control treatment Design
+##'   ([rct_design()]), or an observational Design ([obs_design()]), or a
+##'   regression discontinuity Design ([rd_design()]).
+##'
+##' @details The formula must include exactly one [unit_of_assignment()] to
+##'   identify the units of assignment (one or more variables). (\code{uoa},
+##'   \code{cluster}, or \code{unitid} are synonyms for
+##'   \code{unit_of_assignment}; the choice of which has no impact on the
+##'   analysis.) If defining an \code{rd_design}, the formula must also include
+##'   a [forcing()] entry. The formula may optionally include a [block()] as
+##'   well. Each of these can take in multiple variables, e.g. to pass both a
+##'   household ID and individual ID as unit of assignment, use \code{uoa(hhid,
+##'   iid)} and not \code{uoa(hhid) + uoa(iid)}.
+##'
+##'   The treatment variable passed into the left-hand side of \code{formula}
+##'   can either be \code{logical}, \code{numeric}, or \code{character}. If it
+##'   is anything else, it is attemped to be converted to one of those (for
+##'   example, \code{factor} and \code{ordered} are converted to \code{numeric}
+##'   if the levels are \code{numeric}, otherwise to \code{character}). If the
+##'   treatment is not \code{logical} or \code{numeric} with only values 0 and
+##'   1, in order to generate weights with [ate()] or [ett()], the
+##'   \code{dichotomy} argument must be used to identify the treatment and
+##'   control groups. The \code{Design} creation functions (\code{rct_design()},
+##'   \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomy}
+##'   argument, or instead \code{dichotomy} can be passed to [ett()] and [ate()]
+##'   directly. See [dichotomy()] for more details on specifying a
+##'   \code{dichotomy}.
+##'
+##' @param formula a \code{formula} defining the \code{Design} components. See
+##'   `Details` for specification.
+##' @param data the data set from which to build the Design. Note that this data
+##'   need not be the same as used to estimate the treatment effect; rather the
+##'   \code{data} passed should contain information about the units of treatment
+##'   assignment (as oppposed to the units of analysis).
 ##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
 ##' @param dichotomy optional, a formula defining the dichotomy of the treatment
-##'   variable if it isn't already 0/1 or \code{logical}. See the
-##'   \code{dichotomy()} function for details.
+##'   variable if it isn't already 0/1 or \code{logical}. See the [dichotomy()]
+##'   function for details.
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
 ##'   creation of the \code{Design}
 ##' @return a \code{Design} object of the requested type for use in further
-##'   analysis
+##'   analysis.
 ##' @export
 ##' @rdname Design_objects
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid), data = simdata)
+##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+##'                   data = simdata)
 ##'
 ##' data(schooldata)
 ##' des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),

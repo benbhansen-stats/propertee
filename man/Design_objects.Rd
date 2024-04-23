@@ -13,16 +13,20 @@ rd_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 obs_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
 }
 \arguments{
-\item{formula}{defines the \code{Design} components}
+\item{formula}{a \code{formula} defining the \code{Design} components. See
+\code{Details} for specification.}
 
-\item{data}{the data set.}
+\item{data}{the data set from which to build the Design. Note that this data
+need not be the same as used to estimate the treatment effect; rather the
+\code{data} passed should contain information about the units of treatment
+assignment (as oppposed to the units of analysis).}
 
 \item{subset}{optional, subset the data before creating the \code{Design}
 object}
 
 \item{dichotomy}{optional, a formula defining the dichotomy of the treatment
-variable if it isn't already 0/1 or \code{logical}. See the
-\code{dichotomy()} function for details.}
+variable if it isn't already 0/1 or \code{logical}. See the \code{\link[=dichotomy]{dichotomy()}}
+function for details.}
 
 \item{na.fail}{If \code{TRUE} (default), any missing data found in the
 variables specified in \code{formula} (excluding treatment) will trigger
@@ -31,40 +35,42 @@ creation of the \code{Design}}
 }
 \value{
 a \code{Design} object of the requested type for use in further
-analysis
+analysis.
 }
 \description{
-Generates a randomized control treatment Design (\code{rct_design()}), or an
-observational Design (\code{obs_design()}), or a regression discontinuity
-Design (\code{rd_design()}).
+Generate a randomized control treatment Design
+(\code{\link[=rct_design]{rct_design()}}), or an observational Design (\code{\link[=obs_design]{obs_design()}}), or a
+regression discontinuity Design (\code{\link[=rd_design]{rd_design()}}).
 }
 \details{
-The formula must include exactly one of \code{unit_of_assignment()},
-\code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
-assignment (one or more variables). These are all synonyms; the choice of
-which has no impact on the analysis. If defining an \code{rd_design}, the
-formula must also include a \code{forcing()} entry. The formula may
-optionally include a \code{block()} as well. Each of these can take in
-multiple variables, e.g. to pass both a hosuehold ID and individual ID as
-unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
-uoa(iid)}.
+The formula must include exactly one \code{\link[=unit_of_assignment]{unit_of_assignment()}} to
+identify the units of assignment (one or more variables). (\code{uoa},
+\code{cluster}, or \code{unitid} are synonyms for
+\code{unit_of_assignment}; the choice of which has no impact on the
+analysis.) If defining an \code{rd_design}, the formula must also include
+a \code{\link[=forcing]{forcing()}} entry. The formula may optionally include a \code{\link[=block]{block()}} as
+well. Each of these can take in multiple variables, e.g. to pass both a
+household ID and individual ID as unit of assignment, use \code{uoa(hhid,
+  iid)} and not \code{uoa(hhid) + uoa(iid)}.
 
-The treatment variable passed into the left-hand side of \code{formula} can
-either be \code{logical}, \code{numeric}, or \code{character}. If it is
-anything else, it is attemped to be converted to one of those (for example,
-\code{factor} and \code{ordered} are converted to \code{numeric} if the
-levels are \code{numeric}, otherwise to \code{character}. If the treatment
-is not \code{logical} or \code{numeric} with only values 0 and 1, in order
-to generate weights with \code{ate()} or \code{ett()}, the \code{dichotomy}
-argument must be used to identify the treatment and control groups. The
-\code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
-\code{obs_design()}) all support the \code{dichotomy} argument, or instead
-\code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
-See \code{dichotomy()} for more details on specifying a \code{dichotomy}.
+The treatment variable passed into the left-hand side of \code{formula}
+can either be \code{logical}, \code{numeric}, or \code{character}. If it
+is anything else, it is attemped to be converted to one of those (for
+example, \code{factor} and \code{ordered} are converted to \code{numeric}
+if the levels are \code{numeric}, otherwise to \code{character}). If the
+treatment is not \code{logical} or \code{numeric} with only values 0 and
+1, in order to generate weights with \code{\link[=ate]{ate()}} or \code{\link[=ett]{ett()}}, the
+\code{dichotomy} argument must be used to identify the treatment and
+control groups. The \code{Design} creation functions (\code{rct_design()},
+\code{rd_design()}, \code{obs_design()}) all support the \code{dichotomy}
+argument, or instead \code{dichotomy} can be passed to \code{\link[=ett]{ett()}} and \code{\link[=ate]{ate()}}
+directly. See \code{\link[=dichotomy]{dichotomy()}} for more details on specifying a
+\code{dichotomy}.
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid), data = simdata)
+des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+                  data = simdata)
 
 data(schooldata)
 des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),
