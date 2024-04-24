@@ -24,6 +24,7 @@ setValidity("DesignStructure", function(object) {
 ##'   representation. Has no effect if \code{design} is not dichotomized.
 ##' @return A \code{data.frame} containing the structure of the \code{design}.
 ##' @export
+##' @rdname Design_structure
 get_structure <- function(design, binary = FALSE) {
 
   struct <- design@structure
@@ -40,6 +41,7 @@ get_structure <- function(design, binary = FALSE) {
 ##' @param object \code{DesignStructure} object
 ##' @return an invisible copy of \code{object}
 ##' @export
+##' @rdname Design_structure
 setMethod("show", "DesignStructure", function(object) {
   struct <- data.frame(object)
   old_row_names <- rownames(struct)
