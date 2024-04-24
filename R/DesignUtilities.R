@@ -214,12 +214,16 @@ is_binary_or_dichotomized <- function(des) {
   return(is_dichotomized(des) || has_binary_treatment(des))
 }
 
-##' Check if \code{Design} objects are identical
+##' @title Test equality of two \code{Design} objects
+##'
+##' @description Check whether two \code{Design} objects are identical. Choose
+##'   whether to consider or ignore the \code{dichotomy}.
+##'
 ##' @param x A \code{Design} object.
 ##' @param y A \code{Design} object.
 ##' @param dichotomy_force Logical, default \code{FALSE}. If \code{FALSE}, the
-##'   \code{dichotomy()} of \code{x} and \code{y} is ignored in the comparison.
-##'   (In other words, two \code{Design}s which differ only in their
+##'   [dichotomy()] of \code{x} and \code{y} is ignored in the comparison. (In
+##'   other words, two \code{Design}s which differ only in their
 ##'   \code{@dichotomy} slot will be considered identical.) If \code{TRUE}, the
 ##'   \code{dichotomy} must also be in agreement between \code{x} and \code{y}.
 ##' @return Logical, are \code{x} and \code{y} identical?
@@ -234,10 +238,13 @@ identical_Designs <- function(x, y, dichotomy_force = FALSE) {
   return(identical(x, y))
 }
 
-##' @title Identify fine strata (blocks with one treated or one control unit of assignment)
+##' @title Identify fine strata
+##'
+##' @description Identify blocks in a \code{Design} with exactly one treated or
+##'   one control unit of assignment.
 ##' @param des A \code{Design} object.
-##' @return Logical vector with length given by the number of blocks in the
-##' Design
+##' @return Logical vector with length given by the number of blocks in
+##'   \code{Design}
 ##' @export
 identify_small_blocks <- function(des) {
   blk_txt_cts <- design_table(des, "t", "b")

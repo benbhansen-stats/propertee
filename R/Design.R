@@ -520,28 +520,31 @@ var_names <- function(design, type) {
   return(names(design@structure)[design@column_index == type])
 }
 
-##' Useful for debugging purposes to ensure that there is concordance between
-##' variables in the \code{Design} and data.
-##'
-##' Consider the following scenario: A \code{Design} is generated from some
-##' dataset, "data1", which includes a block variable "b1". Within each unique
-##' unit of assignment/unitid/cluster of "data1", it must be the case that "b1"
-##' is constant. (Otherwise the creation of the \code{Design} will fail.)
-##'
-##' Next, a model is fit which includes weights generated from the
-##' \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
-##' also exists, but due to some issue with data cleaning, does not agree with
-##' "b1" in "data1".
-##'
-##' This could cause errors, either directly (via actual error messages) or
-##' simply produce nonsense results. \code{design_data_concordance()} is
-##' designed to help debug these scenarios by providing information on whether
-##' variables in both the data used in the creation of \code{design} ("data1" in
-##' the above example) and some new dataset, \code{data}, ("data2" in the above
-##' example) have any inconsistencies.
 ##' @title Check for variable agreement within units of assignment
+##'
+##' @description Useful for debugging purposes to ensure that there is
+##'   concordance between variables in the \code{Design} and data.
+##'
+##' @details Consider the following scenario: A \code{Design} is generated from
+##'   some dataset, "data1", which includes a block variable "b1". Within each
+##'   unique unit of assignment/unitid/cluster of "data1", it must be the case
+##'   that "b1" is constant. (Otherwise the creation of the \code{Design} will
+##'   fail.)
+##'
+##'   Next, a model is fit which includes weights generated from the
+##'   \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
+##'   also exists, but due to some issue with data cleaning, does not agree with
+##'   "b1" in "data1".
+##'
+##'   This could cause errors, either directly (via actual error messages) or
+##'   simply produce nonsense results. [design_data_concordance()] is designed
+##'   to help debug these scenarios by providing information on whether
+##'   variables in both the data used in the creation of \code{design} ("data1"
+##'   in the above example) and some new dataset, \code{data}, ("data2" in the
+##'   above example) have any inconsistencies.
+##'
 ##' @param design a \code{Design} object
-##' @param data new data set, presumably not the same used to create
+##' @param data a new data set, presumably not the same used to create
 ##'   \code{design}.
 ##' @param by optional; named vector or list connecting names of variables in
 ##'   \code{design} to variables in \code{data}. Names represent variables in
