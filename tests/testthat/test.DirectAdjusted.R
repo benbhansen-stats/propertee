@@ -437,7 +437,7 @@ test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", 
   a21 <- .get_a21(dmod)
   expect_equal(
     estfun(dmod),
-    ef_pieces[["psi"]] - nq / sqrt(n * nc) * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+    ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
 
@@ -461,7 +461,7 @@ test_that("estfun.DirectAdjusted gets scaling constants right with partial overl
   a21 <- .get_a21(dmod)
   expect_equal(
     estfun(dmod),
-    ef_pieces[["psi"]] - nq / sqrt(n * nc) * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+    ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
 
