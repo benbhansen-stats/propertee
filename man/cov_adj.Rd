@@ -2,46 +2,53 @@
 % Please edit documentation in R/cov_adj.R
 \name{cov_adj}
 \alias{cov_adj}
-\title{Covariance Adjustment for Treatment Estimation}
+\title{Covariance adjustment of \code{DirectAdjusted} model estimates}
 \usage{
 cov_adj(model, newdata = NULL, design = NULL, by = NULL)
 }
 \arguments{
-\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or
+\item{model}{any model that inherits from a \code{glm}, \code{lm}, or
 \code{robustbase::lmrob} object}
 
-\item{newdata}{Optional; a data.frame of new data}
+\item{newdata}{a dataframe of new data. Default is NULL, in which case
+a dataframe is sought from higher up the call stack.}
 
-\item{design}{Optional \code{Design}. If not provided, the function will
-search through the call stack to find one.}
+\item{design}{a \code{Design} object. Default is NULL, in which case a
+\code{Design} object is sought from higher up the call stack.}
 
-\item{by}{optional; vector or list connecting names of unit of
-assignment/unitid/cluster variables in \code{design} to unit of
-assignment/unitid/cluster variables in the covariance adjustment data. If
-a named vector, names should represent variables in the \code{Design}
-object and values should represent variables in the data. Only needed if:
-\enumerate{
-\item columns not related to the design should be used for merging the
-covariance adjustment and quasiexperimental samples, or 2) the column
-names differ between the datasets used to fit both models.
-}}
+\item{by}{optional; a string or named vector of unique identifier columns in
+the data used to create \code{design} and the data used to fit the covariance
+adjustment model. Default is NULL, in which case unit of assignment columns
+are used for identification (even if they do not uniquely identify units of
+observation). If a named vector is provided, names should represent variables
+in the data used to create \code{design}, while values should represent
+variables in the covariance adjustment data.}
 }
 \value{
-\code{SandwichLayer} or \code{PreSandwichLayer} object; the former
-if \code{design} is provided or a \code{design} can be found in the call stack,
-otherwise the latter. The values represent the covariance adjustments for
-the observations in \code{newdata}, if \code{newdata} is provided or found as an
-argument to \code{lmitt.formula}, or the fitted values from \code{model}. The
-length of the output of \code{cov_adj()} varies depending on this logic.
+A \code{SandwichLayer} if \code{design} is not NULL or a \code{Design}
+object is found in the call stack, otherwise a \code{PreSandwichLayer} object
 }
 \description{
-Prior to obtaining predicted values, \code{cov_adj()} tries to identify the
-treatment variable (as specified in the \code{design}) and replace it with
-the reference level. If the treatment is binary, this is \code{FALSE}. If
-treatment is numeric, it is the smallest non-negative value (note that this
-means for 0/1 binary, it uses a 0). Factor treatments are not currently
-supported, but if we add them, it will use the first \code{level()} of the
-factor, you may change this by using \code{relevel()} to adjust.
+\code{cov_adj()} takes a fitted covariance model and returns the information
+necessary for adjusting direct adjustment model estimates and associated
+standard errors for covariates. Standard errors will reflect adjustments made
+to the outcomes as well as contributions to sampling variability arising from
+the estimates of the covariance adjustment model coefficients.
+}
+\details{
+Prior to generating adjustments, \code{cov_adj()} identifies the
+treatment variable specified in the \code{Design} object passed to
+\code{design} and replaces all values with a reference level. If the treatment has
+logical type, this reference level is \code{FALSE}, and if it has numeric type,
+this is the smallest non-negative value (which means 0 for 0/1 binary).
+Factor treatments are not currently supported for \code{Design} objects.\cr\cr
+The values of the output vector represent adjustments for the outcomes in
+\code{newdata} if \code{newdata} is provided; adjustments for the outcomes
+in the data used to fit a \code{DirectAdjusted} model if \code{cov_adj()}
+is called within the \code{offset} argument of the model fit; or they are
+the fitted values from \code{model} if no relevant dataframe can be extracted
+from the call stack. The length of the output of \code{cov_adj()} will match
+the number of rows of the dataframe used.
 }
 \examples{
 data(STARdata)

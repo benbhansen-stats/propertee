@@ -2,12 +2,12 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.sanitize_Q_ids}
 \alias{.sanitize_Q_ids}
-\title{Return ID's for observations in \eqn{Q}}
+\title{(Internal) Return ID's used to order observations in the direct adjustment sample}
 \usage{
 .sanitize_Q_ids(x, id_col = NULL, ...)
 }
 \arguments{
-\item{x}{a fitted \code{DirectAdjusted} object}
+\item{x}{a fitted \code{DirectAdjusted} model}
 
 \item{id_col}{character vector; optional. Specifies column(s) whose ID's will
 be returned. The column must exist in the data that created the \code{Design}
@@ -17,9 +17,10 @@ in the design will be used to generate ID's.}
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|Q|}
+A vector with length equal to the number of units of observation in
+the direct adjustment sample
 }
 \description{
-Return ID's for observations in \eqn{Q}
+(Internal) Return ID's used to order observations in the direct adjustment sample
 }
 \keyword{internal}

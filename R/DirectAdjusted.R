@@ -36,14 +36,18 @@ setMethod("show", "DirectAdjusted", function(object) {
   invisible(object)
 })
 
-##' @title Variance-Covariance matrix of \code{DirectAdjusted} object
-##' @details If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
-##' offset, then its \code{vcov()} method provides a sandwich estimate of the
-##' covariance-adjusted variance-covariance matrix. Otherwise, it provides
-##' the default OLS estimate of the matrix.
-##' @param object DirectAdjusted
-##' @param ... Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.
-##' @return Variance-Covariance matrix
+##' @title Compute variance-covariance matrix for fitted \code{DirectAdjusted} model
+##' @description
+##'   An S3method for \code{stats::vcov} that computes standard errors for
+##'   \code{DirectAdjusted} models using \code{vcovDA()}.
+##' @details
+##'   \code{vcov.DirectAdjusted()} wraps around \code{vcovDA()}, so additional
+##'   arguments passed to \code{...} will be passed to the \code{vcovDA()} call.
+##'   See documentation for \code{vcovDA()} for information about necessary
+##'   arguments.
+##' @param object a fitted \code{DirectAdjusted} model
+##' @param ... additional arguments to \code{vcovDA()}.
+##' @inherit vcovDA return
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
   cl <- match.call()
@@ -66,14 +70,22 @@ vcov.DirectAdjusted <- function(object, ...) {
   return(vmat)
 }
 
-##' @title Variance-Covariance matrix
-##' @param object DirectAdjusted
+##' @title Confidence intervals with standard errors provided by \code{vcov.DirectAdjusted()}
+##' @description
+##'   An S3method for \code{stats::confint} that uses standard errors computed
+##'   using \code{vcov.DirectAdjusted()}. Additional arguments passed to this
+##'   function, such as \code{cluster} and \code{type}, specify the arguments of
+##'   the \code{vcov.DirectAdjusted()} call.
+##' 
+##' @param object a fitted \code{DirectAdjusted} model
 ##' @param parm a specification of which parameters are to be given confidence
 ##'   intervals, either a vector of numbers or a vector of names. If missing,
 ##'   all parameters are considered.
 ##' @param level the confidence level required.
-##' @param ... Add'l arguments
-##' @return Variance-Covariance matrix
+##' @param ... additional arguments to pass to \code{vcov.DirectAdjusted()}
+##' @return A matrix (or vector) with columns giving lower and upper confidence
+##' limits for each parameter. These will be labelled as (1-level)/2 and 1 -
+##' (1-level)/2 in % (by default 2.5% and 97.5%)
 ##' @exportS3Method
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
   call <- match.call()
@@ -84,34 +96,38 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 }
 
 ##' @title Extract empirical estimating equations from a \code{DirectAdjusted} model fit
-##' @param x a fitted \code{DirectAdjusted} object
+##' @description
+##'   An S3method for \code{sandwich::estfun} for producing a matrix of contributions
+##'   to the direct adjustment estimating equations.
+##' @details
+##'   If a prior covariance adjustment model has
+##'   been passed to the \code{offset} argument of the \code{DirectAdjusted} model
+##'   using \code{cov_adj()}, \code{estfun.DirectAdjusted()} incorporates
+##'   contributions to the estimating equations of the covariance adjustment model.\cr\cr
+##'   The covariance adjustment sample may not fully overlap with the direct
+##'   adjustment sample, in which case \code{estfun.DirectAdjusted()} returns a
+##'   matrix with the same number of rows as the number of unique units of observation
+##'   used to fit the two models. Uniqueness is determined by matching units of
+##'   assignment used to fit the covariance adjustment model to units of assignment
+##'   in the \code{DirectAdjusted} model's \code{Design} slot; units of observation
+##'   within units of assignment that do not match are additional units that add
+##'   to the row count.\cr\cr
+##'   The\code{by} argument in \code{cov_adj()} can provide a column or a pair of
+##'   columns (a named vector where the name specifies a column in the direct
+##'   adjustment sample and the value a column in the covariance adjustment
+##'   sample) that uniquely specifies units of observation in each sample. This 
+##'   information can be used to align each unit of observation's contributions
+##'   to the two sets of estimating equations. If no \code{by} argument is 
+##'   provided and units of observation cannot be uniquely specified, contributions
+##'   are aligned up to the unit of assignment level. If standard errors are
+##'   clustered no finer than that, they will provide the same result as if each
+##'   unit of observation's contributions were aligned exactly.
+##' 
+##' @param x a fitted \code{DirectAdjusted} model
 ##' @param ... arguments passed to methods
-##' @return An \eqn{n\times k} matrix of empirical estimating equations for the
-##' covariance-adjusted ITT effect regression. \eqn{n} represents the number of
-##' observations in the union of the samples used to fit the two regressions.
-##' \eqn{k} represents the number of parameters in the latter model.\cr\cr
-##' Each row represents an observation's contribution to the stacked estimating
-##' equations. This contribution, denoted \eqn{\tilde{\psi}_{i}} for the \eqn{i}th
-##' observation, is given by \deqn{\tilde{\psi}_{i} = \psi_{i} +
-##' \phi_{i}A_{11}^{-1}A_{21}^{T}} where \eqn{\psi_{i}} is the observation's
-##' contribution to the ITT effect model fit, \eqn{\phi_{i}} is the observation's
-##' contribution to the covariance adjustment model fit, and the \eqn{A} matrices
-##' are given by typical sandwich calculations.\cr\cr
-##' Note that the formulation of the output matrix \eqn{\tilde{\Psi}} requires
-##' information about each observation's contributions to both the covariance
-##' adjustment and ITT effect models (where some observations may not contribute
-##' to both models). Estimating equations are taken from \code{sandwich::estfun}
-##' calls on both fitted models and aligned as closely as possible.
-##' The `by` argument in `cov_adj()` can be used to specify a column unrelated to
-##' the design that will allow for exact alignment of such matrices. If no `by`
-##' argument is provided, clustering information given in the \code{DirectAdjusted}'s
-##' \code{Design} object will be used to align rows by unit of assignment, even
-##' though no guarantees can be made about aligning the matrices within units
-##' of assignment. Regardless of the eventual alignment and initial ordering of the
-##' observations in the two matrices, however, when using \code{vcovDA},
-##' variance estimates will ultimately be the same due to the clustering passed
-##' to any \code{sandwich::meatCL} calls.
-##' @rdname da_estfun_methods
+##' @return An \eqn{n\times 2} matrix of empirical
+##'  estimating equations for the direct adjustment model fit. See Details for
+##'  definition of \eqn{n}.
 ##' @exportS3Method
 estfun.DirectAdjusted <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
@@ -137,24 +153,35 @@ estfun.DirectAdjusted <- function(x, ...) {
 }
 
 ##' @title Extract bread matrix from a \code{DirectAdjusted} model fit
+##' @description
+##'   An S3method for \code{sandwich::bread} that extracts the bread of the
+##'   direct adjustment model sandwich covariance matrix.
+##' 
 ##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
-##' @param x a fitted \code{DirectAdjusted} object
+##' @param x a fitted \code{DirectAdjusted} model
 ##' @param ... arguments passed to methods
-##' @inherit .get_a22_inverse return
-##' @rdname da_estfun_methods
+##' @inherit vcovDA return
 ##' @exportS3Method
 bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
-##' (Internal) Align the dimensions and rows of estimating equations matrices
-##' from the ITT effect and covariance adjustment models
-##' @param x a fitted \code{DirectAdjusted} object
+##' @title (Internal) Align the dimensions and rows of direct adjustment and covariance
+##' adjustment model estimating equations matrices
+##' @details
+##'   \code{.align_and_extend_estfuns()} first extracts the matrices of contributions
+##'   to the empirical estimating equations for the direct adjustment and covariance
+##'   adjustment models; then, it pads the matrices with zeros to account for units
+##'   of observation that appear in one model-fitting sample but not the other;
+##'   finally it orders the matrices so units of observation
+##'   (or if unit of observation-level ordering is impossible, units of assignment)
+##'   are aligned.
+##' @param x a fitted \code{DirectAdjusted} model
 ##' @param by character vector; indicates unit of assignment columns to generate
 ##' ID's from; default is NULL, which uses the unit of assignment columns specified
 ##' in the \code{DirectAdjusted} object's \code{Design} slot
 ##' @param ... arguments passed to methods
-##' @return list of two matrices, one being the aligned contributions to the
-##' estimating equations for the ITT effect model, and the other being the
-##' aligned contributions to the covariance adjustment model
+##' @return A list of two matrices, one being the aligned contributions to the
+##' estimating equations for the direct adjustment model, and the other being the
+##' aligned contributions to the covariance adjustment model.
 ##' @keywords internal
 .align_and_extend_estfuns <- function(x, by = NULL, ...) {
   if (!inherits(x, "DirectAdjusted") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
@@ -185,8 +212,9 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(list(psi = aligned_psi, phi = aligned_phi))
 }
 
-##' (Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-##' object based on its base S3 class
+##' @title (Internal) Extract empirical estimating equations from a
+##' \code{DirectAdjusted} model using the S3 method associated with its
+##' \code{.S3Class} slot
 ##' @inheritParams estfun.DirectAdjusted
 ##' @return S3 method
 ##' @keywords internal
@@ -202,24 +230,26 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
 }
 
-#' Make unit of assignment ID's to pass to \code{sandwich::meatCL} `cluster`
-#' argument
-#' @details These ID's align with the output of \code{estfun.DirectAdjusted}. If
-#' a \code{by} argument was used for \code{.order_samples}, \code{.make_uoa_ids}
-#' will return the values of the columns specified in \code{cluster} associated
-#' with that ordering.
+#' @title Make ID's to pass to the \code{cluster} argument of \code{vcovDA()}
+#' @description
+#'   \code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
+#'    with the order of the units of observations' contributions in
+#'    \code{estfun.DirectAdjusted()}. This is to ensure that when \code{vcovDA()}
+#'    calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
+#'    correct contributions to estimating equations within clusters.
 #' @param x a fitted \code{DirectAdjusted} object
 #' @param vcov_type a string indicating model-based or design-based covariance
 #' estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
 #' indicating model-based estimation.
 #' @param cluster character vector or list; optional. Specifies column names that appear
-#' in both the covariance adjustment dataframe C and quasiexperimental dataframe
-#' Q. Defaults to NULL, in which case unit of assignment columns indicated in
-#' the Design will be used to generate clustered covariance estimates. If there
-#' are multiple clustering columns, they are concatenated together for each row
-#' and separated by "_".
+#' in both the covariance adjustment and direct adjustment model dataframes.
+#' Defaults to NULL, in which case unit of assignment columns indicated in
+#' the Design will be used for clustering. If there are multiple clustering columns,
+#' they are concatenated together for each row and separated by "_".
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|\mathcal{Q}| + |\mathcal{C} \ \mathcal{Q}|}
+#' @return A vector with length equal to the number of unique units of observation
+#' used to fit the two models. See Details of \code{estfun.DirectAdjusted()} for
+#' the method for determining uniqueness.
 #' @keywords internal
 .make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
   if (!inherits(x, "DirectAdjusted")) {
@@ -296,30 +326,32 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(factor(ids, levels = unique(ids)))
 }
 
-#' Order observations used to fit a \code{DirectAdjusted} model and its
-#' covariance adjustment model
-#' @details \code{.order_samples} underpins the ordering for \code{.make_uoa_ids}
-#' and \code{estfun.DirectAdjusted}. This function needs to order the rows in
-#' in \eqn{\mathcal{Q}\cup\mathcal{C}}, but it also needs to explain how the
-#' original matrices of estimating equations should be indexed so the contributions
-#' from both sets of equations match. So instead of returning a numeric vector,
-#' which one might expect for an ordering function, \code{.order_samples}
-#' returns a list of vectors, which is explained in the Return section. Ultimately,
-#' the order is given by concatenating the vectors stored in \code{Q_not_C},
-#' \code{Q_in_C}, and \code{C_not_q} (\code{Q_in_C} and \code{C_in_Q} are
-#' interchangeable in terms of deriving the order). The names of the
-#' \code{Q_not_C} and \code{Q_in_C} vectors correspond to row indices of the
-#' matrix of estimating equations for the ITT effect model, while the names of
-#' the \code{C_in_Q} and \code{C_not_Q} vectors correspond to row indices of
-#' the matrix of estimating equations for the covariance adjustment model.
-#' When a \code{by} argument is provided to \code{cov_adj}, it is used to
-#' deduce the order.
-#' @param x a fitted \code{DirectAdjusted} object
-#' @param by character vector; indicates unit of assignment columns to generate
-#' ID's from; default is NULL, which uses the unit of assignment columns specified
-#' in the \code{DirectAdjusted} object's \code{Design} slot
-#' @return a list of four named vectors
+#' @title (Internal) Order observations used to fit a \code{DirectAdjusted} model
+#' and a prior covariance adjustment model
+#' @details \code{.order_samples()} underpins the ordering for \code{.make_uoa_ids()}
+#' and \code{estfun.DirectAdjusted()}. This function orders the outputs of those
+#' functions, but also informs how the original matrices of contributions to
+#' estimating equations need to be indexed to align units of observations'
+#' contributions to both sets of estimating equations.\cr\cr When a \code{by}
+#' argument is provided to \code{cov_adj()}, it is used to construct the order
+#' of \code{.order_samples()}.
+#' @param x a fitted \code{DirectAdjusted} model
+#' @param by character vector of columns to get ID's for ordering from. Default
+#' is NULL, in which case unit of assignment ID's are used for ordering.
 #' @param ... arguments passed to methods
+#' @return A list of four named vectors. The \code{Q_not_C} element holds the
+#' ordering for units of observation in the direct adjustment sample but not the
+#' covariance adjustment samples; \code{Q_in_C} and \code{C_in_Q}, the ordering
+#' for units in both; and \code{C_not_Q}, the ordering for units in the covariance
+#' adjustment sample only. \code{Q_in_C} and \code{C_in_Q} differ in that the
+#' names of the \code{Q_in_C} vector correspond to row indices of the original matrix of
+#' estimating equations for the direct adjustment model, while the names of
+#' \code{C_in_Q} correspond to row indices of the matrix of estimating equations for
+#' the covariance adjustment model. Similarly, the names of \code{Q_not_C} and 
+#' \code{C_not_Q} correspond to row indices of the direct adjustment and covariance
+#' adjustment samples, respectively. Ultimately, the order of \code{.make_uoa_ids()}
+#' and \code{estfun.DirectAdjusted()} is given by concatenating the vectors stored
+#' in \code{Q_not_C}, \code{Q_in_C}, and \code{C_not_q}.
 #' @keywords internal
 .order_samples <- function(x, by = NULL, ...) {
   if (!inherits(x, "DirectAdjusted") | !inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
@@ -365,14 +397,15 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(out)
 }
 
-#' @title Return ID's for observations in \eqn{Q}
-#' @param x a fitted \code{DirectAdjusted} object
+#' @title (Internal) Return ID's used to order observations in the direct adjustment sample
+#' @param x a fitted \code{DirectAdjusted} model
 #' @param id_col character vector; optional. Specifies column(s) whose ID's will
 #' be returned. The column must exist in the data that created the \code{Design}
 #' object. Default is NULL, in which case unit of assignment columns indicated
 #' in the design will be used to generate ID's.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|Q|}
+#' @return A vector with length equal to the number of units of observation in
+#' the direct adjustment sample
 #' @keywords internal
 .sanitize_Q_ids <- function(x, id_col = NULL, ...) {
   # link the units of assignment in the Design with desired cluster ID's

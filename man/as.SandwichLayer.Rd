@@ -2,32 +2,37 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{as.SandwichLayer}
 \alias{as.SandwichLayer}
-\title{Convert a PreSandwichLayer to a SandwichLayer via a Design Object}
+\title{Convert a \code{PreSandwichLayer} to a \code{SandwichLayer} with a
+\code{Design} object}
 \usage{
 as.SandwichLayer(x, design, by = NULL, Q_data = NULL)
 }
 \arguments{
-\item{x}{a \code{PreSandwichLayer} object.}
+\item{x}{a \code{PreSandwichLayer} object}
 
-\item{design}{a \code{Design} object created by one of \code{rct_design()},
-\code{rd_design()}, or \code{obs_design()}.}
+\item{design}{a \code{Design} object}
 
-\item{by}{character vector or list; optional. Specifies column names that
-appear in both the covariance adjustment and quasiexperimental dataframes
-and can be used to match observations in case the two overlap. Names
-represent variables in the Design; values represent variables in the data.
-Defaults to NULL, in which case unit of assignment columns indicated in
-the Design will be used to match observations in the samples.}
+\item{by}{optional; a string or named vector of unique identifier columns in
+the data used to create \code{design} and the data used to fit the covariance
+adjustment model. Default is NULL, in which case unit of assignment columns
+are used for identification (even if they do not uniquely identify units of
+observation). If a named vector is provided, names should represent variables
+in the data used to create \code{design}, while values should represent
+variables in the covariance adjustment data.}
 
-\item{Q_data}{optional; quasiexperimental dataframe to allow for merging
-to the covariance adjustment data via the \code{by} argument. If \code{by} is not NULL
-and \code{Q_data} is NULL, the function will search through the call stack to find
-the quasiexperimental data; if the search is unsuccessful, the function will
-use the \code{design} data to attempt to merge.}
+\item{Q_data}{dataframe of direct adjustment sample, which is needed to
+generate the \code{keys} slot of the \code{SandwichLayer} object. Defaults
+to NULL, in which case if \code{by} is NULL, the data used to create \code{design}
+is used, and if \code{by} is not NULL, appropriate data further up the call
+stack (passed as arguments to \code{cov_adj()} or \code{lmitt.formula()},
+for example) is used.}
 }
 \value{
 a \code{SandwichLayer} object
 }
 \description{
-Convert a PreSandwichLayer to a SandwichLayer via a Design Object
+\code{as.SandwichLayer()} uses the \code{Design} object passed to the
+\code{design} argument to populate the slots in a \code{SandwichLayer}
+object that a \code{PreSandwichLayer} does not have sufficient information
+for.
 }

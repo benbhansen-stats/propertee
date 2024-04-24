@@ -71,6 +71,7 @@ reference:
     - as.SandwichLayer
     - subset,PreSandwichLayer-method
     - show,PreSandwichLayer-method
+    - bread.DirectAdjusted
     - estfun.DirectAdjusted
     - estfun.lmrob
     - estfun.glmrob

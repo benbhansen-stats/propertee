@@ -2,12 +2,12 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{confint.DirectAdjusted}
 \alias{confint.DirectAdjusted}
-\title{Variance-Covariance matrix}
+\title{Confidence intervals with standard errors provided by \code{vcov.DirectAdjusted()}}
 \usage{
 \method{confint}{DirectAdjusted}(object, parm, level = 0.95, ...)
 }
 \arguments{
-\item{object}{DirectAdjusted}
+\item{object}{a fitted \code{DirectAdjusted} model}
 
 \item{parm}{a specification of which parameters are to be given confidence
 intervals, either a vector of numbers or a vector of names. If missing,
@@ -15,11 +15,16 @@ all parameters are considered.}
 
 \item{level}{the confidence level required.}
 
-\item{...}{Add'l arguments}
+\item{...}{additional arguments to pass to \code{vcov.DirectAdjusted()}}
 }
 \value{
-Variance-Covariance matrix
+A matrix (or vector) with columns giving lower and upper confidence
+limits for each parameter. These will be labelled as (1-level)/2 and 1 -
+(1-level)/2 in \% (by default 2.5\% and 97.5\%)
 }
 \description{
-Variance-Covariance matrix
+An S3method for \code{stats::confint} that uses standard errors computed
+using \code{vcov.DirectAdjusted()}. Additional arguments passed to this
+function, such as \code{cluster} and \code{type}, specify the arguments of
+the \code{vcov.DirectAdjusted()} call.
 }

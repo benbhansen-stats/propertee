@@ -105,13 +105,16 @@ setMethod("[", "PreSandwichLayer",
 
           })
 
-##' (Internal) Get the a vector of "response" predictions from a covariance adjustment model
-##' and its gradient with respect to the fitted coefficients
-##' @param model Any model that inherits from a \code{glm}, \code{lm}, or \code{
-##' robustbase::lmrob} object
-##' @param newdata Optional; a data.frame of new data
-##' @return Covariate adjusted outcomes and their gradient with respect to the
-##' parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
+##' @title (Internal) Get covariance adjustments and their gradient with
+##' respect to covariance adjustment model coefficients
+##' @description \code{.get_ca_and_prediction_gradient()} takes a fitted covariance
+##' adjustment model passed to the \code{model} argument and generates adjustments to
+##' outcomes for observations in the \code{newdata} argument. It also generates
+##' the gradient of these adjustments taken with respect to the coefficients and
+##' evaluated at the coefficient estimates.
+##' @inheritParams cov_adj
+##' @return A list of covariance adjustments, returned as a numeric vector, and
+##' their gradient, returned as a numeric matrix
 ##' @keywords internal
 .get_ca_and_prediction_gradient <- function(model, newdata = NULL) {
   if (is.null(newdata)) {
@@ -168,21 +171,28 @@ setMethod("[", "PreSandwichLayer",
 }
 
 
-##' @title Convert a PreSandwichLayer to a SandwichLayer via a Design Object
-##' @param x a \code{PreSandwichLayer} object.
-##' @param design a \code{Design} object created by one of \code{rct_design()},
-##' \code{rd_design()}, or \code{obs_design()}.
-##' @param by character vector or list; optional. Specifies column names that
-##' appear in both the covariance adjustment and quasiexperimental dataframes
-##' and can be used to match observations in case the two overlap. Names
-##' represent variables in the Design; values represent variables in the data.
-##' Defaults to NULL, in which case unit of assignment columns indicated in
-##' the Design will be used to match observations in the samples.
-##' @param Q_data optional; quasiexperimental dataframe to allow for merging
-##' to the covariance adjustment data via the `by` argument. If `by` is not NULL
-##' and `Q_data` is NULL, the function will search through the call stack to find
-##' the quasiexperimental data; if the search is unsuccessful, the function will
-##' use the `design` data to attempt to merge.
+##' @title Convert a \code{PreSandwichLayer} to a \code{SandwichLayer} with a
+##' \code{Design} object
+##' @description
+##'   \code{as.SandwichLayer()} uses the \code{Design} object passed to the
+##'   \code{design} argument to populate the slots in a \code{SandwichLayer}
+##'   object that a \code{PreSandwichLayer} does not have sufficient information
+##'   for.
+##' @param x a \code{PreSandwichLayer} object
+##' @param design a \code{Design} object
+##' @param by optional; a string or named vector of unique identifier columns in
+##'   the data used to create \code{design} and the data used to fit the covariance
+##'   adjustment model. Default is NULL, in which case unit of assignment columns
+##'   are used for identification (even if they do not uniquely identify units of
+##'   observation). If a named vector is provided, names should represent variables
+##'   in the data used to create \code{design}, while values should represent
+##'   variables in the covariance adjustment data.
+##' @param Q_data dataframe of direct adjustment sample, which is needed to
+##'   generate the \code{keys} slot of the \code{SandwichLayer} object. Defaults
+##'   to NULL, in which case if \code{by} is NULL, the data used to create \code{design}
+##'   is used, and if \code{by} is not NULL, appropriate data further up the call
+##'   stack (passed as arguments to \code{cov_adj()} or \code{lmitt.formula()},
+##'   for example) is used.
 ##' @return a \code{SandwichLayer} object
 ##' @export
 as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
@@ -257,14 +267,16 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
              Design = design))
 }
 
-#' Return ID's for observations in the covariance adjustment sample C
-#' @param x a \code{SandwichLayer} object.
+#' @title (Internal) Return ID's used to order observations in the covariance
+#' adjustment sample
+#' @param x a \code{SandwichLayer} object
 #' @param by character vector or list; optional. Specifies column names that appear in
-#' botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
-#' Defaults to NULL, in which case unit of assignment columns indicated in the
-#' Design will be used to generate ID's.
+#' botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
+#' in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
+#' slot will be used to generate ID's.
 #' @param ... arguments passed to methods
-#' @return A vector of length \eqn{|C|}
+#' @return A vector of length equal to the number of units of observation used
+#' to fit the covariance adjustment model
 #' @keywords internal
 .sanitize_C_ids <- function(x, by = NULL, sorted = FALSE, ...) {
   if (!inherits(x, "SandwichLayer")) {

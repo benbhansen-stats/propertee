@@ -2,7 +2,8 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.check_df_moderator_estimates}
 \alias{.check_df_moderator_estimates}
-\title{NA vcovDA subgroup estimates that have insufficient degrees of freedom}
+\title{(Internal) Replace standard errors for moderator effect estimates with insufficient
+degrees of freedom with \code{NA}}
 \usage{
 .check_df_moderator_estimates(
   vmat,
@@ -13,21 +14,25 @@
 )
 }
 \arguments{
-\item{vmat}{variance-covariance matrix corresponding to \code{model}}
+\item{vmat}{output of \code{.vcov_XXX()} called with input to \code{model}
+argument below as the first argument}
 
-\item{model}{\code{DirectAdjusted} object}
+\item{model}{a fitted \code{DirectAdjusted} model}
 
-\item{cluster}{character or factor vector providing cluster ID's for the
-observations used to fit \code{model}}
+\item{cluster}{a character or factor vector denoting clusters the units of
+observation used to fit \code{model} belong to. Most conveniently, the
+output of \code{.make_uoa_ids()}}
 
-\item{model_data}{dataframe or name corresponding to the data used to fit \code{model}}
+\item{model_data}{dataframe or name of dataframe used to fit \code{model}}
 
-\item{envir}{environment to get \code{model_data} from if it is a quote object name}
+\item{envir}{environment to get \code{model_data} from if \code{model_data} has class \code{name}}
 }
 \value{
-\code{vmat} with NA's in the entries lacking sufficient degrees of freedom
+A variance-covariance matrix with NA's for estimates lacking sufficient
+degrees of freedom
 }
 \description{
-NA vcovDA subgroup estimates that have insufficient degrees of freedom
+(Internal) Replace standard errors for moderator effect estimates with insufficient
+degrees of freedom with \code{NA}
 }
 \keyword{internal}

@@ -2,8 +2,7 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.make_uoa_ids}
 \alias{.make_uoa_ids}
-\title{Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
-argument}
+\title{Make ID's to pass to the \code{cluster} argument of \code{vcovDA()}}
 \usage{
 .make_uoa_ids(x, vcov_type, cluster = NULL, ...)
 }
@@ -15,25 +14,23 @@ estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
 indicating model-based estimation.}
 
 \item{cluster}{character vector or list; optional. Specifies column names that appear
-in both the covariance adjustment dataframe C and quasiexperimental dataframe
-Q. Defaults to NULL, in which case unit of assignment columns indicated in
-the Design will be used to generate clustered covariance estimates. If there
-are multiple clustering columns, they are concatenated together for each row
-and separated by "_".}
+in both the covariance adjustment and direct adjustment model dataframes.
+Defaults to NULL, in which case unit of assignment columns indicated in
+the Design will be used for clustering. If there are multiple clustering columns,
+they are concatenated together for each row and separated by "_".}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|\mathcal{Q}| + |\mathcal{C} \ \mathcal{Q}|}
+A vector with length equal to the number of unique units of observation
+used to fit the two models. See Details of \code{estfun.DirectAdjusted()} for
+the method for determining uniqueness.
 }
 \description{
-Make unit of assignment ID's to pass to \code{sandwich::meatCL} \code{cluster}
-argument
-}
-\details{
-These ID's align with the output of \code{estfun.DirectAdjusted}. If
-a \code{by} argument was used for \code{.order_samples}, \code{.make_uoa_ids}
-will return the values of the columns specified in \code{cluster} associated
-with that ordering.
+\code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
+with the order of the units of observations' contributions in
+\code{estfun.DirectAdjusted()}. This is to ensure that when \code{vcovDA()}
+calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
+correct contributions to estimating equations within clusters.
 }
 \keyword{internal}

@@ -2,19 +2,21 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{.base_S3class_estfun}
 \alias{.base_S3class_estfun}
-\title{(Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-object based on its base S3 class}
+\title{(Internal) Extract empirical estimating equations from a
+\code{DirectAdjusted} model using the S3 method associated with its
+\code{.S3Class} slot}
 \usage{
 .base_S3class_estfun(x)
 }
 \arguments{
-\item{x}{a fitted \code{DirectAdjusted} object}
+\item{x}{a fitted \code{DirectAdjusted} model}
 }
 \value{
 S3 method
 }
 \description{
-(Internal) Call \code{sandwich::estfun} method for a fitted \code{DirectAdjusted}
-object based on its base S3 class
+(Internal) Extract empirical estimating equations from a
+\code{DirectAdjusted} model using the S3 method associated with its
+\code{.S3Class} slot
 }
 \keyword{internal}

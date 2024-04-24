@@ -6,7 +6,8 @@
 \alias{.get_a21}
 \alias{.get_tilde_a22_inverse}
 \alias{.get_tilde_a21}
-\title{(Internal) Compute variance blocks}
+\title{(Internal) Estimate components of the sandwich covariance matrix
+returned by \code{vcovDA()}}
 \usage{
 .get_a22_inverse(x, ...)
 
@@ -29,43 +30,35 @@
 }
 \value{
 \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
-\eqn{k\times k} matrix where k denotes the number of parameters in the ITT
-effect model
+\eqn{2\times 2} matrix corresponding to an intercept and the treatment
+variable in the direct adjustment model
 
-\code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-\eqn{p} is the dimension of the covariance adjustment model including an
-intercept
+\code{.get_a11_inverse()}: A \eqn{p\times p} matrix where \eqn{p} is
+the dimension of the covariance adjustment model, including an intercept
 
-\code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
-where the number of rows are given by the dimension of the ITT effect
-estimating equations and the number of columns are given by the number of
-terms in the covariance adjustment model
+\code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{2\times p} matrix
+where the number of rows are given by the intercept and the treatment
+variable in the direct adjustment model, and the number of columns are given
+by the dimension of the covariance adjustment model
 }
 \description{
-(Internal) Compute variance blocks
+(Internal) Estimate components of the sandwich covariance matrix
+returned by \code{vcovDA()}
 }
 \details{
-\eqn{A_{22}^{-1}} is the inverse observed Fisher information of the
-ITT effect estimating equations scaled by \eqn{n_{\mathcal{Q}}}.
+\code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: \eqn{A_{22}^{-1}} is the "bread" of the
+sandwich covariance matrix returned by \code{vcovDA()} whether one has fit
+a prior covariance adjustment model or not.
 
-\eqn{A_{11}^{-1}} is the inverse of the gradient of the covariance
-adjustment model estimating equations scaled by \eqn{n_{\mathcal{C}}^{-1}}.
+\code{.get_a11_inverse()}: \eqn{A_{11}^{-1}} is the "bread" of
+the sandwich covariance matrix for the covariance adjustment model. This
+matrix contributes to the meat matrix of the direct adjustment sandwich
+covariance matrix.
 
-\eqn{A_{21}} is the gradient of the ITT effect estimating equations
-scaled by \eqn{n_{\mathcal{Q}}^{-1}} taken with respect to the covariance
-adjustment model parameters. This matrix is the crossproduct of the
-prediction gradient for the units of observation in \eqn{\mathcal{Q}} and
-the model matrix of the ITT effect estimating eqations.
-
-\eqn{\tilde{A}_{22}^{-1}} is the inverse observed Fisher
-information of the ITT effect estimating equations scaled by \eqn{n}. This
-function wraps around the function \code{.get_a22_inverse()} that produces
-\eqn{A_{22}^{-1}}, where \eqn{A_{22}=\frac{n}{n_{\mathcal{Q}}}\tilde{A}_{22}}.
-
-\eqn{\tilde{A}_{21}} is the gradient of the ITT effect estimating
-equations scaled by \eqn{n^{-1}} taken with respect to the covariance
-adjustment model parameters. This function wraps around \code{.get_a21()},
-which produces \eqn{A_{21}}, where \eqn{A_{21} = \frac{n_{\mathcal{Q}}}{n}
-  \tilde{A}_{21}}.
+\code{.get_a21()}/\code{.get_tilde_a21()}: \eqn{A_{21}} is the
+gradient of the estimating equations for the direct adjustment model taken
+with respect to the covariance adjustment model parameters. This matrix is
+the crossproduct of the prediction gradient for the units of observation in
+\eqn{\mathcal{Q}} and the model matrix of the direct adjustment model.
 }
 \keyword{internal}

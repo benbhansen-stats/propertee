@@ -2,24 +2,26 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{vcov.DirectAdjusted}
 \alias{vcov.DirectAdjusted}
-\title{Variance-Covariance matrix of \code{DirectAdjusted} object}
+\title{Compute variance-covariance matrix for fitted \code{DirectAdjusted} model}
 \usage{
 \method{vcov}{DirectAdjusted}(object, ...)
 }
 \arguments{
-\item{object}{DirectAdjusted}
+\item{object}{a fitted \code{DirectAdjusted} model}
 
-\item{...}{Additional arguments to \code{vcovDA()} or \code{stats:::vcov.lm()}.}
+\item{...}{additional arguments to \code{vcovDA()}.}
 }
 \value{
-Variance-Covariance matrix
+A \eqn{2\times 2} matrix corresponding to an intercept and the
+treatment variable in the direct adjustment model
 }
 \description{
-Variance-Covariance matrix of \code{DirectAdjusted} object
+An S3method for \code{stats::vcov} that computes standard errors for
+\code{DirectAdjusted} models using \code{vcovDA()}.
 }
 \details{
-If a \code{DirectAdjusted} object is fit with a \code{SandwichLayer}
-offset, then its \code{vcov()} method provides a sandwich estimate of the
-covariance-adjusted variance-covariance matrix. Otherwise, it provides
-the default OLS estimate of the matrix.
+\code{vcov.DirectAdjusted()} wraps around \code{vcovDA()}, so additional
+arguments passed to \code{...} will be passed to the \code{vcovDA()} call.
+See documentation for \code{vcovDA()} for information about necessary
+arguments.
 }

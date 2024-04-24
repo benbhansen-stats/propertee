@@ -2,24 +2,27 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.sanitize_C_ids}
 \alias{.sanitize_C_ids}
-\title{Return ID's for observations in the covariance adjustment sample C}
+\title{(Internal) Return ID's used to order observations in the covariance
+adjustment sample}
 \usage{
 .sanitize_C_ids(x, by = NULL, sorted = FALSE, ...)
 }
 \arguments{
-\item{x}{a \code{SandwichLayer} object.}
+\item{x}{a \code{SandwichLayer} object}
 
 \item{by}{character vector or list; optional. Specifies column names that appear in
-botn the covariance adjustment dataframe C and quasiexperimental dataframe Q.
-Defaults to NULL, in which case unit of assignment columns indicated in the
-Design will be used to generate ID's.}
+botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
+in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
+slot will be used to generate ID's.}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector of length \eqn{|C|}
+A vector of length equal to the number of units of observation used
+to fit the covariance adjustment model
 }
 \description{
-Return ID's for observations in the covariance adjustment sample C
+(Internal) Return ID's used to order observations in the covariance
+adjustment sample
 }
 \keyword{internal}
