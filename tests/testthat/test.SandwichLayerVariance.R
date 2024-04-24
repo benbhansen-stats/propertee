@@ -1361,7 +1361,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
-               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
+               crossprod(ef_damod - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
@@ -1443,7 +1443,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   ef_cmod <- estfun(cmod)
   ef_cmod <- rbind(matrix(0, nrow = nrow(Z), ncol = ncol(ef_cmod)), ef_cmod)
   expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
-               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
+               crossprod(ef_damod - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
 
   # meat should be the same as the output of sandwich::meat
@@ -1556,7 +1556,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
                crossprod(Reduce(
                  rbind,
-                 by(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
+                 by(ef_damod - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
@@ -1654,7 +1654,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
                crossprod(Reduce(
                  rbind,
-                 by(ef_damod -  nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
+                 by(ef_damod -  nq / nc * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
@@ -1730,7 +1730,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
   ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
   expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
-               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% a11inv %*% t(a21)) / n)
+               crossprod(ef_damod - nq / nc * ef_cmod %*% a11inv %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))
@@ -1822,7 +1822,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(dmod_as.lmitt), ids, colSums))) / n,
                crossprod(Reduce(
                  rbind,
-                 by(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
+                 by(ef_damod - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meatCL
   expect_equal(meat., sandwich::meatCL(dmod_as.lmitt, cluster = ids, cadjust = FALSE))
@@ -1907,7 +1907,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
   ef_cmod[which(df$z == 0),] <- nonzero_ef_cmod
   expect_equal(meat. <- crossprod(estfun(dmod_as.lmitt)) / n,
-               crossprod(ef_damod - nq / sqrt(n * nc) * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
+               crossprod(ef_damod - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21)) / n)
 
   # meat should be the same as the output of sandwich::meat
   expect_equal(meat., sandwich::meat(dmod_as.lmitt, adjust = FALSE))

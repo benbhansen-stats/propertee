@@ -147,7 +147,7 @@ estfun.DirectAdjusted <- function(x, ...) {
   n <- nrow(estmats[["psi"]])
 
   ## form matrix of estimating equations
-  mat <- estmats[["psi"]] - (nq / sqrt(nc * n)) * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
 
   return(mat)
 }
