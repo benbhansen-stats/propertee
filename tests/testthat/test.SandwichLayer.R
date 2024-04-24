@@ -307,7 +307,7 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`",
       ),
       "Unable to detect"
     ),
-    "Could not find quasiexperimental data"
+    "Could not find direct adjustment data"
   )
 
   expect_true(inherits(sl, "SandwichLayer"))
@@ -340,7 +340,7 @@ test_that("as.SandwichLayer failed by", {
         ),
         "Unable to detect"
       ),
-      "Could not find quasiexperimental data"
+      "Could not find direct adjustment data"
     ),
     "Could not find columns"
   )

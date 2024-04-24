@@ -224,7 +224,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
-    stop(paste("ITT effect model must have been fitted using a function from the",
+    stop(paste("Direct adjustment model must have been fitted using a function from the",
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))

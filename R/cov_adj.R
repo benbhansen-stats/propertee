@@ -42,7 +42,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {
     newdata <- tryCatch(
       .get_data_from_model("cov_adj", form),
       error = function(e) {
-        warning(paste("Could not find quasiexperimental data in the call stack,",
+        warning(paste("Could not find direct adjustment data in the call stack,",
                       "or it did not contain the columns specified in `by`.",
                       "Using the covariance adjustment data to generate",
                       "the covariance adjustments"), call. = FALSE)

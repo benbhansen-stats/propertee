@@ -9,7 +9,7 @@ Q_wo_nulls <- simdata
 Q_w_nulls <- STARdata
 Q_partial_overlap <- simdata[simdata$bid == 3,]
 
-# test whether the values are the same as calling predict on the quasiexperimental
+# test whether the values are the same as calling predict on the direct adjustment
 # data if called outside of `lm`
 test_ca <- function(ca, cov_mod,  Q_) {
   expect_true(inherits(ca, "numeric"))
@@ -71,7 +71,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
-                         pattern = "quasiexperimental data in the call stack")))
+                         pattern = "direct adjustment data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
@@ -81,7 +81,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
-                         pattern = "quasiexperimental data in the call stack")))
+                         pattern = "direct adjustment data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
   test_ca(ca, cmod, Q_wo_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
@@ -91,7 +91,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
-                         pattern = "quasiexperimental data in the call stack")))
+                         pattern = "direct adjustment data in the call stack")))
   ca <- suppressWarnings(cov_adj(cmod))
   test_ca(ca, cmod, Q_partial_overlap)
   expect_true(inherits(ca, "PreSandwichLayer"))
@@ -224,7 +224,7 @@ test_that(paste("cov_adj without `lmitt` call with named `by` argument and cmod"
         ),
         "Unable to detect"
       ),
-      "Could not find quasiexperimental data"
+      "Could not find direct adjustment data"
     ),
     "`model` must be fit"
   )
@@ -247,7 +247,7 @@ test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmo
       ),
       "Unable to detect"
     ),
-    "Could not find quasiexperimental data"
+    "Could not find direct adjustment data"
   )
 
   test_ca(ca, cmod, Q_wo_nulls)

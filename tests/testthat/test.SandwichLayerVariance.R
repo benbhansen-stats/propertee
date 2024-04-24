@@ -637,7 +637,7 @@ test_that(".get_b22 fails with invalid custom cluster argument", {
   )
 
   expect_error(propertee:::.get_b22(m, cluster = c("cid3")),
-               "cid3 are missing from the ITT effect model dataset")
+               "cid3 are missing from the direct adjustment")
   expect_error(propertee:::.get_b22(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
 })

@@ -215,10 +215,10 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
       Q_data <- tryCatch(
         .get_data_from_model("cov_adj", form),
         error = function(e) {
-          warning(paste("Could not find quasiexperimental data in the call stack,",
+          warning(paste("Could not find direct adjustment data in the call stack,",
                         "or it did not contain the columns specified in `by`.",
                         "Searching for `names(by)` in `design@structure`.",
-                        "Supply the quasiexperimental data to the `Q_data`",
+                        "Supply the direct adjustment data to the `Q_data`",
                         "argument when using `by` to avoid this error."),
                   call. = FALSE)
           tryCatch({

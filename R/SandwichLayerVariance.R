@@ -247,7 +247,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a character vector specifying column names that",
-               "exist in both the ITT effect and covariance model datasets"))
+               "exist in both the direct adjustment and covariance adjustment samples"))
   }
 
   Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
@@ -256,15 +256,15 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   C_uoas_in_Q <- C_uoas %in% unique(Q_uoas)
 
   message(paste(sum(C_uoas_in_Q),
-                "rows in the covariance adjustment model",
-                "data joined to the ITT effect model data\n"))
+                "rows in the covariance adjustment data",
+                "joined to the direct adjustment data\n"))
 
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
   uoas_overlap <- length(unique(C_uoas[C_uoas_in_Q]))
   if (uoas_overlap <= 1) {
     if (uoas_overlap == 1) {
-      warning(paste("Covariance matrix between covariance adjustment and ITT effect",
+      warning(paste("Covariance matrix between covariance adjustment and direct adjustment",
                     "model estimating equations is numerically indistinguishable",
                     "from 0"))
     }
@@ -345,13 +345,13 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                      envir = environment(formula(x)))
         stop(paste("The columns",
                    paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
-                   "are missing from the ITT effect model dataset"),
+                   "are missing from the direct adjustment data"),
              call. = FALSE)
       })
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a character vector specifying column names in the",
-               "ITT effect model dataset"))
+               "direct adjustment data"))
   }
 
   if (ncol(uoas) == 1) {
@@ -506,7 +506,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                "to propagate covariance adjustment model error"))
   }
 
-  # Get contribution to the estimating equation from the ITT effect model
+  # Get contribution to the estimating equation from the direct adjustment model
   w <- if (is.null(x$weights)) 1 else x$weights
 
   damod_mm <- stats::model.matrix(
