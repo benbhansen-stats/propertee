@@ -3,7 +3,7 @@
 \name{get_structure}
 \alias{get_structure}
 \alias{show,DesignStructure-method}
-\title{Returns \code{Design} Structure Information}
+\title{\code{Design} Structure Information}
 \usage{
 get_structure(design, binary = FALSE)
 
@@ -16,14 +16,19 @@ get_structure(design, binary = FALSE)
 \code{dichotomy}, replace the treatment column with its binary
 representation. Has no effect if \code{design} is not dichotomized.}
 
-\item{object}{\code{DesignStructure} object}
+\item{object}{a \code{DesignStructure} object, typically the output of
+\code{\link[=get_structure]{get_structure()}}}
 }
 \value{
-A \code{data.frame} containing the structure of the \code{design}.
-
-an invisible copy of \code{object}
+A \code{DesignStructure} object containing the structure of the
+\code{design} as a \code{data.frame}.
 }
 \description{
-Creates a \code{data.frame} containing the information at the unit of
-assignment/unitid/cluster level.
+Obtaining a \code{data.frame} which encodes the design
+information.
+}
+\examples{
+data(simdata)
+des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+get_structure(des)
 }

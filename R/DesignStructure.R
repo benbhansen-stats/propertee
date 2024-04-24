@@ -15,16 +15,22 @@ setValidity("DesignStructure", function(object) {
 })
 ######### Structure
 
-##' Creates a \code{data.frame} containing the information at the unit of
-##' assignment/unitid/cluster level.
-##' @title Returns \code{Design} Structure Information
+##' @title \code{Design} Structure Information
+##'
+##' @description Obtaining a \code{data.frame} which encodes the design
+##'   information.
 ##' @param design a \code{Design} object
 ##' @param binary default \code{FALSE}. If \code{TRUE} and the design contains a
 ##'   \code{dichotomy}, replace the treatment column with its binary
 ##'   representation. Has no effect if \code{design} is not dichotomized.
-##' @return A \code{data.frame} containing the structure of the \code{design}.
+##' @return A \code{DesignStructure} object containing the structure of the
+##'   \code{design} as a \code{data.frame}.
 ##' @export
 ##' @rdname Design_structure
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+##' get_structure(des)
 get_structure <- function(design, binary = FALSE) {
 
   struct <- design@structure
@@ -37,9 +43,8 @@ get_structure <- function(design, binary = FALSE) {
              Design = design))
 }
 
-##' @title Show a \code{DesignStructure}
-##' @param object \code{DesignStructure} object
-##' @return an invisible copy of \code{object}
+##' @param object a \code{DesignStructure} object, typically the output of
+##'   [get_structure()]
 ##' @export
 ##' @rdname Design_structure
 setMethod("show", "DesignStructure", function(object) {
