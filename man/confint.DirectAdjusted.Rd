@@ -28,3 +28,9 @@ using \code{vcov.DirectAdjusted()}. Additional arguments passed to this
 function, such as \code{cluster} and \code{type}, specify the arguments of
 the \code{vcov.DirectAdjusted()} call.
 }
+\details{
+Rather than call \code{stats::confint.lm()}, \code{confint.DirectAdjusted()}
+calls \code{.confint_lm()}, a function internal to the \code{propertee}
+package that ensures additional arguments in the \code{...} of the
+\code{confint.DirectAdjusted()} call are passed to the internal \code{vcov()} call.
+}
