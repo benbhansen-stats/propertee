@@ -52,6 +52,7 @@ Collate:
     'DesignConverters.R'
     'DesignStructure.R'
     'DesignUtilities.R'
+    'confint_lm.R'
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
     'DirectAdjusted.R'

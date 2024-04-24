@@ -1,4 +1,4 @@
-#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
+#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R confint_lm.R
 NULL
 # The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
 # prior to `DirectAdjusted`
@@ -51,16 +51,7 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
   cl <- match.call()
-
-  if (is.null(cl[["type"]])) {
-    confint_calls <- grepl("confint.DirectAdjusted", lapply(sys.calls(), "[[", 1))
-    if (any(confint_calls)) {
-      type <- tryCatch(get("call", sys.frame(which(confint_calls)[1]))$type,
-                       error = function(e) NULL)
-      cl$type <- type # will not append if type is NULL
-    }
-  }
-
+  
   cl$x <- cl$object
   argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
   new_cl <- cl[c(1L, argmatch)]
@@ -76,23 +67,18 @@ vcov.DirectAdjusted <- function(object, ...) {
 ##'   using \code{vcov.DirectAdjusted()}. Additional arguments passed to this
 ##'   function, such as \code{cluster} and \code{type}, specify the arguments of
 ##'   the \code{vcov.DirectAdjusted()} call.
-##' 
-##' @param object a fitted \code{DirectAdjusted} model
-##' @param parm a specification of which parameters are to be given confidence
-##'   intervals, either a vector of numbers or a vector of names. If missing,
-##'   all parameters are considered.
-##' @param level the confidence level required.
-##' @param ... additional arguments to pass to \code{vcov.DirectAdjusted()}
-##' @return A matrix (or vector) with columns giving lower and upper confidence
-##' limits for each parameter. These will be labelled as (1-level)/2 and 1 -
-##' (1-level)/2 in % (by default 2.5% and 97.5%)
+##' @details
+##'   Rather than call \code{stats::confint.lm()}, \code{confint.DirectAdjusted()}
+##'   calls \code{.confint_lm()}, a function internal to the \code{propertee}
+##'   package that ensures additional arguments in the \code{...} of the
+##'   \code{confint.DirectAdjusted()} call are passed to the internal \code{vcov()} call.
+##' @inheritParams .confint_lm
+##' @inherit .confint_lm return
 ##' @exportS3Method
 confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
-  call <- match.call()
-  call[[1L]] <- quote(stats::confint.lm)
-
-  ci <- eval(call, parent.frame())
-  return(ci)
+  cl <- match.call()
+  cl[[1L]] <- quote(.confint_lm)
+  return(eval(cl, parent.frame()))
 }
 
 ##' @title Extract empirical estimating equations from a \code{DirectAdjusted} model fit

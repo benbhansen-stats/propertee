@@ -296,6 +296,7 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
 
   expect_error(confint(damod1, type = "not_a_type"), "not defined")
 
+  # default CI
   vcovDA_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
     qt(c(0.025, 0.975), damod1$df.residual)
   dimnames(vcovDA_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
@@ -303,35 +304,26 @@ test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL off
   ci2 <- confint(damod1)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcovDA_ci.95)
+  
+  # HC1 CI
+  vcovDA_HC1_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1, type = "HC1"))) %o%
+    qt(c(0.025, 0.975), damod1$df.residual)
+  dimnames(vcovDA_HC1_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
+  ci_HC1 <- confint(damod1, type = "HC1")
+  expect_equal(ci_HC1, vcovDA_HC1_ci.95)
 
+  # CI with different level
   vcovDA_ci.9 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
     qt(c(0.05, 0.95), damod1$df.residual)
   dimnames(vcovDA_ci.9) <- list(names(damod1$coefficients), c("5 %", "95 %"))
   ci1 <- confint(damod1, level = 0.9)
   expect_equal(ci1, vcovDA_ci.9)
 
-  vcovDA_z.95 <- matrix(rep(damod1$coef, 2), nrow = 2) +
-                          sqrt(diag(vcovDA(damod1))) %o%
-                          qt(c(0.025, 0.975), damod1$df.residual)
-  ci1 <- confint(damod1)
-  expect_true(all.equal(ci1, vcovDA_z.95, check.attributes = FALSE))
-
-  vcovDA_z.9 <- matrix(rep(damod1$coef, 2), nrow = 2) +
-                          sqrt(diag(vcovDA(damod1))) %o%
-                          qt(c(0.05, 0.95), damod1$df.residual)
-  ci1 <- confint(damod1, level = 0.9)
-  expect_true(all.equal(ci1, vcovDA_z.9, check.attributes = FALSE))
-
+  # CI with lmitt.lm
   uoas <- apply(simdata[, c("cid1", "cid2")], 1,
                 function(...) {
                   paste(..., collapse = "_")
                 })
-  vcovlm.9 <- damod2$coefficients +
-    sqrt(diag(sandwich::sandwich(damod2, meat. = sandwich::meatCL,
-                                 cluster = uoas))) %o%
-    qt(c(0.05, 0.95), damod2$df.residual)
-  ci1 <- confint(damod2, level = 0.9)
-  expect_true(all.equal(ci1, vcovlm.9, check.attributes = FALSE))
 
   vcovlm_z.95 <- damod2$coefficients +
     sqrt(diag(sandwich::sandwich(damod2, meat. = sandwich::meatCL,
