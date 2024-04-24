@@ -87,6 +87,11 @@
           <code><a href="DesignSpecials.html">unit_of_assignment()</a></code> <code><a href="DesignSpecials.html">unitid()</a></code> <code><a href="DesignSpecials.html">cluster()</a></code> <code><a href="DesignSpecials.html">uoa()</a></code> <code><a href="DesignSpecials.html">block()</a></code> <code><a href="DesignSpecials.html">forcing()</a></code> 
         </dt>
         <dd>Special terms in <code>Design</code> creation formula</dd>
+      </dl><dl><dt>
+          
+          <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code> 
+        </dt>
+        <dd>Convert <code>Design</code> between types</dd>
       </dl></div><div class="section level2">
       
       <h3 id="accessors-replacers-for-design-objects">Accessors/Replacers for <code>Design</code> Objects<a class="anchor" aria-label="anchor" href="#accessors-replacers-for-design-objects"></a></h3>
@@ -103,6 +108,11 @@
           <code><a href="Design_extractreplace.html">treatment()</a></code> <code><a href="Design_extractreplace.html">`treatment&lt;-`()</a></code> <code><a href="Design_extractreplace.html">units_of_assignment()</a></code> <code><a href="Design_extractreplace.html">`units_of_assignment&lt;-`()</a></code> <code><a href="Design_extractreplace.html">clusters()</a></code> <code><a href="Design_extractreplace.html">`clusters&lt;-`()</a></code> <code><a href="Design_extractreplace.html">unitids()</a></code> <code><a href="Design_extractreplace.html">`unitids&lt;-`()</a></code> <code><a href="Design_extractreplace.html">blocks()</a></code> <code><a href="Design_extractreplace.html">`blocks&lt;-`()</a></code> <code><a href="Design_extractreplace.html">has_blocks()</a></code> <code><a href="Design_extractreplace.html">forcings()</a></code> <code><a href="Design_extractreplace.html">`forcings&lt;-`()</a></code> 
         </dt>
         <dd>Accessors and Replacers for <code>Design</code> objects</dd>
+      </dl><dl><dt>
+          
+          <code><a href="design_treatment_status.html">is_dichotomized()</a></code> <code><a href="design_treatment_status.html">has_binary_treatment()</a></code> <code><a href="design_treatment_status.html">is_binary_or_dichotomized()</a></code> 
+        </dt>
+        <dd>Check if <code>Design</code> has access to a binary treatment</dd>
       </dl><dl><dt>
           
           <code><a href="Design_extract_dichotomy.html">dichotomy()</a></code> <code><a href="Design_extract_dichotomy.html">`dichotomy&lt;-`()</a></code> 
@@ -131,7 +141,7 @@
         <dd>Summarizing <code>Design</code> objects</dd>
       </dl></div><div class="section level2">
       
-      <h3 id="conversion-between-types-of-design-s">Conversion between types of <code>Design</code>s<a class="anchor" aria-label="anchor" href="#conversion-between-types-of-design-s"></a></h3>
+      <h3 id="structure-of-design-objects">Structure of <code>Design</code> objects<a class="anchor" aria-label="anchor" href="#structure-of-design-objects"></a></h3>
       
 
       
@@ -142,9 +152,19 @@
 
       <dl><dt>
           
-          <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code> 
+          <code><a href="Design_structure.html">get_structure()</a></code> <code><a href="Design_structure.html">show(<i>&lt;DesignStructure&gt;</i>)</a></code> 
         </dt>
-        <dd>Convert <code>Design</code> between types</dd>
+        <dd>Returns <code>Design</code> Structure Information</dd>
+      </dl><dl><dt>
+          
+          <code><a href="design_table.html">design_table()</a></code> <code><a href="design_table.html">dtable()</a></code> 
+        </dt>
+        <dd>Table of elements from a <code>Design</code></dd>
+      </dl><dl><dt>
+          
+          <code><a href="Design_var_names.html">var_table()</a></code> <code><a href="Design_var_names.html">var_names()</a></code> 
+        </dt>
+        <dd>Extract Variable Names from <code>Design</code></dd>
       </dl></div><div class="section level2">
       
       <h3 id="utility-functions-for-design-objects">Utility Functions for <code>Design</code> Objects<a class="anchor" aria-label="anchor" href="#utility-functions-for-design-objects"></a></h3>
@@ -158,16 +178,6 @@
 
       <dl><dt>
           
-          <code><a href="design_table.html">design_table()</a></code> <code><a href="design_table.html">dtable()</a></code> 
-        </dt>
-        <dd>Table of elements from a <code>Design</code></dd>
-      </dl><dl><dt>
-          
-          <code><a href="Design_var_names.html">var_table()</a></code> <code><a href="Design_var_names.html">var_names()</a></code> 
-        </dt>
-        <dd>Extract Variable Names from <code>Design</code></dd>
-      </dl><dl><dt>
-          
           <code><a href="identify_small_blocks.html">identify_small_blocks()</a></code> 
         </dt>
         <dd>Identify fine strata (blocks with one treated or one control unit of assignment)</dd>
@@ -178,24 +188,9 @@
         <dd>Check for variable agreement within units of assignment</dd>
       </dl><dl><dt>
           
-          <code><a href="design_treatment_status.html">is_dichotomized()</a></code> <code><a href="design_treatment_status.html">has_binary_treatment()</a></code> <code><a href="design_treatment_status.html">is_binary_or_dichotomized()</a></code> 
-        </dt>
-        <dd>Check if <code>Design</code> has access to a binary treatment</dd>
-      </dl><dl><dt>
-          
           <code><a href="identical_Designs.html">identical_Designs()</a></code> 
         </dt>
         <dd>Check if <code>Design</code> objects are identical</dd>
-      </dl><dl><dt>
-          
-          <code><a href="get_structure.html">get_structure()</a></code> 
-        </dt>
-        <dd>Returns <code>Design</code> Structure Information</dd>
-      </dl><dl><dt>
-          
-          <code><a href="show-DesignStructure-method.html">show(<i>&lt;DesignStructure&gt;</i>)</a></code> 
-        </dt>
-        <dd>Show a <code>DesignStructure</code></dd>
       </dl></div><div class="section level2">
       <h2 id="weights">Weights<a class="anchor" aria-label="anchor" href="#weights"></a></h2>
       
@@ -252,12 +247,12 @@
           
           <code><a href="cov_adj.html">cov_adj()</a></code> 
         </dt>
-        <dd>Covariance Adjustment for Treatment Estimation</dd>
+        <dd>Covariance adjustment of <code>DirectAdjusted</code> model estimates</dd>
       </dl><dl><dt>
           
           <code><a href="as.SandwichLayer.html">as.SandwichLayer()</a></code> 
         </dt>
-        <dd>Convert a PreSandwichLayer to a SandwichLayer via a Design Object</dd>
+        <dd>Convert a <code>PreSandwichLayer</code> to a <code>SandwichLayer</code> with a <code>Design</code> object</dd>
       </dl><dl><dt>
           
           <code><a href="PreSandwichLayer.subset.html">subset(<i>&lt;PreSandwichLayer&gt;</i>)</a></code> <code><a href="PreSandwichLayer.subset.html">`[`(<i>&lt;PreSandwichLayer&gt;</i>)</a></code> 
@@ -270,7 +265,12 @@
         <dd>Show a PreSandwichLayer or SandwichLayer</dd>
       </dl><dl><dt>
           
-          <code><a href="da_estfun_methods.html">estfun(<i>&lt;DirectAdjusted&gt;</i>)</a></code> <code><a href="da_estfun_methods.html">bread(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
+          <code><a href="bread.DirectAdjusted.html">bread(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
+        </dt>
+        <dd>Extract bread matrix from a <code>DirectAdjusted</code> model fit</dd>
+      </dl><dl><dt>
+          
+          <code><a href="estfun.DirectAdjusted.html">estfun(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
         </dt>
         <dd>Extract empirical estimating equations from a <code>DirectAdjusted</code> model fit</dd>
       </dl><dl><dt>
@@ -313,7 +313,7 @@
           
           <code><a href="confint.DirectAdjusted.html">confint(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
         </dt>
-        <dd>Variance-Covariance matrix</dd>
+        <dd>Confidence intervals with standard errors provided by <code><a href="../reference/vcov.DirectAdjusted.html">vcov.DirectAdjusted()</a></code></dd>
       </dl><dl><dt>
           
           <code><a href="show-DirectAdjusted-method.html">show(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
@@ -333,12 +333,12 @@
           
           <code><a href="vcov.DirectAdjusted.html">vcov(<i>&lt;DirectAdjusted&gt;</i>)</a></code> 
         </dt>
-        <dd>Variance-Covariance matrix of <code>DirectAdjusted</code> object</dd>
+        <dd>Compute variance-covariance matrix for fitted <code>DirectAdjusted</code> model</dd>
       </dl><dl><dt>
           
           <code><a href="var_estimators.html">vcovDA()</a></code> <code><a href="var_estimators.html">.vcov_CR0()</a></code> <code><a href="var_estimators.html">.vcov_HC0()</a></code> <code><a href="var_estimators.html">.vcov_MB0()</a></code> <code><a href="var_estimators.html">.vcov_CR1()</a></code> <code><a href="var_estimators.html">.vcov_HC1()</a></code> <code><a href="var_estimators.html">.vcov_MB1()</a></code> 
         </dt>
-        <dd>Compute covariance-adjusted cluster-robust sandwich variance estimates</dd>
+        <dd>Compute robust sandwich variance estimates with optional covariance adjustment</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
       
