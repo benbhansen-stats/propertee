@@ -1,3 +1,8 @@
+# propertee 0.3.9
+
+## Bug Fixes
+* Scaling constants have been updated in `estfun.DirectAdjusted()` to account for a previously missing factor of $\sqrt{n / n_{C}}$ applied to contributions to the covariance adjustment model estimating equations
+
 # propertee 0.3.8
 
 ## Breaking Changes
