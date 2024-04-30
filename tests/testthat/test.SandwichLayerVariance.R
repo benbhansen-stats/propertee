@@ -1,7 +1,7 @@
 test_that("vcovDA errors when provided an invalid type", {
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   expect_error(vcovDA(damod, "not_a_type"))
@@ -10,7 +10,7 @@ test_that("vcovDA errors when provided an invalid type", {
 test_that("vcovDA correctly dispatches", {
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
@@ -31,7 +31,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   simdata_copy <- simdata
   simdata_copy$uid <- seq_len(nrow(simdata_copy))
   cmod <- lm(y ~ x, simdata_copy)
-  des <- rct_design(z ~ cluster(cid1, cid2, uid) + block(bid), simdata_copy)
+  des <- rct_design(z ~ cluster(uoa1, uoa2, uid) + block(bid), simdata_copy)
   dmod <- lmitt(y ~ 1, data = simdata_copy, design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
@@ -44,13 +44,13 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
                 "when cluster ID's have NA's (must be via column name)"), {
   data(simdata)
   df <- rbind(simdata, simdata)
-  df[1:50, c("cid1", "cid2", "bid", "z")] <- NA
+  df[1:50, c("uoa1", "uoa2", "bid", "z")] <- NA
   cmod <- lm(y ~ x, df[1:50,])
-  des <- rct_design(z ~ cluster(cid1, cid2), df[51:100,])
+  des <- rct_design(z ~ cluster(uoa1, uoa2), df[51:100,])
   dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
-  expect_equal(vcovDA(dmod, cluster = c("cid1", "cid2")), vcovDA(dmod))
+  expect_equal(vcovDA(dmod, cluster = c("uoa1", "uoa2")), vcovDA(dmod))
 })
 
 test_that("variance helper functions fail without a DirectAdjusted model", {
@@ -72,7 +72,7 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
                 "without SandwichLayer offset"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   offset <- stats::predict(cmod, simdata)
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
@@ -87,7 +87,7 @@ test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with Direct
 test_that(".get_b12 fails if ITT model isn't strictl an `lm`", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   offset <- stats::predict(cmod, simdata)
   m <- as.lmitt(
     glm(y ~ assigned(), data = simdata, weights = ate(des), offset = offset)
@@ -100,7 +100,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
                 "experimental data identical to cov model data"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -137,16 +137,16 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
 test_that(paste(".get_b12 returns expected B_12 for cluster-level",
                 "experimental data whose rows fully overlap with cov model data"), {
   data(simdata)
-  cluster_ids <- unique(simdata[, c("cid1", "cid2")])
+  cluster_ids <- unique(simdata[, c("uoa1", "uoa2")])
   Q_cluster <- data.frame(Reduce(
     rbind,
     by(simdata,
-       list(simdata$cid1, simdata$cid2),
-       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+       list(simdata$uoa1, simdata$uoa2),
+       function(x) {colMeans(x[, c("uoa1", "uoa2", "x", "y", "z")])}),
   ), row.names = NULL)
 
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_cluster)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = Q_cluster, weights = ate(des), offset = cov_adj(cmod))
@@ -183,7 +183,7 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
   data(simdata)
   cmod_data <- cbind(simdata, new_col = factor(rbinom(nrow(simdata), 1, 0.5)))
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -199,27 +199,27 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
 
 test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
   data(simdata)
-  simdata[simdata$cid2 == 1, "z"] <- 0
-  simdata[simdata$cid2 == 2, "z"] <- 1
+  simdata[simdata$uoa2 == 1, "z"] <- 0
+  simdata[simdata$uoa2 == 2, "z"] <- 1
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa2), data = simdata)
 
   m <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   cmod_eqns <- Reduce(
     rbind,
-    by(estfun(cmod), list(simdata$cid2), colSums)
+    by(estfun(cmod), list(simdata$uoa2), colSums)
   )
   dmod_eqns <- Reduce(
     rbind,
-    by(estfun(as(m, "lm")), list(simdata$cid2), colSums)
+    by(estfun(as(m, "lm")), list(simdata$uoa2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
 
   # default (columns specified in `cluster` argument of Design) matches expected
   expect_equal(suppressMessages(propertee:::.get_b12(m)), expected)
-  expect_equal(suppressMessages(propertee:::.get_b12(m, cluster = "cid2")), expected)
+  expect_equal(suppressMessages(propertee:::.get_b12(m, cluster = "uoa2")), expected)
 })
 
 test_that("get_b12 handles custom cluster columns with only NA's", {
@@ -227,14 +227,14 @@ test_that("get_b12 handles custom cluster columns with only NA's", {
   set.seed(200)
 
   cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
-                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+                          "uoa1" = NA_integer_, "uoa2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
 
-  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("uoa1", "uoa2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 })
@@ -243,27 +243,27 @@ test_that(paste("get_b12 handles multiple custom cluster columns where one is",
                 "only NA's and the other has no NA's"), {
   # first test is where the non-NA cluster ID's are distinct
   cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
-                          "cid1" = rep(seq(6, 10), each = 20),
-                          "cid2" = NA_integer_)
+                          "uoa1" = rep(seq(6, 10), each = 20),
+                          "uoa2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
 
-  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("uoa1", "uoa2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 
   # second test is where the non-NA cluster ID's overlap with design
-  cmod_data$cid1 <- rep(seq(1, 5), each = 20)
+  cmod_data$uoa1 <- rep(seq(1, 5), each = 20)
   cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
 
-  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("cid1", "cid2")), "0 rows")
+  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("uoa1", "uoa2")), "0 rows")
   expect_equal(b12,
                matrix(0, nrow = 2, ncol = 2))
 })
@@ -272,24 +272,24 @@ test_that(paste(".get_b12 handles multiple custom cluster columns where both",
                 "have a mix of NA's and non-NA's"), {
   data(simdata)
   cmod_data <- rbind(simdata, simdata)
-  cmod_data[(nrow(simdata)+1):(2*nrow(simdata)), c("cid1", "cid2")] <- NA_integer_
+  cmod_data[(nrow(simdata)+1):(2*nrow(simdata)), c("uoa1", "uoa2")] <- NA_integer_
   cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des),
                       offset = cov_adj(cmod)))
 
   cmod_eqns <- Reduce(
     rbind,
-    by(sandwich::estfun(cmod), list(cmod_data$cid1, cmod_data$cid2), colSums)
+    by(sandwich::estfun(cmod), list(cmod_data$uoa1, cmod_data$uoa2), colSums)
   )
   dmod_eqns <- Reduce(
     rbind,
-    by(sandwich:::estfun.lm(dmod), list(simdata$cid1, simdata$cid2), colSums)
+    by(sandwich:::estfun.lm(dmod), list(simdata$uoa1, simdata$uoa2), colSums)
   )
   expected <- crossprod(cmod_eqns, dmod_eqns)
 
-  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("cid1", "cid2")),
+  expect_message(b12 <- propertee:::.get_b12(dmod, cluster = c("uoa1", "uoa2")),
                  paste(nrow(simdata), "rows"))
   expect_equal(b12,
                expected)
@@ -299,10 +299,10 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
                 "experimental data that is a subset of cov model data"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
-  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata, subset = simdata$uoa2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$uoa2 == 1,])
   m <- as.lmitt(
-    lm(y ~ assigned(), data = simdata[simdata$cid2 == 1,],
+    lm(y ~ assigned(), data = simdata[simdata$uoa2 == 1,],
        weights = weighted_design, offset = cov_adj(cmod))
   )
 
@@ -329,7 +329,7 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
     by((m$weights * m$residuals * model.matrix(m))[msk, , drop = FALSE],
        lapply(uoanames, function(col) Q[msk, col]),
        colSums))
-  expect_message(b12 <- propertee:::.get_b12(m), paste(nrow(simdata[simdata$cid2 == 1,]), "rows"))
+  expect_message(b12 <- propertee:::.get_b12(m), paste(nrow(simdata[simdata$uoa2 == 1,]), "rows"))
   expect_equal(b12,
                crossprod(cmod_eqns, m_eqns))
 })
@@ -337,16 +337,16 @@ test_that(paste(".get_b12 returns expected B_12 for individual-level",
 test_that(paste(".get_b12 returns expected B_12 for cluster-level",
                 "experimental data that is a subset of cov model data"), {
   data(simdata)
-  subset_cluster_ids <- unique(simdata[simdata$cid2 == 1, c("cid1", "cid2")])
+  subset_cluster_ids <- unique(simdata[simdata$uoa2 == 1, c("uoa1", "uoa2")])
   Q_cluster_subset <- data.frame(Reduce(
     rbind,
     by(simdata,
-       list(simdata$cid1, simdata$cid2),
-       function(x) {colMeans(x[, c("cid1", "cid2", "x", "y", "z")])}),
+       list(simdata$uoa1, simdata$uoa2),
+       function(x) {colMeans(x[, c("uoa1", "uoa2", "x", "y", "z")])}),
   ), row.names = NULL)
 
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_cluster_subset)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_cluster_subset)
   weighted_design <- ate(des, data = Q_cluster_subset)
 
   m <- as.lmitt(
@@ -384,7 +384,7 @@ test_that(paste(".get_b12 returns expected B_12 for cluster-level",
 test_that(paste(".get_b12 returns expected B_12 for experimental",
                 "data that has no overlap with cov model data"), {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   C_no_cluster_ids <- simdata
   C_no_cluster_ids[, var_names(des, "u")] <- NA
   cmod <- lm(y ~ x, data = C_no_cluster_ids)
@@ -404,11 +404,11 @@ test_that(paste(".get_b12 returns B_12 with correct dimensions when only one",
   set.seed(200)
 
   cmod_data <- data.frame("y" = rnorm(10), "x" = rnorm(10),
-                          "cid1" = rep(1, 10), "cid2" = rep(1, 10))
+                          "uoa1" = rep(1, 10), "uoa2" = rep(1, 10))
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ cluster(cid1), simdata, subset = simdata$cid1 %in% c(1, 5))
+  des <- rct_design(z ~ cluster(uoa1), simdata, subset = simdata$uoa1 %in% c(1, 5))
 
-  msk <- simdata$cid1 %in% c(1, 5)
+  msk <- simdata$uoa1 %in% c(1, 5)
   m <- as.lmitt(
     lm(y ~ assigned(), simdata[msk,],
        weights = ate(des, data = simdata[msk,]),
@@ -429,14 +429,14 @@ test_that(paste(".get_b12 returns expected matrix when some rows in cmod data",
   set.seed(96)
 
   # random rows in cmod data have NA covariate values
-  rvals <- runif(n = length(which(simdata$cid1 %in% c(2, 4))))
-  names(rvals) <- which(simdata$cid1 %in% c(2, 4))
+  rvals <- runif(n = length(which(simdata$uoa1 %in% c(2, 4))))
+  names(rvals) <- which(simdata$uoa1 %in% c(2, 4))
   rvals <- sort(rvals)
   simdata[as.numeric(names(rvals)[seq_len(round(length(rvals) / 4))]),
           "x"] <- NA_real_
 
-  cmod <- lm(y ~ x, simdata, subset = cid1 %in% c(2, 4))
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  cmod <- lm(y ~ x, simdata, subset = uoa1 %in% c(2, 4))
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   expect_warning(expect_warning(lmitt(lm(y ~ assigned(), simdata,
                                          offset = cov_adj(cmod, design = des))),
                                 "adjustments are NA"), "adjustments are NA")
@@ -448,15 +448,15 @@ test_that(paste(".get_b12 returns expected matrix when some rows in cmod data",
   cmod_eqns <- Reduce(
     rbind,
     by(sandwich::estfun(cmod),
-       list(cid1 = simdata$cid1[!is.na(simdata$x) & simdata$cid1 %in% c(2, 4)],
-            cid2 = simdata$cid2[!is.na(simdata$x) & simdata$cid1 %in% c(2, 4)]),
+       list(uoa1 = simdata$uoa1[!is.na(simdata$x) & simdata$uoa1 %in% c(2, 4)],
+            uoa2 = simdata$uoa2[!is.na(simdata$x) & simdata$uoa1 %in% c(2, 4)]),
        colSums))
-  msk <- which(simdata$cid1[!is.na(simdata$x)] %in% c(2, 4))
+  msk <- which(simdata$uoa1[!is.na(simdata$x)] %in% c(2, 4))
   dmod_eqns <- Reduce(
     rbind,
     by(estfun(as(m, "lm"))[msk, , drop = FALSE],
-       list(cid1 = simdata$cid1[!is.na(simdata$x)][msk],
-            cid2 = simdata$cid2[!is.na(simdata$x)][msk]),
+       list(uoa1 = simdata$uoa1[!is.na(simdata$x)][msk],
+            uoa2 = simdata$uoa2[!is.na(simdata$x)][msk]),
        colSums))
   b12 <- suppressMessages(propertee:::.get_b12(m))
   expect_equal(b12, crossprod(cmod_eqns, dmod_eqns))
@@ -466,7 +466,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
                 "included in the direct adjustment model"), {
   data(simdata)
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
 
   m <- as.lmitt(lm(y ~ assigned() - 1, simdata, weights = ate(des),
                    offset = cov_adj(cmod)))
@@ -501,7 +501,7 @@ test_that(paste(".get_b12 returns expected value for B12 when no intercept is",
 test_that(".get_a22_inverse correct w/o covariance adjustment", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
   m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
@@ -543,7 +543,7 @@ test_that(".get_a22_inverse correct w/ covariance adjustment", {
 test_that(".get_tilde_a22_inverse correct w/o covariance adjustment", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
   m_lmitt.form <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
@@ -580,7 +580,7 @@ test_that(".get_a22_inverse correct w/o covariance adjustment", {
 test_that(".get_b22 returns correct value for lm object w/o offset", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
@@ -604,7 +604,7 @@ test_that(".get_b22 returns correct value for lm object w offset", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -629,7 +629,7 @@ test_that(".get_b22 returns correct value for lm object w offset", {
 test_that(".get_b22 fails with invalid custom cluster argument", {
   data(simdata)
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -646,7 +646,7 @@ test_that(".get_b22 produces correct estimates with valid custom cluster argumen
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -670,22 +670,22 @@ test_that(".get_b22 produces correct estimates with valid custom cluster argumen
 test_that(".get_b22 with one clustering column", {
   data(simdata)
 
-  simdata[simdata$cid1 == 4, "z"] <- 0
-  simdata[simdata$cid1 == 2, "z"] <- 1
+  simdata[simdata$uoa1 == 4, "z"] <- 0
+  simdata[simdata$uoa1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  uoas <- factor(simdata$cid1)
+  uoas <- factor(simdata$uoa1)
   nuoas <- length(levels(uoas))
 
   nq <- nrow(simdata)
   WX <- m$weights * m$residuals * stats::model.matrix(m)
 
-  uoa_matrix <- stats::model.matrix(as.formula("~ -1 + as.factor(cid1)"),
-                                    stats::expand.model.frame(m, "cid1")[, "cid1", drop = FALSE])
+  uoa_matrix <- stats::model.matrix(as.formula("~ -1 + as.factor(uoa1)"),
+                                    stats::expand.model.frame(m, "uoa1")[, "uoa1", drop = FALSE])
 
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
@@ -696,7 +696,7 @@ test_that(".get_b22 with one clustering column", {
 test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(glm(y ~ assigned(), data = simdata, weights = ate(des)))
@@ -717,7 +717,7 @@ test_that(".get_b22 returns corrrect value for glm fit with Gaussian family", {
 test_that(".get_b22 returns correct value for poisson glm", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -741,7 +741,7 @@ test_that(".get_b22 returns correct value for poisson glm", {
 test_that(".get_b22 returns correct value for quasipoisson glm", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -765,7 +765,7 @@ test_that(".get_b22 returns correct value for quasipoisson glm", {
 test_that(".get_b22 returns correct value for binomial glm", {
   data(simdata)
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- suppressWarnings(
@@ -791,7 +791,7 @@ test_that(".get_b22 returns correct value for binomial glm", {
 test_that(".get_a11_inverse returns correct value for lm cmod", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -808,7 +808,7 @@ test_that(".get_a11_inverse returns correct value for lm cmod", {
 test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
   data(simdata)
   cmod <- glm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -826,7 +826,7 @@ test_that(".get_a11_inverse returns correct value for Gaussian glm cmod", {
 test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
   data(simdata)
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -845,7 +845,7 @@ test_that(".get_a11_inverse returns correct value for poisson glm cmod", {
 test_that(".get_a11_inverse returns correct value for quasipoisson glm cmod", {
   data(simdata)
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::quasipoisson())
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -869,7 +869,7 @@ test_that(".get_a11_inverse returns correct value for binomial glm cmod", {
   cmod <- suppressWarnings(
     glm(round(exp(y) / (1 + exp(y))) ~ x, data = simdata, family = stats::binomial())
   )
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m_as.lmitt <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod))
@@ -888,16 +888,16 @@ test_that(".get_a11_inverse returns correct value for binomial glm cmod", {
 test_that(".get_b11 returns correct B_11 for one cluster column", {
   data(simdata)
 
-  simdata[simdata$cid1 == 4, "z"] <- 0
-  simdata[simdata$cid1 == 2, "z"] <- 1
+  simdata[simdata$uoa1 == 4, "z"] <- 0
+  simdata[simdata$uoa1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des),
        offset = cov_adj(cmod)))
 
-  uoas <- factor(simdata$cid1)
+  uoas <- factor(simdata$uoa1)
   nuoas <- length(levels(uoas))
 
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -912,7 +912,7 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   nuoas <- nrow(des@structure)
 
   m <- as.lmitt(
@@ -929,15 +929,15 @@ test_that(".get_b11 fails with invalid custom cluster argument", {
 test_that(".get_b11 produces correct estimates with valid custom cluster argument", {
   data(simdata)
 
-  simdata[simdata$cid1 == 4, "z"] <- 0
-  simdata[simdata$cid1 == 2, "z"] <- 1
+  simdata[simdata$uoa1 == 4, "z"] <- 0
+  simdata[simdata$uoa1 == 2, "z"] <- 1
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ uoa(cid1), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  uoas <- factor(simdata$cid1)
+  uoas <- factor(simdata$uoa1)
   nuoas <- length(levels(uoas))
 
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -946,7 +946,7 @@ test_that(".get_b11 produces correct estimates with valid custom cluster argumen
       nuoas / (nuoas - 1L) * (nc - 1L) / (nc - 2L)
   )
 
-  expect_equal(propertee:::.get_b11(m, cluster = "cid1"), expected)
+  expect_equal(propertee:::.get_b11(m, cluster = "uoa1"), expected)
 
   # test different clustering level
   bids <- factor(simdata[, "bid"])
@@ -966,41 +966,41 @@ test_that(".get_b11 handles NA's correctly in custom clustering columns", {
 
   # check case where all clustering columns only have NA's
   cmod_data <- data.frame("y" = rnorm(100), "x" = rnorm(100),
-                          "cid1" = NA_integer_, "cid2" = NA_integer_)
+                          "uoa1" = NA_integer_, "uoa2" = NA_integer_)
   cmod <- lm(y ~ x, cmod_data)
   nc <- sum(summary(cmod)$df[1L:2L])
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
 
-  expect_warning(propertee:::.get_b11(dmod, cluster = c("cid1", "cid2")),
+  expect_warning(propertee:::.get_b11(dmod, cluster = c("uoa1", "uoa2")),
                  "are found to have NA's")
-  expect_equal(suppressWarnings(propertee:::.get_b11(dmod, cluster = c("cid1", "cid2"),
+  expect_equal(suppressWarnings(propertee:::.get_b11(dmod, cluster = c("uoa1", "uoa2"),
                                          type = "HC0", cadjust = FALSE)),
                crossprod(sandwich::estfun(cmod))) # there should be no clustering
 
   # check case where one clustering column doesn't only have NA's
-  cmod_data$cid1 <- rep(seq(6, 10), each = 20)
+  cmod_data$uoa1 <- rep(seq(6, 10), each = 20)
   cmod <- lm(y ~ x, cmod_data)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   dmod <- as.lmitt(lm(y ~ assigned(), data = simdata,
                       offset = cov_adj(cmod, design = des)))
 
-  expect_warning(propertee:::.get_b11(dmod, cluster = c("cid1", "cid2")),
+  expect_warning(propertee:::.get_b11(dmod, cluster = c("uoa1", "uoa2")),
                  "have NA's for some but not all")
 })
 
 test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("uoa1", "uoa2")]))
   nuoas <- length(levels(uoas))
 
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -1014,12 +1014,12 @@ test_that(".get_b11 returns correct B_11 for multiple cluster columns", {
 test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m <- as.lmitt(
     lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("uoa1", "uoa2")]))
   nuoas <- length(levels(uoas))
 
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -1033,13 +1033,13 @@ test_that(".get_b11 returns correct B_11 for lm cmod (HC1)", {
 test_that(".get_b11 returns correct B_11 for glm object (HC0)", {
   data(simdata)
   cmod <- glm(round(exp(y)) ~ x, data = simdata, family = stats::poisson())
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   m <- as.lmitt(
     glm(round(exp(y)) ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod),
         family = stats::poisson()))
 
-  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("cid1", "cid2")]))
+  uoas <- factor(Reduce(function(x, y) paste(x, y, sep = "_"), simdata[, c("uoa1", "uoa2")]))
   nuoas <- length(levels(uoas))
 
   nc <- sum(summary(cmod)$df[1L:2L])
@@ -1057,10 +1057,10 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
   cmod <- lm(y ~ x, data = simdata)
   nc <- sum(summary(cmod)$df[1L:2L])
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata, subset = simdata$cid2 == 1)
-  weighted_design <- ate(des, data = simdata[simdata$cid2 == 1,])
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata, subset = simdata$uoa2 == 1)
+  weighted_design <- ate(des, data = simdata[simdata$uoa2 == 1,])
   m <- as.lmitt(
-    lm(y ~ assigned(), data = simdata[simdata$cid2 == 1,],
+    lm(y ~ assigned(), data = simdata[simdata$uoa2 == 1,],
        weights = weighted_design, offset = cov_adj(cmod))
   )
 
@@ -1080,7 +1080,7 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that is a",
 test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
                 "no overlap with cov model data"), {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   C_no_cluster_ids <- simdata
   C_no_cluster_ids[, var_names(des, "u")] <- NA
   cmod <- lm(y ~ x, data = C_no_cluster_ids)
@@ -1105,10 +1105,10 @@ test_that(paste(".get_b11 returns correct B_11 for experimental data that has",
 
 test_that(".get_b11 returns expected B_11 when cmod fit to one cluster", {
   data(simdata)
-  cmod <- lm(y ~ x, simdata, subset = cid1 == 1)
-  des <- rct_design(z ~ cluster(cid1), simdata, subset = simdata$cid1 %in% c(1, 5))
+  cmod <- lm(y ~ x, simdata, subset = uoa1 == 1)
+  des <- rct_design(z ~ cluster(uoa1), simdata, subset = simdata$uoa1 %in% c(1, 5))
 
-  msk <- simdata$cid1 %in% c(1, 5)
+  msk <- simdata$uoa1 %in% c(1, 5)
   m <- as.lmitt(
     lm(y ~ assigned(), simdata[msk,],
        weights = ate(des, data = simdata[msk,]),
@@ -1205,11 +1205,11 @@ test_that(".get_tilde_a21 correct values", {
 test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
                 "has NA values for some covariate values"), {
   data(simdata)
-  simdata[simdata$cid1 == 1, "x"] <- NA_real_
-  cmod_data <- subset(simdata, cid1 %in% c(2, 4))
-  m_data <- subset(simdata, cid1 %in% c(1, 3, 5))
+  simdata[simdata$uoa1 == 1, "x"] <- NA_real_
+  cmod_data <- subset(simdata, uoa1 %in% c(2, 4))
+  m_data <- subset(simdata, uoa1 %in% c(1, 3, 5))
   cmod <- lm(y ~ x, data = cmod_data)
-  des <- rct_design(z ~ cluster(cid1, cid2), m_data)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), m_data)
 
   # warning procs twice
   expect_warning(expect_warning(
@@ -1235,9 +1235,9 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
 test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
                 NA values for some treatment assignments"), {
   data(simdata)
-  simdata[simdata$cid1 %in% c(2, 4), "z"] <- NA_integer_
-  cmod <- lm(y ~ x, data = simdata, subset = cid1 %in% c(2, 4))
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  simdata[simdata$uoa1 %in% c(2, 4), "z"] <- NA_integer_
+  cmod <- lm(y ~ x, data = simdata, subset = uoa1 %in% c(2, 4))
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   m_as.lmitt <- lmitt(lm(y ~ assigned(), simdata, offset = cov_adj(cmod, design = des)))
   m_lmitt.form <- lmitt(y ~ 1, simdata, design = des, offset = cov_adj(cmod))
 
@@ -1258,7 +1258,7 @@ test_that(".get_a21 returns only full rank columns for less than full rank model
   copy_simdata <- simdata
   copy_simdata$o_fac <- as.factor(copy_simdata$o)
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), copy_simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), copy_simdata)
 
   ### lmitt.formula
   damod <- lmitt(y ~ o_fac, data = copy_simdata, design = des, offset = cov_adj(cmod))
@@ -1272,7 +1272,7 @@ test_that("propertee:::.vcov_CR0 returns px2 matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   vmat <- propertee:::.vcov_CR0(m)
@@ -1283,7 +1283,7 @@ test_that(".vcov_CR0 doesn't accept `type` argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(des), offset = cov_adj(cmod)))
 
   expect_error(.vcov_CR0(m, type = "CR0"), "Cannot override the `type`")
@@ -1292,10 +1292,10 @@ test_that(".vcov_CR0 doesn't accept `type` argument", {
 test_that(".vcov_CR0 returns DA model sandwich if it has no SandwichLayer", {
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
-  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   expect_true(all.equal(vcovDA(m, type = "CR0"),
                         sandwich::sandwich(m,
                                            meat. = sandwich::meatCL,
@@ -2113,7 +2113,7 @@ test_that("HC1/CR1/MB1", {
 
 test_that("type attribute", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(y ~ 1, data = simdata, weights = "ate", design = des)
   expect_identical(attr(vcov(damod), "type"), "CR0")
   expect_identical(attr(vcov(damod, type = "CR0"), "type"), "CR0")
@@ -2124,7 +2124,7 @@ test_that("type attribute", {
 test_that("#119 flagging vcovDA entries as NA", {
   ### factor moderator variable
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   mod <- lmitt(y ~ as.factor(o), data = simdata, design = des)
   expect_warning(vc <- vcovDA(mod),
                  "will be returned as NA: as.factor(o)1, as.factor(o)3",
@@ -2212,9 +2212,9 @@ test_that("#119 flagging vcovDA entries as NA", {
   expect_true(all(!is.na(vc)))
   #
   # ### invalid continuous moderator variable
-  simdata <- simdata[(simdata$cid1 == 2 & simdata$cid2 == 2) |
-                      (simdata$cid1 == 2 & simdata$cid2 == 1),]
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  simdata <- simdata[(simdata$uoa1 == 2 & simdata$uoa2 == 2) |
+                      (simdata$uoa1 == 2 & simdata$uoa2 == 1),]
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(y ~ o, data = simdata, design = des)
   expect_warning(vc <- vcov(damod), "will be returned as NA: o")
   na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
@@ -2229,12 +2229,12 @@ test_that(".check_df_moderator_estimates other warnings", {
   # fail without a DirectAdjusted model
   nodamod <- lm(y ~ x, simdata)
   vmat <- vcov(nodamod)
-  cluster_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  cluster_ids <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   expect_error(.check_df_moderator_estimates(vmat, nodamod, cluster_ids),
                "must be a DirectAdjusted")
 
   # invalid `data` arg
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(y ~ factor(o), design = des, data = simdata)
   expect_error(.check_df_moderator_estimates(vmat, damod, cluster_ids,
                                              cbind(y = simdata$y, z = simdata$z),
@@ -2244,7 +2244,7 @@ test_that(".check_df_moderator_estimates other warnings", {
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
   # Make sure its PreSandwich prior
   ca <- cov_adj(cmod, newdata = simdata)

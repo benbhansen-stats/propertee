@@ -29,7 +29,7 @@
 ##' @order 2
 ##' @examples
 ##' data(simdata)
-##' des <- obs_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+##' des <- obs_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid),
 ##'                   data = simdata)
 ##' design_table(des, "treatment")
 ##' design_table(des, "treatment", "block", sort = TRUE, use_var_names = TRUE)

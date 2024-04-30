@@ -1,6 +1,6 @@
 test_that("summary.DirectAdjusted basics", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   da <- lmitt(y ~ 1, data = simdata, design = des, weights = ate())
   sda <- summary(da)
   expect_s3_class(sda, "summary.DirectAdjusted")
@@ -17,7 +17,7 @@ test_that("summary.DirectAdjusted basics", {
 
 test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des),
                     offset = cov_adj(cmod)))
@@ -49,10 +49,10 @@ test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
 
 test_that("DirectAdjusted w/o SandwichLayer offset summary uses sandwich SE's", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
 
-  uoas <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   s <- summary(damod, vcov.type = "CR0", cadjust = FALSE)
   expect_equal(
     s$coefficients[, 2],
@@ -62,7 +62,7 @@ test_that("DirectAdjusted w/o SandwichLayer offset summary uses sandwich SE's", 
 
 test_that("vcov.type argument", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
   expect_equal(summary(damod)$vcov.type, "CR0")
   expect_equal(summary(damod, vcov.type = "CR0")$vcov.type, "CR0")
@@ -88,7 +88,7 @@ test_that("lmitt.form vs as.lmitt", {
   # as.`lmitt`/`lmitt(lm(...` report coefficients since we don't have control
   # over what is reported.
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
 
   co <- capture.output(summary(lmitt(y ~ 1, data = simdata, design = des)))
   expect_true(any(grepl("Treatment Effects", co)))
@@ -117,7 +117,7 @@ test_that("lmitt.form vs as.lmitt", {
 
 test_that("issues with coefficients", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   mod <- lmitt(y ~ 1, data = simdata, design =des, subset = simdata$z == 0)
   s <- summary(mod)
   co <- capture.output(s)
@@ -136,7 +136,7 @@ test_that("issues with coefficients", {
 
 test_that("catching bug with summary(as.lmitt", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), simdata)
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
 
   mod <- lm(y ~ assigned(des), data = simdata)
   ss <- summary(as.lmitt(mod, des))
@@ -146,7 +146,7 @@ test_that("catching bug with summary(as.lmitt", {
 test_that("print.summary isn't confused by bad naming", {
   data(simdata)
   simdata$abz.c <- as.factor(simdata$o)
-  des <- rct_design(z ~ unitid(cid1, cid2), simdata)
+  des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
 
   mod <- lmitt(y ~ abz.c, data = simdata, design = des)
   expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")

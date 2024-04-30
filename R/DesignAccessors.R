@@ -66,7 +66,7 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##' @rdname Design_extractreplace
 ##' @examples
 ##' data(simdata)
-##' des <- obs_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
+##' des <- obs_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
 ##' blocks(des) # empty
 ##' blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
 ##' blocks(des)
@@ -523,8 +523,8 @@ setMethod("forcings<-", "Design", function(x, value) {
 ##'   \code{binary = TRUE} argument to apply the dichotomy before extracting.
 ##' @examples
 ##' data(simdata)
-##' des1 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
-##' des2 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata,
+##' des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
+##' des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
 ##'                    dichotomy = dose > 250 ~ .)
 ##' dichotomy(des1)
 ##' dichotomy(des2)

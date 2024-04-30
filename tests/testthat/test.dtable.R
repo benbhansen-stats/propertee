@@ -1,7 +1,7 @@
 test_that("1-way tables", {
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   tt <- design_table(des, "treatment")
 
@@ -33,7 +33,7 @@ test_that("1-way tables", {
   expect_identical(ut, design_table(des, "UO"))
 
   # Missing element
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   expect_warning(bt <- design_table(des, "block"), "blocks not found")
   expect_s3_class(ut, "table")
@@ -55,7 +55,7 @@ test_that("1-way tables", {
 
   # sortings
   simdata$bid <- rep(1:3, times = c(10, 30, 10))
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   bt <- design_table(des, "block")
 
   expect_true(!all(bt == sort(bt, decreasing = TRUE)))
@@ -74,7 +74,7 @@ test_that("1-way tables", {
 
   # use_var_names
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   expect_equal(names(dimnames(design_table(des, "t")))[1], "treatment")
   expect_equal(names(dimnames(design_table(des, "b")))[1], "blocks")
   expect_equal(names(dimnames(design_table(des, "u")))[1], "units of assignment")
@@ -84,11 +84,11 @@ test_that("1-way tables", {
   expect_equal(names(dimnames(design_table(des, "b", use_var_names = TRUE)))[1],
                "bid")
   expect_equal(names(dimnames(design_table(des, "u", use_var_names = TRUE)))[1],
-               "cid1, cid2")
+               "uoa1, uoa2")
 
   # other arguments
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   expect_length(design_table(des, "t", useNA = "always"), 3)
 
   expect_equal(names(dimnames(design_table(des, "t", dnn = list("abc")))),
@@ -99,7 +99,7 @@ test_that("1-way tables", {
 test_that("2 way tables", {
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
 
   tbl <- dtable(des, "trea", "bl")
@@ -111,13 +111,13 @@ test_that("2 way tables", {
   expect_identical(tbl, t(tbl2))
 
   # Missing entry
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
 
   expect_warning(tbl <- dtable(des, "trea", "bl"), "blocks not found")
   expect_identical(tbl, dtable(des, "tr"))
 
   # var names
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   tbl <- dtable(des, "trea", "bl")
   expect_equal(names(dimnames(tbl)), c("blocks", "treatment"))
   tbl <- dtable(des, "trea", "bl", use_var_names = TRUE)
@@ -127,7 +127,7 @@ test_that("2 way tables", {
 
 test_that("Passing dnn", {
   data(simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   tbl <- dtable(des, "trea", "bl", dnn = c("a", "b"))
   expect_identical(names(attr(tbl, "dimnames")),
                    c("a", "b"))
@@ -139,18 +139,18 @@ test_that("Passing dnn", {
 test_that("dichotomies", {
   data(simdata)
   # No dichotomy is identical
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   expect_identical(dtable(des, "treatment", treatment_binary = TRUE),
                    dtable(des, "treatment", treatment_binary = FALSE))
 
 
   # No dichotomy with non-binary treatment is identical
-  des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  des2 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   expect_identical(dtable(des2, "treatment", treatment_binary = TRUE),
                    dtable(des2, "treatment", treatment_binary = FALSE))
 
   # Dichotomy differs
-  des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
+  des3 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata,
                      dichotomy = dose > 200 ~ dose <= 200)
   expect_length(dtable(des3, "treatment"), 2) # check default
   expect_length(dtable(des3, "treatment", treatment_binary = TRUE), 2)

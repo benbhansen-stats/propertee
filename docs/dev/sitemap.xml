@@ -34,9 +34,6 @@
     <loc>www.github.com/dev/articles/not-for-cran/geex_vs_propertee.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/articles/not-for-cran/non-binary-weights.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/dev/articles/sandwich_infrastructure.html</loc>
   </url>
   <url>
@@ -62,6 +59,15 @@
   </url>
   <url>
     <loc>www.github.com/dev/reference/Design_objects.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/Design_structure.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/Design_summary.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/Design_var_names.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/PreSandwichLayer.show.html</loc>
@@ -142,6 +148,9 @@
     <loc>www.github.com/dev/reference/dot-check_df_moderator_estimates.html</loc>
   </url>
   <url>
+    <loc>www.github.com/dev/reference/dot-confint_lm.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/dev/reference/dot-convert_to_data.frame.html</loc>
   </url>
   <url>
@@ -220,6 +229,9 @@
     <loc>www.github.com/dev/reference/dot-weights_calc.html</loc>
   </url>
   <url>
+    <loc>www.github.com/dev/reference/dtable.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/dev/reference/estfun.DirectAdjusted.html</loc>
   </url>
   <url>
@@ -287,12 +299,6 @@
   </url>
   <url>
     <loc>www.github.com/dev/reference/var_estimators.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/var_names.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/var_table.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/vcov.DirectAdjusted.html</loc>

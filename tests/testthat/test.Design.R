@@ -263,14 +263,14 @@ test_that("unit of assignment differs from unit of analysis", {
 
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   expect_s4_class(desrct, "Design")
   expect_equal(nrow(desrct@structure), 10)
 
-  expect_output(expect_error(rct_design(z ~ cluster(cid1) + block(bid),
+  expect_output(expect_error(rct_design(z ~ cluster(uoa1) + block(bid),
                                         data = simdata),
                              "must be constant"),
-                "cid1")
+                "uoa1")
 
   data(mtcars)
   mtcars$prop <- rep(1:8, 4)
@@ -284,25 +284,25 @@ test_that("unit of assignment differs from unit of analysis", {
 
   data(simdata)
   simdata$z[1] <- 1
-  expect_output(expect_error(rct_design(z ~ cluster(cid1, cid2),
+  expect_output(expect_error(rct_design(z ~ cluster(uoa1, uoa2),
                                         data = simdata),
                              "must be constant"),
-                "cid1")
+                "uoa1")
 
   simdata$z[1] <- NA
-  expect_output(expect_error(rct_design(z ~ cluster(cid1, cid2),
+  expect_output(expect_error(rct_design(z ~ cluster(uoa1, uoa2),
                                         data = simdata),
                              "must be constant"),
-                "cid1")
+                "uoa1")
 })
 
 test_that("Design printing", {
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  desrd  <-  rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                        data = simdata)
-  desobs <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desobs <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_output(print(desrct), "Randomized")
   expect_output(show(desrct),  "Randomized")
@@ -318,22 +318,22 @@ test_that("Design printing", {
   expect_output(show(desobs),  "Observational")
 
   expect_output(show(desrct), "z")
-  expect_output(show(desrct), "cid1")
+  expect_output(show(desrct), "uoa1")
   expect_output(show(desrct), "bid")
 
   expect_output(show(desobs), "z")
-  expect_output(show(desobs), "cid1")
+  expect_output(show(desobs), "uoa1")
   expect_output(show(desobs), "bid")
 
   expect_output(show(desrd), "z")
-  expect_output(show(desrd), "cid1")
+  expect_output(show(desrd), "uoa1")
   expect_output(show(desrd), "bid")
   expect_output(show(desrd), "force")
 
   expect_no_match(capture.output(show(desrct)), "Dichotomy rule")
 
   d <- o > 2 ~ .
-  desdichot <- rct_design(o ~ cluster(cid1, cid2), data = simdata,
+  desdichot <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata,
                           dichotomy = d)
 
   expect_output(show(desdichot), "Dichotomy rule")
@@ -366,10 +366,10 @@ test_that("Design type conversions", {
 
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  desrd  <-  rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                        data = simdata)
-  desobs <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desobs <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   # Obs <-> RCT
   expect_identical(desrct, as_rct_design(desobs))
@@ -401,10 +401,10 @@ test_that("variable transformations in Design", {
 
   data(simdata)
 
-  des <- rct_design(dose + 3 ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(dose + 3 ~ uoa(uoa1, uoa2), data = simdata)
   expect_true(all(treatment(des)[, 1] %in% (simdata$dose + 3)))
 
-  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(cid1, cid2) +
+  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(uoa1, uoa2) +
                                     forcing(force),
                                   data = simdata),
                  "conditional logic")
@@ -413,8 +413,8 @@ test_that("variable transformations in Design", {
 
 test_that("#26 cbind in identification variables", {
   data(simdata)
-  des1 <- obs_design(o ~ cluster(cbind(cid1, cid2)), data = simdata)
-  des2 <- obs_design(o ~ cluster(cid1, cid2), data = simdata)
+  des1 <- obs_design(o ~ cluster(cbind(uoa1, uoa2)), data = simdata)
+  des2 <- obs_design(o ~ cluster(uoa1, uoa2), data = simdata)
 
   des1@call <- fc
   des2@call <- fc
@@ -427,7 +427,7 @@ test_that("variable_concordance", {
   data(simdata)
 
   # No issues
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_silent(expect_true(design_data_concordance(des, simdata)))
@@ -483,19 +483,19 @@ test_that("variable_concordance", {
                                              warn_on_nonexistence = FALSE))
   expect_true(a)
 
-  sd$cid1 <- NULL
+  sd$uoa1 <- NULL
   expect_error(design_data_concordance(des, sd),
                "missing a `by=`")
 
   # No block
-  des <- rd_design(z ~ cluster(cid1, cid2) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force),
                    data = simdata)
   expect_silent(expect_true(design_data_concordance(des, simdata)))
 
   # multiple variables
   sd <- simdata
   sd$force2 <- sd$force + 1
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force, force2),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force, force2),
                    data = sd)
   expect_silent(expect_true(design_data_concordance(des, sd)))
 
@@ -519,16 +519,16 @@ test_that("variable_concordance", {
 
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  names(simdata)[names(simdata) == "cid1"] <- "ccc"
+  names(simdata)[names(simdata) == "uoa1"] <- "ccc"
   names(simdata)[names(simdata) == "force"] <- "fff"
 
   expect_silent(expect_true({
     design_data_concordance(des, simdata,
                             by = list(force = "fff",
-                                      cid1 = "ccc"))
+                                      uoa1 = "ccc"))
   }))
 
 })
@@ -536,13 +536,13 @@ test_that("variable_concordance", {
 test_that("NA's in data to create Design", {
   data(simdata)
   sd2 <- simdata
-  sd2$cid1[1] <- NA
+  sd2$uoa1[1] <- NA
 
-  expect_error(obs_design(z ~ unitid(cid1, cid2), data = sd2),
+  expect_error(obs_design(z ~ unitid(uoa1, uoa2), data = sd2),
                "Missing values cannot be found")
 
-  des1 <- obs_design(z ~ unitid(cid1, cid2), data = simdata)
-  des2 <- obs_design(z ~ unitid(cid1, cid2), data = sd2, na.fail = FALSE)
+  des1 <- obs_design(z ~ unitid(uoa1, uoa2), data = simdata)
+  des2 <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
 
   des1@call <- call("c")
   des2@call <- call("c")
@@ -552,31 +552,31 @@ test_that("NA's in data to create Design", {
   sd2 <- simdata
   sd2$bid <- NA
 
-  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2))
-  expect_error(obs_design(z ~ unitid(cid1, cid2) + block(bid), data = sd2),
+  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2))
+  expect_error(obs_design(z ~ unitid(uoa1, uoa2) + block(bid), data = sd2),
                "Missing values cannot be found")
 
   # Shouldn't affect treatment
   sd2 <- simdata
   sd2$z[1:10] <- NA
-  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2,
+  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2,
                                   na.fail = TRUE))
   expect_equal(nrow(des@structure), 10)
-  expect_silent(des <- obs_design(z ~ unitid(cid1, cid2), data = sd2,
+  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2,
                                   na.fail = FALSE))
   expect_equal(nrow(des@structure), 10)
 
   sd2 <- simdata
-  sd2$cid1[1:4] <- NA
-  des <- obs_design(z ~ unitid(cid1, cid2), data = sd2, na.fail = FALSE)
+  sd2$uoa1[1:4] <- NA
+  des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
   expect_equal(nrow(des@structure), 9)
 
 })
 
 test_that("column name 'cluster' doesn't cause issues", {
   data(simdata)
-  simdata$cluster <- simdata$cid1
+  simdata$cluster <- simdata$uoa1
 
-  expect_no_error(rct_design(z ~ cluster(cluster, cid2), data = simdata))
+  expect_no_error(rct_design(z ~ cluster(cluster, uoa2), data = simdata))
 
 })

@@ -69,7 +69,7 @@ directly. See \code{\link[=dichotomy]{dichotomy()}} for more details on specifyi
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid),
                   data = simdata)
 
 data(schooldata)

@@ -41,41 +41,41 @@ m <- lm(promotion ~ treat * gender, data = Q,
 coef(m) # spits out effect estimates
 ```
 where `Q` may be the same as `Q_`, or `Q_` may describe aggregates of
-units described in `Q`; the offset is similar to what `predict(cmod, newdata=Q, type="response")` would have given; and the weights are of the Horwitz-Thompson, inverse probability of assignment type. 
+units described in `Q`; the offset is similar to what `predict(cmod, newdata=Q, type="response")` would have given; and the weights are of the Horwitz-Thompson, inverse probability of assignment type.
 
 At this point `m` has class `lm`, but with
 additional information tucked away in `m[['model']]`: this data frame
 will have special columns `(weights)` and
-`offset(cov_adj(cmod))`.  As of this writing, the propertee package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two planned classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information. 
+`offset(cov_adj(cmod))`.  As of this writing, the propertee package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two planned classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information.
 
-Standard errors will be obtained through subsequent steps, e.g. 
+Standard errors will be obtained through subsequent steps, e.g.
 ```{r eval=FALSE}
 vcov(as.DirectAdjusted(m))
 ```
 or
 ```{r eval=FALSE}
 m <- as.DirectAdjusted(m,
-                       by=list(cmod=c(cid1=altcid1, cid2=altcid2))
+                       by=list(cmod=c(uoa1=altuoa1, uoa2=altuoa2))
 		       )
 vcov(m)
 ```
-with "`cid1`" and "`cid2`" the column names of `clusters(des)`, while `altcid1` and `altcid2` corresponding column names of `C`,  or
+with "`uoa1`" and "`uoa2`" the column names of `clusters(des)`, while `altuoa1` and `altuoa2` corresponding column names of `C`,  or
 ```r
 m <- as.DirectAdjusted(m,
                        by=keys_data_frame)
 vcov(m)
 ```
-where `keys_data_frame` has rows aligned with those of `C` and columns including "`cid1`" and "`cid2`".
+where `keys_data_frame` has rows aligned with those of `C` and columns including "`uoa1`" and "`uoa2`".
 
 Either way, once `m` has been coerced to class `DirectAdjusted`, it has acquired a `@Design` slot for the information in `des`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
 
 - attend to the structure of the design, as recorded in `des`; and
-- propagate errors from the fitting of covariance model `cmod` into standard errors reported for `treat * gender` coefficients. 
+- propagate errors from the fitting of covariance model `cmod` into standard errors reported for `treat * gender` coefficients.
 
 
 ## Formal class structure proposal
 
-<!-- couldn't get the below to render properly--> 
+<!-- couldn't get the below to render properly-->
 ```{r classdiagram, eval=FALSE, echo=FALSE, fig.height=6, fig.width=6}
 DiagrammeR::mermaid("
 classDiagram
@@ -95,7 +95,7 @@ classDiagram
   DirectAdjusted: +Design Design
 ")
 ```
-<!-- Rendering from https://mermaid.live/ --> 
+<!-- Rendering from https://mermaid.live/ -->
 ![](images/sandwich_layers.png)
 
 Like the existing class `WeightedDesign`, the `PreSandwichLayer` and `SandwichLayer` classes extend the base numeric vector type, with numeric vectors (of predictions) in their `@.Data` slots.  `PreSandwichLayer` and `SandwichLayer` also have a `@prediction_gradient` slot, for a numeric matrix of dimension
@@ -106,9 +106,9 @@ c(nrow(@.Data), length(coef(fitted_covariance_model)))
 
 Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `SandwichLayer` amounts to providing a mapping from the rows of `model.matrix(x)` or `sandwich::estfun(x)` to units of assignment recorded in `des`. This mapping is to be recorded in the `@keys` data frame, which has as many rows as `model.matrix(x)` and columns storing unit-of-assignment (clustering) information as well as a Boolean variable indicating whether such unit of assignments could be found in `des`.
 
-The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `design`, `desvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[desvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `desvars`. 
+The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `design`, `desvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[desvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `desvars`.
 
-In order for `vcov.DirectAdjusted(m)` to work, the following functions must have methods applicable to `m@fitted_covariance_model`: `model.matrix()`, `sandwich::estfun()`, `sandwich::bread()`.  These are similar requirements to those of `sandwich::vcovHC()`. 
+In order for `vcov.DirectAdjusted(m)` to work, the following functions must have methods applicable to `m@fitted_covariance_model`: `model.matrix()`, `sandwich::estfun()`, `sandwich::bread()`.  These are similar requirements to those of `sandwich::vcovHC()`.
 
 
 
@@ -152,12 +152,12 @@ respectively.
 
 ## Required materials for SE calculations
 
-To estimate variances and covariances of $\tau$, we'll need to assemble the following materials. 
+To estimate variances and covariances of $\tau$, we'll need to assemble the following materials.
 
-1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$; 
+1. Sufficient information about $\mathcal{C}$ and $\mathcal{Q}$ to identify their intersection $\mathcal{C}\cap\mathcal{Q}$, as is needed to estimate $B_{21}$;
 2. Matrices of estimating
 functions $\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$
-and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$; 
+and $\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, \hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}$, as are needed for $B_{21}$;
 3. For the quasiexperimental sample $\mathcal{Q}$, matrices
 $$\nabla_{\alpha} \{\sum_{j \in i}\psi(\tilde{\mathbf{Y}}_j, \hat{\tau}, {\alpha}):
 i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},$$ corresponding to
@@ -166,11 +166,11 @@ $A_{21}$, where "$j \in i$" means "elements $j$ of cluster $i$" and "$\sum_{j \i
 \{\frac{1}{\# \mathcal{Q}}\nabla_\tau \sum_{i \in \mathcal{Q}}
 \mathbb{E}[\psi(\tilde{\mathbf{Y}}_i, \tau, \hat{\alpha})]
 \vert_{\tau=\hat\tau}\}^{-1}$, i.e. the inverse of its Fisher information
-w.r.t. $\tau$ only, along with the "meat matrix" 
+w.r.t. $\tau$ only, along with the "meat matrix"
 $n_\mathcal{Q}^{-1} B_{22} = n_\mathcal{Q}^{-1}
 \mathrm{Cov}[\sum_{i \in \mathcal{Q}} \psi(\tilde{\mathbf{Y}}_i,
 {\tau}, {\alpha})]_{({\tau}, {\alpha})=(\hat{\tau}, \hat{\alpha})}$;
-5. The covariance model's bread matrix $(n_\mathcal{C}^{-1} \hat{A}_{11})^{-1} = 
+5. The covariance model's bread matrix $(n_\mathcal{C}^{-1} \hat{A}_{11})^{-1} =
 \{n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
 \nabla_\alpha [\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}\}^{-1}$; and
@@ -205,19 +205,19 @@ $B_{22}$.
 
 1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. A falsy value in the `in_Q` column of `keys` indicates an observation not appearing in the `Design` object.
 
-2\.  Estimating functions may need to be aggregated (summed) to the cluster level before calculation of $B_{21}$.  There should be a dedicated function to calculate $B_{21}$ from the cluster-aggregated estimating function matrices. 
+2\.  Estimating functions may need to be aggregated (summed) to the cluster level before calculation of $B_{21}$.  There should be a dedicated function to calculate $B_{21}$ from the cluster-aggregated estimating function matrices.
 
 3\. `PreSandwichLayer` and `SandwichLayer` have an `@prediction_gradient` slot for a numeric matrix.  This matrix has as many rows as there are entries in the `.Data` vector, and as many columns as there are estimating equations.
 
-The `@prediction_gradient` slot carries $\{\nabla_\alpha f_{\alpha}(\tilde{\mathbf{Y}}_j)|_\alpha=\hat\alpha\}$, where $j$ ranges over rows of `Q` as above -- elements not clusters where the distinction exists -- and $f_\alpha(\mathbf{Y})$ represents the prediction for data $\mathbf{Y}$ from a fitted model of `class(cov_mod)` with parameters $\alpha$. For $\psi()$'s that use only "predictions" of the covariance model, as ours does, the first derivative of the covariance model predictions as applied to data in $\mathcal{Q}$ will provide sufficient information from the covariance model to complete the calculation of $\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}) \vert_{\alpha=\hat\alpha}: i \in \mathcal{Q}\}$. 
+The `@prediction_gradient` slot carries $\{\nabla_\alpha f_{\alpha}(\tilde{\mathbf{Y}}_j)|_\alpha=\hat\alpha\}$, where $j$ ranges over rows of `Q` as above -- elements not clusters where the distinction exists -- and $f_\alpha(\mathbf{Y})$ represents the prediction for data $\mathbf{Y}$ from a fitted model of `class(cov_mod)` with parameters $\alpha$. For $\psi()$'s that use only "predictions" of the covariance model, as ours does, the first derivative of the covariance model predictions as applied to data in $\mathcal{Q}$ will provide sufficient information from the covariance model to complete the calculation of $\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i, \hat{\tau}, {\alpha}) \vert_{\alpha=\hat\alpha}: i \in \mathcal{Q}\}$.
 
-For `glm` and similarly typed objects `cmod`, such predictions are a joint function of `family(cmod)` and the `model.matrix` generated in the process of creating predictions from `cmod`. 
+For `glm` and similarly typed objects `cmod`, such predictions are a joint function of `family(cmod)` and the `model.matrix` generated in the process of creating predictions from `cmod`.
 
 4\. The `SandwichLayer` class isn't implicated in (4).  We can take extant calculations of a direct adjustment model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied. For design-based SEs we'll need our own B matrix calculation.  For model-based SEs we can plug in to extant routines for $B_{22}$ also, but being careful ensure clustering on the units of assignment (as named in a Design object). Scaling of these matrices should default to the conventions of the sandwich package. (I haven't considered whether use of HC0--3 etc for $B_{22}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{11}$, nor whether heuristics animating these adjustments make sense in this context.)
 
 5\. `sandwich::bread()` will be used to retrieve $A_{11}^{-1}$.
 
-We can take extant calculations of a covariance model's information matrix, defaulting to scaling conventions implemented in the sandwich package. 
+We can take extant calculations of a covariance model's information matrix, defaulting to scaling conventions implemented in the sandwich package.
 
 6\. `sandwich::meatCL()` will be used to retrieve $B_{11}$.  For now we only try to implement HC0 & HC1.   (I haven't considered whether use of HC0--3 etc for $B_{11}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{22}$, nor whether heuristics animating these adjustments make sense in this context.)
 

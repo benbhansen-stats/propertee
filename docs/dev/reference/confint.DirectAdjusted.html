@@ -16,7 +16,7 @@ the vcov.DirectAdjusted() call."><meta property="og:image" content="www.github.c
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.8.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.9.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,6 +108,13 @@ all parameters are considered.</p></dd>
 <p>A matrix (or vector) with columns giving lower and upper confidence
 limits for each parameter. These will be labelled as (1-level)/2 and 1 -
 (1-level)/2 in % (by default 2.5% and 97.5%)</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Rather than call <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">stats::confint.lm()</a></code>, <code>confint.DirectAdjusted()</code>
+calls <code><a href="dot-confint_lm.html">.confint_lm()</a></code>, a function internal to the <code>propertee</code>
+package that ensures additional arguments in the <code>...</code> of the
+<code>confint.DirectAdjusted()</code> call are passed to the internal <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> call.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

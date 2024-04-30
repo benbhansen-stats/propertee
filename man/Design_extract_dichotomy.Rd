@@ -70,8 +70,8 @@ the dichotomy will require re-creating the Design, instead of simply using
 }
 \examples{
 data(simdata)
-des1 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
-des2 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata,
+des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
+des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
                    dichotomy = dose > 250 ~ .)
 dichotomy(des1)
 dichotomy(des2)

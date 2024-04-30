@@ -1,6 +1,6 @@
 test_that("internal weight function", {
   data(simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
                         dichotomy = NULL)
@@ -45,7 +45,7 @@ test_that("internal weight function", {
 test_that("dichotomy issues", {
 
   data(simdata)
-  des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
@@ -76,7 +76,7 @@ test_that("dichotomy issues", {
 
 test_that("internal and external weight function agreement", {
   data(simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
@@ -113,7 +113,7 @@ test_that("ate and ett with data argument", {
 
   # n_clusters < n
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -132,7 +132,7 @@ test_that("ate and ett with data argument", {
 
 test_that("ate and ett in lm call", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
@@ -147,77 +147,77 @@ test_that("ate and ett in lm call", {
 test_that("by", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
   w1 <- ate(des, data = simdata)
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  w2 <- ate(des, data = simdata2, by = c("cid2" = "cccc"))
-  w3 <- ate(des, data = simdata2, by = list("cid2" = "cccc"))
+  w2 <- ate(des, data = simdata2, by = c("uoa2" = "cccc"))
+  w3 <- ate(des, data = simdata2, by = list("uoa2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
   expect_equal(w1@.Data, w3@.Data)
 
   w1 <- ett(des, data = simdata)
-  w2 <- ett(des, data = simdata2, by = c("cid2" = "cccc"))
+  w2 <- ett(des, data = simdata2, by = c("uoa2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des))
   mod2 <- lm(y ~ x, data = simdata2,
-             weights = ate(des, by = c("cid2" = "cccc")))
+             weights = ate(des, by = c("uoa2" = "cccc")))
   mod3 <- lm(y ~ x, data = simdata2,
-             weights = ate(des, by = list("cid2" = "cccc")))
+             weights = ate(des, by = list("uoa2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
   expect_identical(mod1$coef, mod3$coef)
 
   mod1 <- lm(y ~ x, data = simdata, weights = ett(des))
   mod2 <- lm(y ~ x, data = simdata2,
-             weights = ett(des, by = c("cid2" = "cccc")))
+             weights = ett(des, by = c("uoa2" = "cccc")))
 
   expect_identical(mod1$coef, mod2$coef)
 
-  des <- rd_design(z ~ unit_of_assignment(cid2, cid1) +
+  des <- rd_design(z ~ unit_of_assignment(uoa2, uoa1) +
                      block(bid) + forcing(force), data = simdata)
 
   w1 <- ate(des, data = simdata)
 
   simdata2 <- simdata
   colnames(simdata2)[2] <- "cccc"
-  w2 <- ate(des, data = simdata2, by = c("cid2" = "cccc"))
+  w2 <- ate(des, data = simdata2, by = c("uoa2" = "cccc"))
 
   expect_equal(w1@.Data, w2@.Data)
 
-  expect_error(ate(des, data = simdata2, by = c("cid2" = "z")),
+  expect_error(ate(des, data = simdata2, by = c("uoa2" = "z")),
                "variables cannot be used more than once")
 
   expect_error(ate(des, data = simdata2, by = c("abc")), "named vector")
 
   expect_error(ate(des, data = simdata2,
-                           by = c("cid2" = "cccc", "cid2" = "bbbb")),
+                           by = c("uoa2" = "cccc", "uoa2" = "bbbb")),
                "unique")
 
   expect_warning(w3 <- ate(des, data = simdata2,
-                           by = c("cid2" = "cccc", "abc" = "cid1")),
+                           by = c("uoa2" = "cccc", "abc" = "uoa1")),
                "not found in Design")
 
   expect_warning(w4 <- ate(des, data = simdata2,
-                           by = c("cid2" = "cccc", "cid1" = "abc")),
+                           by = c("uoa2" = "cccc", "uoa1" = "abc")),
                "not found in data")
   expect_identical(w3, w4)
 
   expect_warning(expect_warning(w5 <- ate(des, data = simdata2,
-                           by = c("cid2" = "cccc", "abc" = "def")),
+                           by = c("uoa2" = "cccc", "abc" = "def")),
                "not found in data"), "not found in Design")
   expect_identical(w3, w5)
 })
 
 test_that("Ops", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -245,7 +245,7 @@ test_that("Ops", {
 test_that("show WeightedDesign", {
 
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -253,7 +253,7 @@ test_that("show WeightedDesign", {
 })
 test_that("weight function", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   wdes <- ett(des, data = simdata)
 
@@ -376,10 +376,10 @@ test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
 test_that("formula as object is able to be found in data search", {
   data(simdata)
 
-  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod1 <- lm(y ~ x, data = simdata, weights = ate(des1))
 
-  f <- z ~ uoa(cid1, cid2)
+  f <- z ~ uoa(uoa1, uoa2)
   des2 <- rct_design(f, data = simdata)
   mod2 <- lm(y ~ x, data = simdata, weights = ate(des2))
 
@@ -393,20 +393,20 @@ test_that("numeric and logical treatments work the same", {
 
   # ways of representing binary treatments
   # numeric
-  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod1 <- lm(y ~ z, data = simdata, weights = ate(des1))
   # binary
   simdata$z <- simdata$z == 1
-  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des2 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod2 <- lm(y ~ z, data = simdata, weights = ate(des2))
   expect_identical(mod1$weights, mod2$weights)
   # repeat for ett
   # numeric
-  des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod1 <- lm(y ~ z, data = simdata, weights = ett(des1))
   # binary
   simdata$z <- simdata$z == 1
-  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des2 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod2 <- lm(y ~ z, data = simdata, weights = ett(des2))
   expect_identical(mod1$weights, mod2$weights)
 
@@ -417,7 +417,7 @@ test_that("Weighting respects ordering", {
   sd <- simdata[c(1, 11, 31), ]
   # Rows 1/2 are z=0, row 3 is z=1
 
-  des <- rct_design(z ~ cluster(cid1), data = sd)
+  des <- rct_design(z ~ cluster(uoa1), data = sd)
   w1 <- ate(des, data = sd)
   # Since first two rows are the same, they should have the same weight
   expect_true(w1[1] == w1[2])
@@ -433,7 +433,7 @@ test_that("Weighting respects ordering", {
 })
 
 test_that("Passing previously created formula", {
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod1 <- lm(y ~ z, data = simdata, weights = ett(des))
   f <- y ~ z
   mod2 <- lm(f, data = simdata, weights = ett(des))
@@ -442,7 +442,7 @@ test_that("Passing previously created formula", {
 })
 
 test_that("subsetting of WeightedDesign", {
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   ww <- ate(des, data = simdata)
 
   expect_identical(subset(ww, rep(TRUE, 50)), ww)
@@ -456,7 +456,7 @@ test_that("subsetting of WeightedDesign", {
 test_that("#130 zero weights with non-varying treatment in a block", {
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   wts <- lmitt(y ~ 1, data = simdata,
                design = des, weights = "ate")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
@@ -469,7 +469,7 @@ test_that("#130 zero weights with non-varying treatment in a block", {
 
   # Make a block with no controls.
   simdata$z[simdata$bid == 3] <- 1
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   wts <- lmitt(y ~ 1, data = simdata,
                design = des, weights = "ate")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
@@ -484,7 +484,7 @@ test_that("#130 zero weights with non-varying treatment in a block", {
 
   # Make a block with no treatment
   simdata$z[simdata$bid == 3] <- 0
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   wts <- lmitt(y ~ 1, data = simdata,
                design = des, weights = "ate")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
@@ -559,7 +559,7 @@ test_that("#131 numeric blocks don't cause NA weights", {
   data(simdata)
   simdata$bid[simdata$bid == 3] <- 4
 
-  des <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   mod <-lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE, weights = "ate")
   expect_length(mod$weights, nrow(simdata))
   expect_true(all(!is.na(mod$weights)))

@@ -2,7 +2,7 @@ test_that("treatments with `newdata`", {
   data(simdata)
 
   # Case 1: binary = FALSE
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid),
                     data = simdata)
 
   expect_true(all.equal(treatment(des, newdata = simdata),
@@ -14,7 +14,7 @@ test_that("treatments with `newdata`", {
 
 
   # Case 2b: binary = TRUE, stored treatment is non-binary but has dichotomy
-  des <- rct_design(o ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
                     data = simdata, dichotomy = o >= 3 ~ .)
 
   expect_equal(nrow(treatment(des, newdata = simdata, binary = TRUE)),
@@ -22,14 +22,14 @@ test_that("treatments with `newdata`", {
   expect_true(all(treatment(des, newdata = simdata, binary = TRUE)[,1] %in% 0:1))
 
   # Case 3a: binary = "ifany", no dichotomy
-  des <- rct_design(o ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
                     data = simdata)
 
   expect_true(all.equal(treatment(des, newdata = simdata, binary = "ifany"),
                         simdata[, "o", drop = FALSE]))
 
   # Case 3b: binary = "ifany", dichotomy
-  des <- rct_design(o ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
                     data = simdata, dichotomy = o >= 3 ~ .)
 
   expect_equal(nrow(treatment(des, newdata = simdata, binary = "ifany")),
@@ -44,10 +44,10 @@ test_that("treatments with `newdata`", {
 test_that("units of assignment and clusters with `newdata`", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  expect_true(all.equal(clusters(des, newdata = simdata), simdata[, c("cid1", "cid2")]))
+  expect_true(all.equal(clusters(des, newdata = simdata), simdata[, c("uoa1", "uoa2")]))
 
   clusters(des) <- 1:10
   expect_length(clusters(des, newdata = simdata)[, 1], 50)
@@ -57,10 +57,10 @@ test_that("units of assignment and clusters with `newdata`", {
   expect_equal(length(unique(clusters(des, newdata = simdata)[, 1])), 5)
 
 
-  des <- rd_design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ uoa(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  expect_true(all.equal(units_of_assignment(des, newdata = simdata), simdata[, c("cid1", "cid2")]))
+  expect_true(all.equal(units_of_assignment(des, newdata = simdata), simdata[, c("uoa1", "uoa2")]))
 
   units_of_assignment(des) <- 1:10
   expect_length(units_of_assignment(des, newdata = simdata)[, 1], 50)
@@ -74,7 +74,7 @@ test_that("units of assignment and clusters with `newdata`", {
 test_that("blocks with `newdata`", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_true(all.equal(blocks(des, newdata = simdata), simdata[, "bid", drop = FALSE]))
@@ -92,7 +92,7 @@ test_that("blocks with `newdata`", {
   ### multi-dimensional blocks
 
   simdata2 <- simdata
-  simdata2$cid1 <- 1:50
+  simdata2$uoa1 <- 1:50
   simdata2 <- rbind(simdata2, simdata2) # Duplicate rows to make data different
   names(simdata2)[1:2] <- c("cid", "bida")
   des <- rd_design(z ~ cluster(cid) + block(bid, bida) + forcing(force),
@@ -104,7 +104,7 @@ test_that("blocks with `newdata`", {
 test_that("forcing with `newdata`", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_true(all.equal(forcings(des, newdata = simdata), simdata[, "force", drop = FALSE]))
@@ -124,7 +124,7 @@ test_that("forcing with `newdata`", {
   simdata2 <- simdata
   simdata2$force2 <- rep(rnorm(10, mean = 5), times = rep(c(4, 6), times = 5))
   simdata2 <- rbind(simdata2, simdata2) # Duplicate rows to make data different
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) +
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) +
                      forcing(force, force2), data = simdata2)
 
 
@@ -136,32 +136,32 @@ test_that(".design_accessors_newdata_validate", {
 
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  names(simdata)[names(simdata) == "cid1"] <- "ccc"
+  names(simdata)[names(simdata) == "uoa1"] <- "ccc"
   names(simdata)[names(simdata) == "force"] <- "fff"
 
   expect_true(.design_accessors_newdata_validate(simdata,
                                                  by = list(force = "fff",
-                                                           cid1 = "ccc")))
+                                                           uoa1 = "ccc")))
 
 })
 
 test_that(".get_col_from_new_data", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   simdata2 <- simdata
-  names(simdata2)[names(simdata2) == "cid1"] <- "ccc"
+  names(simdata2)[names(simdata2) == "uoa1"] <- "ccc"
   names(simdata2)[names(simdata2) == "force"] <- "fff"
 
   expect_identical(.get_col_from_new_data(des, simdata, type = "b"),
                    .get_col_from_new_data(des, simdata2, type = "b",
                                           by = list(force = "fff",
-                                                    cid1 = "ccc")))
+                                                    uoa1 = "ccc")))
 
 
 })

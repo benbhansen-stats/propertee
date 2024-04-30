@@ -1,7 +1,7 @@
 test_that("var_table", {
   data(simdata)
   # RCT and Obs
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   tbl <- var_table(des)
 
@@ -30,7 +30,7 @@ test_that("var_table", {
   expect_identical(tbl2, tbl4)
 
   # RD
-  des <- rd_design(z ~ uoa(cid1, cid2) + forcing(force), data = simdata)
+  des <- rd_design(z ~ uoa(uoa1, uoa2) + forcing(force), data = simdata)
 
   tbl <- var_table(des)
 
@@ -74,7 +74,7 @@ test_that("var_table", {
   expect_true(is.na(tbl4[4, 3]))
 
   # No double-variables
-  simdata$cid <- paste(simdata$cid1, simdata$cid2)
+  simdata$cid <- paste(simdata$uoa1, simdata$uoa2)
   des <- rct_design(z ~ uoa(cid), data = simdata)
 
   expect_identical(var_table(des),

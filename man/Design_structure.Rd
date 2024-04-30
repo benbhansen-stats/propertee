@@ -29,6 +29,6 @@ information.
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 get_structure(des)
 }

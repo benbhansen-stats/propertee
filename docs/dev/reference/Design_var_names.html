@@ -12,7 +12,7 @@ structure of the Design (e.g. treatment, unit of analysis, etc)"><meta property=
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.8.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.9.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,21 +122,21 @@ included in the <code>Design</code>.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">block</a></span><span class="op">(</span><span class="va">bid</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">block</a></span><span class="op">(</span><span class="va">bid</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">var_table</span><span class="op">(</span><span class="va">des</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Structure            Variables   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1,] "Treatment"          "z"         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] "Unit of Assignment" "cid1, cid2"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] "Unit of Assignment" "uoa1, uoa2"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3,] "Block"              "bid"       </span>
 <span class="r-in"><span><span class="fu">var_table</span><span class="op">(</span><span class="va">des</span>, compress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Structure            Variable 1 Variable 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1,] "Treatment"          "z"        NA        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] "Unit of Assignment" "cid1"     "cid2"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] "Unit of Assignment" "uoa1"     "uoa2"    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3,] "Block"              "bid"      NA        </span>
 <span class="r-in"><span><span class="fu">var_names</span><span class="op">(</span><span class="va">des</span>, <span class="st">"t"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "z"</span>
 <span class="r-in"><span><span class="fu">var_names</span><span class="op">(</span><span class="va">des</span>, <span class="st">"u"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "cid1" "cid2"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "uoa1" "uoa2"</span>
 <span class="r-in"><span><span class="fu">var_names</span><span class="op">(</span><span class="va">des</span>, <span class="st">"b"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "bid"</span>
 </code></pre></div>

@@ -14,7 +14,7 @@ obs_design(), rct_design() and rd_design() respectively)."><meta property="og:im
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.8.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.9.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,14 +118,14 @@ variable. This should be entered as a formula which would be passed to
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">des</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Randomized Control Trial</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure          Variables </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---------          --------- </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment          z         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment cid1, cid2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment uoa1, uoa2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu">as_obs_design</span><span class="op">(</span><span class="va">des</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Observational Study</span>
@@ -133,7 +133,7 @@ variable. This should be entered as a formula which would be passed to
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure          Variables </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---------          --------- </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment          z         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment cid1, cid2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment uoa1, uoa2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu">as_rd_design</span><span class="op">(</span><span class="va">des</span>, <span class="va">simdata</span>, forcing <span class="op">=</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">forcing</a></span><span class="op">(</span><span class="va">force</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Regression Discontinuity Design</span>
@@ -141,17 +141,17 @@ variable. This should be entered as a formula which would be passed to
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure          Variables </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---------          --------- </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment          z         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment cid1, cid2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment uoa1, uoa2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Forcing            force     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rd_design</a></span><span class="op">(</span><span class="va">o</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">forcing</a></span><span class="op">(</span><span class="va">force</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rd_design</a></span><span class="op">(</span><span class="va">o</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="DesignSpecials.html">forcing</a></span><span class="op">(</span><span class="va">force</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">des2</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Regression Discontinuity Design</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure          Variables </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---------          --------- </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment          o         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment cid1, cid2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment uoa1, uoa2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Forcing            force     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="co"># as_rct_design(des2) # this will produce an error</span></span></span>
@@ -161,7 +161,7 @@ variable. This should be entered as a formula which would be passed to
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Structure          Variables </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---------          --------- </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment          o         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment cid1, cid2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Unit of Assignment uoa1, uoa2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>

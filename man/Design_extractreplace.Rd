@@ -148,7 +148,7 @@ be provided.
 }
 \examples{
 data(simdata)
-des <- obs_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
+des <- obs_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
 blocks(des) # empty
 blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
 blocks(des)

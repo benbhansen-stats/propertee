@@ -9,7 +9,7 @@
 \alias{*,numeric,WeightedDesign-method}
 \alias{/,WeightedDesign,numeric-method}
 \alias{/,numeric,WeightedDesign-method}
-\title{\code{WeightedDesign} Ops}
+\title{\code{WeightedDesign} Operations}
 \usage{
 \S4method{+}{WeightedDesign,numeric}(e1, e2)
 
@@ -28,11 +28,18 @@
 \S4method{/}{numeric,WeightedDesign}(e1, e2)
 }
 \arguments{
-\item{e1}{\code{WeightedDesign} or \code{numeric}}
-
-\item{e2}{\code{numeric} or \code{WeightedDesign}}
+\item{e1, e2}{\code{WeightedDesign} or \code{numeric} objects}
+}
+\value{
+a \code{WeightedDesign} object
 }
 \description{
-\code{WeightedDesign}s do not support addition or subtraction, but do
-support all other reasonable operations.
+Algebraic operators on \code{WeightedDesign} objects and
+numeric vectors. \code{WeightedDesign}s do not support addition or
+subtraction.
+}
+\details{
+These are primarily used to either combine weights via
+multiplication, or to invert weights. Addition and subtraction are not
+supported and will produce errors.
 }

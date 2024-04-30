@@ -7,8 +7,8 @@
 \format{
 A data.frame with 100 rows and 7 columns.
 \itemize{
-\item cid1 First level unit of assignment ID
-\item cid2 Second level unit of assignment ID
+\item uoa1 First level unit of assignment ID
+\item uoa2 Second level unit of assignment ID
 \item bid Block ID
 \item force Forcing variable
 \item z Binary treatment indicator

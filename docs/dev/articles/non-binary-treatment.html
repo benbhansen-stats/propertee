@@ -34,7 +34,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.8.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.9.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,7 +92,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Non-binary Treatment Specification</h1>
             
-            <h4 data-toc-skip class="date">2024-04-23</h4>
+            <h4 data-toc-skip class="date">2024-04-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/HEAD/vignettes/non-binary-treatment.Rmd" class="external-link"><code>vignettes/non-binary-treatment.Rmd</code></a></small>
       <div class="d-none name"><code>non-binary-treatment.Rmd</code></div>
@@ -181,14 +181,14 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  50 100 200 250 300 </span></span>
 <span><span class="co">#&gt;  10  10  10  10  10</span></span>
-<span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
+<span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Randomized Control Trial</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Structure          Variables </span></span>
 <span><span class="co">#&gt;  ---------          --------- </span></span>
 <span><span class="co">#&gt;  Treatment          dose      </span></span>
-<span><span class="co">#&gt;  Unit of Assignment cid1, cid2</span></span>
+<span><span class="co">#&gt;  Unit of Assignment uoa1, uoa2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of units per Treatment group: </span></span>
 <span><span class="co">#&gt;  Txt Grp Num Units</span></span>
@@ -205,7 +205,7 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt;  Structure          Variables </span></span>
 <span><span class="co">#&gt;  ---------          --------- </span></span>
 <span><span class="co">#&gt;  Treatment          dose      </span></span>
-<span><span class="co">#&gt;  Unit of Assignment cid1, cid2</span></span>
+<span><span class="co">#&gt;  Unit of Assignment uoa1, uoa2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Dichotomy rule: dose &gt;= 300 ~ dose &lt;= 100</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -216,7 +216,7 @@ ignored in the estimation of treatment effects.</p>
 <p>You can also place the <code>dichotomy</code> in the
 <code>_design()</code> call direcly:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">cid1</span>, <span class="va">cid2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
+<code class="sourceCode R"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
 <span>                   dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Randomized Control Trial</span></span>
@@ -224,7 +224,7 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt;  Structure          Variables </span></span>
 <span><span class="co">#&gt;  ---------          --------- </span></span>
 <span><span class="co">#&gt;  Treatment          dose      </span></span>
-<span><span class="co">#&gt;  Unit of Assignment cid1, cid2</span></span>
+<span><span class="co">#&gt;  Unit of Assignment uoa1, uoa2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Dichotomy rule: dose &gt;= 300 ~ dose &lt;= 100</span></span>
 <span><span class="co">#&gt; </span></span>

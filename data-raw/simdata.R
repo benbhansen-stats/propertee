@@ -1,6 +1,6 @@
 set.seed(2)
-simdata <- data.frame(cid1 = rep(1:5, each = 10),
-                      cid2 = rep(rep(1:2, times = c(4, 6)),
+simdata <- data.frame(uoa1 = rep(1:5, each = 10),
+                      uoa2 = rep(rep(1:2, times = c(4, 6)),
                                  times = 5),
                       bid = rep(1:3, times = c(20, 14, 16)),
                       force = rep(rnorm(10, mean = 5),

@@ -1,7 +1,7 @@
 test_that("Accessing and replacing treatment", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_equal(dim(treatment(des)), c(10, 1))
@@ -31,7 +31,7 @@ test_that("Accessing and replacing treatment", {
                    treatment(des, binary = TRUE))
 
   # Continuous treatment, no dichotomy
-  des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(dose ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
@@ -42,7 +42,7 @@ test_that("Accessing and replacing treatment", {
   treatment(des, binary = "ifany")
 
   # Continuous treatment, dichotomy
-  des <- rd_design(dose ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(dose ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata, dichotomy = dose <= 100 ~ dose == 200)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
@@ -56,18 +56,18 @@ test_that("Accessing and replacing treatment", {
 
   ############ .bin_txt
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(treatment(des)[, 1], .bin_txt(des))
 
-  des <- rd_design(o ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(o ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata, dichotomy = o >= 3 ~ .)
 
   expect_true(all(.bin_txt(des) %in% c(0, 1, NA)))
   expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
 
-  des <- rd_design(o ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(o ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_error(.bin_txt(des), "cannot be obtained")
@@ -78,7 +78,7 @@ test_that("treatment binary = 'ifany'", {
   data(simdata)
 
   # Binary already
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   expect_identical(treatment(des),
                    treatment(des, binary = "ifany"))
@@ -86,7 +86,7 @@ test_that("treatment binary = 'ifany'", {
                    treatment(des, binary = TRUE))
 
   # No dichotomization
-  des <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata)
   expect_error(treatment(des, binary = TRUE))
   expect_identical(treatment(des, binary = FALSE),
                    treatment(des, binary = "ifany"))
@@ -106,15 +106,15 @@ test_that("treatment binary = 'ifany'", {
 test_that("Accessing and replacing unit of assignment", {
   data(simdata)
 
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+  des <- rd_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid) +
                      forcing(force),
                    data = simdata)
 
   expect_identical(units_of_assignment(des), des@structure[, 2:3])
 
-  units_of_assignment(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
-  expect_identical(var_names(des, "u"), c("cid1", "cid2"))
-  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) ==
+  units_of_assignment(des) <- data.frame(uoa1 = 10:1, uoa2 = 1:10)
+  expect_identical(var_names(des, "u"), c("uoa1", "uoa2"))
+  expect_true(all(data.frame(uoa1 = 10:1, uoa2 = 1:10) ==
                     units_of_assignment(des)))
 
   units_of_assignment(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
@@ -169,7 +169,7 @@ test_that("Accessing and replacing unit of assignment", {
 
   # more units_of_assignment
   df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+  des <- rd_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid) +
                      forcing(force), data = simdata)
   des2 <- des
   units_of_assignment(des2) <- df
@@ -186,7 +186,7 @@ test_that("Accessing and replacing unit of assignment", {
   expect_true(all(m == units_of_assignment(des2)))
 
   # uoa
-  des <- rd_design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ uoa(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
   expect_identical(units_of_assignment(des), des@structure[, 2:3])
 
@@ -195,14 +195,14 @@ test_that("Accessing and replacing unit of assignment", {
 test_that("Accessing and replacing clusters", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(clusters(des), des@structure[, 2:3])
 
-  clusters(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
-  expect_identical(var_names(des, "u"), c("cid1", "cid2"))
-  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == clusters(des)))
+  clusters(des) <- data.frame(uoa1 = 10:1, uoa2 = 1:10)
+  expect_identical(var_names(des, "u"), c("uoa1", "uoa2"))
+  expect_true(all(data.frame(uoa1 = 10:1, uoa2 = 1:10) == clusters(des)))
 
   clusters(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
   expect_identical(var_names(des, "u"), c("abc1", "abc2"))
@@ -252,7 +252,7 @@ test_that("Accessing and replacing clusters", {
 
   # more clusters
   df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
   des2 <- des
   clusters(des2) <- df
@@ -272,14 +272,14 @@ test_that("Accessing and replacing clusters", {
 test_that("Accessing and replacing unitids", {
   data(simdata)
 
-  des <- rd_design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ unitid(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(unitids(des), des@structure[, 2:3])
 
-  unitids(des) <- data.frame(cid1 = 10:1, cid2 = 1:10)
-  expect_identical(var_names(des, "u"), c("cid1", "cid2"))
-  expect_true(all(data.frame(cid1 = 10:1, cid2 = 1:10) == unitids(des)))
+  unitids(des) <- data.frame(uoa1 = 10:1, uoa2 = 1:10)
+  expect_identical(var_names(des, "u"), c("uoa1", "uoa2"))
+  expect_true(all(data.frame(uoa1 = 10:1, uoa2 = 1:10) == unitids(des)))
 
   unitids(des) <- data.frame(abc1 = 10:1, abc2 = 1:10)
   expect_identical(var_names(des, "u"), c("abc1", "abc2"))
@@ -329,7 +329,7 @@ test_that("Accessing and replacing unitids", {
 
   # more unitids
   df <- data.frame(abc = 3:12, def = 4:13, efg = 5:14)
-  des <- rd_design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ unitid(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
   des2 <- des
   unitids(des2) <- df
@@ -350,7 +350,7 @@ test_that("Accessing and replacing unitids", {
 test_that("Accessing and replacing uoa vs unitid vs cluster", {
   data(simdata)
 
-  des <- rd_design(z ~ unitid(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ unitid(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   # created with unitid
@@ -358,19 +358,19 @@ test_that("Accessing and replacing uoa vs unitid vs cluster", {
   expect_error(units_of_assignment(des), "not `unit_of_assignment")
 
   # created with cluster
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
   expect_error(unitids(des), "not `unitid")
   expect_error(units_of_assignment(des), "not `unit_of_assignment")
 
   # created with unit_of_assignment
-  des <- rd_design(z ~ unit_of_assignment(cid1, cid2) + block(bid) +
+  des <- rd_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid) +
                      forcing(force), data = simdata)
   expect_error(unitids(des), "not `unitid")
   expect_error(clusters(des), "not `cluster")
 
   # created with uoa
-  des <- rd_design(z ~ uoa(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ uoa(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
   expect_error(unitids(des), "not `unitid")
   expect_error(clusters(des), "not `cluster")
@@ -379,7 +379,7 @@ test_that("Accessing and replacing uoa vs unitid vs cluster", {
 test_that("Accessing and replacing blocks", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(blocks(des), des@structure[, 4, drop = FALSE])
@@ -424,7 +424,7 @@ test_that("Accessing and replacing blocks", {
   ### multi-dimensional blocks
 
   simdata2 <- simdata
-  simdata2$cid1 <- 1:50
+  simdata2$uoa1 <- 1:50
   names(simdata2)[1:2] <- c("cid", "bida")
   des <- rd_design(z ~ cluster(cid) + block(bid, bida) + forcing(force),
                    data = simdata2)
@@ -483,7 +483,7 @@ test_that("Accessing and replacing blocks", {
 test_that("Accessing and replacing forcing", {
   data(simdata)
 
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(forcings(des), des@structure[, 5, drop = FALSE])
@@ -526,7 +526,7 @@ test_that("Accessing and replacing forcing", {
 
   simdata2 <- simdata
   simdata2$force2 <- rep(rnorm(10, mean = 5), times = rep(c(4, 6), times = 5))
-  des <- rd_design(z ~ cluster(cid1, cid2) + block(bid) +
+  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) +
                      forcing(force, force2), data = simdata2)
 
   expect_identical(forcings(des), des@structure[, 5:6])
@@ -581,17 +581,17 @@ test_that("Accessing and replacing forcing", {
 
   # Forcing for non-RD
 
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   expect_error(forcings(des),
                "only used")
   expect_error(forcings(des) <- rnorm(1:10),
                "only used")
 
   # duplicate variable names
-  expect_error(rct_design(z ~ cluster(cid1, cid2) + block(cid1),
+  expect_error(rct_design(z ~ cluster(uoa1, uoa2) + block(uoa1),
                           data = simdata),
                "more than once")
-  expect_error(rct_design(z ~ cluster(cid1, cid1, cid2), data = simdata),
+  expect_error(rct_design(z ~ cluster(uoa1, uoa1, uoa2), data = simdata),
                "more than once")
 
 })
@@ -600,7 +600,7 @@ test_that("Accessing and replacing forcing", {
 test_that("Accessing and replacing dichotomy", {
   data(simdata)
 
-  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata,
+  des <- rct_design(dose ~ unitid(uoa1, uoa2), data = simdata,
                     dichotomy = dose >= 250 ~ dose < 100)
 
   dd <- dichotomy(des)
@@ -609,7 +609,7 @@ test_that("Accessing and replacing dichotomy", {
 
   expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
 
-  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
+  des <- rct_design(dose ~ unitid(uoa1, uoa2), data = simdata)
   dd <- dichotomy(des)
   expect_true(inherits(dd, "formula"))
   expect_length(dd, 0)
@@ -651,19 +651,19 @@ test_that("Updating call works", {
 
   data(simdata)
 
-  des <- rct_design(dose ~ unitid(cid1, cid2), data = simdata)
+  des <- rct_design(dose ~ unitid(uoa1, uoa2), data = simdata)
 
   expect_true(any(grepl("dose", des@call$formula[[2]])))
   treatment(des) <- data.frame(newt = 1:10)
   expect_false(all(grepl("dose", des@call$formula[[2]])))
   expect_true(any(grepl("newt", des@call$formula[[2]])))
 
-  expect_true(any(grepl("cid1", des@call$formula[[3]])))
+  expect_true(any(grepl("uoa1", des@call$formula[[3]])))
   unitids(des) <- data.frame(newua = 1:10)
-  expect_false(all(grepl("cid1", des@call$formula[[3]])))
+  expect_false(all(grepl("uoa1", des@call$formula[[3]])))
   expect_true(any(grepl("newua", des@call$formula[[3]])))
 
-  des2 <- rd_design(dose ~ unitid(cid1, cid2) + block(bid) +
+  des2 <- rd_design(dose ~ unitid(uoa1, uoa2) + block(bid) +
                       forcing(force), data = simdata)
 
   expect_true(any(grepl("bid", des2@call$formula[[3]])))
@@ -682,7 +682,7 @@ test_that("Updating call works", {
 test_that("treatment extraction with NA", {
   data(simdata)
   simdata$z[1:4] <- NA
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   expect_identical(.bin_txt(des), des@structure$z)
   expect_identical(.bin_txt(des), treatment(des)[, 1])
   expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
@@ -690,7 +690,7 @@ test_that("treatment extraction with NA", {
 
 
   simdata$dose[1:4] <- NA
-  des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   expect_error(.bin_txt(des), "cannot be obtained")
   o <- treatment(des)[, 1]
   expect_true(is.na(o[1]))
@@ -709,7 +709,7 @@ test_that("treatment extraction with NA", {
 
 test_that("convert_to_data.frame add'l testing", {
   data(simdata)
-  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- obs_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   ##### Replacing existing component
   # vector
@@ -770,7 +770,7 @@ test_that("convert_to_data.frame add'l testing", {
   cdf <- .convert_to_data.frame(mm, des, "u")
   expect_s3_class(cdf, "data.frame")
   expect_equal(dim(cdf), c(10, 2))
-  expect_equal(names(cdf), c("cid1", "cid2"))
+  expect_equal(names(cdf), c("uoa1", "uoa2"))
 
   expect_error(.convert_to_data.frame(mm, des, "b"),
                "requires a named")
@@ -792,7 +792,7 @@ test_that("convert_to_data.frame add'l testing", {
 
   colnames(df) <- NULL
   cdf <- .convert_to_data.frame(df, des, "u")
-  expect_equal(names(cdf), c("cid1", "cid2"))
+  expect_equal(names(cdf), c("uoa1", "uoa2"))
 
   expect_error(.convert_to_data.frame(df, des, "b"),
                "requires a named")
@@ -840,8 +840,8 @@ test_that("convert_to_data.frame add'l testing", {
 test_that("has_blocks", {
   data(simdata)
   
-  blocked_des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
-  no_blocks_des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  blocked_des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  no_blocks_des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   
   expect_true(has_blocks(blocked_des))
   expect_false(has_blocks(no_blocks_des))
@@ -850,7 +850,7 @@ test_that("has_blocks", {
 test_that("dichotimization should error if if makes treatment constant", {
   data(simdata)
 
-  des <- obs_design(dose ~ uoa(cid1, cid2), data = simdata)
+  des <- obs_design(dose ~ uoa(uoa1, uoa2), data = simdata)
   expect_error(dichotomy(des) <- dose  > 1000 ~ .,
                "constant")
   expect_error(dichotomy(des) <- dose > 200 ~ dose < 0,

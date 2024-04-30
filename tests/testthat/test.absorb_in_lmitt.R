@@ -1,7 +1,7 @@
 test_that("absorb= argument", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
@@ -24,7 +24,7 @@ test_that("multiple variables in blocks", {
   simdata$bid1 <- (simdata$bid > 1) + 1
   simdata$bid2 <- (simdata$bid != 2) + 2
 
-  des <- rct_design(z ~ cluster(cid2, cid1) + block(bid1, bid2),
+  des <- rct_design(z ~ cluster(uoa2, uoa1) + block(bid1, bid2),
                    data = simdata)
 
   da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)

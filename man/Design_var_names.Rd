@@ -45,7 +45,7 @@ assignment/unitid/cluster), with additional rows for blocks and forcing if
 included in the \code{Design}.
 }
 \examples{
-des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 var_table(des)
 var_table(des, compress = FALSE)
 var_names(des, "t")

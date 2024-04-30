@@ -1,6 +1,6 @@
 test_that(".get_design", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lm(y ~ x, data = simdata)
 
@@ -25,7 +25,7 @@ test_that(".get_design", {
   expect_true(all(mod1$coef == mod6$coef))
   expect_true(all(mod1$coef == mod7$coef))
 
-  des2 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des2 <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   expect_error(lm(y ~ assigned(), data = simdata, weights = ate(des),
                   offset = cov_adj(mod, design = des2)),
@@ -53,7 +53,7 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
   }
 
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   mod <- lm(y ~ x, data = simdata)
   expect_true(is.null(cov_adj(mod, newdata = simdata)))
   mod1 <- lm(y ~ z, data = simdata, offset = cov_adj(mod))
@@ -62,14 +62,14 @@ test_that(".get_design returns NULL with NULL_on_error = TRUE", {
 
 test_that(".get_design finds design in expand.model.frame call", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   damod <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   # ensure we're taking the Design object from the model not the existing object
   # in the environment
   uoanames <- var_names(des, "u")
-  des <- rct_design(z ~ cluster(cid1), data = simdata,
-                    subset = simdata$cid1 %in% c(1, 3, 5))
+  des <- rct_design(z ~ cluster(uoa1), data = simdata,
+                    subset = simdata$uoa1 %in% c(1, 3, 5))
   dat <- .expand.model.frame.DA(damod, uoanames)
   expect_true(is.data.frame(dat))
   expect_true(all(uoanames %in% colnames(dat)))
@@ -77,7 +77,7 @@ test_that(".get_design finds design in expand.model.frame call", {
 
 test_that(".get_design finds design in model.frame call", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   damod <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
 
   mf1 <- stats::model.frame(damod)

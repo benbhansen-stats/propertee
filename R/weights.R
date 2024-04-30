@@ -1,29 +1,46 @@
-##' @title Generate Direct Adjusted Weights
-##' @details In a block design, Weights are generated as a function of the ratio
-##'   of the number of treated units in a block versus the total number of units
-##'   in a block.
+##' @title Generate Direct Adjusted Weights for Treatment Effect Estimation
 ##'
-##' In any blocks where that ratio is 0 or 1 (that is, all units in the block
-##' have the same treatment status), the weights will be 0. In effect this
-##' removes from the target population any block in which there is no basis for
-##' estimating either means under treatment or means under control.
+##' @description These should primarily be used inside models. See Details.
+##'   [ate()] creates weights to estimate the Average Treatment Effect and
+##'   [ett()] creates weights to estimate Effect of Treatment on the Treated.
 ##'
-##' If block is missing for a given observation, a weight of 0 is applied.
-##' @param design a \code{Design} object created by one of \code{rct_design()},
-##'   \code{rd_design()}, or \code{obs_design()}.
+##' @details These functions should primarily be used in the \code{weight}
+##'   argument of [lmitt()] or[lm()]. All arguments are optional if used within
+##'   those functions. If used on their own, \code{design} and \code{data} must
+##'   be provided.
+##'
+##'   In a \code{Design} with \code{block}s, the weights are generated as a
+##'   function of the ratio of the number of treated units in a block versus the
+##'   total number of units in a block.
+##'
+##'   In any blocks where that ratio is 0 or 1 (that is, all units in the block
+##'   have the same treatment status), the weights will be 0. In effect this
+##'   removes from the target population any block in which there is no basis
+##'   for estimating either means under treatment or means under control.
+##'
+##'   If block is missing for a given observation, a weight of 0 is applied.
+##'
+##' @param design optional; a \code{Design} object created by one of
+##'   \code{rct_design()}, \code{rd_design()}, or \code{obs_design()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
 ##'   variable if it isn't already \code{0}/\code{1}. See details of help for
-##'   \code{rct_design()} e.g. for details.
+##'   \code{rct_design()} e.g. for details. If \code{design} already has a
+##'   \code{dichotomy}, passing an additional one through this argument will
+##'   overwrite the existing dichotomy.
 ##' @param by optional; named vector or list connecting names of unit of
 ##'   assignment/ variables in \code{design} to unit of assignment/cluster
 ##'   variables in \code{data}. Names represent variables in the Design; values
 ##'   represent variables in the data. Only needed if variable names differ.
-##' @param data optionally the data for the analysis to be performed on. May be
+##' @param data optional; the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
-##' @return a \code{WeightedDesign} object
+##' @return a \code{WeightedDesign} object, which is a vector of numeric weights
 ##' @export
 ##' @rdname WeightCreators
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' summary(lmitt(y ~ 1, data = simdata, design = des, weights = ate()))
 ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   return(.weights_calc(design = design,
                        target = "ett",

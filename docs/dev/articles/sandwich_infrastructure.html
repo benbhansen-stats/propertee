@@ -34,7 +34,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.8.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.9.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,26 +150,26 @@ describes two planned classes appropriate for
 <code>PreSandwichLayer</code>, for use when the call to
 <code><a href="../reference/cov_adj.html">cov_adj()</a></code> producing this object is able to locate some but
 not all of the necessary information.</p>
-<p>Standard errors will be obtained through subsequent steps, e.g. </p>
+<p>Standard errors will be obtained through subsequent steps, e.g.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="fu"><a href="../reference/as_lmitt.html">as.DirectAdjusted</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>or</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_lmitt.html">as.DirectAdjusted</a></span><span class="op">(</span><span class="va">m</span>,</span>
-<span>                       by<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cmod<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>cid1<span class="op">=</span><span class="va">altcid1</span>, cid2<span class="op">=</span><span class="va">altcid2</span><span class="op">)</span><span class="op">)</span></span>
+<span>                       by<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cmod<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>uoa1<span class="op">=</span><span class="va">altuoa1</span>, uoa2<span class="op">=</span><span class="va">altuoa2</span><span class="op">)</span><span class="op">)</span></span>
 <span>               <span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
-<p>with “<code>cid1</code>” and “<code>cid2</code>” the column names of
-<code>clusters(des)</code>, while <code>altcid1</code> and
-<code>altcid2</code> corresponding column names of <code>C</code>,
+<p>with “<code>uoa1</code>” and “<code>uoa2</code>” the column names of
+<code>clusters(des)</code>, while <code>altuoa1</code> and
+<code>altuoa2</code> corresponding column names of <code>C</code>,
 or</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_lmitt.html">as.DirectAdjusted</a></span><span class="op">(</span><span class="va">m</span>,</span>
 <span>                       by<span class="op">=</span><span class="va">keys_data_frame</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
 <p>where <code>keys_data_frame</code> has rows aligned with those of
-<code>C</code> and columns including “<code>cid1</code>” and
-“<code>cid2</code>”.</p>
+<code>C</code> and columns including “<code>uoa1</code>” and
+“<code>uoa2</code>”.</p>
 <p>Either way, once <code>m</code> has been coerced to class
 <code>DirectAdjusted</code>, it has acquired a <code>@Design</code> slot
 for the information in <code>des</code>, while <code>m[['model']]</code>

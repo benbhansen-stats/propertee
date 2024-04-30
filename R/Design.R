@@ -272,7 +272,7 @@ setValidity("Design", function(object) {
 ##' @rdname Design_objects
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid),
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid),
 ##'                   data = simdata)
 ##'
 ##' data(schooldata)
@@ -441,7 +441,7 @@ setMethod("show", "Design", function(object) {
 ##' @rdname Design_var_names
 ##' @order 1
 ##' @examples
-##' des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+##' des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 ##' var_table(des)
 ##' var_table(des, compress = FALSE)
 ##' var_names(des, "t")

@@ -20,11 +20,11 @@
 ##' @importFrom stats as.formula update
 ##' @rdname designconversion
 ##' @examples
-##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
 ##' des
 ##' as_obs_design(des)
 ##' as_rd_design(des, simdata, forcing = ~ . + forcing(force))
-##' des2 <- rd_design(o ~ uoa(cid1, cid2) + forcing(force), data = simdata)
+##' des2 <- rd_design(o ~ uoa(uoa1, uoa2) + forcing(force), data = simdata)
 ##' des2
 ##' # as_rct_design(des2) # this will produce an error
 ##' as_rct_design(des2, loseforcing = TRUE)

@@ -94,7 +94,7 @@ We place the dichotomy directly in a `Design` object:
 ```{r}
 data(simdata)
 table(simdata$dose)
-des1 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
+des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
 summary(des1)
 dichotomy(des1) <- dose >= 300 ~ dose <= 100
 summary(des1)
@@ -103,7 +103,7 @@ summary(des1)
 You can also place the `dichotomy` in the `_design()` call direcly:
 
 ```{r}
-des2 <- rct_design(dose ~ uoa(cid1, cid2), data = simdata,
+des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
                    dichotomy = dose >= 300 ~ dose <= 100)
 summary(des2)
 ```

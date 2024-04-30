@@ -1,10 +1,10 @@
 test_that("summary.Design", {
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(cid1, cid2) + block(bid) + forcing(force),
+  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  desrd  <-  rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                        data = simdata)
-  desobs <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desobs <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_s3_class(summary(desrct), "summary.Design")
   expect_s3_class(summary(desrd) , "summary.Design")
@@ -18,7 +18,7 @@ test_that("summary.Design", {
   expect_output(print(summary(desrd)) , "Discontinuity")
   expect_output(print(summary(desobs)), "Observational")
 
-  desrct <- rct_design(o ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  desrct <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   expect_output(print(summary(desrct)), "...")
   expect_output(print(summary(desrct)), "excluded")
   expect_identical(desrct, summary(desrct)$Design)

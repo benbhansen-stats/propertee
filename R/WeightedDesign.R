@@ -19,9 +19,12 @@ setValidity("WeightedDesign", function(object) {
   return(TRUE)
 })
 
-##' @title Show a WeightedDesign
-##' @param object WeightedDesignDesign object
-##' @return an invisible copy of `object`
+##' @title Show a \code{WeightedDesign}
+##'
+##' @description Prints out the weights from a \code{WeightedDesign}
+##'
+##' @param object a \code{WeightedDesign} object
+##' @return an invisible copy of \code{object}
 ##' @export
 setMethod("show", "WeightedDesign", function(object) {
   print(object@.Data)
@@ -29,13 +32,19 @@ setMethod("show", "WeightedDesign", function(object) {
 })
 
 
-##' \code{WeightedDesign}s do not support addition or subtraction, but do
-##' support all other reasonable operations.
+##' @title \code{WeightedDesign} Operations
 ##'
-##' @title \code{WeightedDesign} Ops
-##' @param e1 \code{WeightedDesign} or \code{numeric}
-##' @param e2 \code{numeric} or \code{WeightedDesign}
+##' @description Algebraic operators on \code{WeightedDesign} objects and
+##'   numeric vectors. \code{WeightedDesign}s do not support addition or
+##'   subtraction.
+##'
+##' @details These are primarily used to either combine weights via
+##'   multiplication, or to invert weights. Addition and subtraction are not
+##'   supported and will produce errors.
+##'
+##' @param e1,e2 \code{WeightedDesign} or \code{numeric} objects
 ##' @rdname WeightedDesignOps
+##' @return a \code{WeightedDesign} object
 ##' @export
 setMethod("+", signature(e1 = "WeightedDesign", e2 = "numeric"),
           function(e1, e2) addsubtracterror()
@@ -102,9 +111,13 @@ addsubtracterror <- function() {
 setGeneric("weights")
 
 ##' @title Extract Weights from \code{WeightedDesign}
-##' @param object \code{WeightedDesign} object
+##'
+##' @description A \code{WeightedDesign} object contains a numeric vector with a
+##'   few additional slots, this extracts only the numeric vector.
+##'
+##' @param object a \code{WeightedDesign} object
 ##' @param ... Ignored
-##' @return vector of weights
+##' @return A numeric \code{vector} of the weights
 ##' @export
 setMethod("weights", "WeightedDesign", function(object, ...) {
   return(as.numeric(object))
@@ -113,8 +126,13 @@ setMethod("weights", "WeightedDesign", function(object, ...) {
 setGeneric("subset")
 
 ##' @title \code{WeightedDesign} subsetting
+##'
+##' @description Provides functionality to subset the weights of a
+##'   \code{WeightedDesign} object.
+##'
 ##' @param subset Logical vector identifying values to keep or drop
-##' @return \code{x} subset by \code{i}
+##' @return A \code{WeightedDesign} object which is a subsetted version of
+##'   \code{x}.
 ##' @export
 ##' @rdname WeightedDesign.subset
 setMethod("subset", "WeightedDesign", function(x, subset) {
@@ -127,7 +145,6 @@ setGeneric("[")
 ##' @param x \code{WeightedDesign} object
 ##' @param i indices specifying elements to extract or replace. See
 ##'   \code{help("[")} for further details.
-##' @return \code{x} subset by \code{i}
 ##' @export
 ##' @importFrom methods callNextMethod
 ##' @rdname WeightedDesign.subset

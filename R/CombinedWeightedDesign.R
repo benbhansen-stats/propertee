@@ -15,36 +15,61 @@ setValidity("CombinedWeightedDesign", function(object) {
   return(TRUE)
 })
 
-##' Given several variations of weights generated from a single \code{Design},
-##' combine into a single weight.
-##'
-##' Concatenating \code{WeightedDesign}s with \code{c()} requires both
-##' individual \code{WeightedDesign}s to come from the same \code{Design}
-##' (except \code{dichotomy}, see below) and have the same target (e.g all
-##' created with \code{ate()} or all created with \code{ett()}, no
-##' mixing-and-matching). All arguments to \code{c()} must be
-##' \code{WeightedDesign}.
-##'
-##' One exception is when concatenting \code{WeightedDesign}s with the same
-##' \code{Design} but different dichotomies. There may be cases where the
-##' treatment is continuous or has multiple levels, and there is a need to
-##' combine the weights from the same general design, but with different
-##' dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
-##' they are identical except for their \code{@dichotomy} slots. The resulting
-##' object will be a \code{CombinedWeightedDesign} which tracks all individual
-##' \code{dichotomy}.
-##'
 ##' @title Concatenate weights
-##' @param x a \code{WeightedDesign} object with equivalent \code{Design} to
-##'   those in \code{...}.
-##' @param ... any number of \code{WeightedDesign} objects with equivalent
-##'   \code{Design} to each other and \code{x}.
+##'
+##' @description Given several variations of weights generated from a single
+##'   \code{Design}, combine into a single weight.
+##'
+##' @details Concatenating \code{WeightedDesign} objects with [c()] requires
+##'   both individual \code{WeightedDesign} objects to come from the same
+##'   \code{Design} (except \code{dichotomy}, see below) and have the same
+##'   target (e.g all created with [ate()] or all created with [ett()], no
+##'   mixing-and-matching). All arguments to [c()] must be
+##'   \code{WeightedDesign}.
+##'
+##'   One exception is when concatenting \code{WeightedDesign} objects whose
+##'   \code{Design} differ only in their dichotomies. There may be cases where
+##'   the treatment is continuous or has multiple levels, and there is a need to
+##'   combine the weights from the same general design, but with different
+##'   dichotomies. Therefore multiple \code{WeightedDesign} objects can be
+##'   combined if they are identical except for their \code{@dichotomy} slots.
+##'   The resulting object will be a \code{CombinedWeightedDesign} which tracks
+##'   all individual \code{dichotomy}.
+##'
+##' @param x, .. a \code{WeightedDesign} object, typically created from [ate()]
+##'   or [ett()]
+##' @param ... any number of additional \code{WeightedDesign} objects with
+##'   equivalent \code{Design} to \code{x} and eachother
 ##' @param force_dichotomy_equal if \code{FALSE} (default), \code{Design}s are
 ##'   considered equivalent even if their \code{dichotomy} differs. If
 ##'   \code{TRUE}, \code{@dichotomy} must also be equal.
+##' @return If all \code{WeightedDesign} objects contain the same
+##'   \code{dichotomy} (including \code{NULL}), a new \code{WeightedDesign} with
+##'   the weights concatenated in the input order.
+##'
+##'   If \code{force_dichotomy_equal} is \code{FALSE} and the
+##'   \code{WeightedDesign} objects differ in their dichotomies, a
+##'   \code{CombinedWeightedDesign} is returned. This functions essentially
+##'   identically to a \code{WeightedDesign}, but carries with it the
+##'   dichotimization information that came from each of the individual
+##'   \code{WeightedDesign}.
 ##' @export
 ##' @importFrom methods slot
 ##' @importFrom stats formula
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' w1 <- ate(des, data = simdata[1:30,])
+##' w2 <- ate(des, data = simdata[31:40,])
+##' w3 <- ate(des, data = simdata[41:50,])
+##' c_w <- c(w1, w2, w3)
+##' c(length(w1), length(w2), length(w3), length(c_w))
+##'
+##' des <- rct_design(dose ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' w1 <- ate(des, data = simdata[1:10, ], dichotomy = dose >= 300 ~ .)
+##' w2 <- ate(des, data = simdata[11:30, ], dichotomy = dose >= 200 ~ .)
+##' w3 <- ate(des, data = simdata[31:50, ], dichotomy = dose >= 100 ~ .)
+##' c_w <- c(w1, w2, w3)
 setMethod("c", signature(x = "WeightedDesign"),
           function(x, ..., force_dichotomy_equal = FALSE) {
   dots <- list(...)

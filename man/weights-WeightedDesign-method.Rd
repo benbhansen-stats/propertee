@@ -7,13 +7,14 @@
 \S4method{weights}{WeightedDesign}(object, ...)
 }
 \arguments{
-\item{object}{\code{WeightedDesign} object}
+\item{object}{a \code{WeightedDesign} object}
 
 \item{...}{Ignored}
 }
 \value{
-vector of weights
+A numeric \code{vector} of the weights
 }
 \description{
-Extract Weights from \code{WeightedDesign}
+A \code{WeightedDesign} object contains a numeric vector with a
+few additional slots, this extracts only the numeric vector.
 }

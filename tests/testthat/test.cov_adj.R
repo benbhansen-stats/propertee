@@ -31,7 +31,7 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has NU
 })
 
 test_that("cov_adj outside of lm call specifying newdata and design, data has no NULLs", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, design = des, newdata = Q_wo_nulls)
   test_ca(ca, cmod, Q_wo_nulls)
@@ -39,7 +39,7 @@ test_that("cov_adj outside of lm call specifying newdata and design, data has no
 })
 
 test_that("cov_adj outside of lm call specifying newdata and design, data has partial overlap", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, design = des, newdata = Q_partial_overlap)
   test_ca(ca, cmod, Q_partial_overlap)
@@ -115,7 +115,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
 })
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod), weights = ate(des))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
@@ -123,7 +123,7 @@ test_that("cov_adj as offset with weights, data has no NULLs", {
 })
 
 test_that("cov_adj as offset with weights, data has partial overlap", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod), weights = ate(des))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
@@ -146,7 +146,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
 })
 
 test_that("cov_adj as offset specified w/ newdata and design, no weights, data has no NULLs", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls,
           offset = cov_adj(cmod, newdata = Q_wo_nulls, design = des))
@@ -155,7 +155,7 @@ test_that("cov_adj as offset specified w/ newdata and design, no weights, data h
 })
 
 test_that("cov_adj as offset specified w/ newdata and design, no weights, data has partial overlap", {
-  des <- rct_design(z ~ cluster(cid1, cid2), data = Q_partial_overlap)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_partial_overlap,
           offset = cov_adj(cmod, newdata = Q_partial_overlap, design = des))
@@ -191,7 +191,7 @@ test_that("cov_adj with named `by` argument called within `lmitt`", {
   Q_wo_nulls$obs_id <- seq_len(nrow(Q_wo_nulls))
 
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
   m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
              offset = cov_adj(cmod, by = "obs_id"))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
@@ -199,9 +199,9 @@ test_that("cov_adj with named `by` argument called within `lmitt`", {
 
 test_that("cov_adj with `by` argument that's the same as the default called within `lmitt`", {
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
   m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
-             offset = cov_adj(cmod, by = c("cid1", "cid2")))
+             offset = cov_adj(cmod, by = c("uoa1", "uoa2")))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
 })
 
@@ -213,7 +213,7 @@ test_that(paste("cov_adj without `lmitt` call with named `by` argument and cmod"
   C_data$uid <- seq_len(nrow(C_data))
 
   cmod <- lm(C_data$y ~ C_data$x)
-  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
 
   expect_error(
     expect_warning(
@@ -232,17 +232,17 @@ test_that(paste("cov_adj without `lmitt` call with named `by` argument and cmod"
 
 test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmod",
                 "fit with `data` arg"), {
-  C_data <- Q_wo_nulls[, !(colnames(Q_wo_nulls) %in% c("cid1", "cid2"))]
-  C_data$c1 <- Q_wo_nulls$cid1
-  C_data$c2 <- Q_wo_nulls$cid2
+  C_data <- Q_wo_nulls[, !(colnames(Q_wo_nulls) %in% c("uoa1", "uoa2"))]
+  C_data$c1 <- Q_wo_nulls$uoa1
+  C_data$c2 <- Q_wo_nulls$uoa2
 
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(cid1, cid2), Q_wo_nulls)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
 
   expect_warning(
     expect_warning(
       expect_warning(
-        ca <- cov_adj(cmod, design = des, by = c("cid1", "cid2")),
+        ca <- cov_adj(cmod, design = des, by = c("uoa1", "uoa2")),
         "No call to"
       ),
       "Unable to detect"
@@ -454,7 +454,7 @@ test_that("Basics of replacing treatment variable with reference level", {
   data(simdata)
 
   # Binary treatment
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   camod <- lm(y ~ x + z, data = simdata)
   ca <- cov_adj(camod, newdata = simdata, design = des)
 
@@ -470,7 +470,7 @@ test_that("Basics of replacing treatment variable with reference level", {
   expect_false(all(manual == ca))
 
   # Numeric treatment
-  des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   camod <- lm(y ~ x + dose, data = simdata)
   ca <- cov_adj(camod, newdata = simdata, design = des)
 
@@ -482,7 +482,7 @@ test_that("Basics of replacing treatment variable with reference level", {
 
   # Factor treatment
   ## simdata$dose <- as.factor(simdata$dose)
-  ## des <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
+  ## des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   ## camod <- lm(y ~ x + dose, data = simdata)
   ## ca <- cov_adj(camod, newdata = simdata, design = des)
 
