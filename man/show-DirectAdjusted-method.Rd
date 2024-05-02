@@ -2,16 +2,17 @@
 % Please edit documentation in R/DirectAdjusted.R
 \name{show,DirectAdjusted-method}
 \alias{show,DirectAdjusted-method}
-\title{Show an DirectAdjusted}
+\title{Show a \code{DirectAdjusted}}
 \usage{
 \S4method{show}{DirectAdjusted}(object)
 }
 \arguments{
-\item{object}{DirectAdjusted object}
+\item{object}{\code{DirectAdjusted} object, usually a result of a call to
+\code{\link[=lmitt]{lmitt()}}.}
 }
 \value{
-an invisible copy of \code{object}
+\code{object}, invisibly.
 }
 \description{
-Show an DirectAdjusted
+Display information about a \code{DirectAdjusted} object
 }

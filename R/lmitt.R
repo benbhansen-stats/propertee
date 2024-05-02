@@ -1,19 +1,19 @@
-##' Linear Model for Intention To Treat
+##' @title Linear Model for Intention To Treat
 ##'
-##' Generates a linear model object which allows proper estimation of variances
-##' accounting for the study design.
+##' @description Generates a linear model object to estimate a treatment effect,
+##'   with proper estimation of variances accounting for the study design.
 ##'
-##' The first argument to \code{lmitt()} should be a formula specifying the
-##' outcome on the left hand side. The right hand side of the formula can be any
-##' of the following:
+##' @details The first argument to [lmitt()] should be a formula specifying the
+##'   outcome on the left hand side. The right hand side of the formula can be
+##'   any of the following:
 ##'
 ##' \itemize{
 ##'   \item \code{1}: Estimates a main treatment effect.
 ##'   \item a subgroup variable: Estimates a treatment effect within each level
 ##'        of your subgrouping variable.
-##'   \item a contiuous moderator: Estimates a main treatment effect as well as
-##'        a treatment by moderator interaciton. Note that the moderator is
-##'        NOT automatically centered, if desired please center in your data.
+##'   \item a continuous moderator: Estimates a main treatment effect as well as
+##'        a treatment by moderator interaction. The moderator is not
+##'        automatically centered.
 ##' }
 ##'
 ##' Alternatively, \code{obj} can be a pre-created \code{lm} object. No
@@ -21,55 +21,59 @@
 ##' \code{as.lmitt()} for details of this conversion.
 ##'
 ##' Note that although the \code{Design} creation functions (e.g.
-##' \code{rct_design()}) take an optional \code{subset=} argument used in the
+##' [rct_design()]) take an optional \code{subset=} argument used in the
 ##' creation of the \code{Design}, this is \bold{not} the same as the
-##' \code{subset=} argument passed to \code{lm()} or \code{lmitt()}. The
-##' \code{subset=} argument when creating a \code{Design} restricts the data
-##' used to generate the \code{Design}, but has no direct impact on the future
-##' \code{lm()} or \code{lmitt()} calls using that \code{Design}. (It can
-##' indirectly have an impact by excluding particular units of
-##' assignment/unitids/clusters from recieving a treatment assignment and thus
-##' complete case analysis removes them from the model.)
+##' \code{subset=} argument passed to [lm()] or [lmitt()]. The \code{subset=}
+##' argument when creating a \code{Design} restricts the data used to generate
+##' the \code{Design}, but has no direct impact on the future \code{lm()} or
+##' \code{lmitt()} calls using that \code{Design}. (It can indirectly have an
+##' impact by excluding particular units of assignment from receiving a
+##' treatment assignment and thus complete case analysis removes them from the
+##' model.)
 ##'
-##' On the other hand, the \code{subset=} argument in \code{lm()} or
-##' \code{lmitt()} refers only to subsetting the \code{data} argument passed
-##' into \code{lm()} or \code{lmitt()}.
+##' On the other hand, the \code{subset=} argument in [lm()] or [lmitt()] refers
+##' only to subsetting the \code{data} argument passed into [lm()] or [lmitt()].
 ##'
 ##' To avoid variable name collision, the treatment variable defined in the
 ##' \code{design} will have a "\code{.}" appended to it. For example, if you
-##' request a main treatment effect with a treatment variable named "txt", you
-##' can obtain it's estimate from the returned \code{DirectAdjusted} object via
-##' \code{$coefficients["txt."]}.
+##' request a main treatment effect (with a formula of \code{~ 1}) with a
+##' treatment variable named "txt", you can obtain it's estimate from the
+##' returned \code{DirectAdjusted} object via \code{$coefficients["txt."]}.
 ##'
-##' \code{lmitt()} will produce a message if the \code{design} passed in has
-##' block information that is not being utilized in the model. Note that this is
+##' [lmitt()] will produce a message if the \code{Design} passed in has block
+##' information that is not being utilized in the model. Note that this is
 ##' \emph{not} an error, but could be an oversight. To disable this message, run
 ##' \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
-##' Note: \code{lmitt()} does not currently support \code{factor} or
-##' \code{ordered} treatment variables.
-##' @param obj A \code{formula} or a \code{lm} object. See details.
+##' @param obj A \code{formula} or a \code{lm} object. See Details.
 ##' @param design The \code{Design} to be used. Alternatively, a formula
 ##'   creating a design (of the type of that would be passed as the first
-##'   argument to \code{rd_design()}, \code{rct_design()}, or
-##'   \code{obs_design()}). If the formula includes a \code{forcing()} element,
-##'   an RD design is created. Otherwise an observational design is created. An
-##'   RCT design must be created using \code{rct_design()}.
-##' @param data Data frame such as would be passed into \code{lm()}.
+##'   argument to [rd_design()], [rct_design()], or [obs_design()]). If the
+##'   formula includes a [forcing()] element, an RD design is created. Otherwise
+##'   an observational design is created. An RCT design must be created manually
+##'   using [rct_design()].
+##' @param data A \code{data.frame} such as would be passed into [lm()].
 ##' @param absorb If \code{TRUE}, fixed effects are included for blocks
 ##'   identified in the \code{Design}. Excluded in \code{FALSE}. Default is
-##'   \code{FALSE}.
-##' @param offset Offset of the kind which would be passed into \code{lm()}. To
-##'   utilize propertee's functionality, the output of \code{cov_adj()} should
-##'   be used.
-##' @param weights Weight of the kind which would be passed into \code{lm()}. To
-##'   utilize propertee's functionality, the output of \code{ate()} or
-##'   \code{ett()}, or the strings \code{"ate"}/\code{"ett"}, should be used..
-##' @param ... Additional arguments passed to \code{lm()}.
+##'   \code{FALSE}. The estimates of these fixed effects are suppressed from the
+##'   returned object.
+##' @param offset Offset of the kind which would be passed into [lm()]. Ideally,
+##'   this should be the output of [cov_adj()].
+##' @param weights Which weights should be generated? Options are \code{"ate"}
+##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
+##'   or \code{ett()} can be used.
+##' @param ... Additional arguments passed to [lm()].
 ##' @return \code{DirectAdjusted} model.
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt
+##' @examples
+##' data(simdata)
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' mod1 <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate")
+##' mod2 <- lmitt(y ~ as.factor(o), data = simdata, design = des, weights = "ate")
+##' mod3 <- lmitt(y ~ 1, data = simdata,
+##'               design = z ~ uoa(uoa1, uoa2) + forcing(force))
 lmitt <- function(obj,
                   design,
                   data,

@@ -21,7 +21,7 @@ identified in the model (usually because neither weights (\code{ate()} or
 \code{ett()}) nor a covariate adjustment model (\code{cov_adj()}) are
 found), the \code{Design} can be passed diretly.}
 
-\item{data}{Optional data set. By default \code{assigned()} will attempt to
+\item{data}{Optional data set. By default \code{\link[=assigned]{assigned()}} will attempt to
 identify the appropriate data, if this fails (or you want to overwrite
 it), you can pass the data here.}
 }
@@ -29,24 +29,42 @@ it), you can pass the data here.}
 The treatment variable to be placed in the regression formula.
 }
 \description{
-When included as a predictor in a model formula where weights (via
-\code{ate()} or \code{ett()} being passed to the \code{weights=} argument)
-or a covariance adjustment model (via \code{cov_adj()} being passed to the
-\code{offset=} argument) are included, this will extract the treatment
-variable from the \code{Design}.
+When passing a \code{lm} object to \code{\link[=lmitt]{lmitt()}}, extract and use
+the treatment variable specified in the \code{Design}.
 }
 \details{
-While \code{assigned()} can be used in any situation, it is most useful for
-scenarios where the treatment variable is non-binary and the \code{Design}
-contains a \code{Dichotomy}. For example, say \code{q} is a 3-level ordinal
-treatment variable, and the binary comparison of interest is captured in
-\code{dichotomy = q == 3 ~ q < 3}. If you were to fit a model including
-\code{q} as a predictor, e.g. \code{lm(y ~ q, ...)}, \code{lm} would treat
-\code{q} as the full ordinal variable. On the other hand, by calling
-\code{lm(y ~ assigned(), weights = ate(des), ...)}, \code{assigned()} will
-generate the appropriate binary variable to allow estimation of treatment
-effects.
+When passing a \code{lm} object to \code{\link[=lmitt]{lmitt()}}, the treatment
+variable in the \code{formula} passed to \code{\link[=lm]{lm()}} needs to be identifiable.
+Rather than placing the treatment variable directly in the \code{formula},
+use one of these functions, to allow \code{\link[=lmitt]{lmitt()}} to identify the treatment
+variable.
+
+The \code{\link[=lm]{lm()}} call must include either weights (via \code{ate()} or
+\code{ett()} being passed to the \code{weights=} argument) or a covariance
+adjustment model (via \code{cov_adj()} being passed to the \code{offset=}
+argument). In this case, no arguments are needed to these functions.
+
+Alternatively, you can pass the \code{design} and \code{data} arguments.
+
+While \code{assigned()} can be used in any situation, it is most useful
+for scenarios where the treatment variable is non-binary and the
+\code{Design} contains a \code{Dichotomy}. For example, say \code{q} is a
+3-level ordinal treatment variable, and the binary comparison of interest
+is captured in \code{dichotomy = q == 3 ~ q < 3}. If you were to fit a
+model including \code{q} as a predictor, e.g. \code{lm(y ~ q, ...)},
+\code{lm} would treat \code{q} as the full ordinal variable. On the other
+hand, by calling \code{lm(y ~ assigned(), weights = ate(des), ...)},
+\code{assigned()} will generate the appropriate binary variable to allow
+estimation of treatment effects.
 
 If called outside of a model call and without a \code{data} argument, this
-will extract the treatment from the \code{design}.
+will extract the treatment from the \code{design}. If this is the goal,
+the \code{\link[=treatment]{treatment()}} function is better suited for this purpose.
+}
+\examples{
+data(simdata)
+des <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata)
+mod <- lm(y ~ assigned(), data = simdata, weights = ate(des))
+lmittmod <- lmitt(mod)
+summary(lmittmod)
 }

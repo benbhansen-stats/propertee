@@ -18,9 +18,11 @@ setValidity("DirectAdjusted", function(object) {
   return(TRUE)
 })
 
-##' @title Show an DirectAdjusted
-##' @param object DirectAdjusted object
-##' @return an invisible copy of `object`
+##' @title Show a \code{DirectAdjusted}
+##' @description Display information about a \code{DirectAdjusted} object
+##' @param object \code{DirectAdjusted} object, usually a result of a call to
+##'   [lmitt()].
+##' @return \code{object}, invisibly.
 ##' @export
 setMethod("show", "DirectAdjusted", function(object) {
   coeffs <- object$coefficients
@@ -51,7 +53,7 @@ setMethod("show", "DirectAdjusted", function(object) {
 ##' @exportS3Method
 vcov.DirectAdjusted <- function(object, ...) {
   cl <- match.call()
-  
+
   cl$x <- cl$object
   argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
   new_cl <- cl[c(1L, argmatch)]
@@ -101,14 +103,14 @@ confint.DirectAdjusted <- function(object, parm, level = 0.95, ...) {
 ##'   The\code{by} argument in \code{cov_adj()} can provide a column or a pair of
 ##'   columns (a named vector where the name specifies a column in the direct
 ##'   adjustment sample and the value a column in the covariance adjustment
-##'   sample) that uniquely specifies units of observation in each sample. This 
+##'   sample) that uniquely specifies units of observation in each sample. This
 ##'   information can be used to align each unit of observation's contributions
-##'   to the two sets of estimating equations. If no \code{by} argument is 
+##'   to the two sets of estimating equations. If no \code{by} argument is
 ##'   provided and units of observation cannot be uniquely specified, contributions
 ##'   are aligned up to the unit of assignment level. If standard errors are
 ##'   clustered no finer than that, they will provide the same result as if each
 ##'   unit of observation's contributions were aligned exactly.
-##' 
+##'
 ##' @param x a fitted \code{DirectAdjusted} model
 ##' @param ... arguments passed to methods
 ##' @return An \eqn{n\times 2} matrix of empirical
@@ -142,7 +144,7 @@ estfun.DirectAdjusted <- function(x, ...) {
 ##' @description
 ##'   An S3method for \code{sandwich::bread} that extracts the bread of the
 ##'   direct adjustment model sandwich covariance matrix.
-##' 
+##'
 ##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{DirectAdjusted} model
 ##' @param ... arguments passed to methods
@@ -333,7 +335,7 @@ bread.DirectAdjusted <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' names of the \code{Q_in_C} vector correspond to row indices of the original matrix of
 #' estimating equations for the direct adjustment model, while the names of
 #' \code{C_in_Q} correspond to row indices of the matrix of estimating equations for
-#' the covariance adjustment model. Similarly, the names of \code{Q_not_C} and 
+#' the covariance adjustment model. Similarly, the names of \code{Q_not_C} and
 #' \code{C_not_Q} correspond to row indices of the direct adjustment and covariance
 #' adjustment samples, respectively. Ultimately, the order of \code{.make_uoa_ids()}
 #' and \code{estfun.DirectAdjusted()} is given by concatenating the vectors stored

@@ -3,25 +3,26 @@
 \docType{data}
 \name{simdata}
 \alias{simdata}
-\title{Simulated data with unit of assignment level treatment assignment}
+\title{Simulated data}
 \format{
 A data.frame with 100 rows and 7 columns.
 \itemize{
-\item uoa1 First level unit of assignment ID
-\item uoa2 Second level unit of assignment ID
-\item bid Block ID
-\item force Forcing variable
-\item z Binary treatment indicator
-\item o 4-level ordered treatment variable
-\item dose Dose treatment variable
-\item x Some predictor
-\item y Some outcome
+\item \code{uoa1} First level unit of assignment ID
+\item \code{uoa2} Second level unit of assignment ID
+\item \code{bid} Block ID
+\item \code{force} Forcing variable
+\item \code{z} Binary treatment indicator
+\item \code{o} 4-level ordered treatment variable
+\item \code{dose} Dose treatment variable
+\item \code{x} Some predictor
+\item \code{y} Some outcome
 }
 }
 \usage{
 simdata
 }
 \description{
-Simulated data with unit of assignment level treatment assignment
+Simulated data to use with the \bold{propertee} package with unit
+of assignment level treatment assignment
 }
 \keyword{dataset}

@@ -10,7 +10,8 @@ as.lmitt(x, design = NULL)
 as.DirectAdjusted(x, design = NULL)
 }
 \arguments{
-\item{x}{\code{lm} object with weights containing a \code{WeightedDesign}}
+\item{x}{\code{lm} object with weights containing a \code{WeightedDesign},
+or an offset from \code{\link[=cov_adj]{cov_adj()}}.}
 
 \item{design}{Optional, explicitly specify the \code{Design} to be used. If
 the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
@@ -24,5 +25,10 @@ through this argument), an error will be produced.)}
 \code{DirectAdjusted} object
 }
 \description{
-Convert \code{lm} object into \code{DirectAdjusted}
+Converts the output of \code{\link[=lm]{lm()}} into a \code{DirectAdjusted}
+object so that it can be used to properly account for standard errors.
+}
+\details{
+The formula with which \code{x} was created must include a
+treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).
 }
