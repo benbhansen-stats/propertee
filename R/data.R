@@ -46,10 +46,11 @@
 "lsoSynth"
 
 #' @title STAR data
-#' @format The STAR data set
-#' \itemize{
-#'   \item ???
-#' }
+#'
+#' @description Tennessee’s Student-Teacher Achievement Ratio (STAR) data set.
+#'   This is a copy of the data \code{AER::STAR}.
+#'
+#' @format  A \code{data.frame} with 11,598 rows and 47 columns.
 #' @keywords dataset
 "STARdata"
 
