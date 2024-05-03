@@ -8,6 +8,7 @@ check.R
 ^.*\.Rproj$
 ^\.Rproj\.user$
 tests/testthat/test.notforCRAN.R
+tests/testthat/test.track_function_changes.R
 man-roxygen
 README.md
 .github
@@ -19,3 +20,4 @@ vignettes/not-for-cran/*
 _pkgdown.yml
 docs
 hexsticker
+tests/testthat/hashed_functions/*
