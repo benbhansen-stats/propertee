@@ -2,38 +2,21 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{vcovDA}
 \alias{vcovDA}
-\alias{.vcov_CR0}
-\alias{.vcov_HC0}
-\alias{.vcov_MB0}
-\alias{.vcov_CR1}
-\alias{.vcov_HC1}
-\alias{.vcov_MB1}
-\title{Compute robust sandwich variance estimates with optional covariance adjustment}
+\title{Variance/Covariance for \code{DirectAdjusted} objects}
 \usage{
 vcovDA(x, type = "CR0", cluster = NULL, ...)
-
-.vcov_CR0(x, ...)
-
-.vcov_HC0(x, ...)
-
-.vcov_MB0(x, ...)
-
-.vcov_CR1(x, ...)
-
-.vcov_HC1(x, ...)
-
-.vcov_MB1(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model}
 
-\item{type}{a string indicating the desired variance estimator}
+\item{type}{a string indicating the desired variance estimator. See Details
+for supported variance estimators}
 
-\item{cluster}{a string or character vector of column names indicating columns
-to cluster standard errors by. With prior covariance adjustment, columns
-must appear in both the covariance adjustment and direct adjustment samples.
-Default is NULL, which uses unit of assignment columns in the \code{Design}
-slot of the \code{DirectAdjusted} model.}
+\item{cluster}{a string or character vector of column names indicating
+columns to cluster standard errors by. With prior covariance adjustment,
+columns must appear in both the covariance adjustment and direct adjustment
+samples. Default is NULL, which uses unit of assignment columns in the
+\code{Design} slot of the \code{DirectAdjusted} model.}
 
 \item{...}{arguments to be passed to the internal variance estimation
 function.}
@@ -43,7 +26,8 @@ A \eqn{2\times 2} matrix corresponding to an intercept and the
 treatment variable in the direct adjustment model
 }
 \description{
-Compute robust sandwich variance estimates with optional covariance adjustment
+Compute robust sandwich variance estimates with optional covariance
+adjustment
 }
 \details{
 Supported \code{type} include:
@@ -60,4 +44,3 @@ To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 \code{type = "XXX"} will now use your method. Your method should return a
 matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
 }
-\keyword{internal}

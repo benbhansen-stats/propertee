@@ -1,7 +1,11 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Compute robust sandwich variance estimates with optional covariance adjustment
+#' @title Variance/Covariance for \code{DirectAdjusted} objects
+#'
+#' @description Compute robust sandwich variance estimates with optional covariance
+#'   adjustment
+#'
 #' @details Supported \code{type} include:
 #'
 #' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC0 standard errors
@@ -14,13 +18,15 @@ NULL
 #' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 #' \code{type = "XXX"} will now use your method. Your method should return a
 #' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
+#'
 #' @param x a fitted \code{DirectAdjusted} model
-#' @param type a string indicating the desired variance estimator
-#' @param cluster a string or character vector of column names indicating columns
-#'   to cluster standard errors by. With prior covariance adjustment, columns
-#'   must appear in both the covariance adjustment and direct adjustment samples.
-#'    Default is NULL, which uses unit of assignment columns in the \code{Design}
-#'    slot of the \code{DirectAdjusted} model.
+#' @param type a string indicating the desired variance estimator. See Details
+#'   for supported variance estimators
+#' @param cluster a string or character vector of column names indicating
+#'   columns to cluster standard errors by. With prior covariance adjustment,
+#'   columns must appear in both the covariance adjustment and direct adjustment
+#'   samples. Default is NULL, which uses unit of assignment columns in the
+#'   \code{Design} slot of the \code{DirectAdjusted} model.
 #' @param ... arguments to be passed to the internal variance estimation
 #'   function.
 #' @return A \eqn{2\times 2} matrix corresponding to an intercept and the
@@ -44,7 +50,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @keywords internal
-#' @rdname var_estimators
 .vcov_CR0 <- function(x, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
@@ -69,14 +74,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_HC0 <- function(x, ...) {
   out <- .vcov_CR0(x, ...)
   attr(out, "type") <- "HC0"
   return(out)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_MB0 <- function(x, ...) {
   out <- .vcov_CR0(x, ...)
   attr(out, "type") <- "MB0"
@@ -84,7 +89,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @keywords internal
-#' @rdname var_estimators
 .vcov_CR1 <- function(x, ...) {
   args <- list(...)
   args$x <- x
@@ -101,14 +105,14 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_HC1 <- function(x, ...) {
   out <- .vcov_CR1(x, ...)
   attr(out, "type") <- "HC1"
   return(out)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_MB1 <- function(x, ...) {
   out <- .vcov_CR1(x, ...)
   attr(out, "type") <- "MB1"
@@ -122,7 +126,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param model a fitted \code{DirectAdjusted} model
 #' @param cluster a character or factor vector denoting clusters the units of
 #'  observation used to fit \code{model} belong to. Most conveniently, the
-#'  output of \code{.make_uoa_ids()} 
+#'  output of \code{.make_uoa_ids()}
 #' @param model_data dataframe or name of dataframe used to fit \code{model}
 #' @param envir environment to get \code{model_data} from if \code{model_data} has class \code{name}
 #' @return A variance-covariance matrix with NA's for estimates lacking sufficient
@@ -158,7 +162,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   } else {
     valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
   }
-    
+
 
   # Replace SE's for moderator variable/levels with <= 2 clusters with NA's
   if (any(!valid_mods)) {
@@ -306,7 +310,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!inherits(x, "DirectAdjusted")) {
     stop("x must be a DirectAdjusted model")
   }
-  
+
   out <- utils::getS3method("bread", "lm")(x)
 
   return(out)
@@ -388,7 +392,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   }
 
   out <- sandwich::bread(sl@fitted_covariance_model)
-  
+
   return(out)
 }
 
@@ -528,7 +532,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 ##' @rdname sandwich_elements_calc
 .get_tilde_a22_inverse <- function(x, ...) {
   out <- .get_a22_inverse(x, ...)
-  
+
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(out)
   }
@@ -536,9 +540,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   nq <- nrow(stats::model.frame(x))
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
-  
+
   out <- out * n / nq
-  
+
   return(out)
 }
 
@@ -548,11 +552,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 ##' @rdname sandwich_elements_calc
 .get_tilde_a21 <- function(x) {
   out <- .get_a21(x)
-  
+
   nq <- nrow(stats::model.frame(x))
   sl <- x$model$`(offset)`
   nc_not_q <- sum(!sl@keys$in_Q)
   n <- nq + nc_not_q
-  
+
   out <- nq / n * out
 }

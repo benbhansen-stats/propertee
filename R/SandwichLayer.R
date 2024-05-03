@@ -65,18 +65,26 @@ setValidity("SandwichLayer", function(object) {
   invisible(object)
 }
 
-##' @title Show a PreSandwichLayer or SandwichLayer
-##' @param object PreSandwichLayer object
-##' @return an invisible copy of `object`
+##' @title Show a \code{PreSandwichLayer} or \code{SandwichLayer}
+##'
+##' @description Display information about a \code{PreSandwichLayer} or
+##'   \code{SandwichLayer} object
+##'
+##' @param object \code{PreSandwichLayer} or \code{SandwichLayer} object
+##' @return an invisible copy of \code{object}
 ##' @export
 ##' @rdname PreSandwichLayer.show
 setMethod("show", "PreSandwichLayer", .show_layer)
 
 setGeneric("subset")
 
-##' @title PreSandwichLayer and SandwichLayer subsetting
+##' @title \code{PreSandwichLayer} and \code{SandwichLayer} subsetting
+##'
+##' @description Return subset of a \code{PreSandwichLayer} or
+##'   \code{SandwichLayer} which meets conditions.
+##'
 ##' @param subset Logical vector identifying values to keep or drop
-##' @return \code{x} subset by \code{i}
+##' @return \code{x} subset by \code{subset} or \code{i}
 ##' @export
 ##' @rdname PreSandwichLayer.subset
 setMethod("subset", "PreSandwichLayer", function(x, subset) {
@@ -87,10 +95,9 @@ setMethod("subset", "PreSandwichLayer", function(x, subset) {
 
 setGeneric("[")
 
-##' @param x \code{PreSandwichLayer} object
+##' @param x \code{PreSandwichLayer} or \code{SandwichLayer} object
 ##' @param i indices specifying elements to extract or replace. See
 ##'   \code{help("[")} for further details.
-##' @return \code{x} subset by \code{i}
 ##' @export
 ##' @importFrom methods callNextMethod
 ##' @rdname PreSandwichLayer.subset
@@ -199,7 +206,7 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
   if (!inherits(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
-  
+
   if (is.null(by)) {
     by <- stats::setNames(var_names(design, "u"), var_names(design, "u"))
     if (is.null(Q_data)) Q_data <- design@structure
@@ -227,7 +234,7 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
             stop("Could not find columns specified in `by` in design@structure",
                  call. = FALSE)
           })
-          
+
         })
     }
   }
@@ -316,6 +323,6 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
       out <- sort(as.numeric(out), index.return = TRUE)
     }
   }
-  
+
   return(out)
 }
