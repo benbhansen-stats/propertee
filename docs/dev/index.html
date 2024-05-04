@@ -92,8 +92,8 @@
 </div>
 <!-- badges: start -->
 
-<p>Propertee enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.</p>
-<p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. This design information must be utilized in future analyses. Using Propertee, a user can generate a Design object which will keep track of the design structure.</p>
+<p><strong>propertee</strong> enables flexible direct adjustment with design-informed standard errors and optional prior covariance adjustment.</p>
+<p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. This design information must be utilized in future analyses. Using <strong>propertee</strong>, a user can generate a Design object which will keep track of the design structure.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>des <span class="ot">&lt;-</span> <span class="fu">rct_design</span>(txt <span class="sc">~</span> <span class="fu">unit_of_assignment</span>(teacher) <span class="sc">+</span> <span class="fu">block</span>(school), <span class="at">data =</span> teacherdata)</span></code></pre></div>
 <p>(Also supported are observational studies (<code>obs_design</code>) and regression discontinuity designs (<code>rdd_design</code> which requires a <code><a href="reference/DesignSpecials.html">forcing()</a></code> variable as well.)</p>
 <p>In order to pass the design information into the model using the <code>weights=</code> argument, functions <code><a href="reference/WeightCreators.html">ett()</a></code> and <code><a href="reference/WeightCreators.html">ate()</a></code> will be used to convert the Design into a numeric vector with the Design object as an attribute.</p>
@@ -107,11 +107,11 @@
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
-<p>You may use RStudio to develop for propertee, by opening the <code>propertee.Rproj</code> file. We suggest you ensure all required dependencies are installed by running</p>
+<p>You may use RStudio to develop for <strong>propertee</strong>, by opening the <code>propertee.Rproj</code> file. We suggest you ensure all required dependencies are installed by running</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>We prefer changes that include unit tests demonstrating the problem or showing how the new feature should be added. The test suite uses the <a href="https://github.com/hadley/test_that" class="external-link">testthat</a> package to write and run tests. (Please ensure you have the latest version of testthat (or at least v0.11.0), as older versions stored the tests in a different directory, and may not test properly.) See the <code>tests/testthat</code> directory for examples. You can run the test suite via Build -&gt; Test Package.</p>
 <p>New features should include inline <a href="http://roxygen.org/" class="external-link">Roxygen</a> documentation. You can generate all <code>.Rd</code> documents from the <code>Roxygen</code> code using Build -&gt; Document, or using Make as describe below.</p>
-<p>Finally, you can use Build -&gt; Build and Reload or Build -&gt; Clean and Rebuild to load an updated version of <code>propertee</code> in your current RStudio session. Alternatively, to install the developed version permanently, use Build -&gt; Build Binary Version, followed by</p>
+<p>Finally, you can use Build -&gt; Build and Reload or Build -&gt; Clean and Rebuild to load an updated version of <strong>propertee</strong> in your current RStudio session. Alternatively, to install the developed version permanently, use Build -&gt; Build Binary Version, followed by</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"../propertee_VERSION.tgz"</span>, <span class="at">repo=</span><span class="cn">NULL</span>)</span></code></pre></div>
 <p>You can revert back to the current CRAN version by</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">remove.packages</span>(<span class="st">"propertee"</span>)</span>
@@ -123,7 +123,7 @@
 <li>
 <code>make document</code>: Update all documentation from Roxygen inline comments.</li>
 <li>
-<code>make interactive</code>: Start up an interactive session with <code>propertee</code> loaded. (<code>make interactive-emacs</code> starts the session inside emacs.)</li>
+<code>make interactive</code>: Start up an interactive session with <strong>propertee</strong> loaded. (<code>make interactive-emacs</code> starts the session inside emacs.)</li>
 <li>
 <code>make check</code>: Run <code>R CMD check</code> on the package</li>
 <li>
@@ -153,7 +153,7 @@
 <h3 id="internal-functions">Internal functions<a class="anchor" aria-label="anchor" href="#internal-functions"></a>
 </h3>
 <p>Any internal functions (for our use only) should be prefaced with a “<code>.</code>” (e.g. <code>.myfunc &lt;- function()</code>). Internal functions should be documented using roxygen as described above, and given the <code>@keywords internal</code> tag to ensure they do not get indexed. (Generally internally functions should not be <code>@export</code>’d but exceptions may arise.)</p>
-<p>During this period of development, after documenting an internal function, add it to the “_pkgdown.yml” file in the appropriate category. Once propertee goes public, we will remove those.</p>
+<p>During this period of development, after documenting an internal function, add it to the “_pkgdown.yml” file in the appropriate category. Once <strong>propertee</strong> goes public, we will remove those.</p>
 </div>
 <div class="section level3">
 <h3 id="referring-to-functions">Referring to functions<a class="anchor" aria-label="anchor" href="#referring-to-functions"></a>

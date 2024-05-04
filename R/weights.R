@@ -28,9 +28,10 @@
 ##'   \code{dichotomy}, passing an additional one through this argument will
 ##'   overwrite the existing dichotomy.
 ##' @param by optional; named vector or list connecting names of unit of
-##'   assignment/ variables in \code{design} to unit of assignment/cluster
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data. Only needed if variable names differ.
+##'   assignment/ variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{data}. Names represent
+##'   variables in the Design; values represent variables in the data. Only
+##'   needed if variable names differ.
 ##' @param data optional; the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.

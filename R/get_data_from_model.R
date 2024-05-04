@@ -12,7 +12,8 @@
 ##' @param which_fn Identify calling function, "weights" or "assigned", helps
 ##'   separate logic for the two functions.
 ##' @param form Formula on which to apply \code{model.frame()}. See details
-##' @param by translation of cluster ID names, passed down from weights.
+##' @param by translation of unit of assignment/unitid/cluster ID names, passed
+##'   down from weights.
 ##' @return \code{data.frame}
 ##' @keywords internal
 .get_data_from_model <- function(which_fn,
