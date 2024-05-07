@@ -526,8 +526,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out / nq)
 }
 
-##' @inheritDotParams .get_a22_inverse
-##' @inherit .get_a22_inverse return
 ##' @keywords internal
 ##' @rdname sandwich_elements_calc
 .get_tilde_a22_inverse <- function(x, ...) {
@@ -546,8 +544,6 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-##' @inheritDotParams .get_a21
-##' @inherit .get_a21 return
 ##' @keywords internal
 ##' @rdname sandwich_elements_calc
 .get_tilde_a21 <- function(x) {

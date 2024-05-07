@@ -22,11 +22,7 @@ returned by \code{vcovDA()}}
 \arguments{
 \item{x}{a fitted \code{DirectAdjusted} model}
 
-\item{...}{
-  Arguments passed on to \code{\link[=.get_a22_inverse]{.get_a22_inverse}}, \code{\link[=.get_a21]{.get_a21}}
-  \describe{
-    \item{\code{}}{}
-  }}
+\item{...}{arguments passed to \code{bread} method}
 }
 \value{
 \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
