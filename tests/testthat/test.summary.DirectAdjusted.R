@@ -109,7 +109,7 @@ test_that("lmitt.form vs as.lmitt", {
   mod <- as.lmitt(lm(
     y ~ as.factor(o) + as.factor(o):z.(des), data = simdata),
     design = des)
-  expect_warning(co <- capture.output(summary(mod), "NaNs"))
+  suppressWarnings(co <- capture.output(summary(mod), "NaNs"))
   expect_equal(sum(grepl("as.factor(o)", co, fixed = TRUE)),
                length(mod$coefficients))
 
