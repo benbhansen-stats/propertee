@@ -419,6 +419,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
+  if (nc==0) nc <- length(cmod$fitted.values)
+  if (nc==0) stop("can't determine extent of covariance model fitting data")
 
   # Get units of assignment for clustering
   dots <- list(...)
