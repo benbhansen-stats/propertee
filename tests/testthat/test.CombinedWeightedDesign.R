@@ -49,3 +49,35 @@ test_that("Combining weighted designs with different dichotomys ", {
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
                "must be identical")
 })
+test_that("Combine WeightedDesigns & align weights with analysis data",{
+    set.seed(202021)
+    analysis_dat  <- data.frame(
+        id = rep(letters[1:6], each = 2),
+        year = ordered(rep(c("AY20", "AY21"), 6), levels=c("AY20", "AY21", ".")),
+        y = rnorm(12)
+    )
+    design_dat  <- data.frame(id=letters[1:6], blk=character(6),
+                              year_trt = ordered(rep(c("AY20", "AY21", "."),
+                                                     each = 2),
+                                                 levels=c("AY20", "AY21", ".")
+                                                 )
+                              )
+    design_dat[   design_dat$id %in% c("a", "e") , "blk"]  <- "A"
+    design_dat[ !(design_dat$id %in% c("a", "e")), "blk"]  <- "B"
+    des  <- obs_design(year_trt~uoa(id)+block(blk), data=design_dat)
+
+    w1  <- ett(des, data=subset(analysis_dat,year=="AY20"),
+               dichotomy= year_trt<="AY20" ~ .)
+    w2  <- ett(des, data=subset(analysis_dat,year=="AY21"),
+               dichotomy= year_trt<="AY21" ~ .)
+    c_w0 <- c(w1, w2)
+    expect_true(inherits(c_w0, "WeightedDesign"))
+    expect_length(c_w0, 12)
+    ## Putting it into the same order as in analysis_dat
+    c_w <- c_w0
+    c_w[which(analysis_dat$year=="AY20")]  <- w1
+    c_w[which(analysis_dat$year=="AY21")]  <- w2
+    expect_identical(c_w0@Design, c_w@Design)
+    expect_equal(as.numeric(w1), as.numeric(c_w)[analysis_dat$year=="AY20"])
+    expect_equal(as.numeric(w2), as.numeric(c_w)[analysis_dat$year=="AY21"])
+})
