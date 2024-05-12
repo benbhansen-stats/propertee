@@ -48,7 +48,16 @@ test_that("Combining weighted designs with different dichotomys ", {
 
   expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
                "must be identical")
+
+  data_w  <- rbind(cbind(simdata[1:10, ], w=w1),
+                   cbind(simdata[11:30, ], w=w2),
+                   cbind(simdata[31:50, ], w=w3))
+  expect_s4_class(data_w$w, "WeightedDesign")
+  ##would prefer the following were true:
+  expect_false(inherits(data_w$w, "CombinedWeightedDesign"))
+  ##ToDo: WD's combined using `rbind()` should give CWD's
 })
+
 test_that("Combine WeightedDesigns & align weights with analysis data",{
     set.seed(202021)
     analysis_dat  <- data.frame(
@@ -66,18 +75,74 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     design_dat[ !(design_dat$id %in% c("a", "e")), "blk"]  <- "B"
     des  <- obs_design(year_trt~uoa(id)+block(blk), data=design_dat)
 
-    w1  <- ett(des, data=subset(analysis_dat,year=="AY20"),
+    w20  <- ett(des, data=subset(analysis_dat,year=="AY20"),
                dichotomy= year_trt<="AY20" ~ .)
-    w2  <- ett(des, data=subset(analysis_dat,year=="AY21"),
+    w21  <- ett(des, data=subset(analysis_dat,year=="AY21"),
                dichotomy= year_trt<="AY21" ~ .)
-    c_w0 <- c(w1, w2)
-    expect_true(inherits(c_w0, "WeightedDesign"))
-    expect_length(c_w0, 12)
-    ## Putting it into the same order as in analysis_dat
-    c_w <- c_w0
-    c_w[which(analysis_dat$year=="AY20")]  <- w1
-    c_w[which(analysis_dat$year=="AY21")]  <- w2
-    expect_identical(c_w0@Design, c_w@Design)
-    expect_equal(as.numeric(w1), as.numeric(c_w)[analysis_dat$year=="AY20"])
-    expect_equal(as.numeric(w2), as.numeric(c_w)[analysis_dat$year=="AY21"])
+    w0 <- c(w20, w21)
+    expect_length(w0, length(w20)+length(w21))
+    expect_true(inherits(w0, "WeightedDesign"))
+    expect_true(inherits(w0, "CombinedWeightedDesign"))
+
+
+### Bringing the weights back into the data frame is easier
+### if you're happy to reorder the data.
+    mf_dat <- cbind(analysis_dat[order(analysis_dat$year),], w0)
+    expect_true(inherits(mf_dat$w0, "CombinedWeightedDesign"))
+    expect_equal(mf_dat$w0, w0)
+
+### Let obvious how to put w0 into the same order as the
+### rows of analysis_dat.  Users might try the following.
+    analysis_dat$w0 <- numeric(12)
+    analysis_dat[analysis_dat$year=="AY20","w0"] <- w20
+    analysis_dat[analysis_dat$year=="AY21","w0"] <- w21
+    ## would have been preferable that the below 2 assertions be true:
+    expect_false(inherits(analysis_dat$w, "WeightedDesign"))
+    expect_false(inherits(analysis_dat$w, "CombinedWeightedDesign"))
+    ## rather, this workflow requires us to make sure a_d$w0 is a
+    ## WeightedDesign &/or CombinedWeightedDesign from the get-go.
+    ## One way to do this:
+    analysis_dat$w0 <- w0
+    expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign")
+    analysis_dat[which(analysis_dat$year=="AY20"), "w0"]  <- w20
+    analysis_dat[which(analysis_dat$year=="AY21"), "w0"]  <- w21
+    expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign")
+    expect_identical(w0@Design, analysis_dat$w0@Design)
+    expect_equal(as.numeric(w20), as.numeric(analysis_dat$w0)[analysis_dat$year=="AY20"])
+    expect_equal(as.numeric(w21), as.numeric(analysis_dat$w0)[analysis_dat$year=="AY21"])
+    ## Now let's confirm that the CombinedWeightedDesign internals
+    ## are as they should be:
+    expect_equal(mf_dat$w0@dichotomies, analysis_dat$w0@dichotomies)
+    ## (`expect_setequal()` would work too, but `expect_equal()`
+    ## sets up the next test).
+    ## This ought to have been true:
+    expect_false(all(analysis_dat[analysis_dat$w0@keys[[1]], "year"]=="AY20"))
+    ## ... just as it is when we've reordered the data to match
+    ##the CWD, rather than the reverse.
+    expect_true(all(mf_dat[mf_dat$w0@keys[[1]], "year"]=="AY20"))
+    ## ToDo: Ensure CWD@keys get reordered upon reorder of the .Data
+
+### Alternatively, use lapply and unsplit:
+    analysis_dat$w1 <-
+        lapply(c("AY20", "AY21"),
+    {\(yr) ett(des, data=subset(analysis_dat,year==yr),
+               dichotomy= year_trt<=yr ~ .) }
+    ) |> unsplit(analysis_dat$year)
+    expect_equal(as.numeric(analysis_dat$w1),
+                 as.numeric(analysis_dat$w0))
+    expect_identical(analysis_dat$w1@Design@structure,
+                     analysis_dat$w0@Design@structure)
+    expect_s4_class(analysis_dat$w1, "WeightedDesign")
+    ## ...except that the below should really be `TRUE`:
+    expect_false(inherits(analysis_dat$w1, "CombinedWeightedDesign"))
+    ## ToDo: Ensure that `unsplit()`, `split<-` etc create
+    ## CWDs carrying appropriate info
+
+### (One might hope to use tapply instead of lapply, but I couldn't find
+###    a `dichotomy=` formula that's compatible with that mechanism.)
+### Doesn't work:
+###    tapply(analysis_dat, ~year,
+###    {\(dat) ett(des, data=dat, dichotomy = year_trt <= dat[1L, "year"] ~ .)}
+###    )
+
 })
