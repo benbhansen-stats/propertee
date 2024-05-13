@@ -66,7 +66,7 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
         y = rnorm(12)
     )
     design_dat  <- data.frame(id=letters[1:6], blk=character(6),
-                              year_trt = ordered(rep(c("AY20", "AY21", "."),
+                              year_trt = ordered(rep(c("AY21", "AY20", "."),
                                                      each = 2),
                                                  levels=c("AY20", "AY21", ".")
                                                  )
@@ -76,9 +76,20 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     des  <- obs_design(year_trt~uoa(id)+block(blk), data=design_dat)
 
     w20  <- ett(des, data=subset(analysis_dat,year=="AY20"),
-               dichotomy= year_trt<="AY20" ~ .)
+                dichotomy= year_trt<="AY20" ~ .)
+    w20[which(subset(analysis_dat,year=="AY20")$id %in% c("a", "e"))] |>
+    as.numeric() |> expect_equal(rep(0,2))
+    ## ...confirming that blocks without treatment variation
+    ## receive 0 weight. This is also tested by the test that
+    ## "#130 zero weights with non-varying treatment in a block",
+    ## in test.WeightedDesign, but here we go on to check that
+    ## in the next year, when there is variation in treatment status,
+    ## the same pair has nonzero weights:
     w21  <- ett(des, data=subset(analysis_dat,year=="AY21"),
                dichotomy= year_trt<="AY21" ~ .)
+    w21[which(subset(analysis_dat,year=="AY21")$id %in% c("a", "e"))] |>
+    as.numeric() |> expect_equal(rep(1,2))
+
     w0 <- c(w20, w21)
     expect_length(w0, length(w20)+length(w21))
     expect_true(inherits(w0, "WeightedDesign"))
