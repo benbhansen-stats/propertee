@@ -6,22 +6,22 @@
 # propertee 0.3.8
 
 ## Breaking Changes
-* When model-based standard errors clustered at the level of assignment are called for in a blocked design, `vcovDA()` clusters units of assignment in small blocks, blocks with only one treated or control unit, together.
+* When model-based standard errors clustered at the level of assignment are called for in a blocked design, `vcov_tee()` clusters units of assignment in small blocks, blocks with only one treated or control unit, together.
 
 # propertee 0.3.7
 
 ## Breaking Changes
-* `vcovDA()` scales estimating equations using different constants than it did before
+* `vcov_tee()` scales estimating equations using different constants than it did before
 
 # propertee 0.3.6
 
 ## Bug Fixes
-* Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA's. Outputs of `vcovDA()` were liable to change from call to call as a result. This has been fixed.
+* Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA's. Outputs of `vcov_tee()` were liable to change from call to call as a result. This has been fixed.
 
 # propertee 0.3.5
 
 ## Improvements
-* Diagonal elements of `vcovDA()` matrices lacking sufficient degrees of freedom for estimation are returned as NA's rather than numeric zeros. This is a deviation from the `sandwich` package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix
+* Diagonal elements of `vcov_tee()` matrices lacking sufficient degrees of freedom for estimation are returned as NA's rather than numeric zeros. This is a deviation from the `sandwich` package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix
 
 ## Bug Fixes
 * When `lmitt()` is called with a blocked design and `absorb=TRUE`, the block-centered assignment and, if applicable, moderator and assignment:moderator interaction columns, are no longer centered on the grand mean of the column. This ensures blocks that do not satisfy positivity of the assignment variable (or positivity within a factor level) do not contribute to effect estimation
@@ -39,7 +39,7 @@
 # propertee 0.3.3
 
 ## Added Features
-* `vcovDA()` can accept user-created variance estimation functions that start with the prefix `.vcov_`; the `type` argument should take the rest of the function name as an input
+* `vcov_tee()` can accept user-created variance estimation functions that start with the prefix `.vcov_`; the `type` argument should take the rest of the function name as an input
 * Variance estimation for robust GLM's (models fit using `robustbase::glmrob`) is now accommodated
 * HC1 variance estimates are now accommodated
 
@@ -49,7 +49,7 @@
 * Effect estimation for continuous moderator variables is now supported
 
 ## Non-Breaking Changes
-* `vcovDA()` will return NA's for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA'd out.
+* `vcov_tee()` will return NA's for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA'd out.
 
 ## Bug Fixes
 * Functions for generating weights, `ate()` and `ett()`, return weights of 0 rather than infinity for blocks that contain treated units but no control units.
@@ -67,7 +67,7 @@ equations in versions `v0.1.1` and later.
 
 ## Non-Breaking Changes
 * `teeMod` objects now have `lmitt_call` slots.
-* `summary` calls on `teeMod` objects accept `vcov.type` arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for `vcovDA`.
+* `summary` calls on `teeMod` objects accept `vcov.type` arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for `vcov_tee`.
 * Shown or printed `teeMod` objects return more comprehensible labels for ITT effect outputs.
 
 ## R Version Compatibility

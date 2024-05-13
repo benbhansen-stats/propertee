@@ -2,7 +2,7 @@
 % Please edit documentation in R/teeMod.R
 \name{.make_uoa_ids}
 \alias{.make_uoa_ids}
-\title{Make ID's to pass to the \code{cluster} argument of \code{vcovDA()}}
+\title{Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}}
 \usage{
 .make_uoa_ids(x, vcov_type, cluster = NULL, ...)
 }
@@ -29,7 +29,7 @@ the method for determining uniqueness.
 \description{
 \code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
 with the order of the units of observations' contributions in
-\code{estfun.teeMod()}. This is to ensure that when \code{vcovDA()}
+\code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()}
 calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
 correct contributions to estimating equations within clusters.
 }

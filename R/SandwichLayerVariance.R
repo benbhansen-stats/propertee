@@ -33,7 +33,7 @@ NULL
 #'   treatment variable in the direct adjustment model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
+vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!exists(paste0(".vcov_", type))) {
     stop(paste0("covariance function .vcov_", type,
                 " not defined.\n"))
@@ -295,9 +295,9 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Estimate components of the sandwich covariance matrix
-#' returned by \code{vcovDA()}
+#' returned by \code{vcov_tee()}
 #' @details \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: \eqn{A_{22}^{-1}} is the "bread" of the
-#' sandwich covariance matrix returned by \code{vcovDA()} whether one has fit
+#' sandwich covariance matrix returned by \code{vcov_tee()} whether one has fit
 #' a prior covariance adjustment model or not.
 #' @param x a fitted \code{teeMod} object
 #' @param ... arguments passed to \code{bread} method

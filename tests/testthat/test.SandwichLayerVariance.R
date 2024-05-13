@@ -1,31 +1,31 @@
-test_that("vcovDA errors when provided an invalid type", {
+test_that("vcov_tee errors when provided an invalid type", {
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  expect_error(vcovDA(damod, "not_a_type"))
+  expect_error(vcov_tee(damod, "not_a_type"))
 })
 
-test_that("vcovDA correctly dispatches", {
+test_that("vcov_tee correctly dispatches", {
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des), offset = cov_adj(cmod)))
 
-  vmat1 <- suppressMessages(vcovDA(damod, type = "CR0"))
+  vmat1 <- suppressMessages(vcov_tee(damod, type = "CR0"))
   expect_equal(vmat1, suppressMessages(.vcov_CR0(damod, cluster = .make_uoa_ids(damod, "CR"))))
 
-  vmat2 <- suppressMessages(vcovDA(damod, type = "MB0"))
+  vmat2 <- suppressMessages(vcov_tee(damod, type = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
 
-  vmat3 <- suppressMessages(vcovDA(damod, type = "HC0"))
+  vmat3 <- suppressMessages(vcov_tee(damod, type = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
 })
 
-test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have no NA's"), {
   data(simdata)
   simdata_copy <- simdata
@@ -36,11 +36,11 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
                 weights = ate(des), offset = cov_adj(cmod))
 
   # check default clustering level is the same when specified using cluster arg
-  expect_equal(suppressMessages(vcovDA(dmod)),
-               suppressMessages(vcovDA(dmod, cluster = c("uid"))))
+  expect_equal(suppressMessages(vcov_tee(dmod)),
+               suppressMessages(vcov_tee(dmod, cluster = c("uid"))))
 })
 
-test_that(paste("vcovDA produces correct calculations with valid `cluster` arugment",
+test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have NA's (must be via column name)"), {
   data(simdata)
   df <- rbind(simdata, simdata)
@@ -50,7 +50,7 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   dmod <- lmitt(y ~ 1, data = df[51:100,], design = des,
                 weights = ate(des), offset = cov_adj(cmod))
 
-  expect_equal(vcovDA(dmod, cluster = c("uoa1", "uoa2")), vcovDA(dmod))
+  expect_equal(vcov_tee(dmod, cluster = c("uoa1", "uoa2")), vcov_tee(dmod))
 })
 
 test_that("variance helper functions fail without a teeMod model", {
@@ -1296,7 +1296,7 @@ test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", 
   m <- lmitt(y ~ 1, data = simdata, design = des, weights = ate(des))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
-  expect_true(all.equal(vcovDA(m, type = "CR0"),
+  expect_true(all.equal(vcov_tee(m, type = "CR0"),
                         sandwich::sandwich(m,
                                            meat. = sandwich::meatCL,
                                            cluster = uoas),
@@ -2063,7 +2063,7 @@ test_that("HC1/CR1/MB1", {
 
   # CR1
   expect_true(
-    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
+    all.equal(cr1_vmat <- vcov_tee(dmod, type = "CR1"),
               50 / 48 * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"), cadjust=FALSE),
               check.attributes = FALSE)
   )
@@ -2071,12 +2071,12 @@ test_that("HC1/CR1/MB1", {
   expect_true(any(grepl("CR1", capture.output(summary(dmod, vcov.type = "CR1")))))
 
   # HC1
-  expect_true(all.equal(hc1_vmat <- vcovDA(dmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
+  expect_true(all.equal(hc1_vmat <- vcov_tee(dmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
   expect_equal(attr(hc1_vmat, "type"), "HC1")
   expect_true(any(grepl("HC1", capture.output(summary(dmod, vcov.type = "HC1")))))
 
   # MB1
-  expect_true(all.equal(mb1_vmat <- vcovDA(dmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
+  expect_true(all.equal(mb1_vmat <- vcov_tee(dmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
   expect_equal(attr(mb1_vmat, "type"), "MB1")
   expect_true(any(grepl("MB1", capture.output(summary(dmod, vcov.type = "MB1")))))
 
@@ -2102,7 +2102,7 @@ test_that("HC1/CR1/MB1", {
 
   # CR1
   expect_true(
-    all.equal(cr1_vmat <- vcovDA(dmod, type = "CR1"),
+    all.equal(cr1_vmat <- vcov_tee(dmod, type = "CR1"),
               g / (g-1) * (n-1) / (n-2) * .vcov_CR0(dmod, cluster = .make_uoa_ids(dmod, "CR"),
                                                       cadjust=FALSE),
               check.attributes = FALSE)
@@ -2121,12 +2121,12 @@ test_that("type attribute", {
   expect_identical(attr(vcov(damod, type = "HC0"), "type"), "HC0")
 })
 
-test_that("#119 flagging vcovDA entries as NA", {
+test_that("#119 flagging vcov_tee entries as NA", {
   ### factor moderator variable
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   mod <- lmitt(y ~ as.factor(o), data = simdata, design = des)
-  expect_warning(vc <- vcovDA(mod),
+  expect_warning(vc <- vcov_tee(mod),
                  "will be returned as NA: as.factor(o)1, as.factor(o)3",
                  fixed = TRUE)
 
@@ -2152,7 +2152,7 @@ test_that("#119 flagging vcovDA entries as NA", {
                       ass_id = rep(seq(5), each = 4))
   ddes <- rct_design(z ~ unitid(ass_id), ddata)
   dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
-  expect_warning(vc <- vcovDA(dmod),
+  expect_warning(vc <- vcov_tee(dmod),
                  "will be returned as NA: modr1",
                  fixed = TRUE)
 
@@ -2168,14 +2168,14 @@ test_that("#119 flagging vcovDA entries as NA", {
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
 
   ### valid factor moderator variable; vcov diagonals shouldn't be numerically 0
-  ### when using the sandwich package and shouldn't have NA's when using vcovDA
+  ### when using the sandwich package and shouldn't have NA's when using vcov_tee
   ddata <- data.frame(modr = factor(c(rep(1, 8), rep(2, 12))),
                       y = rnorm(20),
                       z = c(rep(rep(c(0, 1), each = 4), 2), rep(1, 4)),
                       ass_id = rep(seq(10), each = 2))
   ddes <- rct_design(z ~ unitid(ass_id), ddata)
   dmod <- lmitt(y ~ modr, design = ddes, data = ddata)
-  vc <- vcovDA(dmod)
+  vc <- vcov_tee(dmod)
   expect_true(all(
     abs(diag(sandwich::sandwich(dmod, meat. = sandwich::meatCL,
                                 cluster = .make_uoa_ids(dmod, "CR")))[na_dim])
@@ -2192,7 +2192,7 @@ test_that("#119 flagging vcovDA entries as NA", {
   ## so .check_df_moderator_estimates will return
   ## the initial vcov matrix, and we need not check it here.)
   # mod <- lmitt(lm(y ~ as.factor(o) + as.factor(o):assigned(des), data = simdata), design = des)
-  # vc <- vcovDA(mod)[5:7, 5:7]
+  # vc <- vcov_tee(mod)[5:7, 5:7]
   #
   # #****************************************
   # ### Setting these to NA manually only for testing purposes!
@@ -2266,14 +2266,14 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
             offset = cov_adj(cmod, NULL, NULL, "schoolid"))
   dmod1 <- lmitt(lm1, design = des)
   expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
-  v1 <- vcovDA(dmod1)
+  v1 <- vcov_tee(dmod1)
 
   wts2 <- ett(des, data = copy_simdata)
   offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid")
   lm2 <- lm(y ~ assigned(), copy_simdata, weights = wts2, offset = offst2)
   dmod2 <- lmitt(lm2, design = des)
   expect_true(is(damod$model$`(offset)`, "SandwichLayer"))
-  v2 <- vcovDA(dmod2)
+  v2 <- vcov_tee(dmod2)
 
   expect_true(all.equal(v1, v2))
 
@@ -2286,7 +2286,7 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   desdata$y <- rnorm(40)
   des <- rct_design(a ~ unitid(uoa_id) + block(bid), desdata)
   suppressMessages(mod <- lmitt(y ~ 1, design = des, data = desdata))
-  vc_w_small_block_clusters <- vcovDA(mod)
+  vc_w_small_block_clusters <- vcov_tee(mod)
   vc_w_no_small_block_clusters <- .vcov_CR0(mod,
                                             cluster = .make_uoa_ids(mod, "DB"),
                                             by = "uoa_id")

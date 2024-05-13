@@ -134,8 +134,8 @@ test_that("lmitt finds Design wherever it's stored", {
 
   expect_equal(coef(mod1), coef(mod2))
   expect_equal(coef(mod1), coef(mod3))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1), vcovDA(mod3))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod3))
 })
 
 test_that("Allowed inputs to lmitt #73", {

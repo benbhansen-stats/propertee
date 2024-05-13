@@ -10,8 +10,8 @@
 ##'
 ##' @param object \code{teeMod} object
 ##' @param vcov.type A string indicating the desired variance estimator. See
-##'   [vcovDA()] for details on accepted types.
-##' @param ... Additional arguments to [vcovDA()], such as the desired
+##'   [vcov_tee()] for details on accepted types.
+##' @param ... Additional arguments to [vcov_tee()], such as the desired
 ##'   finite sample heteroskedasticity-robust standard error adjustment.
 ##' @return object of class \code{summary.teeMod}
 ##' @export
@@ -23,7 +23,7 @@ summary.teeMod <- function(object,
   out <- summary(as(object, "lm"))
 
   if (object$rank > 0) {
-    covmat <- vcovDA(object, type = vcov.type, ...)
+    covmat <- vcov_tee(object, type = vcov.type, ...)
     out$coefficients[, 2L] <- sqrt(diag(covmat))
     out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
     out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),

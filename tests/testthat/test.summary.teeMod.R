@@ -15,7 +15,7 @@ test_that("summary.teeMod basics", {
 })
 
 
-test_that("teeMod with SandwichLayer offset summary uses vcovDA SE's", {
+test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -23,11 +23,11 @@ test_that("teeMod with SandwichLayer offset summary uses vcovDA SE's", {
                     offset = cov_adj(cmod)))
 
   s <- summary(damod)
-  expect_equal(s$coefficients[, 2L], sqrt(diag(vcovDA(damod))))
+  expect_equal(s$coefficients[, 2L], sqrt(diag(vcov_tee(damod))))
   expect_equal(s$coefficients[, 3L],
-               damod$coefficients / sqrt(diag(vcovDA(damod))))
+               damod$coefficients / sqrt(diag(vcov_tee(damod))))
   expect_equal(s$coefficients[, 4L],
-               2 * pt(abs(damod$coefficients / sqrt(diag(vcovDA(damod)))),
+               2 * pt(abs(damod$coefficients / sqrt(diag(vcov_tee(damod)))),
                       damod$df.residual,
                       lower.tail = FALSE))
 
@@ -38,11 +38,11 @@ test_that("teeMod with SandwichLayer offset summary uses vcovDA SE's", {
                     offset = cov_adj(cmod)))
 
   s <- summary(damod)
-  expect_true(s$coefficients[, 2L] ==  sqrt(diag(vcovDA(damod))))
+  expect_true(s$coefficients[, 2L] ==  sqrt(diag(vcov_tee(damod))))
   expect_true(s$coefficients[, 3L] ==
-               damod$coefficients / sqrt(diag(vcovDA(damod))))
+               damod$coefficients / sqrt(diag(vcov_tee(damod))))
   expect_true(s$coefficients[, 4L] ==
-               2 * pt(abs(damod$coefficients / sqrt(diag(vcovDA(damod)))),
+               2 * pt(abs(damod$coefficients / sqrt(diag(vcov_tee(damod)))),
                       damod$df.residual,
                       lower.tail = FALSE))
 })

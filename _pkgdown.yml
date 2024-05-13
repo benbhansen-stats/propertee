@@ -87,7 +87,7 @@ reference:
     - summary.teeMod
     - print.summary.teeMod
     - vcov.teeMod
-    - vcovDA
+    - vcov_tee
 - title: Data
 - contents:
     - STARdata

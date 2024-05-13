@@ -72,7 +72,7 @@
 <h2 class="pkg-version" data-toc-text="0.3.8" id="propertee-038">propertee 0.3.8<a class="anchor" aria-label="anchor" href="#propertee-038"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-3-8">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-8"></a></h3>
-<ul><li>When model-based standard errors clustered at the level of assignment are called for in a blocked design, <code><a href="../reference/var_estimators.html">vcovDA()</a></code> clusters units of assignment in small blocks, blocks with only one treated or control unit, together.</li>
+<ul><li>When model-based standard errors clustered at the level of assignment are called for in a blocked design, <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> clusters units of assignment in small blocks, blocks with only one treated or control unit, together.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -80,21 +80,21 @@
 <div class="section level3">
 <h3 id="breaking-changes-0-3-7">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-7"></a></h3>
 <ul><li>
-<code><a href="../reference/var_estimators.html">vcovDA()</a></code> scales estimating equations using different constants than it did before</li>
+<code><a href="../reference/var_estimators.html">vcov_tee()</a></code> scales estimating equations using different constants than it did before</li>
 </ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.6" id="propertee-036">propertee 0.3.6<a class="anchor" aria-label="anchor" href="#propertee-036"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-6">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-6"></a></h3>
-<ul><li>Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA’s. Outputs of <code><a href="../reference/var_estimators.html">vcovDA()</a></code> were liable to change from call to call as a result. This has been fixed.</li>
+<ul><li>Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA’s. Outputs of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> were liable to change from call to call as a result. This has been fixed.</li>
 </ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.5" id="propertee-035">propertee 0.3.5<a class="anchor" aria-label="anchor" href="#propertee-035"></a></h2>
 <div class="section level3">
 <h3 id="improvements-0-3-5">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-3-5"></a></h3>
-<ul><li>Diagonal elements of <code><a href="../reference/var_estimators.html">vcovDA()</a></code> matrices lacking sufficient degrees of freedom for estimation are returned as NA’s rather than numeric zeros. This is a deviation from the <code>sandwich</code> package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix</li>
+<ul><li>Diagonal elements of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> matrices lacking sufficient degrees of freedom for estimation are returned as NA’s rather than numeric zeros. This is a deviation from the <code>sandwich</code> package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-5">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-5"></a></h3>
@@ -121,7 +121,7 @@
 <div class="section level3">
 <h3 id="added-features-0-3-3">Added Features<a class="anchor" aria-label="anchor" href="#added-features-0-3-3"></a></h3>
 <ul><li>
-<code><a href="../reference/var_estimators.html">vcovDA()</a></code> can accept user-created variance estimation functions that start with the prefix <code>.vcov_</code>; the <code>type</code> argument should take the rest of the function name as an input</li>
+<code><a href="../reference/var_estimators.html">vcov_tee()</a></code> can accept user-created variance estimation functions that start with the prefix <code>.vcov_</code>; the <code>type</code> argument should take the rest of the function name as an input</li>
 <li>Variance estimation for robust GLM’s (models fit using <code><a href="https://rdrr.io/pkg/robustbase/man/glmrob.html" class="external-link">robustbase::glmrob</a></code>) is now accommodated</li>
 <li>HC1 variance estimates are now accommodated</li>
 </ul></div>
@@ -135,7 +135,7 @@
 <div class="section level3">
 <h3 id="non-breaking-changes-0-3-2">Non-Breaking Changes<a class="anchor" aria-label="anchor" href="#non-breaking-changes-0-3-2"></a></h3>
 <ul><li>
-<code><a href="../reference/var_estimators.html">vcovDA()</a></code> will return NA’s for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA’d out.</li>
+<code><a href="../reference/var_estimators.html">vcov_tee()</a></code> will return NA’s for the entries of the covariance matrix that lack sufficient degrees of freedom for an estimate. Informative warnings will accompany the matrix, further indicating which standard errors have been NA’d out.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-2"></a></h3>
@@ -157,12 +157,12 @@
 <ul><li>
 <code>teeMod</code> objects now have <code>lmitt_call</code> slots.</li>
 <li>
-<code>summary</code> calls on <code>teeMod</code> objects accept <code>vcov.type</code> arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for <code>vcovDA</code>.</li>
+<code>summary</code> calls on <code>teeMod</code> objects accept <code>vcov.type</code> arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for <code>vcov_tee</code>.</li>
 <li>Shown or printed <code>teeMod</code> objects return more comprehensible labels for ITT effect outputs.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="r-version-compatibility-0-3-1">R Version Compatibility<a class="anchor" aria-label="anchor" href="#r-version-compatibility-0-3-1"></a></h3>
-<ul><li>Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid <code>expand.model.frame</code> calls on <code>teeMod</code> objects and instead use the internal function <code>.expand.model.frame.DA</code> when necessary.</li>
+<ul><li>Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid <code>expand.model.frame</code> calls on <code>teeMod</code> objects and instead use the internal function <code>.expand.model.frame_teeMod</code> when necessary.</li>
 </ul></div>
 </div>
     <div class="section level2">

@@ -263,7 +263,7 @@ test_that("teeMod object has its own evaluation environment", {
   expect_equal(environment(formula(mod1))$design, environment(formula(mod2))$design)
 })
 
-test_that("vcov.teeMod handles vcovDA `type` arguments and non-SL offsets", {
+test_that("vcov.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -276,7 +276,7 @@ test_that("vcov.teeMod handles vcovDA `type` arguments and non-SL offsets", {
 
   expect_error(vcov(damod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
-  expect_identical(vmat1, vcovDA(damod1))
+  expect_identical(vmat1, vcov_tee(damod1))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   vmat3 <- vcov(damod2)
@@ -286,7 +286,7 @@ test_that("vcov.teeMod handles vcovDA `type` arguments and non-SL offsets", {
     check.attributes = FALSE))
 })
 
-test_that("confint.teeMod handles vcovDA `type` arguments and non-SL offsets", {
+test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -297,27 +297,27 @@ test_that("confint.teeMod handles vcovDA `type` arguments and non-SL offsets", {
   expect_error(confint(damod1, type = "not_a_type"), "not defined")
 
   # default CI
-  vcovDA_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
+  vcov_tee_ci.95 <- damod1$coefficients + sqrt(diag(vcov_tee(damod1))) %o%
     qt(c(0.025, 0.975), damod1$df.residual)
-  dimnames(vcovDA_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
+  dimnames(vcov_tee_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
   ci1 <- confint(damod1, type = "CR0")
   ci2 <- confint(damod1)
   expect_equal(ci1, ci2)
-  expect_equal(ci1, vcovDA_ci.95)
+  expect_equal(ci1, vcov_tee_ci.95)
 
   # HC1 CI
-  vcovDA_HC1_ci.95 <- damod1$coefficients + sqrt(diag(vcovDA(damod1, type = "HC1"))) %o%
+  vcov_tee_HC1_ci.95 <- damod1$coefficients + sqrt(diag(vcov_tee(damod1, type = "HC1"))) %o%
     qt(c(0.025, 0.975), damod1$df.residual)
-  dimnames(vcovDA_HC1_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
+  dimnames(vcov_tee_HC1_ci.95) <- list(names(damod1$coefficients), c("2.5 %", "97.5 %"))
   ci_HC1 <- confint(damod1, type = "HC1")
-  expect_equal(ci_HC1, vcovDA_HC1_ci.95)
+  expect_equal(ci_HC1, vcov_tee_HC1_ci.95)
 
   # CI with different level
-  vcovDA_ci.9 <- damod1$coefficients + sqrt(diag(vcovDA(damod1))) %o%
+  vcov_tee_ci.9 <- damod1$coefficients + sqrt(diag(vcov_tee(damod1))) %o%
     qt(c(0.05, 0.95), damod1$df.residual)
-  dimnames(vcovDA_ci.9) <- list(names(damod1$coefficients), c("5 %", "95 %"))
+  dimnames(vcov_tee_ci.9) <- list(names(damod1$coefficients), c("5 %", "95 %"))
   ci1 <- confint(damod1, level = 0.9)
-  expect_equal(ci1, vcovDA_ci.9)
+  expect_equal(ci1, vcov_tee_ci.9)
 
   # CI with lmitt.lm
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -692,8 +692,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
     ef1$psi,
     mod_lm_ef[sort(as.character(seq(nrow(simdata_copy)))),],
     check.attributes = FALSE))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
@@ -725,8 +725,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
   expect_true(all.equal(ef1$phi, cmod_ef[c(nonzero_ix, zero_ix),], check.attributes = FALSE))
   expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[zero_ix] == 0))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
@@ -764,8 +764,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   expect_true(all.equal(
     ef1$psi,
     mod_lm_ef[c(21L:50L, sort(as.character(seq(20L)))),], check.attributes = FALSE))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap"), {
@@ -797,8 +797,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
   expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
   expect_true(all(ef1$psi[31L:50L,] == 0))
   expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,], check.attributes = FALSE))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `by`)"), {
@@ -824,8 +824,8 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all.equal(ef1$phi, cmod_ef[sort(seq(50L)),], check.attributes = FALSE))
   expect_true(all.equal(ef1$psi, mod_lm_ef[sort(seq(50L)),], check.attributes = FALSE))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), {
@@ -854,8 +854,8 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), 
   expect_true(all.equal(ef1$phi, cmod_ef, check.attributes = FALSE))
   expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[1L:20L,], check.attributes = FALSE))
   expect_true(all(ef1$psi[21L:50L] == 0))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't",
@@ -885,8 +885,8 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
   expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
   expect_true(all(ef1$phi[1L:30L] == 0))
   expect_true(all.equal(ef1$psi, mod_lm_ef[c(21L:50L, 1L:20L),], check.attributes = FALSE))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no `by`)"), {
@@ -917,8 +917,8 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   expect_true(all(ef1$phi[1L:30L,] == 0))
   expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,], check.attributes = FALSE))
   expect_true(all(ef1$psi[31L:50L,] == 0))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or teeMod model", {

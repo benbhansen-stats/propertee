@@ -18,9 +18,9 @@
 \item{object}{\code{teeMod} object}
 
 \item{vcov.type}{A string indicating the desired variance estimator. See
-\code{\link[=vcovDA]{vcovDA()}} for details on accepted types.}
+\code{\link[=vcov_tee]{vcov_tee()}} for details on accepted types.}
 
-\item{...}{Additional arguments to \code{\link[=vcovDA]{vcovDA()}}, such as the desired
+\item{...}{Additional arguments to \code{\link[=vcov_tee]{vcov_tee()}}, such as the desired
 finite sample heteroskedasticity-robust standard error adjustment.}
 
 \item{x}{\code{summary.teeMod} object}

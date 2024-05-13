@@ -7,7 +7,7 @@
 \alias{.get_tilde_a22_inverse}
 \alias{.get_tilde_a21}
 \title{(Internal) Estimate components of the sandwich covariance matrix
-returned by \code{vcovDA()}}
+returned by \code{vcov_tee()}}
 \usage{
 .get_a22_inverse(x, ...)
 
@@ -39,11 +39,11 @@ by the dimension of the covariance adjustment model
 }
 \description{
 (Internal) Estimate components of the sandwich covariance matrix
-returned by \code{vcovDA()}
+returned by \code{vcov_tee()}
 }
 \details{
 \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: \eqn{A_{22}^{-1}} is the "bread" of the
-sandwich covariance matrix returned by \code{vcovDA()} whether one has fit
+sandwich covariance matrix returned by \code{vcov_tee()} whether one has fit
 a prior covariance adjustment model or not.
 
 \code{.get_a11_inverse()}: \eqn{A_{11}^{-1}} is the "bread" of

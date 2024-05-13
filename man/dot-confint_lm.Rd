@@ -29,6 +29,6 @@ Produce confidence intervals for linear models
 \code{.confint_lm()} is a copy of \code{stats::confint.lm} but passes
 arguments in \code{...} to the \code{vcov()} call. When called on a
 \code{teeMod} model, this produces confidence intervals where standard
-errors are computed based on the desired formulation of the \code{vcovDA()} call.
+errors are computed based on the desired formulation of the \code{vcov_tee()} call.
 }
 \keyword{internal}

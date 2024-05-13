@@ -72,7 +72,7 @@ geexRes <- geex::m_estimate(estFun,
                             root_control = geex::setup_root_control(start = rep(0.1,5)))
 print(paste("geex estimate of var(tau_hat):", round(geexRes@vcov[5,5], 8)))
 print(paste("propertee estimate of var(tau_hat):",
-            round(vcovDA(damod, type = "CR0", cadjust = FALSE)[2,2], 8)))
+            round(vcov_tee(damod, type = "CR0", cadjust = FALSE)[2,2], 8)))
 ```
 
 ## Example with clustered data
@@ -139,7 +139,7 @@ geexRes <- geex::m_estimate(clusterEstFunc,
 
 print(paste("geex estimate of var(tau_hat):", round(geexRes@vcov[5,5], 8)))
 print(paste("propertee estimate of var(tau_hat):",
-            round(vcovDA(damod, type = "CR0", cadjust = FALSE)[2,2], 8)))
+            round(vcov_tee(damod, type = "CR0", cadjust = FALSE)[2,2], 8)))
 ```
 
 ## References

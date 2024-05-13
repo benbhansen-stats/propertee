@@ -425,9 +425,9 @@ old_vcovMB_CR0 <- function(x, ...) {
 # 4) nonlinear covariance adjustment model
 # For each model, verify:
 #  1) crossprod of new est. eqns. returns what we expect
-#  2) new vcovDA estimates are the same estimates output by the `propertee`
+#  2) new vcov_tee estimates are the same estimates output by the `propertee`
 #     package prior to Feb. 2023
-#  3) new vcovDA estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
+#  3) new vcov_tee estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
 #     with appropriate scaling for the `bread` function and an appropriate
 #     `cluster` argument
 set.seed(2300)

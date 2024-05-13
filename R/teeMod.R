@@ -1,6 +1,6 @@
 #' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R confint_lm.R
 NULL
-# The above ensures that `Design`, `WeightedDesign`, and `vcovDA` are defined
+# The above ensures that `Design`, `WeightedDesign`, and `vcov_tee` are defined
 # prior to `teeMod`
 
 setClass("teeMod",
@@ -41,15 +41,15 @@ setMethod("show", "teeMod", function(object) {
 ##' @title Compute variance-covariance matrix for fitted \code{teeMod} model
 ##' @description
 ##'   An S3method for \code{stats::vcov} that computes standard errors for
-##'   \code{teeMod} models using \code{vcovDA()}.
+##'   \code{teeMod} models using \code{vcov_tee()}.
 ##' @details
-##'   \code{vcov.teeMod()} wraps around \code{vcovDA()}, so additional
-##'   arguments passed to \code{...} will be passed to the \code{vcovDA()} call.
-##'   See documentation for \code{vcovDA()} for information about necessary
+##'   \code{vcov.teeMod()} wraps around \code{vcov_tee()}, so additional
+##'   arguments passed to \code{...} will be passed to the \code{vcov_tee()} call.
+##'   See documentation for \code{vcov_tee()} for information about necessary
 ##'   arguments.
 ##' @param object a fitted \code{teeMod} model
-##' @param ... additional arguments to \code{vcovDA()}.
-##' @inherit vcovDA return
+##' @param ... additional arguments to \code{vcov_tee()}.
+##' @inherit vcov_tee return
 ##' @exportS3Method
 vcov.teeMod <- function(object, ...) {
   cl <- match.call()
@@ -57,7 +57,7 @@ vcov.teeMod <- function(object, ...) {
   cl$x <- cl$object
   argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
   new_cl <- cl[c(1L, argmatch)]
-  new_cl[[1L]] <-  quote(vcovDA)
+  new_cl[[1L]] <-  quote(vcov_tee)
 
   vmat <- eval(new_cl, parent.frame())
   return(vmat)
@@ -148,7 +148,7 @@ estfun.teeMod <- function(x, ...) {
 ##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{teeMod} model
 ##' @param ... arguments passed to methods
-##' @inherit vcovDA return
+##' @inherit vcov_tee return
 ##' @exportS3Method
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
@@ -218,11 +218,11 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
 }
 
-#' @title Make ID's to pass to the \code{cluster} argument of \code{vcovDA()}
+#' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
 #' @description
 #'   \code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
 #'    with the order of the units of observations' contributions in
-#'    \code{estfun.teeMod()}. This is to ensure that when \code{vcovDA()}
+#'    \code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()}
 #'    calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
 #'    correct contributions to estimating equations within clusters.
 #' @param x a fitted \code{teeMod} object

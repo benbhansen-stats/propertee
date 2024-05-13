@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{a fitted \code{teeMod} model}
 
-\item{...}{additional arguments to \code{vcovDA()}.}
+\item{...}{additional arguments to \code{vcov_tee()}.}
 }
 \value{
 A \eqn{2\times 2} matrix corresponding to an intercept and the
@@ -17,11 +17,11 @@ treatment variable in the direct adjustment model
 }
 \description{
 An S3method for \code{stats::vcov} that computes standard errors for
-\code{teeMod} models using \code{vcovDA()}.
+\code{teeMod} models using \code{vcov_tee()}.
 }
 \details{
-\code{vcov.teeMod()} wraps around \code{vcovDA()}, so additional
-arguments passed to \code{...} will be passed to the \code{vcovDA()} call.
-See documentation for \code{vcovDA()} for information about necessary
+\code{vcov.teeMod()} wraps around \code{vcov_tee()}, so additional
+arguments passed to \code{...} will be passed to the \code{vcov_tee()} call.
+See documentation for \code{vcov_tee()} for information about necessary
 arguments.
 }
