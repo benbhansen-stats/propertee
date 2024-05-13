@@ -9,12 +9,12 @@ test_that("lmitt", {
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
 
-  expect_s4_class(da, "DirectAdjusted")
+  expect_s4_class(da, "teeMod")
   expect_true(inherits(da, "lm"))
 
   da_ett <- lmitt(y ~ 1, weights = ett(), data = simdata, design = des)
 
-  expect_s4_class(da_ett, "DirectAdjusted")
+  expect_s4_class(da_ett, "teeMod")
 })
 
 test_that("lmitt and lm return the same in simple cases", {
@@ -204,7 +204,7 @@ test_that("Regular weights can still be used", {
   des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ 1, design = des, weights = simdata$dose, data = simdata)
-  expect_true(is(mod, "DirectAdjusted"))
+  expect_true(is(mod, "teeMod"))
 
 })
 
@@ -333,7 +333,7 @@ test_that("#140 handling 0 weights", {
   des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[1, ] == 0))
 
   # A block with only a single non-zero weight should contribute nothing to the
@@ -346,7 +346,7 @@ test_that("#140 handling 0 weights", {
   des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[simdata$bid == 1, 2:ncol(ee)] == 0))
   expect_true(all(ee[simdata$bid == 1 & simdata$weight == 0, 1] == 0))
 
@@ -357,7 +357,7 @@ test_that("#140 handling 0 weights", {
   # Block 1 has 0 variance in treatment
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[simdata$bid == 1, "z."] == 0))
   expect_true(all(
     sapply(ee[simdata$bid == 1, c("(Intercept)", "x", "z._x")],

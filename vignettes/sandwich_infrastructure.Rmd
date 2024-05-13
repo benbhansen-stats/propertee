@@ -50,24 +50,24 @@ will have special columns `(weights)` and
 
 Standard errors will be obtained through subsequent steps, e.g.
 ```{r eval=FALSE}
-vcov(as.DirectAdjusted(m))
+vcov(as.teeMod(m))
 ```
 or
 ```{r eval=FALSE}
-m <- as.DirectAdjusted(m,
+m <- as.teeMod(m,
                        by=list(cmod=c(uoa1=altuoa1, uoa2=altuoa2))
 		       )
 vcov(m)
 ```
 with "`uoa1`" and "`uoa2`" the column names of `clusters(des)`, while `altuoa1` and `altuoa2` corresponding column names of `C`,  or
 ```r
-m <- as.DirectAdjusted(m,
+m <- as.teeMod(m,
                        by=keys_data_frame)
 vcov(m)
 ```
 where `keys_data_frame` has rows aligned with those of `C` and columns including "`uoa1`" and "`uoa2`".
 
-Either way, once `m` has been coerced to class `DirectAdjusted`, it has acquired a `@Design` slot for the information in `des`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
+Either way, once `m` has been coerced to class `teeMod`, it has acquired a `@Design` slot for the information in `des`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
 
 - attend to the structure of the design, as recorded in `des`; and
 - propagate errors from the fitting of covariance model `cmod` into standard errors reported for `treat * gender` coefficients.
@@ -82,7 +82,7 @@ classDiagram
   numeric <|-- WeightedDesign
   numeric <|-- PreSandwichLayer
   PreSandwichLayer <|-- SandwichLayer
-  lm <|-- DirectAdjusted
+  lm <|-- teeMod
 
   PreSandwichLayer: +list fitted_covariance_model
   PreSandwichLayer: +double .Data
@@ -92,7 +92,7 @@ classDiagram
   SandwichLayer: +data.frame keys
 
   WeightedDesign: +Design Design
-  DirectAdjusted: +Design Design
+  teeMod: +Design Design
 ")
 ```
 <!-- Rendering from https://mermaid.live/ -->
@@ -108,7 +108,7 @@ Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `Sandw
 
 The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `design`, `desvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[desvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `desvars`.
 
-In order for `vcov.DirectAdjusted(m)` to work, the following functions must have methods applicable to `m@fitted_covariance_model`: `model.matrix()`, `sandwich::estfun()`, `sandwich::bread()`.  These are similar requirements to those of `sandwich::vcovHC()`.
+In order for `vcov.teeMod(m)` to work, the following functions must have methods applicable to `m@fitted_covariance_model`: `model.matrix()`, `sandwich::estfun()`, `sandwich::bread()`.  These are similar requirements to those of `sandwich::vcovHC()`.
 
 
 

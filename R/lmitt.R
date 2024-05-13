@@ -38,7 +38,7 @@
 ##' \code{design} will have a "\code{.}" appended to it. For example, if you
 ##' request a main treatment effect (with a formula of \code{~ 1}) with a
 ##' treatment variable named "txt", you can obtain it's estimate from the
-##' returned \code{DirectAdjusted} object via \code{$coefficients["txt."]}.
+##' returned \code{teeMod} object via \code{$coefficients["txt."]}.
 ##'
 ##' [lmitt()] will produce a message if the \code{Design} passed in has block
 ##' information that is not being utilized in the model. Note that this is
@@ -63,7 +63,7 @@
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
 ##' @param ... Additional arguments passed to [lm()].
-##' @return \code{DirectAdjusted} model.
+##' @return \code{teeMod} model.
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt

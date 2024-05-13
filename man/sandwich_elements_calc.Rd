@@ -20,7 +20,7 @@ returned by \code{vcovDA()}}
 .get_tilde_a21(x)
 }
 \arguments{
-\item{x}{a fitted \code{DirectAdjusted} model}
+\item{x}{a fitted \code{teeMod} model}
 
 \item{...}{arguments passed to \code{bread} method}
 }

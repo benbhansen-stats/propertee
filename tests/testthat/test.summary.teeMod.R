@@ -1,9 +1,9 @@
-test_that("summary.DirectAdjusted basics", {
+test_that("summary.teeMod basics", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   da <- lmitt(y ~ 1, data = simdata, design = des, weights = ate())
   sda <- summary(da)
-  expect_s3_class(sda, "summary.DirectAdjusted")
+  expect_s3_class(sda, "summary.teeMod")
 
   out <- capture_output(print(sda))
 
@@ -15,7 +15,7 @@ test_that("summary.DirectAdjusted basics", {
 })
 
 
-test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
+test_that("teeMod with SandwichLayer offset summary uses vcovDA SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -47,7 +47,7 @@ test_that("DirectAdjusted with SandwichLayer offset summary uses vcovDA SE's", {
                       lower.tail = FALSE))
 })
 
-test_that("DirectAdjusted w/o SandwichLayer offset summary uses sandwich SE's", {
+test_that("teeMod w/o SandwichLayer offset summary uses sandwich SE's", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   damod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(des)))
@@ -125,7 +125,7 @@ test_that("issues with coefficients", {
 
   expect_false(any(grepl("calculated via type", co)))
 
-  dalm <- new("DirectAdjusted",
+  dalm <- new("teeMod",
               lm(y ~ 0, data = simdata, weights = ate(des)),
               Design = des,
               lmitt_fitted = TRUE)
@@ -140,7 +140,7 @@ test_that("catching bug with summary(as.lmitt", {
 
   mod <- lm(y ~ assigned(des), data = simdata)
   ss <- summary(as.lmitt(mod, des))
-  expect_true(is(ss, "summary.DirectAdjusted"))
+  expect_true(is(ss, "summary.teeMod"))
 })
 
 test_that("print.summary isn't confused by bad naming", {

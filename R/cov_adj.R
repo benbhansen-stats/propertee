@@ -1,7 +1,7 @@
 #' @include SandwichLayer.R
 NULL
 
-##' @title Covariance adjustment of \code{DirectAdjusted} model estimates
+##' @title Covariance adjustment of \code{teeMod} model estimates
 ##' @description
 ##'  \code{cov_adj()} takes a fitted covariance model and returns the information
 ##'  necessary for adjusting direct adjustment model estimates and associated
@@ -16,7 +16,7 @@ NULL
 ##'   Factor treatments are not currently supported for \code{Design} objects.\cr\cr
 ##'   The values of the output vector represent adjustments for the outcomes in
 ##'   \code{newdata} if \code{newdata} is provided; adjustments for the outcomes
-##'   in the data used to fit a \code{DirectAdjusted} model if \code{cov_adj()}
+##'   in the data used to fit a \code{teeMod} model if \code{cov_adj()}
 ##'   is called within the \code{offset} argument of the model fit; or they are
 ##'   the fitted values from \code{model} if no relevant dataframe can be extracted
 ##'   from the call stack. The length of the output of \code{cov_adj()} will match

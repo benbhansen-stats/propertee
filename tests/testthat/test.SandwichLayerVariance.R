@@ -53,22 +53,22 @@ test_that(paste("vcovDA produces correct calculations with valid `cluster` arugm
   expect_equal(vcovDA(dmod, cluster = c("uoa1", "uoa2")), vcovDA(dmod))
 })
 
-test_that("variance helper functions fail without a DirectAdjusted model", {
+test_that("variance helper functions fail without a teeMod model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(propertee:::.vcov_CR0(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_b12(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_b22(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_a22_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_a11_inverse(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_b11(cmod), "must be a DirectAdjusted")
-  expect_error(propertee:::.get_a21(cmod), "must be a DirectAdjusted")
+  expect_error(propertee:::.vcov_CR0(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_b12(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_a22_inverse(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_b22(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_a22_inverse(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_a11_inverse(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_b11(cmod), "must be a teeMod")
+  expect_error(propertee:::.get_a21(cmod), "must be a teeMod")
 
 })
 
-test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with DirectAdjusted model",
+test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with teeMod model",
                 "without SandwichLayer offset"), {
   data(simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -194,7 +194,7 @@ test_that(".get_b12 fails with invalid custom cluster argument", {
   expect_error(propertee:::.get_b12(m, cluster = c(TRUE, FALSE)),
                "must provide a character vector")
   expect_error(.get_b12(m, cluster = "new_col"),
-               "in the DirectAdjusted object's Design: new_col")
+               "in the teeMod object's Design: new_col")
 })
 
 test_that(".get_b12 produces correct estimates with valid custom cluster argument", {
@@ -2188,7 +2188,7 @@ test_that("#119 flagging vcovDA entries as NA", {
   ## for lmitt objects created with lmitt.formula; the commented-out
   ## tests that follow would have tested similar logic for lmitt.lm
   ##objects. (this distinction is reflected in `lmitt.lm()`'s leaving
-  ## the "moderator" slot empty for DirectAdjusted objects,
+  ## the "moderator" slot empty for teeMod objects,
   ## so .check_df_moderator_estimates will return
   ## the initial vcov matrix, and we need not check it here.)
   # mod <- lmitt(lm(y ~ as.factor(o) + as.factor(o):assigned(des), data = simdata), design = des)
@@ -2226,12 +2226,12 @@ test_that("#119 flagging vcovDA entries as NA", {
 test_that(".check_df_moderator_estimates other warnings", {
   data(simdata)
 
-  # fail without a DirectAdjusted model
+  # fail without a teeMod model
   nodamod <- lm(y ~ x, simdata)
   vmat <- vcov(nodamod)
   cluster_ids <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   expect_error(.check_df_moderator_estimates(vmat, nodamod, cluster_ids),
-               "must be a DirectAdjusted")
+               "must be a teeMod")
 
   # invalid `data` arg
   des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)

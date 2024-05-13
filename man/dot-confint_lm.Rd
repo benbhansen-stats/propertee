@@ -7,7 +7,7 @@
 .confint_lm(object, parm, level = 0.95, ...)
 }
 \arguments{
-\item{object}{a fitted \code{DirectAdjusted} model}
+\item{object}{a fitted \code{teeMod} model}
 
 \item{parm}{a specification of which parameters are to be given confidence
 intervals, either a vector of numbers or a vector of names. If missing,
@@ -15,7 +15,7 @@ all parameters are considered.}
 
 \item{level}{the confidence level required.}
 
-\item{...}{additional arguments to pass to \code{vcov.DirectAdjusted()}}
+\item{...}{additional arguments to pass to \code{vcov.teeMod()}}
 }
 \value{
 A matrix (or vector) with columns giving lower and upper confidence
@@ -28,7 +28,7 @@ Produce confidence intervals for linear models
 \details{
 \code{.confint_lm()} is a copy of \code{stats::confint.lm} but passes
 arguments in \code{...} to the \code{vcov()} call. When called on a
-\code{DirectAdjusted} model, this produces confidence intervals where standard
+\code{teeMod} model, this produces confidence intervals where standard
 errors are computed based on the desired formulation of the \code{vcovDA()} call.
 }
 \keyword{internal}

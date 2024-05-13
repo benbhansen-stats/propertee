@@ -2,7 +2,7 @@
 % Please edit documentation in R/expand.model.frame.DA.R
 \name{.expand.model.frame.DA}
 \alias{.expand.model.frame.DA}
-\title{Add new variables to a model frame from a \code{DirectAdjusted}
+\title{Add new variables to a model frame from a \code{teeMod}
 object}
 \usage{
 .expand.model.frame.DA(
@@ -13,7 +13,7 @@ object}
 )
 }
 \arguments{
-\item{model}{A \code{DirectAdjusted} object}
+\item{model}{A \code{teeMod} object}
 
 \item{extras}{one-sided formula or vector of character strings describing
 new variables to be added}
@@ -26,13 +26,13 @@ new variables to be added}
 A \code{data.frame}
 }
 \description{
-A variation of expand.model.frame which works for \code{DirectAdjusted}
+A variation of expand.model.frame which works for \code{teeMod}
 objects
 }
 \details{
-When building a \code{DirectAdjusted} object inside \code{lmitt()}, we do a
+When building a \code{teeMod} object inside \code{lmitt()}, we do a
 lot of manipulation of the variables involved in the model such that by the
-time the \code{DirectAdjusted} is produced, neither the outcome nor
+time the \code{teeMod} is produced, neither the outcome nor
 predictors actually fit in the model exist in the \code{data} passed into
 the call.
 

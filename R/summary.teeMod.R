@@ -1,23 +1,23 @@
-##' @title Summarizing \code{DirectAdjusted} objects
+##' @title Summarizing \code{teeMod} objects
 ##'
-##' @description [summary()] method for class \code{DirectAdjusted}
+##' @description [summary()] method for class \code{teeMod}
 ##'
-##' @details If a \code{DirectAdjusted} object is fit with a
+##' @details If a \code{teeMod} object is fit with a
 ##'   \code{SandwichLayer} offset, then the usual \code{stats::summary.lm()}
 ##'   output is enhanced by the use of covariance-adjusted sandwich standard
 ##'   errors, with t-test values recalculated to reflect the new standard
 ##'   errors.
 ##'
-##' @param object \code{DirectAdjusted} object
+##' @param object \code{teeMod} object
 ##' @param vcov.type A string indicating the desired variance estimator. See
 ##'   [vcovDA()] for details on accepted types.
 ##' @param ... Additional arguments to [vcovDA()], such as the desired
 ##'   finite sample heteroskedasticity-robust standard error adjustment.
-##' @return object of class \code{summary.DirectAdjusted}
+##' @return object of class \code{summary.teeMod}
 ##' @export
-##' @method summary DirectAdjusted
-##' @rdname DirectAdjusted_summary
-summary.DirectAdjusted <- function(object,
+##' @method summary teeMod
+##' @rdname teeMod_summary
+summary.teeMod <- function(object,
                                    vcov.type = "CR0",
                                    ...) {
   out <- summary(as(object, "lm"))
@@ -31,32 +31,32 @@ summary.DirectAdjusted <- function(object,
                                           lower.tail = FALSE)
     out$vcov.type <- attr(covmat, "type")
   }
-  class(out) <- "summary.DirectAdjusted"
-  out$DirectAdjusted <- object
+  class(out) <- "summary.teeMod"
+  out$teeMod <- object
   return(out)
 }
 
 
-##' @param x \code{summary.DirectAdjusted} object
+##' @param x \code{summary.teeMod} object
 ##' @param digits the number of significant digits to use when printing.
 ##' @param signif.stars logical. If ‘TRUE’, ‘significance stars’ are printed for
 ##'   each coefficient.
 ##' @importFrom stats pt printCoefmat
 ##' @export
-##' @rdname DirectAdjusted_summary
-print.summary.DirectAdjusted <- function(x,
+##' @rdname teeMod_summary
+print.summary.teeMod <- function(x,
                                          digits =
                                            max(3L, getOption("digits") - 3L),
                                          signif.stars =
                                            getOption("show.signif.stars"),
                                          ...) {
 
-  cat("\nCall:\n", paste(deparse(x$DirectAdjusted@lmitt_call), sep = "\n",
+  cat("\nCall:\n", paste(deparse(x$teeMod@lmitt_call), sep = "\n",
                          collapse = "\n"), "\n", sep = "")
 
   df <- x$df
 
-  if (x$DirectAdjusted@lmitt_fitted) {
+  if (x$teeMod@lmitt_fitted) {
     coefmatname <- "Treatment Effects"
   } else {
     coefmatname <- "Coefficients"
@@ -79,9 +79,9 @@ print.summary.DirectAdjusted <- function(x,
                       dimnames = list(cn, colnames(coefs)))
       coefs[!aliased, ] <- x$coefficients
     }
-    if (x$DirectAdjusted@lmitt_fitted) {
+    if (x$teeMod@lmitt_fitted) {
       toprint <- grepl(paste0("^\\`?",
-                              var_names(x$DirectAdjusted@Design, "t"), "\\."),
+                              var_names(x$teeMod@Design, "t"), "\\."),
                        rownames(coefs))
     } else {
       toprint <- rep(TRUE, nrow(coefs))

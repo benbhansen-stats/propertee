@@ -2,12 +2,12 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{vcovDA}
 \alias{vcovDA}
-\title{Variance/Covariance for \code{DirectAdjusted} objects}
+\title{Variance/Covariance for \code{teeMod} objects}
 \usage{
 vcovDA(x, type = "CR0", cluster = NULL, ...)
 }
 \arguments{
-\item{x}{a fitted \code{DirectAdjusted} model}
+\item{x}{a fitted \code{teeMod} model}
 
 \item{type}{a string indicating the desired variance estimator. See Details
 for supported variance estimators}
@@ -16,7 +16,7 @@ for supported variance estimators}
 columns to cluster standard errors by. With prior covariance adjustment,
 columns must appear in both the covariance adjustment and direct adjustment
 samples. Default is NULL, which uses unit of assignment columns in the
-\code{Design} slot of the \code{DirectAdjusted} model.}
+\code{Design} slot of the \code{teeMod} model.}
 
 \item{...}{arguments to be passed to the internal variance estimation
 function.}

@@ -1,33 +1,33 @@
-test_that(paste("DirectAdjusted object created correctly with weights and no",
+test_that(paste("teeMod object created correctly with weights and no",
                 "SandwichLayer in the lm call"), {
 
   data(simdata)
   des <- obs_design(z ~ cluster(uoa2, uoa1) + block(bid), data = simdata)
 
-  dalm <- new("DirectAdjusted",
+  dalm <- new("teeMod",
               lm(y ~ assigned(), data = simdata, weights = ate(des)),
               Design = des,
               lmitt_fitted = TRUE)
 
-  expect_s4_class(dalm, "DirectAdjusted")
+  expect_s4_class(dalm, "teeMod")
   expect_true(inherits(dalm, "lm"))
 
   expect_identical(dalm$model$"(weights)"@Design, des)
   expect_identical(dalm$model$"(weights)"@Design, dalm@Design)
 })
 
-test_that(paste("DirectAdjusted object created correctly with weights and ",
+test_that(paste("teeMod object created correctly with weights and ",
                 "SandwichLayer in the lm call"), {
   data(simdata)
   des <- obs_design(z ~ cluster(uoa2, uoa1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
-  dalm <- new("DirectAdjusted",
+  dalm <- new("teeMod",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
               lmitt_fitted = FALSE)
 
-  expect_s4_class(dalm, "DirectAdjusted")
+  expect_s4_class(dalm, "teeMod")
   expect_true(inherits(dalm, "lm"))
 
   expect_equal(dalm$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
@@ -38,14 +38,14 @@ test_that(paste("DirectAdjusted object created correctly with weights and ",
                    cbind(simdata[,var_names(des, "u")], in_Q = rep(TRUE, nrow(simdata))))
 })
 
-test_that("DirectAdjusted print/show", {
+test_that("teeMod print/show", {
 
   data(simdata)
   des <- obs_design(z ~ cluster(uoa2, uoa1) + block(bid), data = simdata)
   cmod <- lm(y ~ z, data = simdata)
 
   ######## Pretend it comes from `as.lmitt`
-  dalm <- new("DirectAdjusted",
+  dalm <- new("teeMod",
               lm(y ~ assigned(), data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
@@ -63,7 +63,7 @@ test_that("DirectAdjusted print/show", {
   ######## Now pretend it comes from `lmitt.formula`
   # Need `txt_` to match what comes out of a call like `lmitt(y ~ 1...)`
   simdata$z. <- simdata$z
-  dalm <- new("DirectAdjusted",
+  dalm <- new("teeMod",
               lm(y ~ z., data = simdata, weights = ate(des),
                  offset = cov_adj(cmod)),
               Design = des,
@@ -79,7 +79,7 @@ test_that("DirectAdjusted print/show", {
   expect_output(show(dalm), "z\\.")
 })
 
-test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
+test_that("lm to teeMod succeeds with weights and no SandwichLayer", {
 
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
@@ -88,7 +88,7 @@ test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
 
   mod_da <- as.lmitt(mod)
 
-  expect_s4_class(mod_da, "DirectAdjusted")
+  expect_s4_class(mod_da, "teeMod")
   expect_true(inherits(mod_da, "lm"))
 
   expect_identical(mod_da$model$"(weights)"@Design, des)
@@ -99,7 +99,7 @@ test_that("lm to DirectAdjusted succeeds with weights and no SandwichLayer", {
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
-test_that("lm to DirectAdjusted with weights and SandwichLayer", {
+test_that("lm to teeMod with weights and SandwichLayer", {
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
@@ -108,7 +108,7 @@ test_that("lm to DirectAdjusted with weights and SandwichLayer", {
 
   mod_da <- as.lmitt(mod)
 
-  expect_s4_class(mod_da, "DirectAdjusted")
+  expect_s4_class(mod_da, "teeMod")
   expect_true(inherits(mod_da, "lm"))
 
   expect_equal(mod_da$model$`(offset)`@.Data, as.numeric(cmod$fitted.values))
@@ -125,12 +125,12 @@ test_that("lm to DirectAdjusted with weights and SandwichLayer", {
   expect_identical(mod_da@Design, mod_lmitt@Design)
 })
 
-test_that("Conversion from lm to DirectAdjusted fails without an lm object", {
+test_that("Conversion from lm to teeMod fails without an lm object", {
   expect_error(as.lmitt(1),
                "lm object")
 })
 
-test_that("lm to DirectAdjusted fails without a Design object", {
+test_that("lm to teeMod fails without a Design object", {
   data(simdata)
 
   expect_error(as.lmitt(lm(y ~ assigned(), data = simdata,
@@ -246,7 +246,7 @@ test_that("Differing designs found", {
 
 })
 
-test_that("DirectAdjusted object has its own evaluation environment", {
+test_that("teeMod object has its own evaluation environment", {
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
@@ -263,7 +263,7 @@ test_that("DirectAdjusted object has its own evaluation environment", {
   expect_equal(environment(formula(mod1))$design, environment(formula(mod2))$design)
 })
 
-test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
+test_that("vcov.teeMod handles vcovDA `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -286,7 +286,7 @@ test_that("vcov.DirectAdjusted handles vcovDA `type` arguments and non-SL offset
     check.attributes = FALSE))
 })
 
-test_that("confint.DirectAdjusted handles vcovDA `type` arguments and non-SL offsets", {
+test_that("confint.teeMod handles vcovDA `type` arguments and non-SL offsets", {
   data(simdata)
   des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -380,7 +380,7 @@ test_that("@moderator slot", {
   expect_equal(not_lmitt_fitted@moderator, vector("character"))
 })
 
-test_that("estfun.DirectAdjusted requires a certain model class", {
+test_that("estfun.teeMod requires a certain model class", {
   data(simdata)
 
   des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
@@ -390,7 +390,7 @@ test_that("estfun.DirectAdjusted requires a certain model class", {
   expect_error(estfun(mod), "must have been fitted using")
 })
 
-test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
+test_that(paste("estfun.teeMod returns original psi if no offset or no",
                 "SandwichLayer offset"), {
   data(simdata)
 
@@ -410,7 +410,7 @@ test_that(paste("estfun.DirectAdjusted returns original psi if no offset or no",
   expect_true(all.equal(estfun(mod2), ef_expected2, check.attributes = FALSE))
 })
 
-test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", {
+test_that("estfun.teeMod gets scaling constants right with no overlap", {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
@@ -433,7 +433,7 @@ test_that("estfun.DirectAdjusted gets scaling constants right with no overlap", 
   )
 })
 
-test_that("estfun.DirectAdjusted gets scaling constants right with partial overlap", {
+test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
@@ -457,7 +457,7 @@ test_that("estfun.DirectAdjusted gets scaling constants right with partial overl
   )
 })
 
-test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment",
+test_that(paste("estfun.teeMod returns correct dimensions and alignment",
                 "when exact alignment between C and Q is possible"), {
   set.seed(438)
   data(simdata)
@@ -474,7 +474,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
-test_that(paste("estfun.DirectAdjusted returns correct dimensions when only",
+test_that(paste("estfun.teeMod returns correct dimensions when only",
                 "inexact alignment between C and Q is possible"), {
   set.seed(438)
   data(simdata)
@@ -489,7 +489,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions when only",
   expect_equal(dim(estfun(mod2)), c(nrow(simdata), 2))
 })
 
-test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment",
+test_that(paste("estfun.teeMod returns correct dimensions and alignment",
                 "when exact alignment between C and Q is possible but they only",
                 "partially overlap"), {
   set.seed(438)
@@ -507,7 +507,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions and alignment"
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
-test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
+test_that(paste("estfun.teeMod returns correct dimensions for partial",
                 "overlap of C and Q when only inexact alignment is possible"), {
   data(simdata)
   set.seed(401)
@@ -524,7 +524,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for partial",
                c(nrow(simdata) + nrow(cmod_data[is.na(cmod_data$uoa1),]), 2))
 })
 
-test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
+test_that(paste("estfun.teeMod returns correct dimensions for no",
                 "overlap of C and Q when only inexact alignment is possible"), {
   data(simdata)
   set.seed(401)
@@ -540,7 +540,7 @@ test_that(paste("estfun.DirectAdjusted returns correct dimensions for no",
 })
 
 if (requireNamespace("robustbase", quietly = TRUE)) {
-  test_that("estfun.DirectAdjusted returns correct dimensions for rectangular A11_inv", {
+  test_that("estfun.teeMod returns correct dimensions for rectangular A11_inv", {
     data(simdata)
     cmod <- robustbase::lmrob(y ~ x, simdata)
     des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
@@ -551,7 +551,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
   })
 }
 
-test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted objects",
+test_that(paste("bread.teeMod returns bread.lm for teeMod objects",
                 "with non-SandwichLayer or NULL offsets"), {
   data(simdata)
 
@@ -571,7 +571,7 @@ test_that(paste("bread.DirectAdjusted returns bread.lm for DirectAdjusted object
   expect_equal(sandwich::bread(m2), expected_out2)
 })
 
-test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
+test_that(paste("bread.teeMod returns expected output for full overlap",
                 "of C and Q"), {
   data(simdata)
   simdata$uid <- seq_len(nrow(simdata))
@@ -587,7 +587,7 @@ test_that(paste("bread.DirectAdjusted returns expected output for full overlap",
   expect_equal(sandwich::bread(m), expected_out)
 })
 
-test_that(paste("bread.DirectAdjusted returns expected output for partial overlap",
+test_that(paste("bread.teeMod returns expected output for partial overlap",
                 "of C and Q"), {
   set.seed(438)
   data(simdata)
@@ -608,7 +608,7 @@ test_that(paste("bread.DirectAdjusted returns expected output for partial overla
   expect_equal(sandwich::bread(dmod), expected_out)
 })
 
-test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
+test_that(paste("bread.teeMod returns expected output for no overlap",
                 "of C and Q"), {
   set.seed(438)
   data(simdata)
@@ -628,7 +628,7 @@ test_that(paste("bread.DirectAdjusted returns expected output for no overlap",
   expect_equal(sandwich::bread(dmod), expected_out)
 })
 
-test_that("bread.DirectAdjusted handles model with less than full rank", {
+test_that("bread.teeMod handles model with less than full rank", {
   data(simdata)
   copy_simdata <- simdata
   copy_simdata$o_fac <- as.factor(copy_simdata$o)
@@ -646,7 +646,7 @@ test_that("bread.DirectAdjusted handles model with less than full rank", {
   )
 })
 
-test_that(paste(".align_and_extend_estfuns fails if not a DirectAdjusted object",
+test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
                 "with a SandwichLayer offset"), {
   data(simdata)
 
@@ -921,7 +921,7 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   expect_equal(vcovDA(mod1, cluster = "bid"), vcovDA(mod2, cluster = "bid"))
 })
 
-test_that(".make_uoa_ids fails without cluster argument or DirectAdjusted model", {
+test_that(".make_uoa_ids fails without cluster argument or teeMod model", {
   data(simdata)
   mod <- lm(y ~ z, data = simdata)
   expect_error(.make_uoa_ids(mod), "Must be provided")
@@ -1060,7 +1060,7 @@ test_that("model-based .make_uoa_ids replaces uoa ID's in small blocks with bloc
   )
 })
 
-test_that(paste(".order_samples fails without a DirectAdjusted object or",
+test_that(paste(".order_samples fails without a teeMod object or",
                 "SandwichLayer offset"), {
   data(simdata)
 
@@ -1069,8 +1069,8 @@ test_that(paste(".order_samples fails without a DirectAdjusted object or",
   mod1 <- lm(y ~ z, simdata, offset = predict(cmod))
   mod2 <- lmitt(y ~ 1, data = simdata, design = des)
 
-  expect_error(.order_samples(mod1), "must be a DirectAdjusted object")
-  expect_error(.order_samples(mod2), "must be a DirectAdjusted object")
+  expect_error(.order_samples(mod1), "must be a teeMod object")
+  expect_error(.order_samples(mod2), "must be a teeMod object")
 })
 
 test_that(".order_samples when the samples fully overlap", {
@@ -1276,7 +1276,7 @@ test_that("disable update.DA", {
   mod <- lmitt(y ~ 1, data = simdata, design = des)
 
   expect_error(update(mod),
-               "DirectAdjusted objects do not support")
+               "teeMod objects do not support")
 })
 
 test_that("lmitt_call", {
@@ -1373,7 +1373,7 @@ test_that("as.lmitt call inside mapply", {
   SIMPLIFY = FALSE)
 
 
-  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(res, is, "teeMod")))
   expect_true(all(sapply(sapply(sapply(res,
                                        slot, "lmitt_call"),
                                 "[[", 1),
@@ -1384,7 +1384,7 @@ test_that("as.lmitt call inside mapply", {
                   as.lmitt(lm(fmla, min_df, weights = ett(min_des)))
                 })
 
-  expect_true(all(sapply(res, is, "DirectAdjusted")))
+  expect_true(all(sapply(res, is, "teeMod")))
   expect_true(all(sapply(sapply(sapply(res,
                                        slot, "lmitt_call"),
                                 "[[", 1),

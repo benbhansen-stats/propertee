@@ -2,12 +2,12 @@
 % Please edit documentation in R/as.lmitt.R
 \name{as.lmitt}
 \alias{as.lmitt}
-\alias{as.DirectAdjusted}
-\title{Convert \code{lm} object into \code{DirectAdjusted}}
+\alias{as.teeMod}
+\title{Convert \code{lm} object into \code{teeMod}}
 \usage{
 as.lmitt(x, design = NULL)
 
-as.DirectAdjusted(x, design = NULL)
+as.teeMod(x, design = NULL)
 }
 \arguments{
 \item{x}{\code{lm} object with weights containing a \code{WeightedDesign},
@@ -22,10 +22,10 @@ passed here as well. (If different \code{Design} objects are passed
 through this argument), an error will be produced.)}
 }
 \value{
-\code{DirectAdjusted} object
+\code{teeMod} object
 }
 \description{
-Converts the output of \code{\link[=lm]{lm()}} into a \code{DirectAdjusted}
+Converts the output of \code{\link[=lm]{lm()}} into a \code{teeMod}
 object so that it can be used to properly account for standard errors.
 }
 \details{

@@ -1,9 +1,9 @@
-##' A variation of expand.model.frame which works for \code{DirectAdjusted}
+##' A variation of expand.model.frame which works for \code{teeMod}
 ##' objects
 ##'
-##' When building a \code{DirectAdjusted} object inside \code{lmitt()}, we do a
+##' When building a \code{teeMod} object inside \code{lmitt()}, we do a
 ##' lot of manipulation of the variables involved in the model such that by the
-##' time the \code{DirectAdjusted} is produced, neither the outcome nor
+##' time the \code{teeMod} is produced, neither the outcome nor
 ##' predictors actually fit in the model exist in the \code{data} passed into
 ##' the call.
 ##'
@@ -19,9 +19,9 @@
 ##' Trivial modifications from \code{stats::expand.model.frame()} include
 ##' ensuring \code{model} is a \code{Directadjusted} object, and using the
 ##' \code{::} syntax as appropriate.
-##' @title Add new variables to a model frame from a \code{DirectAdjusted}
+##' @title Add new variables to a model frame from a \code{teeMod}
 ##'   object
-##' @param model A \code{DirectAdjusted} object
+##' @param model A \code{teeMod} object
 ##' @param extras one-sided formula or vector of character strings describing
 ##'   new variables to be added
 ##' @param envir an environment to evaluate things in
@@ -35,7 +35,7 @@
   # R4.2.3 or earlier
   if (as.numeric(version$major) < 4 |
         (as.numeric(version$major) == 4 & as.numeric(version$minor) < 3)) {
-    stopifnot(is(model, "DirectAdjusted")) # JE addition
+    stopifnot(is(model, "teeMod")) # JE addition
     f <- stats::formula(model) # JE modification
     data <- eval(model$call$data, envir)
     data <- cbind(data, stats::model.frame(model)) # JE addition
@@ -63,7 +63,7 @@
     }
     return(rval)
   } else {
-    stopifnot(is(model, "DirectAdjusted")) # JE addition
+    stopifnot(is(model, "teeMod")) # JE addition
     f <- stats::formula(model) # JE modification
     cl <- getCall(model)
     data <- cl$data

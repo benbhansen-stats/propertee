@@ -1,7 +1,7 @@
 # propertee 0.3.9
 
 ## Bug Fixes
-* Scaling constants have been updated in `estfun.DirectAdjusted()` to account for a previously missing factor of sqrt(n / n_C) applied to contributions to the covariance adjustment model estimating equations
+* Scaling constants have been updated in `estfun.teeMod()` to account for a previously missing factor of sqrt(n / n_C) applied to contributions to the covariance adjustment model estimating equations
 
 # propertee 0.3.8
 
@@ -30,7 +30,7 @@
 # propertee 0.3.4
 
 ## Improvements
-* Computational performance for `estfun.DirectAdjusted` has been improved
+* Computational performance for `estfun.teeMod` has been improved
 
 ## Bug Fixes
 * No more errors due to under-the-hood duplication of a moderator variable
@@ -62,16 +62,16 @@ equations in versions `v0.1.1` and later.
 # propertee 0.3.1
 
 ## Breaking Changes
-* We now order `DirectAdjusted` objects' matrix of estimating equations based on user-specified ID columns or unit of assignment ID's.
-* The `stats::update` function can no longer be called on `DirectAdjusted` objects.
+* We now order `teeMod` objects' matrix of estimating equations based on user-specified ID columns or unit of assignment ID's.
+* The `stats::update` function can no longer be called on `teeMod` objects.
 
 ## Non-Breaking Changes
-* `DirectAdjusted` objects now have `lmitt_call` slots.
-* `summary` calls on `DirectAdjusted` objects accept `vcov.type` arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for `vcovDA`.
-* Shown or printed `DirectAdjusted` objects return more comprehensible labels for ITT effect outputs.
+* `teeMod` objects now have `lmitt_call` slots.
+* `summary` calls on `teeMod` objects accept `vcov.type` arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for `vcovDA`.
+* Shown or printed `teeMod` objects return more comprehensible labels for ITT effect outputs.
 
 ## R Version Compatibility
-* Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid `expand.model.frame` calls on `DirectAdjusted` objects and instead use the internal function `.expand.model.frame.DA` when necessary.
+* Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid `expand.model.frame` calls on `teeMod` objects and instead use the internal function `.expand.model.frame.DA` when necessary.
 
 # propertee 0.2.1
 

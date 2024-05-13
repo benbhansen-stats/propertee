@@ -72,8 +72,8 @@ reference:
     - as.SandwichLayer
     - subset,PreSandwichLayer-method
     - show,PreSandwichLayer-method
-    - bread.DirectAdjusted
-    - estfun.DirectAdjusted
+    - bread.teeMod
+    - estfun.teeMod
     - estfun.lmrob
     - estfun.glmrob
 - title: Estimating Model
@@ -82,11 +82,11 @@ reference:
     - lmitt
     - assigned
     - as.lmitt
-    - confint.DirectAdjusted
-    - show,DirectAdjusted-method
-    - summary.DirectAdjusted
-    - print.summary.DirectAdjusted
-    - vcov.DirectAdjusted
+    - confint.teeMod
+    - show,teeMod-method
+    - summary.teeMod
+    - print.summary.teeMod
+    - vcov.teeMod
     - vcovDA
 - title: Data
 - contents:

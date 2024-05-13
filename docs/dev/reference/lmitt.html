@@ -125,7 +125,7 @@ or <code><a href="WeightCreators.html">ett()</a></code> can be used.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p><code>DirectAdjusted</code> model.</p>
+<p><code>teeMod</code> model.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -157,7 +157,7 @@ only to subsetting the <code>data</code> argument passed into <code><a href="htt
 <code>design</code> will have a "<code>.</code>" appended to it. For example, if you
 request a main treatment effect (with a formula of <code>~ 1</code>) with a
 treatment variable named "txt", you can obtain it's estimate from the
-returned <code>DirectAdjusted</code> object via <code>$coefficients["txt."]</code>.</p>
+returned <code>teeMod</code> object via <code>$coefficients["txt."]</code>.</p>
 <p><code>lmitt()</code> will produce a message if the <code>Design</code> passed in has block
 information that is not being utilized in the model. Note that this is
 <em>not</em> an error, but could be an oversight. To disable this message, run

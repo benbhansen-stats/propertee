@@ -155,7 +155,7 @@
         silent = TRUE)
   }
 
-  # search for a DirectAdjusted object in the call stack
+  # search for a teeMod object in the call stack
   if (is.null(data) || !is.data.frame(data)) {
     for (i in seq_len(sys.nframe())) {
       # recursion stops at the rlang_trace_top_env option if it's been set (i.e.
@@ -164,7 +164,7 @@
           is.null(sys.call(-i))) break
 
       objs <- sapply(ls(parent.frame(i)), get, envir = parent.frame(i))
-      lmitts <- vapply(objs, inherits, logical(1), "DirectAdjusted")
+      lmitts <- vapply(objs, inherits, logical(1), "teeMod")
       if (any(lmitts)) {
         found_lmitt <- objs[[which(lmitts)]]
         try(data <- get("data", envir = environment(formula(found_lmitt))),

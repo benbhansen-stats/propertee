@@ -17,7 +17,7 @@ degrees of freedom with \code{NA}}
 \item{vmat}{output of \code{.vcov_XXX()} called with input to \code{model}
 argument below as the first argument}
 
-\item{model}{a fitted \code{DirectAdjusted} model}
+\item{model}{a fitted \code{teeMod} model}
 
 \item{cluster}{a character or factor vector denoting clusters the units of
 observation used to fit \code{model} belong to. Most conveniently, the

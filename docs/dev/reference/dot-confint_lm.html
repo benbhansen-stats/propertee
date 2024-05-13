@@ -74,7 +74,7 @@
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>object</dt>
-<dd><p>a fitted <code>DirectAdjusted</code> model</p></dd>
+<dd><p>a fitted <code>teeMod</code> model</p></dd>
 
 
 <dt>parm</dt>
@@ -88,7 +88,7 @@ all parameters are considered.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>additional arguments to pass to <code><a href="vcov.DirectAdjusted.html">vcov.DirectAdjusted()</a></code></p></dd>
+<dd><p>additional arguments to pass to <code><a href="vcov.teeMod.html">vcov.teeMod()</a></code></p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -103,7 +103,7 @@ limits for each parameter. These will be labelled as (1-level)/2 and 1 -
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>.confint_lm()</code> is a copy of <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">stats::confint.lm</a></code> but passes
 arguments in <code>...</code> to the <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> call. When called on a
-<code>DirectAdjusted</code> model, this produces confidence intervals where standard
+<code>teeMod</code> model, this produces confidence intervals where standard
 errors are computed based on the desired formulation of the <code><a href="var_estimators.html">vcovDA()</a></code> call.</p>
     </div>
 

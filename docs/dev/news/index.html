@@ -65,7 +65,7 @@
 <h2 class="pkg-version" data-toc-text="0.3.9" id="propertee-039">propertee 0.3.9<a class="anchor" aria-label="anchor" href="#propertee-039"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-9">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-9"></a></h3>
-<ul><li>Scaling constants have been updated in <code><a href="../reference/estfun.DirectAdjusted.html">estfun.DirectAdjusted()</a></code> to account for a previously missing factor of sqrt(n / n_C) applied to contributions to the covariance adjustment model estimating equations</li>
+<ul><li>Scaling constants have been updated in <code><a href="../reference/estfun.teeMod.html">estfun.teeMod()</a></code> to account for a previously missing factor of sqrt(n / n_C) applied to contributions to the covariance adjustment model estimating equations</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -107,7 +107,7 @@
 <h2 class="pkg-version" data-toc-text="0.3.4" id="propertee-034">propertee 0.3.4<a class="anchor" aria-label="anchor" href="#propertee-034"></a></h2>
 <div class="section level3">
 <h3 id="improvements-0-3-4">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-3-4"></a></h3>
-<ul><li>Computational performance for <code>estfun.DirectAdjusted</code> has been improved</li>
+<ul><li>Computational performance for <code>estfun.teeMod</code> has been improved</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-4">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-4"></a></h3>
@@ -149,20 +149,20 @@
 <h2 class="pkg-version" data-toc-text="0.3.1" id="propertee-031">propertee 0.3.1<a class="anchor" aria-label="anchor" href="#propertee-031"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-3-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-1"></a></h3>
-<ul><li>We now order <code>DirectAdjusted</code> objects’ matrix of estimating equations based on user-specified ID columns or unit of assignment ID’s.</li>
-<li>The <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">stats::update</a></code> function can no longer be called on <code>DirectAdjusted</code> objects.</li>
+<ul><li>We now order <code>teeMod</code> objects’ matrix of estimating equations based on user-specified ID columns or unit of assignment ID’s.</li>
+<li>The <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">stats::update</a></code> function can no longer be called on <code>teeMod</code> objects.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="non-breaking-changes-0-3-1">Non-Breaking Changes<a class="anchor" aria-label="anchor" href="#non-breaking-changes-0-3-1"></a></h3>
 <ul><li>
-<code>DirectAdjusted</code> objects now have <code>lmitt_call</code> slots.</li>
+<code>teeMod</code> objects now have <code>lmitt_call</code> slots.</li>
 <li>
-<code>summary</code> calls on <code>DirectAdjusted</code> objects accept <code>vcov.type</code> arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for <code>vcovDA</code>.</li>
-<li>Shown or printed <code>DirectAdjusted</code> objects return more comprehensible labels for ITT effect outputs.</li>
+<code>summary</code> calls on <code>teeMod</code> objects accept <code>vcov.type</code> arguments to specify the desired standard error calculation shown in the output. Acceptable types follow the documentation for <code>vcovDA</code>.</li>
+<li>Shown or printed <code>teeMod</code> objects return more comprehensible labels for ITT effect outputs.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="r-version-compatibility-0-3-1">R Version Compatibility<a class="anchor" aria-label="anchor" href="#r-version-compatibility-0-3-1"></a></h3>
-<ul><li>Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid <code>expand.model.frame</code> calls on <code>DirectAdjusted</code> objects and instead use the internal function <code>.expand.model.frame.DA</code> when necessary.</li>
+<ul><li>Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid <code>expand.model.frame</code> calls on <code>teeMod</code> objects and instead use the internal function <code>.expand.model.frame.DA</code> when necessary.</li>
 </ul></div>
 </div>
     <div class="section level2">

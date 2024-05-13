@@ -97,13 +97,13 @@ to add block-specific intercepts.)
 The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
 \subsection{Goal} \label{sec:goal}
-We aim to define \texttt{estfun.DirectAdjusted()} associating
+We aim to define \texttt{estfun.teeMod()} associating
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
 \begin{equation} \label{eq:22}
   \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}^{t},
 \end{equation}
-and a corresponding \texttt{bread.DirectAdjusted()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
+and a corresponding \texttt{bread.teeMod()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
 $\mathcal{Q}$ sample, with columns corresponding to $\rho$.%
@@ -289,7 +289,7 @@ of dimension $n$ rather than $n_{\mathcal{Q}}$.%
   functions will select for the covariance model is $n_{\mathcal{C}}$, given its sample
   size.  It's incumbent on us to supply \texttt{sandwich::estfun()}
   and/or \texttt{sandwich::bread()} methods for
-  \texttt{DirectAdjusted} objects with compatible implicit scaling
+  \texttt{teeMod} objects with compatible implicit scaling
   constants. \texttt{sandwich::bread()} and
   \texttt{sandwich::breadCL()} take the scaling constant to be the
   reciprocal of the number of rows in whatever
@@ -418,7 +418,7 @@ An advantage of the expression with leading factor $n^{-1}$ is that
 that way it parallels the calculation of
 \texttt{sandwich::sandwich()} and, I think, other \texttt{sandwich}
 functions. (Assuming that we write
-\texttt{estfun.DirectAdjusted()}  to return a matrix of row extent
+\texttt{estfun.teeMod()}  to return a matrix of row extent
 $n$.)
 % A potential disadvantage is that it makes $A_{21}$ and
 % $A_{22}$ not means of estimating equation contributions but rather
@@ -509,7 +509,7 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
 In computations that assemble the three inner summands separately, we may combine $\psi$-\texttt{estfun}'s of dimension
 $n$ with $\hat{A}_{21}$ and $\hat{A}_{22}$ that have been scaled by
 $n_{\mathcal{Q}}$, as opposed to $n$.  However, for Section~\ref{sec:goal}'s purpose of
-associating \texttt{DirectAdjusted} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
+associating \texttt{teeMod} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
 A_{11}^{-1}A_{21}^{t}$, this formula invites unhelpful
 complication. It seems to call for $c_{2}=({n}/{n_{\mathcal{Q}}})$
 and as well as a $c_{1}=({n}/{n_C})^{1/2}$.  An $A$/$\tilde{A}$
@@ -560,7 +560,7 @@ column for each cluster:
 \subsection{Realization of goal} \label{sec:realization-goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return an $n \times \tilde{k}$ matrix
+\texttt{sandwich::estfun.teeMod()} to return an $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
   \Psi -
   \frac{n}{n_{\mathcal{C}}}\Phi
@@ -569,7 +569,7 @@ appropriate, it seems that if we define
  \hat{A}_{11}^{-1}\hat{A}_{21}^{\prime},
 \end{equation}
 while \texttt{sandwich::bread()} as applied to
-\texttt{DirectAdjusted} objects returns $\hat{\tilde{A}}_{22}^{-1} = nn_{\mathcal{Q}}^{-1}\hat{A}_{22}^{-1}$, then the effect of this will be for \texttt{sandwich::sandwich()}
+\texttt{teeMod} objects returns $\hat{\tilde{A}}_{22}^{-1} = nn_{\mathcal{Q}}^{-1}\hat{A}_{22}^{-1}$, then the effect of this will be for \texttt{sandwich::sandwich()}
 and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
 $\hat{M}$'s,  as
 given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
@@ -774,13 +774,13 @@ The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not re
 effects, as conventional covariance estimators for this scenario
 seem to do.  This aspect would inflate these standard errors
 relative to those. Nonetheless, I maintain that
-\texttt{estfun.DirectAdjusted()} as described here are sound as a
+\texttt{estfun.teeMod()} as described here are sound as a
 basis for variance-covariance estimation.}
   sandwich estimates by substitution of $\acute{\Psi}$ for
 $\Psi$ in \eqref{eq:15}.  That is, for a
-\texttt{DirectAdjusted} object \texttt{DA} we should have
+\texttt{teeMod} object \texttt{DA} we should have
 \begin{equation*}\label{eq:26}
-\mathtt{estfun.DirectAdjusted(DA)} = 
+\mathtt{estfun.teeMod(DA)} = 
   \begin{cases}
   \acute{\Psi} -
   \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
@@ -800,9 +800,9 @@ preliminary regression, we can get variance propagation for it by
 another elaboration of estimating functions along the lines of
 \eqref{eq:15}. We facilitate doing
 this by \st{setting up our
-\texttt{sandwich::estfun.DirectAdjusted()} to return} creating a
+\texttt{sandwich::estfun.teeMod()} to return} creating a
 helper \texttt{estfun\_DB\_blockabsorb()}, applying to
-\texttt{DirectAdjusted} objects \texttt{DB} and returning
+\texttt{teeMod} objects \texttt{DB} and returning
 \begin{equation*}
 \begin{cases}
   \AbsorbInterceptsEF{}
@@ -820,7 +820,7 @@ $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
 \mathbf{p}, \beta, \tau)]$.  For design-based variance-covariance
 estimation one uses as estimating function
 \begin{multline*}\label{eq:25}
-  \mathtt{estfun.DirectAdjusted(DA)} -
+  \mathtt{estfun.teeMod(DA)} -
   \mathtt{estfun\_DB\_blockabsorb(DA)} =\\
 \begin{cases}
 \acute{\Psi} -
@@ -985,7 +985,7 @@ For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
   \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'.
  \end{equation*}
  In this way, the overall estimating function
- \texttt{estfun.DirectAdjusted(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)} 
+ \texttt{estfun.teeMod(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)} 
  becomes
  \begin{equation}
    \label{eq:19}
