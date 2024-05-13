@@ -15,9 +15,9 @@
 \item{...}{arguments passed to methods}
 }
 \value{
-Details needed
+matrix, estimating functions evaluated at data points and fitted parameters
 
-Details needed
+matrix, inverse Hessian of loss as evaluated at fitted parameters
 }
 \description{
 Extract empirical estimating equations from a \code{glmbrob} model fit
