@@ -21,7 +21,7 @@ test_that("binary treatment, in all data", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # cov_adj alone
@@ -94,7 +94,7 @@ test_that("binary treatment, not in data2", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
@@ -145,7 +145,7 @@ test_that("non-binary treatment, in all data, dichotomization in design", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
@@ -197,7 +197,7 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned

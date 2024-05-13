@@ -88,7 +88,7 @@
     covadj_design <- .find.design("offset")
   }
 
-  # `model.frame` may have a DA object we can extract from
+  # `model.frame` may have a teeMod object we can extract from
   mf_calls <- grepl("model\\.frame$", lapply(sys.calls(), "[[", 1), perl = TRUE)
 
   mf_design <- lapply(which(mf_calls), function(x) {
@@ -109,7 +109,7 @@
 
   emf_calls <- grepl("expand\\.model\\.frame$",
                      lapply(sys.calls(), "[[", 1), perl = TRUE) |
-    grepl("\\.expand\\.model\\.frame\\.DA$",
+    grepl("\\.expand\\.model\\.frame_teeMod$",
           lapply(sys.calls(), "[[", 1), perl = TRUE)
 
   emf_design <- lapply(which(emf_calls), function(x) {

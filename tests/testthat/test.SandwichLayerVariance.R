@@ -1289,7 +1289,7 @@ test_that(".vcov_CR0 doesn't accept `type` argument", {
   expect_error(.vcov_CR0(m, type = "CR0"), "Cannot override the `type`")
 })
 
-test_that(".vcov_CR0 returns DA model sandwich if it has no SandwichLayer", {
+test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", {
   data(simdata)
 
   des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)

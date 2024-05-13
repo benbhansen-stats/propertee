@@ -1235,7 +1235,7 @@ test_that(".base_S3class_estfun fails with invalid base S3 class", {
   expect_error(.base_S3class_estfun(mod), "must have been fitted")
 })
 
-test_that("checking proper errors in conversion from lm to DA", {
+test_that("checking proper errors in conversion from lm to teeMod", {
   data(simdata)
   des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
 
@@ -1269,7 +1269,7 @@ test_that("checking proper errors in conversion from lm to DA", {
 })
 
 
-test_that("disable update.DA", {
+test_that("disable update.teeMod", {
   data(simdata)
   des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
 
