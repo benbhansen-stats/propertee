@@ -336,12 +336,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- .expand.model.frame.DA(x,
+    uoas <- .expand.model.frame_teeMod(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
     uoas <- tryCatch(
-      .expand.model.frame.DA(x, dots$cluster)[,
+      .expand.model.frame_teeMod(x, dots$cluster)[,
                                                         dots$cluster,
                                                         drop = FALSE],
       error = function(e) {

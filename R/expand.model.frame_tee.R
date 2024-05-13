@@ -28,7 +28,7 @@
 ##' @param na.expand logical; see \code{stats::expand.model.frame} for details
 ##' @return A \code{data.frame}
 ##' @keywords internal
-.expand.model.frame.DA <- function (model,
+.expand.model.frame_teeMod <- function (model,
                                     extras,
                                     envir = environment(formula(model)),
                                     na.expand = FALSE) {

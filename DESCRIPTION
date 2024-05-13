@@ -64,7 +64,7 @@ Collate:
     'cov_adj.R'
     'data.R'
     'dtable.R'
-    'expand.model.frame.DA.R'
+    'expand.model.frame_tee.R'
     'get_cov_adj.R'
     'get_data_from_model.R'
     'get_design.R'

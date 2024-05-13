@@ -71,7 +71,7 @@ equations in versions `v0.1.1` and later.
 * Shown or printed `teeMod` objects return more comprehensible labels for ITT effect outputs.
 
 ## R Version Compatibility
-* Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid `expand.model.frame` calls on `teeMod` objects and instead use the internal function `.expand.model.frame.DA` when necessary.
+* Now compatible with R 4.3. Particularly, we advise users working with R 4.3 to avoid `expand.model.frame` calls on `teeMod` objects and instead use the internal function `.expand.model.frame_teeMod` when necessary.
 
 # propertee 0.2.1
 
