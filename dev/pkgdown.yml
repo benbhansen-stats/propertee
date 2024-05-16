@@ -1,4 +1,4 @@
-pandoc: 3.1.11
+pandoc: '3.2'
 pkgdown: 2.0.9
 pkgdown_sha: ~
 articles:
@@ -9,7 +9,7 @@ articles:
   non-binary-treatment: non-binary-treatment.html
   RDD: RDD.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2024-05-16T15:18Z
+last_built: 2024-05-16T15:05Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles

@@ -158,7 +158,7 @@ the number of rows of the dataframe used.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ett_read</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -1.079602e-13  5.554179e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -8.224997e-13  5.554179e+00 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span>,</span></span>
 <span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
@@ -167,7 +167,7 @@ the number of rows of the dataframe used.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -1.022791e-13  5.554179e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -5.334478e-13  5.554179e+00 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">ate_read_eth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span> <span class="op">*</span> <span class="va">ethnicity</span>,</span></span>
 <span class="r-in"><span>                   offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
@@ -176,13 +176,13 @@ the number of rows of the dataframe used.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read_eth</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     (Intercept)                   treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -9.603676e-14                    5.901494e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -4.599280e-13                    5.901494e+00 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                   ethnicityafam                  ethnicityasian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.612015e-14                    1.965411e-14 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.267935e-13                    5.281315e-13 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               ethnicityhispanic               ethnicityamindian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    6.700549e-13                    1.565857e-15 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    6.750873e-12                    1.579858e-12 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  ethnicityother     treatmentTRUE:ethnicityafam </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -6.431281e-14                   -1.289929e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    3.151440e-12                   -1.289929e+00 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    treatmentTRUE:ethnicityasian treatmentTRUE:ethnicityhispanic </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                   -2.494972e+01                    3.214437e+01 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> treatmentTRUE:ethnicityamindian    treatmentTRUE:ethnicityother </span>

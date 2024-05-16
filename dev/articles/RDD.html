@@ -316,21 +316,19 @@ recommended in Sales &amp; Hansen (2020):</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">nextGPA</span><span class="op">[</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">-</span><span class="va">yhat1</span><span class="op">[</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">)</span><span class="op">-</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">nextGPA</span><span class="op">[</span><span class="op">!</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">-</span><span class="va">yhat1</span><span class="op">[</span><span class="op">!</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.2553202</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
+<span><span class="co">#&gt; [1] 0.2553202</span></span>
+<span></span>
 <span><span class="co">#### method 2:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">nextGPA</span><span class="op">~</span><span class="va">Z</span>, offset<span class="op">=</span><span class="va">yhat1</span>,data<span class="op">=</span><span class="va">lsoSynthW</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="st">'ZTRUE'</span><span class="op">]</span></span>
 <span><span class="co">#&gt;     ZTRUE </span></span>
 <span><span class="co">#&gt; 0.2553202</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### method 1:</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">nextGPA</span><span class="op">[</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">-</span><span class="va">yhat2</span><span class="op">[</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">)</span><span class="op">-</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">nextGPA</span><span class="op">[</span><span class="op">!</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">-</span><span class="va">yhat2</span><span class="op">[</span><span class="op">!</span><span class="va">lsoSynthW</span><span class="op">$</span><span class="va">Z</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.2295554</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
+<span><span class="co">#&gt; [1] 0.2295554</span></span>
+<span></span>
 <span><span class="co">#### method 2:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">nextGPA</span><span class="op">~</span><span class="va">Z</span>, offset<span class="op">=</span><span class="va">yhat2</span>,data<span class="op">=</span><span class="va">lsoSynthW</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="st">'ZTRUE'</span><span class="op">]</span></span>
 <span><span class="co">#&gt;     ZTRUE </span></span>
