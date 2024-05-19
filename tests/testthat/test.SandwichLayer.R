@@ -625,6 +625,23 @@ test_that(paste(".make_PreSandwichLayer returns expected output",
                         check.attributes = FALSE))
 })
 
+test_that(".make_PreSandwichLayer glmrob", {
+  set.seed(30)
+  x = sample(rep(c(-1, 1), each = 15))
+  y = c(0.5 * x[1:29] - 2 + 1e-2 * rnorm(29), 12 * x[30] + 1e-2 * rnorm(1))
+  moddata <- data.frame(x = x, y = y)
+  
+  suppressWarnings(
+    mod <- robustbase::glmrob(y ~ x, moddata, family = stats::gaussian(),
+                              control = robustbase::glmrobMqle.control(tcc = 1.5))
+  )
+  
+  expect_true(!all(mod$w.r == 1.))
+  expect_true(all.equal(.make_PreSandwichLayer(mod, moddata)@.Data,
+                        mod$fitted.values,
+                        check.attributes = FALSE))
+})
+
 test_that(paste(".make_PreSandwichLayer returns expected output when",
                 "NA's are present"), {
   set.seed(20)

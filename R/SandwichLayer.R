@@ -252,7 +252,7 @@ setMethod("[", "PreSandwichLayer",
                            ...)
   
   # use the `stats` package's method for handling model fits not of full rank
-  QR <- qr(stats::model.matrix(model))
+  QR <- qr(model$w.r * stats::model.matrix(model))
   p <- QR$rank
   p1 <- seq_len(p)
   piv <- if(p) QR$pivot[p1]
