@@ -157,7 +157,6 @@ setMethod("[", "PreSandwichLayer",
   p1 <- seq_len(p)
   piv <- if(p) model$qr$pivot[p1]
   if(p < ncol(X)) {
-    warning("prediction from a rank-deficient fit may be misleading")
     X <- X[, piv, drop = FALSE]
   }
   
@@ -195,7 +194,6 @@ setMethod("[", "PreSandwichLayer",
   p1 <- seq_len(p)
   piv <- if(p) model$qr$pivot[p1]
   if(p < ncol(X)) {
-    warning("prediction from a rank-deficient fit may be misleading")
     X <- X[, piv, drop = FALSE]
   }
   
@@ -234,7 +232,6 @@ setMethod("[", "PreSandwichLayer",
   p1 <- seq_len(p)
   piv <- if(p) QR$pivot[p1]
   if(p < ncol(X)) {
-    warning("prediction from a rank-deficient fit may be misleading")
     X <- X[, piv, drop = FALSE]
   }
   
