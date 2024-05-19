@@ -188,10 +188,9 @@ setMethod("[", "PreSandwichLayer",
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
-                           contrasts.arg = model$contrasts, # contrasts.arg also follows `predict.lm`
+                           contrasts.arg = model$contrasts,
                            ...)
   
-  # use the `stats` package's method for handling model fits not of full rank
   p <- model$rank
   p1 <- seq_len(p)
   piv <- if(p) model$qr$pivot[p1]
@@ -212,32 +211,11 @@ setMethod("[", "PreSandwichLayer",
 
 ##' @keywords internal
 .make_PreSandwichLayer.glmrob <- function(model, newdata = NULL, ...) {
-  # if (is.null(newdata)) {
-  #   newdata <- stats::model.frame(model)
-  # }
-  # 
-  # if (!is.data.frame(newdata)) {
-  #   stop("If supplied, `newdata` must be a dataframe")
-  # }
-  # 
   model_terms <- tryCatch(
     terms(model),
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
-  # newdata <- tryCatch({
-  #   try_terms <- terms(newdata) # terms will be the same if newdata generated with model's model.frame
-  #   if (!is.null(try_terms)) newdata
-  #   }, error = function(e) {
-  #     stats::model.frame(stats::delete.response(model_terms),
-  #                        data = newdata,
-  #                        na.action = na.pass,
-  #                        xlev = model$xlevels) # xlev arg follows `predict.lm`
-  # })
-  
-  # X <- stats::model.matrix(stats::delete.response(model_terms),
-  #                          data = newdata,
-  #                          contrasts.arg = model$contrasts) # contrasts.arg also follows `predict.lm`
-  
+
   if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
   
   mf <- stats::model.frame(stats::delete.response(terms(model)),
@@ -248,10 +226,9 @@ setMethod("[", "PreSandwichLayer",
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
-                           contrasts.arg = model$contrasts, # contrasts.arg also follows `predict.lm`
+                           contrasts.arg = model$contrasts,
                            ...)
   
-  # use the `stats` package's method for handling model fits not of full rank
   QR <- qr(model$w.r * stats::model.matrix(model))
   p <- QR$rank
   p1 <- seq_len(p)
