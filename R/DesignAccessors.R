@@ -6,34 +6,49 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
   standardGeneric("treatment")
 })
 
-##' Allows access to the elements which define a \code{Design}, enabling their
-##' extraction or replacement.
-##'
-##' For \code{treatment()}, when argument \code{binary} is \code{FALSE}, the
-##' treatment variable passed into the \code{Design} is returned as a one-column
-##' \code{data.frame}. If \code{binary = TRUE} is passed, and the \code{Design}
-##' either has a binary treatment variable, or has a \code{dichotomy}, a binary
-##' one-column \code{data.frame} will be returned. If the \code{Design} does not
-##' have access to binary treatment (non-binary treatment and no
-##' \code{dichotomy} specified), passing \code{binary = TRUE} will error.
-##'
-##' \code{binary = "ifany"} is the most permissible; returning the dichotomized
-##' treatment variable if \code{@dichotomy} exists, otherwise returning the
-##' original treatment without error.
-##'
-##' The one-column \code{data.frame} returned by \code{treatment()} is named as
-##' entered in the \code{Design} creation, but if a \code{dichotomy} is in the
-##' \code{Design}, the column name is \code{"__z"}.
 ##' @title Accessors and Replacers for \code{Design} objects
-##' @param x \code{Design} object
-##' @param binary if \code{FALSE} (default), return a \code{data.frame}
-##'   containing the named treatment variable. If \code{TRUE} and \code{x} has a
-##'   formula in \code{@dichotomy}, return a \code{data.frame} containing a
-##'   binary treatment variable with the name \code{"z__"}. Errors on
-##'   \code{TRUE} if treatment is non-binary \code{@dichotomy} is \code{NULL}.
-##'   If \code{"ifany"}, returns a binary treatment if possible (if treatment is
-##'   already binary, or there's a valid \code{@dichotomy}), otherwise return
-##'   original treatment.
+##'
+##' @description Allows access to the elements which define a \code{Design},
+##'   enabling their extraction or replacement.
+##'
+##' @details For [treatment()], when argument \code{binary} is \code{FALSE}, the
+##'   treatment variable passed into the \code{Design} is returned as a
+##'   one-column \code{data.frame} regardless of whether it is binary or
+##'   \code{x} has a \code{dichotomy}
+##'
+##'   If \code{binary = TRUE} is passed, and the \code{Design} either has a
+##'   binary treatment variable, or has a \code{dichotomy}, a binary one-column
+##'   \code{data.frame} will be returned. If the \code{Design} does not have
+##'   access to binary treatment (non-binary treatment and no \code{dichotomy}
+##'   specified), passing \code{binary = TRUE} will error.
+##'
+##'   \code{binary = "ifany"} is the most permissible; returning the
+##'   dichotomized treatment variable if \code{@dichotomy} exists, otherwise
+##'   returning the original treatment without error.
+##'
+##'   The one-column \code{data.frame} returned by [treatment()] is named as
+##'   entered in the \code{Design} creation, but if a \code{dichotomy} is in the
+##'   \code{Design}, the column name is \code{"__z"} to try and avoid any name
+##'   conflicts.
+##'
+##'   For the \code{value} when using replacers, the replacement must have the
+##'   same number of rows as the \code{Design} (the same number of units of
+##'   assignment). The number of columns can differ (e.g. if the \code{Design}
+##'   were defined with two variable uniquely identifying blocks, you can
+##'   replace that with a single variable uniquely identifying blocks, as long
+##'   as it respects other restrictions.)
+##'
+##'   If the replacement value is a \code{data.frame}, the name of the columns
+##'   is used as the new variable names. If the replacement is a \code{matrix}
+##'   or \code{vector}, the original names are retained. If reducing the number
+##'   of variables (e.g., moving from two variables uniquely identifying to a
+##'   single variable), the appropriate number of variable names are retained.
+##'   If increasing the number of variables, a \code{data.frame} with names must
+##'   be provided.
+##'
+##' @param x a \code{Design} object
+##' @param binary Controls whether a \code{dichotomy} is applied before
+##'   returning the treatment variable. See \code{Details}.
 ##' @param newdata optional; an additional \code{data.frame}. If passed, and the
 ##'   unit of assignment variable is found in \code{newdata}, then the requested
 ##'   variable type for each unit of \code{newdata} is returned. See \code{by}
@@ -41,19 +56,22 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##' @param by optional; named vector or list connecting names of unit of
 ##'   assignment/unitid/cluster variables in \code{x} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
-##'   variables in the Design; values represent variables in the data. Only
+##'   variables in \code{x}; values represent variables in \code{newdata}. Only
 ##'   needed if variable names differ.
 ##' @param ... ignored.
 ##' @return \code{data.frame} containing requested variable, or an updated
-##'   \code{Design}.
+##'   \code{Design}. [treatment()] works slightly differently, see
+##'   \code{Details}.
 ##' @export
 ##' @rdname Design_extractreplace
 ##' @examples
 ##' data(simdata)
-##' des <- obs_design(z ~ unit_of_assignment(cid1, cid2), data = simdata)
+##' des <- obs_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
 ##' blocks(des) # empty
 ##' blocks(des) <- data.frame(blks = c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5))
 ##' blocks(des)
+##' blocks(des) <- c(5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
+##' blocks(des) # notice that variable is not renamed
 setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
   binary <- as.character(binary)
   if (!binary %in% c("TRUE", "FALSE", "ifany")) {
@@ -129,7 +147,7 @@ setGeneric("treatment<-", function(x, value) standardGeneric("treatment<-"))
 
 ##' @param value replacement. Either a \code{vector}/\code{matrix} of
 ##'   appropriate dimension, or a named \code{data.frame} if renaming variable
-##'   as well.
+##'   as well. See \code{Details}.
 ##' @export
 ##' @rdname Design_extractreplace
 setMethod("treatment<-", "Design", function(x, value) {
@@ -452,50 +470,65 @@ setMethod("forcings<-", "Design", function(x, value) {
 ############### dichotomy
 
 ##' @title Extract or replace \code{dichotomy}
-##' @description Used to add, modify, or read the \code{dichotomy} attached to a
-##'   \code{Design}.
-##' @details A \code{dichotomy} is specified by a formula consisting of a
+##'
+##' @description Used to add, modify, or extract the \code{dichotomy} attached
+##'   to a \code{Design}.
+##'
+##' @details A \code{dichotomy} is specified by a \code{formula} consisting of a
 ##'   conditional statement on both the left-hand side (identifying treatment
 ##'   levels associated with "treatment") and the right hand side (identifying
 ##'   treatment levels associated with "control"). For example, if your
-##'   treatment variable was called \code{dose}, you might write:
+##'   treatment variable was called \code{dose} and doses above 250 are
+##'   considered treatment, you might write:
 ##'
-##' \code{dichotomy = dose > 250 ~ dose <= 250}
+##'   \code{dichotomy(des) <- dose > 250 ~ dose <= 250}
 ##'
-##' The period (\code{.}) can be used to assign all other units of assignment.
-##' For example, we could have written the above example as
+##'   The period (\code{.}) can be used to assign all other units of assignment.
+##'   For example, we could have written the same treatment regime as either
 ##'
-##' \code{dichotomy = dose > 250 ~ .}
+##'   \code{dichotomy(des) <- dose > 250 ~ .}
 ##'
-##' or
+##'   or
 ##'
-##' \code{dichotomy = . ~ dose <= 250}
+##'   \code{dichotomy(des) <- . ~ dose <= 250}
 ##'
-##' The \code{dichotomy} formula supports all Relational Operators, Logical
-##' Operators, and \code{%in%}.
+##'   The \code{dichotomy} formula supports Relational Operators (see
+##'   [Comparison]), Logical Operators (see [Logic]), and \code{%in%} (see
+##'   [match()]).
 ##'
-##' The conditionals need not assign all values of treatment to control or
-##' treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
-##' \code{200 <= dose <= 300} to either treatment or control. This would be
-##' equivalent to manually generating a binary variable with \code{NA} whenever
-##' \code{dose} is between 200 and 300. Units not assigned to treatment or
-##' control will be maintained in the Design for proper standard error
-##' calculations.
+##'   The conditionals need not assign all values of treatment to control or
+##'   treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
+##'   \code{200 <= dose <= 300} to either treatment or control. This would be
+##'   equivalent to manually generating a binary variable with \code{NA}
+##'   whenever \code{dose} is between 200 and 300. Units not assigned to
+##'   treatment or control will be maintained in the \code{Design} for proper
+##'   standard error calculations.
 ##'
-##' Note that you can specify a conditional logic treatment directly in the
-##' \code{Design} creation (e.g. \code{rct_design(dose > 250 ~
-##' unitOfAssignment(...}) but we would strongly suggest instead passing the
-##' treatment variable directly and using \code{dichotomy}. Otherwise changing
-##' the dichotomy will require re-creating the Design, instead of simply using
-##' \code{dichotomy(design) <-} or passing \code{dichotomy} to \code{ate()} or
-##' \code{ett()}.
+##'   Note that you can specify a conditional logic treatment directly in the
+##'   \code{Design} creation (e.g. \code{rct_design(dose > 250 ~
+##'   unitOfAssignment(...}) but we would strongly suggest instead passing the
+##'   treatment variable directly and using \code{dichotomy}. Otherwise changing
+##'   the dichotomy will require re-creating the Design, instead of simply using
+##'   \code{dichotomy(design) <-} or passing \code{dichotomy} to \code{ate()} or
+##'   \code{ett()}.
 ##'
 ##' @param x a \code{Design} object
 ##' @param value replacement \code{dichotomy} formula, or \code{NULL} to remove
-##' @return dichomization formula, or a \code{Design} with the
-##'   \code{dichomization} replaces with \code{x}.
+##' @return The accessor returns the dichomization formula. (\code{NULL} if
+##'   \code{x} has no \code{dichotomy}.) The replacer returns a \code{Design} with
+##' the \code{dichomization} replaced with \code{x}.
 ##' @export
 ##' @rdname Design_extract_dichotomy
+##' @seealso [treatment()] for extracting the treatment variable, using
+##'   \code{binary = TRUE} argument to apply the dichotomy before extracting.
+##' @examples
+##' data(simdata)
+##' des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
+##' des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
+##'                    dichotomy = dose > 250 ~ .)
+##' dichotomy(des1)
+##' dichotomy(des2)
+##' dichotomy(des1) <- dose > 250 ~ .
 setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))
 
 ##' @export

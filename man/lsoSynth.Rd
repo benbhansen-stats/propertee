@@ -3,17 +3,34 @@
 \docType{data}
 \name{lsoSynth}
 \alias{lsoSynth}
-\title{Fake data}
+\title{Synthethic Regression Discontinuity Data}
 \format{
-A data.frame with ?? rows and ?? columns.
+A \code{data.frame} with 40,403 rows and 11 columns.
 \itemize{
-\item ???
+\item \code{R}
+\item \code{lhsgrade_pct}
+\item \code{nextGPA}
+\item \code{probation_year1}
+\item \code{totcredits_year1}
+\item \code{male}
+\item \code{loc_campus1}
+\item \code{loc_campus2}
+\item \code{bpl_north_america}
+\item \code{english}
+\item \code{age_at_entry}
 }
 }
 \usage{
 lsoSynth
 }
 \description{
-Fake data
+The data for this example were randomly simulated using the
+\bold{synthpop} package in R based on data originally collected by Lindo,
+Sanders, and Oreopoulos (2010).
+}
+\details{
+See the "Regression Discontinuity Designs" vignette on the
+\code{propertee} website for more details on the original data, a link to
+the code used to generate this synthethic data, and a detailed example.
 }
 \keyword{dataset}

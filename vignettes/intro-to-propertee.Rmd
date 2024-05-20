@@ -1,10 +1,10 @@
 ---
-title: "Introduction to the 'propertee' package"
-author: "propertee authors"
+title: "Introduction to propertee"
+author: "propertee Authors"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to the 'propertee' package}
+  %\VignetteIndexEntry{Introduction to propertee}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,29 +14,34 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+#devtools::load_all("~/repositories/_r/propertee/")
 library(propertee)
 ```
 
-# Main Features
+## Main Features
 
-The `{propertee}` package offers a two step approach to treatment effect
-estimation.
+The **propertee** package, Prognostic Regression Offsets with Propagation of
+ERrors (for Treatment Effect Estimation), facilitates direct adjustment for
+experiments and observational studies with design-informed standard errors and
+flexible options for covariance adjustment. It uses explicit specification of
+study design to provide probability of assignment weights and standard errors
+that appropriately reflect the design. For covariance adjustment of its Hajek
+and (one-way) fixed effects estimates, it enables offsetting the outcome against
+predictions from a dedicated covariance model, with standard error calculations
+propagating error as appropriate from the covariance model.
+
+The main workflow consists of two main steps and one optional step:
 
 1. Generate a `Design` object which encodes the study design, including the unit
-   of assignment, treatment status, and optionally block information.
-2. Estimate a treatment effect, accounting for the design information.
+   of assignment, treatment status of each unit of assignment, and optionally
+   block information. This is accomplished with the `obs_design()`,
+   `rct_design()` or `rd_design()` functions.
+2. Optionally, fit a covariate adjustment model.
+3. Fit a model to estimate a treatment effect, accounting for the design
+   information, and optionally the covariate adjustment. This is done via the
+   `lmitt()` function.
 
-The treatment effect estimation can optionally include proper weighting (for
-either average treatment effect or effect of the treatment on the treated), or
-can include a externally fit covariance adjustment model.
-
-While both the weights and and covariance adjustment can be used in a stock R
-model (e.g. `lm()`), `{propertee}` offers the `lmitt()` function which can be used
-to directly estimate the desired treatment effect, along with properly
-calculated standard errors accounting for the design features and covariance
-adjustment first stage model.
-
-# Example Data
+## Example Data
 
 The example dataset comes from the state of Tennessee's Student-Teacher
 Achievement Ratio (STAR) experiment. Students were randomly assigned to three
@@ -56,7 +61,8 @@ treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
 STARdata$starkbinary <- STARdata$stark == "small"
 table(STARdata$starkbinary)
 ```
-After this basic example, we will see how `{propertee}` makes it easy to handle
+
+After this basic example, we will see how **propertee** makes it easy to handle
 non-binary treatment variables by introducing `dichotomy`s.
 
 The outcome of interest is a reading score at the end of kindergarten.
@@ -80,15 +86,15 @@ STARdata$studentid <- seq_len(nrow(STARdata))
 head(STARdata$studentid)
 ```
 
-# A Basic Example
+## A Basic Example
 
-## Defining the `Design`
+### Defining the `Design`
 
 The three `_design` functions (`rct_design()`, `obj_design()`, and
-`rd_design()`) operate very similarly. The first argument is the most important,
-and encodes all the design information through the use of a formula. The
-left-hand side of the formula identifies the treatment variable. The right-hand
-side of the formula consists of the following potential pieces of information:
+`rd_design()`) operate similarly. The first argument is the most important, and
+encodes all the design information through the use of a formula. The left-hand
+side of the formula identifies the treatment variable. The right-hand side of
+the formula consists of the following potential pieces of information:
 
 1. `unit_of_assignment()`: This identifies the variable(s) which indicate the
    units of assignment. This is required for all designs. The alias `uoa()` can
@@ -98,7 +104,7 @@ side of the formula consists of the following potential pieces of information:
 3. `forcing()`: In regression discontinuity designs (`rd_design()`), this
    identifies the variable(s) which contain forcing information.
 
-To define the `Design` in our example:
+To define a `Design` in our example:
 
 ```{r}
 des <- obs_design(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
@@ -111,22 +117,26 @@ block, or forcing, they can be included. For example, perhaps `schoolidk` may be
 unique within district, but potentially not unique across districts. Then we'd
 use something like `block(districtid, schoolidk)` in the `_design` function.
 
-## Estimating the treatment effect
+### Estimating the treatment effect
 
 The main function for estimating treatment effects is the `lmitt()` function. It
 takes in three main required arguments:
 
 1. A formula specifying the outcome and the desired treatment effect.
 2. The data set containing the outcome information.
-3. A `Design`.
+3. A [`Design`](#defining-the-design).
 
 Note that the data set does **not** need to be the same data set which generated
 the `Design`; it does however need to include the same variables to identify the
-units of assignment. (Note that if the variable names differ, the `by=` argument
-can be used to link them.) For example, school may be the unit of treatment
-assignment level, so the data set creating the `Design` is school-level.
-However, the outcome could be at the student level. As long as the student-level
-data had school identifiers, `{propertee}` can match them up.
+units of assignment. (If the variable names differ, the `by=` argument can be
+used to link them, though we recommend renaming to reduce the likelihood of
+issues.)
+
+For example, you may have one dataset containing school-level information, and a
+separate dataset containing student-level information. Assume school is the unit
+of assignment. While you could of course merge those two data-sets,
+**propertee** can instead use the school-level data to define the `Design`, and
+the student-level data to estimate the treatment effect.
 
 The formula entering `lmitt()` can take on one of two forms:
 
@@ -137,15 +147,12 @@ y ~ 1
 will estimate the main treatment effect on outcome variable `y`, and
 
 ```r
-y ~ sbgrp
+y ~ x
 ```
 
-will estimate subgroup specific treatment effects for each level of `sbgrp` for
-the outcome `y`.
-
-(We hope in the future to support `y ~ 1 + sbgrp` to simultaneously estimate
-both main and subgroup effects; however for now you can fit each model
-separately.)
+will estimate subgroup specific treatment effects for each level of `x` for the
+outcome `y`, if `x` is categorical. For continuous `x`, a main effect and a
+treatment-`x` interaction effect is estimated.
 
 Therefore, to estimate the treatment effect in our example, we can run:
 
@@ -154,16 +161,16 @@ te <- lmitt(readk ~ 1, data = STARdata, design = des)
 summary(te)
 ```
 
-The data includes ethnicity; we can estimate subgroup effects by ethnicity.
+The data includes ethnicity; we can estimate subgroup effects by ethnicity:
 
 ```{r}
 te_s <- lmitt(readk ~ ethnicity, data = STARdata, design = des)
 summary(te_s)
 ```
 
-## Including design weights
+### Including design weights
 
-Design weights can be easily included in this estimation. `{propertee}` supports
+Design weights can be easily included in this estimation. **propertee** supports
 average treatment effect (ATE) and effect of the treatment on the treated (ETT)
 weights.
 
@@ -179,35 +186,20 @@ Internally, these call the `ate()` or `ett()` functions which can be used
 directly.
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, design = des, weights = ate())
-```
-
-This enables easy combination of weights; for example if you had some other
-weight variable, say `wgt`, you could include `weights = wgt*ate()` in the
-`lmitt()` call.
-
-The weight functions also function within normal model calls such as `lm()` or
-`glm()`.
-
-```{r}
-lm(readk ~ starkbinary, data = STARdata, weights = ate(des))
-```
-
-Note the neccessity to include the `Design` as an argument to `ate()` when
-called within `lm()`; `ate()` and `ett()` attempt to locate both the `Design`
-and `data` inside their call, however if needed, both can be manually included.
-For example, to obtain the weights independently on the model:
-
-```{r}
 head(ate(des, data = STARdata))
 ```
 
-## Covariance Adjustment models
+When included inside `lmitt()`, you do not need to specify any additional
+arguments to `ate()` or `ett()`, enabling easy functions of weights. For example
+if you had some other weight variable, say `wgt`, you could include `weights =
+wgt*ate()` in the `lmitt()` call.
+
+### Covariance Adjustment models
 
 By itself, `lmitt()` does not allow for other covariates; e.g. something like
 `lmitt(y ~ 1 + control_var,...` will fail. To adjust for covariates, a separate
 covariate model should be fit. Any model which supports a `predict()` function
-will work.
+should work.
 
 ```{r}
 camod <- lm(readk ~ gender + birth + lunchk, data = STARdata)
@@ -222,9 +214,10 @@ lmitt(readk ~ 1, data = STARdata, design = des,
 ```
 
 Similarly to the weight functions, `cov_adj()` attempts to locate the correct
-dataset to use in the model command; while `cov_adj()` does fall back to using
-the data which is in the covariance model, its safer to use the `newdata=`
-argument if calling `cov_adj()` outside of the model.
+arguments (in this case, mainly the `data=` argument) to use in the model
+command; while `cov_adj()` does fall back to using the data which is in the
+covariance model, its safer to use the `newdata=` argument if calling
+`cov_adj()` outside of the model.
 
 ```{r}
 head(cov_adj(camod, newdata = STARdata))
@@ -238,89 +231,11 @@ lm(readk ~ starkbinary, data = STARdata, weights = ate(des),
    offset = cov_adj(camod))
 ```
 
-## Absorbing Blocks
+### Absorbing Blocks
 
-If it is desired to include fixed effects for blocks, which can be absorbed away
-to avoid estimating, the `absorb=TRUE` argument can be passed.
+If fixed effects for blocks are desired, which can be absorbed away to avoid
+estimating, the `absorb=TRUE` argument can be passed.
 
 ```{r}
 lmitt(readk ~ 1, data = STARdata, design = des, absorb = TRUE)
-```
-
-
-# Additional topics
-
-## Non-binary treatment variables
-
-In the example above, we manually created a binary treatment variable,
-`starkbinary` out of a three-level categorical variable. `Design`s can instead
-handle non-binary treatment variables. (Note that factor variables, while able
-to be included in a `*_design` call, have their labels converted to numeric or
-character as appropriate. We therefore recommend doing this conversion a priori
-so you can control this conversion and ensure it is appropriate.)
-
-```{r}
-STARdata$stark <- as.character(STARdata$stark)
-des <- obs_design(stark ~ unit_of_assignment(studentid) + block(schoolidk),
-                  data = STARdata, na.fail = FALSE)
-summary(des)
-lmitt(readk ~ 1, des, data = STARdata)
-```
-
-Note however that some features (notably weight generation and proper covariance
-estimates) are not fully supported in cases with non-binary treatment. While we
-could manually create several binary variables based upon the non-binary
-treatment variables, we can instead use the `dichotomy` feature to inform the
-`Design` about the current binary comparison we are examing.
-
-A `dichotomy` is given as a formula object, where the left hand side evaluates
-to a logical statement about the treatment variable identifying the "treated"
-group, and the right hand side evaluates to a logical statement identifying the
-"control" group. For example, if we wanted to examine the treatment effect of
-"small" versus "regular", the following `dichotomy` would provide this
-information:
-
-```r
-stark == "small" ~ stark == "regular"
-```
-
-The "small" versus pooled "regular"/"regular+aide" can be expressed in any
-several ways:
-
-```r
-stark == "small" ~ stark == "regular" | stark == "regular+aide"
-stark == "small" ~ stark != "small"
-stark == "small" ~ .
-. ~ stark == "regular" | stark == "regular+aide"
-
-```
-
-The "`.`" can be used in exactly one side, and implies that that group is
-defined as all units not assigned to the other group.
-
-You can attach a `dichotomy` to a `Design` with the `dichotomy()` function:
-
-```{r}
-des2 <- des
-dichotomy(des2) <- stark == "small" ~ .
-summary(des2)
-```
-
-Once a `dichotomy` is attached to a `Design`, its equivalent for all intents and
-purposes to if you had used a binary treatment variable when creating the
-`Design`. (The `*_design` functions take a `dichotomy=` argument so you can
-create a `Design` and attach a `dichotomy in one step.)
-
-```{r}
-lmitt(readk ~ 1, des2, data = STARdata)
-```
-
-Alternatively, the `ate()` and `ett()` functions, for generating average
-treatment effect weights and effect of the treatment on the treated weights
-respectively, take an optional `dichotomy=`
-
-```{r, eval = FALSE}
-# NYI, see #91
-lmitt(readk ~ 1, data = STARdata,
-      weights = ate(des, dichotomy = stark == "small" ~ .))
 ```

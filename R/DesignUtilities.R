@@ -1,24 +1,31 @@
 #' @include Design.R DesignAccessors.R
 NULL
 
-##' These are special functions used only in the definition of \code{Design}
-##' objects. They identify the units of assignment, blocks and forcing
-##' variables.
-##'
-##' These functions have no use outside of the formula in creating a
-##' \code{Design}.
-##'
-##' \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are
-##' all aliases of each other; you must include one and only one in each
-##' \code{Design}. The choice of which to use will have no impact on any
-##' analysis, only on some output display.
-##'
-##' See \code{rct_design}, \code{obs_design}, or \code{rd_design} for examples
-##' of their usage.
-##'
 ##' @title Special terms in \code{Design} creation formula
+##'
+##' @description These are special functions used only in the definition of
+##'   \code{Design} objects. They identify the units of assignment, blocks and
+##'   forcing variables. They should never be used outside of the \code{formula}
+##'   argument to [obs_design()], [rct_design()], or [rd_design()].
+##'
+##' @details These functions have no use outside of the formula in creating a
+##'   \code{Design}.
+##'
+##'   \code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid}
+##'   are synonyms; you must include one and only one in each \code{Design}. The
+##'   choice of which to use will have no impact on any analysis, only on some
+##'   output and the name of the stored element in the \code{Design}. Accessors/
+##'   replacers ([units_of_assignment()], [unitids()], [clusters()]) respect the
+##'   choice made at the point of creation of the \code{Design}, and only the
+##'   appropriate function will work.
+##'
+##'   See [rct_design()], [obs_design()], or [rd_design()] for examples
+##'   of their usage.
+##'
 ##' @param ... any number of variables of the same length.
-##' @return the variables with appropriate labels
+##' @return the variables with appropriate labels. No use outside of their
+##'   inclusion in the \code{formula} argument to [obs_design()],
+##'   [rct_design()], or [rd_design()]
 ##' @export
 ##' @rdname DesignSpecials
 unit_of_assignment <- function(...) {
@@ -158,9 +165,9 @@ forcing <- unit_of_assignment
 ##' @rdname design_treatment_status
 ##' @examples
 ##' data(simdata)
-##' des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
-##' des2 <- rct_design(o ~ uoa(cid1, cid2), data = simdata)
-##' des3 <- rct_design(o ~ uoa(cid1, cid2), data = simdata,
+##' des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
+##' des2 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata)
+##' des3 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata,
 ##'                    dichotomy = o >= 3 ~ .)
 ##'
 ##' if (is_binary_or_dichotomized(des1)) {
@@ -207,12 +214,16 @@ is_binary_or_dichotomized <- function(des) {
   return(is_dichotomized(des) || has_binary_treatment(des))
 }
 
-##' Check if \code{Design} objects are identical
+##' @title Test equality of two \code{Design} objects
+##'
+##' @description Check whether two \code{Design} objects are identical. Choose
+##'   whether to consider or ignore the \code{dichotomy}.
+##'
 ##' @param x A \code{Design} object.
 ##' @param y A \code{Design} object.
 ##' @param dichotomy_force Logical, default \code{FALSE}. If \code{FALSE}, the
-##'   \code{dichotomy()} of \code{x} and \code{y} is ignored in the comparison.
-##'   (In other words, two \code{Design}s which differ only in their
+##'   [dichotomy()] of \code{x} and \code{y} is ignored in the comparison. (In
+##'   other words, two \code{Design}s which differ only in their
 ##'   \code{@dichotomy} slot will be considered identical.) If \code{TRUE}, the
 ##'   \code{dichotomy} must also be in agreement between \code{x} and \code{y}.
 ##' @return Logical, are \code{x} and \code{y} identical?
@@ -227,10 +238,13 @@ identical_Designs <- function(x, y, dichotomy_force = FALSE) {
   return(identical(x, y))
 }
 
-##' @title Identify fine strata (blocks with one treated or one control unit of assignment)
+##' @title Identify fine strata
+##'
+##' @description Identify blocks in a \code{Design} with exactly one treated or
+##'   one control unit of assignment.
 ##' @param des A \code{Design} object.
-##' @return Logical vector with length given by the number of blocks in the
-##' Design
+##' @return Logical vector with length given by the number of blocks in
+##'   \code{Design}
 ##' @export
 identify_small_blocks <- function(des) {
   blk_txt_cts <- design_table(des, "t", "b")

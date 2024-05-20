@@ -15,7 +15,7 @@ options("propertee_message_on_unused_blocks" = FALSE)
 test_that("equivalent of lm and lmitt calls - no subset", {
   data(simdata)
   simdata$o <- as.factor(simdata$o)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
 
@@ -177,8 +177,8 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 test_that("subset in design", {
   data(simdata)
   simdata$o <- as.factor(simdata$o)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata,
-                    subset = !(simdata$cid1 == 5 & simdata$cid2 == 2))
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
+                    subset = !(simdata$uoa1 == 5 & simdata$uoa2 == 2))
   cmod <- lm(y ~ x, data = simdata)
 
   test_coeffs <- function(lmcoef, lmittcoef, subgroup) {

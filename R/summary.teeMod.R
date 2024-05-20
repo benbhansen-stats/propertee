@@ -1,0 +1,102 @@
+##' @title Summarizing \code{teeMod} objects
+##'
+##' @description [summary()] method for class \code{teeMod}
+##'
+##' @details If a \code{teeMod} object is fit with a
+##'   \code{SandwichLayer} offset, then the usual \code{stats::summary.lm()}
+##'   output is enhanced by the use of covariance-adjusted sandwich standard
+##'   errors, with t-test values recalculated to reflect the new standard
+##'   errors.
+##'
+##' @param object \code{teeMod} object
+##' @param vcov.type A string indicating the desired variance estimator. See
+##'   [vcov_tee()] for details on accepted types.
+##' @param ... Additional arguments to [vcov_tee()], such as the desired
+##'   finite sample heteroskedasticity-robust standard error adjustment.
+##' @return object of class \code{summary.teeMod}
+##' @export
+##' @method summary teeMod
+##' @rdname teeMod_summary
+summary.teeMod <- function(object,
+                                   vcov.type = "CR0",
+                                   ...) {
+  out <- summary(as(object, "lm"))
+
+  if (object$rank > 0) {
+    covmat <- vcov_tee(object, type = vcov.type, ...)
+    out$coefficients[, 2L] <- sqrt(diag(covmat))
+    out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
+    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
+                                          object$df.residual,
+                                          lower.tail = FALSE)
+    out$vcov.type <- attr(covmat, "type")
+  }
+  class(out) <- "summary.teeMod"
+  out$teeMod <- object
+  return(out)
+}
+
+
+##' @param x \code{summary.teeMod} object
+##' @param digits the number of significant digits to use when printing.
+##' @param signif.stars logical. If ‘TRUE’, ‘significance stars’ are printed for
+##'   each coefficient.
+##' @importFrom stats pt printCoefmat
+##' @export
+##' @rdname teeMod_summary
+print.summary.teeMod <- function(x,
+                                         digits =
+                                           max(3L, getOption("digits") - 3L),
+                                         signif.stars =
+                                           getOption("show.signif.stars"),
+                                         ...) {
+
+  cat("\nCall:\n", paste(deparse(x$teeMod@lmitt_call), sep = "\n",
+                         collapse = "\n"), "\n", sep = "")
+
+  df <- x$df
+
+  if (x$teeMod@lmitt_fitted) {
+    coefmatname <- "Treatment Effects"
+  } else {
+    coefmatname <- "Coefficients"
+  }
+
+  if (length(x$aliased) == 0L) {
+    cat("\nNo Coefficients\n")
+    return(invisible(x))
+  }
+  else {
+    if (nsingular <- df[3L] - df[1L])
+      cat("\n", coefmatname, ": (", nsingular,
+          " not defined because of singularities)\n",
+          sep = "")
+    else cat("\n", coefmatname, ":\n")
+    coefs <- x$coefficients
+    if (any(aliased <- x$aliased)) {
+      cn <- names(aliased)
+      coefs <- matrix(NA, length(aliased), 4,
+                      dimnames = list(cn, colnames(coefs)))
+      coefs[!aliased, ] <- x$coefficients
+    }
+    if (x$teeMod@lmitt_fitted) {
+      toprint <- grepl(paste0("^\\`?",
+                              var_names(x$teeMod@Design, "t"), "\\."),
+                       rownames(coefs))
+    } else {
+      toprint <- rep(TRUE, nrow(coefs))
+    }
+    stats::printCoefmat(coefs[toprint, , drop = FALSE],
+                        digits = digits,
+                        signif.stars = signif.stars,
+                        na.print = "NA", ...)
+  }
+
+  if (sum(toprint) > 0 & any(!is.na(coefs[toprint, 1]))) {
+    # Only print if we estimate at least one treatment effect
+    cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+  } else {
+    cat("\n")
+  }
+  invisible(x)
+}

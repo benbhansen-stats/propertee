@@ -1,7 +1,7 @@
 test_that("Finding cov_adj in model", {
 
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   ca <- lm(y ~ x, data = simdata)
 

@@ -1,6 +1,6 @@
 test_that("get_structure() fn", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   ss <- get_structure(des)
 
@@ -16,7 +16,7 @@ test_that("get_structure() fn", {
   expect_identical(ss2@Design, des)
 
 
-  des <- rct_design(o ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   ss <- get_structure(des)
 
   expect_true(is(ss, "DesignStructure"))
@@ -39,20 +39,20 @@ test_that("get_structure() fn", {
 test_that("show.Design.Structure", {
 
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
   ss <- get_structure(des)
   expect_output(show(ss), "Treatment")
   expect_output(show(ss), "Cluster")
   expect_output(show(ss), "Block")
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
 
   cap <- capture_output(show(get_structure(des)))
   expect_match(cap, "Treatment")
   expect_match(cap, "Unit of Assignment", fixed = TRUE)
   expect_no_match(cap, "Block")
 
-  des <- rd_design(z ~ unitid(cid1, cid2) + forcing(force), data = simdata)
+  des <- rd_design(z ~ unitid(uoa1, uoa2) + forcing(force), data = simdata)
 
   cap <- capture_output(show(get_structure(des)))
 

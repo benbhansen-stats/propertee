@@ -9,21 +9,17 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
 ```{r installPropertee, eval=FALSE,include=FALSE}
 ### this is for Adam, to remember how to do this each time
 ### LMK if it causes problems, I'll remove
 devtools::install_github('benbhansen-stats/propertee', auth_token=GITHUB_PAT)
 ```
 
-
-```{r}
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 library(propertee)
 ```
 
@@ -86,9 +82,9 @@ where $E$ denotes expectation--that is, the LATE is the limit of average treatme
 Among other considerations, the LATE target suggests that data analysts restrict their attention to subjects with $R$ falling within a bandwidth $b>0$ of $c$, e.g. only fitting the model to subjects $i$ with within a "window of analysis" $\mathcal{W}=\{i:R_i\in (c-b,c+b)\}$.
 A number of methods have been proposed to select $b$, including cross validation, non-parametric modeling of the second derivative of $f(r)=E(Y|R=r)$, and specification tests.
 
-### The `propertee` Approach to RD Designs
+### The **propertee** Approach to RD Designs
 
-The `propertee` approach to RD designs breaks the data analysis into three steps:
+The **propertee** approach to RD designs breaks the data analysis into three steps:
 
 1. Conduct specification tests and choose a bandwidth $b>0$, along with, possibly, other data exclusions, resulting in an analysis sample $W$.
 2. Fit a covariance model $Y_{i0}=g(R_i,x_i;\beta)$, modeling $Y_{i0}$ as a function of running variable $R_i$ and (optionally) other covariates $\mathbf{x}_i$. Fitting a covariance model to only the control subjects, as in other designs, would entail extrapolation of a model fit to subjects with $R_i\in (c-b,c)$ to subjects with $R_i\in (c,c+b)$, or vice-versa, which is undesirable. Instead, we fit the covariance model to the full analysis sample $\mathcal{W}$, including both treated and untreated subjects. However, since we are interested in modeling $Y_0$, and not $Y_1$ or $Y$, so rather than fitting $g(\cdot)$, we fit an extended model
@@ -101,7 +97,7 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 
 The estimator $d_{\hat{\beta}}$ will be consistent if the model $g(R_i,x_i;\beta_0)$, with $\beta_0$ as the probability limit for $\hat{\beta}$, successfully removes all confounding due to $R$, i.e. $Y_0-g(R_i,x_i;\beta_0) \perp \!\!\! \perp Z$ for $i\in \mathcal{W}$.
 
-## Analyzing an RD design in `propertee`
+## Analyzing an RD design in **propertee**
 
 ### Determining the window of analysis
 There is an extensive literature on determining the appropriate window of analysis for an RD design. See, for instance, Imbens and Kalyanaraman (2012) and Sales and Hansen (2020).
@@ -110,7 +106,16 @@ For the purpose of this example, we will focus our analysis on
 $\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}$.
 
 ### Initializing the RD Design Object
-In general, `propertee` design objects require users to specify a unit- or cluster-id variable, that corresponds to the level of treatment assignment--in other words, which units were assigned between conditions. This is necessary both for combining results across different models or datasets, and for estimating correct design-based standard errors. In `lsoSynth`, there are no clusters, and individual students are assigned to academic probation on an individual basis. The dataset does not include an ID variable, but any variable that takes a unique value for each row will do. We will use row-names.
+
+In general, **propertee** design objects require users to specify a unit of
+assignment variable, that corresponds to the level of treatment assignment--in
+other words, which units were assigned between conditions. This is necessary
+both for combining results across different models or datasets, and for
+estimating correct design-based standard errors. In `lsoSynth`, there are no
+clusters, and individual students are assigned to academic probation on an
+individual basis. The dataset does not include an ID variable, but any variable
+that takes a unique value for each row will do. We will use row-names.
+
 ```{r defineUnitID}
 lsoSynth$id <- rownames(lsoSynth)
 ```
@@ -126,8 +131,8 @@ des <- rd_design(Z ~ forcing(R) + unitid(id), data=lsoSynth, subset=abs(lsoSynth
 ```
 
 ### Modeling $Y_C$ as a function of $R$
-We will consider two potential models $\tilde{g}(\cdot)$ of $Y_C$ as a function of $R$.
-First, the standard OLS model:
+We will consider two potential models $\tilde{g}(\cdot)$ of $Y_C$ as a function
+of $R$. First, the standard OLS model:
 
 ```{r olsGmod1, eval=FALSE,include=TRUE}
 ### this doesn't work:

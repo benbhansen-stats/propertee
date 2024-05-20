@@ -1,24 +1,30 @@
-##' @title Create summary of \code{Design} object
-##' @param object Design object
-##' @param ... Other args
-##' @return object of class \code{summary.Design}
+##' @param treatment_binary Should the treatment be dichotomized if
+##'   \code{object} contains a \code{dichotomy}? Ignored if \code{object} does
+##'   not contain a \code{dichotomy}.
 ##' @export
 ##' @method summary Design
-summary.Design <- function(object, ...) {
+##' @rdname Design_summary
+summary.Design <- function(object, ..., treatment_binary = TRUE) {
   out <- list()
   out$Design <- object
-  out$treatment_table <- dtable(object, "treatment")
+  out$treatment_table <- dtable(object, "treatment",
+                                treatment_binary = treatment_binary)
   class(out) <- "summary.Design"
   return(out)
 }
 
-##' @title Print summary of \code{Design} object
-##' @param x \code{summary.Design} object
-##' @param ... Other args
+##' @title Summarizing \code{Design} objects
+##' @description [summary()] method for class \code{Design}.
+##' @param object \code{Design} object, usually a result of a call to
+##'   [rct_design()], [obs_design()], or [rd_design()].
+##' @param x \code{summary.Design} object, usually as a result of a call to
+##'   [summary.Design()]
+##' @param ... Ignored
 ##' @param max_unit_print Maximum number of treatment levels to print in
 ##'   treatment table
-##' @return object, invisibly
+##' @return The \code{Design} or \code{summary.Design}object, invisibly
 ##' @export
+##' @rdname Design_summary
 print.summary.Design <- function(x, ..., max_unit_print = 3) {
   show(x$Design)
 

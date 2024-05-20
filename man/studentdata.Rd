@@ -6,23 +6,23 @@
 \alias{studentdata}
 \title{Student data}
 \format{
-Two data.frames, one with school-level data (\code{schooldata})
+Two \code{data.frame}s, one with school-level data (\code{schooldata})
 including treatment assignment and a second with student-level data
 (\code{studentdata}).
 \code{schoolata}:
 \itemize{
-\item schoolid Unique school ID variable.
-\item treatment Was this school in the intervention group?
-\item state State which the school is in.
-\item pct_disadvantage Percent of student body flagged as "disadvantaged".
+\item {schoolid} Unique school ID variable.
+\item {treatment} Was this school in the intervention group?
+\item {state} State which the school is in.
+\item {pct}_disadvantage Percent of student body flagged as "disadvantaged".
 }
 \code{studentdata}:
 \itemize{
-\item id Unique student ID.
-\item schoolid Unique school ID variable.
-\item grade Student's grade, 3-5.
-\item gpa Student GPA in prior year.
-\item math Standarized math score (out of 100).
+\item {id} Unique student ID.
+\item {schoolid} Unique school ID variable.
+\item {grade} Student's grade, 3-5.
+\item {gpa} Student GPA in prior year.
+\item {math} Standarized math score (out of 100).
 }
 
 An object of class \code{data.frame} with 8713 rows and 5 columns.
@@ -33,16 +33,22 @@ schooldata
 studentdata
 }
 \description{
-Student data
+An example of data sets stored at two levels.
+}
+\details{
+In this hypothetical data, schools were randomly assignment to
+treatment status, but the unit of analysis is students. Thus the two data
+sets, one encoding school information (including treatment status) and one
+encoding student information (which does not include treatment status).
 }
 \examples{
 des <- obs_design(treatment ~ uoa(schoolid), data = schooldata)
 
 # Treatment effect
-lmitt(math ~ 1, design = des, data = studentdata)
+mod1 <- lmitt(math ~ 1, design = des, data = studentdata)
 
 # Treatment effect by grade
-lmitt(math ~ as.factor(grade), design = des, data = studentdata)
+mod2 <- lmitt(math ~ as.factor(grade), design = des, data = studentdata)
 }
 \keyword{dataset}
 \keyword{datasets}

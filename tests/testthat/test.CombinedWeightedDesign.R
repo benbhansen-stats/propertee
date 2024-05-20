@@ -1,7 +1,7 @@
 test_that("Combining weighted designs", {
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
 
   w1 <- ate(des, data = simdata[1:30,])
   w2 <- ate(des, data = simdata[31:40,])
@@ -24,7 +24,7 @@ test_that("Combining weighted designs", {
   expect_error(c(w1, 1:5), "with other")
   expect_error(c(w1, w1e), "same target")
 
-  des2 <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des2 <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   alt_w1 <- ate(des2, data = simdata)
 
@@ -36,7 +36,7 @@ test_that("Combining weighted designs", {
 })
 
 test_that("Combining weighted designs with different dichotomys ", {
-  des <- rct_design(dose ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
 
   w1 <- ate(des, data = simdata[1:10, ], dichotomy = dose >= 300 ~ .)
   w2 <- ate(des, data = simdata[11:30, ], dichotomy = dose >= 200 ~ .)

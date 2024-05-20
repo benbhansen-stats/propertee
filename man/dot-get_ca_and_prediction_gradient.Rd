@@ -2,23 +2,27 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.get_ca_and_prediction_gradient}
 \alias{.get_ca_and_prediction_gradient}
-\title{(Internal) Get the a vector of "response" predictions from a covariance adjustment model
-and its gradient with respect to the fitted coefficients}
+\title{(Internal) Get covariance adjustments and their gradient with
+respect to covariance adjustment model coefficients}
 \usage{
 .get_ca_and_prediction_gradient(model, newdata = NULL)
 }
 \arguments{
-\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or \code{
-robustbase::lmrob} object}
+\item{model}{any model that inherits from a \code{glm}, \code{lm}, or
+\code{robustbase::lmrob} object}
 
-\item{newdata}{Optional; a data.frame of new data}
+\item{newdata}{a dataframe of new data. Default is NULL, in which case
+a dataframe is sought from higher up the call stack.}
 }
 \value{
-Covariate adjusted outcomes and their gradient with respect to the
-parameters of the covariance adjustment model (a list of a numeric vector and a matrix)
+A list of covariance adjustments, returned as a numeric vector, and
+their gradient, returned as a numeric matrix
 }
 \description{
-(Internal) Get the a vector of "response" predictions from a covariance adjustment model
-and its gradient with respect to the fitted coefficients
+\code{.get_ca_and_prediction_gradient()} takes a fitted covariance
+adjustment model passed to the \code{model} argument and generates adjustments to
+outcomes for observations in the \code{newdata} argument. It also generates
+the gradient of these adjustments taken with respect to the coefficients and
+evaluated at the coefficient estimates.
 }
 \keyword{internal}

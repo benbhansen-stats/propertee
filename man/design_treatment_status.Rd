@@ -40,9 +40,9 @@ allows \code{NA} in the treatment.
 }
 \examples{
 data(simdata)
-des1 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
-des2 <- rct_design(o ~ uoa(cid1, cid2), data = simdata)
-des3 <- rct_design(o ~ uoa(cid1, cid2), data = simdata,
+des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
+des2 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata)
+des3 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata,
                    dichotomy = o >= 3 ~ .)
 
 if (is_binary_or_dichotomized(des1)) {

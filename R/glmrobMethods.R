@@ -1,7 +1,7 @@
 ##' @title Extract empirical estimating equations from a \code{glmbrob} model fit
 ##' @param x a fitted \code{glmrob} object
 ##' @param ... arguments passed to methods
-##' @return Details needed
+##' @return matrix, estimating functions evaluated at data points and fitted parameters
 ##' @importFrom stats family model.matrix
 ##' @importFrom utils getFromNamespace
 ##' @rdname glmrob_methods
@@ -97,7 +97,7 @@ estfun.glmrob <- function(x, ...) {
 ##' @title Extract bread matrix from an \code{lmrob()} fit
 ##' @param x a fitted \code{lmrob} object
 ##' @param ... arguments passed to methods
-##' @return Details needed
+##' @return matrix, inverse Hessian of loss as evaluated at fitted parameters
 ##' @rdname glmrob_methods
 ##' @exportS3Method
 bread.glmrob <- function(x, ...) {

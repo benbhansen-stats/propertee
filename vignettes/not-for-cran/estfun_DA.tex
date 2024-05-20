@@ -97,13 +97,13 @@ to add block-specific intercepts.)
 The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
 \subsection{Goal} \label{sec:goal}
-We aim to define \texttt{estfun.DirectAdjusted()} associating
+We aim to define \texttt{estfun.teeMod()} associating
 with a direct adjustment model a matrix of evaluated estimating function
 contributions of form
 \begin{equation} \label{eq:22}
   \tilde{\Psi} = c_{2}\Psi - c_{1}\Phi A_{11}^{-1}A_{21}^{t},
 \end{equation}
-and a corresponding \texttt{bread.DirectAdjusted()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
+and a corresponding \texttt{bread.teeMod()} which together will enable \texttt{sandwich::vcov()} to provide valid standard errors. 
 Note that this is $n$ by
 $k+1$, $n$ being the size of the combined $\mathcal{C}$ and
 $\mathcal{Q}$ sample, with columns corresponding to $\rho$.%
@@ -233,7 +233,11 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
 \right),
   \end{align}
 where the structure of $\psi(\cdot)$ as given in \eqref{eq:14} ensures
-that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functions only of $\beta$ and of $(\alpha, \tau)$ respectively. Define   
+that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$
+are functions only of $\beta$ and of $(\alpha, \tau)$
+respectively. Assuming $A_{11}(\beta_{(n)})$ and $A_{22}(\alpha_{(n)},
+\tau_{(n)})$ to be invertible, define \textit{linearizations} (of
+$\hat\beta$ and $(\hat\alpha, \hat\tau)$) as follows:
   \begin{align}
     \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
@@ -259,7 +263,14 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$ are functio
                  \mathcal{Q}}\psi(\vec{Z}_{j};
                  \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],\nonumber
 \end{align}
-known as \textit{linearizations} (of $\hat\beta$ and $(\hat\alpha, \hat\tau)$).
+where we've used the block inversion relationship
+\begin{equation*}
+  \label{eq:23}
+  \left(\begin{array}{cc}U & 0 \\ V & W \end{array} \right)^{-1} =
+  \left(\begin{array}{cc}U^{-1} & 0 \\ 0 & W^{-1} \end{array} \right)
+  \left(\begin{array}{cc} I & 0 \\ -VU^{-1} & I \end{array} \right)
+\end{equation*}
+(a special case of factorization and inversion based on Schur complements).
 
 The constants $n_{\mathcal{C}}$ and
 $n_{\mathcal{Q}}$ in the above are somewhat
@@ -278,7 +289,7 @@ of dimension $n$ rather than $n_{\mathcal{Q}}$.%
   functions will select for the covariance model is $n_{\mathcal{C}}$, given its sample
   size.  It's incumbent on us to supply \texttt{sandwich::estfun()}
   and/or \texttt{sandwich::bread()} methods for
-  \texttt{DirectAdjusted} objects with compatible implicit scaling
+  \texttt{teeMod} objects with compatible implicit scaling
   constants. \texttt{sandwich::bread()} and
   \texttt{sandwich::breadCL()} take the scaling constant to be the
   reciprocal of the number of rows in whatever
@@ -315,7 +326,7 @@ $\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
       {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
       \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right] \nonumber
 \end{align}
-and in turn
+or equivalently
 \begin{equation*}
 \left(\begin{array}{c}\tilde{\beta}_{(n)}\\ \tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     = \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
@@ -407,7 +418,7 @@ An advantage of the expression with leading factor $n^{-1}$ is that
 that way it parallels the calculation of
 \texttt{sandwich::sandwich()} and, I think, other \texttt{sandwich}
 functions. (Assuming that we write
-\texttt{estfun.DirectAdjusted()}  to return a matrix of row extent
+\texttt{estfun.teeMod()}  to return a matrix of row extent
 $n$.)
 % A potential disadvantage is that it makes $A_{21}$ and
 % $A_{22}$ not means of estimating equation contributions but rather
@@ -483,14 +494,14 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
                                  &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
                                  \frac{n^{3/2}}{n_{\mathcal{C}}^{1/2}n_{\mathcal{Q}}}[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\right\}\\
     &
                                  \times A_{22}^{-t}\\
                                =& n^{-1}A_{22}^{-1} \times\\
                                  &\left\{\left(\frac{n}{n_{\mathcal{Q}}}\right)^{2}M_{22} -
                                  \left(\frac{n}{n_{\mathcal{Q}}}\right)\left(\frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}\right)[M_{21}A_{11}^{-t}A_{21}^t
                                  + A_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}A_{22}\right\}\\
+                                 \frac{n}{n_C}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\right\}\\
     &
                                  \times A_{22}^{-t}
                                 . 
@@ -498,7 +509,7 @@ $A_{21}(\beta)$ as given in \eqref{eq:13}.
 In computations that assemble the three inner summands separately, we may combine $\psi$-\texttt{estfun}'s of dimension
 $n$ with $\hat{A}_{21}$ and $\hat{A}_{22}$ that have been scaled by
 $n_{\mathcal{Q}}$, as opposed to $n$.  However, for Section~\ref{sec:goal}'s purpose of
-associating \texttt{DirectAdjusted} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
+associating \texttt{teeMod} objects witth estimating functions of \eqref{eq:22}'s form $c_{2}\Psi - c_{1}\Phi
 A_{11}^{-1}A_{21}^{t}$, this formula invites unhelpful
 complication. It seems to call for $c_{2}=({n}/{n_{\mathcal{Q}}})$
 and as well as a $c_{1}=({n}/{n_C})^{1/2}$.  An $A$/$\tilde{A}$
@@ -518,11 +529,11 @@ $\tilde{A}_{22}$ in place, $\operatorname{Cov}(\hat\tau) \approx$
                                  \frac{n_{\mathcal{Q}}^{2}}{n_{\mathcal{C}}n}A_{21}A_{11}^{-1}M_{11}A_{11}^{-t}A_{21}^{t}\}\tilde{A}_{22}^{-t} .\nonumber
   \end{align*}
  We engender corresponding estimates of $\operatorname{Cov}(\hat\tau)$ by setting \eqref{eq:22}'s
- $(c_{2}, c_{1})$ to $(1, n_{\mathcal{Q}}n_{\mathcal{C}}^{-1/2}n^{-1/2})$, that is having
+ $(c_{2}, c_{1})$ to $(1, n_{\mathcal{Q}}n_{\mathcal{C}}^{-1})$, that is having
  \texttt{estfun.DA()} return $\Psi -
- \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}^{1/2}n^{1/2}}\Psi
+ \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
  \hat{A}_{11}^{-1}\hat{A}_{21}^{t}$, or simply $\Psi$ if $n_{\mathcal{C}}=0$, while having \texttt{bread.DA()}
- return $\tilde{A}_{22}^{-1}$.
+ return $\hat{\tilde{A}}_{22}^{-1}$.
 
 
   \subsubsection{Clustered estimation of meat matrices}
@@ -546,18 +557,19 @@ column for each cluster:
     \end{array}
   \end{equation}
   
-\subsection{Realization of goal}
+\subsection{Realization of goal} \label{sec:realization-goal}
 Leaving the clusterwise aggregation to \texttt{sandwich}, as
 appropriate, it seems that if we define
-\texttt{sandwich::estfun.DirectAdjusted()} to return an $n \times \tilde{k}$ matrix
+\texttt{sandwich::estfun.teeMod()} to return an $n \times \tilde{k}$ matrix
 \begin{equation} \label{eq:15}
   \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
-  \hat{A}_{11}^{-t}\hat{\tilde{A}}_{21}', 
+  \frac{n}{n_{\mathcal{C}}}\Phi
+  \hat{A}_{11}^{-t}\hat{\tilde{A}}_{21}' = \Psi -
+ \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
+ \hat{A}_{11}^{-1}\hat{A}_{21}^{\prime},
 \end{equation}
-while continuing to allow \texttt{sandwich::bread()} as applied to
-\texttt{DirectAdjusted} objects to return an (appropriately scaled)
-inverted estimate of $A_{22}$, then the effect of this will be for \texttt{sandwich::sandwich()}
+while \texttt{sandwich::bread()} as applied to
+\texttt{teeMod} objects returns $\hat{\tilde{A}}_{22}^{-1} = nn_{\mathcal{Q}}^{-1}\hat{A}_{22}^{-1}$, then the effect of this will be for \texttt{sandwich::sandwich()}
 and \texttt{sandwich::vcovCL()} to return \eqref{eq:6} with
 $\hat{M}$'s,  as
 given by \eqref{eq:7} or \eqref{eq:8} respectively, substituted for
@@ -586,8 +598,8 @@ defining $\tilde{k}$ by 1 random matrices
     \psi_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \psi (\vec{Z}; \tau,\alpha, 
     \beta) -
-    \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
-    \hat{\tilde{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
+    \hat{{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta), 
 \end{equation}
 we have in the model-based formulation 
@@ -595,9 +607,9 @@ we have in the model-based formulation
   \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
-                                 \frac{n^{1/2}}{n_{\mathcal{C}}^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
+                                 \frac{n_{\mathcal{Q}}}{(n n_{\mathcal{C}})^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
                                  + \tilde{A}_{21}A_{11}^{-1}M_{12}] +
-                                 \frac{n}{n_C}\tilde{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}\tilde{A}_{21}^{t}, \label{eq:12}
+                                 \frac{n_{\mathcal{Q}}^{2}}{nn_C}{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}{A}_{21}^{t}, \label{eq:12}
                                \end{multline}
 regardless of what adjustments for
 clustering or heteroskedasticity that we might seek to apply.
@@ -609,16 +621,16 @@ $\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
 coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
 This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
-\begin{equation*}
+\begin{equation*}\label{eq:24}
       \tilde{\psi}_\text{DA}(\vec{Z}; \tau, \alpha, 
     \beta) = \tilde{\psi} (\vec{Z}; \tau,\alpha, 
     \beta) -
-    \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}
+    \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
     \hat{\mathrm{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
     \beta)
 \end{equation*}
-in combination with $\hat{A}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
-$\mathrm{A}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing. 
+in combination with $\hat{\tilde{A}}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
+$\hat{\mathrm{A}}_{22}^{-1}$, which we can readily rescale to obtain $\hat{\tilde{\mathrm{A}}}_{22}^{-1}$; \texttt{sandwich::vcov()} and \texttt{sandwich::vcovCL()} should do the right thing.
 
 
 \section{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
@@ -762,20 +774,20 @@ The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not re
 effects, as conventional covariance estimators for this scenario
 seem to do.  This aspect would inflate these standard errors
 relative to those. Nonetheless, I maintain that
-\texttt{estfun.DirectAdjusted()} as described here are sound as a
+\texttt{estfun.teeMod()} as described here are sound as a
 basis for variance-covariance estimation.}
   sandwich estimates by substitution of $\acute{\Psi}$ for
 $\Psi$ in \eqref{eq:15}.  That is, for a
-\texttt{DirectAdjusted} object \texttt{DA} we should have
-\begin{equation*}
-\mathtt{estfun.DirectAdjusted(DA)} = 
+\texttt{teeMod} object \texttt{DA} we should have
+\begin{equation*}\label{eq:26}
+\mathtt{estfun.teeMod(DA)} = 
   \begin{cases}
   \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'& \mathtt{DA} \text{ absorbs
     intercepts}\\
 \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'  & \text{ otherwise}.
 \end{cases}
 \end{equation*}
@@ -788,9 +800,9 @@ preliminary regression, we can get variance propagation for it by
 another elaboration of estimating functions along the lines of
 \eqref{eq:15}. We facilitate doing
 this by \st{setting up our
-\texttt{sandwich::estfun.DirectAdjusted()} to return} creating a
+\texttt{sandwich::estfun.teeMod()} to return} creating a
 helper \texttt{estfun\_DB\_blockabsorb()}, applying to
-\texttt{DirectAdjusted} objects \texttt{DB} and returning
+\texttt{teeMod} objects \texttt{DB} and returning
 \begin{equation*}
 \begin{cases}
   \AbsorbInterceptsEF{}
@@ -807,16 +819,16 @@ $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\acute{\psi}(\vec{Z}_{i};
 \mathbf{p}, \beta, \tau)]$.  For design-based variance-covariance
 estimation one uses as estimating function
-\begin{multline*}
-  \mathtt{estfun.DirectAdjusted(DA)} -
+\begin{multline*}\label{eq:25}
+  \mathtt{estfun.teeMod(DA)} -
   \mathtt{estfun\_DB\_blockabsorb(DA)} =\\
 \begin{cases}
 \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}'  - \AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' & \mathtt{DA} \text{ absorbs intercepts}\\
  \Psi -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}' 
  & \text{ otherwise}.\\
 \end{cases}
@@ -973,12 +985,12 @@ For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
   \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'.
  \end{equation*}
  In this way, the overall estimating function
- \texttt{estfun.DirectAdjusted(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)} 
+ \texttt{estfun.teeMod(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)} 
  becomes
  \begin{equation}
    \label{eq:19}
   \acute{\Psi} -
-  \left(\frac{n}{n_{\mathcal{C}}}\right)^{1/2}\Phi
+  \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}' - \AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
   \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'

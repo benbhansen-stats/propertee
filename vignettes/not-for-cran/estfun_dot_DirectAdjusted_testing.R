@@ -1,7 +1,7 @@
-#' This script serves as validation for the adjustments made to `DirectAdjusted`'s
+#' This script serves as validation for the adjustments made to `teeMod`'s
 #' `sandwich::estfun` method in February 2023. The goal of this change was to 
 #' write a new `estfun` method such that when `sandwich::vcovCL` was called on a
-#' `DirectAdjusted` object (and thus invoking `estfun`) it would return a meat
+#' `teeMod` object (and thus invoking `estfun`) it would return a meat
 #' matrix corresponding to the covariance matrix of our stacked estimating
 #' equations. Thus, this script tests 1) whether the new method produces the
 #' output matrix we expect and 2) whether the resulting sandwich covariance
@@ -17,12 +17,12 @@ library(propertee)
 # DEFINE CLASSES AND FUNCTIONS FOR TESTING
 # Create placeholder classes for this script so these tests will hold regardless
 # of package development
-# `newPsiTildeDAClass` will be use new `estfun.DirectAdjusted` method, the
-# `oldPsiTildeDAClass` will use the base class's `DirectAdjusted` method, and
+# `newPsiTildeDAClass` will be use new `estfun.teeMod` method, the
+# `oldPsiTildeDAClass` will use the base class's `teeMod` method, and
 # the rest of the functions we re-write here because they will no longer be
 # exported as part of the `propertee` package
 setClass("newPsiTildeDAClass",
-         contains = "DirectAdjusted")
+         contains = "teeMod")
 
 estfun.newPsiTildeDAClass <- function(object) {
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
@@ -87,7 +87,7 @@ bread.newPsiTildeDAClass <- function(object) {
 }
 
 setClass("oldPsiTildeDAClass",
-         contains = "DirectAdjusted")
+         contains = "teeMod")
 
 estfun.oldPsiTildeDAClass <- function(object) {
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
@@ -104,13 +104,13 @@ estfun.oldPsiTildeDAClass <- function(object) {
 #' The following submatrix computation functions are as they appeared in the
 #' `propertee` package prior to Feb. 2023
 .get_a11_inverse <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -122,13 +122,13 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 .get_a21 <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -151,8 +151,8 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 .get_a22_inverse <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   # Get expected information per sandwich_infrastructure vignette
@@ -163,13 +163,13 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 .get_b11 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -213,13 +213,13 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 .get_b12 <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   sl <- x$model$`(offset)`
   if (!is(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   
@@ -279,8 +279,8 @@ estfun.oldPsiTildeDAClass <- function(object) {
 }
 
 .get_b22 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   nq <- nrow(sandwich::estfun(x))
@@ -425,9 +425,9 @@ old_vcovMB_CR0 <- function(x, ...) {
 # 4) nonlinear covariance adjustment model
 # For each model, verify:
 #  1) crossprod of new est. eqns. returns what we expect
-#  2) new vcovDA estimates are the same estimates output by the `propertee`
+#  2) new vcov_tee estimates are the same estimates output by the `propertee`
 #     package prior to Feb. 2023
-#  3) new vcovDA estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
+#  3) new vcov_tee estimates are the same as `sandwich::sandwich(newDA, meat. = sandwich::vcovCL)`
 #     with appropriate scaling for the `bread` function and an appropriate
 #     `cluster` argument
 set.seed(2300)
@@ -533,4 +533,4 @@ testthat::expect_equal(new_vcov4,
                        sandwich::sandwich(new_psi_tilde_da4, adjust = FALSE))
 new_vcov4
 
-cat("Successfully tested estfun.DirectAdjusted", sep = "\n")
+cat("Successfully tested estfun.teeMod", sep = "\n")

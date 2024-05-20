@@ -4,22 +4,22 @@ options("propertee_message_on_unused_blocks" = FALSE)
 test_that("lmitt", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
   da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
 
-  expect_s4_class(da, "DirectAdjusted")
+  expect_s4_class(da, "teeMod")
   expect_true(inherits(da, "lm"))
 
   da_ett <- lmitt(y ~ 1, weights = ett(), data = simdata, design = des)
 
-  expect_s4_class(da_ett, "DirectAdjusted")
+  expect_s4_class(da_ett, "teeMod")
 })
 
 test_that("lmitt and lm return the same in simple cases", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid),
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid),
                    data = simdata)
 
   ml <- lm(y ~ assigned(), data = simdata, weights = ate(des))
@@ -41,7 +41,7 @@ test_that("lmitt and lm return the same in simple cases", {
 
 test_that("covariate adjustment", {
   data(simdata)
-  des <- rd_design(z ~ cluster(cid2, cid1) + block(bid) + forcing(force),
+  des <- rd_design(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
   camod <- lm(y ~ x, data = simdata)
@@ -56,33 +56,33 @@ test_that("covariate adjustment", {
 
 test_that("Design argument", {
   data(simdata)
-  des <- obs_design(z ~ cluster(cid1, cid2), data = simdata)
+  des <- obs_design(z ~ cluster(uoa1, uoa2), data = simdata)
 
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
   mod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des)
-  mod3 <- lmitt(y ~ 1, data = simdata, design = z ~ cluster(cid1, cid2))
+  mod3 <- lmitt(y ~ 1, data = simdata, design = z ~ cluster(uoa1, uoa2))
   expect_true(mod3@Design@type == "Obs")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
-  des2 <- rd_design(z ~ cluster(cid1, cid2) + forcing(force), data = simdata)
+  des2 <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force), data = simdata)
 
   mod1 <- lmitt(y ~ 1, data = simdata, design = des2)
   mod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), design = des2)
   mod3 <- lmitt(y ~ 1, data = simdata,
-                design = z ~ cluster(cid1, cid2) + forcing(force))
+                design = z ~ cluster(uoa1, uoa2) + forcing(force))
   expect_true(mod3@Design@type == "RD")
   expect_identical(mod1@Design, mod2@Design)
   expect_identical(mod1@Design, mod3@Design)
 
-  des3 <- obs_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des3 <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   mod1 <- lmitt(y ~ 1, data = simdata, design = des3,
                 subset = simdata$dose < 300)
   mod2 <- lmitt(y ~ 1, data = simdata, weights = ate(),
                 subset = simdata$dose < 300, design = des3)
   mod3 <- lmitt(y ~ 1, data = simdata,
-                design = z ~ cluster(cid1, cid2) + block(bid),
+                design = z ~ cluster(uoa1, uoa2) + block(bid),
                 subset = simdata$dose < 300)
   expect_true(mod3@Design@type == "Obs")
   expect_identical(mod1@Design, mod2@Design)
@@ -96,11 +96,11 @@ test_that("Design argument", {
 test_that("Dichotomy option in Design creation", {
 
   data(simdata)
-  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata,
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata,
                     dichotomy = dose > 200 ~ .)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
   mod2 <- lmitt(y ~ 1, data = simdata,
-                design = dose ~ cluster(cid1, cid2),
+                design = dose ~ cluster(uoa1, uoa2),
                 dichotomy = dose > 200 ~ .)
   expect_identical(mod1@Design, mod2@Design)
   expect_true(all.equal(mod1$coefficients, mod2$coefficients,
@@ -112,7 +112,7 @@ test_that("Dichotomy option in Design creation", {
 test_that("Allow non-binary treatment", {
 
   data(simdata)
-  des <- obs_design(dose ~ cluster(cid1, cid2), data = simdata)
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, design = des)
   expect_true(any(!model.frame(mod1)[, 2] %in% 0:1))
 
@@ -120,7 +120,7 @@ test_that("Allow non-binary treatment", {
 
 test_that("lmitt finds Design wherever it's stored", {
   data(simdata)
-  des_form <- z ~ uoa(cid1, cid2) + block(bid)
+  des_form <- z ~ uoa(uoa1, uoa2) + block(bid)
   des <- obs_design(des_form, data = simdata)
   camod <- lm(y ~ x, data = simdata)
 
@@ -134,13 +134,13 @@ test_that("lmitt finds Design wherever it's stored", {
 
   expect_equal(coef(mod1), coef(mod2))
   expect_equal(coef(mod1), coef(mod3))
-  expect_equal(vcovDA(mod1), vcovDA(mod2))
-  expect_equal(vcovDA(mod1), vcovDA(mod3))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1), vcov_tee(mod3))
 })
 
 test_that("Allowed inputs to lmitt #73", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   ### Allowed versions
 
@@ -172,7 +172,7 @@ test_that("Allowed inputs to lmitt #73", {
 test_that("weights argument can be string", {
 
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   l1 <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
   l2 <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate")
@@ -201,16 +201,16 @@ test_that("weights argument can be string", {
 test_that("Regular weights can still be used", {
 
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ 1, design = des, weights = simdata$dose, data = simdata)
-  expect_true(is(mod, "DirectAdjusted"))
+  expect_true(is(mod, "teeMod"))
 
 })
 
 test_that("Aliases for assigned() aren't allowed either", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_error(lmitt(y ~ assigned(), design = des, data = simdata),
                "Do not specify")
@@ -229,7 +229,7 @@ test_that("Aliases for assigned() aren't allowed either", {
   ad <- assigned
   # Passing in a different weight to ensure we get a predictable error that
   # ocurs *after* checking the formula
-  des2 <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des2 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   expect_error(lmitt(y ~ ad(), design = des, data = simdata,
                      weights = ate(des2)),
                "Multiple differing")
@@ -246,7 +246,7 @@ test_that("Aliases for assigned() aren't allowed either", {
 
 test_that("User can pass WeightedDesign", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ 1, data = simdata, design = ate(des))
 
@@ -256,7 +256,7 @@ test_that("User can pass WeightedDesign", {
 
 test_that("#82 Informative error if design in weight/offset but not lmitt", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_error(lmitt(y ~ 1, data = simdata, weights = ate(des)),
                "into the weight function")
@@ -269,12 +269,12 @@ test_that("#82 Informative error if design in weight/offset but not lmitt", {
 
 test_that("#81 continuous moderator", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) , data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) , data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, design = des)
   expect_length(mod$coeff, 4)
 
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, design = des, absorb = TRUE)
   expect_length(mod$coeff, 4)
@@ -283,17 +283,17 @@ test_that("#81 continuous moderator", {
 
 test_that("non-integer units of assignment", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid) , data = simdata)
 
   expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
 
-  simdata$cid1 <- as.character(simdata$cid1)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+  simdata$uoa1 <- as.character(simdata$uoa1)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid) , data = simdata)
 
   expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
 
-  simdata$cid1 <- as.factor(simdata$cid1)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid) , data = simdata)
+  simdata$uoa1 <- as.factor(simdata$uoa1)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid) , data = simdata)
 
   expect_no_error(lmitt(y ~ x, data = simdata, design = des, absorb = TRUE))
 
@@ -304,9 +304,9 @@ test_that("#137 ensure absorb is using the correct moderator", {
   data(simdata)
 
   mod1 <- lmitt(y ~ o, data = simdata,
-                design = z ~ cluster(cid1, cid2) + block(bid))
+                design = z ~ cluster(uoa1, uoa2) + block(bid))
   mod2 <- lmitt(y ~ o, data = simdata,
-                design = z ~ cluster(cid1, cid2) + block(bid),
+                design = z ~ cluster(uoa1, uoa2) + block(bid),
                 absorb = TRUE)
 
   o1 <- model.matrix(mod1)[, "o"]
@@ -330,10 +330,10 @@ test_that("#140 handling 0 weights", {
   simdata$weight <- 1
   simdata$weight[1] <- 0
 
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[1, ] == 0))
 
   # A block with only a single non-zero weight should contribute nothing to the
@@ -343,21 +343,21 @@ test_that("#140 handling 0 weights", {
   simdata$weight[simdata$bid == 1] <- 0
   simdata$weight[simdata$bid == 1][1] <- 1
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[simdata$bid == 1, 2:ncol(ee)] == 0))
   expect_true(all(ee[simdata$bid == 1 & simdata$weight == 0, 1] == 0))
 
   data(simdata)
   simdata$z[simdata$bid == 1] <- 1
   simdata$weight <- 1
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   # Block 1 has 0 variance in treatment
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
-  ee <- propertee:::estfun.DirectAdjusted(mod)
+  ee <- propertee:::estfun.teeMod(mod)
   expect_true(all(ee[simdata$bid == 1, "z."] == 0))
   expect_true(all(
     sapply(ee[simdata$bid == 1, c("(Intercept)", "x", "z._x")],
@@ -375,7 +375,7 @@ options(save_options)
 
 test_that("Message if design has block info but isn't used in lmitt", {
   data(simdata)
-  des <- obs_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_message(lmitt(y ~ 1, data = simdata, design = des),
                  "is not used in this model")
@@ -397,9 +397,9 @@ test_that("Message if design has block info but isn't used in lmitt", {
 test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
                 "(some strata only have treated clusters)"), {
   data(simdata)
-  simdata[simdata$cid1 == 5 & simdata$cid2 == 2, "bid"] <- 4
+  simdata[simdata$uoa1 == 5 & simdata$uoa2 == 2, "bid"] <- 4
   
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = TRUE)
   no_absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = FALSE)
   
@@ -409,9 +409,9 @@ test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
 test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
                 "(some strata only have untreated clusters)"), {
   data(simdata)
-  simdata[simdata$cid1 == 4 & simdata$cid2 == 2, "bid"] <- 4
+  simdata[simdata$uoa1 == 4 & simdata$uoa2 == 2, "bid"] <- 4
   
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = TRUE)
   no_absorb_mod <- lmitt(y ~ 1, design = des, data = simdata, weights = "ate", absorb = FALSE)
   
@@ -421,7 +421,7 @@ test_that(paste("absorb=TRUE doesn't drop rows when some strata have weights=0",
 test_that("#147 lmitt.formula accepts references to formula objects", {
   data(simdata)
   lmitt_form <- y ~ 1
-  des <- rct_design(z ~ uoa(cid1, cid2), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
   expect_equal(
     co <- capture.output(lmitt(lmitt_form, data = simdata, design = des)),
     capture.output(lmitt(y ~ 1, data = simdata, design = des))
@@ -429,7 +429,7 @@ test_that("#147 lmitt.formula accepts references to formula objects", {
   
   make_lmitt <- function(data, dv_col) {
     lmitt_form <- as.formula(paste0(dv_col, "~1"))
-    des <- rct_design(z ~ unitid(cid1, cid2), data)
+    des <- rct_design(z ~ unitid(uoa1, uoa2), data)
     lmitt(lmitt_form, design = des, data = data)
   }
   expect_equal(capture.output(make_lmitt(simdata, "y")), co)

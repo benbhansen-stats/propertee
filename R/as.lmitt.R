@@ -1,9 +1,17 @@
 #' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
-#' @include DirectAdjusted.R
+#' @include teeMod.R
 NULL
 
-##' @title Convert \code{lm} object into \code{DirectAdjusted}
-##' @param x \code{lm} object with weights containing a \code{WeightedDesign}
+##' @title Convert \code{lm} object into \code{teeMod}
+##'
+##' @description Converts the output of [lm()] into a \code{teeMod}
+##'   object so that it can be used to properly account for standard errors.
+##'
+##' @details The formula with which \code{x} was created must include a
+##'   treatment identifier (e.g. [assigned()]).
+##'
+##' @param x \code{lm} object with weights containing a \code{WeightedDesign},
+##'   or an offset from [cov_adj()].
 ##' @param design Optional, explicitly specify the \code{Design} to be used. If
 ##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
 ##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
@@ -11,7 +19,7 @@ NULL
 ##'   passed here as well. (If different \code{Design} objects are passed
 ##'   (either through the \code{lm} in weights or covariance adjustment, or
 ##'   through this argument), an error will be produced.)
-##' @return \code{DirectAdjusted} object
+##' @return \code{teeMod} object
 ##' @rdname as_lmitt
 ##' @importFrom stats formula
 ##' @export
@@ -85,7 +93,7 @@ as.lmitt <- function(x, design = NULL) {
 
 ##' @rdname as_lmitt
 ##' @export
-as.DirectAdjusted <- as.lmitt
+as.teeMod <- as.lmitt
 
 .convert_to_lmitt <- function(lm_model,
                               design,
@@ -184,7 +192,7 @@ as.DirectAdjusted <- as.lmitt
     lm_model$formula <- as.formula(lm_model, env = eval_env)
   }
 
-  return(new("DirectAdjusted",
+  return(new("teeMod",
              lm_model,
              Design = design,
              absorbed_intercepts = absorbed_intercepts,

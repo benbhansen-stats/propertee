@@ -2,16 +2,16 @@
 % Please edit documentation in R/WeightedDesign.R
 \name{show,WeightedDesign-method}
 \alias{show,WeightedDesign-method}
-\title{Show a WeightedDesign}
+\title{Show a \code{WeightedDesign}}
 \usage{
 \S4method{show}{WeightedDesign}(object)
 }
 \arguments{
-\item{object}{WeightedDesignDesign object}
+\item{object}{a \code{WeightedDesign} object}
 }
 \value{
 an invisible copy of \code{object}
 }
 \description{
-Show a WeightedDesign
+Prints out the weights from a \code{WeightedDesign}
 }

@@ -1,6 +1,6 @@
 test_that("Obtaining data for weights", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
@@ -33,7 +33,7 @@ test_that("Obtaining data for weights", {
   mod7 <- lm(y ~ x, data = simdata, weights = simdata$o*ate(des))
 
   # additional arguments in weights
-  des2 <- rct_design(o ~ cluster(cid1, cid2), data = simdata)
+  des2 <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata)
   mod8 <- lm(y ~ x, data = simdata, weights = ett(des2, dichotomy = o >= 3 ~ .))
 
 
@@ -66,7 +66,7 @@ test_that("Obtaining data for weights", {
 
 test_that("get_data_from_model finds data in lmitt object's eval env", {
   data(simdata)
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   damod <- lmitt(y ~ 1, design = des, data = simdata)
 
   lmitt_func <- function(x, ...) {
@@ -90,7 +90,7 @@ test_that(paste("get_data_from_model frame recursion doesn't return",
 
   data(simdata)
   data <- simdata
-  des <- rct_design(z ~ cluster(cid1, cid2), data)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), data)
   damod <- lmitt(y ~ 1, design = des, data = data)
 
   non_lmitt_func <- function(data = NULL) {

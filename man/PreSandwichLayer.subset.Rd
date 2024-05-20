@@ -3,14 +3,14 @@
 \name{subset,PreSandwichLayer-method}
 \alias{subset,PreSandwichLayer-method}
 \alias{[,PreSandwichLayer-method}
-\title{PreSandwichLayer and SandwichLayer subsetting}
+\title{\code{PreSandwichLayer} and \code{SandwichLayer} subsetting}
 \usage{
 \S4method{subset}{PreSandwichLayer}(x, subset)
 
 \S4method{[}{PreSandwichLayer}(x, i)
 }
 \arguments{
-\item{x}{\code{PreSandwichLayer} object}
+\item{x}{\code{PreSandwichLayer} or \code{SandwichLayer} object}
 
 \item{subset}{Logical vector identifying values to keep or drop}
 
@@ -18,10 +18,9 @@
 \code{help("[")} for further details.}
 }
 \value{
-\code{x} subset by \code{i}
-
-\code{x} subset by \code{i}
+\code{x} subset by \code{subset} or \code{i}
 }
 \description{
-PreSandwichLayer and SandwichLayer subsetting
+Return subset of a \code{PreSandwichLayer} or
+\code{SandwichLayer} which meets conditions.
 }

@@ -25,22 +25,28 @@ forcing(...)
 \item{...}{any number of variables of the same length.}
 }
 \value{
-the variables with appropriate labels
+the variables with appropriate labels. No use outside of their
+inclusion in the \code{formula} argument to \code{\link[=obs_design]{obs_design()}},
+\code{\link[=rct_design]{rct_design()}}, or \code{\link[=rd_design]{rd_design()}}
 }
 \description{
-These are special functions used only in the definition of \code{Design}
-objects. They identify the units of assignment, blocks and forcing
-variables.
+These are special functions used only in the definition of
+\code{Design} objects. They identify the units of assignment, blocks and
+forcing variables. They should never be used outside of the \code{formula}
+argument to \code{\link[=obs_design]{obs_design()}}, \code{\link[=rct_design]{rct_design()}}, or \code{\link[=rd_design]{rd_design()}}.
 }
 \details{
 These functions have no use outside of the formula in creating a
 \code{Design}.
 
-\code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid} are
-all aliases of each other; you must include one and only one in each
-\code{Design}. The choice of which to use will have no impact on any
-analysis, only on some output display.
+\code{unit_of_assignment}, \code{uoa}, \code{cluster} and \code{unitid}
+are synonyms; you must include one and only one in each \code{Design}. The
+choice of which to use will have no impact on any analysis, only on some
+output and the name of the stored element in the \code{Design}. Accessors/
+replacers (\code{\link[=units_of_assignment]{units_of_assignment()}}, \code{\link[=unitids]{unitids()}}, \code{\link[=clusters]{clusters()}}) respect the
+choice made at the point of creation of the \code{Design}, and only the
+appropriate function will work.
 
-See \code{rct_design}, \code{obs_design}, or \code{rd_design} for examples
+See \code{\link[=rct_design]{rct_design()}}, \code{\link[=obs_design]{obs_design()}}, or \code{\link[=rd_design]{rd_design()}} for examples
 of their usage.
 }

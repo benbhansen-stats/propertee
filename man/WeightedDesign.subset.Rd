@@ -18,10 +18,10 @@
 \code{help("[")} for further details.}
 }
 \value{
-\code{x} subset by \code{i}
-
-\code{x} subset by \code{i}
+A \code{WeightedDesign} object which is a subsetted version of
+\code{x}.
 }
 \description{
-\code{WeightedDesign} subsetting
+Provides functionality to subset the weights of a
+\code{WeightedDesign} object.
 }

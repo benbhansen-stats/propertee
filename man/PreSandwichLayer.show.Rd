@@ -2,16 +2,17 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{show,PreSandwichLayer-method}
 \alias{show,PreSandwichLayer-method}
-\title{Show a PreSandwichLayer or SandwichLayer}
+\title{Show a \code{PreSandwichLayer} or \code{SandwichLayer}}
 \usage{
 \S4method{show}{PreSandwichLayer}(object)
 }
 \arguments{
-\item{object}{PreSandwichLayer object}
+\item{object}{\code{PreSandwichLayer} or \code{SandwichLayer} object}
 }
 \value{
 an invisible copy of \code{object}
 }
 \description{
-Show a PreSandwichLayer or SandwichLayer
+Display information about a \code{PreSandwichLayer} or
+\code{SandwichLayer} object
 }

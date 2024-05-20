@@ -5,15 +5,13 @@
 \alias{STARdata}
 \title{STAR data}
 \format{
-The STAR data set
-\itemize{
-\item ???
-}
+A \code{data.frame} with 11,598 rows and 47 columns.
 }
 \usage{
 STARdata
 }
 \description{
-STAR data
+Tennessee’s Student-Teacher Achievement Ratio (STAR) data set.
+This is a copy of the data \code{AER::STAR}.
 }
 \keyword{dataset}

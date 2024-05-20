@@ -307,7 +307,7 @@ test_that("as.SandwichLayer used correctly with unnamed `by` and NULL `Q_data`",
       ),
       "Unable to detect"
     ),
-    "Could not find quasiexperimental data"
+    "Could not find direct adjustment data"
   )
 
   expect_true(inherits(sl, "SandwichLayer"))
@@ -340,7 +340,7 @@ test_that("as.SandwichLayer failed by", {
         ),
         "Unable to detect"
       ),
-      "Could not find quasiexperimental data"
+      "Could not find direct adjustment data"
     ),
     "Could not find columns"
   )
@@ -657,7 +657,7 @@ test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   expect_error(.sanitize_C_ids(dmod$model$`(offset)`, by = "uid"),
@@ -668,21 +668,21 @@ test_that(".sanitize_C_ids with full UOA info", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
   ids <- .sanitize_C_ids(dmod$model$`(offset)`)
-  expected_ids <- apply(simdata[, c("cid1", "cid2")], 1, function(...) paste(..., collapse = "_"))
+  expected_ids <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   expect_equal(ids, expected_ids)
 })
 
 test_that(".sanitize_C_ids with partial UOA info", {
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
-                          "cid1" = rep(c(1, 2), each = 5),  "cid2" = NA)
+                          "uoa1" = rep(c(1, 2), each = 5),  "uoa2" = NA)
 
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
 
@@ -693,10 +693,10 @@ test_that(".sanitize_C_ids with partial UOA info", {
 
 test_that(".sanitize_C_ids with no UOA info", {
   data(simdata)
-  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "cid1" = NA,  "cid2" = NA)
+  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "uoa1" = NA,  "uoa2" = NA)
 
   cmod <- lm(y ~ x, cmod_data)
-  des <- rct_design(z ~ uoa(cid1, cid2), simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des,
                 offset = cov_adj(cmod))
 

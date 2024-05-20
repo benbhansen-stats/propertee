@@ -10,7 +10,7 @@ test_that("binary treatment, in all data", {
   # Treatment exists in data
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   camod <- lm(y ~ x, data = simdata)
 
   # Weight alone
@@ -21,7 +21,7 @@ test_that("binary treatment, in all data", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # cov_adj alone
@@ -88,13 +88,13 @@ test_that("binary treatment, not in data2", {
   # Treatment doesn't exist in data
   data(simdata)
 
-  des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   camod <- lm(y ~ x, data = simdata)
   simdata$z <- NULL
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
@@ -138,14 +138,14 @@ test_that("non-binary treatment, in all data, dichotomization in design", {
   # Treatment exists in data
   data(simdata)
 
-  des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata,
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
                     dichotomy = dose >= 200 ~ .)
   camod <- lm(y ~ x, data = simdata)
 
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
@@ -189,7 +189,7 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
   # Treatment exists in data
   data(simdata)
 
-  des <- rct_design(dose ~ uoa(cid1, cid2) + block(bid), data = simdata,
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
                     dichotomy = dose >= 200 ~ .)
   camod <- lm(y ~ x, data = simdata)
   simdata$dose <- NULL
@@ -197,7 +197,7 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
 
   # Adopters alone
   expect_silent(a <- lm(y ~ assigned(des), data = simdata))
-  # DA doesnt look in assigned for Design
+  # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned

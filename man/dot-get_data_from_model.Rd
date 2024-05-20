@@ -12,7 +12,8 @@ separate logic for the two functions.}
 
 \item{form}{Formula on which to apply \code{model.frame()}. See details}
 
-\item{by}{translation of cluster ID names, passed down from weights.}
+\item{by}{translation of unit of assignment/unitid/cluster ID names, passed
+down from weights.}
 }
 \value{
 \code{data.frame}

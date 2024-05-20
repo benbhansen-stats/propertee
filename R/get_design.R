@@ -88,12 +88,12 @@
     covadj_design <- .find.design("offset")
   }
 
-  # `model.frame` may have a DA object we can extract from
+  # `model.frame` may have a teeMod object we can extract from
   mf_calls <- grepl("model\\.frame$", lapply(sys.calls(), "[[", 1), perl = TRUE)
 
   mf_design <- lapply(which(mf_calls), function(x) {
     form <- get("formula", sys.frame(x))
-    found_des <- if (inherits(form, "DirectAdjusted")) {
+    found_des <- if (inherits(form, "teeMod")) {
       form@Design
     } else if (inherits(form, "terms") | inherits(form, "formula")) {
       tryCatch(get("design", environment(form)),
@@ -109,12 +109,12 @@
 
   emf_calls <- grepl("expand\\.model\\.frame$",
                      lapply(sys.calls(), "[[", 1), perl = TRUE) |
-    grepl("\\.expand\\.model\\.frame\\.DA$",
+    grepl("\\.expand\\.model\\.frame_teeMod$",
           lapply(sys.calls(), "[[", 1), perl = TRUE)
 
   emf_design <- lapply(which(emf_calls), function(x) {
     mod <- get("model", sys.frame(x))
-    if (inherits(mod, "DirectAdjusted")) mod@Design else NULL
+    if (inherits(mod, "teeMod")) mod@Design else NULL
   })
 
   # At this point, each *_design is either NULL, or a Design (as enforced by

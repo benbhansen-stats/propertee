@@ -2,7 +2,7 @@
 % Please edit documentation in R/DesignUtilities.R
 \name{identify_small_blocks}
 \alias{identify_small_blocks}
-\title{Identify fine strata (blocks with one treated or one control unit of assignment)}
+\title{Identify fine strata}
 \usage{
 identify_small_blocks(des)
 }
@@ -10,9 +10,10 @@ identify_small_blocks(des)
 \item{des}{A \code{Design} object.}
 }
 \value{
-Logical vector with length given by the number of blocks in the
-Design
+Logical vector with length given by the number of blocks in
+\code{Design}
 }
 \description{
-Identify fine strata (blocks with one treated or one control unit of assignment)
+Identify blocks in a \code{Design} with exactly one treated or
+one control unit of assignment.
 }

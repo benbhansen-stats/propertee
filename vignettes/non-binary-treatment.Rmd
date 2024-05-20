@@ -1,9 +1,9 @@
 ---
-title: "Applying Dichotomies to Non-Binary Treatments"
+title: "Non-binary Treatment Specification"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Applying Dichotomies to Non-Binary Treatments}
+  %\VignetteIndexEntry{Non-binary Treatment Specification}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,29 +18,48 @@ library(propertee)
 
 ## Binary Treatment
 
-When creating a Design, handling binary treatment variables is straightforward:
+When creating a Design, handling binary treatment variables is straightforward.
+If the treatment variable is either `numeric` with only values 0/1, or is
+`logical`, then `lmitt()` will estimate a treatment effect of the difference
+between the outcome in the treated group (`1` or `TRUE`) versus the control
+group (`0` or `FALSE`).
 
-```{r}
-des1 <- rct_design(z ~ cluster(cid1, cid2), data = simdata)
-head(ate(des1, data = simdata))
-```
+### Missing treatment status
+
+In all cases (binary and non-binary), missing values are allowed and any units
+of assignment with missing treatment values are excluded from models fit via
+`lmitt()`.
 
 ## Non-binary Treatment
 
-However, while Design objects support non-binary treatment variables, attempting
-to utilize those non-binary treatment variables will result in an error:
+However, the [`_design()`](../reference/Design_objects.html) functions can take
+in any (reasonable) form of treatment assignment.
 
-```{r, error= TRUE}
-head(simdata$dose)
-des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
-ate(des2, data = simdata)
-```
+If the treatment variable is a `numeric` with non-binary values, it is treated
+as a continuous treatment effect and `lmitt(y ~ 1, ...` will estimate a single
+coefficient on treatment.
 
-### Applying a `dichotomy`
+If the treatment variable is a `character`, it is treated as a multi-level
+treatment variable and `lmitt(y ~ 1, ...` will estimate treatment effects
+against a reference category. The reference category is the first level defined
+according to [R's comparison of characters](https://rdrr.io/r/base/Comparison.html).
 
-Instead, you need to define a `dichotomy`. A `dichotomy` is presented as a
+`factor` and `ordered` objects are tricky to deal with, so while a `Design` can
+be created with `factor` or `ordered` treatment variables, `lmitt()` will refuse
+to estimate a model. It is strongly recommended to recode the variable into
+`numeric` or `character`, or you can use
+[`dichotomy`](#dichotomzing-a-non-binary-treatment) (see below).
+
+Note that weights (`ate()` or `ett()`, or `weights="ate"` or `weights ="ett"`)
+only support binary treatment variables and will error on anything except binary
+`numeric` or `logical`.
+
+### Dichotomzing a Non-binary Treatment
+
+The [`Design`](../reference/Design_objects.html) creation functions and
+`ett()`/`ate()` support a `dichotomy=` argument. A `dichotomy` is presented as a
 formula, where the left-hand side is a logical statement defining inclusion in
-the treatment group, and the rihgt-hand side is a logical statement defining
+the treatment group, and the right-hand side is a logical statement defining
 inclusion in the control group. For example,
 
 ```{r, eval = FALSE}
@@ -58,77 +77,43 @@ dose > 200 ~ .
 . ~ dose <= 200
 ```
 
-Note that all units need to be assigned to treatment or control; any units who
-are not captured in either logical statement are assumed to be excluded from the
-trial.
+Any units of assignment not assigned to either treatment or control are assumed
+to have `NA` for a treatment status and will be ignored in the estimation of
+treatment effects.
 
 ```{r, eval = FALSE}
-dose > 200 ~ dose <= 200 & dose >= 100
+dose >= 300 ~ dose <= 100
 ```
 
-In this `dichotomy`, only units of assignment above 100 are considered in the
-trial.
+In this `dichotomy`, units of assignment in the range (100,300) are ignored.
 
-Let's see these passed to the `ate()`/`ett()` functions:
+### An Example
+
+We place the dichotomy directly in a `Design` object:
 
 ```{r}
-head(ate(des2, data = simdata,
-         dichotomy = dose > 200 ~ dose <= 200))
-head(ate(des2, data = simdata,
-         dichotomy = dose > 200 ~ .))
-head(ate(des2, data = simdata,
-         dichotomy = .~ dose <= 200))
-head(ate(des2, data = simdata,
-         dose > 200 ~ dose <= 200 & dose >= 100))
+data(simdata)
+table(simdata$dose)
+des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
+summary(des1)
+dichotomy(des1) <- dose >= 300 ~ dose <= 100
+summary(des1)
 ```
 
-The first four units of assignment have `dose` of 50, notice their corresponding
-weight of 0 in the last example.
-
-Alternatively, we could place the dichotomy directly in the `Design` object
-instead.
+You can also place the `dichotomy` in the `_design()` call direcly:
 
 ```{r}
-dichotomy(des2) <- dose > 200 ~ dose <= 200 & dose >= 100
+des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
+                   dichotomy = dose >= 300 ~ dose <= 100)
+summary(des2)
+```
+
+Alternatively, a `dichotomy` can be passed to `ate()`/`ett()` functions. If the
+`Design` already has a `dichotomy`, it will be used, but passing an additional
+`dichotomy` to the weight functions replaces the `Design`'s `dichotomy`.
+
+```{r}
 head(ate(des2, data = simdata))
-des3 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
-                   dichotomy = dose > 200 ~ dose <= 200 & dose >= 100)
-head(ate(des3, data = simdata))
-```
-### Storage of non-binary treatment
-
-When a design's treatment is dichotomized, we keep the orignal treatment in
-place, but add a slot for the `dichotomy`:
-
-```{r}
-des3
-```
-
-We can obtain the `dichotomy` with the `dichotomy()` function, or apply it to
-the treatment with the `treatment()` function and it's `binary=` argument.
-
-```{r}
-dichotomy(des3)
-treatment(des3)
-treatment(des3, binary = TRUE)
-```
-
-### Helper Functions
-
-There are three helper functions:
-
-- `has_binary_treatment()` identifies whether a `Design` has a binary treatment
-  variable.
-- `is_dichotomized()` identifies whether a `Design` has a `dichotomy`
-  applied to it.
-- `is_binary_or_dichotomized()` identifies whether either a `Design` is binary
-  **or** has a `dichotomy` applied to it.
-
-```{r}
-c(is_dichotomized(des1),
-  has_binary_treatment(des1),
-  is_binary_or_dichotomized(des1))
-c(is_dichotomized(des2),
-  has_binary_treatment(des2),
-  is_binary_or_dichotomized(des2))
+head(ate(des2, data = simdata,
+         dichotomy = dose != 300 ~ .))
 ```

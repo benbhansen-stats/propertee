@@ -7,9 +7,6 @@
     <loc>www.github.com/dev/LICENSE.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/articles/CovarianceAdjustment.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/dev/articles/LinearModelVarianceEstimation.html</loc>
   </url>
   <url>
@@ -17,9 +14,6 @@
   </url>
   <url>
     <loc>www.github.com/dev/articles/design_based_SEs.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/articles/geex_vs_propertee.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/articles/index.html</loc>
@@ -31,7 +25,7 @@
     <loc>www.github.com/dev/articles/non-binary-treatment.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/articles/not-for-cran/non-binary-weights.html</loc>
+    <loc>www.github.com/dev/articles/not-for-cran/geex_vs_propertee.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/articles/sandwich_infrastructure.html</loc>
@@ -61,6 +55,15 @@
     <loc>www.github.com/dev/reference/Design_objects.html</loc>
   </url>
   <url>
+    <loc>www.github.com/dev/reference/Design_structure.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/Design_summary.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/Design_var_names.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/dev/reference/PreSandwichLayer.show.html</loc>
   </url>
   <url>
@@ -88,22 +91,16 @@
     <loc>www.github.com/dev/reference/as_lmitt.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/bread.DirectAdjusted.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/bread.glmrob.html</loc>
+    <loc>www.github.com/dev/reference/bread.teeMod.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/c-WeightedDesign-method.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/confint.DirectAdjusted.html</loc>
+    <loc>www.github.com/dev/reference/confint.teeMod.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/cov_adj.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/da_estfun_methods.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/design_data_concordance.html</loc>
@@ -139,13 +136,16 @@
     <loc>www.github.com/dev/reference/dot-check_df_moderator_estimates.html</loc>
   </url>
   <url>
+    <loc>www.github.com/dev/reference/dot-confint_lm.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/dev/reference/dot-convert_to_data.frame.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/dot-design_accessors_newdata_validate.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/dot-expand.model.frame.DA.html</loc>
+    <loc>www.github.com/dev/reference/dot-expand.model.frame_teeMod.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/dot-fallback_data_search.html</loc>
@@ -196,9 +196,6 @@
     <loc>www.github.com/dev/reference/dot-show_layer.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/dot-txt_fn.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/dev/reference/dot-update_by.html</loc>
   </url>
   <url>
@@ -217,13 +214,7 @@
     <loc>www.github.com/dev/reference/dot-weights_calc.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/estfun.DirectAdjusted.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/estfun.glmrob.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/get_structure.html</loc>
+    <loc>www.github.com/dev/reference/estfun.teeMod.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/glmrob_methods.html</loc>
@@ -247,28 +238,16 @@
     <loc>www.github.com/dev/reference/lsoSynth.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/make_uoa_cluster_df.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/print.summary.Design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/print.summary.DirectAdjusted.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/dev/reference/sandwich_elements_calc.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/show-Design-method.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/show-DesignStructure-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/show-DirectAdjusted-method.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/dev/reference/show-WeightedDesign-method.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/dev/reference/show-teeMod-method.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/simdata.html</loc>
@@ -277,22 +256,13 @@
     <loc>www.github.com/dev/reference/studentdata.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/summary.Design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/summary.DirectAdjusted.html</loc>
+    <loc>www.github.com/dev/reference/teeMod_summary.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/var_estimators.html</loc>
   </url>
   <url>
-    <loc>www.github.com/dev/reference/var_names.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/var_table.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/dev/reference/vcov.DirectAdjusted.html</loc>
+    <loc>www.github.com/dev/reference/vcov.teeMod.html</loc>
   </url>
   <url>
     <loc>www.github.com/dev/reference/weights-WeightedDesign-method.html</loc>

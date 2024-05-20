@@ -7,34 +7,61 @@
 \S4method{c}{WeightedDesign}(x, ..., force_dichotomy_equal = FALSE)
 }
 \arguments{
-\item{x}{a \code{WeightedDesign} object with equivalent \code{Design} to
-those in \code{...}.}
+\item{x, }{.. a \code{WeightedDesign} object, typically created from \code{\link[=ate]{ate()}}
+or \code{\link[=ett]{ett()}}}
 
-\item{...}{any number of \code{WeightedDesign} objects with equivalent
-\code{Design} to each other and \code{x}.}
+\item{...}{any number of additional \code{WeightedDesign} objects with
+equivalent \code{Design} to \code{x} and eachother}
 
 \item{force_dichotomy_equal}{if \code{FALSE} (default), \code{Design}s are
 considered equivalent even if their \code{dichotomy} differs. If
 \code{TRUE}, \code{@dichotomy} must also be equal.}
 }
+\value{
+If all \code{WeightedDesign} objects contain the same
+\code{dichotomy} (including \code{NULL}), a new \code{WeightedDesign} with
+the weights concatenated in the input order.
+
+If \code{force_dichotomy_equal} is \code{FALSE} and the
+\code{WeightedDesign} objects differ in their dichotomies, a
+\code{CombinedWeightedDesign} is returned. This functions essentially
+identically to a \code{WeightedDesign}, but carries with it the
+dichotimization information that came from each of the individual
+\code{WeightedDesign}.
+}
 \description{
-Given several variations of weights generated from a single \code{Design},
-combine into a single weight.
+Given several variations of weights generated from a single
+\code{Design}, combine into a single weight.
 }
 \details{
-Concatenating \code{WeightedDesign}s with \code{c()} requires both
-individual \code{WeightedDesign}s to come from the same \code{Design}
-(except \code{dichotomy}, see below) and have the same target (e.g all
-created with \code{ate()} or all created with \code{ett()}, no
-mixing-and-matching). All arguments to \code{c()} must be
+Concatenating \code{WeightedDesign} objects with \code{\link[=c]{c()}} requires
+both individual \code{WeightedDesign} objects to come from the same
+\code{Design} (except \code{dichotomy}, see below) and have the same
+target (e.g all created with \code{\link[=ate]{ate()}} or all created with \code{\link[=ett]{ett()}}, no
+mixing-and-matching). All arguments to \code{\link[=c]{c()}} must be
 \code{WeightedDesign}.
 
-One exception is when concatenting \code{WeightedDesign}s with the same
-\code{Design} but different dichotomies. There may be cases where the
-treatment is continuous or has multiple levels, and there is a need to
+One exception is when concatenting \code{WeightedDesign} objects whose
+\code{Design} differ only in their dichotomies. There may be cases where
+the treatment is continuous or has multiple levels, and there is a need to
 combine the weights from the same general design, but with different
-dichotomys. Therefore multiple \code{WeightedDesign}s can be combined if
-they are identical except for their \code{@dichotomy} slots. The resulting
-object will be a \code{CombinedWeightedDesign} which tracks all individual
-\code{dichotomy}.
+dichotomies. Therefore multiple \code{WeightedDesign} objects can be
+combined if they are identical except for their \code{@dichotomy} slots.
+The resulting object will be a \code{CombinedWeightedDesign} which tracks
+all individual \code{dichotomy}.
+}
+\examples{
+data(simdata)
+des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+w1 <- ate(des, data = simdata[1:30,])
+w2 <- ate(des, data = simdata[31:40,])
+w3 <- ate(des, data = simdata[41:50,])
+c_w <- c(w1, w2, w3)
+c(length(w1), length(w2), length(w3), length(c_w))
+
+des <- rct_design(dose ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+w1 <- ate(des, data = simdata[1:10, ], dichotomy = dose >= 300 ~ .)
+w2 <- ate(des, data = simdata[11:30, ], dichotomy = dose >= 200 ~ .)
+w3 <- ate(des, data = simdata[31:50, ], dichotomy = dose >= 100 ~ .)
+c_w <- c(w1, w2, w3)
 }

@@ -9,7 +9,7 @@ design_data_concordance(design, data, by = NULL, warn_on_nonexistence = TRUE)
 \arguments{
 \item{design}{a \code{Design} object}
 
-\item{data}{new data set, presumably not the same used to create
+\item{data}{a new data set, presumably not the same used to create
 \code{design}.}
 
 \item{by}{optional; named vector or list connecting names of variables in
@@ -26,14 +26,15 @@ invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
 any warnings are produced.
 }
 \description{
-Useful for debugging purposes to ensure that there is concordance between
-variables in the \code{Design} and data.
+Useful for debugging purposes to ensure that there is
+concordance between variables in the \code{Design} and data.
 }
 \details{
-Consider the following scenario: A \code{Design} is generated from some
-dataset, "data1", which includes a block variable "b1". Within each unique
-unit of assignment/unitid/cluster of "data1", it must be the case that "b1"
-is constant. (Otherwise the creation of the \code{Design} will fail.)
+Consider the following scenario: A \code{Design} is generated from
+some dataset, "data1", which includes a block variable "b1". Within each
+unique unit of assignment/unitid/cluster of "data1", it must be the case
+that "b1" is constant. (Otherwise the creation of the \code{Design} will
+fail.)
 
 Next, a model is fit which includes weights generated from the
 \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
@@ -41,9 +42,9 @@ also exists, but due to some issue with data cleaning, does not agree with
 "b1" in "data1".
 
 This could cause errors, either directly (via actual error messages) or
-simply produce nonsense results. \code{design_data_concordance()} is
-designed to help debug these scenarios by providing information on whether
-variables in both the data used in the creation of \code{design} ("data1" in
-the above example) and some new dataset, \code{data}, ("data2" in the above
-example) have any inconsistencies.
+simply produce nonsense results. \code{\link[=design_data_concordance]{design_data_concordance()}} is designed
+to help debug these scenarios by providing information on whether
+variables in both the data used in the creation of \code{design} ("data1"
+in the above example) and some new dataset, \code{data}, ("data2" in the
+above example) have any inconsistencies.
 }

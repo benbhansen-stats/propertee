@@ -5,12 +5,12 @@
 [![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
 <!-- badges: end -->
 
-Propertee enables flexible direct adjustment with design-informed standard errors
+**propertee** enables flexible direct adjustment with design-informed standard errors
 and optional prior covariance adjustment.
 
 Random trials often utilize units of assignment and blocking in assigning
 treatment status as a way to simplify implementation. This design information
-must be utilized in future analyses. Using Propertee, a user can generate a
+must be utilized in future analyses. Using **propertee**, a user can generate a
 Design object which will keep track of the design structure.
 
     des <- rct_design(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
@@ -39,7 +39,7 @@ Optionally, we can also include a covariance adjustment model through the
 
 ## Contributing
 
-You may use RStudio to develop for propertee, by opening the `propertee.Rproj` file.
+You may use RStudio to develop for **propertee**, by opening the `propertee.Rproj` file.
 We suggest you ensure all required dependencies are installed by running
 
     devtools::install_deps(dependencies = TRUE)
@@ -57,7 +57,7 @@ You can generate all `.Rd` documents from the `Roxygen` code using Build ->
 Document, or using Make as describe below.
 
 Finally, you can use Build -> Build and Reload or Build -> Clean and Rebuild to
-load an updated version of `propertee` in your current RStudio session.
+load an updated version of **propertee** in your current RStudio session.
 Alternatively, to install the developed version permanently, use Build -> Build
 Binary Version, followed by
 
@@ -72,7 +72,7 @@ If you prefer not to use RStudio, you can develop using Make.
 
 - `make test`: Run the full test suite.
 - `make document`: Update all documentation from Roxygen inline comments.
-- `make interactive`: Start up an interactive session with `propertee` loaded.
+- `make interactive`: Start up an interactive session with **propertee** loaded.
   (`make interactive-emacs` starts the session inside emacs.)
 - `make check`: Run `R CMD check` on the package
 - `make build`: Build a binary package.
@@ -113,14 +113,15 @@ get indexed. (Generally internally functions should not be `@export`'d but
 exceptions may arise.)
 
 During this period of development, after documenting an internal function, add
-it to the "_pkgdown.yml" file in the appropriate category. Once propertee goes
-public, we will remove those.
+it to the "_pkgdown.yml" file in the appropriate category. Once **propertee**
+goes public, we will remove those.
 
 ### Referring to functions
 
 When documentation refers to another function (internal to the package or
 otherwise), please include the trailing `()`, as that will help **pkgdown**
-provide an appropriate link (see [https://pkgdown.r-lib.org/articles/linking.html](https://pkgdown.r-lib.org/articles/linking.html)).
+provide an appropriate link (see
+[https://pkgdown.r-lib.org/articles/linking.html](https://pkgdown.r-lib.org/articles/linking.html)).
 
 E.g. `\code{lm()}` or `\code{cov_adj()}` or `\code{lme4::lmer()}`.
 

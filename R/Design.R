@@ -221,52 +221,59 @@ setValidity("Design", function(object) {
              dichotomy = dichotomy))
 }
 
-##' Generates a randomized control treatment Design (\code{rct_design()}), or an
-##' observational Design (\code{obs_design()}), or a regression discontinuity
-##' Design (\code{rd_design()}).
-##'
-##' The formula must include exactly one of \code{unit_of_assignment()},
-##' \code{uoa()}, \code{cluster()}, or \code{unitid()} to identify the units of
-##' assignment (one or more variables). These are all synonyms; the choice of
-##' which has no impact on the analysis. If defining an \code{rd_design}, the
-##' formula must also include a \code{forcing()} entry. The formula may
-##' optionally include a \code{block()} as well. Each of these can take in
-##' multiple variables, e.g. to pass both a hosuehold ID and individual ID as
-##' unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
-##' uoa(iid)}.
-##'
-##' The treatment variable passed into the left-hand side of \code{formula} can
-##' either be \code{logical}, \code{numeric}, or \code{character}. If it is
-##' anything else, it is attemped to be converted to one of those (for example,
-##' \code{factor} and \code{ordered} are converted to \code{numeric} if the
-##' levels are \code{numeric}, otherwise to \code{character}. If the treatment
-##' is not \code{logical} or \code{numeric} with only values 0 and 1, in order
-##' to generate weights with \code{ate()} or \code{ett()}, the \code{dichotomy}
-##' argument must be used to identify the treatment and control groups. The
-##' \code{Design} creation functions (\code{rct_design()}, \code{rd_design()},
-##' \code{obs_design()}) all support the \code{dichotomy} argument, or instead
-##' \code{dichotomy} can be passed to \code{ett()} and \code{ate()} directly.
-##' See \code{dichotomy()} for more details on specifying a \code{dichotomy}.
-##'
 ##' @title Generates a \code{Design} object with the given specifications.
-##' @param formula defines the \code{Design} components
-##' @param data the data set.
+##'
+##' @description Generate a randomized control treatment Design
+##'   ([rct_design()]), or an observational Design ([obs_design()]), or a
+##'   regression discontinuity Design ([rd_design()]).
+##'
+##' @details The formula must include exactly one [unit_of_assignment()] to
+##'   identify the units of assignment (one or more variables). (\code{uoa},
+##'   \code{cluster}, or \code{unitid} are synonyms for
+##'   \code{unit_of_assignment}; the choice of which has no impact on the
+##'   analysis.) If defining an \code{rd_design}, the formula must also include
+##'   a [forcing()] entry. The formula may optionally include a [block()] as
+##'   well. Each of these can take in multiple variables, e.g. to pass both a
+##'   household ID and individual ID as unit of assignment, use \code{uoa(hhid,
+##'   iid)} and not \code{uoa(hhid) + uoa(iid)}.
+##'
+##'   The treatment variable passed into the left-hand side of \code{formula}
+##'   can either be \code{logical}, \code{numeric}, or \code{character}. If it
+##'   is anything else, it attempts conversion to one of those types (for
+##'   example, \code{factor} and \code{ordered} are converted to \code{numeric}
+##'   if the levels are \code{numeric}, otherwise to \code{character}). If the
+##'   treatment is not \code{logical} or \code{numeric} with only values 0 and
+##'   1, in order to generate weights with [ate()] or [ett()], the
+##'   \code{dichotomy} argument must be used to identify the treatment and
+##'   control groups. The \code{Design} creation functions (\code{rct_design()},
+##'   \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomy}
+##'   argument, or instead \code{dichotomy} can be passed to [ett()] and [ate()]
+##'   directly. See [dichotomy()] for more details on specifying a
+##'   \code{dichotomy}.
+##'
+##' @param formula a \code{formula} defining the \code{Design} components. See
+##'   `Details` for specification.
+##' @param data the data set from which to build the Design. Note that this data
+##'   need not be the same as used to estimate the treatment effect; rather the
+##'   \code{data} passed should contain information about the units of treatment
+##'   assignment (as opposed to the units of analysis).
 ##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
 ##' @param dichotomy optional, a formula defining the dichotomy of the treatment
-##'   variable if it isn't already 0/1 or \code{logical}. See the
-##'   \code{dichotomy()} function for details.
+##'   variable if it isn't already 0/1 or \code{logical}. See the [dichotomy()]
+##'   function for details.
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
 ##'   creation of the \code{Design}
 ##' @return a \code{Design} object of the requested type for use in further
-##'   analysis
+##'   analysis.
 ##' @export
 ##' @rdname Design_objects
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ unit_of_assignment(cid1, cid2) + block(bid), data = simdata)
+##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2) + block(bid),
+##'                   data = simdata)
 ##'
 ##' data(schooldata)
 ##' des <- obs_design(treatment ~ unit_of_assignment(schoolid) + block(state),
@@ -323,9 +330,11 @@ obs_design <- function(formula,
                      na.fail = na.fail))
 }
 
-##' @title Display a \code{Design}
-##' @param object a \code{Design} object
-##' @return an invisible copy of \code{object}
+##' @title Show a \code{Design}
+##' @description Display information about a \code{Design} object
+##' @param object \code{Design} object, usually a result of a call to
+##'   [rct_design()], [obs_design()], or [rd_design()].
+##' @return \code{object}, invisibly.
 ##' @export
 setMethod("show", "Design", function(object) {
   destype <- switch(object@type,
@@ -356,24 +365,6 @@ setMethod("show", "Design", function(object) {
   cat("\n")
   invisible(object)
 })
-
-##' @title Return names of variables defining the \code{Design}
-##' @param x a \code{Design} object
-##' @param type one of "t", "u", "b", "f"; for "treatment",
-##'   "unit_of_assignment", "block", and "forcing" respectively
-##' @return character vector of variable names of the given type
-##' @export
-##' @examples
-##' des <- obs_design(o ~ unitid(cid1, cid2), data = simdata)
-##' var_names(des, "t")
-##' var_names(des, "u")
-##' var_names(des, "b")
-var_names <- function(x, type) {
-  stopifnot(inherits(x, "Design"))
-  stopifnot(length(type) == 1)
-  stopifnot(type %in% c("t", "u", "b", "f"))
-  return(names(x@structure)[x@column_index == type])
-}
 
 ##' After calling \code{model.frame()} on the formula input to
 ##' \code{.new_Design()}, the names of the columns will include function names,
@@ -421,11 +412,10 @@ var_names <- function(x, type) {
               index = index))
 }
 
-##' @title Table of variable names and their role in the \code{Design}.
+##' @title Extract Variable Names from \code{Design}
 ##'
-##' @description Generates a table identifying each element of the structure of
-##'   the \code{Design} (e.g. treatment, unit of analysis, etc) and which
-##'   variable(s) are associated with that element.
+##' @description Methods to extract the variable names to the elements of the
+##'   structure of the \code{Design} (e.g. treatment, unit of analysis, etc)
 ##'
 ##' @details When \code{compress} is \code{TRUE}, the result will always have
 ##'   two columns. When \code{FALSE}, the result will have number of columns
@@ -439,18 +429,24 @@ var_names <- function(x, type) {
 ##' \code{FALSE}, the matrix will have minimum 2 rows (treatment and unit of
 ##' assignment/unitid/cluster), with additional rows for blocks and forcing if
 ##' included in the \code{Design}.
-##' @title Table of variables identifying a \code{Design}
 ##' @param design a \code{Design} object
 ##' @param compress should multiple variables be compressed into a
-##'   comma-separated string? Default \code{TRUE}.
+##'   comma-separated string? Default \code{TRUE}. If \code{FALSE}, multiple
+##'   columns can be created instead.
 ##' @param report_all should we report all possible structures even if they
 ##'   don't exist in the \code{Design}? Default \code{FALSE}.
-##' @return a \code{matrix} of variables in the \code{Design} structure
+##' @return [var_table()] returns the requested table. [var_names()] returns a
+##'   vector of variable names.
 ##' @export
+##' @rdname Design_var_names
+##' @order 1
 ##' @examples
-##' des <- rct_design(z ~ uoa(cid1, cid2) + block(bid), data = simdata)
+##' des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 ##' var_table(des)
 ##' var_table(des, compress = FALSE)
+##' var_names(des, "t")
+##' var_names(des, "u")
+##' var_names(des, "b")
 var_table <- function(design, compress = TRUE, report_all = FALSE) {
   uoatype <- switch(design@unit_of_assignment_type,
                     "unit_of_assignment" = "Unit of Assignment",
@@ -512,28 +508,43 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
   return(out)
 }
 
-##' Useful for debugging purposes to ensure that there is concordance between
-##' variables in the \code{Design} and data.
-##'
-##' Consider the following scenario: A \code{Design} is generated from some
-##' dataset, "data1", which includes a block variable "b1". Within each unique
-##' unit of assignment/unitid/cluster of "data1", it must be the case that "b1"
-##' is constant. (Otherwise the creation of the \code{Design} will fail.)
-##'
-##' Next, a model is fit which includes weights generated from the
-##' \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
-##' also exists, but due to some issue with data cleaning, does not agree with
-##' "b1" in "data1".
-##'
-##' This could cause errors, either directly (via actual error messages) or
-##' simply produce nonsense results. \code{design_data_concordance()} is
-##' designed to help debug these scenarios by providing information on whether
-##' variables in both the data used in the creation of \code{design} ("data1" in
-##' the above example) and some new dataset, \code{data}, ("data2" in the above
-##' example) have any inconsistencies.
+##' @param type one of "t", "u", "b", "f"; for "treatment",
+##'   "unit_of_assignment", "block", and "forcing" respectively
+##' @export
+##' @rdname Design_var_names
+##' @order 2
+var_names <- function(design, type) {
+  stopifnot(inherits(design, "Design"))
+  stopifnot(length(type) == 1)
+  stopifnot(type %in% c("t", "u", "b", "f"))
+  return(names(design@structure)[design@column_index == type])
+}
+
 ##' @title Check for variable agreement within units of assignment
+##'
+##' @description Useful for debugging purposes to ensure that there is
+##'   concordance between variables in the \code{Design} and data.
+##'
+##' @details Consider the following scenario: A \code{Design} is generated from
+##'   some dataset, "data1", which includes a block variable "b1". Within each
+##'   unique unit of assignment/unitid/cluster of "data1", it must be the case
+##'   that "b1" is constant. (Otherwise the creation of the \code{Design} will
+##'   fail.)
+##'
+##'   Next, a model is fit which includes weights generated from the
+##'   \code{Design}, but on dataset "data2". In "data2", the block variable "b1"
+##'   also exists, but due to some issue with data cleaning, does not agree with
+##'   "b1" in "data1".
+##'
+##'   This could cause errors, either directly (via actual error messages) or
+##'   simply produce nonsense results. [design_data_concordance()] is designed
+##'   to help debug these scenarios by providing information on whether
+##'   variables in both the data used in the creation of \code{design} ("data1"
+##'   in the above example) and some new dataset, \code{data}, ("data2" in the
+##'   above example) have any inconsistencies.
+##'
 ##' @param design a \code{Design} object
-##' @param data new data set, presumably not the same used to create
+##' @param data a new data set, presumably not the same used to create
 ##'   \code{design}.
 ##' @param by optional; named vector or list connecting names of variables in
 ##'   \code{design} to variables in \code{data}. Names represent variables in

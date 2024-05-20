@@ -56,11 +56,11 @@ test_that("binary treatment and dichotomy", {
   expect_error(is_binary_or_dichotomized(1),
                "must be")
 
-  des1 <- obs_design(z ~ uoa(cid1, cid2), data = simdata)
-  des2 <- obs_design(o ~ uoa(cid1, cid2), data = simdata)
-  des3 <- obs_design(o ~ uoa(cid1, cid2), data = simdata,
+  des1 <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata)
+  des2 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata)
+  des3 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata,
                      dichotomy = o > 3 ~ o == 1)
-  des4 <- obs_design(z ~ uoa(cid1, cid2), data = simdata,
+  des4 <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata,
                      dichotomy = z == 1 ~ z == 0)
 
   expect_false(is_dichotomized(des1))
@@ -95,10 +95,10 @@ test_that("binary treatment and dichotomy", {
 test_that("identical_Designs function", {
   data(simdata)
 
-  des1 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata)
-  des2 <- rct_design(dose ~ cluster(cid1, cid2), data = simdata,
+  des1 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  des2 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata,
                      dichotomy = dose > 200 ~ dose <= 200)
-  des3 <- rct_design(dose ~ cluster(cid1, cid2) + block(bid), data = simdata)
+  des3 <- rct_design(dose ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_true(identical_Designs(des1, des2))
   expect_false(identical_Designs(des1, des3))
@@ -131,15 +131,15 @@ test_that(".make_uoa_cluster_df errors", {
 
   data(simdata)
   simdata_copy <- simdata
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata_copy)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata_copy)
 
-  simdata_copy$cid2[simdata_copy$cid1 == 1 & simdata_copy$cid2 == 2] <- 1
+  simdata_copy$uoa2[simdata_copy$uoa1 == 1 & simdata_copy$uoa2 == 2] <- 1
   expect_warning(.make_uoa_cluster_df(des), "Some units of assignment")
 
   simdata_copy <- NULL
   expect_error(.make_uoa_cluster_df(des), "design data")
 
-  des <- rct_design(z ~ cluster(cid1, cid2), simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
   expect_error(.make_uoa_cluster_df(des, "id"), "id column in the design data")
 })
 

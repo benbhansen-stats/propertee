@@ -1,5 +1,5 @@
 Package: propertee
-Version: 0.3.8.9002
+Version: 0.3.9.9001
 Title: Design-Informed Direct Adjustment with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of ERrors
     (for Treatment Effect Estimation) package facilitates direct adjustment
@@ -17,6 +17,8 @@ Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
                     email = "jwass@umich.edu"),
              person("Mark", "Fredrickson", role = "ctb",
                     email = "mark.m.fredrickson@gmail.com"),
+             person("Adam", "Sales", role = "ctb",
+                    email = "asales@wpi.edu"),
              person("Xinhe", "Wang", role = "ctb",
                     email = "xinhew@umich.edu"),
              person("Ben", "Hansen", role = "aut",
@@ -54,14 +56,15 @@ Collate:
     'DesignUtilities.R'
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
-    'DirectAdjusted.R'
     'areg.center.R'
+    'confint_lm.R'
+    'teeMod.R'
     'as.lmitt.R'
     'assigned.R'
     'cov_adj.R'
     'data.R'
     'dtable.R'
-    'expand.model.frame.DA.R'
+    'expand.model.frame_tee.R'
     'get_cov_adj.R'
     'get_data_from_model.R'
     'get_design.R'
@@ -71,6 +74,6 @@ Collate:
     'merge_preserve_order.R'
     'propertee_package.R'
     'summary.Design.R'
-    'summary.DirectAdjusted.R'
+    'summary.teeMod.R'
     'update_by.R'
     'weights.R'

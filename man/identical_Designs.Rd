@@ -2,7 +2,7 @@
 % Please edit documentation in R/DesignUtilities.R
 \name{identical_Designs}
 \alias{identical_Designs}
-\title{Check if \code{Design} objects are identical}
+\title{Test equality of two \code{Design} objects}
 \usage{
 identical_Designs(x, y, dichotomy_force = FALSE)
 }
@@ -12,8 +12,8 @@ identical_Designs(x, y, dichotomy_force = FALSE)
 \item{y}{A \code{Design} object.}
 
 \item{dichotomy_force}{Logical, default \code{FALSE}. If \code{FALSE}, the
-\code{dichotomy()} of \code{x} and \code{y} is ignored in the comparison.
-(In other words, two \code{Design}s which differ only in their
+\code{\link[=dichotomy]{dichotomy()}} of \code{x} and \code{y} is ignored in the comparison. (In
+other words, two \code{Design}s which differ only in their
 \code{@dichotomy} slot will be considered identical.) If \code{TRUE}, the
 \code{dichotomy} must also be in agreement between \code{x} and \code{y}.}
 }
@@ -21,5 +21,6 @@ identical_Designs(x, y, dichotomy_force = FALSE)
 Logical, are \code{x} and \code{y} identical?
 }
 \description{
-Check if \code{Design} objects are identical
+Check whether two \code{Design} objects are identical. Choose
+whether to consider or ignore the \code{dichotomy}.
 }

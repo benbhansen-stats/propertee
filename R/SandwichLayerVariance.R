@@ -1,31 +1,39 @@
 #' @include Design.R SandwichLayer.R
 NULL
 
-#' @title Compute covariance-adjusted cluster-robust sandwich variance estimates
+#' @title Variance/Covariance for \code{teeMod} objects
+#'
+#' @description Compute robust sandwich variance estimates with optional covariance
+#'   adjustment
+#'
 #' @details Supported \code{type} include:
 #'
-#' - \code{"CR0"}, \code{"MB0"}, \code{"HC0"} are synonyms for ...
-#' - Others...
+#' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC0 standard errors
+#' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based standard errors
+#' with HC1 corrections based on the direct adjustment estimate i.e.,
+#' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
+#' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
+#' in the direct adjustment sample.
 #'
 #' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 #' \code{type = "XXX"} will now use your method. Your method should return a
 #' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
-#' @param x a fitted \code{DirectAdjusted} model object
-#' @param type A string indicating the desired variance estimator. Currently
-#'   accepts "CR0", "MB0", or "HC0"
-#' @param cluster Defaults to NULL, which means unit of assignment columns
-#'   indicated in the Design will be used to generate clustered covariance
-#'   estimates. A non-NULL argument to `cluster` specifies a string or character
-#'   vector of column names appearing in both the covariance adjustment and
-#'   quasiexperimental samples that should be used for clustering covariance
-#'   estimates.
-#' @param ... Arguments to be passed to the internal variance estimation
+#'
+#' @param x a fitted \code{teeMod} model
+#' @param type a string indicating the desired variance estimator. See Details
+#'   for supported variance estimators
+#' @param cluster a string or character vector of column names indicating
+#'   columns to cluster standard errors by. With prior covariance adjustment,
+#'   columns must appear in both the covariance adjustment and direct adjustment
+#'   samples. Default is NULL, which uses unit of assignment columns in the
+#'   \code{Design} slot of the \code{teeMod} model.
+#' @param ... arguments to be passed to the internal variance estimation
 #'   function.
-#' @return A \eqn{2\times 2} matrix where the dimensions are given by the
-#'   intercept and treatment variable terms in the ITT effect model
+#' @return A \eqn{2\times 2} matrix corresponding to an intercept and the
+#'   treatment variable in the direct adjustment model
 #' @export
 #' @rdname var_estimators
-vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
+vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!exists(paste0(".vcov_", type))) {
     stop(paste0("covariance function .vcov_", type,
                 " not defined.\n"))
@@ -41,12 +49,10 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(est)
 }
 
-#' Model-based standard errors with HC0 adjustment
 #' @keywords internal
-#' @rdname var_estimators
 .vcov_CR0 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   args <- list(...)
@@ -68,23 +74,21 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_HC0 <- function(x, ...) {
   out <- .vcov_CR0(x, ...)
   attr(out, "type") <- "HC0"
   return(out)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_MB0 <- function(x, ...) {
   out <- .vcov_CR0(x, ...)
   attr(out, "type") <- "MB0"
   return(out)
 }
 
-#' Model-based standard errors with HC1 adjustment
 #' @keywords internal
-#' @rdname var_estimators
 .vcov_CR1 <- function(x, ...) {
   args <- list(...)
   args$x <- x
@@ -101,33 +105,37 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_HC1 <- function(x, ...) {
   out <- .vcov_CR1(x, ...)
   attr(out, "type") <- "HC1"
   return(out)
 }
 
-#' @rdname var_estimators
+#' @keywords internal
 .vcov_MB1 <- function(x, ...) {
   out <- .vcov_CR1(x, ...)
   attr(out, "type") <- "MB1"
   return(out)
 }
 
-#' @title NA vcovDA subgroup estimates that have insufficient degrees of freedom
-#' @param vmat variance-covariance matrix corresponding to `model`
-#' @param model \code{DirectAdjusted} object
-#' @param cluster character or factor vector providing cluster ID's for the
-#'  observations used to fit `model`
-#' @param model_data dataframe or name corresponding to the data used to fit `model`
-#' @param envir environment to get `model_data` from if it is a quote object name
-#' @return `vmat` with NA's in the entries lacking sufficient degrees of freedom
+#' @title (Internal) Replace standard errors for moderator effect estimates with insufficient
+#' degrees of freedom with \code{NA}
+#' @param vmat output of \code{.vcov_XXX()} called with input to \code{model}
+#'  argument below as the first argument
+#' @param model a fitted \code{teeMod} model
+#' @param cluster a character or factor vector denoting clusters the units of
+#'  observation used to fit \code{model} belong to. Most conveniently, the
+#'  output of \code{.make_uoa_ids()}
+#' @param model_data dataframe or name of dataframe used to fit \code{model}
+#' @param envir environment to get \code{model_data} from if \code{model_data} has class \code{name}
+#' @return A variance-covariance matrix with NA's for estimates lacking sufficient
+#' degrees of freedom
 #' @keywords internal
 .check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
                                           envir = environment(formula(model))) {
-  if (!inherits(model, "DirectAdjusted")) {
-    stop("`model` must be a DirectAdjusted object")
+  if (!inherits(model, "teeMod")) {
+    stop("`model` must be a teeMod object")
   }
 
   if (length(model@moderator) == 0) {
@@ -154,7 +162,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   } else {
     valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
   }
-    
+
 
   # Replace SE's for moderator variable/levels with <= 2 clusters with NA's
   if (any(!valid_mods)) {
@@ -178,24 +186,20 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @details The \bold{B12 block} is the covariance matrix of the cluster-level
-#'   estimating equations for the covariance adjustment and ITT effect models. It
-#'   has a row for each term in the covariance adjustment model and a column for each term
-#'   in the ITT effect model. For any row that does not appear in both
-#'   the experimental design and the covariance adjustment model data, its contribution to
-#'   this matrix will be 0. Thus, if there is no overlap between the two
-#'   datasets, this will return a matrix of 0's.
-#' @param x a fitted \code{DirectAdjusted} model
-#' @param ... arguments to pass to internal functions
-#' @return \code{.get_b12()}: A \eqn{p\times 2} matrix where the number of rows
-#'   are given by the number of terms in the covariance adjustment model and the number of
-#'   columns correspond to intercept and treatment variable terms in the ITT
-#'   effect model
+#' @details \code{.get_b12()}: \eqn{B_{12}} is the covariance of the unit of assignment- or cluster-level
+#'   estimating equations for the covariance adjustment and direct adjustment models.
+#'   It has a row for each term in the former and a column for each term in the latter.
+#'   Any unit of assignment or cluster that does not appear in both model fits
+#'   makes no contribution to this matrix. If there is no overlap between the two
+#'   datasets, this function will return a matrix of zeros of appropriate dimension.
+#' @param x a fitted \code{teeMod} model
+#' @param ... arguments to pass to internal functions, such as \code{cluster}
+#' @return \code{.get_b12()}: A \eqn{p\times 2} matrix
 #' @keywords internal
 #' @noRd
 .get_b12 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
 
   if (x@.S3Class[1] != "lm") {
@@ -204,7 +208,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 
   sl <- x$model$`(offset)`
   if (!is(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
   # If cluster argument is NULL, use the `keys` dataframe created at initialization,
@@ -232,7 +236,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
     missing_des_cols <- setdiff(cluster_cols, colnames(x@Design@structure))
     if (length(missing_des_cols) > 0) {
       stop(paste("The following columns in the `cluster` argument cannot be found",
-                 "in the DirectAdjusted object's Design:",
+                 "in the teeMod object's Design:",
                  paste(missing_des_cols, collapse = ", ")))
     }
 
@@ -247,7 +251,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a character vector specifying column names that",
-               "exist in both the ITT effect and covariance model datasets"))
+               "exist in both the direct adjustment and covariance adjustment samples"))
   }
 
   Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
@@ -256,15 +260,15 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   C_uoas_in_Q <- C_uoas %in% unique(Q_uoas)
 
   message(paste(sum(C_uoas_in_Q),
-                "rows in the covariance adjustment model",
-                "data joined to the ITT effect model data\n"))
+                "rows in the covariance adjustment data",
+                "joined to the direct adjustment data\n"))
 
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
   uoas_overlap <- length(unique(C_uoas[C_uoas_in_Q]))
   if (uoas_overlap <= 1) {
     if (uoas_overlap == 1) {
-      warning(paste("Covariance matrix between covariance adjustment and ITT effect",
+      warning(paste("Covariance matrix between covariance adjustment and direct adjustment",
                     "model estimating equations is numerically indistinguishable",
                     "from 0"))
     }
@@ -290,57 +294,41 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(crossprod(cmod_eqns, damod_eqns))
 }
 
-#' @title (Internal) Compute variance blocks
-#' @details \eqn{A_{22}^{-1}} is the inverse observed Fisher information of the
-#' ITT effect estimating equations scaled by \eqn{n_{\mathcal{Q}}}.
-#' @param x a fitted \code{DirectAdjusted} object
-#' @param ... arguments passed to methods
+#' @title (Internal) Estimate components of the sandwich covariance matrix
+#' returned by \code{vcov_tee()}
+#' @details \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: \eqn{A_{22}^{-1}} is the "bread" of the
+#' sandwich covariance matrix returned by \code{vcov_tee()} whether one has fit
+#' a prior covariance adjustment model or not.
+#' @param x a fitted \code{teeMod} object
+#' @param ... arguments passed to \code{bread} method
 #' @return \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
-#' \eqn{k\times k} matrix where k denotes the number of parameters in the ITT
-#' effect model
+#' \eqn{2\times 2} matrix corresponding to an intercept and the treatment
+#' variable in the direct adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a22_inverse <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
-  
+
   out <- utils::getS3method("bread", "lm")(x)
 
   return(out)
 }
 
-#' @param x a fitted \code{DirectAdjusted} model
+#' @param x a fitted \code{teeMod} model
 #' @param ... arguments to pass to internal functions
-#' @details The \bold{B22 block} refers to a clustered estimate of the covariance
-#'   matrix for the ITT effect model. The \code{stats} package offers family objects
-#'   with canonical link functions, so the log-likelihood for a generalized
-#'   linear model can be written in terms of the linear predictor as
-#'   \deqn{L(y_i, \beta, \phi, w_i) = w_i * (y_i * \beta'x_i - b(\beta'x_i)) /
-#'   \phi + h(y_i; \phi)} The estimating equations \eqn{\psi_i} given by the
-#'   score function can then be expressed as \deqn{\psi_i = E[w_i * (y_i -
-#'   \mu(\beta'x_i)) * x_i / \phi]} In section 4.4 of the second edition of
-#'   Categorical Data Analysis, Agresti shows the derivative of the mean
-#'   function with respect to the linear predictor is equivalent to the weighted
-#'   variance for an observation divided by the estimate of the dispersion
-#'   parameter. Thus, the above estimating equations can also be written as
-#'   \deqn{\psi_i = (r_i / Var(y_i)) * (d\mu_i/d\eta_i) * x_i}
-#'
-#'   A matrix \eqn{C} of dimension \eqn{n\times J} is formed to indicate which
-#'   unit each subject in the design belongs to, where \eqn{J} is the number of
-#'   units at the level of treatment assignment. The treatment assignment-level
-#'   estimating equations are then obtained via \eqn{C'\psi}, where \eqn{\psi}
-#'   is the matrix of estimating equations at the subject level.
-#' @references Agresti, Alan. Categorical Data Analysis. 2003. Open WorldCat,
-#'   https://nbn-resolving.org/urn:nbn:de:101:1-201502241089.
-#' @return \code{.get_b22()}: A \eqn{2\times 2} matrix where the
-#'   dimensions are given by the intercept and treatment variable terms in the
-#'   ITT effect model
+#' @details \code{.get_b22()}: \eqn{B_{22}} is the covariance of the unit of
+#'   assignment- or cluster-level estimating equations for the direct adjustment
+#'   model. In the absence of covariance adjustment, this is the meat of the
+#'   sandwich covariance matrix for the direct adjustment model.
+#' @return \code{.get_b22()}: A \eqn{2\times 2} matrix corresponding to an
+#' intercept and the treatment variable in the direct adjustment model
 #' @keywords internal
 #' @noRd
 .get_b22 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
 
   nq <- nrow(sandwich::estfun(x))
@@ -348,12 +336,12 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   if (is.null(dots$cluster)) {
-    uoas <- .expand.model.frame.DA(x,
+    uoas <- .expand.model.frame_teeMod(x,
                          var_names(x@Design, "u"))[, var_names(x@Design, "u"),
                                                    drop = FALSE]
   } else if (inherits(dots$cluster, "character")) {
     uoas <- tryCatch(
-      .expand.model.frame.DA(x, dots$cluster)[,
+      .expand.model.frame_teeMod(x, dots$cluster)[,
                                                         dots$cluster,
                                                         drop = FALSE],
       error = function(e) {
@@ -361,13 +349,13 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
                      envir = environment(formula(x)))
         stop(paste("The columns",
                    paste(setdiff(dots$cluster, colnames(data)), collapse = ", "),
-                   "are missing from the ITT effect model dataset"),
+                   "are missing from the direct adjustment data"),
              call. = FALSE)
       })
   } else {
     stop(paste("If overriding `cluster` argument for meat matrix calculations,",
                "must provide a character vector specifying column names in the",
-               "ITT effect model dataset"))
+               "direct adjustment data"))
   }
 
   if (ncol(uoas) == 1) {
@@ -383,55 +371,56 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details \eqn{A_{11}^{-1}} is the inverse of the gradient of the covariance
-#'   adjustment model estimating equations scaled by \eqn{n_{\mathcal{C}}^{-1}}.
-#' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where the
-#'   \eqn{p} is the dimension of the covariance adjustment model including an
-#'   intercept
+#' @details \code{.get_a11_inverse()}: \eqn{A_{11}^{-1}} is the "bread" of
+#'   the sandwich covariance matrix for the covariance adjustment model. This
+#'   matrix contributes to the meat matrix of the direct adjustment sandwich
+#'   covariance matrix.
+#' @param x a fitted \code{teeMod} model
+#' @return \code{.get_a11_inverse()}: A \eqn{p\times p} matrix where \eqn{p} is
+#'   the dimension of the covariance adjustment model, including an intercept
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a11_inverse <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
   out <- sandwich::bread(sl@fitted_covariance_model)
-  
+
   return(out)
 }
 
-#' @param x a fitted \code{DirectAdjusted} model
+#' @param x a fitted \code{teeMod} model
 #' @param ... arguments to pass to internal functions
-#' @details The \bold{B11 block} is the block of the sandwich variance estimator
-#'   corresponding to the variance-covariance matrix of the covariance model
-#'   coefficient estimates. The estimates returned here are potentially
-#'   clustered (either by the clustering in the experimental design or by
-#'   a manually provided `cluster` argument) if clustering information can be
-#'   retrieved from the covariance adjustment model data.
-#' @return \code{.get_b11()}: A \eqn{p\times p} matrix where the dimensions are
-#'   given by the number of terms in the covariance adjustment model including an
-#'   intercept
+#' @details \code{.get_b11()}: \eqn{B_{11}} is the covariance of the unit of
+#'   assignment- or cluster-level estimating equations for the covariance
+#'   adjustment model. This matrix contributes to the meat matrix of the direct
+#'   adjustment sandwich covariance matrix.
+#' @return \code{.get_b11()}: A \eqn{p\times p} matrix where \eqn{p} is
+#'   the dimension of the covariance adjustment model, including an intercept
 #' @keywords internal
 #' @noRd
 .get_b11 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
 
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
+  if (nc==0) nc <- length(cmod$fitted.values)
+  if (nc==0) stop("can't determine extent of covariance model fitting data")
 
   # Get units of assignment for clustering
   dots <- list(...)
@@ -500,30 +489,30 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out)
 }
 
-#' @details \eqn{A_{21}} is the gradient of the ITT effect estimating equations
-#'   scaled by \eqn{n_{\mathcal{Q}}^{-1}} taken with respect to the covariance
-#'   adjustment model parameters. This matrix is the crossproduct of the
-#'   prediction gradient for the units of observation in \eqn{\mathcal{Q}} and
-#'   the model matrix of the ITT effect estimating eqations.
-#' @param x a fitted \code{DirectAdjusted} model
-#' @return \code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{k\times p} matrix
-#'   where the number of rows are given by the dimension of the ITT effect
-#'   estimating equations and the number of columns are given by the number of
-#'   terms in the covariance adjustment model
+#' @details \code{.get_a21()}/\code{.get_tilde_a21()}: \eqn{A_{21}} is the
+#'   gradient of the estimating equations for the direct adjustment model taken
+#'   with respect to the covariance adjustment model parameters. This matrix is
+#'   the crossproduct of the prediction gradient for the units of observation in
+#'   \eqn{\mathcal{Q}} and the model matrix of the direct adjustment model.
+#' @param x a fitted \code{teeMod} model
+#' @return \code{.get_a21()}/\code{.get_tilde_a21()}: A \eqn{2\times p} matrix
+#'   where the number of rows are given by the intercept and the treatment
+#'   variable in the direct adjustment model, and the number of columns are given
+#'   by the dimension of the covariance adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
 
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
-    stop(paste("DirectAdjusted model must have an offset of class `SandwichLayer`",
+    stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "to propagate covariance adjustment model error"))
   }
 
-  # Get contribution to the estimating equation from the ITT effect model
+  # Get contribution to the estimating equation from the direct adjustment model
   w <- if (is.null(x$weights)) 1 else x$weights
 
   damod_mm <- stats::model.matrix(
@@ -539,17 +528,11 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   return(out / nq)
 }
 
-##' @details \eqn{\tilde{A}_{22}^{-1}} is the inverse observed Fisher
-##' information of the ITT effect estimating equations scaled by \eqn{n}. This
-##' function wraps around the function \code{.get_a22_inverse()} that produces
-##' \eqn{A_{22}^{-1}}, where \eqn{A_{22}=\frac{n}{n_{\mathcal{Q}}}\tilde{A}_{22}}.
-##' @inheritDotParams .get_a22_inverse
-##' @inherit .get_a22_inverse return
 ##' @keywords internal
 ##' @rdname sandwich_elements_calc
 .get_tilde_a22_inverse <- function(x, ...) {
   out <- .get_a22_inverse(x, ...)
-  
+
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(out)
   }
@@ -557,29 +540,22 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   nq <- nrow(stats::model.frame(x))
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
-  
+
   out <- out * n / nq
-  
+
   return(out)
 }
 
-##' @details \eqn{\tilde{A}_{21}} is the gradient of the ITT effect estimating
-##'   equations scaled by \eqn{n^{-1}} taken with respect to the covariance
-##'   adjustment model parameters. This function wraps around \code{.get_a21()},
-##'   which produces \eqn{A_{21}}, where \eqn{A_{21} = \frac{n_{\mathcal{Q}}}{n}
-##'   \tilde{A}_{21}}.
-##' @inheritDotParams .get_a21
-##' @inherit .get_a21 return
 ##' @keywords internal
 ##' @rdname sandwich_elements_calc
 .get_tilde_a21 <- function(x) {
   out <- .get_a21(x)
-  
+
   nq <- nrow(stats::model.frame(x))
   sl <- x$model$`(offset)`
   nc_not_q <- sum(!sl@keys$in_Q)
   n <- nq + nc_not_q
-  
+
   out <- nq / n * out
 }
 
@@ -588,8 +564,8 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 #' @rdname var_estimators
 .vcov_DB0 <- function(x, ...) {
-  if (!inherits(x, "DirectAdjusted")) {
-    stop("x must be a DirectAdjusted model")
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
   }
   
   if (!x@lmitt_fitted){
@@ -599,7 +575,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
   
   if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
     if (!all(os@keys$in_Q)){
-      stop(paste("Design-based standard errors cannot be computed for DirectAdjusted",
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
                  "models with external sample for covariance adjustment"))
   }
   
@@ -625,7 +601,7 @@ vcovDA <- function(x, type = "CR0", cluster = NULL, ...) {
       vmat <- .get_DB_covadj_se(x)
     }
     else if (length(x@moderator) > 0){
-      stop(paste("Design-based standard errors cannot be computed for DirectAdjusted",
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
                  "models with moderators"))
     }
     else {

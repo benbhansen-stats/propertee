@@ -2,39 +2,36 @@
 % Please edit documentation in R/cov_adj.R
 \name{.update_ca_model_formula}
 \alias{.update_ca_model_formula}
-\title{(Internal) Add columns for merging covariance adjustment and quasiexperimental samples
-to model formula}
+\title{(Internal) Add columns for merging covariance adjustment and direct
+adjustment samples to model formula}
 \usage{
 .update_ca_model_formula(model, by = NULL, design = NULL)
 }
 \arguments{
-\item{model}{Any model that inherits from a \code{glm}, \code{lm}, or
+\item{model}{any model that inherits from a \code{glm}, \code{lm}, or
 \code{robustbase::lmrob} object}
 
-\item{by}{optional; vector or list connecting names of unit of
-assignment/unitid/cluster variables in \code{design} to unit of
-assignment/unitid/cluster variables in the covariance adjustment data. If
-a named vector, names should represent variables in the \code{Design}
-object and values should represent variables in the data. Only needed if:
-\enumerate{
-\item columns not related to the design should be used for merging the
-covariance adjustment and quasiexperimental samples, or 2) the column
-names differ between the datasets used to fit both models.
-}}
+\item{by}{optional; a string or named vector of unique identifier columns in
+the data used to create \code{design} and the data used to fit the covariance
+adjustment model. Default is NULL, in which case unit of assignment columns
+are used for identification (even if they do not uniquely identify units of
+observation). If a named vector is provided, names should represent variables
+in the data used to create \code{design}, while values should represent
+variables in the covariance adjustment data.}
 
-\item{design}{Optional \code{Design}. If not provided, the function will
-search through the call stack to find one.}
+\item{design}{a \code{Design} object. Default is NULL, in which case a
+\code{Design} object is sought from higher up the call stack.}
 }
 \value{
 formula
 }
 \description{
-(Internal) Add columns for merging covariance adjustment and quasiexperimental samples
-to model formula
+(Internal) Add columns for merging covariance adjustment and direct
+adjustment samples to model formula
 }
 \details{
-This function is typically used prior to \code{.get_data_from_model}
-and incorporates information provided in a \code{by} vector to ensure the necessary
-columns for merging the two samples are included in any \code{model.frame} calls.
+This function is typically used prior to \code{.get_data_from_model()}
+and incorporates information provided in a \code{by} argument to ensure the necessary
+columns for merging the two samples are included in any \code{model.frame()} calls.
 }
 \keyword{internal}
