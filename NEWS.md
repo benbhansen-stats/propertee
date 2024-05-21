@@ -1,8 +1,8 @@
 # propertee 0.3.10
 
 ## Bug Fixes
-* Fixed bug preventing the creation of `Design` objects from `tibble`s
-* Fixed bug preventing the use of `cov_adj()` with covariance adjustment models fit with `robustbase::glmrob()`
+* Linking unit of assignments to clusters for variance estimation no longer errors when `Design` objects are created with a `tibble`
+* `cov_adj()` does not error with covariance adjustment models fit with `robustbase::glmrob()`
 
 # propertee 0.3.9
 
