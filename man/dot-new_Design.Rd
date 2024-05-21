@@ -4,15 +4,7 @@
 \alias{.new_Design}
 \title{(Internal) Create a new \code{Design} object.}
 \usage{
-.new_Design(
-  form,
-  data,
-  type,
-  subset = NULL,
-  call = NULL,
-  dichotomy = stats::formula(),
-  na.fail = TRUE
-)
+.new_Design(form, data, type, subset = NULL, call = NULL, na.fail = TRUE)
 }
 \arguments{
 \item{form}{Formula to create Design, see help for \code{rcr_design()},
@@ -25,8 +17,6 @@
 \item{subset}{Any subset information}
 
 \item{call}{The call generating the \code{Design}.}
-
-\item{dichotomy}{If present, the dichotomization formula}
 
 \item{na.fail}{Should it error on NA's (\code{TRUE}) or remove them
 (\code{FALSE})?}
