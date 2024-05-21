@@ -507,100 +507,107 @@ test_that("subsetting PreSandwich and SandwichLayer works", {
                    sl@prediction_gradient[1:10,])
 })
 
-test_that(".get_ca_and_prediction_gradient newdata is a matrix", {
-  expect_error(propertee:::.get_ca_and_prediction_gradient("a", matrix(1)),
-               "must be a dataframe")
+test_that(".make_PreSandwichLayer newdata is a matrix", {
+  set.seed(20)
+  N <- 100
+  df <- data.frame("x1" = rnorm(N), "y" = rnorm(N))
+  cmod <- lm(y ~ x1, df)
+  expect_error(.make_PreSandwichLayer(cmod, matrix(1)),
+               "must be a data.frame")
 })
 
-test_that(".get_ca_and_prediction_gradient model doesn't have a terms method", {
-  expect_error(propertee:::.get_ca_and_prediction_gradient(list("coefficients" = c(1., 1.)),
+test_that(".make_PreSandwichLayer model doesn't have a terms method", {
+  expect_error(.make_PreSandwichLayer(list("coefficients" = c(1., 1.)),
                                                data.frame("x" = 1)),
                "must have `terms`")
 })
 
-test_that(".get_ca_and_prediction_gradient model frame missing cmod columns", {
+test_that(".make_PreSandwichLayer model frame missing cmod columns", {
   set.seed(20)
   N <- 100
   df <- data.frame("x1" = rnorm(N), "x2" = rnorm(N), "y" = rnorm(N))
   pred_df <- data.frame("x1" = rnorm(N))
   cmod <- lm(y ~ x1 + x2, df)
 
-  expect_error(propertee:::.get_ca_and_prediction_gradient(cmod, pred_df),
+  expect_error(.make_PreSandwichLayer(cmod, pred_df),
                "'x2' not found")
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
-                "for `lm` object"), {
+test_that(".make_PreSandwichLayer returns expected output for `lm` object", {
   set.seed(20)
   N <- 100
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   cmod <- lm(y ~ x, df)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod)
+  psl <- .make_PreSandwichLayer(cmod, df)
 
-  expect_equal(ca_and_grad$ca, cmod$fitted.values)
-  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+  expect_true(all.equal(psl@.Data, cmod$fitted.values, check.attributes = FALSE))
+  expect_true(all.equal(psl@prediction_gradient, stats::model.matrix(cmod),
+                        check.attributes = FALSE))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
-                "for `lm` object with new data"), {
+test_that(".make_PreSandwichLayer returns expected output for `lm` object with new data", {
   set.seed(20)
   N <- 100
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   pred_df <- data.frame("x" = rnorm(N))
   cmod <- lm(y ~ x, df)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod, pred_df)
+  psl <- .make_PreSandwichLayer(cmod, pred_df)
 
-  expect_equal(ca_and_grad$ca,
-               drop(stats::model.matrix(
-                      formula(stats::delete.response(terms(cmod))), pred_df) %*%
-                    cmod$coefficients))
-  expect_equal(ca_and_grad$prediction_gradient,
-               stats::model.matrix(
-                 formula(stats::delete.response(terms(cmod))), pred_df))
+  expect_true(all.equal(
+    psl@.Data,
+    drop(stats::model.matrix(formula(stats::delete.response(terms(cmod))), pred_df) %*%
+           cmod$coefficients),
+    check.attributes = FALSE
+  ))
+  expect_true(all.equal(
+    psl@prediction_gradient,
+    stats::model.matrix(formula(stats::delete.response(terms(cmod))), pred_df)
+  ))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
-                "when formula is a symbol"), {
+test_that(".make_PreSandwichLayer returns expected output when formula is a symbol", {
   set.seed(20)
   N <- 100
   df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
   cmod_form <- y ~ x
   cmod <- lm(cmod_form, df)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod)
+  psl <- .make_PreSandwichLayer(cmod, df)
 
-  expect_equal(ca_and_grad$ca, cmod$fitted.values)
-  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+  expect_true(all.equal(psl@.Data, cmod$fitted.values, check.attributes = FALSE))
+  expect_true(all.equal(psl@prediction_gradient, stats::model.matrix(cmod),
+                        check.attributes = FALSE))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+test_that(paste(".make_PreSandwichLayer returns expected output",
                 "when variables are modified in the formula"), {
   set.seed(20)
   N <- 100
   df <- data.frame("x1" = rnorm(N), "x2" = rpois(N, 1) + 1, "y" = rnorm(N))
   cmod_form <- y ~ stats::poly(x1, 3) + log(x2)
   cmod <- lm(cmod_form, data = df)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod)
+  psl <- .make_PreSandwichLayer(cmod, df)
 
-  expect_equal(ca_and_grad$ca, cmod$fitted.values)
-  expect_equal(ca_and_grad$prediction_gradient, stats::model.matrix(cmod))
+  expect_true(all.equal(psl@.Data, cmod$fitted.values, check.attributes = FALSE))
+  expect_true(all.equal(psl@prediction_gradient, stats::model.matrix(cmod),
+                        check.attributes = FALSE))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
-                "for `glm` object"), {
+test_that(".make_PreSandwichLayer returns expected output for `glm` object", {
   set.seed(20)
   N <- 100
   df <- data.frame("x1" = rnorm(N), "x2" = rpois(N, 1) + 1, "y" = rnorm(N))
   cmod <- glm(x2 ~ x1, data = df, family = stats::poisson())
   mm <- stats::model.matrix(cmod)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod)
+  psl <- .make_PreSandwichLayer(cmod, df)
 
-  expect_equal(ca_and_grad$ca,
-              drop(exp(mm %*% cmod$coefficients)))
-  expect_equal(ca_and_grad$prediction_gradient,
-              cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm)
+  expect_true(all.equal(psl@.Data, drop(exp(mm %*% cmod$coefficients)),
+                        check.attributes = FALSE))
+  expect_true(all.equal(psl@prediction_gradient,
+                        cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm,
+                        check.attributes = FALSE))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output",
+test_that(paste(".make_PreSandwichLayer returns expected output",
                 "for `glm` object with new data"), {
   set.seed(20)
   N <- 100
@@ -609,15 +616,35 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output",
   pred_df <- data.frame("x1" = rnorm(N))
   mm <- stats::model.matrix(formula(stats::delete.response(terms(cmod))),
                             data = pred_df)
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod, pred_df)
+  psl <- .make_PreSandwichLayer(cmod, pred_df)
 
-  expect_equal(ca_and_grad$ca,
-               drop(exp(mm %*% cmod$coefficients)))
-  expect_equal(ca_and_grad$prediction_gradient,
-               cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm)
+  expect_true(all.equal(psl@.Data, drop(exp(mm %*% cmod$coefficients)),
+                        check.attributes = FALSE))
+  expect_true(all.equal(psl@prediction_gradient,
+                        cmod$family$mu.eta(drop(mm %*% cmod$coefficients)) * mm,
+                        check.attributes = FALSE))
 })
 
-test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  test_that(".make_PreSandwichLayer glmrob", {
+    set.seed(30)
+    x = sample(rep(c(-1, 1), each = 15))
+    y = c(0.5 * x[1:29] - 2 + 1e-2 * rnorm(29), 12 * x[30] + 1e-2 * rnorm(1))
+    moddata <- data.frame(x = x, y = y)
+    
+    suppressWarnings(
+      mod <- robustbase::glmrob(y ~ x, moddata, family = stats::gaussian(),
+                                control = robustbase::glmrobMqle.control(tcc = 1.5))
+    )
+    
+    expect_true(!all(mod$w.r == 1.))
+    expect_true(all.equal(.make_PreSandwichLayer(mod, moddata)@.Data,
+                          mod$fitted.values,
+                          check.attributes = FALSE))
+  })
+}
+
+test_that(paste(".make_PreSandwichLayer returns expected output when",
                 "NA's are present"), {
   set.seed(20)
   N <- 100
@@ -626,31 +653,17 @@ test_that(paste(".get_ca_and_prediction_gradient returns expected output when",
   cmod <- lm(y ~ x, df)
 
   pred_df[N, c("x")] <- NA_real_
-  ca_and_grad <- propertee:::.get_ca_and_prediction_gradient(cmod, pred_df)
+  psl <- .make_PreSandwichLayer(cmod, pred_df)
   pred_gradient <- stats::model.matrix(
     formula(stats::delete.response(terms(cmod))),
     stats::model.frame(pred_df, na.action = na.pass))
 
-  expect_equal(length(ca_and_grad$ca), N)
-  expect_equal(sum(is.na(ca_and_grad$ca)), 1)
-  expect_equal(dim(ca_and_grad$prediction_gradient), dim(pred_gradient))
-  expect_equal(ca_and_grad$prediction_gradient[seq_len(N-1),],
-               pred_gradient[seq_len(N-1),])
-})
-
-test_that(".get_ca_and_prediction_gradient miscellaneous errors", {
-  set.seed(789)
-  n <- 30
-  df <- data.frame(x1 = runif(n))
-  df$x2 <- 1 - df$x1
-  df$y <- df$x1 + df$x2 + rnorm(n)
-  suppressWarnings(mod <- lm(y ~ x1 + x2, df))
-  expect_warning(.get_ca_and_prediction_gradient(mod),
-                 "prediction from a rank-deficient fit")
-  
-  class(mod) <- "new_lm"
-  expect_error(suppressWarnings(.get_ca_and_prediction_gradient(mod)),
-               "must inherit from a")
+  expect_equal(length(psl@.Data), N)
+  expect_equal(sum(is.na(psl@.Data)), 1)
+  expect_equal(dim(psl@prediction_gradient), dim(pred_gradient))
+  expect_true(all.equal(psl@prediction_gradient[seq_len(N-1),],
+                        pred_gradient[seq_len(N-1),],
+                        check.attributes = FALSE))
 })
 
 test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
