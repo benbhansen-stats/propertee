@@ -1,3 +1,9 @@
+# propertee 0.3.10
+
+## Bug Fixes
+* Fixed bug preventing the creation of `Design` objects from `tibble`s
+* Fixed bug preventing the use of `cov_adj()` with covariance adjustment models fit with `robustbase::glmrob()`
+
 # propertee 0.3.9
 
 ## Bug Fixes
