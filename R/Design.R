@@ -3,8 +3,7 @@ setClass("Design",
                    column_index = "character",
                    type = "character",
                    unit_of_assignment_type = "character",
-                   call = "call",
-                   dichotomy = "formula"))
+                   call = "call"))
 
 setValidity("Design", function(object) {
   if (any(dim(object@structure) == 0)) {
@@ -28,12 +27,6 @@ setValidity("Design", function(object) {
   }
   if (length(table(tr)) < 2) {
     return("Invalid treatment; treatment can not be constant")
-  }
-  if (is_dichotomized(object)) {
-    if (length(table(treatment(object, binary = TRUE))) < 2) {
-      return(paste("Invalid treatment and/or dichotomy; dichotomized treatment",
-                   "can not be constant"))
-    }
   }
   if (ncol(object@structure) != length(object@column_index)) {
     return("@column_index does not agree with number of columns in @structure")
@@ -62,9 +55,6 @@ setValidity("Design", function(object) {
     return(paste('valid `unit_of_assignment_type`s are "unit_of_assignment",',
                  '"cluster" or "unitid"'))
   }
-  if (!length(object@dichotomy) %in% c(0, 3)) {
-    return("@dichotomy invalid")
-  }
   return(TRUE)
 })
 
@@ -78,7 +68,6 @@ setValidity("Design", function(object) {
 ##' @param type One of "RCT", "RD", or "Obs"
 ##' @param subset Any subset information
 ##' @param call The call generating the \code{Design}.
-##' @param dichotomy If present, the dichotomization formula
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
 ##' @return A new Design object
@@ -89,7 +78,6 @@ setValidity("Design", function(object) {
                        type,
                        subset = NULL,
                        call = NULL,
-                       dichotomy = stats::formula(),
                        na.fail = TRUE) {
 
   if (is.null(call) | !is.call(call)) {
@@ -102,14 +90,6 @@ setValidity("Design", function(object) {
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
-
-  # `formula()` is a close equivalent of a NULL formula
-  if (is.null(dichotomy)) dichotomy <- stats::formula()
-  # the fact that a formula has an environment is playing hell with testing. I
-  # don't believe we'll ever need the environment in which the dichotomy
-  # formula is created as we use it on wahtever data we need, so setting it
-  # always to the generic interactive environment for simplicity.
-  environment(dichotomy) <- globalenv()
 
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
@@ -161,16 +141,6 @@ setValidity("Design", function(object) {
 
   if (options()$propertee_warn_on_conditional_treatment &
                 grepl("[<>=]", deparse(form[[2]]))) {
-    # Case 1: LHS of form has a conditional (e.g. (dose > 50). Search for >, <,
-    # = and if found, evaluate and convert to numeric, but warn users.
-    warning(paste("It appears that you've identified the treatment group",
-                  "using conditional logic\n(by including one of <, >, or =",
-                  "in the left hand side of `form`).\n",
-                  "This is supported, but it is recommended to instead",
-                  "include the non-binary\ntreatment variable in the `form`",
-                  "and use the `dichotomy` to define the groups.\n",
-                  "Using `dichotomy` will make modifying the groups",
-                  "easier in the future\nshould you need to adjust."))
     # If the user is using conditionals, we'll be converting logical to numeric
     # later but don't need to the add'l warning message.
     if (!is.logical(treatment)) {
@@ -217,8 +187,7 @@ setValidity("Design", function(object) {
              column_index = index,
              type = type,
              unit_of_assignment_type = autype,
-             call = call,
-             dichotomy = dichotomy))
+             call = call))
 }
 
 ##' @title Generates a \code{Design} object with the given specifications.
@@ -244,11 +213,8 @@ setValidity("Design", function(object) {
 ##'   if the levels are \code{numeric}, otherwise to \code{character}). If the
 ##'   treatment is not \code{logical} or \code{numeric} with only values 0 and
 ##'   1, in order to generate weights with [ate()] or [ett()], the
-##'   \code{dichotomy} argument must be used to identify the treatment and
-##'   control groups. The \code{Design} creation functions (\code{rct_design()},
-##'   \code{rd_design()}, \code{obs_design()}) all support the \code{dichotomy}
-##'   argument, or instead \code{dichotomy} can be passed to [ett()] and [ate()]
-##'   directly. See [dichotomy()] for more details on specifying a
+##'   \code{dichotomy} argument must be used in those functions to identify the
+##'   treatment and control groups. See [ett()] for more details on specifying a
 ##'   \code{dichotomy}.
 ##'
 ##' @param formula a \code{formula} defining the \code{Design} components. See
@@ -259,9 +225,6 @@ setValidity("Design", function(object) {
 ##'   assignment (as opposed to the units of analysis).
 ##' @param subset optional, subset the data before creating the \code{Design}
 ##'   object
-##' @param dichotomy optional, a formula defining the dichotomy of the treatment
-##'   variable if it isn't already 0/1 or \code{logical}. See the [dichotomy()]
-##'   function for details.
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
@@ -281,7 +244,6 @@ setValidity("Design", function(object) {
 rct_design <- function(formula,
                        data,
                        subset = NULL,
-                       dichotomy = NULL,
                        na.fail = TRUE) {
   .check_design_formula(formula)
 
@@ -290,7 +252,6 @@ rct_design <- function(formula,
                      type = "RCT",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy,
                      na.fail = na.fail))
 }
 
@@ -299,7 +260,6 @@ rct_design <- function(formula,
 rd_design <- function(formula,
                       data,
                       subset = NULL,
-                      dichotomy = NULL,
                       na.fail = TRUE) {
   .check_design_formula(formula, allow_forcing = TRUE)
 
@@ -308,7 +268,6 @@ rd_design <- function(formula,
                      type = "RD",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy,
                      na.fail = na.fail))
 }
 
@@ -317,7 +276,6 @@ rd_design <- function(formula,
 obs_design <- function(formula,
                        data,
                        subset = NULL,
-                       dichotomy = NULL,
                        na.fail = TRUE) {
   .check_design_formula(formula)
 
@@ -326,7 +284,6 @@ obs_design <- function(formula,
                      type = "Obs",
                      subset = subset,
                      call = match.call(),
-                     dichotomy = dichotomy,
                      na.fail = na.fail))
 }
 
@@ -355,12 +312,6 @@ setMethod("show", "Design", function(object) {
   vartab <- rbind(c("---------", "---------"),
                   vartab)
   print(data.frame(vartab), row.names = FALSE, right = FALSE)
-
-  if (is_dichotomized(object)) {
-    cat("\n")
-    cat(paste("Dichotomy rule:", deparse(object@dichotomy)))
-    cat("\n")
-  }
 
   cat("\n")
   invisible(object)
