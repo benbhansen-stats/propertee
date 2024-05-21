@@ -28,9 +28,9 @@
 \alias{forcings<-,Design-method}
 \title{Accessors and Replacers for \code{Design} objects}
 \usage{
-treatment(x, binary = FALSE, newdata = NULL, by = NULL, ...)
+treatment(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...)
 
-\S4method{treatment}{Design}(x, binary = FALSE, newdata = NULL, by = NULL, ...)
+\S4method{treatment}{Design}(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...)
 
 treatment(x) <- value
 
@@ -89,6 +89,10 @@ unit of assignment variable is found in \code{newdata}, then the requested
 variable type for each unit of \code{newdata} is returned. See \code{by}
 argument if the name of the unit of assignment differs.}
 
+\item{dichotomy}{optional; a formula specifying how to dichotomize
+a non-binary treatment variable. See the Details section of the \code{ett()}
+or \code{att()} help pages for information on specifying this formula}
+
 \item{by}{optional; named vector or list connecting names of unit of
 assignment/unitid/cluster variables in \code{x} to unit of
 assignment/unitid/cluster variables in \code{data}. Names represent
@@ -116,20 +120,14 @@ treatment variable passed into the \code{Design} is returned as a
 one-column \code{data.frame} regardless of whether it is binary or
 \code{x} has a \code{dichotomy}
 
-If \code{binary = TRUE} is passed, and the \code{Design} either has a
-binary treatment variable, or has a \code{dichotomy}, a binary one-column
-\code{data.frame} will be returned. If the \code{Design} does not have
-access to binary treatment (non-binary treatment and no \code{dichotomy}
-specified), passing \code{binary = TRUE} will error.
-
-\code{binary = "ifany"} is the most permissible; returning the
-dichotomized treatment variable if \code{@dichotomy} exists, otherwise
-returning the original treatment without error.
+If a \code{dichotomy} is passed, a binary one-column \code{data.frame} will
+be returned. If not and \code{binary} is \code{TRUE}, unless the \code{Design}
+has a binary treatment, \code{\link[=treatment]{treatment()}} will error. If \code{binary} is
+\code{"ifany"}, it will return the original treatment in this case.
 
 The one-column \code{data.frame} returned by \code{\link[=treatment]{treatment()}} is named as
-entered in the \code{Design} creation, but if a \code{dichotomy} is in the
-\code{Design}, the column name is \code{"__z"} to try and avoid any name
-conflicts.
+entered in the \code{Design} creation, but if a \code{dichotomy} is passed,
+the column name is \code{"__z"} to try and avoid any name conflicts.
 
 For the \code{value} when using replacers, the replacement must have the
 same number of rows as the \code{Design} (the same number of units of

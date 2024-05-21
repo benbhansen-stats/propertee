@@ -43,11 +43,12 @@ test_that("Accessing and replacing treatment", {
 
   # Continuous treatment, dichotomy
   des <- rd_design(dose ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
-                   data = simdata, dichotomy = dose <= 100 ~ dose == 200)
+                   data = simdata)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
   expect_identical(treatment(des), treatment(des, binary = FALSE))
-  tt <- treatment(des, binary = TRUE)
+  expect_error(treatment(des, binary = TRUE), "No binary")
+  tt <- treatment(des, binary = TRUE, dichotomy = dose <= 100 ~ dose == 200)
 
   expect_equal(dim(tt), c(10, 1))
   expect_true(is.numeric(tt[, 1]))
@@ -62,15 +63,16 @@ test_that("Accessing and replacing treatment", {
   expect_identical(treatment(des)[, 1], .bin_txt(des))
 
   des <- rd_design(o ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
-                   data = simdata, dichotomy = o >= 3 ~ .)
+                   data = simdata)
 
-  expect_true(all(.bin_txt(des) %in% c(0, 1, NA)))
-  expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
+  expect_true(all(.bin_txt(des, dichotomy = o >= 3 ~ .) %in% c(0, 1, NA)))
+  expect_identical(.bin_txt(des, dichotomy = o >= 3 ~ .),
+                   treatment(des, binary = TRUE, dichotomy = o >= 3 ~ .)[, 1])
 
   des <- rd_design(o ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  expect_error(.bin_txt(des), "cannot be obtained")
+  expect_error(.bin_txt(des), "Must provide a dichotomy")
 
 })
 
@@ -93,14 +95,30 @@ test_that("treatment binary = 'ifany'", {
 
 
   # Dichotomization
-  dichotomy(des) <- o >= 3 ~ .
-  expect_identical(treatment(des)$o,
+  expect_identical(treatment(des, dichotomy = o >= 3 ~ .)$o,
                    des@structure$o)
-  expect_identical(treatment(des, binary = TRUE),
-                   treatment(des, binary = "ifany"))
+  expect_identical(treatment(des, binary = TRUE, dichotomy = o >= 3 ~ .),
+                   treatment(des, binary = "ifany", dichotomy =  o >= 3 ~ .))
 
   expect_error(treatment(des, binary = "cat"), "Valid input")
 
+})
+
+test_that("New .bin_txt, and .apply_dichotomy errors", {
+  des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
+  expect_error(.bin_txt(des, data.frame("uoa1" = seq(100, 110))),
+               "Not all unit of assignment variables")
+  
+  expect_error(.apply_dichotomy(simdata, "dose > 50 ~ dose == 50"),
+               "must be formula")
+  expect_error(.apply_dichotomy(simdata$dose, dose > 50 ~ dose == 50),
+               "expected to be a named `data.frame`")
+  expect_error(.apply_dichotomy(treatment(des), dichotomy = dose > 50 ~ dose == 50),
+               "Could not find variables specified in `dichotomy`")
+  expect_error(.apply_dichotomy(simdata, . ~ .),
+               "At least one side")
+  expect_error(.apply_dichotomy(simdata, dichotomy = dose >= 50 ~ dose == 50),
+               "dichotomy overlaps")
 })
 
 test_that("Accessing and replacing unit of assignment", {
@@ -596,57 +614,6 @@ test_that("Accessing and replacing forcing", {
 
 })
 
-
-test_that("Accessing and replacing dichotomy", {
-  data(simdata)
-
-  des <- rct_design(dose ~ unitid(uoa1, uoa2), data = simdata,
-                    dichotomy = dose >= 250 ~ dose < 100)
-
-  dd <- dichotomy(des)
-  expect_true(inherits(dd, "formula"))
-  expect_length(dd, 3)
-
-  expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
-
-  des <- rct_design(dose ~ unitid(uoa1, uoa2), data = simdata)
-  dd <- dichotomy(des)
-  expect_true(inherits(dd, "formula"))
-  expect_length(dd, 0)
-
-
-  # assignment
-
-  dichotomy(des) <- dose >= 250 ~ dose < 100
-
-  expect_true(is_dichotomized(des))
-  dd <- dichotomy(des)
-  expect_true(inherits(dd, "formula"))
-  expect_length(dd, 3)
-
-  expect_identical(deparse(dd), deparse(dose >= 250 ~ dose < 100))
-
-  # remove dichot with `formula()`
-  dichotomy(des) <- formula()
-  dd <- dichotomy(des)
-  expect_true(inherits(dd, "formula"))
-  expect_length(dd, 0)
-
-  # remove dichot with `NULL` (after re-adding it)
-  dichotomy(des) <- dose >= 250 ~ dose < 100
-  dichotomy(des) <- NULL
-  dd <- dichotomy(des)
-  expect_true(inherits(dd, "formula"))
-  expect_length(dd, 0)
-
-
-  expect_error(dichotomy(des) <- 1,
-               "not valid")
-  # dichot too short
-  expect_error(dichotomy(des) <- ~ a,
-               "invalid")
-})
-
 test_that("Updating call works", {
 
   data(simdata)
@@ -691,18 +658,17 @@ test_that("treatment extraction with NA", {
 
   simdata$dose[1:4] <- NA
   des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
-  expect_error(.bin_txt(des), "cannot be obtained")
+  expect_error(.bin_txt(des), "Must provide a dichotomy")
   o <- treatment(des)[, 1]
   expect_true(is.na(o[1]))
   expect_true(all(!is.na(o[-1])))
 
 
-  dichotomy(des) <- dose >= 250 ~ .
-  z <- .bin_txt(des)
+  z <- .bin_txt(des, dichotomy = dose >= 250 ~ .)
   expect_true(is.na(z[1]))
   expect_true(all(z[-1] %in% 0:1))
-  expect_identical(z, treatment(des, binary = TRUE)[, 1])
-  expect_identical(o, treatment(des, binary = FALSE)[, 1])
+  expect_identical(z, treatment(des, binary = TRUE, dichotomy = dose >= 250 ~ .)[, 1])
+  expect_identical(o, treatment(des, binary = FALSE, dichotomy = dose >= 250 ~ .)[, 1])
 
 
 })
@@ -845,16 +811,4 @@ test_that("has_blocks", {
   
   expect_true(has_blocks(blocked_des))
   expect_false(has_blocks(no_blocks_des))
-})
-
-test_that("dichotimization should error if if makes treatment constant", {
-  data(simdata)
-
-  des <- obs_design(dose ~ uoa(uoa1, uoa2), data = simdata)
-  expect_error(dichotomy(des) <- dose  > 1000 ~ .,
-               "constant")
-  expect_error(dichotomy(des) <- dose > 200 ~ dose < 0,
-               "constant")
-  expect_error(ate(des, dose > 1000 ~ ., data = simdata),
-               "constant")
 })

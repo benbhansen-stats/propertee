@@ -7,19 +7,20 @@
 .apply_dichotomy(txt, dichotomy)
 }
 \arguments{
-\item{txt}{A named \code{data.frame} containing a single column of the
-treatment, such as that produed by \code{treatment(mydesign)}.}
+\item{txt}{A named \code{data.frame} containing a column of the treatment,
+such as that produed by \code{treatment(mydesign)}, and any variables specified
+in \code{dichotomy}.}
 
-\item{dichotomy}{A dichotomization formula. See the details in the Details
-for the help of \code{rct_design()}.}
+\item{dichotomy}{A formula specifying how to dichotomize the non-binary
+treatment column in \code{txt}. See the Details section of the \code{ett()}
+or \code{att()} help pages for information on specifying this formula}
 }
 \value{
 A \code{vector} of binary treatments
 }
 \description{
-Given a treatment variable (passed as a named \code{data.frame}) and a
-dichotomy formula (see help on \code{rct_design()} for details on
-specification), returns \code{vector} containing only \code{0}, \code{1}, or
-\code{NA}.
+Given a dichotomy formula and a \code{data.frame} with a treatment
+variable and any variables in the formula, returns a \code{vector} containing
+only \code{0}, \code{1}, or \code{NA}.
 }
 \keyword{internal}
