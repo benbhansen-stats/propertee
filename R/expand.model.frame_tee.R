@@ -17,7 +17,7 @@
 ##' the additional variables created during \code{lmitt()} can be found.
 ##'
 ##' Trivial modifications from \code{stats::expand.model.frame()} include
-##' ensuring \code{model} is a \code{Directadjusted} object, and using the
+##' ensuring \code{model} is a \code{teeMod} object, and using the
 ##' \code{::} syntax as appropriate.
 ##' @title Add new variables to a model frame from a \code{teeMod}
 ##'   object

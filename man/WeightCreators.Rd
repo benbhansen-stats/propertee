@@ -53,6 +53,8 @@ removes from the target population any block in which there is no basis
 for estimating either means under treatment or means under control.
 
 If block is missing for a given observation, a weight of 0 is applied.
+
+Code for the computation of the weights was contributed by Tim Lycurgus.
 }
 \examples{
 data(simdata)
