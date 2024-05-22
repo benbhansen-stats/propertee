@@ -9,8 +9,11 @@ test_that("Combining weighted designs", {
 
   c_w <- c(w1, w2, w3)
   expect_true(inherits(c_w, "WeightedDesign"))
+  expect_true(identical(c_w@Design, des))
   expect_length(c_w, 50)
-  expect_identical(c_w, ate(des, data = simdata))
+  ## NOTE 5/22/24: the below is no longer true--.weights_calc() calculates weights
+  ## based on the provided `data` argument rather than `design@structure`
+  # expect_identical(c_w, ate(des, data = simdata))
 
   w1e <- ett(des, data = simdata[1:30,])
   w2e <- ett(des, data = simdata[31:40,])
@@ -18,8 +21,9 @@ test_that("Combining weighted designs", {
 
   c_we <- c(w1e, w2e, w3e)
   expect_true(inherits(c_we, "WeightedDesign"))
+  expect_true(identical(c_we@Design, des))
   expect_length(c_we, 50)
-  expect_identical(c_we, ett(des, data = simdata))
+  # expect_identical(c_we, ett(des, data = simdata))
 
   expect_error(c(w1, 1:5), "with other")
   expect_error(c(w1, w1e), "same target")
@@ -28,7 +32,7 @@ test_that("Combining weighted designs", {
 
   alt_w1 <- ate(des2, data = simdata)
 
-  expect_error(c(w1, alt_w1), "which differ on elements")
+  expect_error(c(w1, alt_w1), "differing Design")
 
   # if the first argument is compatible with WeightedDesign but isn't one (e.g.
   # numeric vector), c() will return a numeric vector
@@ -45,9 +49,7 @@ test_that("Combining weighted designs with different dichotomys ", {
   c_w <- c(w1, w2, w3)
   expect_true(inherits(c_w, "WeightedDesign"))
   expect_length(c_w, 50)
-
-  expect_error(c(w1, w2, w3, force_dichotomy_equal = TRUE),
-               "must be identical")
+  expect_true(identical(c_w@Design, des))
 
   data_w  <- rbind(cbind(simdata[1:10, ], w=w1),
                    cbind(simdata[11:30, ], w=w2),
@@ -93,13 +95,15 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     w0 <- c(w20, w21)
     expect_length(w0, length(w20)+length(w21))
     expect_true(inherits(w0, "WeightedDesign"))
-    expect_true(inherits(w0, "CombinedWeightedDesign"))
+    # expect_true(inherits(w0, "CombinedWeightedDesign")) JW 5/22/24 EDIT
+    expect_false(inherits(w0, "CombinedWeightedDesign")) # JW 5/22/24 EDIT
 
 
 ### Bringing the weights back into the data frame is easier
 ### if you're happy to reorder the data.
     mf_dat <- cbind(analysis_dat[order(analysis_dat$year),], w0)
-    expect_true(inherits(mf_dat$w0, "CombinedWeightedDesign"))
+    # expect_true(inherits(mf_dat$w0, "CombinedWeightedDesign")) JW 5/22/24 EDIT
+    expect_false(inherits(mf_dat$w0, "CombinedWeightedDesign")) # JW 5/22/24 EDIT
     expect_equal(mf_dat$w0, w0)
 
 ### Let obvious how to put w0 into the same order as the
@@ -108,36 +112,40 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     analysis_dat[analysis_dat$year=="AY20","w0"] <- w20
     analysis_dat[analysis_dat$year=="AY21","w0"] <- w21
     ## would have been preferable that the below 2 assertions be true:
-    expect_false(inherits(analysis_dat$w, "WeightedDesign"))
-    expect_false(inherits(analysis_dat$w, "CombinedWeightedDesign"))
+    # expect_false(inherits(analysis_dat$w, "WeightedDesign")) JW 5/22/24 EDIT
+    # expect_false(inherits(analysis_dat$w, "CombinedWeightedDesign")) JW 5/22/24 EDIT
+    expect_false(inherits(analysis_dat$w0, "WeightedDesign")) # JW 5/22/24 EDIT
+    expect_false(inherits(analysis_dat$w0, "CombinedWeightedDesign")) # JW 5/22/24 EDIT
     ## rather, this workflow requires us to make sure a_d$w0 is a
     ## WeightedDesign &/or CombinedWeightedDesign from the get-go.
     ## One way to do this:
     analysis_dat$w0 <- w0
-    expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign")
+    # JW 5/22/24 EDIT: expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign")
+    expect_s4_class(analysis_dat$w0, "WeightedDesign")
     analysis_dat[which(analysis_dat$year=="AY20"), "w0"]  <- w20
     analysis_dat[which(analysis_dat$year=="AY21"), "w0"]  <- w21
-    expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign")
+    # expect_s4_class(analysis_dat$w0, "CombinedWeightedDesign") JW 5/22/24 EDIT
+    expect_s4_class(analysis_dat$w0, "WeightedDesign")
     expect_identical(w0@Design, analysis_dat$w0@Design)
     expect_equal(as.numeric(w20), as.numeric(analysis_dat$w0)[analysis_dat$year=="AY20"])
     expect_equal(as.numeric(w21), as.numeric(analysis_dat$w0)[analysis_dat$year=="AY21"])
     ## Now let's confirm that the CombinedWeightedDesign internals
     ## are as they should be:
-    expect_equal(mf_dat$w0@dichotomies, analysis_dat$w0@dichotomies)
+    # expect_equal(mf_dat$w0@dichotomies, analysis_dat$w0@dichotomies) JW 5/22/24 EDIT
     ## (`expect_setequal()` would work too, but `expect_equal()`
     ## sets up the next test).
     ## This ought to have been true:
-    expect_false(all(analysis_dat[analysis_dat$w0@keys[[1]], "year"]=="AY20"))
+    # expect_false(all(analysis_dat[analysis_dat$w0@keys[[1]], "year"]=="AY20")) JW 5/22/24 EDIT
     ## ... just as it is when we've reordered the data to match
     ##the CWD, rather than the reverse.
-    expect_true(all(mf_dat[mf_dat$w0@keys[[1]], "year"]=="AY20"))
+    # expect_true(all(mf_dat[mf_dat$w0@keys[[1]], "year"]=="AY20")) JW 5/22/24 EDIT
     ## ToDo: Ensure CWD@keys get reordered upon reorder of the .Data
 
 ### Alternatively, use lapply and unsplit:
     analysis_dat$w1 <-
         lapply(c("AY20", "AY21"),
     {\(yr) ett(des, data=subset(analysis_dat,year==yr),
-               dichotomy= year_trt<=yr ~ .) }
+               dichotomy= as.formula(paste0("year_trt<=\"", yr, "\"~."))) } # JW 5/22/24 EDIT
     ) |> unsplit(analysis_dat$year)
     expect_equal(as.numeric(analysis_dat$w1),
                  as.numeric(analysis_dat$w0))

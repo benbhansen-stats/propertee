@@ -13,21 +13,13 @@ or \code{\link[=ett]{ett()}}}
 \item{...}{any number of additional \code{WeightedDesign} objects with
 equivalent \code{Design} to \code{x} and eachother}
 
-\item{force_dichotomy_equal}{if \code{FALSE} (default), \code{Design}s are
+\item{force_dichotomy_equal}{if \code{FALSE} (default), \code{WeightedDesign}s are
 considered equivalent even if their \code{dichotomy} differs. If
 \code{TRUE}, \code{@dichotomy} must also be equal.}
 }
 \value{
-If all \code{WeightedDesign} objects contain the same
-\code{dichotomy} (including \code{NULL}), a new \code{WeightedDesign} with
+A new \code{WeightedDesign} with
 the weights concatenated in the input order.
-
-If \code{force_dichotomy_equal} is \code{FALSE} and the
-\code{WeightedDesign} objects differ in their dichotomies, a
-\code{CombinedWeightedDesign} is returned. This functions essentially
-identically to a \code{WeightedDesign}, but carries with it the
-dichotimization information that came from each of the individual
-\code{WeightedDesign}.
 }
 \description{
 Given several variations of weights generated from a single
@@ -47,8 +39,7 @@ the treatment is continuous or has multiple levels, and there is a need to
 combine the weights from the same general design, but with different
 dichotomies. Therefore multiple \code{WeightedDesign} objects can be
 combined if they are identical except for their \code{@dichotomy} slots.
-The resulting object will be a \code{CombinedWeightedDesign} which tracks
-all individual \code{dichotomy}.
+The resulting object will be a \code{WeightedDesign}.
 }
 \examples{
 data(simdata)
