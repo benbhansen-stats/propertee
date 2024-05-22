@@ -19,9 +19,9 @@ test_that("basic assigned", {
 test_that("with dichotomy", {
 
   data(simdata)
-  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata,
-                    dichotomy = dose < 250 ~ .)
-  m1 <- lm(y ~ assigned(), data = simdata, weights = ate(des))
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  m1 <- lm(y ~ assigned(), data = simdata,
+           weights = ate(des, dichotomy = dose < 250 ~ .))
 
   expect_true(all(m1$model$`assigned()` %in% 0:1))
 })
@@ -36,19 +36,17 @@ test_that("Missing data", {
                nrow(simdata))
 
   simdata$dose[1:4] <- NA
-  des <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
-                    dichotomy = dose > 250 ~ .)
-  expect_equal(length(assigned(des, data = simdata)),
+  des <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
+  expect_equal(length(assigned(des, data = simdata, dichotomy = dose > 250 ~ .)),
                nrow(simdata))
 
 
   data(STARdata)
   STARdata$id <- seq_len(nrow(STARdata))
   STARdata$stark <- as.character(STARdata$stark)
-  des <- rct_design(stark ~ unitid(id), data = STARdata,
-                    dichotomy = stark == "small" ~ .)
+  des <- rct_design(stark ~ unitid(id), data = STARdata)
   mod <- lm(readk ~ birth + lunchk + assigned(), data = STARdata,
-          weights = ate(des))
+          weights = ate(des, dichotomy = stark == "small" ~ .))
 
 })
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_dichotomy.R
 \name{.get_dichotomy}
 \alias{.get_dichotomy}
-\title{Find and validate a \code{dichotomy}}
+\title{(Internal) Find and validate a \code{dichotomy}}
 \usage{
 .get_dichotomy(dichotomy = NULL)
 }
@@ -15,7 +15,7 @@ A formula or a call that evaluates to a formula, or NULL if no
 stack
 }
 \description{
-Find and validate a \code{dichotomy}
+(Internal) Find and validate a \code{dichotomy}
 }
 \details{
 Whether a \code{dichotomy} is provided or not, \code{.get_dichotomy()}

@@ -108,9 +108,7 @@ test_that("New .bin_txt, and .apply_dichotomy errors", {
   des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
   expect_error(.bin_txt(des, data.frame("uoa1" = seq(100, 110))),
                "Not all unit of assignment variables")
-  
-  expect_error(.apply_dichotomy(simdata, "dose > 50 ~ dose == 50"),
-               "must be formula")
+
   expect_error(.apply_dichotomy(simdata$dose, dose > 50 ~ dose == 50),
                "expected to be a named `data.frame`")
   expect_error(.apply_dichotomy(treatment(des), dichotomy = dose > 50 ~ dose == 50),

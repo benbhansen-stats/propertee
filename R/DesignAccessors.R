@@ -158,8 +158,9 @@ setMethod("treatment<-", "Design", function(x, value) {
                      # Design second.
                      tt[, paste0(txtname, ".y"), drop = FALSE]
                    })
+    colnames(tt) <- txtname
   }
-  
+
   if (!is.null(dichotomy)) {
     treatment <- .apply_dichotomy(tt, dichotomy)
   } else {
@@ -181,19 +182,16 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##'   such as that produed by `treatment(mydesign)`, and any variables specified
 ##'   in \code{dichotomy}.
 ##' @param dichotomy A formula specifying how to dichotomize the non-binary
-##' treatment column in \code{txt}. See the Details section of the \code{ett()}
-##' or \code{att()} help pages for information on specifying this formula
+##' treatment column in \code{txt} (or a call that evaluates to a formula).
+##' See the Details section of the \code{ett()} or \code{att()} help pages for
+##' information on specifying this formula
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .apply_dichotomy <- function(txt, dichotomy) {
-  if (!inherits(dichotomy, "formula")) {
-    stop("`dichotomy` must be formula")
-  }
-
   if (!is.data.frame(txt)) {
     stop("`txt` is expected to be a named `data.frame`")
   }
-  
+
   if (!all(setdiff(all.vars(dichotomy), ".") %in% colnames(txt))) {
     stop(paste("Could not find variables specified in `dichotomy`. Provide a", 
                "`data` argument with these columns, or ensure `data` argument",

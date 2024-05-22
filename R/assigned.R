@@ -9,10 +9,10 @@
 ##'   use one of these functions, to allow [lmitt()] to identify the treatment
 ##'   variable.
 ##'
-##'   The [lm()] call must include either weights (via \code{ate()} or
-##'   \code{ett()} being passed to the \code{weights=} argument) or a covariance
-##'   adjustment model (via \code{cov_adj()} being passed to the \code{offset=}
-##'   argument). In this case, no arguments are needed to these functions.
+##'   To keep the formula in the [lm()] call concise, instead of passing
+##'   \code{design} and \code{data} arguments to these functions, one can
+##'   pass a \code{WeightedDesign} object to the \code{weights} argument of the
+##'   [lm()] call or a \code{SandwichLayer} object to the \code{offset} argument.
 ##'
 ##'   Alternatively, you can pass the \code{design} and \code{data} arguments.
 ##'
@@ -38,6 +38,7 @@
 ##' @param data Optional data set. By default [assigned()] will attempt to
 ##'   identify the appropriate data, if this fails (or you want to overwrite
 ##'   it), you can pass the data here.
+##' @inheritParams ett
 ##' @return The treatment variable to be placed in the regression formula.
 ##' @rdname AssignedAliases
 ##' @export
@@ -47,7 +48,7 @@
 ##' mod <- lm(y ~ assigned(), data = simdata, weights = ate(des))
 ##' lmittmod <- lmitt(mod)
 ##' summary(lmittmod)
-assigned <- function(design = NULL, data = NULL) {
+assigned <- function(design = NULL, data = NULL, dichotomy = NULL) {
   if (is.null(design)) {
     design <- .get_design()
   }
@@ -66,33 +67,10 @@ assigned <- function(design = NULL, data = NULL) {
     }
   }
 
-  # Extract treatment and unitofassignment variables from the Design
-  treatment_uoa <- cbind(treatment(design, binary = "ifany"),
-                         design@structure[, var_names(design, "u"),
-                                             drop = FALSE])
+  # get `dichotomy` argument and validate against any up the call stack
+  dichotomy <- .get_dichotomy(dichotomy)
 
-  # Merge the extracted pieces from the Design with the data being used to build
-  # the model.
-  treatment_data <- .merge_preserve_order(data, treatment_uoa,
-                                          by = var_names(design, "u"),
-                                          all.x = TRUE)
-
-  if (is_dichotomized(design)) {
-    txtname <- "z__"
-  } else {
-    txtname <- var_names(design, "t")
-  }
-  treatment <- tryCatch(treatment_data[, txtname],
-                        error = function(e) {
-                          # if treatment variable already exists in data, there
-                          # will be a .x and .y version; e.g. z.x and z.y, so
-                          # we'll extract the ".y" version (the second one)
-                          # since the merge above has the treatment from the
-                          # Design second.
-                          treatment_data[, paste0(txtname, ".y")]
-                        })
-
-  return(treatment)
+  return(.bin_txt(design, data, dichotomy))
 }
 
 ##' @rdname AssignedAliases
