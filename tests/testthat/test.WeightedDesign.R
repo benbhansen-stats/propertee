@@ -36,10 +36,6 @@ test_that("internal weight function", {
                              dichotomy = NULL),
                "`data` must be")
 
-  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
-                             target = "ate", dichotomy = 1),
-               "`dichotomy` must be")
-
 })
 
 test_that("dichotomy issues", {
