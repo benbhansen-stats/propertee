@@ -12,10 +12,6 @@ setValidity("WeightedDesign", function(object) {
     return(paste("@target must be one of [ate,ett]. unknown @target:",
                  object@target))
   }
-  # The design in weighted design must have an accessible binary treatment.
-  if (!is_binary_or_dichotomized(object@Design)) {
-    return("Treatment must be binary or have a dichotomy.")
-  }
   return(TRUE)
 })
 
