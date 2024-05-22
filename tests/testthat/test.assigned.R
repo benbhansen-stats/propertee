@@ -16,7 +16,19 @@ test_that("basic assigned", {
              data = simdata)
 })
 
-test_that("with dichotomy", {
+test_that("with dichotomy passed directly", {
+  
+  data(simdata)
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  wts <- ate(des, data = simdata, dichotomy = dose < 250 ~ .)
+  m1 <- lm(y ~ assigned(des, dichotomy = dose < 250 ~ .), data = simdata,
+           weights = wts)
+  m2 <- lm(y ~ assigned(des, dichotomy = dose < 250 ~ .), data = simdata)
+  
+  expect_true(all(m1$model$`assigned()` %in% 0:1))
+})
+
+test_that("with dichotomy found in weights", {
 
   data(simdata)
   des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
