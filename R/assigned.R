@@ -53,11 +53,12 @@ assigned <- function(design = NULL, data = NULL, dichotomy = NULL) {
     design <- .get_design()
   }
 
-  # Only thing we need from the data is uoa info to enable later merge
-  form <- as.formula(paste("~", paste(var_names(design, "u"),
-                                      collapse = "+")))
-
   if (is.null(data)) {
+    # Get uoa info to enable merge in .expand_txt, and get non-treatment variables
+    # in the dichotomy for .apply_dichotomy
+    divars <- setdiff(all.vars(dichotomy), c(var_names(design, "t"), "."))
+    form <- as.formula(paste("~", paste(c(divars, var_names(design, "u")),
+                                        collapse = "+")))
     suppressWarnings(data <- try(.get_data_from_model("assigned", form),
                                  silent = TRUE))
     if (is(data, "try-error")) {
@@ -72,7 +73,7 @@ assigned <- function(design = NULL, data = NULL, dichotomy = NULL) {
   dichotomy <- .get_dichotomy(dichotomy)
   
   if (!is.null(dichotomy)) {
-    return(.apply_dichotomy(tt, dichotomy))
+    return(.apply_dichotomy(cbind(tt, data), dichotomy))
   } else {
     return(tt[,1])
   }
