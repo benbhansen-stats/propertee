@@ -10,9 +10,12 @@ test_that(".get_dichotomy with lmitt.formula()", {
   data(simdata)
   des <- rct_design(dose ~ cluster(uoa1, uoa2), simdata)
   expect_warning(
-    mod1 <- lmitt(y ~ 1, design = des, data = simdata, dichotomy = dose > 50 ~ dose == 50,
-                  weights = ate(des, dichotomy = dose <= 250 ~ dose > 250)),
-    "passed to `.weights_calc()"
+    expect_warning(
+      mod1 <- lmitt(y ~ 1, design = des, data = simdata, dichotomy = dose > 50 ~ dose == 50,
+                    weights = ate(des, dichotomy = dose <= 250 ~ dose > 250)),
+      "passed to `.weights_calc()"
+    ),
+    "passed to `a.()"
   )
   expect_equal(mod1$model$dose., as.numeric(simdata$dose > 50))
   expect_equal(mod1$model$`(weights)`, ate(des, dose <= 250 ~ dose > 250, data = simdata))

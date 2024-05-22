@@ -39,8 +39,8 @@
                       "is not the same as the `dichotomy` passed to `lmitt()`"))
       }
     }
-    if (!is.null(weights.dichotomy)) {
-      if (!identical(deparse(weights.dichotomy[[1]]), deparse(dichotomy))) {
+    if (!is.null(weights.dichotomy[[1L]])) {
+      if (!identical(deparse(weights.dichotomy[[1L]]), deparse(dichotomy))) {
         warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to",
                       paste0("`", unique(weights.calls)[[1L]][[1L]], "()`")))

@@ -151,7 +151,7 @@ lmitt.formula <- function(obj,
     }
 
     # #126 block on factor treatments
-    if (is.factor(treatment(design)[, 1])) {
+    if (is.factor(treatment(design)[, 1]) & is.null(dichotomy)) {
       if (is.ordered(treatment(design)[, 1])) {
         fact_or_ord <- "Ordered"
       } else {
@@ -269,13 +269,16 @@ lmitt.formula <- function(obj,
 
   # Generate formula for the internal `lm`
   if (rhstype == "intercept") {
-    new.form <- formula(~ a.())
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ")"))
     moderator <- character()
   } else if (rhstype == "categorical") {
-    new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), "):",
+                                          rhs, "+", rhs))
     moderator <- rhs
   } else {
-    new.form <- stats::reformulate(paste0("a.() + a.():", rhs, "+", rhs))
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ") + ",
+                                          "a.(dichotomy=", deparse(dichotomy), "):",
+                                          rhs, "+", rhs))
     moderator <- rhs
   }
   mm.call <- lm.call
@@ -286,6 +289,8 @@ lmitt.formula <- function(obj,
   mm.call$na.action <- "na.pass"
   names(mm.call)[2] <- "object"
   mm <- eval(mm.call, parent.frame())
+  colnames(mm) <- gsub(paste0("dichotomy = ", deparse(dichotomy)), "", colnames(mm),
+                       fixed = TRUE)
 
   if (absorb) {
     mm <- areg.center(mm, as.factor(blocks), lm.call$weights)

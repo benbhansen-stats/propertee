@@ -1,7 +1,9 @@
 test_that("dichotomy args where design has no blocks, no time-varying assignment", {
+  data(simdata)
   des1 <- rct_design(dose ~ cluster(uoa1, uoa2), simdata)
+  
   lm1 <- lm(y ~ assigned(des1, dichotomy = dose >250~dose<=250), simdata)
-  expect_equal(lm1$model[[2]], as.numeric(dose>250))
+  expect_equal(lm1$model[[2]], as.numeric(simdata$dose>250))
   
   lm2 <- lm(y ~ assigned(des1, dichotomy = dose >250~dose<=250), simdata,
             weights = ate(des1, dichotomy = dose >250~dose<=250))
@@ -22,7 +24,7 @@ test_that("dichotomy args where design has no blocks, no time-varying assignment
   expect_equal(lm2$model$`(weights)`@.Data, expected_wts)
   
   lmitt1 <- lmitt(y ~ 1, design = des1, simdata, dichotomy = dose>250~dose<=250)
-  expect_equal(lmitt1$model$dose., as.numeric(dose>250))
+  expect_equal(lmitt1$model$dose., as.numeric(simdata$dose>250))
   expect_true(all.equal(lmitt1$coefficients, lm1$coefficients, check.attributes = FALSE))
   
   lmitt2 <- lmitt(y ~ 1, design = des1, simdata,
@@ -46,9 +48,11 @@ test_that("dichotomy args where design has no blocks, no time-varying assignment
 })
 
 test_that("dichotomy args where design has blocks, no time-varying assignment", {
+  data(simdata)
   des1 <- rct_design(dose ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  
   lm1 <- lm(y ~ assigned(des1, dichotomy = dose >250~dose<=250), simdata)
-  expect_equal(lm1$model[[2]], as.numeric(dose>250))
+  expect_equal(lm1$model[[2]], as.numeric(simdata$dose>250))
   
   lm2 <- lm(y ~ assigned(des1, dichotomy = dose >250~dose<=250), simdata,
             weights = ate(des1, dichotomy = dose >250~dose<=250))
@@ -73,7 +77,7 @@ test_that("dichotomy args where design has blocks, no time-varying assignment", 
   suppressMessages(
     lmitt1 <- lmitt(y ~ 1, design = des1, simdata, dichotomy = dose>250~dose<=250)
   )
-  expect_equal(lmitt1$model$dose., as.numeric(dose>250))
+  expect_equal(lmitt1$model$dose., as.numeric(simdata$dose>250))
   
   lmitt2 <- lmitt(y ~ 1, design = des1, simdata,
                   weights = ate(des1, dichotomy = dose >250~dose<=250))
@@ -131,4 +135,13 @@ test_that("dichotomy args where design has blocks, time-varying assignment", {
   expected_wts[analysis_dat$id %in% c("b", "c", "d") & analysis_dat$year == "AY21"] <- 1
   expected_wts[analysis_dat$id %in% c("f") & analysis_dat$year == "AY21"] <- 3
   expect_equal(wts@.Data, expected_wts)
+  
+  suppressMessages(
+    lmitt1 <- lmitt(y ~ 1, design = des, analysis_dat, dichotomy = year_trt<=year ~.)
+  )
+  expect_equal(lmitt1$model$year_trt., as.numeric(analysis_dat$year>=analysis_dat_year_trts))
+  
+  lmitt2 <- lmitt(y ~ 1, design = des, analysis_dat, dichotomy = year_trt<=year ~.,
+                  weights = wts)
+  expect_equal(lmitt2$model$year_trt., as.numeric(analysis_dat$year>=analysis_dat_year_trts))
 })
