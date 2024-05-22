@@ -4,16 +4,25 @@ test_that("basic assigned", {
   mod1 <- lm(y ~ z, weights = ate(des), data = simdata)
   mod2 <- lm(y ~ assigned(), weights = ate(des), data = simdata)
   expect_true(all(coef(mod1) == coef(mod2)))
+  expect_true(all(mod2$model$`assigned()` %in% c(0, 1)))
+  expect_true(all.equal(mod2$model$`assigned()`, simdata$z))
 
-  mod3 <- lm(y ~ z, weights = ate(), offset = cov_adj(mod1, design = des),
-             data = simdata)
-  mod4 <- lm(y ~ z, weights = ate(des), offset = cov_adj(mod1),
-             data = simdata)
   mod5 <- lm(y ~ assigned(), weights = ate(),
              offset = cov_adj(mod1, design = des),
              data = simdata)
   mod6 <- lm(y ~ assigned(), weights = ate(des), offset = cov_adj(mod1),
              data = simdata)
+  expect_true(all(coef(mod5) == coef(mod6)))
+  expect_true(all(mod5$model$`assigned()` %in% c(0, 1)))
+  expect_true(all.equal(mod5$model$`assigned()`, simdata$z))
+  expect_true(all(mod6$model$`assigned()` %in% c(0, 1)))
+  expect_true(all.equal(mod6$model$`assigned()`, simdata$z))
+  
+  nonbin_des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  mod7 <- lm(y ~ assigned(nonbin_des), simdata)
+  expect_equal(length(mod7$coefficients), 2)
+  expect_true(length(unique(mod7$model$`assigned(nonbin_des)`)) > 2)
+  expect_equal(mod7$model$`assigned(nonbin_des)`, simdata$dose)
 })
 
 test_that("with dichotomy passed directly", {

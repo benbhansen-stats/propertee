@@ -67,10 +67,15 @@ assigned <- function(design = NULL, data = NULL, dichotomy = NULL) {
     }
   }
 
-  # get `dichotomy` argument and validate against any up the call stack
+  tt <- treatment(design, binary = FALSE)
+  tt <- .expand_txt(tt, data, design)
   dichotomy <- .get_dichotomy(dichotomy)
-
-  return(.bin_txt(design, data, dichotomy))
+  
+  if (!is.null(dichotomy)) {
+    return(.apply_dichotomy(tt, dichotomy))
+  } else {
+    return(tt[,1])
+  }
 }
 
 ##' @rdname AssignedAliases

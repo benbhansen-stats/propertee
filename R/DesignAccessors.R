@@ -139,27 +139,7 @@ setMethod("treatment<-", "Design", function(x, value) {
   # get treatment from the design
   tt <- treatment(des, binary = FALSE)
   
-  if (!is.null(data)) {
-    # if there's a `data` argument, merge it to the treatment info using the
-    # units of assignment
-    if (!all(var_names(des, "u") %in% colnames(data))) {
-      stop("Not all unit of assignment variables can be found in `data`")
-    }
-    treatment_uoa <- cbind(tt, des@structure[, var_names(des, "u"), drop = FALSE])
-    tt <- .merge_preserve_order(data, treatment_uoa, by = var_names(des, "u"), all.x = TRUE)
-    
-    txtname <- var_names(des, "t")
-    tt <- tryCatch(tt[, txtname, drop = FALSE],
-                   error = function(e) {
-                     # if treatment variable already exists in data, there
-                     # will be a .x and .y version; e.g. z.x and z.y, so
-                     # we'll extract the ".y" version (the second one)
-                     # since the merge above has the treatment from the
-                     # Design second.
-                     tt[, paste0(txtname, ".y"), drop = FALSE]
-                   })
-    colnames(tt) <- txtname
-  }
+  if (!is.null(data)) tt <- .expand_txt(tt, data, des)
 
   if (!is.null(dichotomy)) {
     treatment <- .apply_dichotomy(tt, dichotomy)
@@ -172,6 +152,38 @@ setMethod("treatment<-", "Design", function(x, value) {
   }
   
   return(treatment)
+}
+
+##' @title (Internal) Expand treatment variable from a \code{Design} to a dataframe
+##' with unit of assignment information
+##' @param txt A dataframe with one column corresponding to the treatment. Can be
+##' dichotomized or as it's stored in \code{des}
+##' @param data A dataframe with unit of assignment information
+##' @param des A \code{Design}, used to align unit of assignment information with
+##' \code{txt}
+##' @keywords internal
+.expand_txt <- function(txt, data, des) {
+  # if there's a `data` argument, merge it to the treatment info using the
+  # units of assignment
+  if (!all(var_names(des, "u") %in% colnames(data))) {
+    stop("Not all unit of assignment variables can be found in `data`")
+  }
+  treatment_uoa <- cbind(txt, des@structure[, var_names(des, "u"), drop = FALSE])
+  txt <- .merge_preserve_order(data, treatment_uoa, by = var_names(des, "u"), all.x = TRUE)
+  
+  txtname <- var_names(des, "t")
+  txt <- tryCatch(txt[, txtname, drop = FALSE],
+                  error = function(e) {
+                    # if treatment variable already exists in data, there
+                    # will be a .x and .y version; e.g. z.x and z.y, so
+                    # we'll extract the ".y" version (the second one)
+                    # since the merge above has the treatment from the
+                    # Design second.
+                    txt[, paste0(txtname, ".y"), drop = FALSE]
+                  })
+  colnames(txt) <- txtname
+  
+  return(txt)
 }
 
 ##' @title (Internal) Applies dichotomy to treatment

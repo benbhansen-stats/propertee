@@ -104,7 +104,7 @@ test_that("treatment binary = 'ifany'", {
 
 })
 
-test_that("New .bin_txt, and .apply_dichotomy errors", {
+test_that("New .bin_txt, .expand_txt, and .apply_dichotomy errors", {
   des <- rct_design(z ~ unitid(uoa1, uoa2), simdata)
   expect_error(.bin_txt(des, data.frame("uoa1" = seq(100, 110))),
                "Not all unit of assignment variables")
