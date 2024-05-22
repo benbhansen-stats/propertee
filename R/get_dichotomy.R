@@ -12,12 +12,15 @@
   found_lmitt <- grepl("^lmitt\\.formula$",
                        lapply(sys.calls(), "[[", 1),
                        perl = TRUE)
-  found_weights <- vapply(lapply(sys.calls(), "[[", "weights"), function(aa) {
-    is.call(aa) && (aa[[1]] == quote(ate) || aa[[1]] == quote(ett) ||
-                      any(vapply(aa, function(x) {
-                        x == quote(ate()) || x == quote(ett())
-                      }, logical(1))))
-  },   logical(1))
+  found_weights <- if (any(grepl("weights_calc", lapply(sys.calls(), "[[", 1),
+                             fixed = TRUE))) FALSE else {
+    vapply(lapply(sys.calls(), "[[", "weights"), function(aa) {
+      is.call(aa) && (aa[[1]] == quote(ate) || aa[[1]] == quote(ett) ||
+                        any(vapply(aa, function(x) {
+                          x == quote(ate()) || x == quote(ett())
+                        }, logical(1))))
+    },   logical(1))
+  }
 
   lmitt.dichotomy <- NULL
   weights.dichotomy <- NULL
@@ -31,18 +34,15 @@
   }
 
   if (!is.null(dichotomy)) {
-    if (!inherits(dichotomy, "formula")) {
-      stop("`dichotomy` must be a `formula`")
-    }
     if (!is.null(lmitt.dichotomy)) {
-      if (!all.equal(lmitt.dichotomy, dichotomy)) {
-        warning(paste("`dichotomy` passed to", paste0("`", sys.call(1L)[[1L]], "()`"),
+      if (!identical(deparse(lmitt.dichotomy), deparse(dichotomy))) {
+        warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to `lmitt()`"))
       }
     }
     if (!is.null(weights.dichotomy)) {
-      if (!all.equal(weights.dichotomy[[1]], dichotomy)) {
-        warning(paste("`dichotomy` passed to", paste0("`", sys.call(1L)[[1L]], "()`"),
+      if (!identical(deparse(weights.dichotomy[[1]]), deparse(dichotomy))) {
+        warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to",
                       paste0("`", unique(weights.calls)[[1L]][[1L]], "()`")))
       }
