@@ -35,6 +35,7 @@ test_that("with dichotomy passed directly", {
   m2 <- lm(y ~ assigned(des, dichotomy = dose < 250 ~ .), data = simdata)
   
   expect_true(all(m1$model$`assigned()` %in% 0:1))
+  expect_true(all(m2$model$`assigned()` %in% 0:1))
 })
 
 test_that("with dichotomy found in weights", {
