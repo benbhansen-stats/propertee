@@ -12,8 +12,9 @@ such as that produed by \code{treatment(mydesign)}, and any variables specified
 in \code{dichotomy}.}
 
 \item{dichotomy}{A formula specifying how to dichotomize the non-binary
-treatment column in \code{txt}. See the Details section of the \code{ett()}
-or \code{att()} help pages for information on specifying this formula}
+treatment column in \code{txt} (or a call that evaluates to a formula).
+See the Details section of the \code{ett()} or \code{att()} help pages for
+information on specifying this formula}
 }
 \value{
 A \code{vector} of binary treatments

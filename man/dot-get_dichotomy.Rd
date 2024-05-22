@@ -11,8 +11,7 @@
 }
 \value{
 A formula or a call that evaluates to a formula, or NULL if no
-\code{dichotomy} is provided nor found in a \code{lmitt.formula()} call up
-stack
+\code{dichotomy} is provided nor found in the call stack
 }
 \description{
 (Internal) Find and validate a \code{dichotomy}
@@ -20,7 +19,7 @@ stack
 \details{
 Whether a \code{dichotomy} is provided or not, \code{.get_dichotomy()}
 finds any \code{dichotomy} argument passed to an \code{lmitt.formula()} call
-up the stack. This argument is either used itself or used to validate a
-provided \code{dichotomy}.
+up the stack or called in a \code{weights} argument. This found argument is
+either used itself or used to validate a provided \code{dichotomy}.
 }
 \keyword{internal}
