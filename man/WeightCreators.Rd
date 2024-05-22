@@ -14,10 +14,11 @@ ate(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
 \code{rct_design()}, \code{rd_design()}, or \code{obs_design()}.}
 
 \item{dichotomy}{optional; a formula defining the dichotomy of the treatment
-variable if it isn't already \code{0}/\code{1}. See details of help for
-\code{rct_design()} e.g. for details. If \code{design} already has a
-\code{dichotomy}, passing an additional one through this argument will
-overwrite the existing dichotomy.}
+variable if it isn't already \code{0}/\code{1}. See details for more information.
+If \code{ett()} or \code{ate()} is
+called within a \code{lmitt()} call that specifies a \code{dichotomy}
+argument, that \code{dichotomy} will be used if the argument here has not
+been specified.}
 
 \item{by}{optional; named vector or list connecting names of unit of
 assignment/ variables in \code{design} to unit of
@@ -53,6 +54,35 @@ removes from the target population any block in which there is no basis
 for estimating either means under treatment or means under control.
 
 If block is missing for a given observation, a weight of 0 is applied.
+
+A \code{dichotomy} is specified by a \code{formula} consisting of a
+conditional statement on both the left-hand side (identifying treatment
+levels associated with "treatment") and the right hand side (identifying
+treatment levels associated with "control"). For example, if your
+treatment variable was called \code{dose} and doses above 250 are
+considered treatment, you might write:
+
+\code{dichotomy(des) <- dose > 250 ~ dose <= 250}
+
+The period (\code{.}) can be used to assign all other units of assignment.
+For example, we could have written the same treatment regime as either
+
+\code{dichotomy(des) <- dose > 250 ~ .}
+
+or
+
+\code{dichotomy(des) <- . ~ dose <= 250}
+
+The \code{dichotomy} formula supports Relational Operators (see
+\link{Comparison}), Logical Operators (see \link{Logic}), and \code{\%in\%} (see
+\code{\link[=match]{match()}}).
+
+The conditionals need not assign all values of treatment to control or
+treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
+\code{200 <= dose <= 300} to either treatment or control. This would be
+equivalent to manually generating a binary variable with \code{NA}
+whenever \code{dose} is between 200 and 300. Standard errors will reflect
+the sizes of the comparison groups specified by the \code{dichotomy}.
 }
 \examples{
 data(simdata)

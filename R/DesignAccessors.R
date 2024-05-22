@@ -139,13 +139,7 @@ setMethod("treatment<-", "Design", function(x, value) {
   # get treatment from the design
   tt <- treatment(des, binary = FALSE)
   
-  # return it if there's no data or dichotomy specified
-  if (is.null(data) & is.null(dichotomy)) {
-    treatment <- tt[,1]
-    if (!all(treatment %in% c(0:1, NA))) {
-      stop("Must provide a dichotomy if the `Design` has a non-binary treatment")
-    }
-  } else if (!is.null(data)) {
+  if (!is.null(data)) {
     # if there's a `data` argument, merge it to the treatment info using the
     # units of assignment
     if (!all(var_names(des, "u") %in% colnames(data))) {
@@ -155,19 +149,25 @@ setMethod("treatment<-", "Design", function(x, value) {
     tt <- .merge_preserve_order(data, treatment_uoa, by = var_names(des, "u"), all.x = TRUE)
     
     txtname <- var_names(des, "t")
-    treatment <- tryCatch(tt[, txtname],
-                          error = function(e) {
-                            # if treatment variable already exists in data, there
-                            # will be a .x and .y version; e.g. z.x and z.y, so
-                            # we'll extract the ".y" version (the second one)
-                            # since the merge above has the treatment from the
-                            # Design second.
-                            tt[, paste0(txtname, ".y")]
-                          })
+    tt <- tryCatch(tt[, txtname, drop = FALSE],
+                   error = function(e) {
+                     # if treatment variable already exists in data, there
+                     # will be a .x and .y version; e.g. z.x and z.y, so
+                     # we'll extract the ".y" version (the second one)
+                     # since the merge above has the treatment from the
+                     # Design second.
+                     tt[, paste0(txtname, ".y"), drop = FALSE]
+                   })
   }
   
   if (!is.null(dichotomy)) {
     treatment <- .apply_dichotomy(tt, dichotomy)
+  } else {
+    treatment <- tt[,1]
+  }
+  
+  if (!all(treatment %in% c(0:1, NA))) {
+    stop("Must provide a dichotomy if the `Design` has a non-binary treatment")
   }
   
   return(treatment)
@@ -186,7 +186,6 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .apply_dichotomy <- function(txt, dichotomy) {
-
   if (!inherits(dichotomy, "formula")) {
     stop("`dichotomy` must be formula")
   }
@@ -194,7 +193,6 @@ setMethod("treatment<-", "Design", function(x, value) {
   if (!is.data.frame(txt)) {
     stop("`txt` is expected to be a named `data.frame`")
   }
-  
   
   if (!all(setdiff(all.vars(dichotomy), ".") %in% colnames(txt))) {
     stop(paste("Could not find variables specified in `dichotomy`. Provide a", 

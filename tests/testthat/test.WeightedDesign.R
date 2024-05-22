@@ -49,12 +49,10 @@ test_that("dichotomy issues", {
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
-               "must have a dichotomy")
-
-  dichotomy(des) <- . ~ dose > 150
+               "Must provide a dichotomy")
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
-                        dichotomy = NULL)
+                        dichotomy = . ~ dose > 150)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
   expect_s4_class(wdes@Design, "Design")
@@ -65,13 +63,6 @@ test_that("dichotomy issues", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
-
-  expect_warning(wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
-                                       target = "ate",
-                                       dichotomy = dose > 200 ~ .),
-                 "over-writing")
-  expect_identical(deparse(dichotomy(wdes@Design)), "dose > 200 ~ .")
-
 })
 
 test_that("internal and external weight function agreement", {
