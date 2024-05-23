@@ -22,27 +22,23 @@ setValidity("CombinedWeightedDesign", function(object) {
 ##'
 ##' @details Concatenating \code{WeightedDesign} objects with [c()] requires
 ##'   both individual \code{WeightedDesign} objects to come from the same
-##'   \code{Design} (except \code{dichotomy}, see below) and have the same
+##'   \code{Design} and have the same
 ##'   target (e.g all created with [ate()] or all created with [ett()], no
 ##'   mixing-and-matching). All arguments to [c()] must be
 ##'   \code{WeightedDesign}.
 ##'
-##'   One exception is when concatenting \code{WeightedDesign} objects whose
-##'   \code{Design} differ only in their dichotomies. There may be cases where
-##'   the treatment is continuous or has multiple levels, and there is a need to
-##'   combine the weights from the same general design, but with different
-##'   dichotomies. Therefore multiple \code{WeightedDesign} objects can be
-##'   combined if they are identical except for their \code{@dichotomy} slots.
-##'   The resulting object will be a \code{WeightedDesign}.
-##'
+##'   \code{WeightedDesign} objects may be concatenated together even without
+##'   having the same \code{@dichotomy} slot. This procedure only prompts a
+##'   warning for differing dichotomies if the argument \code{warn_dichotomy_not_equal}
+##'   is set to \code{TRUE}.
 ##' @param x, .. a \code{WeightedDesign} object, typically created from [ate()]
 ##'   or [ett()]
 ##' @param ... any number of additional \code{WeightedDesign} objects with
 ##'   equivalent \code{Design} to \code{x} and eachother
-##' @param force_dichotomy_equal if \code{FALSE} (default), \code{WeightedDesign}s are
+##' @param warn_dichotomy_not_equal if \code{FALSE} (default), \code{WeightedDesign}s are
 ##'   considered equivalent even if their \code{dichotomy} differs. If
-##'   \code{TRUE}, \code{@dichotomy} must also be equal.
-##' @return A new \code{WeightedDesign} with
+##'   \code{TRUE}, a warning is produced.
+##' @return A numeric \code{vector} with
 ##'   the weights concatenated in the input order.
 ##' @export
 ##' @importFrom methods slot
@@ -62,7 +58,7 @@ setValidity("CombinedWeightedDesign", function(object) {
 ##' w3 <- ate(des, data = simdata[31:50, ], dichotomy = dose >= 100 ~ .)
 ##' c_w <- c(w1, w2, w3)
 setMethod("c", signature(x = "WeightedDesign"),
-          function(x, ..., force_dichotomy_equal = FALSE) {
+          function(x, ..., warn_dichotomy_not_equal = FALSE) {
   dots <- list(...)
   # x must be a WeightedDesign to get here; ensure all other elements
   # are as well
@@ -85,17 +81,18 @@ setMethod("c", signature(x = "WeightedDesign"),
   })
 
   if (length(unique(destmp)) == 1) {
+    if (warn_dichotomy_not_equal) {
+      dichotomies <- Reduce(c, lapply(dots, methods::slot, "dichotomy"), init = x@dichotomy)
+      if (length(unique(dichotomies)) > 1) {
+        warning("Concatenating WeightedDesigns with different `dichotomy` slots")
+      }
+    }
+
     # if all Designs are identical (sans @call), we can c together
     # just the numeric weights, and pull out Design/target from the
     # first one
-    return(new("WeightedDesign",
-               Reduce(c, lapply(dots, methods::slot, ".Data"), init = x@.Data),
-               Design = x@Design,
-               target = x@target))
+    return(Reduce(c, lapply(dots, methods::slot, ".Data"), init = x@.Data))
   } else {
-    if (force_dichotomy_equal) {
-      stop("NEED AN ERROR MESSAGE HERE IF `WeightedDesign` OBECTS HAVE `dichotomy` SLOTS")
-    }
     stop("Cannot combine WeightedDesigns from differing Designs")
   }
 })

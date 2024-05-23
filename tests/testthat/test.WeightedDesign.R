@@ -14,6 +14,8 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
@@ -27,6 +29,8 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
@@ -59,6 +63,8 @@ test_that("dichotomy issues", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(. ~ dose > 150), deparse(wdes@dichotomy))
 })
 
 test_that("internal and external weight function agreement", {
@@ -97,6 +103,7 @@ test_that("ate and ett with data argument", {
   expect_equal(nrow(mtcars), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   # n_clusters < n
   data(simdata)
@@ -114,6 +121,8 @@ test_that("ate and ett with data argument", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
 })
 

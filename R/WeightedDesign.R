@@ -5,7 +5,8 @@ NULL
 setClass("WeightedDesign",
          contains = "numeric",
          slots = c(Design = "Design",
-                   target = "character"))
+                   target = "character",
+                   dichotomy = "formula"))
 
 setValidity("WeightedDesign", function(object) {
   if (!object@target %in% c("ate", "ett")) {

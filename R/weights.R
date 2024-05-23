@@ -200,7 +200,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
   }
 
-  return(.join_design_weights(weights, design, target = target, data = data))
+  return(.join_design_weights(weights, design, target = target, data = data, dichotomy = dichotomy))
 }
 
 ##' Helper function called during creation of the weights via \code{ate()} or
@@ -211,9 +211,12 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 ##' @param design a \code{Design}
 ##' @param target One of "ate" or "ett"
 ##' @param data New data
+##' @param dichotomy formula used to specify a dichotomy of a non-binary treatment variable.
+##' The output \code{WeightedDesign} object will store this as its \code{dichotomy} slot,
+##' unless it is NULL, in which case it will be translated to an empty \code{formula}.
 ##' @return a \code{WeightedDesign}
 ##' @keywords internal
-.join_design_weights <- function(weights, design, target, data) {
+.join_design_weights <- function(weights, design, target, data, dichotomy) {
   uoanames <- var_names(design, "u")
 
   # Merge uoa data with weights at uoa level
@@ -235,5 +238,6 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   return(new("WeightedDesign",
              weights,
              Design = design,
-             target = target))
+             target = target,
+             dichotomy = as.formula(dichotomy)))
 }
