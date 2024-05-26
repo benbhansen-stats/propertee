@@ -1,0 +1,128 @@
+---
+title: "Using Auxiliary Data in Policy Evaluations with propertee"
+author: "Josh Wasserman"
+date: "2024-05-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+The `propertee` package allows users to incorporate auxiliary data in covariance adjustment during policy analyses. Users can fit a prior covariance adjustment model to a sample including units of observation that were and were not part of the study, then pass the information of that model on to a model for estimating the impact effect in order to 
+
+## Data
+We measure policy effectiveness using school-level averages of students' performance on the 2014 Michigan Merit Examination (MME). We use schools' average MME scores from the previous two years as covariates to adjust these scores. All scores are publicly available from the [Michigan Department of Education website](https://mischooldata.org/historical-assessment-data-files/). We also adjust scores in the evaluation year using school demographic breakdowns obtained from the [Common Core of Data](https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:28,Page:1), another publicly available data source.
+
+## Policy Evaluation
+We'll first set up our R environment for analysis by loading the `propertee` package; the scores data, which we've reformatted as a .csv from the original .xls format to facilitate the use of base R commands for data loading; and demographics data.
+
+```{r load, cache=TRUE}
+if (!require("robustbase")) library(robustbase)
+if (!require("propertee")) library(propertee)
+source("utils.R")
+all_scores <- read.csv("Spring2011_2014MME.csv")
+ccd <- read.delim("ccd13_14.txt")
+```
+
+The scores data has rows corresponding to state-, intermediate school district (ISD)-, district-, and campus-wide averages. In addition to averages taken over all students in these subpopulations, some rows correspond to averages taken within substrata formed by gender, ethnicity, learning ability, or economic background. We will use these marginal averages within substrata to perform a secondary analysis investigating policy effect heterogeneity (though they can also be incorporated in the primary main effect analysis as covariates). For purposes of cleaning the data, we will make one dataset that only keeps rows reporting campus-wide averages of all students, and another that keeps campus-wide averages within substrata.
+
+The demographics data spans the universe of public schools in the United States, so for data cleaning we limit it to schools located in Michigan. To join the demographics data to the scores data, we need to use a unique identifier, such as NCES ID.
+
+```{r load_and_clean}
+source("load_and_clean.R")
+```
+
+### Creating the `Design` Object
+The dataframe necessary to convey the study design, however, is much more compact. It only needs to provide which units were assigned to the intervention and control groups and whether the design involves either pre- or post-assignment blocking. In our simulated study, we will match a random sample of schools from the Oakland County ISD into pairs or triplets based on some of the demographic covariates available in the CCD data, then randomly assign one or two schools in each block to be members of the policy group.
+
+```{r}
+source("match_schools.R", local = TRUE)
+```
+
+```{r}
+des <- rct_design(z ~ unitid(merge_id) + block(blk), design_dat)
+des@structure
+```
+
+### Fitting the Covariance Adjustment Model
+The joined dataframe of scores and demographic variables will serve as our analysis data. We can use different subsets of this dataframe to fit covariance adjustment models.
+
+```{r}
+set.seed(650)
+not_missing_resp <- !is.na(analysis1_dat[[RESPONSE_COL]])
+not_missing_covs <- rowSums(is.na(analysis1_dat[, MODELING_COLS])) == 0
+county_ix <- analysis1_dat$CONAME == oak_coname
+county_camod_dat <- analysis1_dat[not_missing_resp & not_missing_covs,]
+
+camod_form <- as.formula(
+  paste0(RESPONSE_COL, "~", paste(MODELING_COLS, collapse = "+")))
+lm_county_camod <- lm(camod_form, county_camod_dat,
+                      weights = county_camod_dat$TOTAL_ENROLLMENT)
+```
+
+```{r}
+rob_county_camod <- robustbase::lmrob(
+  camod_form, county_camod_dat, weights = county_camod_dat$TOTAL_ENROLLMENT,
+  control = robustbase::lmrob.control(max.it = 500L))
+```
+
+### Estimating Policy Effects
+```{r}
+study_dat <- merge(design_dat, analysis1_dat, by = "merge_id", all.x = TRUE)
+ip_wts <- propertee::ate(des, data = study_dat)
+lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study_dat, design = des)
+```
+
+```{r}
+main_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~1"))
+lm_ca_effect <- propertee::lmitt(
+  main_effect_fmla, design = des, data = study_dat, weights = ip_wts,
+  offset = lm_ca
+)
+summary(lm_ca_effect, vcov.type = "HC0")
+```
+```{r}
+summary(lm_ca_effect, vcov.type = "HC1")
+```
+
+```{r}
+rob_ca <- propertee::cov_adj(rob_county_camod, newdata = study_dat, design = des)
+rob_ca_effect <- propertee::lmitt(
+  main_effect_fmla, design = des, data = study_dat, weights = ip_wts,
+  offset = rob_ca
+)
+summary(rob_ca_effect, vcov.type = "HC1")
+```
+
+```{r}
+not_missing_resp <- !is.na(analysis2_dat[[RESPONSE_COL]])
+not_missing_covs <- rowSums(is.na(analysis2_dat[, MODELING_COLS])) == 0
+county_ix <- analysis2_dat$CONAME == oak_coname
+county_mod_camod_dat <- analysis2_dat[not_missing_resp & not_missing_covs,]
+
+mod_camod_form <- update(camod_form, . ~ . + factor(DemographicGroup))
+lm_county_mod_camod <- lm(mod_camod_form, county_mod_camod_dat,
+                          weights = county_mod_camod_dat$TOTAL_ENROLLMENT)
+rob_county_mod_camod <- robustbase::lmrob(
+  mod_camod_form, county_mod_camod_dat,
+  weights = county_mod_camod_dat$TOTAL_ENROLLMENT,
+  control = robustbase::lmrob.control(max.it = 500L))
+```
+
+
+```{r}
+study2_dat <- merge(design_dat, analysis2_dat, by = "merge_id", all.x = TRUE)
+study2_dat <- study2_dat[study2_dat$DemographicGroup %in%
+                           c("White", "Black or African American"),]
+ip_wts <- propertee::ate(des, data = study2_dat)
+lm_mod_ca <- propertee::cov_adj(lm_county_mod_camod, newdata = study2_dat,
+                                design = des)
+mod_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~ DemographicGroup"))
+lm_ca_mod_effect <- propertee::lmitt(mod_effect_fmla, design = des,
+                                     data = study2_dat, weights = ip_wts,
+                                     offset = lm_mod_ca)
+summary(lm_ca_mod_effect, vcov.type = "HC1", cluster = "merge_id")
+```
+
