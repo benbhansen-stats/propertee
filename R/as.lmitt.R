@@ -124,15 +124,6 @@ as.teeMod <- as.lmitt
 
   designs <- list(design, design_weights, design_cov_adj)
   designs <- designs[!vapply(designs, is.null, logical(1))]
-  if (lmitt_fitted) {
-    # If we fitted this via `lmitt.formula`, strip off dichotomies before
-    # checking for equality. See #91.
-    designs <- lapply(designs, function(x) {
-      x@dichotomy <- stats::formula(env = globalenv())
-      x@call$dichotomy <- NULL
-      return(x)
-    })
-  }
 
   # The list contains all designs possible found (one passed in, and one in each
   # of weights and cov_adj). Passing `unique` removes any duplicates (since

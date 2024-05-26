@@ -2,7 +2,8 @@
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
+setGeneric("treatment",
+           function(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
   standardGeneric("treatment")
 })
 
@@ -16,20 +17,14 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##'   one-column \code{data.frame} regardless of whether it is binary or
 ##'   \code{x} has a \code{dichotomy}
 ##'
-##'   If \code{binary = TRUE} is passed, and the \code{Design} either has a
-##'   binary treatment variable, or has a \code{dichotomy}, a binary one-column
-##'   \code{data.frame} will be returned. If the \code{Design} does not have
-##'   access to binary treatment (non-binary treatment and no \code{dichotomy}
-##'   specified), passing \code{binary = TRUE} will error.
-##'
-##'   \code{binary = "ifany"} is the most permissible; returning the
-##'   dichotomized treatment variable if \code{@dichotomy} exists, otherwise
-##'   returning the original treatment without error.
+##'   If a \code{dichotomy} is passed, a binary one-column \code{data.frame} will
+##'   be returned. If not and \code{binary} is \code{TRUE}, unless the \code{Design}
+##'   has a binary treatment, [treatment()] will error. If \code{binary} is
+##'   \code{"ifany"}, it will return the original treatment in this case.
 ##'
 ##'   The one-column \code{data.frame} returned by [treatment()] is named as
-##'   entered in the \code{Design} creation, but if a \code{dichotomy} is in the
-##'   \code{Design}, the column name is \code{"__z"} to try and avoid any name
-##'   conflicts.
+##'   entered in the \code{Design} creation, but if a \code{dichotomy} is passed,
+##'   the column name is \code{"__z"} to try and avoid any name conflicts.
 ##'
 ##'   For the \code{value} when using replacers, the replacement must have the
 ##'   same number of rows as the \code{Design} (the same number of units of
@@ -53,6 +48,9 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##'   unit of assignment variable is found in \code{newdata}, then the requested
 ##'   variable type for each unit of \code{newdata} is returned. See \code{by}
 ##'   argument if the name of the unit of assignment differs.
+##' @param dichotomy optional; a formula specifying how to dichotomize
+##' a non-binary treatment variable. See the Details section of the \code{ett()}
+##' or \code{att()} help pages for information on specifying this formula
 ##' @param by optional; named vector or list connecting names of unit of
 ##'   assignment/unitid/cluster variables in \code{x} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
@@ -72,7 +70,8 @@ setGeneric("treatment", function(x, binary = FALSE, newdata = NULL, by = NULL, .
 ##' blocks(des)
 ##' blocks(des) <- c(5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
 ##' blocks(des) # notice that variable is not renamed
-setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by = NULL, ...) {
+setMethod("treatment", "Design",
+          function(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
   binary <- as.character(binary)
   if (!binary %in% c("TRUE", "FALSE", "ifany")) {
     stop(paste("Valid input to `binary=` argument include only TRUE, ",
@@ -80,65 +79,30 @@ setMethod("treatment", "Design", function(x, binary = FALSE, newdata = NULL, by 
   }
   .design_accessors_newdata_validate(newdata, by)
 
-  # Case 1: binary = FALSE
   if (binary == FALSE) {
-    # Return original treatment
     if (!is.null(newdata)) {
       return(.get_col_from_new_data(x, newdata, type = "t", by))
     }
     return(x@structure[x@column_index == "t"])
   }
-
-  # Case 2: binary = TRUE
-  if (binary == TRUE) {
-
-    # Case 2a: binary = TRUE, treatment is stored as binary
-    if (has_binary_treatment(x)) {
-      # Treatment is binary, return original treatment
-      if (!is.null(newdata)) {
-        return(.get_col_from_new_data(x, newdata, type = "t", by))
-      }
-      return(x@structure[x@column_index == "t"])
-    }
-
-    # Case 2b: binary = TRUE, stored treatment is non-binary but has dichotomy
-    if (is_dichotomized(x)) {
-      # Has dichotomization, return that
-      if (!is.null(newdata)) {
-        treatment(x) <- .bin_txt(x)
-        return(.get_col_from_new_data(x, newdata, type = "t", by))
-      }
-      return(data.frame(z__ = .bin_txt(x)))
-    }
-
-    # Case 2c: binary = TRUE, treatment is non-binary and no dichotomy
+  
+  # For binary = TRUE or binary = "ifany", if stored treatment is non-binary but
+  # dichotomy is provided, return dichotomized treatment
+  if (!is.null(dichotomy)) {
+    return(data.frame(z__ = .bin_txt(x, newdata, dichotomy)))
+  }
+  
+  # For binary = TRUE with non-binary treatment is non-binary and no dichotomy,
+  # error
+  if (binary == TRUE & !has_binary_treatment(x)) {
     stop(paste("No binary treatment can be produced. Treatment is",
                "non-binary and `x` does not contain a `@dichotomy`."))
   }
-
-  # Case 3: binary = "ifany"
-  if (binary == "ifany") {
-
-    # Case 3a: binary = "ifany", no dichotomy
-    if (!is_dichotomized(x)) {
-      # Return original treatment
-      if (!is.null(newdata)) {
-        return(.get_col_from_new_data(x, newdata, type = "t", by))
-      }
-      return(x@structure[x@column_index == "t"])
-    }
-
-    # Case 3b: binary = "ifany", dichotomy
-    if (is_dichotomized(x)) {
-      # Has dichotomization, return that
-      if (!is.null(newdata)) {
-        treatment(x) <- .bin_txt(x)
-        return(.get_col_from_new_data(x, newdata, type = "t", by))
-      }
-      return(data.frame(z__ = .bin_txt(x)))
-    }
+    
+  if (!is.null(newdata)) {
+    return(.get_col_from_new_data(x, newdata, type = "t", by))
   }
-
+  return(x@structure[x@column_index == "t"])
 })
 
 ##' @export
@@ -160,46 +124,90 @@ setMethod("treatment<-", "Design", function(x, value) {
   return(x)
 })
 
-##' If the \code{Design} has a \code{@dichotomy}, or has a treatment variable
-##' consisting only of 0/1 or \code{NA}, then returns the binary treatment.
+##' @title (Internal) Extracts treatment as binary \code{vector}
+##' @details If a \code{dichotomy} is specified or the \code{Design} has a
+##' treatment variable consisting only of 0/1 or \code{NA}, then returns the binary treatment.
 ##' Otherwise (it has a non-binary treatment and lacks a dichotomy) it errors.
-##' @title (Internal) Extracts treatment as binary \code{vector} if possible or
-##'   else errors.
-##' @param des A \code{Design}
+##' @param des A \code{Design}, used to get treatment assignment information
+##' @param data A dataframe with unit of assignment information and, if a
+##' dichotomy is provided, columns specified therein
+##' @param dichotomy A formula. See the Details section of the \code{ett()} or
+##' \code{att()} help pages for information on specifying the formula
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
-.bin_txt <- function(des) {
-  if (!is_dichotomized(des)) {
-    tt <- treatment(des, binary = FALSE)[, 1]
-    if (!all(tt %in% c(0:1, NA))) {
-      stop("binary treatment cannot be obtained")
-    }
-    return(tt)
+.bin_txt <- function(des, data = NULL, dichotomy = NULL) {
+  # get treatment from the design
+  tt <- treatment(des, binary = FALSE)
+  
+  if (!is.null(data)) tt <- .expand_txt(tt, data, des)
+
+  if (!is.null(dichotomy)) {
+    treatment <- .apply_dichotomy(tt, dichotomy)
+  } else {
+    treatment <- tt[,1]
   }
-  return(.apply_dichotomy(treatment(des, binary = FALSE),
-                          des@dichotomy))
+  
+  if (!all(treatment %in% c(0:1, NA))) {
+    stop("Must provide a dichotomy if the `Design` has a non-binary treatment")
+  }
+  
+  return(treatment)
 }
 
-##' Given a treatment variable (passed as a named \code{data.frame}) and a
-##' dichotomy formula (see help on \code{rct_design()} for details on
-##' specification), returns \code{vector} containing only \code{0}, \code{1}, or
-##' \code{NA}.
+##' @title (Internal) Expand treatment variable from a \code{Design} to a dataframe
+##' with unit of assignment information
+##' @param txt A dataframe with one column corresponding to the treatment. Can be
+##' dichotomized or as it's stored in \code{des}
+##' @param data A dataframe with unit of assignment information
+##' @param des A \code{Design}, used to align unit of assignment information with
+##' \code{txt}
+##' @keywords internal
+.expand_txt <- function(txt, data, des) {
+  # if there's a `data` argument, merge it to the treatment info using the
+  # units of assignment
+  if (!all(var_names(des, "u") %in% colnames(data))) {
+    stop("Not all unit of assignment variables can be found in `data`")
+  }
+  treatment_uoa <- cbind(txt, des@structure[, var_names(des, "u"), drop = FALSE])
+  txt <- .merge_preserve_order(data, treatment_uoa, by = var_names(des, "u"), all.x = TRUE)
+  
+  txtname <- var_names(des, "t")
+  txt <- tryCatch(txt[, txtname, drop = FALSE],
+                  error = function(e) {
+                    # if treatment variable already exists in data, there
+                    # will be a .x and .y version; e.g. z.x and z.y, so
+                    # we'll extract the ".y" version (the second one)
+                    # since the merge above has the treatment from the
+                    # Design second.
+                    txt[, paste0(txtname, ".y"), drop = FALSE]
+                  })
+  colnames(txt) <- txtname
+  
+  return(txt)
+}
+
 ##' @title (Internal) Applies dichotomy to treatment
-##' @param txt A named \code{data.frame} containing a single column of the
-##'   treatment, such as that produed by `treatment(mydesign)`.
-##' @param dichotomy A dichotomization formula. See the details in the Details
-##'   for the help of \code{rct_design()}.
+##' @description Given a dichotomy formula and a \code{data.frame} with a treatment
+##' variable and any variables in the formula, returns a \code{vector} containing
+##' only \code{0}, \code{1}, or \code{NA}.
+##' @param txt A named \code{data.frame} containing a column of the treatment,
+##'   such as that produed by `treatment(mydesign)`, and any variables specified
+##'   in \code{dichotomy}.
+##' @param dichotomy A formula specifying how to dichotomize the non-binary
+##' treatment column in \code{txt} (or a call that evaluates to a formula).
+##' See the Details section of the \code{ett()} or \code{att()} help pages for
+##' information on specifying this formula
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .apply_dichotomy <- function(txt, dichotomy) {
-
-  if (!inherits(dichotomy, "formula")) {
-    stop("`dichotomy` must be formula")
+  if (!is.data.frame(txt)) {
+    stop("`txt` is expected to be a named `data.frame`")
   }
 
-  if (!is.data.frame(txt)) {
-    stop(paste("`txt` is expected to be a named `data.frame`",
-               "(e.g. from `treatment(des)`)"))
+  if (!all(setdiff(all.vars(dichotomy), ".") %in% colnames(txt))) {
+    stop(paste("Could not find variables specified in `dichotomy`. Provide a", 
+               "`data` argument with these columns, or ensure `data` argument",
+               "has them."))
   }
 
   lhs_dot <- rhs_dot <- FALSE
@@ -466,92 +474,6 @@ setMethod("forcings<-", "Design", function(x, value) {
   validObject(x)
   return(x)
 })
-
-############### dichotomy
-
-##' @title Extract or replace \code{dichotomy}
-##'
-##' @description Used to add, modify, or extract the \code{dichotomy} attached
-##'   to a \code{Design}.
-##'
-##' @details A \code{dichotomy} is specified by a \code{formula} consisting of a
-##'   conditional statement on both the left-hand side (identifying treatment
-##'   levels associated with "treatment") and the right hand side (identifying
-##'   treatment levels associated with "control"). For example, if your
-##'   treatment variable was called \code{dose} and doses above 250 are
-##'   considered treatment, you might write:
-##'
-##'   \code{dichotomy(des) <- dose > 250 ~ dose <= 250}
-##'
-##'   The period (\code{.}) can be used to assign all other units of assignment.
-##'   For example, we could have written the same treatment regime as either
-##'
-##'   \code{dichotomy(des) <- dose > 250 ~ .}
-##'
-##'   or
-##'
-##'   \code{dichotomy(des) <- . ~ dose <= 250}
-##'
-##'   The \code{dichotomy} formula supports Relational Operators (see
-##'   [Comparison]), Logical Operators (see [Logic]), and \code{%in%} (see
-##'   [match()]).
-##'
-##'   The conditionals need not assign all values of treatment to control or
-##'   treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
-##'   \code{200 <= dose <= 300} to either treatment or control. This would be
-##'   equivalent to manually generating a binary variable with \code{NA}
-##'   whenever \code{dose} is between 200 and 300. Units not assigned to
-##'   treatment or control will be maintained in the \code{Design} for proper
-##'   standard error calculations.
-##'
-##'   Note that you can specify a conditional logic treatment directly in the
-##'   \code{Design} creation (e.g. \code{rct_design(dose > 250 ~
-##'   unitOfAssignment(...}) but we would strongly suggest instead passing the
-##'   treatment variable directly and using \code{dichotomy}. Otherwise changing
-##'   the dichotomy will require re-creating the Design, instead of simply using
-##'   \code{dichotomy(design) <-} or passing \code{dichotomy} to \code{ate()} or
-##'   \code{ett()}.
-##'
-##' @param x a \code{Design} object
-##' @param value replacement \code{dichotomy} formula, or \code{NULL} to remove
-##' @return The accessor returns the dichomization formula. (\code{NULL} if
-##'   \code{x} has no \code{dichotomy}.) The replacer returns a \code{Design} with
-##' the \code{dichomization} replaced with \code{x}.
-##' @export
-##' @rdname Design_extract_dichotomy
-##' @seealso [treatment()] for extracting the treatment variable, using
-##'   \code{binary = TRUE} argument to apply the dichotomy before extracting.
-##' @examples
-##' data(simdata)
-##' des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
-##' des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
-##'                    dichotomy = dose > 250 ~ .)
-##' dichotomy(des1)
-##' dichotomy(des2)
-##' dichotomy(des1) <- dose > 250 ~ .
-setGeneric("dichotomy", function(x) standardGeneric("dichotomy"))
-
-##' @export
-##' @rdname Design_extract_dichotomy
-setMethod("dichotomy", "Design", function(x) {
-  return(x@dichotomy)
-})
-
-##' @export
-##' @rdname Design_extract_dichotomy
-setGeneric("dichotomy<-", function(x, value) standardGeneric("dichotomy<-"))
-
-##' @export
-##' @rdname Design_extract_dichotomy
-setMethod("dichotomy<-", "Design", function(x, value) {
-  if (is.null(value)) {
-    value <- stats::formula()
-  }
-  x@dichotomy <- value
-  validObject(x)
-  return(x)
-})
-
 
 ############### Helper Functions
 

@@ -216,25 +216,13 @@ is_binary_or_dichotomized <- function(des) {
 
 ##' @title Test equality of two \code{Design} objects
 ##'
-##' @description Check whether two \code{Design} objects are identical. Choose
-##'   whether to consider or ignore the \code{dichotomy}.
+##' @description Check whether two \code{Design} objects are identical.
 ##'
 ##' @param x A \code{Design} object.
 ##' @param y A \code{Design} object.
-##' @param dichotomy_force Logical, default \code{FALSE}. If \code{FALSE}, the
-##'   [dichotomy()] of \code{x} and \code{y} is ignored in the comparison. (In
-##'   other words, two \code{Design}s which differ only in their
-##'   \code{@dichotomy} slot will be considered identical.) If \code{TRUE}, the
-##'   \code{dichotomy} must also be in agreement between \code{x} and \code{y}.
 ##' @return Logical, are \code{x} and \code{y} identical?
 ##' @export
-identical_Designs <- function(x, y, dichotomy_force = FALSE) {
-  if (!dichotomy_force) {
-        x@dichotomy <- stats::formula(env = globalenv())
-        x@call$dichotomy <- NULL
-        y@dichotomy <- stats::formula(env = globalenv())
-        y@call$dichotomy <- NULL
-  }
+identical_Designs <- function(x, y) {
   return(identical(x, y))
 }
 

@@ -93,12 +93,11 @@ test_that("Design argument", {
 
 })
 
-test_that("Dichotomy option in Design creation", {
+test_that("Dichotomy argument", {
 
   data(simdata)
-  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata,
-                    dichotomy = dose > 200 ~ .)
-  mod1 <- lmitt(y ~ 1, data = simdata, design = des)
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  mod1 <- lmitt(y ~ 1, data = simdata, design = des, dichotomy = dose > 200 ~ .)
   mod2 <- lmitt(y ~ 1, data = simdata,
                 design = dose ~ cluster(uoa1, uoa2),
                 dichotomy = dose > 200 ~ .)
@@ -106,7 +105,21 @@ test_that("Dichotomy option in Design creation", {
   expect_true(all.equal(mod1$coefficients, mod2$coefficients,
                         check.attributes =  FALSE))
 
+})
 
+test_that("Dichotomy from weights", {
+  data(simdata)
+  des <- obs_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  mod1 <- lmitt(y ~ 1, data = simdata, design = des,
+                weights = ate(dichotomy = dose > 200 ~ .))
+  mod2 <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate",
+                dichotomy = dose > 200 ~ .)
+  expect_identical(mod1@Design, mod2@Design)
+  expect_true(all.equal(mod1$coefficients, mod2$coefficients,
+                        check.attributes =  FALSE))
+  expect_true(
+    all.equal(mod2$model$`(weights)`, ate(des, data = simdata, dichotomy = dose > 200 ~ .))
+  )
 })
 
 test_that("Allow non-binary treatment", {
@@ -357,7 +370,7 @@ test_that("#140 handling 0 weights", {
   # Block 1 has 0 variance in treatment
   mod <- lmitt(y ~ x, data = simdata, design = des,
                absorb = TRUE, weights = simdata$weight)
-  ee <- propertee:::estfun.teeMod(mod)
+  ee <- estfun.teeMod(mod)
   expect_true(all(ee[simdata$bid == 1, "z."] == 0))
   expect_true(all(
     sapply(ee[simdata$bid == 1, c("(Intercept)", "x", "z._x")],

@@ -14,6 +14,8 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
@@ -27,6 +29,8 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
@@ -35,10 +39,6 @@ test_that("internal weight function", {
   expect_error(propertee:::.weights_calc(des, data = 1, by = NULL, target = "ate",
                              dichotomy = NULL),
                "`data` must be")
-
-  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
-                             target = "ate", dichotomy = 1),
-               "`dichotomy` must be")
 
 })
 
@@ -49,12 +49,10 @@ test_that("dichotomy issues", {
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
-               "must have a dichotomy")
-
-  dichotomy(des) <- . ~ dose > 150
+               "Must provide a dichotomy")
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
-                        dichotomy = NULL)
+                        dichotomy = . ~ dose > 150)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
   expect_s4_class(wdes@Design, "Design")
@@ -65,13 +63,8 @@ test_that("dichotomy issues", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
-
-  expect_warning(wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
-                                       target = "ate",
-                                       dichotomy = dose > 200 ~ .),
-                 "over-writing")
-  expect_identical(deparse(dichotomy(wdes@Design)), "dose > 200 ~ .")
-
+  
+  expect_identical(deparse(. ~ dose > 150), deparse(wdes@dichotomy))
 })
 
 test_that("internal and external weight function agreement", {
@@ -110,6 +103,7 @@ test_that("ate and ett with data argument", {
   expect_equal(nrow(mtcars), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   # n_clusters < n
   data(simdata)
@@ -127,6 +121,8 @@ test_that("ate and ett with data argument", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
 })
 
@@ -565,4 +561,25 @@ test_that("#131 numeric blocks don't cause NA weights", {
   expect_true(all(!is.na(mod$weights)))
 
 
+})
+
+test_that(paste("weights with attention to blocks when `data` has different order",
+                "from design data"), {
+  set.seed(31)
+  design_dat <- data.frame(id = letters[seq_len(10)],
+           z = c(rep(c(1, 1, 0), 2), rep(c(0, 1), 2)),
+           blk = c(rep(LETTERS[1:2], each = 3),
+                   rep(LETTERS[3:4], each = 2)))
+  des <- rct_design(z ~ unitid(id) + block(blk), design_dat)
+  
+  analysis_dat <- rbind(design_dat[design_dat$blk == "B",],
+                        design_dat[design_dat$blk == "D",],
+                        design_dat[design_dat$blk == "A",],
+                        design_dat[design_dat$blk == "C",])
+  
+  wts <- .weights_calc(des, target = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
+  expected_triplet_wts <- c(rep(3/2, 2), 3)
+  expected_pair_wts <- rep(2, 2)
+  expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
+                            expected_triplet_wts, expected_pair_wts))
 })

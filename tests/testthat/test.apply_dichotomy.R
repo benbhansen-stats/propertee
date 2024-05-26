@@ -6,10 +6,6 @@ test_that("apply dichotomization function", {
   expect_length(bt, nrow(zz))
   expect_true(all(bt %in% c(0, 1, NA)))
 
-
-  expect_error(.apply_dichotomy(zz, 1),
-               "must be formula")
-
   expect_error(.apply_dichotomy(1, z > 5 ~ .),
                "to be a named")
 

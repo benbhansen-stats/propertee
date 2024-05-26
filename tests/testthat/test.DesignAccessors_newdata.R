@@ -15,11 +15,11 @@ test_that("treatments with `newdata`", {
 
   # Case 2b: binary = TRUE, stored treatment is non-binary but has dichotomy
   des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
-                    data = simdata, dichotomy = o >= 3 ~ .)
+                    data = simdata)
 
-  expect_equal(nrow(treatment(des, newdata = simdata, binary = TRUE)),
+  expect_equal(nrow(treatment(des, dichotomy = o >= 3 ~ ., newdata = simdata, binary = TRUE)),
                50)
-  expect_true(all(treatment(des, newdata = simdata, binary = TRUE)[,1] %in% 0:1))
+  expect_true(all(treatment(des, dichotomy = o >= 3 ~ ., newdata = simdata, binary = TRUE)[,1] %in% 0:1))
 
   # Case 3a: binary = "ifany", no dichotomy
   des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
@@ -30,11 +30,11 @@ test_that("treatments with `newdata`", {
 
   # Case 3b: binary = "ifany", dichotomy
   des <- rct_design(o ~ cluster(uoa1, uoa2) + block(bid),
-                    data = simdata, dichotomy = o >= 3 ~ .)
+                    data = simdata)
 
-  expect_equal(nrow(treatment(des, newdata = simdata, binary = "ifany")),
+  expect_equal(nrow(treatment(des, dichotomy = o >= 3 ~ ., newdata = simdata, binary = "ifany")),
                50)
-  expect_true(all(treatment(des, newdata = simdata, binary = "ifany")[,1] %in% 0:1))
+  expect_true(all(treatment(des, dichotomy = o >= 3 ~ ., newdata = simdata, binary = "ifany")[,1] %in% 0:1))
 
 
 })

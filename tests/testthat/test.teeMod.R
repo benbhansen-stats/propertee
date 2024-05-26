@@ -181,8 +181,7 @@ test_that("Differing designs found", {
 
   data(simdata)
   des <- obs_design(z ~ cluster(uoa1, uoa2), data = simdata)
-  des2 <- obs_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata,
-                     dichotomy = o >= 3 ~ .)
+  des2 <- obs_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   # This should error, since there's no `design` argument to `lm`, `assigned()`
   # finds both the `des` inside `ate()` and `des2` inside `cov_adj()`
@@ -237,12 +236,6 @@ test_that("Differing designs found", {
   # No error with a dichotomy
   expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
                              weights = ate(des3, dichotomy = o > 2 ~ .)))
-
-  des4 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata,
-                     dichotomy = o > 2 ~ .)
-
-  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
-                              weights = ett(des4)))
 
 })
 
