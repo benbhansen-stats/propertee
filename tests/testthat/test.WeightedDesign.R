@@ -562,3 +562,24 @@ test_that("#131 numeric blocks don't cause NA weights", {
 
 
 })
+
+test_that(paste("weights with attention to blocks when `data` has different order",
+                "from design data"), {
+  set.seed(31)
+  design_dat <- data.frame(id = letters[seq_len(10)],
+           z = c(rep(c(1, 1, 0), 2), rep(c(0, 1), 2)),
+           blk = c(rep(LETTERS[1:2], each = 3),
+                   rep(LETTERS[3:4], each = 2)))
+  des <- rct_design(z ~ unitid(id) + block(blk), design_dat)
+  
+  analysis_dat <- rbind(design_dat[design_dat$blk == "B",],
+                        design_dat[design_dat$blk == "D",],
+                        design_dat[design_dat$blk == "A",],
+                        design_dat[design_dat$blk == "C",])
+  
+  wts <- .weights_calc(des, target = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
+  expected_triplet_wts <- c(rep(3/2, 2), 3)
+  expected_pair_wts <- rep(2, 2)
+  expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
+                            expected_triplet_wts, expected_pair_wts))
+})

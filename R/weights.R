@@ -170,11 +170,16 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     # Identify number of units per block, and number of treated units per block
     # NOTE 5/21/24: since .bin_txt() returns NA elements, need to replace
     # `blocks(design)` with a matrix that has NA elements at the same indices
+    # (and is aligned to the order of the ID's in `data`)
     blks <- as.data.frame(matrix(nrow = length(txt),
                                  ncol = length(var_names(design, "b")),
                                  dimnames = list(rownames = NULL,
                                                  colnames = var_names(design, "b"))))
-    blks[!is.na(txt),] <- blocks(design)
+    blks[!is.na(txt),] <- .merge_preserve_order(
+      unique(data[, var_names(design, "u"), drop=FALSE]),
+      cbind(design@structure[, var_names(design, "b"), drop=FALSE],
+            design@structure[, var_names(design, "u"), drop=FALSE])
+    )[[var_names(design, "b")]]
     block_units <- table(blks[!is.na(txt), ])
     block_tx_units <- tapply(txt,
                              blks,
