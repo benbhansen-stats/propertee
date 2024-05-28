@@ -65,6 +65,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
   bread. <- sandwich::bread(x)
   meat. <- do.call(sandwich::meatCL, args)
+  
+  if (x@absorbed_intercepts) {
+    ## estimate random effects structure
+    meat. <- meat. + .absorb_block_effects(x, args$weights, args$by, n)
+  }
+  
   vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
@@ -117,6 +123,35 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   out <- .vcov_CR1(x, ...)
   attr(out, "type") <- "MB1"
   return(out)
+}
+
+#' @title (Internal) Absorb block effects using a random effects model
+.absorb_block_effects <- function(x, weights, cluster, n) {
+  if (is.null(cluster)) {
+    cluster <- var_names(x@Design, "u")
+  }
+  bcols <- var_names(x@Design, "b")
+  mf <- stats::expand.model.frame(x, c(cluster, bcols))
+  
+  cls <- apply(mf[, cluster, drop=FALSE], 1, function(...) paste(..., collapse = "_"))
+  unit_bs <- apply(mf[, bcols, drop=FALSE], 1, function(...) paste(..., collapse = "_"))
+  
+  if (is.null(w <- weights)) w <- rep(1, length(unit_bs))
+  r <- x$residuals
+  ssr <- sum(w * r^2) # sigma2 = sigma2_i * wi, so avg of RHS estimates LHS
+  ssw <- sum(sapply(unique(unit_bs), function(b) {
+    r_b <- r[unit_bs == b]
+    sum(apply(combn(length(r_b), 2), 2, function(ix) prod(r_b[ix])))
+  }))
+  rho <- ssw / (sum(table(unit_bs)^2) - length(unit_bs))
+  sigma <- sqrt(ssr / length(unit_bs))
+  absorbed_psi <- (
+    diag(sigma / sqrt(w) - sign(rho) * sqrt(abs(rho))) +
+      sign(rho) * sqrt(abs(rho)) * tcrossprod(stats::model.matrix(~ b + 0, data.frame(b = unit_bs)))
+    ) %*% model.matrix(x)
+  
+  (1 / n) * (crossprod(rowsum(absorbed_psi, cls))
+             - crossprod(rowsum(.base_S3class_estfun(x), cls)))
 }
 
 #' @title (Internal) Replace standard errors for moderator effect estimates with insufficient
