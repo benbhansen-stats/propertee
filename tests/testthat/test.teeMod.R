@@ -544,6 +544,87 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
   })
 }
 
+test_that("estfun.teeMod with absorbed intercepts and no weights provided", {
+  Qdat <- data.frame(uid = seq_len(10),
+                     blk = rep(c(1, 2), each = 5),
+                     trt = c(rep(0, 3), rep(1, 2), rep(0, 4), 1),
+                     y = c(rep(c(1, 2), 5)))
+  des <- obs_design(trt ~ unitid(uid) + block(blk), Qdat)
+  mod <- lmitt(y ~ 1, design = des, data = Qdat, absorb = TRUE)
+  
+  blkcentered_x <- areg.center(matrix(Qdat$trt, ncol = 1), Qdat$blk)
+  tauhat <- sum(blkcentered_x * Qdat$y) / sum(blkcentered_x^2)
+  expect_true(all.equal(mod$coefficients[2], tauhat, check.attributes = FALSE))
+  
+  r <- mod$residuals
+  sigma <- sqrt(mean(r^2))
+  rho <- sum(apply(combn(5, 2), 2, function(ix) prod(r[1:5][ix])),
+             apply(combn(5, 2), 2, function(ix) prod(r[6:10][ix]))) / (2 * 5^2 - 10)
+  sqrt_covmat <- matrix(0, nrow = 10, ncol = 10)
+  sqrt_covmat[1:5, 1:5] <- sqrt_covmat[6:10, 6:10] <- diag(5) * (
+    sigma - sign(rho) * sqrt(abs(rho))) + sign(rho) * sqrt(abs(rho))
+  
+  mm <- cbind("(Intercept)" = 1, "trt." = blkcentered_x)
+
+  expect_true(all.equal(.estfun_psi_absorbed(mod), sqrt_covmat %*% mm,
+                        check.attributes = FALSE))
+})
+
+test_that("estfun.teeMod with absorbed intercepts and weights provided", {
+  Qdat <- data.frame(uid = seq_len(10),
+                     blk = rep(c(1, 2), each = 5),
+                     trt = c(rep(0, 3), rep(1, 2), rep(0, 4), 1),
+                     y = c(rep(c(1, 2), 5)),
+                     w = rep(c(5, 10), each = 5))
+  des <- obs_design(trt ~ unitid(uid) + block(blk), Qdat)
+  mod <- lmitt(y ~ 1, design = des, data = Qdat, absorb = TRUE)
+  
+  blkcentered_x <- areg.center(matrix(Qdat$trt, ncol = 1), Qdat$blk)
+  tauhat <- sum(blkcentered_x * Qdat$y) / sum(blkcentered_x^2)
+  expect_true(all.equal(mod$coefficients[2], tauhat, check.attributes = FALSE))
+  
+  r <- mod$residuals
+  sigma <- sqrt(mean(Qdat$w * r^2))
+  rho <- sum(apply(combn(5, 2), 2, function(ix) prod(r[1:5][ix])),
+             apply(combn(5, 2), 2, function(ix) prod(r[6:10][ix]))) / (2 * 5^2 - 10)
+  sqrt_covmat <- matrix(0, nrow = 10, ncol = 10)
+  sqrt_covmat[1:5, 1:5] <- diag(5) * (
+    sigma / sqrt(Qdat$w[1:5]) - sign(rho) * sqrt(abs(rho))) + sign(rho) * sqrt(abs(rho))
+  sqrt_covmat[6:10, 6:10] <- diag(5) * (
+    sigma / sqrt(Qdat$w[6:10]) - sign(rho) * sqrt(abs(rho))) + sign(rho) * sqrt(abs(rho))
+  
+  mm <- cbind("(Intercept)" = 1, "trt." = blkcentered_x)
+  
+  expect_true(all.equal(.estfun_psi_absorbed(mod, weights = Qdat$w), sqrt_covmat %*% mm,
+                        check.attributes = FALSE))
+})
+
+test_that(paste("estfun.teeMod with absorbed intercepts and a block that shouldn't",
+                "contribute to estimation"), {
+  Qdat <- data.frame(uid = seq_len(6),
+                     blk = c(rep(1, 5), 2),
+                     trt = c(rep(0, 3), rep(1, 2), 1),
+                     y = rep(c(1, 2), 3))
+  des <- obs_design(trt ~ unitid(uid) + block(blk), Qdat)
+  mod <- lmitt(y ~ 1, design = des, data = Qdat, absorb = TRUE)
+
+  blkcentered_x <- areg.center(matrix(Qdat$trt, ncol = 1), Qdat$blk)
+  tauhat <- sum(blkcentered_x * Qdat$y) / sum(blkcentered_x^2)
+  expect_true(all.equal(mod$coefficients[2], tauhat, check.attributes = FALSE))
+  
+  r <- mod$residuals
+  sigma <- sqrt(mean(r[1:5]^2))
+  rho <- sum(apply(combn(5, 2), 2, function(ix) prod(r[1:5][ix]))) / (5^2 - 5)
+  sqrt_covmat <- matrix(0, nrow = 6, ncol = 6)
+  sqrt_covmat[1:5, 1:5] <- diag(5) * (
+    sigma - sign(rho) * sqrt(abs(rho))) + sign(rho) * sqrt(abs(rho))
+  
+  mm <- cbind("(Intercept)" = 1, "trt." = blkcentered_x)
+  
+  expect_true(all.equal(.estfun_psi_absorbed(mod), sqrt_covmat %*% mm,
+                        check.attributes = FALSE))
+})
+
 test_that(paste("bread.teeMod returns bread.lm for teeMod objects",
                 "with non-SandwichLayer or NULL offsets"), {
   data(simdata)

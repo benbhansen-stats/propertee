@@ -54,12 +54,10 @@ setMethod("show", "teeMod", function(object) {
 vcov.teeMod <- function(object, ...) {
   cl <- match.call()
 
-  cl$x <- cl$object
-  argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
-  new_cl <- cl[c(1L, argmatch)]
-  new_cl[[1L]] <-  quote(vcov_tee)
+  names(cl)[2] <- "x"
+  cl[[1L]] <-  quote(vcov_tee)
 
-  vmat <- eval(new_cl, parent.frame())
+  vmat <- eval(cl, parent.frame())
   return(vmat)
 }
 
@@ -175,9 +173,16 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
-
+  args <- list(...)
+  
   # get the original estimating equations
-  psi <- .base_S3class_estfun(x)
+  if (x@absorbed_intercepts) {
+    # absorb block fixed effects into psi estimating equations if absorbed_intercepts
+    # slot is TRUE
+    psi <- .estfun_psi_absorbed(x, args$weights)
+  } else {
+    psi <- .base_S3class_estfun(x)
+  }
   phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
 
   # the ordering output by `.order_samples()` is explained in that function's
@@ -216,6 +221,58 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
+}
+
+#' @title (Internal) Absorb block effects into effect estimating equations by
+#' estimating them with a random effects model
+#' @details Block effects are estimated by modeling the covariance of the errors
+#' using a random effects structure. Errors within blocks specified by the
+#' \code{Design} slot of the \code{teeMod} are modeled as being correlated, while
+#' errors across blocks are modeled as being uncorrelated. Residual variances of
+#' the errors are modeled as heteroskedastic but proportional to weights provided
+#' to the \code{weights} argument. The elements of the covariance matrix are
+#' estimated following the approach in Imbens and Kolesar (2016).
+#' @references Imbens, Guido W., and Michal Kolesar. "Robust standard
+#' errors in small samples: Some practical advice." \emph{Review of Economics
+#' and Statistics} 98.4 (2016): 701-712.
+#' @inheritParams estfun.teeMod
+#' @param weights numeric vector of the weights in the model of the covariance
+#' structure. If NULL, uniform weights will be used
+#' @return a matrix with number of rows given by the number of rows of
+#' \code{stats::model.frame(x)} and number of columns given by the number of
+#' parameters in the model
+#' @keywords internal
+#' @importFrom stats residuals
+.estfun_psi_absorbed <- function(x, weights) {
+  bcols <- var_names(x@Design, "b")
+  
+  # pass na.expand = TRUE because the documentation for expand.model.frame says
+  # the result will have the same length of model.frame(x), which uses na.action
+  # given by `x`, which is the same as what residuals() will use
+  mf <- stats::expand.model.frame(x, bcols, na.expand = TRUE)
+  unit_bs <- apply(mf[, bcols, drop=FALSE], 1, function(...) paste(..., collapse = "_"))
+  r <- stats::residuals(x)
+  
+  # units in blocks with only one treatment or control unit by shouldn't contribute
+  # to estimation of rho and sigma
+  contrib_bs <- names(table(unit_bs))[table(unit_bs) > 1]
+  if (is.null(w <- weights)) w <- rep(1, length(unit_bs))
+  w[!(unit_bs %in% contrib_bs)] <- 0
+  
+  ssw <- sum(sapply(contrib_bs, function(b) {
+    r_b <- r[unit_bs == b]
+    sum(apply(combn(length(r_b), 2), 2, function(ix) prod(r_b[ix])))
+  }))
+  rho <- ssw / (sum(table(unit_bs[unit_bs %in% contrib_bs])^2)
+                - sum(unit_bs %in% contrib_bs))
+  
+  sigma <- sqrt(sum(w * r^2) / sum(unit_bs %in% contrib_bs)) # sigma2 = sigma2_i * wi, so avg of RHS estimates LHS
+  sigma_w <- numeric(length(w))
+  sigma_w[w > 0] <- sigma / sqrt(w[w > 0])
+  
+  (diag(sigma_w - sign(rho) * sqrt(abs(rho))) +
+      sign(rho) * sqrt(abs(rho)) * tcrossprod(stats::model.matrix(~ b + 0, data.frame(b = unit_bs)))
+  ) %*% model.matrix(x)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
