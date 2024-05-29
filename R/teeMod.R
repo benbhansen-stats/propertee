@@ -243,7 +243,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' parameters in the model
 #' @keywords internal
 #' @importFrom stats residuals
-.estfun_psi_absorbed <- function(x, weights) {
+.estfun_psi_absorbed <- function(x, weights = NULL) {
   bcols <- var_names(x@Design, "b")
   
   # pass na.expand = TRUE because the documentation for expand.model.frame says
