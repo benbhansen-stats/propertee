@@ -292,12 +292,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     by <- cluster
   }
 
-  ord_call <- call(".order_samples", quote(mod), by = quote(by))
+  ord_call <- call(".order_samples", quote(x), by = quote(by))
   id_order <- eval(ord_call)
 
   # if no "by" was specified in cov_adj(), cluster variable was used for ordering,
   # so we can take the names of the sorted vector. Otherwise, we need to get
-  # ID's associated with the ordering
+  # ID's associated with the ordering.
   if (length(setdiff(cluster, by)) == 0) {
     ids <- Reduce(c, id_order[c("Q_not_C", "Q_in_C", "C_not_Q")])
   } else {
@@ -382,6 +382,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   Q_in_C <- sort(Q_in_C)
   C_in_Q <- stats::setNames(C_ids[which(C_ids %in% Q_ids)], which(C_ids %in% Q_ids))
   C_in_Q <- sort(C_in_Q)
+  
+  if (length(Q_in_C) != length(C_in_Q)) {
+    stop(paste("Contributions to covariance adjustment and/or effect estimation",
+               "are not uniquely specified. Provide a `by` argument to `cov_adj()`",
+               "or `vcov.teeMod()`"))
+  }
 
   out <- list(
     Q_not_C = stats::setNames(Q_ids[!(Q_ids %in% C_ids)], which(!(Q_ids %in% C_ids))),
