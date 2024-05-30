@@ -405,8 +405,8 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #' @keywords internal
 .sanitize_Q_ids <- function(x, id_col = NULL, ...) {
   # link the units of assignment in the Design with desired cluster ID's
-  uoa_cols <- var_names(x@Design, "u")
   uoa_cls_df <- .make_uoa_cluster_df(x@Design, id_col)
+  uoa_cols <- var_names(x@Design, "u")
   if (nrow(uoa_cls_df) == nrow(x$model)) {
     expand_cols <- unique(c(uoa_cols, id_col))
     by.y <- if (length(expand_cols) == length(uoa_cols)) uoa_cols else c(uoa_cols, "cluster")
