@@ -5,12 +5,12 @@
 \title{(Internal) Return ID's used to order observations in the covariance
 adjustment sample}
 \usage{
-.sanitize_C_ids(x, by = NULL, sorted = FALSE, ...)
+.sanitize_C_ids(x, id_col = NULL, sorted = FALSE, ...)
 }
 \arguments{
 \item{x}{a \code{SandwichLayer} object}
 
-\item{by}{character vector or list; optional. Specifies column names that appear in
+\item{id_col}{character vector or list; optional. Specifies column names that appear in
 botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
 in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
 slot will be used to generate ID's.}
