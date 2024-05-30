@@ -673,7 +673,7 @@ test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
   des <- rct_design(z ~ uoa(uoa1, uoa2), simdata)
   dmod <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
 
-  expect_error(.sanitize_C_ids(dmod$model$`(offset)`, by = "uid"),
+  expect_error(.sanitize_C_ids(dmod$model$`(offset)`, id_col = "uid"),
                "uid could not be found")
 })
 

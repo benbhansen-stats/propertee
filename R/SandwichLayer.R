@@ -345,7 +345,7 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
 #' @title (Internal) Return ID's used to order observations in the covariance
 #' adjustment sample
 #' @param x a \code{SandwichLayer} object
-#' @param by character vector or list; optional. Specifies column names that appear in
+#' @param id_col character vector or list; optional. Specifies column names that appear in
 #' botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
 #' in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
 #' slot will be used to generate ID's.
@@ -353,26 +353,26 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
 #' @return A vector of length equal to the number of units of observation used
 #' to fit the covariance adjustment model
 #' @keywords internal
-.sanitize_C_ids <- function(x, by = NULL, sorted = FALSE, ...) {
+.sanitize_C_ids <- function(x, id_col = NULL, sorted = FALSE, ...) {
   if (!inherits(x, "SandwichLayer")) {
     stop("x must be a `SandwichLayer` object")
   }
-  if (is.null(by)) {
-    by <- var_names(x@Design, "u")
+  if (is.null(id_col)) {
+    id_col <- var_names(x@Design, "u")
   }
 
   C_ids <- tryCatch(
-    x@keys[, by, drop = FALSE],
+    x@keys[, id_col, drop = FALSE],
     error = function(e) {
       tryCatch({
         camod <- x@fitted_covariance_model
-        stats::expand.model.frame(camod, by, na.expand = TRUE)[by]
+        stats::expand.model.frame(camod, id_col, na.expand = TRUE)[id_col]
       },
       error = function(e) {
         camod <- x@fitted_covariance_model
         data <- eval(camod$call$data, envir = environment(formula(camod)))
         stop(paste("The columns",
-                   paste(setdiff(by, colnames(data)), collapse = ", "),
+                   paste(setdiff(id_col, colnames(data)), collapse = ", "),
                    "could not be found in either the SandwichLayer's `keys`",
                    "slot or the covariance adjustment model dataset"),
              call. = FALSE)
