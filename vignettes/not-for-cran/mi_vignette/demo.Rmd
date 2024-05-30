@@ -1,5 +1,5 @@
 ---
-title: "Using Auxiliary Data in Policy Evaluations with propertee"
+title: "Using Auxiliary Data in Intervention Evaluations with propertee"
 author: "Josh Wasserman"
 date: "2024-05-15"
 output: pdf_document
@@ -10,36 +10,36 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Overview
-The `propertee` package allows users to incorporate auxiliary data in covariance adjustment during policy analyses. Users can fit a prior covariance adjustment model to a sample including units of observation that were and were not part of the study, then pass the information of that model on to a model for estimating the impact effect in order to 
+The `propertee` package allows users to adjust for covariates by fitting a prior model to a sample that includes data from a study as well as available auxiliary data. Users can choose from a variety of fitting procedures for this model, including linear, generalized linear, and robust regression models. In this vignette, we demonstrate how users can pass information from this model to estimates of intervention effects and their associated standard errors. We approximate a pair-matched, cluster-randomized study analyzed in Pane et al. (2014) using only publicly available data, replacing schools from a southeastern Michigan county in the original study--whose intervention assignments we have but are not at liberty to disseminate--with similar schools from a neighboring county.
 
 ## Data
-We measure policy effectiveness using school-level averages of students' performance on the 2014 Michigan Merit Examination (MME). We use schools' average MME scores from the previous two years as covariates to adjust these scores. All scores are publicly available from the [Michigan Department of Education website](https://mischooldata.org/historical-assessment-data-files/). We also adjust scores in the evaluation year using school demographic breakdowns obtained from the [Common Core of Data](https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:28,Page:1), another publicly available data source.
+To run this vignette yourself, first download the necessary data. School-level averages of student performance on the Michigan Merit Examination (MME) from 2011-2014, which we will use to measure intervention effectiveness and to fit the covariance adjustment model, can be downloaded as a zipped file from the [Michigan Department of Education website](https://mischooldata.org/historical-assessment-data-files/). Unzip that file, and convert the resulting .xls file to a .csv to facilitate the use of base R commands for loading it into the R session.
 
-## Policy Evaluation
-We'll first set up our R environment for analysis by loading the `propertee` package; the scores data, which we've reformatted as a .csv from the original .xls format to facilitate the use of base R commands for data loading; and demographics data.
+We also use school-level characteristics from the [Common Core of Data](https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:28,Page:1) in the covariance adjustment model. Click on the link provided here, and download the "Flat File" for the 2013-2014 Public Elementary/Secondary School Universe Survey under "Data File". Unzipping the downloaded file will return a .txt file we can load in using base R.
 
-```{r load, cache=TRUE}
+We provide the last necessary file, `design_dat.Rdata`, as part of the `propertee` package. It stores information about the matched sets in the study, and which schools in each set were assigned to intervention and control.
+
+## Package Installation
+This vignette only requires the installation of two packages. `propertee` is the first, and `robustbase` is the second. Users can fit outlier-robust regressions using `robustbase`, so we demonstrate how effect estimates and standard errors provided by `propertee` can accommodate covariance models fit using that package or ordinary least squares, as provided by the `stats` package.
+
+## `propertee` Walkthrough
+
+After loading the installed packages and downloaded data files, we clean the MME scores and school characteristics datasets. The scores data has rows corresponding to state-, intermediate school district (ISD)-, district-, and campus-wide averages. In addition to averages taken over all students in these subpopulations, some rows correspond to averages taken within substrata formed by gender, ethnicity, learning ability, or economic background. In the cleaning script `load_and_clean.R`, which we also provide as part of the `propertee` package, we create a cleaned dataset that only keeps rows corresponding to campus-wide averages of all students, specifically for campuses where MME scores were reported in 2012, 2013, and 2014.
+
+The school characteristics data spans the universe of public schools in the United States, so to clean it for this vignette, we first limit it to schools relevant to the study. The MME is taken almost exclusively by 11th graders and, as the name suggests, only taken by students in Michigan, so we first subset the data to schools in Michigan serving 11th graders. Then, we perform feature generation, creating derived covariates such as demographic breakdowns by gender, race/ethnicity, and free- or reduced-price lunch eligibility at the school level, and additionally, gender and race/ethnicity breakdowns for 11th graders. These cleaning steps are also performed in `load_and_clean.R`.
+<!-- We will use these marginal averages within substrata to perform a secondary analysis investigating policy effect heterogeneity (though they can also be incorporated in the primary main effect analysis as covariates). For purposes of cleaning the data, we will make one dataset that only keeps rows reporting campus-wide averages of all students, and another that keeps campus-wide averages within substrata. -->
+```{r load_and_clean}
 if (!require("robustbase")) library(robustbase)
 if (!require("propertee")) library(propertee)
-source("utils.R")
-all_scores <- read.csv("Spring2011_2014MME.csv")
-ccd <- read.delim("ccd13_14.txt")
-```
 
-The scores data has rows corresponding to state-, intermediate school district (ISD)-, district-, and campus-wide averages. In addition to averages taken over all students in these subpopulations, some rows correspond to averages taken within substrata formed by gender, ethnicity, learning ability, or economic background. We will use these marginal averages within substrata to perform a secondary analysis investigating policy effect heterogeneity (though they can also be incorporated in the primary main effect analysis as covariates). For purposes of cleaning the data, we will make one dataset that only keeps rows reporting campus-wide averages of all students, and another that keeps campus-wide averages within substrata.
-
-The demographics data spans the universe of public schools in the United States, so for data cleaning we limit it to schools located in Michigan. To join the demographics data to the scores data, we need to use a unique identifier, such as NCES ID.
-
-```{r load_and_clean}
-source("load_and_clean.R")
+all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
+ccd <- read.delim("sc132a.txt")
+load("design_dat.Rdata")
+source("clean_data.R")
 ```
 
 ### Creating the `Design` Object
-The dataframe necessary to convey the study design, however, is much more compact. It only needs to provide which units were assigned to the intervention and control groups and whether the design involves either pre- or post-assignment blocking. In our simulated study, we will match a random sample of schools from the Oakland County ISD into pairs or triplets based on some of the demographic covariates available in the CCD data, then randomly assign one or two schools in each block to be members of the policy group.
-
-```{r}
-source("match_schools.R", local = TRUE)
-```
+The first step in estimating intervention effects using `propertee` is to create a `Design` object. This will store the information from `design_dat.Rdata` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. `propertee`'s `rct_design()` function takes in the necessary information as a formula where the lefthand side indicates the assignment variable and the righthand side indicates the variables specifying units of assignment and matched sets. The `Design` obect's `structure` slot shows a comprehensive summary of the study design.
 
 ```{r}
 des <- rct_design(z ~ unitid(merge_id) + block(blk), design_dat)
@@ -47,7 +47,32 @@ des@structure
 ```
 
 ### Fitting the Covariance Adjustment Model
-The joined dataframe of scores and demographic variables will serve as our analysis data. We can use different subsets of this dataframe to fit covariance adjustment models.
+We now turn our attention to the covariance adjustment model. This model will use covariates to explain variation in school-level averages of MME scores, so when we generate predictions from the We will use predictions from this model to generate partial residuals for This model need not correctly specify the true function for the potential outcomes for  We hope for this model to explain as much variation in school-level average MME scores not due to intervention assignmentWe will fit our covariance adjustment model to a sample The joined dataframe of scores and demographic variables will serve as our analysis data. We can use different subsets of this dataframe to fit covariance adjustment models.
+
+```{r}
+zero_lpad <- function(vec, char_len) {
+  vapply(
+    vec,
+    function(x) paste(c(rep(0, char_len - nchar(x)), x), collapse = ""),
+    character(1L)
+  )
+}
+
+CCD_ID_COLS <- c("STID", "LEANM", "SEASCH", "SCHNAM", "CONUM", "CONAME")
+CCD_CAT_COLS <- c("TITLEISTAT", "MAGNET", "CHARTR", "TYPE")
+CCD_ENROLLMENT_COLS <- c("KG", paste0("G", zero_lpad(seq(1, 12), 2)))
+RACEETH_COLS <- c("AM", "ASIAN", "HISP", "BLACK", "WHITE", "PACIFIC", "TR")
+RACEGENDER_PREFIXES <- c("AM", "AS", "HI", "BL", "WH", "HP", "TR")
+FRL_COL <- "TOTFRL"
+RESPONSE_COL <- "Average.Scale.Score.2014"
+MODELING_COLS <- c(
+  "TOTAL_ENROLLMENT", setdiff(CCD_CAT_COLS, "TYPE"),
+  setdiff(colnames(analysis1_dat)[grepl("_PERC$", colnames(analysis1_dat))],
+          c("MALE_PERC", "TR_PERC", "MALE_G11_PERC", "TR_G11_PERC")),
+  paste0("Average.Scale.Score.", c(2013, 2012))
+)
+```
+
 
 ```{r}
 set.seed(650)
@@ -118,11 +143,14 @@ study2_dat <- study2_dat[study2_dat$DemographicGroup %in%
                            c("White", "Black or African American"),]
 ip_wts <- propertee::ate(des, data = study2_dat)
 lm_mod_ca <- propertee::cov_adj(lm_county_mod_camod, newdata = study2_dat,
-                                design = des)
+                                design = des, by = "uniqueid")
 mod_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~ DemographicGroup"))
 lm_ca_mod_effect <- propertee::lmitt(mod_effect_fmla, design = des,
                                      data = study2_dat, weights = ip_wts,
                                      offset = lm_mod_ca)
+
+
+smp <- .order_samples(lm_ca_mod_effect)
 summary(lm_ca_mod_effect, vcov.type = "HC1", cluster = "merge_id")
 ```
 
