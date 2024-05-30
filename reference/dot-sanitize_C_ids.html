@@ -71,7 +71,7 @@ adjustment sample</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.sanitize_C_ids</span><span class="op">(</span><span class="va">x</span>, by <span class="op">=</span> <span class="cn">NULL</span>, sorted <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.sanitize_C_ids</span><span class="op">(</span><span class="va">x</span>, id_col <span class="op">=</span> <span class="cn">NULL</span>, sorted <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -80,7 +80,7 @@ adjustment sample</p>
 <dd><p>a <code>SandwichLayer</code> object</p></dd>
 
 
-<dt>by</dt>
+<dt>id_col</dt>
 <dd><p>character vector or list; optional. Specifies column names that appear in
 botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
 in which case unit of assignment columns in the <code>SandwichLayer</code>'s <code>Design</code>

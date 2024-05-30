@@ -74,7 +74,7 @@ degrees of freedom with <code>NA</code></p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.check_df_moderator_estimates</span><span class="op">(</span></span>
 <span>  <span class="va">vmat</span>,</span>
 <span>  <span class="va">model</span>,</span>
-<span>  <span class="va">cluster</span>,</span>
+<span>  <span class="va">cluster_cols</span>,</span>
 <span>  model_data <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/substitute.html" class="external-link">quote</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>,</span>
 <span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">environment</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -91,10 +91,8 @@ argument below as the first argument</p></dd>
 <dd><p>a fitted <code>teeMod</code> model</p></dd>
 
 
-<dt>cluster</dt>
-<dd><p>a character or factor vector denoting clusters the units of
-observation used to fit <code>model</code> belong to. Most conveniently, the
-output of <code><a href="dot-make_uoa_ids.html">.make_uoa_ids()</a></code></p></dd>
+<dt>cluster_cols</dt>
+<dd><p>a character vector indicating the column(s) defining cluster ID's</p></dd>
 
 
 <dt>model_data</dt>
