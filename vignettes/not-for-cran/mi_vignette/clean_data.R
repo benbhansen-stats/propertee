@@ -1,0 +1,168 @@
+zero_lpad <- function(vec, char_len) {
+  vapply(
+    vec,
+    function(x) paste(c(rep(0, char_len - nchar(x)), x), collapse = ""),
+    character(1L)
+  )
+}
+
+CCD_ID_COLS <- c("STID", "LEANM", "SEASCH", "SCHNAM", "CONUM", "CONAME")
+CCD_CAT_COLS <- c("TITLEISTAT", "MAGNET", "CHARTR", "TYPE")
+CCD_ENROLLMENT_COLS <- c("KG", paste0("G", zero_lpad(seq(1, 12), 2)))
+RACEETH_COLS <- c("AM", "ASIAN", "HISP", "BLACK", "WHITE", "PACIFIC", "TR")
+RACEGENDER_PREFIXES <- c("AM", "AS", "HI", "BL", "WH", "HP", "TR")
+FRL_COL <- "TOTFRL"
+
+recode_binary_variable <- function(col) {
+  if (inherits(col, "character")) {
+    nonmissing_levels <- unique(col[!(col %in% c("N", "M"))])
+    if (length(setdiff(nonmissing_levels, c("1", "2"))) == 0) {
+      col[col == "1"] <- "0"
+      col[col == "2"] <- "1"
+    }
+  } else if (inherits(col, c("numeric", "integer"))) {
+    nonmissing_levels <- unique(col[!(col %in% c(-2, -1))])
+    if (length(setdiff(nonmissing_levels, c(1, 2))) == 0) {
+      col[col == 1] <- 0
+      col[col == 2] <- 1
+    }
+  } else {
+    warning("Encountered an unexpected variable type")
+  }
+  
+  return(col)
+}
+
+make_demo_perc <- function(df, cols, total_col) {
+  out <- rowSums(df[, cols, drop=FALSE]) / df[[total_col]]
+  out[df[[total_col]] == 0 | df$MEMBER == 0] <- 0
+  out[apply(df[, cols, drop=FALSE], 1, function(x) any(x == -1))] <- -1
+  out[apply(df[, cols, drop=FALSE], 1,
+            function(x) any(x == -2)) | df$MEMBER %in% c(-2, -1)] <- -2
+  
+  return(out)
+}
+
+clean_ccd <- function() {
+  ccd <- read.delim("sc132a.txt")
+  rownames(ccd) <- NULL
+  ccd <- ccd[ccd$LSTATE == "MI",]
+  
+  gender_percs <- mapply(
+    make_demo_perc,
+    lapply(c("ALM", "ALF"), function(pf) paste0(RACEGENDER_PREFIXES, pf)),
+    rep("MEMBER", 2),
+    MoreArgs = list(df = ccd),
+    SIMPLIFY = TRUE
+  )
+  colnames(gender_percs) <- paste(c("MALE", "FEMALE"), "PERC", sep = "_")
+  
+  gender_g11_percs <- mapply(
+    make_demo_perc,
+    lapply(paste0(11, c("M", "F")),
+           function(pf) paste0(RACEGENDER_PREFIXES, pf)),
+    rep("G11", 2),
+    MoreArgs = list(df = ccd),
+    SIMPLIFY = TRUE
+  )
+  colnames(gender_g11_percs) <- paste(c("MALE", "FEMALE"), "G11_PERC", sep = "_")
+  
+  raceeth_percs <- mapply(
+    make_demo_perc,
+    RACEETH_COLS,
+    rep("MEMBER", length(RACEETH_COLS)),
+    MoreArgs = list(df = ccd),
+    SIMPLIFY = TRUE
+  )
+  colnames(raceeth_percs) <- paste(RACEETH_COLS, "PERC", sep = "_")
+  
+  raceeth_g11_percs <- mapply(
+    make_demo_perc,
+    lapply(RACEGENDER_PREFIXES,
+           function(pf) paste0(pf, 11, c("M", "F"))),
+    rep("G11", length(RACEGENDER_PREFIXES)),
+    MoreArgs = list(df = ccd),
+    SIMPLIFY = TRUE
+  )
+  colnames(raceeth_g11_percs) <- paste(RACEETH_COLS, "G11_PERC", sep = "_")
+  
+  frl_perc <- make_demo_perc(ccd, FRL_COL, "MEMBER")
+  
+  cleaned_cat_cols <- sapply(ccd[, CCD_CAT_COLS], recode_binary_variable)
+  
+  cbind(merge_id = paste0(ccd$STID, ccd$SEASCH),
+        ccd[, CCD_ID_COLS, drop=FALSE],
+        sapply(ccd[, CCD_ENROLLMENT_COLS, drop=FALSE], as.numeric),
+        TOTAL_ENROLLMENT = as.numeric(apply(
+          ccd[, CCD_ENROLLMENT_COLS], 1,
+          function(r) sum(r[!(r %in% c(-2, -1))]))),
+        cleaned_cat_cols,
+        gender_percs, raceeth_percs, TOTFRL_PERC = frl_perc,
+        gender_g11_percs, raceeth_g11_percs)
+}
+
+clean_scores <- function(ccd) {
+  all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
+  all_scores <- all_scores[
+    !is.na(all_scores$Building.Code) &
+      !(all_scores$Building.Name %in% c("STATEWIDE", "ISDWIDE", "DISTRICTWIDE")),]
+  
+  all_scores$Average.Scale.Score.2012 <- all_scores$Average.Scale.Score.2011.1
+  all_scores$Average.Scale.Score.2011.1 <- NULL
+  
+  out_cols <- Reduce(
+    cbind,
+    lapply(
+      seq(2011, 2014),
+      function(df, yr) {
+        colnms <- paste0(c("Total.Tested.", "Average.Scale.Score."), yr)
+        out_cols <- df[, colnms, drop=FALSE]
+        out_cols[, 3] <- as.numeric(out_cols[, 1] == "<10")
+        out_cols[, 4] <- as.numeric(out_cols[, 1] == "NULL")
+        out_cols[, 5] <- as.numeric(out_cols[, 2] == "NULL" &
+                                      !(out_cols[, 1] %in% c("<10", "NULL")))
+        out_cols[out_cols[, 1] %in% c("<10", "NULL"), 1] <- NA_character_
+        out_cols[out_cols[, 2] == "NULL", 2] <- NA_character_
+        colnames(out_cols) <- c(colnms,
+                                paste0(c("Masked.Average.Scale.Score.",
+                                         "Missing.Students.Tested.",
+                                         "Missing.Average.Scale.Score."), yr))
+        sapply(out_cols, as.numeric)
+      },
+      df = all_scores
+    )
+  )
+  all_scores[, grepl("(.Tested|Average.Scale)", colnames(all_scores))] <- NULL
+  all_scores <- cbind(all_scores, out_cols)
+  
+  nchar_ccd_distid <- max(nchar(ccd$STID[!grepl("^[A-Z]", ccd$STID)]))
+  nchar_ccd_schid <- max(nchar(ccd$SEASCH[!grepl("^[A-Z]", ccd$SEASCH)]))
+  all_scores$District.Code <- zero_lpad(all_scores$District.Code, nchar_ccd_distid)
+  all_scores$Building.Code <- zero_lpad(all_scores$Building.Code, nchar_ccd_schid)
+  all_scores$merge_id <- paste0(all_scores$District.Code, all_scores$Building.Code)
+  
+  all_scores
+}
+
+cleaned_ccd <- clean_ccd()
+all_scores <- clean_scores(cleaned_ccd)
+all_schools <- merge(all_scores, cleaned_ccd, by = "merge_id", all = TRUE)
+analysis1_dat <- all_schools[
+  !is.na(all_schools$DemographicGroup) &
+    all_schools$DemographicGroup == "All Students" &
+    all_schools$TYPE == "1" &
+    all_schools$Subject == "M",]
+rownames(analysis1_dat) <- NULL
+analysis2_dat <- all_schools[
+  !is.na(all_schools$DemographicGroup) &
+    all_schools$DemographicGroup %in% c("White", "Black or African American",
+                                        "Hispanic of any race", "Asian",
+                                        "American Indian or Alaska Native",
+                                        "Two or more races") &
+    all_schools$TYPE == "1" &
+    all_schools$Subject == "M",]
+analysis2_dat$DemographicGroup[!(analysis2_dat$DemographicGroup %in%
+                                   c("White", "Black or African American"))] <-
+  "Other Race/Ethnicity"
+rownames(analysis2_dat) <- NULL
+analysis2_dat$uniqueid <- seq_len(nrow(analysis2_dat))
