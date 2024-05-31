@@ -95,3 +95,14 @@
 
 #' @rdname studentdata
 "studentdata"
+
+#' @title Intervention data from a pair-matched study of schools
+#'
+#' @description Schools matched into pairs or triplets approximating the subset
+#' of participating schools in Pane et al. (2014) from Michigan
+#' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
+#' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+#'
+#' @format  A \code{data.frame} with 14 rows and 3 columns.
+#' @keywords dataset
+"paireddata"
