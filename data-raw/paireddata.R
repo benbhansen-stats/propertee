@@ -1,5 +1,4 @@
-# this is the `design_dat` dataframe created in the `match_schools.R` script in
-# vignettes/not-for-cran/mi_vignette
+# this dataframe is used for vignettes/mi_vignette
 paireddata <- data.frame(
   schoolid = c("6305000291", "6316006171", "6320001204", "6324009415",
                "6326003242", "6327000710", "6328002123", "6329004340",
