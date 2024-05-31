@@ -147,13 +147,15 @@ clean_scores <- function(ccd) {
 cleaned_ccd <- clean_ccd()
 all_scores <- clean_scores(cleaned_ccd)
 all_schools <- merge(all_scores, cleaned_ccd, by = "merge_id", all = TRUE)
-analysis1_dat <- all_schools[
+analysis1data <- all_schools[
   !is.na(all_schools$DemographicGroup) &
     all_schools$DemographicGroup == "All Students" &
     all_schools$TYPE == "1" &
     all_schools$Subject == "M",]
-rownames(analysis1_dat) <- NULL
-analysis2_dat <- all_schools[
+rownames(analysis1data) <- NULL
+analysis1data$schoolid <- analysis1data$merge_id
+analysis1data$merge_id <- NULL
+analysis2data <- all_schools[
   !is.na(all_schools$DemographicGroup) &
     all_schools$DemographicGroup %in% c("White", "Black or African American",
                                         "Hispanic of any race", "Asian",
@@ -161,8 +163,10 @@ analysis2_dat <- all_schools[
                                         "Two or more races") &
     all_schools$TYPE == "1" &
     all_schools$Subject == "M",]
-analysis2_dat$DemographicGroup[!(analysis2_dat$DemographicGroup %in%
+analysis2data$schoolid <- analysis2data$merge_id
+analysis2data$merge_id <- NULL
+analysis2data$DemographicGroup[!(analysis2data$DemographicGroup %in%
                                    c("White", "Black or African American"))] <-
   "Other Race/Ethnicity"
-rownames(analysis2_dat) <- NULL
-analysis2_dat$uniqueid <- seq_len(nrow(analysis2_dat))
+rownames(analysis2data) <- NULL
+analysis2data$uniqueid <- seq_len(nrow(analysis2data))

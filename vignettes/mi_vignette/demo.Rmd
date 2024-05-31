@@ -17,7 +17,7 @@ To run this vignette yourself, first download the necessary data. School-level a
 
 We also use school-level characteristics from the [Common Core of Data](https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:28,Page:1) in the covariance adjustment model. Click on the link provided here, and download the "Flat File" for the 2013-2014 Public Elementary/Secondary School Universe Survey under "Data File". Unzipping the downloaded file will return a .txt file we can load in using base R.
 
-We provide the last necessary file, `design_dat.Rdata`, as part of the `propertee` package. It stores information about the matched sets in the study, and which schools in each set were assigned to intervention and control.
+The last necessary file can be be loaded from the `propertee` package by calling `data(paireddata)`. This dataframe stores information about the matched sets in the study, and which schools in each set were assigned to intervention and control.
 
 ## Package Installation
 This vignette only requires the installation of two packages. `propertee` is the first, and `robustbase` is the second. Users can fit outlier-robust regressions using `robustbase`, so we demonstrate how effect estimates and standard errors provided by `propertee` can accommodate covariance models fit using that package or ordinary least squares, as provided by the `stats` package.
@@ -33,7 +33,7 @@ if (!require("propertee")) library(propertee)
 
 all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
 ccd <- read.delim("sc132a.txt")
-load("design_dat.Rdata")
+data(paireddata)
 source("clean_data.R")
 ```
 
