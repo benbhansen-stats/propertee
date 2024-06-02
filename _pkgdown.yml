@@ -37,8 +37,6 @@ reference:
 - subtitle: Accessors/Replacers for `Design` Objects
 - contents:
     - treatment
-    - is_dichotomized
-    - dichotomy
 - subtitle: Summary and print methods
 - contents:
     - show,Design-method
