@@ -3,7 +3,7 @@
 ##' @export
 ##' @rdname Design_extractreplace
 setGeneric("treatment",
-           function(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
+           function(x, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
   standardGeneric("treatment")
 })
 

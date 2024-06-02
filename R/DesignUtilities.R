@@ -139,8 +139,10 @@ forcing <- unit_of_assignment
   return(as.formula(form))
 }
 
+##' @title Check whether treatment stored in a `Design` object is binary
+##' @param des \code{Design} object
+##' @return logical vector of length 1
 ##' @export
-##' @rdname design_treatment_status
 has_binary_treatment <- function(des) {
   if (!inherits(des, "Design")) {
     stop("des must be a Design object.")

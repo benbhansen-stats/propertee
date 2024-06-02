@@ -28,9 +28,9 @@
 \alias{forcings<-,Design-method}
 \title{Accessors and Replacers for \code{Design} objects}
 \usage{
-treatment(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...)
+treatment(x, newdata = NULL, dichotomy = NULL, by = NULL, ...)
 
-\S4method{treatment}{Design}(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...)
+\S4method{treatment}{Design}(x, newdata = NULL, dichotomy = NULL, by = NULL, ...)
 
 treatment(x) <- value
 
