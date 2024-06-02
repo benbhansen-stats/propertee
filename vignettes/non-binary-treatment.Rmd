@@ -46,27 +46,28 @@ according to [R's comparison of characters](https://rdrr.io/r/base/Comparison.ht
 
 `factor` and `ordered` objects are tricky to deal with, so while a `Design` can
 be created with `factor` or `ordered` treatment variables, `lmitt()` will refuse
-to estimate a model. It is strongly recommended to recode the variable into
-`numeric` or `character`, or you can use
+to estimate a model unless it is also provided a
 [`dichotomy`](#dichotomzing-a-non-binary-treatment) (see below).
-
-Note that weights (`ate()` or `ett()`, or `weights="ate"` or `weights ="ett"`)
-only support binary treatment variables and will error on anything except binary
-`numeric` or `logical`.
 
 ### Dichotomzing a Non-binary Treatment
 
-The [`Design`](../reference/Design_objects.html) creation functions and
-`ett()`/`ate()` support a `dichotomy=` argument. A `dichotomy` is presented as a
+Studies may offer treatment to units at different times or provide treatment to
+units in varying intensities. Researchers may be interested in estimating treatment
+effects at different times or given a certain threshold of provided treatment, however.
+`propertee` accommodates these wishes by storing the time or intensity of treatment
+for treated units in the  [`Design`](../reference/Design_objects.html), then offering
+a `dichotomy=` argument to the weights calculation functions `ett()`/`ate()` and the
+assginment creation function `assigned()` A `dichotomy` is presented as a
 formula, where the left-hand side is a logical statement defining inclusion in
 the treatment group, and the right-hand side is a logical statement defining
-inclusion in the control group. For example,
+inclusion in the control group. For example, if `dose` represents the intensity
+of a given treatment, we could set a threshold of 200, say, mg:
 
 ```{r, eval = FALSE}
 dose > 200 ~ dose <= 200
 ```
 
-defines that all units of assignment with `dose` above 200 are treated units,
+All units of assignment with `dose` above 200 are treated units,
 and all units of assignment with `dose` of 200 or below are control units.
 
 A `.` can be used to define either group as the inverse of the other. For
@@ -89,31 +90,17 @@ In this `dichotomy`, units of assignment in the range (100,300) are ignored.
 
 ### An Example
 
-We place the dichotomy directly in a `Design` object:
-
 ```{r}
 data(simdata)
 table(simdata$dose)
 des1 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata)
 summary(des1)
-dichotomy(des1) <- dose >= 300 ~ dose <= 100
-summary(des1)
 ```
 
-You can also place the `dichotomy` in the `_design()` call direcly:
-
 ```{r}
-des2 <- rct_design(dose ~ uoa(uoa1, uoa2), data = simdata,
-                   dichotomy = dose >= 300 ~ dose <= 100)
-summary(des2)
+head(ate(des1, data = simdata, dichotomy = dose >= 300 ~ dose <= 100))
 ```
 
-Alternatively, a `dichotomy` can be passed to `ate()`/`ett()` functions. If the
-`Design` already has a `dichotomy`, it will be used, but passing an additional
-`dichotomy` to the weight functions replaces the `Design`'s `dichotomy`.
-
 ```{r}
-head(ate(des2, data = simdata))
-head(ate(des2, data = simdata,
-         dichotomy = dose != 300 ~ .))
+head(assigned(des1, data = simdata, dichotomy = dose >= 300 ~ dose <= 100))
 ```
