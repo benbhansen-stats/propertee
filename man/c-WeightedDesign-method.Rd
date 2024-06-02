@@ -4,7 +4,7 @@
 \alias{c,WeightedDesign-method}
 \title{Concatenate weights}
 \usage{
-\S4method{c}{WeightedDesign}(x, ..., force_dichotomy_equal = FALSE)
+\S4method{c}{WeightedDesign}(x, ..., warn_dichotomy_not_equal = FALSE)
 }
 \arguments{
 \item{x, }{.. a \code{WeightedDesign} object, typically created from \code{\link[=ate]{ate()}}
@@ -13,21 +13,13 @@ or \code{\link[=ett]{ett()}}}
 \item{...}{any number of additional \code{WeightedDesign} objects with
 equivalent \code{Design} to \code{x} and eachother}
 
-\item{force_dichotomy_equal}{if \code{FALSE} (default), \code{Design}s are
+\item{warn_dichotomy_not_equal}{if \code{FALSE} (default), \code{WeightedDesign}s are
 considered equivalent even if their \code{dichotomy} differs. If
-\code{TRUE}, \code{@dichotomy} must also be equal.}
+\code{TRUE}, a warning is produced.}
 }
 \value{
-If all \code{WeightedDesign} objects contain the same
-\code{dichotomy} (including \code{NULL}), a new \code{WeightedDesign} with
+A numeric \code{vector} with
 the weights concatenated in the input order.
-
-If \code{force_dichotomy_equal} is \code{FALSE} and the
-\code{WeightedDesign} objects differ in their dichotomies, a
-\code{CombinedWeightedDesign} is returned. This functions essentially
-identically to a \code{WeightedDesign}, but carries with it the
-dichotimization information that came from each of the individual
-\code{WeightedDesign}.
 }
 \description{
 Given several variations of weights generated from a single
@@ -36,19 +28,15 @@ Given several variations of weights generated from a single
 \details{
 Concatenating \code{WeightedDesign} objects with \code{\link[=c]{c()}} requires
 both individual \code{WeightedDesign} objects to come from the same
-\code{Design} (except \code{dichotomy}, see below) and have the same
+\code{Design} and have the same
 target (e.g all created with \code{\link[=ate]{ate()}} or all created with \code{\link[=ett]{ett()}}, no
 mixing-and-matching). All arguments to \code{\link[=c]{c()}} must be
 \code{WeightedDesign}.
 
-One exception is when concatenting \code{WeightedDesign} objects whose
-\code{Design} differ only in their dichotomies. There may be cases where
-the treatment is continuous or has multiple levels, and there is a need to
-combine the weights from the same general design, but with different
-dichotomies. Therefore multiple \code{WeightedDesign} objects can be
-combined if they are identical except for their \code{@dichotomy} slots.
-The resulting object will be a \code{CombinedWeightedDesign} which tracks
-all individual \code{dichotomy}.
+\code{WeightedDesign} objects may be concatenated together even without
+having the same \code{@dichotomy} slot. This procedure only prompts a
+warning for differing dichotomies if the argument \code{warn_dichotomy_not_equal}
+is set to \code{TRUE}.
 }
 \examples{
 data(simdata)

@@ -4,8 +4,7 @@ NULL
 
 setClass("DesignStructure",
          contains = "data.frame",
-         slots = c(Design = "Design",
-                   binary = "logical"))
+         slots = c(Design = "Design"))
 
 setValidity("DesignStructure", function(object) {
   validObject(as(object@Design, "Design"))
@@ -20,9 +19,6 @@ setValidity("DesignStructure", function(object) {
 ##' @description Obtaining a \code{data.frame} which encodes the design
 ##'   information.
 ##' @param design a \code{Design} object
-##' @param binary default \code{FALSE}. If \code{TRUE} and the design contains a
-##'   \code{dichotomy}, replace the treatment column with its binary
-##'   representation. Has no effect if \code{design} is not dichotomized.
 ##' @return A \code{DesignStructure} object containing the structure of the
 ##'   \code{design} as a \code{data.frame}.
 ##' @export
@@ -31,15 +27,14 @@ setValidity("DesignStructure", function(object) {
 ##' data(simdata)
 ##' des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 ##' get_structure(des)
-get_structure <- function(design, binary = FALSE) {
+get_structure <- function(design) {
 
   struct <- design@structure
   struct[, design@column_index == "t"] <-
-    treatment(design, binary = binary)
+    treatment(design)
 
   return(new("DesignStructure",
              struct,
-             binary = binary,
              Design = design))
 }
 
