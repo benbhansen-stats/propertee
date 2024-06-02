@@ -81,9 +81,6 @@ forcings(x) <- value
 \arguments{
 \item{x}{a \code{Design} object}
 
-\item{binary}{Controls whether a \code{dichotomy} is applied before
-returning the treatment variable. See \code{Details}.}
-
 \item{newdata}{optional; an additional \code{data.frame}. If passed, and the
 unit of assignment variable is found in \code{newdata}, then the requested
 variable type for each unit of \code{newdata} is returned. See \code{by}

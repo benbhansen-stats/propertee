@@ -113,7 +113,7 @@ lmitt.formula <- function(obj,
   wt <- lmitt.call$weights
   if (is(wt, "character")) {
     if ((wt_call <- tolower(wt)) %in% c("ate", "ett")) {
-      lm.call$weights <- lmitt.call$weights <- call(wt_call)
+      lm.call$weights <- lmitt.call$weights <- call(wt_call, dichotomy = dichotomy)
     } else {
       warning(paste("Character other than \"ate\" or \"ett\" passed to",
                     "`weights=` argument.\nIf you are trying to pass a",

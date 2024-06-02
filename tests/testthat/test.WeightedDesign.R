@@ -74,12 +74,30 @@ test_that("internal and external weight function agreement", {
   iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
   ewdes <- ate(des, data = simdata)
-  expect_identical(iwdes, ewdes)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(iwdes, slot)),
+                           deparse(methods::slot(ewdes, slot)))
+                } else {
+                  identical(methods::slot(iwdes, slot), methods::slot(ewdes, slot))
+                },
+               logical(1L)))
+  )
 
   iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ett", dichotomy = NULL)
   ewdes <- ett(des, data = simdata)
-  expect_identical(iwdes, ewdes)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(iwdes, slot)),
+                           deparse(methods::slot(ewdes, slot)))
+               } else {
+                 identical(methods::slot(iwdes, slot), methods::slot(ewdes, slot))
+               },
+               logical(1L)))
+  )
 
 })
 
@@ -132,11 +150,11 @@ test_that("ate and ett in lm call", {
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
-  expect_equal(mod$weights, ate(des, data = simdata)@.Data)
+  expect_equal(mod$weights@.Data, ate(des, data = simdata)@.Data)
 
   mod <- lm(y ~ x, data = simdata, weights = ett(des))
 
-  expect_equal(mod$weights, ett(des, data = simdata)@.Data)
+  expect_equal(mod$weights@.Data, ett(des, data = simdata)@.Data)
 
 })
 

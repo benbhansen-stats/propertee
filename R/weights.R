@@ -118,10 +118,11 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   }
   
   # get `dichotomy` argument and validate against any up the call stack
-  dichotomy <- .get_dichotomy(dichotomy)
-  if (!all(setdiff(all.vars(dichotomy), ".") %in% colnames(design@structure))) {
-    stop(paste("All variables must be specified in the Design when calculating",
-               "weights."))
+  if (is.null(dichotomy)) {
+    possible_dichotomies <- .find_dichotomies()
+    dichotomy <- .validate_dichotomy(possible_dichotomies)
+  } else {
+    dichotomy <- .validate_dichotomy(dichotomy)
   }
 
   if (is.null(data)) {
@@ -145,11 +146,6 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   txt <- .bin_txt(design,
                   unique(data[, var_names(design, "u"), drop = FALSE]),
                   dichotomy)
-  if (!all(txt %in% c(0, 1, TRUE, FALSE, NA))) {
-    stop(paste("To calculate weights, treatment must either be 0/1 binary,\n",
-               "or dichotomy must be specified."))
-  }
-
 
   #### generate weights
 

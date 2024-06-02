@@ -10,9 +10,6 @@ test_that("Combining weighted designs", {
   c_w <- c(w1, w2, w3)
   expect_true(inherits(c_w, "numeric"))
   expect_length(c_w, 50)
-  ## NOTE 5/22/24: the below is no longer true--.weights_calc() calculates weights
-  ## based on the provided `data` argument rather than `design@structure`
-  # expect_identical(c_w, ate(des, data = simdata))
 
   w1e <- ett(des, data = simdata[1:30,])
   w2e <- ett(des, data = simdata[31:40,])
@@ -21,9 +18,8 @@ test_that("Combining weighted designs", {
   c_we <- c(w1e, w2e, w3e)
   expect_true(inherits(c_we, "numeric"))
   expect_length(c_we, 50)
-  # expect_identical(c_we, ett(des, data = simdata))
 
-  expect_error(c(w1, 1:5), "with other")
+  expect_message(c(w1, 1:5), "with a non-WeightedDesign")
   expect_error(c(w1, w1e), "same target")
 
   des2 <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)

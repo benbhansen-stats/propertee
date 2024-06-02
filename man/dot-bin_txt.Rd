@@ -12,7 +12,7 @@
 \item{data}{A dataframe with unit of assignment information and, if a
 dichotomy is provided, columns specified therein}
 
-\item{dichotomy}{A formula. See the Details section of the \code{ett()} or
+\item{dichotomy}{Optional, a formula. See the Details section of the \code{ett()} or
 \code{att()} help pages for information on specifying the formula}
 }
 \value{

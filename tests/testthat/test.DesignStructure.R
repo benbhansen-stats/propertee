@@ -6,13 +6,11 @@ test_that("get_structure() fn", {
 
   expect_true(is(ss, "DesignStructure"))
   expect_identical(data.frame(ss), des@structure)
-  expect_false(ss@binary)
   expect_identical(ss@Design, des)
 
-  ss2 <- get_structure(des, binary = TRUE)
+  ss2 <- get_structure(des)
   # No dichotomy so should be identical
   expect_identical(data.frame(ss), data.frame(ss2))
-  expect_true(ss2@binary)
   expect_identical(ss2@Design, des)
 
 
@@ -21,11 +19,7 @@ test_that("get_structure() fn", {
 
   expect_true(is(ss, "DesignStructure"))
   expect_identical(data.frame(ss), des@structure)
-  expect_false(ss@binary)
   expect_identical(ss@Design, des)
-
-  expect_error(get_structure(des, binary = TRUE),
-               "No binary treatment")
 })
 
 test_that("show.Design.Structure", {

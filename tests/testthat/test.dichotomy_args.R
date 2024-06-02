@@ -17,7 +17,17 @@ test_that("dichotomy args where design has no blocks, no time-varying assignment
   expect_true(all.equal(lm2$coefficients, lm4$coefficients, check.attributes = FALSE))
   expect_equal(lm2$model[[2]], lm1$model[[2]])
   expect_equal(lm3$model[[2]], lm1$model[[2]])
-  expect_equal(lm2$model$`(weights)`, wts)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(lm2$model$`(weights)`, slot)),
+                           deparse(methods::slot(wts, slot)))
+               } else {
+                 identical(methods::slot(lm2$model$`(weights)`, slot),
+                           methods::slot(wts, slot))
+               },
+               logical(1L)))
+  )
   expected_wts <- numeric(nrow(simdata))
   expected_wts[simdata$dose >250] <- 1 / mean(simdata$dose>250)
   expected_wts[simdata$dose <=250] <- 1 / mean(simdata$dose<=250)
@@ -42,7 +52,17 @@ test_that("dichotomy args where design has no blocks, no time-varying assignment
   expect_true(all.equal(lmitt2$coefficients, lm2$coefficients, check.attributes = FALSE))
   expect_equal(lmitt2$model[[2]], lmitt1$model[[2]])
   expect_equal(lmitt3$model[[2]], lm1$model[[2]])
-  expect_equal(lmitt2$model$`(weights)`, wts)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(lmitt2$model$`(weights)`, slot)),
+                           deparse(methods::slot(wts, slot)))
+               } else {
+                 identical(methods::slot(lmitt2$model$`(weights)`, slot),
+                           methods::slot(wts, slot))
+               },
+               logical(1L)))
+  )
   expect_equal(lmitt2$model$`(weights)`@.Data, expected_wts)
 
 })
@@ -66,7 +86,17 @@ test_that("dichotomy args where design has blocks, no time-varying assignment", 
   expect_true(all.equal(lm2$coefficients, lm4$coefficients, check.attributes = FALSE))
   expect_equal(lm2$model[[2]], lm1$model[[2]])
   expect_equal(lm3$model[[2]], lm1$model[[2]])
-  expect_equal(lm2$model$`(weights)`, wts)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(lm2$model$`(weights)`, slot)),
+                           deparse(methods::slot(wts, slot)))
+               } else {
+                 identical(methods::slot(lm2$model$`(weights)`, slot),
+                           methods::slot(wts, slot))
+               },
+               logical(1L)))
+  )
   expected_wts <- numeric(nrow(simdata))
   # in block 1, no uoa's have dose > 250, while in blocks 2 and 1/3 do
   expected_wts[simdata$bid == 1] <- 0 # 
@@ -93,7 +123,17 @@ test_that("dichotomy args where design has blocks, no time-varying assignment", 
   expect_equal(lmitt2$coefficients, lmitt5$coefficients)
   expect_equal(lmitt2$model[[2]], lmitt1$model[[2]])
   expect_equal(lmitt3$model[[2]], lm1$model[[2]])
-  expect_equal(lmitt2$model$`(weights)`, wts)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(lmitt2$model$`(weights)`, slot)),
+                           deparse(methods::slot(wts, slot)))
+               } else {
+                 identical(methods::slot(lmitt2$model$`(weights)`, slot),
+                           methods::slot(wts, slot))
+               },
+               logical(1L)))
+  )
   expect_equal(lmitt2$model$`(weights)`@.Data, expected_wts)
   
 })

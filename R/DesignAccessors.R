@@ -42,8 +42,6 @@ setGeneric("treatment",
 ##'   be provided.
 ##'
 ##' @param x a \code{Design} object
-##' @param binary Controls whether a \code{dichotomy} is applied before
-##'   returning the treatment variable. See \code{Details}.
 ##' @param newdata optional; an additional \code{data.frame}. If passed, and the
 ##'   unit of assignment variable is found in \code{newdata}, then the requested
 ##'   variable type for each unit of \code{newdata} is returned. See \code{by}
@@ -71,38 +69,23 @@ setGeneric("treatment",
 ##' blocks(des) <- c(5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
 ##' blocks(des) # notice that variable is not renamed
 setMethod("treatment", "Design",
-          function(x, binary = FALSE, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
-  binary <- as.character(binary)
-  if (!binary %in% c("TRUE", "FALSE", "ifany")) {
-    stop(paste("Valid input to `binary=` argument include only TRUE, ",
-               "FALSE, and 'ifany'."))
-  }
+          function(x, newdata = NULL, dichotomy = NULL, by = NULL, ...) {
   .design_accessors_newdata_validate(newdata, by)
 
-  if (binary == FALSE) {
+  if (is.null(dichotomy)) {
     if (!is.null(newdata)) {
       return(.get_col_from_new_data(x, newdata, type = "t", by))
+    } else {
+      return(x@structure[x@column_index == "t"])
     }
-    return(x@structure[x@column_index == "t"])
   }
-  
-  # For binary = TRUE or binary = "ifany", if stored treatment is non-binary but
-  # dichotomy is provided, return dichotomized treatment
+
   if (!is.null(dichotomy)) {
     return(data.frame(z__ = .bin_txt(x, newdata, dichotomy)))
-  }
-  
-  # For binary = TRUE with non-binary treatment is non-binary and no dichotomy,
-  # error
-  if (binary == TRUE & !has_binary_treatment(x)) {
+  } else if (!has_binary_treatment(x)) {
     stop(paste("No binary treatment can be produced. Treatment is",
-               "non-binary and `x` does not contain a `@dichotomy`."))
+               "non-binary and no `dichotomy` provided."))
   }
-    
-  if (!is.null(newdata)) {
-    return(.get_col_from_new_data(x, newdata, type = "t", by))
-  }
-  return(x@structure[x@column_index == "t"])
 })
 
 ##' @export
@@ -131,13 +114,13 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##' @param des A \code{Design}, used to get treatment assignment information
 ##' @param data A dataframe with unit of assignment information and, if a
 ##' dichotomy is provided, columns specified therein
-##' @param dichotomy A formula. See the Details section of the \code{ett()} or
+##' @param dichotomy Optional, a formula. See the Details section of the \code{ett()} or
 ##' \code{att()} help pages for information on specifying the formula
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .bin_txt <- function(des, data = NULL, dichotomy = NULL) {
   # get treatment from the design
-  tt <- treatment(des, binary = FALSE)
+  tt <- treatment(des)
   
   if (!is.null(data)) tt <- .expand_txt(tt, data, des)
 
@@ -200,13 +183,10 @@ setMethod("treatment<-", "Design", function(x, value) {
 ##' @return A \code{vector} of binary treatments
 ##' @keywords internal
 .apply_dichotomy <- function(txt, dichotomy) {
-  if (!is.data.frame(txt)) {
-    stop("`txt` is expected to be a named `data.frame`")
-  }
-
+  if (!is.data.frame(txt)) stop("`txt` is expected to be a named `data.frame`")
   if (!all(setdiff(all.vars(dichotomy), ".") %in% colnames(txt))) {
-    stop(paste("Could not find variables specified in `dichotomy`. Provide a", 
-               "`data` argument with these columns, or ensure `data` argument",
+    stop(paste("Could not find variables specified in dichotomy. Provide a", 
+               "data argument with these columns, or ensure provided data argument",
                "has them."))
   }
 

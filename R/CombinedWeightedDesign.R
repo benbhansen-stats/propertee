@@ -62,37 +62,39 @@ setMethod("c", signature(x = "WeightedDesign"),
   dots <- list(...)
   # x must be a WeightedDesign to get here; ensure all other elements
   # are as well
-  if (any(vapply(dots, function(k) !inherits(k, "WeightedDesign"), TRUE))) {
-    stop("WeightedDesigns can only be combined with other WeightedDesigns")
+  if (any_numeric <- any(vapply(dots, function(k) !inherits(k, "WeightedDesign"), TRUE))) {
+    message(paste("Concatenating a WeightedDesign with a non-WeightedDesign vector.",
+                  "If non-WeightedDesign vector has been formed from previous",
+                  "concatenation of WeightedDesign objects, equality of `Design`",
+                  "slots cannot be confirmed"))
   }
 
-  # Ensure all WeightedDesigns have the same target
-  targets <- c(x@target, lapply(dots, methods::slot, "target"))
-  if (length(unique(targets)) > 1) {
-    stop(paste("WeightedDesigns can only be concatenated with",
-               "the same target (ate or ett)"))
-  }
-
-  designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
-  # temporarily remove calls from the Designs to avoid weird discrepancies here
-  destmp <- lapply(designs, function(x) {
-    x@call <- call("c") # placeholder for unique check
-    x
-  })
-
-  if (length(unique(destmp)) == 1) {
-    if (warn_dichotomy_not_equal) {
-      dichotomies <- Reduce(c, lapply(dots, methods::slot, "dichotomy"), init = x@dichotomy)
-      if (length(unique(dichotomies)) > 1) {
-        warning("Concatenating WeightedDesigns with different `dichotomy` slots")
-      }
+  if (!any_numeric) {
+    # Ensure all WeightedDesigns have the same target
+    targets <- c(x@target, lapply(dots, methods::slot, "target"))
+    if (length(unique(targets)) > 1) {
+      stop(paste("WeightedDesigns can only be concatenated with",
+                 "the same target (ate or ett)"))
     }
-
-    # if all Designs are identical (sans @call), we can c together
-    # just the numeric weights, and pull out Design/target from the
-    # first one
-    return(Reduce(c, lapply(dots, methods::slot, ".Data"), init = x@.Data))
-  } else {
-    stop("Cannot combine WeightedDesigns from differing Designs")
+    
+    designs <- c(x@Design, lapply(dots, methods::slot, "Design"))
+    # temporarily remove calls from the Designs to avoid weird discrepancies here
+    destmp <- lapply(designs, function(x) {
+      x@call <- call("c") # placeholder for unique check
+      x
+    })
+    
+    if (length(unique(destmp)) == 1) {
+      if (warn_dichotomy_not_equal) {
+        dichotomies <- Reduce(c, lapply(dots, methods::slot, "dichotomy"), init = x@dichotomy)
+        if (length(unique(dichotomies)) > 1) {
+          warning("Concatenating WeightedDesigns with different `dichotomy` slots")
+        }
+      }
+    } else {
+      stop("Cannot combine WeightedDesigns from differing Designs")
+    }
   }
+
+  return(Reduce(c, lapply(dots, methods::slot, ".Data"), init = x@.Data))
 })

@@ -139,56 +139,6 @@ forcing <- unit_of_assignment
   return(as.formula(form))
 }
 
-##' Check if \code{Design} has access to a binary treatment
-##'
-##' These functions determine if a \code{Design} is dichotomized
-##' (\code{is_dichotomized()}) or has access to a binary treatment variable
-##' (\code{has_binary_treatment()}) or has either
-##' (\code{is_binary_or_dichotomized()}).
-##'
-##' \code{is_dichotomized()} checks for the the presence of a \code{@dichotomy}
-##' slot in the \code{Design}, either passed directly into the various
-##' \code{*_design()} \code{Design} creators, or added afterwards with
-##' \code{dichotomy(my_design)<-}.
-##'
-##' \code{has_binary_treatment()} returns \code{TRUE} if the treatment is
-##' numeric with only values of \code{0} and \code{1}, or is logical. It also
-##' allows \code{NA} in the treatment.
-##'
-##' \code{is_binary_or_dichotomized} returns \code{TRUE} if either
-##' \code{is_dichotomized()} and \code{has_binary_treatment()} return
-##' \code{TRUE}.
-##'
-##' @param des a \code{Design} object
-##' @return Logical; see details.
-##' @export
-##' @rdname design_treatment_status
-##' @examples
-##' data(simdata)
-##' des1 <- rct_design(z ~ uoa(uoa1, uoa2), data = simdata)
-##' des2 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata)
-##' des3 <- rct_design(o ~ uoa(uoa1, uoa2), data = simdata,
-##'                    dichotomy = o >= 3 ~ .)
-##'
-##' if (is_binary_or_dichotomized(des1)) {
-##'   wt <- ate(des1, data = simdata)
-##' }
-##' if (is_binary_or_dichotomized(des2)) {
-##'   wt <- ate(des2, data = simdata) # would fail but won't be run
-##' }
-##' if (is_binary_or_dichotomized(des3)) {
-##'   wt <- ate(des3, data = simdata)
-##' }
-##'
-is_dichotomized <- function(des) {
-  if (!inherits(des, "Design")) {
-    stop("des must be a Design object.")
-  }
-
-  # legnth 3 formula implies a LHS, a ~, and a RHS.
-  return(length(des@dichotomy) == 3)
-}
-
 ##' @export
 ##' @rdname design_treatment_status
 has_binary_treatment <- function(des) {
@@ -202,16 +152,6 @@ has_binary_treatment <- function(des) {
   }
 
   return(all(treatment(des)[, 1] %in% c(0, 1, TRUE, FALSE, NA)))
-}
-
-##' @export
-##' @rdname design_treatment_status
-is_binary_or_dichotomized <- function(des) {
-  if (!inherits(des, "Design")) {
-    stop("des must be a Design object.")
-  }
-
-  return(is_dichotomized(des) || has_binary_treatment(des))
 }
 
 ##' @title Test equality of two \code{Design} objects

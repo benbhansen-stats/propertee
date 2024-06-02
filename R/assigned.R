@@ -70,7 +70,13 @@ assigned <- function(design = NULL, data = NULL, dichotomy = NULL) {
 
   tt <- treatment(design, binary = FALSE)
   tt <- .expand_txt(tt, data, design)
-  dichotomy <- .get_dichotomy(dichotomy)
+  if (is.null(dichotomy)) {
+    possible_dichotomies <- .find_dichotomies()
+    dichotomy <- .validate_dichotomy(possible_dichotomies)
+  } else {
+    dichotomy <- .validate_dichotomy(dichotomy)
+  }
+  
   
   if (!is.null(dichotomy)) {
     return(.apply_dichotomy(cbind(tt, data), dichotomy))

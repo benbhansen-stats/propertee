@@ -25,30 +25,19 @@ test_that("Accessing and replacing treatment", {
 
   expect_error(treatment(des) <- data.frame(a = c(1, 0, 1, 0, 1)),
                "same number")
-  # no dichotomy
-  expect_identical(treatment(des), treatment(des, binary = TRUE))
-  expect_identical(treatment(des, binary = FALSE),
-                   treatment(des, binary = TRUE))
 
   # Continuous treatment, no dichotomy
   des <- rd_design(dose ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
-  expect_identical(treatment(des), treatment(des, binary = FALSE))
-
-  expect_error(treatment(des, binary = TRUE), "No binary")
-
-  treatment(des, binary = "ifany")
 
   # Continuous treatment, dichotomy
   des <- rd_design(dose ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_identical(treatment(des), des@structure[, 1, drop = FALSE])
-  expect_identical(treatment(des), treatment(des, binary = FALSE))
-  expect_error(treatment(des, binary = TRUE), "No binary")
-  tt <- treatment(des, binary = TRUE, dichotomy = dose <= 100 ~ dose == 200)
+  tt <- treatment(des, dichotomy = dose <= 100 ~ dose == 200)
 
   expect_equal(dim(tt), c(10, 1))
   expect_true(is.numeric(tt[, 1]))
@@ -67,40 +56,12 @@ test_that("Accessing and replacing treatment", {
 
   expect_true(all(.bin_txt(des, dichotomy = o >= 3 ~ .) %in% c(0, 1, NA)))
   expect_identical(.bin_txt(des, dichotomy = o >= 3 ~ .),
-                   treatment(des, binary = TRUE, dichotomy = o >= 3 ~ .)[, 1])
+                   treatment(des, dichotomy = o >= 3 ~ .)[, 1])
 
   des <- rd_design(o ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   expect_error(.bin_txt(des), "Must provide a dichotomy")
-
-})
-
-test_that("treatment binary = 'ifany'", {
-  data(simdata)
-
-  # Binary already
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
-
-  expect_identical(treatment(des),
-                   treatment(des, binary = "ifany"))
-  expect_identical(treatment(des),
-                   treatment(des, binary = TRUE))
-
-  # No dichotomization
-  des <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata)
-  expect_error(treatment(des, binary = TRUE))
-  expect_identical(treatment(des, binary = FALSE),
-                   treatment(des, binary = "ifany"))
-
-
-  # Dichotomization
-  expect_identical(treatment(des, dichotomy = o >= 3 ~ .)$o,
-                   des@structure$o)
-  expect_identical(treatment(des, binary = TRUE, dichotomy = o >= 3 ~ .),
-                   treatment(des, binary = "ifany", dichotomy =  o >= 3 ~ .))
-
-  expect_error(treatment(des, binary = "cat"), "Valid input")
 
 })
 
@@ -112,7 +73,7 @@ test_that("New .bin_txt, .expand_txt, and .apply_dichotomy errors", {
   expect_error(.apply_dichotomy(simdata$dose, dose > 50 ~ dose == 50),
                "expected to be a named `data.frame`")
   expect_error(.apply_dichotomy(treatment(des), dichotomy = dose > 50 ~ dose == 50),
-               "Could not find variables specified in `dichotomy`")
+               "Could not find variables specified in dichotomy")
   expect_error(.apply_dichotomy(simdata, . ~ .),
                "At least one side")
   expect_error(.apply_dichotomy(simdata, dichotomy = dose >= 50 ~ dose == 50),
@@ -650,8 +611,6 @@ test_that("treatment extraction with NA", {
   des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
   expect_identical(.bin_txt(des), des@structure$z)
   expect_identical(.bin_txt(des), treatment(des)[, 1])
-  expect_identical(.bin_txt(des), treatment(des, binary = TRUE)[, 1])
-
 
 
   simdata$dose[1:4] <- NA
@@ -665,8 +624,8 @@ test_that("treatment extraction with NA", {
   z <- .bin_txt(des, dichotomy = dose >= 250 ~ .)
   expect_true(is.na(z[1]))
   expect_true(all(z[-1] %in% 0:1))
-  expect_identical(z, treatment(des, binary = TRUE, dichotomy = dose >= 250 ~ .)[, 1])
-  expect_identical(o, treatment(des, binary = FALSE, dichotomy = dose >= 250 ~ .)[, 1])
+  expect_identical(z, treatment(des, dichotomy = dose >= 250 ~ .)[, 1])
+  expect_identical(o, treatment(des)[, 1])
 
 
 })
