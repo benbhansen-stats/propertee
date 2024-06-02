@@ -1,5 +1,5 @@
 Package: propertee
-Version: 0.3.11
+Version: 0.4.0
 Title: Design-Informed Direct Adjustment with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of ERrors
     (for Treatment Effect Estimation) package facilitates direct adjustment
