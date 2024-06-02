@@ -12,7 +12,7 @@ rct_design(), rd_design() or obs_design()."><meta property="og:image" content="w
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,15 +71,7 @@ rct_design(), rd_design() or obs_design()."><meta property="og:image" content="w
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.new_Design</span><span class="op">(</span></span>
-<span>  <span class="va">form</span>,</span>
-<span>  <span class="va">data</span>,</span>
-<span>  <span class="va">type</span>,</span>
-<span>  subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  call <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dichotomy <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  na.fail <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.new_Design</span><span class="op">(</span><span class="va">form</span>, <span class="va">data</span>, <span class="va">type</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, call <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -103,10 +95,6 @@ rct_design(), rd_design() or obs_design()."><meta property="og:image" content="w
 
 <dt>call</dt>
 <dd><p>The call generating the <code>Design</code>.</p></dd>
-
-
-<dt>dichotomy</dt>
-<dd><p>If present, the dichotomization formula</p></dd>
 
 
 <dt>na.fail</dt>

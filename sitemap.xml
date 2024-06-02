@@ -49,9 +49,6 @@
     <loc>www.github.com/reference/DesignSpecials.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/Design_extract_dichotomy.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/reference/Design_extractreplace.html</loc>
   </url>
   <url>
@@ -112,9 +109,6 @@
     <loc>www.github.com/reference/design_table.html</loc>
   </url>
   <url>
-    <loc>www.github.com/reference/design_treatment_status.html</loc>
-  </url>
-  <url>
     <loc>www.github.com/reference/designconversion.html</loc>
   </url>
   <url>
@@ -151,7 +145,13 @@
     <loc>www.github.com/reference/dot-expand.model.frame_teeMod.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/dot-expand_txt.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/dot-fallback_data_search.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/dot-find_dichotomies.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/dot-get_col_from_new_data.html</loc>
@@ -214,6 +214,9 @@
     <loc>www.github.com/reference/dot-update_structure.html</loc>
   </url>
   <url>
+    <loc>www.github.com/reference/dot-validate_dichotomy.html</loc>
+  </url>
+  <url>
     <loc>www.github.com/reference/dot-weights_calc.html</loc>
   </url>
   <url>
@@ -221,6 +224,9 @@
   </url>
   <url>
     <loc>www.github.com/reference/glmrob_methods.html</loc>
+  </url>
+  <url>
+    <loc>www.github.com/reference/has_binary_treatment.html</loc>
   </url>
   <url>
     <loc>www.github.com/reference/identical_Designs.html</loc>

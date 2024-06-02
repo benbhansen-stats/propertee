@@ -12,7 +12,7 @@ information."><meta property="og:image" content="www.github.com/logo.png"><!-- m
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,7 +71,7 @@ information.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_structure</span><span class="op">(</span><span class="va">design</span>, binary <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_structure</span><span class="op">(</span><span class="va">design</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for DesignStructure</span></span>
 <span><span class="fu">show</span><span class="op">(</span><span class="va">object</span><span class="op">)</span></span></code></pre></div>
@@ -81,12 +81,6 @@ information.</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
     <dl><dt>design</dt>
 <dd><p>a <code>Design</code> object</p></dd>
-
-
-<dt>binary</dt>
-<dd><p>default <code>FALSE</code>. If <code>TRUE</code> and the design contains a
-<code>dichotomy</code>, replace the treatment column with its binary
-representation. Has no effect if <code>design</code> is not dichotomized.</p></dd>
 
 
 <dt>object</dt>

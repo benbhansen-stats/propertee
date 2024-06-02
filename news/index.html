@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,9 +62,14 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.11" id="propertee-0311">propertee 0.3.11<a class="anchor" aria-label="anchor" href="#propertee-0311"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.4.0" id="propertee-040">propertee 0.4.0<a class="anchor" aria-label="anchor" href="#propertee-040"></a></h2>
 <div class="section level3">
-<h3 id="bug-fixes-0-3-11">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-11"></a></h3>
+<h3 id="new-features-0-4-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/lmitt.html">lmitt()</a></code>, weights calculation functions <code><a href="../reference/WeightCreators.html">ate()</a></code> and <code><a href="../reference/WeightCreators.html">ett()</a></code>, and assignment vector generation function <code><a href="../reference/AssignedAliases.html">assigned()</a></code> now accept a <code>dichotomy</code> argument that can be used for studies with time-varying treatment assignment. The <code>Design</code> object, unlike before, will not carry information about this dichotomization. Instead, the information stored there reflecting when units were assigned to treatment (if they were assigned to treatment) will be leveraged to create inverse probability of assignment weights and assignment indicators for datasets that have longitudinal data for the study units.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-0"></a></h3>
 <ul><li>Standard error calculations no longer error when a <code>by</code> column is used to uniquely identify rows in the covariance adjustment or effect estimation sample that cannot be distinguished with information in the <code>Design</code> alone</li>
 </ul></div>
 </div>

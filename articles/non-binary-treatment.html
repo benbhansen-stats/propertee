@@ -33,7 +33,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,7 +91,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Non-binary Treatment Specification</h1>
             
-            <h4 data-toc-skip class="date">2024-05-31</h4>
+            <h4 data-toc-skip class="date">2024-06-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/HEAD/vignettes/non-binary-treatment.Rmd" class="external-link"><code>vignettes/non-binary-treatment.Rmd</code></a></small>
       <div class="d-none name"><code>non-binary-treatment.Rmd</code></div>
@@ -134,28 +134,31 @@ characters</a>.</p>
 <p><code>factor</code> and <code>ordered</code> objects are tricky to
 deal with, so while a <code>Design</code> can be created with
 <code>factor</code> or <code>ordered</code> treatment variables,
-<code><a href="../reference/lmitt.html">lmitt()</a></code> will refuse to estimate a model. It is strongly
-recommended to recode the variable into <code>numeric</code> or
-<code>character</code>, or you can use <a href="#dichotomzing-a-non-binary-treatment"><code>dichotomy</code></a>
+<code><a href="../reference/lmitt.html">lmitt()</a></code> will refuse to estimate a model unless it is also
+provided a <a href="#dichotomzing-a-non-binary-treatment"><code>dichotomy</code></a>
 (see below).</p>
-<p>Note that weights (<code><a href="../reference/WeightCreators.html">ate()</a></code> or <code><a href="../reference/WeightCreators.html">ett()</a></code>, or
-<code>weights="ate"</code> or <code>weights ="ett"</code>) only support
-binary treatment variables and will error on anything except binary
-<code>numeric</code> or <code>logical</code>.</p>
 <div class="section level3">
 <h3 id="dichotomzing-a-non-binary-treatment">Dichotomzing a Non-binary Treatment<a class="anchor" aria-label="anchor" href="#dichotomzing-a-non-binary-treatment"></a>
 </h3>
-<p>The <a href="../reference/Design_objects.html"><code>Design</code></a> creation
-functions and <code><a href="../reference/WeightCreators.html">ett()</a></code>/<code><a href="../reference/WeightCreators.html">ate()</a></code> support a
-<code>dichotomy=</code> argument. A <code>dichotomy</code> is presented
-as a formula, where the left-hand side is a logical statement defining
-inclusion in the treatment group, and the right-hand side is a logical
-statement defining inclusion in the control group. For example,</p>
+<p>Studies may offer treatment to units at different times or provide
+treatment to units in varying intensities. Researchers may be interested
+in estimating treatment effects at different times or given a certain
+threshold of provided treatment, however. <code>propertee</code>
+accommodates these wishes by storing the time or intensity of treatment
+for treated units in the <a href="../reference/Design_objects.html"><code>Design</code></a>, then
+offering a <code>dichotomy=</code> argument to the weights calculation
+functions <code><a href="../reference/WeightCreators.html">ett()</a></code>/<code><a href="../reference/WeightCreators.html">ate()</a></code> and the assginment
+creation function <code><a href="../reference/AssignedAliases.html">assigned()</a></code> A <code>dichotomy</code> is
+presented as a formula, where the left-hand side is a logical statement
+defining inclusion in the treatment group, and the right-hand side is a
+logical statement defining inclusion in the control group. For example,
+if <code>dose</code> represents the intensity of a given treatment, we
+could set a threshold of 200, say, mg:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dose</span> <span class="op">&gt;</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">200</span></span></code></pre></div>
-<p>defines that all units of assignment with <code>dose</code> above 200
-are treated units, and all units of assignment with <code>dose</code> of
-200 or below are control units.</p>
+<p>All units of assignment with <code>dose</code> above 200 are treated
+units, and all units of assignment with <code>dose</code> of 200 or
+below are control units.</p>
 <p>A <code>.</code> can be used to define either group as the inverse of
 the other. For example, the above dichotomy could be defined as either
 of</p>
@@ -173,7 +176,6 @@ ignored in the estimation of treatment effects.</p>
 <div class="section level3">
 <h3 id="an-example">An Example<a class="anchor" aria-label="anchor" href="#an-example"></a>
 </h3>
-<p>We place the dichotomy directly in a <code>Design</code> object:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">simdata</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">simdata</span><span class="op">$</span><span class="va">dose</span><span class="op">)</span></span>
@@ -199,54 +201,11 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt; 2 smaller treatment groups excluded.</span></span>
 <span><span class="co">#&gt; Use `dtable` function to view full results.</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/Design_extract_dichotomy.html">dichotomy</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Randomized Control Trial</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Structure          Variables </span></span>
-<span><span class="co">#&gt;  ---------          --------- </span></span>
-<span><span class="co">#&gt;  Treatment          dose      </span></span>
-<span><span class="co">#&gt;  Unit of Assignment uoa1, uoa2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Dichotomy rule: dose &gt;= 300 ~ dose &lt;= 100</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of units per Treatment group: </span></span>
-<span><span class="co">#&gt;  Txt Grp Num Units</span></span>
-<span><span class="co">#&gt;        0         4</span></span>
-<span><span class="co">#&gt;        1         2</span></span></code></pre></div>
-<p>You can also place the <code>dichotomy</code> in the
-<code>_design()</code> call direcly:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">des2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
-<span>                   dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">des2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Randomized Control Trial</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Structure          Variables </span></span>
-<span><span class="co">#&gt;  ---------          --------- </span></span>
-<span><span class="co">#&gt;  Treatment          dose      </span></span>
-<span><span class="co">#&gt;  Unit of Assignment uoa1, uoa2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Dichotomy rule: dose &gt;= 300 ~ dose &lt;= 100</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Number of units per Treatment group: </span></span>
-<span><span class="co">#&gt;  Txt Grp Num Units</span></span>
-<span><span class="co">#&gt;        0         4</span></span>
-<span><span class="co">#&gt;        1         2</span></span></code></pre></div>
-<p>Alternatively, a <code>dichotomy</code> can be passed to
-<code><a href="../reference/WeightCreators.html">ate()</a></code>/<code><a href="../reference/WeightCreators.html">ett()</a></code> functions. If the
-<code>Design</code> already has a <code>dichotomy</code>, it will be
-used, but passing an additional <code>dichotomy</code> to the weight
-functions replaces the <code>Design</code>’s <code>dichotomy</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1.5 1.5 1.5 1.5 0.0 0.0</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des2</span>, data <span class="op">=</span> <span class="va">simdata</span>,</span>
-<span>         dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">!=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">.</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in .weights_calc(design = design, target = "ate", dichotomy =</span></span>
-<span><span class="co">#&gt; dichotomy, : design is already dichotomized; over-writing with new `dichotomy`</span></span>
-<span><span class="co">#&gt; [1] 1.25 1.25 1.25 1.25 1.25 1.25</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/AssignedAliases.html">assigned</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1]  0  0  0  0 NA NA</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

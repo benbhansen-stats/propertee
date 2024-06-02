@@ -12,7 +12,7 @@ enabling their extraction or replacement."><meta property="og:image" content="ww
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,10 +71,10 @@ enabling their extraction or replacement.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, binary <span class="op">=</span> <span class="cn">FALSE</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S4 method for Design</span></span>
-<span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, binary <span class="op">=</span> <span class="cn">FALSE</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span>, newdata <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">treatment</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">value</span></span>
 <span></span>
@@ -140,16 +140,17 @@ enabling their extraction or replacement.</p>
 <dd><p>a <code>Design</code> object</p></dd>
 
 
-<dt>binary</dt>
-<dd><p>Controls whether a <code>dichotomy</code> is applied before
-returning the treatment variable. See <code>Details</code>.</p></dd>
-
-
 <dt>newdata</dt>
 <dd><p>optional; an additional <code>data.frame</code>. If passed, and the
 unit of assignment variable is found in <code>newdata</code>, then the requested
 variable type for each unit of <code>newdata</code> is returned. See <code>by</code>
 argument if the name of the unit of assignment differs.</p></dd>
+
+
+<dt>dichotomy</dt>
+<dd><p>optional; a formula specifying how to dichotomize
+a non-binary treatment variable. See the Details section of the <code><a href="WeightCreators.html">ett()</a></code>
+or <code>att()</code> help pages for information on specifying this formula</p></dd>
 
 
 <dt>by</dt>
@@ -184,18 +185,13 @@ as well. See <code>Details</code>.</p></dd>
 treatment variable passed into the <code>Design</code> is returned as a
 one-column <code>data.frame</code> regardless of whether it is binary or
 <code>x</code> has a <code>dichotomy</code></p>
-<p>If <code>binary = TRUE</code> is passed, and the <code>Design</code> either has a
-binary treatment variable, or has a <code>dichotomy</code>, a binary one-column
-<code>data.frame</code> will be returned. If the <code>Design</code> does not have
-access to binary treatment (non-binary treatment and no <code>dichotomy</code>
-specified), passing <code>binary = TRUE</code> will error.</p>
-<p><code>binary = "ifany"</code> is the most permissible; returning the
-dichotomized treatment variable if <code>@dichotomy</code> exists, otherwise
-returning the original treatment without error.</p>
+<p>If a <code>dichotomy</code> is passed, a binary one-column <code>data.frame</code> will
+be returned. If not and <code>binary</code> is <code>TRUE</code>, unless the <code>Design</code>
+has a binary treatment, <code>treatment()</code> will error. If <code>binary</code> is
+<code>"ifany"</code>, it will return the original treatment in this case.</p>
 <p>The one-column <code>data.frame</code> returned by <code>treatment()</code> is named as
-entered in the <code>Design</code> creation, but if a <code>dichotomy</code> is in the
-<code>Design</code>, the column name is <code>"__z"</code> to try and avoid any name
-conflicts.</p>
+entered in the <code>Design</code> creation, but if a <code>dichotomy</code> is passed,
+the column name is <code>"__z"</code> to try and avoid any name conflicts.</p>
 <p>For the <code>value</code> when using replacers, the replacement must have the
 same number of rows as the <code>Design</code> (the same number of units of
 assignment). The number of columns can differ (e.g. if the <code>Design</code>

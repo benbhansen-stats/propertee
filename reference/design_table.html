@@ -12,7 +12,7 @@ is specified) of the elements of the Design."><meta property="og:image" content=
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,7 +78,6 @@ is specified) of the elements of the <code>Design</code>.</p>
 <span>  sort <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  decreasing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  use_var_names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  treatment_binary <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -89,7 +88,6 @@ is specified) of the elements of the <code>Design</code>.</p>
 <span>  sort <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  decreasing <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  use_var_names <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  treatment_binary <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -127,13 +125,6 @@ descending (<code>TRUE</code>, default) or ascending (<code>FALSE</code>).</p></
 variable names. If <code>FALSE</code> (default), name by their function (e.g.
 "treatment" or "blocks"). Passing the <code>dnn</code> argument in <code>...</code>
 (an argument of <code><a href="https://rdrr.io/r/base/table.html" class="external-link">table()</a></code>) overrides whatever is requested here.</p></dd>
-
-
-<dt>treatment_binary</dt>
-<dd><p>Should the treatment (if requested) be dichotomized
-of <code>design</code> contains a <code>dichotomy</code>? Ignored if <code>design</code>
-does not contain a <code>dichotomy</code>, or if neither <code>x</code> or <code>y</code> is
-"treatment".</p></dd>
 
 
 <dt>...</dt>

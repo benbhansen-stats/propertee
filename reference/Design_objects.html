@@ -14,7 +14,7 @@ regression discontinuity Design (rd_design())."><meta property="og:image" conten
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,11 +74,11 @@ regression discontinuity Design (<code>rd_design()</code>).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rct_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rct_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">rd_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">rd_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">obs_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">obs_design</span><span class="op">(</span><span class="va">formula</span>, <span class="va">data</span>, subset <span class="op">=</span> <span class="cn">NULL</span>, na.fail <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -98,12 +98,6 @@ assignment (as opposed to the units of analysis).</p></dd>
 <dt>subset</dt>
 <dd><p>optional, subset the data before creating the <code>Design</code>
 object</p></dd>
-
-
-<dt>dichotomy</dt>
-<dd><p>optional, a formula defining the dichotomy of the treatment
-variable if it isn't already 0/1 or <code>logical</code>. See the <code><a href="Design_extract_dichotomy.html">dichotomy()</a></code>
-function for details.</p></dd>
 
 
 <dt>na.fail</dt>
@@ -138,11 +132,8 @@ example, <code>factor</code> and <code>ordered</code> are converted to <code>num
 if the levels are <code>numeric</code>, otherwise to <code>character</code>). If the
 treatment is not <code>logical</code> or <code>numeric</code> with only values 0 and
 1, in order to generate weights with <code><a href="WeightCreators.html">ate()</a></code> or <code><a href="WeightCreators.html">ett()</a></code>, the
-<code>dichotomy</code> argument must be used to identify the treatment and
-control groups. The <code>Design</code> creation functions (<code>rct_design()</code>,
-<code>rd_design()</code>, <code>obs_design()</code>) all support the <code>dichotomy</code>
-argument, or instead <code>dichotomy</code> can be passed to <code><a href="WeightCreators.html">ett()</a></code> and <code><a href="WeightCreators.html">ate()</a></code>
-directly. See <code><a href="Design_extract_dichotomy.html">dichotomy()</a></code> for more details on specifying a
+<code>dichotomy</code> argument must be used in those functions to identify the
+treatment and control groups. See <code><a href="WeightCreators.html">ett()</a></code> for more details on specifying a
 <code>dichotomy</code>.</p>
     </div>
 

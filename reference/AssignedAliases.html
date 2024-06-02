@@ -12,7 +12,7 @@ the treatment variable specified in the Design."><meta property="og:image" conte
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,13 +71,13 @@ the treatment variable specified in the <code>Design</code>.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">assigned</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">assigned</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">adopters</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">adopters</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">a.</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">a.</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">z.</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">z.</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -94,6 +94,15 @@ found), the <code>Design</code> can be passed diretly.</p></dd>
 identify the appropriate data, if this fails (or you want to overwrite
 it), you can pass the data here.</p></dd>
 
+
+<dt>dichotomy</dt>
+<dd><p>optional; a formula defining the dichotomy of the treatment
+variable if it isn't already <code>0</code>/<code>1</code>. See details for more information.
+If <code><a href="WeightCreators.html">ett()</a></code> or <code><a href="WeightCreators.html">ate()</a></code> is
+called within a <code><a href="lmitt.html">lmitt()</a></code> call that specifies a <code>dichotomy</code>
+argument, that <code>dichotomy</code> will be used if the argument here has not
+been specified.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -108,10 +117,10 @@ variable in the <code>formula</code> passed to <code><a href="https://rdrr.io/r/
 Rather than placing the treatment variable directly in the <code>formula</code>,
 use one of these functions, to allow <code><a href="lmitt.html">lmitt()</a></code> to identify the treatment
 variable.</p>
-<p>The <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> call must include either weights (via <code><a href="WeightCreators.html">ate()</a></code> or
-<code><a href="WeightCreators.html">ett()</a></code> being passed to the <code>weights=</code> argument) or a covariance
-adjustment model (via <code><a href="cov_adj.html">cov_adj()</a></code> being passed to the <code>offset=</code>
-argument). In this case, no arguments are needed to these functions.</p>
+<p>To keep the formula in the <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> call concise, instead of passing
+<code>design</code> and <code>data</code> arguments to these functions, one can
+pass a <code>WeightedDesign</code> object to the <code>weights</code> argument of the
+<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> call or a <code>SandwichLayer</code> object to the <code>offset</code> argument.</p>
 <p>Alternatively, you can pass the <code>design</code> and <code>data</code> arguments.</p>
 <p>While <code>assigned()</code> can be used in any situation, it is most useful
 for scenarios where the treatment variable is non-binary and the

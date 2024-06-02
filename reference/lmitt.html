@@ -12,7 +12,7 @@ with proper estimation of variances accounting for the study design."><meta prop
     
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.4.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,7 +100,10 @@ using <code><a href="Design_objects.html">rct_design()</a></code>.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>.</p></dd>
+<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. One such argument is
+<code>dichotomy</code>, which can be used to dichotomize a non-binary treatment
+variable in <code>design</code>. See the Details section of the <code><a href="WeightCreators.html">ett()</a></code> or
+<code>att()</code> help pages for information on specifying this formula.</p></dd>
 
 
 <dt>absorb</dt>
