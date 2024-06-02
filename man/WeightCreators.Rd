@@ -83,7 +83,9 @@ treatment, for example, \code{dose > 300 ~ dose < 200} does not assign
 equivalent to manually generating a binary variable with \code{NA}
 whenever \code{dose} is between 200 and 300. Standard errors will reflect
 the sizes of the comparison groups specified by the \code{dichotomy}.
-}
+
+Code for the computation of the weights was contributed by Tim Lycurgus.
+
 \examples{
 data(simdata)
 des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)

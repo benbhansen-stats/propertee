@@ -49,6 +49,8 @@
 ##'   whenever \code{dose} is between 200 and 300. Standard errors will reflect
 ##'   the sizes of the comparison groups specified by the \code{dichotomy}.
 ##'
+##'   Code for the computation of the weights was contributed by Tim Lycurgus.
+##'
 ##' @param design optional; a \code{Design} object created by one of
 ##'   \code{rct_design()}, \code{rd_design()}, or \code{obs_design()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment

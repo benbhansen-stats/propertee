@@ -76,12 +76,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {
       }
   }
 
-  ca_and_grad <- .get_ca_and_prediction_gradient(model, newdata)
-  psl <- new("PreSandwichLayer",
-             ca_and_grad$ca,
-             fitted_covariance_model = model,
-             prediction_gradient = ca_and_grad$prediction_gradient)
-
+  psl <- .make_PreSandwichLayer(model, newdata)
 
   if (is.null(design)) {
     return(psl)

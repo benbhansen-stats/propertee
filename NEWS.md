@@ -1,3 +1,14 @@
+# propertee 0.3.11
+
+## Bug Fixes
+* Standard error calculations no longer error when a `by` column is used to uniquely identify rows in the covariance adjustment or effect estimation sample that cannot be distinguished with information in the `Design` alone
+
+# propertee 0.3.10
+
+## Bug Fixes
+* Linking unit of assignments to clusters for variance estimation no longer errors when `Design` objects are created with a `tibble`
+* `cov_adj()` does not error with covariance adjustment models fit with `robustbase::glmrob()`
+
 # propertee 0.3.9
 
 ## Bug Fixes

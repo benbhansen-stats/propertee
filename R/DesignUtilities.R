@@ -218,7 +218,7 @@ identify_small_blocks <- function(des) {
     stop(paste("Could not find", cluster, "column in the design data"))
   }
 
-  q_df <- q_df[, c(uoa_cols, cluster), drop = FALSE]
+  q_df <- q_df[, unique(c(uoa_cols, cluster)), drop = FALSE]
   grab_uoas_fn <- switch(
     des@unit_of_assignment_type,
     "unitid" = unitids,
