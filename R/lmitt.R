@@ -282,7 +282,7 @@ lmitt.formula <- function(obj,
     moderator <- rhs
   }
   mm.call <- lm.call
-  mm.call[[2]] <- str2lang(deparse(new.form))
+  mm.call[[2]] <- str2lang(paste(deparse(new.form, width.cutoff = 500L), collapse = ""))
   # model.matrix.lm supports as `na.action` argument where
   # model.matrix.default doesn't
   mm.call[[1]] <- quote(stats::model.matrix.lm)

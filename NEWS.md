@@ -1,3 +1,8 @@
+# propertee 0.4.1
+
+## Bug Fixes
+* Fixed bug where use of `dichotomy` and moderator variables in `lmitt()` could lead to errors due to too long of a formula.
+
 # propertee 0.4.0
 
 ## New Features
