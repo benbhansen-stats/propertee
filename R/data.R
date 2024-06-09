@@ -96,7 +96,7 @@
 #' @rdname studentdata
 "studentdata"
 
-#' @title Intervention data from a pair-matched study of schools
+#' @title Intervention data from a pair-matched study of schools in Michigan
 #'
 #' @description Schools matched into pairs or triplets approximating the subset
 #' of participating schools in Pane et al. (2014) from Michigan
@@ -105,4 +105,4 @@
 #'
 #' @format  A \code{data.frame} with 14 rows and 3 columns.
 #' @keywords dataset
-"paireddata"
+"michigan_school_pairs"

@@ -12,14 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Overview
 The `propertee` package offers tools for enhancing evaluations of treatments, policies, and interventions that respect the statistical properties endowed by the study design. One such offering is a routine for covariance adjustment that allows researchers to model exogenous variation in outcomes of interest using data from their study as well as available auxiliary data. `propertee` accommodates linear, generalized linear, and robust regression models, providing users flexibility in functional form, fitting procedure, and fitting sample.
 
-This vignette serves as a step-by-step walkthrough of how users can use a prior covariance  adjustment model fit to inform estimates of intervention effects--as well as associated standard errors--with the software in `propertee`. We approximate a pair-matched study of high schools analyzed in Pane et al. (2014) using publicly available data. To maintain anonymity of the schools that participated in the original study, we replace them with similar schools from the neighboring Michigan county of Oakland.
+This vignette serves as a step-by-step walkthrough of how users can use a prior covariance  adjustment model fit to inform estimates of intervention effects--as well as associated standard errors--with the software in `propertee`. We approximate a pair-matched study of high schools analyzed in Pane et al. (2014) using publicly available data. To maintain anonymity of the schools that participated in the original study, we replace them with similar schools from the neighboring Michigan county of Oakland. The replacement schools in the intervention group did not, to our knowledge, actually implement any intervention. As a result, we expect in the demonstration that follows to find no evidence for an effect.
 
 ## Data
 To run this vignette, first download the necessary data. We will use school-level averages of student performance on the Michigan Merit Examination (MME) in 2014 to measure intervention effects, and we will use school-level averages of scores on the 2012 and 2013 tests as covariates in our covariance adjustment model. These scores can be downloaded as a zipped file from the [Michigan Department of Education website](https://mischooldata.org/historical-assessment-data-files/). After unzipping that file, convert the resulting .xls file to a .csv to facilitate the use of base R commands for loading it into an R session.
 
 We also use school-level characteristics from the [Common Core of Data](https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:28,Page:1) in the covariance adjustment model. Click on the link provided here, and download the "Flat File" for the 2013-2014 Public Elementary/Secondary School Universe Survey under "Data File". We can use base R commands to load in the unzipped .txt file.
 
-The last necessary file can be be loaded from the `propertee` package by calling `data(paireddata)`. This dataframe tracks which schools were paired together in the study and which schools were assigned to intervention and control.
+The last necessary file can be be loaded from the `propertee` package by calling `data(michigan_school_pairs)`. This dataframe tracks which schools were paired together in the study and which schools were assigned to intervention and control.
 
 ## Package Installation
 This vignette requires the installation of two packages, `propertee` being the first and `robustbase` being the second. `robustbase` provides functionality for outlier-robust regressions. We use it here to demonstrate how `propertee` can handle alternatives to ordinary least squares for covariance adjustment modeling.
@@ -35,15 +35,15 @@ if (!require("propertee")) library(propertee)
 
 all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
 ccd <- read.delim("sc132a.txt")
-data(paireddata)
+data(michigan_school_pairs)
 source("clean_data.R")
 ```
 
 #### Creating the `Design` Object
-The first step in estimating intervention effects using `propertee` is to create a `Design` object. This will store the information from `paireddata` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. In studies where units of observation within units of assignment are used to estimate intervention effects--for example, if we had student-level scores data--this data structure would also facilitate the definition of a vector of assignment indicators at the unit of observation level we could use for estimating the intervention effect. `propertee`'s `rct_design()` function takes in information about the study design as a formula. The lefthand side indicates the assignment variable, and the righthand side indicates the unit of assignment and, if applicable, matched set variables. The `Design` object's `structure` slot shows a comprehensive summary of the design.
+The first step in estimating intervention effects using `propertee` is to create a `Design` object. This will store the information from `michigan_school_pairs` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. In studies where units of observation within units of assignment are used to estimate intervention effects--for example, if we had student-level scores data--this data structure would also facilitate the definition of a vector of assignment indicators at the unit of observation level we could use for estimating the intervention effect. `propertee`'s `rct_design()` function takes in information about the study design as a formula. The lefthand side indicates the assignment variable, and the righthand side indicates the unit of assignment and, if applicable, matched set variables. The `Design` object's `structure` slot shows a comprehensive summary of the design.
 
 ```{r}
-des <- rct_design(z ~ unitid(schoolid) + block(blk), paireddata)
+des <- rct_design(z ~ unitid(schoolid) + block(blk), michigan_school_pairs)
 des@structure
 ```
 
@@ -87,22 +87,22 @@ county_camod_dat <- analysis1data[not_missing_resp & not_missing_covs,]
 camod_form <- as.formula(
   paste0(RESPONSE_COL, "~", paste(MODELING_COLS, collapse = "+")))
 lm_county_camod <- lm(camod_form, county_camod_dat,
-                      weights = county_camod_dat$TOTAL_ENROLLMENT)
+                      weights = county_camod_dat$Total.Tested.2014)
 ```
 
 ```{r}
 set.seed(650)
 rob_county_camod <- robustbase::lmrob(
-  camod_form, county_camod_dat, weights = county_camod_dat$TOTAL_ENROLLMENT,
+  camod_form, county_camod_dat, weights = county_camod_dat$Total.Tested.2014,
   control = robustbase::lmrob.control(max.it = 500L))
 ```
 
 #### Estimating Marginal Intervention Effects
-With the `Design` object created and the covariance adjustment model fit, we're prepared to evaluate the intervention. `propertee` supports calculations of inverse probability of assignment weights appropriate for estimating either the average intervention effect (ATE) or the average effect of the intervention on those in the intervention group (ETT). In this analysis and the one that follows, we demonstrate estimation of the ATE. We calculate weights using `propertee`'s `ate()` function, then generate predictions from the covariance adjustment model using its `cov_adj()` function. We then pass these to the `weights` and `offset` arguments, respectively, of the `lmitt()` function, a function that looks almost exactly like the base R function for linear regression, `lm()`. The only major difference is that `lmitt()` expects a `design` argument, where we will pass the `Design` object we created. The summary of a fitted `lmitt()` model, which is called a `teeMod`, shows the estimated intervention effect and the estimated standard error that has propagated uncertainty from the covariance adjustment regression.
+With the `Design` object created and the covariance adjustment model fit, we're prepared to evaluate the intervention. `propertee` supports calculations of inverse probability of assignment weights appropriate for estimating either the average intervention effect (ATE) or the average effect of the intervention on those in the intervention group (ETT). These weights can be combined with additional unit weights to reflect varying sizes of units in the sample. In this analysis and the one that follows, we estimate the student-level ATE by calculating inverse probability of assignment weights for each school using the `ate()` function, then multiplying those weights by the number of students at the corresponding school who took the test. We incorporate the prognostic model using the `cov_adj()` function, which generates model predictions for each school and identifies overlap between the prognostic sample and the study sample. To estimate the intervention effect, we pass the weights to the `weights` argument and the predictions to the `offset` argument of the `lmitt()` function, a function that looks almost exactly like the base R function for linear regression, `lm()`. The only major difference is that `lmitt()` expects a `design` argument, where we will pass the `Design` object we created. The summary of a fitted `lmitt()` model, which is called a `teeMod`, shows the estimated intervention effect and the estimated standard error that has propagated uncertainty from the covariance adjustment regression.
 
 ```{r}
-study1data <- merge(paireddata, analysis1data, by = "schoolid", all.x = TRUE)
-ip_wts <- propertee::ate(des, data = study1data)
+study1data <- merge(michigan_school_pairs, analysis1data, by = "schoolid", all.x = TRUE)
+ip_wts <- propertee::ate(des, data = study1data) * study1data$Total.Tested.2014
 lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study1data, design = des)
 ```
 
@@ -142,12 +142,12 @@ county_mod_camod_dat <- analysis2data[not_missing_resp & not_missing_covs,]
 
 mod_camod_form <- update(camod_form, . ~ . + factor(DemographicGroup))
 lm_county_mod_camod <- lm(mod_camod_form, county_mod_camod_dat,
-                          weights = county_mod_camod_dat$TOTAL_ENROLLMENT)
+                          weights = county_mod_camod_dat$Total.Tested.2014)
 
-study2data <- merge(paireddata, analysis2data, by = "schoolid", all.x = TRUE)
+study2data <- merge(michigan_school_pairs, analysis2data, by = "schoolid", all.x = TRUE)
 study2data <- study2data[study2data$DemographicGroup %in%
                            c("White", "Black or African American"),]
-ip_wts <- propertee::ate(des, data = study2data)
+ip_wts <- propertee::ate(des, data = study2data) * study2data$Total.Tested.2014
 lm_mod_ca <- propertee::cov_adj(lm_county_mod_camod, newdata = study2data,
                                 design = des, by = "uniqueid")
 mod_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~ DemographicGroup"))
