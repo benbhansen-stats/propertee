@@ -1,19 +1,5 @@
 #' @include WeightedDesign.R
 NULL
-# The above ensures that `WeightedDesign` is defined prior to
-# `CombinedWeightedDesign`
-
-setClass("CombinedWeightedDesign",
-         contains = "WeightedDesign",
-         slots = c(dichotomies = "list",
-                   keys = "list"))
-
-setValidity("CombinedWeightedDesign", function(object) {
-  if (length(object@dichotomies) != length(object@keys)) {
-    return("discrepancy between length of @dichotomies and @keys")
-  }
-  return(TRUE)
-})
 
 ##' @title Concatenate weights
 ##'

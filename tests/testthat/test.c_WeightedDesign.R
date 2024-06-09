@@ -51,10 +51,7 @@ test_that("Combining weighted designs with different dichotomys ", {
                    cbind(simdata[11:30, ], w=w2),
                    cbind(simdata[31:50, ], w=w3))
   expect_s4_class(data_w$w, "numeric")
-  ##would prefer the following were true:
   expect_true(inherits(data_w$w, "WeightedDesign"))
-  expect_false(inherits(data_w$w, "CombinedWeightedDesign"))
-  ##ToDo: WD's combined using `rbind()` should give CWD's
 })
 
 test_that("Combine WeightedDesigns & align weights with analysis data",{
@@ -93,25 +90,20 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     expect_length(w0, length(w20)+length(w21))
     expect_true(inherits(w0, "numeric"))
     expect_false(inherits(w0, "WeightedDesign"))
-    expect_false(inherits(w0, "CombinedWeightedDesign"))
-
 
 ### Bringing the weights back into the data frame is easier
 ### if you're happy to reorder the data.
     mf_dat <- cbind(analysis_dat[order(analysis_dat$year),], w0)
     expect_identical(mf_dat$w0, w0)
 
-### Let obvious how to put w0 into the same order as the
-### rows of analysis_dat.  Users might try the following.
+### Users might try the following to put w0 into the same order as the
+### rows of analysis_dat.
     analysis_dat$w0 <- numeric(12)
     analysis_dat[analysis_dat$year=="AY20","w0"] <- w20
     analysis_dat[analysis_dat$year=="AY21","w0"] <- w21
     expect_true(inherits(analysis_dat$w0, "numeric"))
     expect_false(inherits(analysis_dat$w0, "WeightedDesign"))
-    expect_false(inherits(analysis_dat$w0, "CombinedWeightedDesign"))
-    ## rather, this workflow requires us to make sure a_d$w0 is a
-    ## WeightedDesign &/or CombinedWeightedDesign from the get-go.
-    ## One way to do this:
+
     analysis_dat$w0 <- w0
     expect_true(inherits(analysis_dat$w0, "numeric"))
     analysis_dat[which(analysis_dat$year=="AY20"), "w0"]  <- w20
@@ -126,11 +118,6 @@ test_that("Combine WeightedDesigns & align weights with analysis data",{
     ) |> unsplit(analysis_dat$year)
     expect_s4_class(analysis_dat$w1, "WeightedDesign")
     expect_equal(analysis_dat$w1@.Data, analysis_dat$w0@.Data)
-    
-    ## ...except that the below should really be `TRUE`:
-    expect_false(inherits(analysis_dat$w1, "CombinedWeightedDesign"))
-    ## ToDo: Ensure that `unsplit()`, `split<-` etc create
-    ## CWDs carrying appropriate info
 
 ### (One might hope to use tapply instead of lapply, but I couldn't find
 ###    a `dichotomy=` formula that's compatible with that mechanism.)
