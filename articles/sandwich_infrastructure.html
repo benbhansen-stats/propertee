@@ -92,8 +92,8 @@
       <img src="../logo.png" class="logo" alt=""><h1>Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model</h1>
                         <h4 data-toc-skip class="author">Ben Hansen</h4>
             
-            <h4 data-toc-skip class="date">April 2022 (+ non-substantive
-updates in May ’22)</h4>
+            <h4 data-toc-skip class="date">April 2022 (+ subsequent
+non-substantive updates)</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/HEAD/vignettes/sandwich_infrastructure.Rmd" class="external-link"><code>vignettes/sandwich_infrastructure.Rmd</code></a></small>
       <div class="d-none name"><code>sandwich_infrastructure.Rmd</code></div>
@@ -116,14 +116,15 @@ covariance and quasiexperimental samples, potentially at different
 levels of aggregation. For instance <code>C</code> might give student
 data while <code>Q_</code> is a table of classrooms. The samples they
 describe may be disjoint, identical or overlapping.</p>
-<p>Next she uses <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> (or perhaps an
-<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>-wrapper we’ll offer) to calculate directly adjusted<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Much or all of what’s said here can later be made to
+<p>Next she uses <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> (or propertee’s
+<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>-wrapper, <code><a href="../reference/lmitt.html">lmitt()</a></code>) to calculate directly
+adjusted<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Much or all of what’s said here can later be made to
 apply with intention-to-treat models of nearby forms, for example
 &lt;code&gt;lm(promotion ~ treat + cov_adj(covmod), data=Q, weights=ate(des))&lt;/code&gt;
 or &lt;code&gt;lm(promotion ~ treat * cov_adj(covmod), &amp;lt;...&amp;gt;)&lt;/code&gt;.
 But for now our focus is covariance modeling followed by direct
-adjustment, ie what’s shown in the display.&lt;/p&gt;"><sup>1</sup></a> estimates
-of an intention-to-treat effect:</p>
+adjustment, ie what’s shown in the display.&lt;/p&gt;"><sup>1</sup></a>
+estimates of an intention-to-treat effect:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">promotion</span> <span class="op">~</span> <span class="va">treat</span> <span class="op">*</span> <span class="va">gender</span>, data <span class="op">=</span> <span class="va">Q</span>,</span>
 <span>        offset <span class="op">=</span> <span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">cmod</span><span class="op">)</span>,</span>
@@ -138,12 +139,12 @@ assignment type.</p>
 <p>At this point <code>m</code> has class <code>lm</code>, but with
 additional information tucked away in <code>m[['model']]</code>: this
 data frame will have special columns <code>(weights)</code> and
-<code>offset(cov_adj(cmod))</code>. As of this writing, the
-<strong>propertee</strong> package implements an S4 class
-<code>WeightedDesign</code> that extends the base numeric vector type
-and encodes information beyond unit weights necessary for standard error
-calculations, and arranges that <code>m[['model']][['(weights)']]</code>
-is of this type. This note describes two planned classes appropriate for
+<code>offset(cov_adj(cmod))</code>. The <strong>propertee</strong>
+package implements an S4 class <code>WeightedDesign</code> that extends
+the base numeric vector type and encodes information beyond unit weights
+necessary for standard error calculations, and arranges that
+<code>m[['model']][['(weights)']]</code> is of this type. This note
+describes two classes appropriate for
 <code>m[['model']][['offset(cov_adj(cmod))']]</code>:
 <code>SandwichLayer</code>, and a fallback option
 <code>PreSandwichLayer</code>, for use when the call to
@@ -236,7 +237,7 @@ estimating-equation covariance matrices <span class="math inline">\(A_{11}\)</sp
 adjustment model’s are <span class="math inline">\(\psi(\tilde{\mathbf{Y}}, \tau, \alpha)\)</span>,
 the <code>treat</code> coefficients being <span class="math inline">\(\tau\)</span>, with sandwich components <span class="math inline">\(A_{22}\)</span> and <span class="math inline">\(B_{22}\)</span>. (The symbols “<span class="math inline">\(\phi()\)</span>”, “<span class="math inline">\(\psi()\)</span>” and “<span class="math inline">\(\alpha\)</span>” are used as Carroll et al use
 them, while our “<span class="math inline">\(\tau\)</span>” corresponds
-to their “<span class="math inline">\(\mathcal{B}\)</span>”.)</p>
+to their script-<span class="math inline">\({B}\)</span>.)</p>
 <p>We take <span class="math inline">\(i\)</span> to range over the
 units of assignment (clusters) not elements<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;We’ll need to aggregate (by summing) the elementwise
 estimating equation contributions to the cluster level, to form
@@ -245,19 +246,19 @@ development is missing <span class="math inline">\(n^{-1}\)</span>
 factors at the right of the equations defining <span class="math inline">\(A_{n,\, 11}, \ldots, B_{n,\, 22}\)</span>. To
 avoid ambiguities in mapping to external subroutines’ understanding of
 “<span class="math inline">\(n\)</span>”<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Carroll et al seem to have a single sample in mind,
-without clusters, whereas we have both &lt;span class="math inline"&gt;\(\mathcal{C}\)&lt;/span&gt; and &lt;span class="math inline"&gt;\(\mathcal{Q}\)&lt;/span&gt;, with or without clusters.
-Where necessary, we use &lt;span class="math inline"&gt;\(n_\mathcal{C}\)&lt;/span&gt; and &lt;span class="math inline"&gt;\(n_\mathcal{Q}\)&lt;/span&gt; for the unit-of-assignment
-counts in the two samples respectively.&lt;/p&gt;'><sup>3</sup></a>, let’s address the
+without clusters, whereas we have both &lt;span class="math inline"&gt;\({C}\)&lt;/span&gt; and &lt;span class="math inline"&gt;\({Q}\)&lt;/span&gt;, with or without clusters. Where
+necessary, we use &lt;span class="math inline"&gt;\(n_{C}\)&lt;/span&gt; and &lt;span class="math inline"&gt;\(n_{Q}\)&lt;/span&gt; for the unit-of-assignment counts
+in the two samples respectively.&lt;/p&gt;'><sup>3</sup></a>, let’s address the
 error by leaving those displays as-is, while striking the leading <span class="math inline">\(n^{-1}\)</span> factors from display (A.34) and
-from the subsequent expression for <span class="math inline">\(\mathrm{var}(\hat{\mathcal{B}})\)</span>: i.e.,
-turn the A and B matrices into sums not means. Carroll et al’s formulas
-for <span class="math inline">\(A_{11}\)</span>, <span class="math inline">\(A_{21}\)</span> and <span class="math inline">\(A_{22}\)</span> then apply, although design-based
+from the subsequent expression for <span class="math inline">\(\mathrm{var}(\hat{{B}})\)</span>: i.e., turn the A
+and B matrices into sums not means. Carroll et al’s formulas for <span class="math inline">\(A_{11}\)</span>, <span class="math inline">\(A_{21}\)</span> and <span class="math inline">\(A_{22}\)</span> then apply, although design-based
 standard errors call for different calculations of <span class="math inline">\(B_{11}\)</span>, <span class="math inline">\(B_{12}\)</span> and <span class="math inline">\(B_{22}\)</span>. (When we get around to putting
 the multidecker sandwich together, we’ll need to be cognizant of the
 fact that its As and Bs are means not sums, and ready to compensate for
 the fact that it will have divided by different <span class="math inline">\(ns\)</span> in figuring the means that are <span class="math inline">\(A_{11}\)</span> and <span class="math inline">\(A_{22}\)</span>, for example.) Denote the
 clusters/units of assignment that are represented in covariance and
-quasiexperimental samples by <span class="math inline">\(\mathcal{C}\)</span> and <span class="math inline">\(\mathcal{Q}\)</span> respectively.</p>
+quasiexperimental samples by <span class="math inline">\({C}\)</span>
+and <span class="math inline">\({Q}\)</span> respectively.</p>
 </div>
 <div class="section level2">
 <h2 id="required-materials-for-se-calculations">Required materials for SE calculations<a class="anchor" aria-label="anchor" href="#required-materials-for-se-calculations"></a>
@@ -265,45 +266,42 @@ quasiexperimental samples by <span class="math inline">\(\mathcal{C}\)</span> an
 <p>To estimate variances and covariances of <span class="math inline">\(\tau\)</span>, we’ll need to assemble the
 following materials.</p>
 <ol style="list-style-type: decimal">
-<li>Sufficient information about <span class="math inline">\(\mathcal{C}\)</span> and <span class="math inline">\(\mathcal{Q}\)</span> to identify their
-intersection <span class="math inline">\(\mathcal{C}\cap\mathcal{Q}\)</span>, as is needed
-to estimate <span class="math inline">\(B_{21}\)</span>;</li>
+<li>Sufficient information about <span class="math inline">\({C}\)</span> and <span class="math inline">\({Q}\)</span> to identify their intersection <span class="math inline">\({C}\cap{Q}\)</span>, as is needed to estimate
+<span class="math inline">\(B_{21}\)</span>;</li>
 <li>Matrices of estimating functions <span class="math inline">\(\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in
-\mathcal{C}\cap\mathcal{Q}\}\)</span> and <span class="math inline">\(\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau},
-\hat{\alpha}): i \in \mathcal{C}\cap\mathcal{Q}\}\)</span>, as are
-needed for <span class="math inline">\(B_{21}\)</span>;</li>
-<li>For the quasiexperimental sample <span class="math inline">\(\mathcal{Q}\)</span>, matrices <span class="math display">\[\nabla_{\alpha} \{\sum_{j \in
+{C}\cap{Q}\}\)</span> and <span class="math inline">\(\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau},
+\hat{\alpha}): i \in {C}\cap{Q}\}\)</span>, as are needed for <span class="math inline">\(B_{21}\)</span>;</li>
+<li>For the quasiexperimental sample <span class="math inline">\({Q}\)</span>, matrices <span class="math display">\[\nabla_{\alpha} \{\sum_{j \in
 i}\psi(\tilde{\mathbf{Y}}_j, \hat{\tau}, {\alpha}):
-i \in \mathcal{Q}\} \vert_{\alpha=\hat\alpha},\]</span> corresponding to
-<span class="math inline">\(A_{21}\)</span>, where “<span class="math inline">\(j \in i\)</span>” means “elements <span class="math inline">\(j\)</span> of cluster <span class="math inline">\(i\)</span>” and “<span class="math inline">\(\sum_{j \in i} \psi(\tilde{\mathbf{Y}}_j,
+i \in {Q}\} \vert_{\alpha=\hat\alpha},\]</span> corresponding to <span class="math inline">\(A_{21}\)</span>, where “<span class="math inline">\(j \in i\)</span>” means “elements <span class="math inline">\(j\)</span> of cluster <span class="math inline">\(i\)</span>” and “<span class="math inline">\(\sum_{j \in i} \psi(\tilde{\mathbf{Y}}_j,
 \hat{\tau}, {\alpha})\)</span>” is interpreted to mean “<span class="math inline">\(\psi(\tilde{\mathbf{Y}}_i, \hat{\tau},
 {\alpha})\)</span>” if there is no clustering;</li>
-<li>Estimates of the direct adjustment model’s “bread matrix” <span class="math inline">\((n_\mathcal{Q}^{-1} A_{22})^{-1} =
-\{\frac{1}{\# \mathcal{Q}}\nabla_\tau \sum_{i \in \mathcal{Q}}
+<li>Estimates of the direct adjustment model’s “bread matrix” <span class="math inline">\((n_{Q}^{-1} A_{22})^{-1} =
+\{\frac{1}{\# {Q}}\nabla_\tau \sum_{i \in {Q}}
 \mathbb{E}[\psi(\tilde{\mathbf{Y}}_i, \tau, \hat{\alpha})]
 \vert_{\tau=\hat\tau}\}^{-1}\)</span>, i.e. the inverse of its Fisher
 information w.r.t. <span class="math inline">\(\tau\)</span> only, along
-with the “meat matrix” <span class="math inline">\(n_\mathcal{Q}^{-1}
-B_{22} = n_\mathcal{Q}^{-1}
-\mathrm{Cov}[\sum_{i \in \mathcal{Q}} \psi(\tilde{\mathbf{Y}}_i,
+with the “meat matrix” <span class="math inline">\(n_{Q}^{-1} B_{22} =
+n_{Q}^{-1}
+\mathrm{Cov}[\sum_{i \in {Q}} \psi(\tilde{\mathbf{Y}}_i,
 {\tau}, {\alpha})]_{({\tau}, {\alpha})=(\hat{\tau},
 \hat{\alpha})}\)</span>;</li>
-<li>The covariance model’s bread matrix <span class="math inline">\((n_\mathcal{C}^{-1} \hat{A}_{11})^{-1} =
-\{n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
+<li>The covariance model’s bread matrix <span class="math inline">\((n_{C}^{-1} \hat{A}_{11})^{-1} =
+\{n_{C}^{-1}\sum_{i \in {C}}
 \nabla_\alpha [\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}\}^{-1}\)</span>; and</li>
 <li>for covariance estimation in the conventional “model-based” setup
-only, estimates of the covariance model’s B matrix <span class="math inline">\(n_\mathcal{C}^{-1}B_{11} =
-n_\mathcal{C}^{-1}
-\mathrm{Cov}[\sum_{i \in \mathcal{C}}\phi(\tilde{\mathbf{Y}}_i;
+only, estimates of the covariance model’s B matrix <span class="math inline">\(n_{C}^{-1}B_{11} =
+n_{C}^{-1}
+\mathrm{Cov}[\sum_{i \in {C}}\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}\)</span> (a “clustered” covariance
 estimate).</li>
 </ol>
-<p>In (5), observed information <span class="math inline">\(n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
+<p>In (5), observed information <span class="math inline">\(n_{C}^{-1}\sum_{i \in {C}}
 \nabla_\alpha [\phi(\tilde{\mathbf{Y}}_i;
 {\alpha})]_{\alpha=\hat\alpha}\)</span> is preferred to “observed
-expected” information, <span class="math inline">\(n_\mathcal{C}^{-1}\sum_{i \in \mathcal{C}}
-\nabla_\alpha \mathbb{E}
+expected” information, <span class="math inline">\(n_{C}^{-1}\sum_{i \in
+{C}} \nabla_\alpha \mathbb{E}
 [\phi(\tilde{\mathbf{Y}}_i; {\alpha})]_{\alpha=\hat\alpha}\)</span>,
 because observed information is agnostic as to whether expectation is
 calculated with conditioning on potential outcomes, ie the finite
@@ -320,9 +318,9 @@ outside of the quasiexperimental sample do not contribute to the
 covariance model’s B matrix. Only quasiexperimental sample observations
 do, and we’ll have access to these when the direct adjustment model is
 fit. As we also have <span class="math inline">\(\{\phi(\tilde{\mathbf{Y}}_i; \hat{\alpha}): i \in
-\mathcal{Q}\}\)</span> and <span class="math inline">\(\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau},
+{Q}\}\)</span> and <span class="math inline">\(\{\psi(\tilde{\mathbf{Y}}_i, \hat{\tau},
 \hat{\alpha}): i \in
-\mathcal{Q}\}\)</span>, we can use these materials to estimate <span class="math inline">\(B_{12}\)</span> and <span class="math inline">\(B_{22}\)</span>.</p>
+{Q}\}\)</span>, we can use these materials to estimate <span class="math inline">\(B_{12}\)</span> and <span class="math inline">\(B_{22}\)</span>.</p>
 </div>
 <div class="section level2">
 <h2 id="software-implementation-comments-on-16-above-including-contents-of-sandwichveganlayerlayerkit-objects">Software implementation comments on 1–6 above, including contents of
@@ -356,11 +354,10 @@ exists – and <span class="math inline">\(f_\alpha(\mathbf{Y})\)</span>
 represents the prediction for data <span class="math inline">\(\mathbf{Y}\)</span> from a fitted model of
 <code>class(cov_mod)</code> with parameters <span class="math inline">\(\alpha\)</span>. For <span class="math inline">\(\psi()\)</span>’s that use only “predictions” of
 the covariance model, as ours does, the first derivative of the
-covariance model predictions as applied to data in <span class="math inline">\(\mathcal{Q}\)</span> will provide sufficient
-information from the covariance model to complete the calculation of
-<span class="math inline">\(\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i,
+covariance model predictions as applied to data in <span class="math inline">\({Q}\)</span> will provide sufficient information
+from the covariance model to complete the calculation of <span class="math inline">\(\{\nabla_{\alpha}  \psi(\tilde{\mathbf{Y}}_i,
 \hat{\tau}, {\alpha}) \vert_{\alpha=\hat\alpha}: i \in
-\mathcal{Q}\}\)</span>.</p>
+{Q}\}\)</span>.</p>
 <p>For <code>glm</code> and similarly typed objects <code>cmod</code>,
 such predictions are a joint function of <code>family(cmod)</code> and
 the <code>model.matrix</code> generated in the process of creating
