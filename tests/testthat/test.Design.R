@@ -2,8 +2,6 @@
 fc <- call("ls")
 
 identical_designs <- function(a, b) {
-  attr(a@dichotomy, ".Environment") <- NULL
-  attr(b@dichotomy, ".Environment") <- NULL
   expect_identical(a, b)
 }
 
@@ -163,7 +161,7 @@ test_that("Design creation", {
   mtcars <- mtcars[-c(5, 11), ]
 
   d_rct <- .new_Design(vs ~ cluster(qsec), data = mtcars,
-                      type = "RCT", call = fc, dichotomy = NULL)
+                      type = "RCT", call = fc)
 
   expect_s4_class(d_rct, "Design")
   expect_s3_class(d_rct@structure, "data.frame")
@@ -329,15 +327,6 @@ test_that("Design printing", {
   expect_output(show(desrd), "uoa1")
   expect_output(show(desrd), "bid")
   expect_output(show(desrd), "force")
-
-  expect_no_match(capture.output(show(desrct)), "Dichotomy rule")
-
-  d <- o > 2 ~ .
-  desdichot <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata,
-                          dichotomy = d)
-
-  expect_output(show(desdichot), "Dichotomy rule")
-  expect_output(show(desdichot), deparse(d))
 })
 
 
@@ -404,10 +393,8 @@ test_that("variable transformations in Design", {
   des <- rct_design(dose + 3 ~ uoa(uoa1, uoa2), data = simdata)
   expect_true(all(treatment(des)[, 1] %in% (simdata$dose + 3)))
 
-  expect_warning(des <- rd_design(force > 4 & bid < 2 ~ cluster(uoa1, uoa2) +
-                                    forcing(force),
-                                  data = simdata),
-                 "conditional logic")
+  des <- rd_design(force > 4 & bid < 2 ~ cluster(uoa1, uoa2) + forcing(force),
+                   data = simdata)
   expect_true(is.logical(treatment(des)[, 1]))
 })
 

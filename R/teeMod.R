@@ -243,6 +243,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (!inherits(x, "teeMod")) {
     stop("Must be provided a teeMod object")
   }
+  mc <- match.call()
 
   # Must be a teeMod object for this logic to occur
   if (!inherits(cluster, "character")) {
@@ -285,15 +286,18 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # `keys` may have columns in addition to "in_Q" and the uoa columns if a
   # `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
   # does, use the columns exclusively specified in `by` to produce the order
-  by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
+  if (is.null(by <- mc$by)) by <- setdiff(colnames(ca@keys),
+                                            c(var_names(x@Design, "u"), "in_Q"))
   if (length(by) == 0) {
     by <- cluster
   }
-  id_order <- .order_samples(x, by = by, ...)
+
+  ord_call <- call(".order_samples", quote(x), by = quote(by))
+  id_order <- eval(ord_call)
 
   # if no "by" was specified in cov_adj(), cluster variable was used for ordering,
   # so we can take the names of the sorted vector. Otherwise, we need to get
-  # ID's associated with the ordering
+  # ID's associated with the ordering.
   if (length(setdiff(cluster, by)) == 0) {
     ids <- Reduce(c, id_order[c("Q_not_C", "Q_in_C", "C_not_Q")])
   } else {
@@ -355,6 +359,8 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
   }
 
+  ## Should only hit this if a custom `cluster` argument hasn't been passed to
+  ## vcov_tee or no `by` was specified in `cov_adj`
   if (length(by) == 0) {
     by <- var_names(x@Design, "u")
   }
@@ -367,7 +373,9 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # the rows to pull from the original estfun matrices
 
   # get all ID's in Q
-  Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
+  # Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
+  Q_ids <- stats::expand.model.frame(x, by, na.expand = TRUE)[, by, drop = FALSE]
+  Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
 
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
@@ -375,14 +383,20 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # need Q_in_C and C_in_Q to have the same order so contributions are aligned
   Q_in_C <- stats::setNames(Q_ids[which(Q_ids %in% C_ids)], which(Q_ids %in% C_ids))
   Q_in_C <- sort(Q_in_C)
-  C_in_Q <- stats::setNames(C_ids[which(ca@keys$in_Q)], which(ca@keys$in_Q))
+  C_in_Q <- stats::setNames(C_ids[which(C_ids %in% Q_ids)], which(C_ids %in% Q_ids))
   C_in_Q <- sort(C_in_Q)
+  
+  if (length(Q_in_C) != length(C_in_Q)) {
+    stop(paste("Contributions to covariance adjustment and/or effect estimation",
+               "are not uniquely specified. Provide a `by` argument to `cov_adj()`",
+               "or `vcov.teeMod()`"))
+  }
 
   out <- list(
     Q_not_C = stats::setNames(Q_ids[!(Q_ids %in% C_ids)], which(!(Q_ids %in% C_ids))),
     Q_in_C = Q_in_C,
     C_in_Q = C_in_Q,
-    C_not_Q = stats::setNames(C_ids[!ca@keys$in_Q], which(!ca@keys$in_Q))
+    C_not_Q = stats::setNames(C_ids[!(C_ids %in% Q_ids)], which(!(C_ids %in% Q_ids)))
   )
 
   return(out)

@@ -7,13 +7,13 @@
 \alias{z.}
 \title{Obtain Treatment from Design}
 \usage{
-assigned(design = NULL, data = NULL)
+assigned(design = NULL, data = NULL, dichotomy = NULL)
 
-adopters(design = NULL, data = NULL)
+adopters(design = NULL, data = NULL, dichotomy = NULL)
 
-a.(design = NULL, data = NULL)
+a.(design = NULL, data = NULL, dichotomy = NULL)
 
-z.(design = NULL, data = NULL)
+z.(design = NULL, data = NULL, dichotomy = NULL)
 }
 \arguments{
 \item{design}{Optional \code{Design}. If the \code{Design} can't be
@@ -24,6 +24,13 @@ found), the \code{Design} can be passed diretly.}
 \item{data}{Optional data set. By default \code{\link[=assigned]{assigned()}} will attempt to
 identify the appropriate data, if this fails (or you want to overwrite
 it), you can pass the data here.}
+
+\item{dichotomy}{optional; a formula defining the dichotomy of the treatment
+variable if it isn't already \code{0}/\code{1}. See details for more information.
+If \code{ett()} or \code{ate()} is
+called within a \code{lmitt()} call that specifies a \code{dichotomy}
+argument, that \code{dichotomy} will be used if the argument here has not
+been specified.}
 }
 \value{
 The treatment variable to be placed in the regression formula.
@@ -39,10 +46,10 @@ Rather than placing the treatment variable directly in the \code{formula},
 use one of these functions, to allow \code{\link[=lmitt]{lmitt()}} to identify the treatment
 variable.
 
-The \code{\link[=lm]{lm()}} call must include either weights (via \code{ate()} or
-\code{ett()} being passed to the \code{weights=} argument) or a covariance
-adjustment model (via \code{cov_adj()} being passed to the \code{offset=}
-argument). In this case, no arguments are needed to these functions.
+To keep the formula in the \code{\link[=lm]{lm()}} call concise, instead of passing
+\code{design} and \code{data} arguments to these functions, one can
+pass a \code{WeightedDesign} object to the \code{weights} argument of the
+\code{\link[=lm]{lm()}} call or a \code{SandwichLayer} object to the \code{offset} argument.
 
 Alternatively, you can pass the \code{design} and \code{data} arguments.
 

@@ -24,7 +24,10 @@ using \code{\link[=rct_design]{rct_design()}}.}
 
 \item{data}{A \code{data.frame} such as would be passed into \code{\link[=lm]{lm()}}.}
 
-\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}}.}
+\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}}. One such argument is
+\code{dichotomy}, which can be used to dichotomize a non-binary treatment
+variable in \code{design}. See the Details section of the \code{ett()} or
+\code{att()} help pages for information on specifying this formula.}
 
 \item{absorb}{If \code{TRUE}, fixed effects are included for blocks
 identified in the \code{Design}. Excluded in \code{FALSE}. Default is

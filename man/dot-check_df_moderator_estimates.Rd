@@ -8,7 +8,7 @@ degrees of freedom with \code{NA}}
 .check_df_moderator_estimates(
   vmat,
   model,
-  cluster,
+  cluster_cols,
   model_data = quote(data),
   envir = environment(formula(model))
 )
@@ -19,9 +19,7 @@ argument below as the first argument}
 
 \item{model}{a fitted \code{teeMod} model}
 
-\item{cluster}{a character or factor vector denoting clusters the units of
-observation used to fit \code{model} belong to. Most conveniently, the
-output of \code{.make_uoa_ids()}}
+\item{cluster_cols}{a character vector indicating the column(s) defining cluster ID's}
 
 \item{model_data}{dataframe or name of dataframe used to fit \code{model}}
 

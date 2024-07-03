@@ -5,16 +5,13 @@ NULL
 setClass("WeightedDesign",
          contains = "numeric",
          slots = c(Design = "Design",
-                   target = "character"))
+                   target = "character",
+                   dichotomy = "formula"))
 
 setValidity("WeightedDesign", function(object) {
   if (!object@target %in% c("ate", "ett")) {
     return(paste("@target must be one of [ate,ett]. unknown @target:",
                  object@target))
-  }
-  # The design in weighted design must have an accessible binary treatment.
-  if (!is_binary_or_dichotomized(object@Design)) {
-    return("Treatment must be binary or have a dichotomy.")
   }
   return(TRUE)
 })
