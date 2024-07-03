@@ -35,10 +35,12 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+LinkingTo: Rcpp
 Imports:
     stats,
     methods,
-    sandwich
+    sandwich,
+    Rcpp
 Enhances:
     robustbase
 Depends:
@@ -54,6 +56,7 @@ Collate:
     'DesignConverters.R'
     'DesignStructure.R'
     'DesignUtilities.R'
+    'RcppExports.R'
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
     'areg.center.R'

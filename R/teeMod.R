@@ -359,6 +359,9 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     by <- var_names(x@Design, "u")
   }
 
+  # DEBUG: is Rcpp correctly "installed"?
+  orderSamplesC(42)
+  
   # The order, given by the names of the output vector, will be:
   # Q not in C --> Q in C --> C not in Q. The values in the vector correspond to
   # the rows to pull from the original estfun matrices

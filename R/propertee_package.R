@@ -2,6 +2,9 @@
 #' @importFrom stats model.frame terms na.pass vcov confint
 #' @importFrom methods as is new validObject show
 #' @importFrom sandwich estfun bread
+#' @import Rcpp
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib propertee
 NULL
 #> NULL
 
