@@ -601,3 +601,62 @@ test_that(paste("weights with attention to blocks when `data` has different orde
   expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
                             expected_triplet_wts, expected_pair_wts))
 })
+
+test_that("#180 non-exhaustive dichotomies", {
+  # no missing block ID's
+  data(simdata)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  wdes  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                         dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes) == nrow(simdata))
+  expect_true(all.equal(which(wdes == 0), which(simdata$dose == 200)))
+  expect_true(all.equal(which(wdes == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200,])
+  )
+  
+  # Ben's tests
+  wdes2  <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate", dichotomy = dose >200 ~ dose <200)
+  expect_true(all(wdes2[simdata$dose==200]==0))
+  expect_true(all(wdes2[simdata$dose!=200]!=0))
+  
+  wdes3  <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett", dichotomy = dose >200 ~ dose <100)
+  expect_true(all(wdes3[simdata$bid==3]==0))
+  
+  # missing block ID's
+  simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, "bid"] <- NA_integer_
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
+  wdes4  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                          dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes4) == nrow(simdata))
+  expect_true(all.equal(which(wdes4 == 0), which(simdata$dose == 200 | is.na(simdata$bid))))
+  expect_true(all.equal(which(wdes4 == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes4,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200 & !is.na(simdata$bid),])
+  )
+  
+  # missing unit ID's
+  data(simdata)
+  simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, paste0("uoa", c(1, 2))] <- NA_integer_
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
+  wdes5  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                          dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes5) == nrow(simdata))
+  expect_true(all.equal(which(wdes5 == 0), which(simdata$dose == 200 | is.na(simdata$uoa1))))
+  expect_true(all.equal(which(wdes5 == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes4,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200 & !is.na(simdata$uoa1),])
+  )
+})

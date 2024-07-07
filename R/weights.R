@@ -176,8 +176,9 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
     blks[!is.na(txt),] <- .merge_preserve_order(
       unique(data[, var_names(design, "u"), drop=FALSE]),
       cbind(design@structure[, var_names(design, "b"), drop=FALSE],
-            design@structure[, var_names(design, "u"), drop=FALSE])
-    )[[var_names(design, "b")]]
+            design@structure[, var_names(design, "u"), drop=FALSE]),
+      all = FALSE, all.x = TRUE
+    )[!is.na(txt), var_names(design, "b")]
     block_units <- table(blks[!is.na(txt), ])
     block_tx_units <- tapply(txt,
                              blks,
