@@ -1,279 +1,95 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>www.github.com/404.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/LinearModelVarianceEstimation.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/RDD.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/design_based_SEs.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/intro-to-propertee.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/non-binary-treatment.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/not-for-cran/geex_vs_propertee.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/articles/sandwich_infrastructure.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/authors.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/index.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/news/index.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/AssignedAliases.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/DesignSpecials.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/Design_extractreplace.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/Design_objects.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/Design_structure.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/Design_summary.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/Design_var_names.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/PreSandwichLayer.show.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/PreSandwichLayer.subset.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/STARdata.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/WeightCreators.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/WeightedDesign.subset.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/WeightedDesignOps.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/areg.center.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/as.SandwichLayer.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/as_lmitt.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/bread.teeMod.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/c-WeightedDesign-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/confint.teeMod.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/cov_adj.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/design_data_concordance.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/design_table.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/designconversion.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-align_and_extend_estfuns.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-apply_dichotomy.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-base_S3class_estfun.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-bin_txt.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-check_by.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-check_design_formula.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-check_df_moderator_estimates.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-confint_lm.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-convert_to_data.frame.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-design_accessors_newdata_validate.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-expand.model.frame_teeMod.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-expand_txt.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-fallback_data_search.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-find_dichotomies.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_col_from_new_data.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_data_from_model.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-get_design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-join_design_weights.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-make_PreSandwichLayer.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-make_uoa_cluster_df.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-make_uoa_ids.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-merge_preserve_order.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-new_Design.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-order_samples.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-remove_forcing.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-rename_model_frame_columns.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-sanitize_C_ids.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-sanitize_Q_ids.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-show_layer.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-update_by.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-update_ca_model_formula.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-update_call_formula.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-update_form_to_unit_of_assignment.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-update_structure.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-validate_dichotomy.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/dot-weights_calc.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/estfun.teeMod.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/glmrob_methods.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/has_binary_treatment.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/identical_Designs.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/identify_small_blocks.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/lmitt.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/lmrob_methods.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/lsoSynth.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/sandwich_elements_calc.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-Design-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-WeightedDesign-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/show-teeMod-method.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/simdata.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/studentdata.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/teeMod_summary.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/var_estimators.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/vcov.teeMod.html</loc>
-  </url>
-  <url>
-    <loc>www.github.com/reference/weights-WeightedDesign-method.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>www.github.com/404.html</loc></url>
+<url><loc>www.github.com/LICENSE-text.html</loc></url>
+<url><loc>www.github.com/LICENSE.html</loc></url>
+<url><loc>www.github.com/articles/LinearModelVarianceEstimation.html</loc></url>
+<url><loc>www.github.com/articles/RDD.html</loc></url>
+<url><loc>www.github.com/articles/design_based_SEs.html</loc></url>
+<url><loc>www.github.com/articles/index.html</loc></url>
+<url><loc>www.github.com/articles/intro-to-propertee.html</loc></url>
+<url><loc>www.github.com/articles/non-binary-treatment.html</loc></url>
+<url><loc>www.github.com/articles/not-for-cran/geex_vs_propertee.html</loc></url>
+<url><loc>www.github.com/articles/sandwich_infrastructure.html</loc></url>
+<url><loc>www.github.com/authors.html</loc></url>
+<url><loc>www.github.com/index.html</loc></url>
+<url><loc>www.github.com/news/index.html</loc></url>
+<url><loc>www.github.com/reference/AssignedAliases.html</loc></url>
+<url><loc>www.github.com/reference/DesignSpecials.html</loc></url>
+<url><loc>www.github.com/reference/Design_extractreplace.html</loc></url>
+<url><loc>www.github.com/reference/Design_objects.html</loc></url>
+<url><loc>www.github.com/reference/Design_structure.html</loc></url>
+<url><loc>www.github.com/reference/Design_summary.html</loc></url>
+<url><loc>www.github.com/reference/Design_var_names.html</loc></url>
+<url><loc>www.github.com/reference/PreSandwichLayer.show.html</loc></url>
+<url><loc>www.github.com/reference/PreSandwichLayer.subset.html</loc></url>
+<url><loc>www.github.com/reference/STARdata.html</loc></url>
+<url><loc>www.github.com/reference/WeightCreators.html</loc></url>
+<url><loc>www.github.com/reference/WeightedDesign.subset.html</loc></url>
+<url><loc>www.github.com/reference/WeightedDesignOps.html</loc></url>
+<url><loc>www.github.com/reference/areg.center.html</loc></url>
+<url><loc>www.github.com/reference/as.SandwichLayer.html</loc></url>
+<url><loc>www.github.com/reference/as_lmitt.html</loc></url>
+<url><loc>www.github.com/reference/bread.teeMod.html</loc></url>
+<url><loc>www.github.com/reference/c-WeightedDesign-method.html</loc></url>
+<url><loc>www.github.com/reference/confint.teeMod.html</loc></url>
+<url><loc>www.github.com/reference/cov_adj.html</loc></url>
+<url><loc>www.github.com/reference/design_data_concordance.html</loc></url>
+<url><loc>www.github.com/reference/design_table.html</loc></url>
+<url><loc>www.github.com/reference/designconversion.html</loc></url>
+<url><loc>www.github.com/reference/dot-align_and_extend_estfuns.html</loc></url>
+<url><loc>www.github.com/reference/dot-apply_dichotomy.html</loc></url>
+<url><loc>www.github.com/reference/dot-base_S3class_estfun.html</loc></url>
+<url><loc>www.github.com/reference/dot-bin_txt.html</loc></url>
+<url><loc>www.github.com/reference/dot-check_by.html</loc></url>
+<url><loc>www.github.com/reference/dot-check_design_formula.html</loc></url>
+<url><loc>www.github.com/reference/dot-check_df_moderator_estimates.html</loc></url>
+<url><loc>www.github.com/reference/dot-confint_lm.html</loc></url>
+<url><loc>www.github.com/reference/dot-convert_to_data.frame.html</loc></url>
+<url><loc>www.github.com/reference/dot-design_accessors_newdata_validate.html</loc></url>
+<url><loc>www.github.com/reference/dot-expand.model.frame_teeMod.html</loc></url>
+<url><loc>www.github.com/reference/dot-expand_txt.html</loc></url>
+<url><loc>www.github.com/reference/dot-fallback_data_search.html</loc></url>
+<url><loc>www.github.com/reference/dot-find_dichotomies.html</loc></url>
+<url><loc>www.github.com/reference/dot-get_col_from_new_data.html</loc></url>
+<url><loc>www.github.com/reference/dot-get_data_from_model.html</loc></url>
+<url><loc>www.github.com/reference/dot-get_design.html</loc></url>
+<url><loc>www.github.com/reference/dot-join_design_weights.html</loc></url>
+<url><loc>www.github.com/reference/dot-make_PreSandwichLayer.html</loc></url>
+<url><loc>www.github.com/reference/dot-make_uoa_cluster_df.html</loc></url>
+<url><loc>www.github.com/reference/dot-make_uoa_ids.html</loc></url>
+<url><loc>www.github.com/reference/dot-merge_preserve_order.html</loc></url>
+<url><loc>www.github.com/reference/dot-new_Design.html</loc></url>
+<url><loc>www.github.com/reference/dot-order_samples.html</loc></url>
+<url><loc>www.github.com/reference/dot-remove_forcing.html</loc></url>
+<url><loc>www.github.com/reference/dot-rename_model_frame_columns.html</loc></url>
+<url><loc>www.github.com/reference/dot-sanitize_C_ids.html</loc></url>
+<url><loc>www.github.com/reference/dot-sanitize_Q_ids.html</loc></url>
+<url><loc>www.github.com/reference/dot-show_layer.html</loc></url>
+<url><loc>www.github.com/reference/dot-update_by.html</loc></url>
+<url><loc>www.github.com/reference/dot-update_ca_model_formula.html</loc></url>
+<url><loc>www.github.com/reference/dot-update_call_formula.html</loc></url>
+<url><loc>www.github.com/reference/dot-update_form_to_unit_of_assignment.html</loc></url>
+<url><loc>www.github.com/reference/dot-update_structure.html</loc></url>
+<url><loc>www.github.com/reference/dot-validate_dichotomy.html</loc></url>
+<url><loc>www.github.com/reference/dot-weights_calc.html</loc></url>
+<url><loc>www.github.com/reference/estfun.teeMod.html</loc></url>
+<url><loc>www.github.com/reference/glmrob_methods.html</loc></url>
+<url><loc>www.github.com/reference/has_binary_treatment.html</loc></url>
+<url><loc>www.github.com/reference/identical_Designs.html</loc></url>
+<url><loc>www.github.com/reference/identify_small_blocks.html</loc></url>
+<url><loc>www.github.com/reference/index.html</loc></url>
+<url><loc>www.github.com/reference/lmitt.html</loc></url>
+<url><loc>www.github.com/reference/lmrob_methods.html</loc></url>
+<url><loc>www.github.com/reference/lsoSynth.html</loc></url>
+<url><loc>www.github.com/reference/sandwich_elements_calc.html</loc></url>
+<url><loc>www.github.com/reference/show-Design-method.html</loc></url>
+<url><loc>www.github.com/reference/show-WeightedDesign-method.html</loc></url>
+<url><loc>www.github.com/reference/show-teeMod-method.html</loc></url>
+<url><loc>www.github.com/reference/simdata.html</loc></url>
+<url><loc>www.github.com/reference/studentdata.html</loc></url>
+<url><loc>www.github.com/reference/teeMod_summary.html</loc></url>
+<url><loc>www.github.com/reference/var_estimators.html</loc></url>
+<url><loc>www.github.com/reference/vcov.teeMod.html</loc></url>
+<url><loc>www.github.com/reference/weights-WeightedDesign-method.html</loc></url>
 </urlset>
+
