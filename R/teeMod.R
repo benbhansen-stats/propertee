@@ -366,8 +366,8 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   }
 
   # DEBUG: is Rcpp correctly "installed"?
-  orderSamplesC(42)
-  
+  # orderSamplesC(42)
+
   # The order, given by the names of the output vector, will be:
   # Q not in C --> Q in C --> C not in Q. The values in the vector correspond to
   # the rows to pull from the original estfun matrices
@@ -380,12 +380,21 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
 
+  # save the %in% and which expressions to avoid code & computation duplication
+  ids_qinc <- Q_ids %in% C_ids
+  which_ids_qinc <- which(ids_qinc)
+
   # need Q_in_C and C_in_Q to have the same order so contributions are aligned
-  Q_in_C <- stats::setNames(Q_ids[which(Q_ids %in% C_ids)], which(Q_ids %in% C_ids))
+  Q_in_C <- stats::setNames(Q_ids[which_ids_qinc], which_ids_qinc)
   Q_in_C <- sort(Q_in_C)
-  C_in_Q <- stats::setNames(C_ids[which(C_ids %in% Q_ids)], which(C_ids %in% Q_ids))
+
+  # save the %in% and which expressions to avoid code & computation duplication
+  ids_cinq <- C_ids %in% Q_ids
+  which_ids_cinq <- which(ids_cinq)
+
+  C_in_Q <- stats::setNames(C_ids[which_ids_cinq], which_ids_cinq)
   C_in_Q <- sort(C_in_Q)
-  
+
   if (length(Q_in_C) != length(C_in_Q)) {
     stop(paste("Contributions to covariance adjustment and/or effect estimation",
                "are not uniquely specified. Provide a `by` argument to `cov_adj()`",
@@ -393,10 +402,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   }
 
   out <- list(
-    Q_not_C = stats::setNames(Q_ids[!(Q_ids %in% C_ids)], which(!(Q_ids %in% C_ids))),
+    Q_not_C = stats::setNames(Q_ids[!ids_qinc], which(!ids_qinc)),
     Q_in_C = Q_in_C,
     C_in_Q = C_in_Q,
-    C_not_Q = stats::setNames(C_ids[!(C_ids %in% Q_ids)], which(!(C_ids %in% Q_ids)))
+    C_not_Q = stats::setNames(C_ids[!ids_cinq], which(!(ids_cinq)))
   )
 
   return(out)

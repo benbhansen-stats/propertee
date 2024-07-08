@@ -10,20 +10,20 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// timesTwo
-NumericVector timesTwo(NumericVector x);
-RcppExport SEXP _propertee_timesTwo(SEXP xSEXP) {
+// orderSamplesC
+NumericVector orderSamplesC(NumericVector x);
+RcppExport SEXP _propertee_orderSamplesC(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(timesTwo(x));
+    rcpp_result_gen = Rcpp::wrap(orderSamplesC(x));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_propertee_timesTwo", (DL_FUNC) &_propertee_timesTwo, 1},
+    {"_propertee_orderSamplesC", (DL_FUNC) &_propertee_orderSamplesC, 1},
     {NULL, NULL, 0}
 };
 
