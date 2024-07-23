@@ -103,6 +103,8 @@ lmitt.formula <- function(obj,
   #lmitt.call contains design, absorb. lm.call contains only things that get
   #passed to lm, model.matrix
 
+  data <- .as_data_frame(data)
+
   # Save the subset and remove it from `lm.call`, to be re-added at the enc
   savedsubset <- lm.call$subset
   lm.call$subset <- NULL

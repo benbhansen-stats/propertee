@@ -29,7 +29,7 @@ License_restricts_use: no
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Suggests:
     knitr,
     rmarkdown,
@@ -59,6 +59,7 @@ Collate:
     'confint_lm.R'
     'teeMod.R'
     'as.lmitt.R'
+    'as_data_frame.R'
     'assigned.R'
     'c_weightedDesign.R'
     'cov_adj.R'

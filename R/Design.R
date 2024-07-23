@@ -91,6 +91,9 @@ setValidity("Design", function(object) {
     data <- subset(data, subset = subset)
   }
 
+  ## #174 convert all data.frames
+  data <- .as_data_frame(data)
+
   ### Track whether Design uses uoa/cluster/unitid for nicer output later
 
   if (grepl("unit_of_assignment\\([a-zA-Z]", deparse(form)) |

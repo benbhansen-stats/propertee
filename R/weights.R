@@ -134,8 +134,9 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
                                         collapse = "+")))
 
     data <- .get_data_from_model("weights", form, by)
-  } else if (!is.data.frame(data)) {
-    stop("`data` must be `data.frame`")
+  } else {
+    # #174 handle tibbles
+    data <- .as_data_frame(data)
   }
 
   if (!is.null(by)) {

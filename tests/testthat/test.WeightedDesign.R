@@ -29,16 +29,12 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
-  
+
   expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
                "Invalid weight target")
-
-  expect_error(propertee:::.weights_calc(des, data = 1, by = NULL, target = "ate",
-                             dichotomy = NULL),
-               "`data` must be")
 
 })
 
