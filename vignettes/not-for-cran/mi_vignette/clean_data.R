@@ -43,8 +43,7 @@ make_demo_perc <- function(df, cols, total_col) {
   return(out)
 }
 
-clean_ccd <- function() {
-  ccd <- read.delim("sc132a.txt")
+clean_ccd <- function(ccd) {
   rownames(ccd) <- NULL
   ccd <- ccd[ccd$LSTATE == "MI",]
   
@@ -101,14 +100,15 @@ clean_ccd <- function() {
         gender_g11_percs, raceeth_g11_percs)
 }
 
-clean_scores <- function(ccd) {
-  all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
+clean_scores <- function(all_scores, ccd) {
   all_scores <- all_scores[
     !is.na(all_scores$Building.Code) &
       !(all_scores$Building.Name %in% c("STATEWIDE", "ISDWIDE", "DISTRICTWIDE")),]
   
-  all_scores$Average.Scale.Score.2012 <- all_scores$Average.Scale.Score.2011.1
-  all_scores$Average.Scale.Score.2011.1 <- NULL
+  colnames(all_scores)[colnames(all_scores)=="Average.Scale.Score.2011.1"]  <-
+      "Average.Scale.Score.2012"
+  colnames(all_scores)[colnames(all_scores)=="Average.Scale.Score.2011.2"]  <-
+      "Average.Scale.Score.2011"
   
   out_cols <- Reduce(
     cbind,
@@ -144,9 +144,11 @@ clean_scores <- function(ccd) {
   all_scores
 }
 
-cleaned_ccd <- clean_ccd()
-all_scores <- clean_scores(cleaned_ccd)
+cleaned_ccd <-  read.delim("sc132a.txt") |> clean_ccd()
+all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv"
+                       ) |>  clean_scores(cleaned_ccd)
 all_schools <- merge(all_scores, cleaned_ccd, by = "merge_id", all = TRUE)
+
 analysis1data <- all_schools[
   !is.na(all_schools$DemographicGroup) &
     all_schools$DemographicGroup == "All Students" &
