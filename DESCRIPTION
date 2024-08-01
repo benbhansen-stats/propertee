@@ -61,6 +61,7 @@ Collate:
     'as.lmitt.R'
     'as_data_frame.R'
     'assigned.R'
+    'bread.R'
     'c_weightedDesign.R'
     'cov_adj.R'
     'data.R'
