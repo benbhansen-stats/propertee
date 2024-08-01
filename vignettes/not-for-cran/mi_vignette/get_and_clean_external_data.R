@@ -104,11 +104,11 @@ clean_scores <- function(all_scores, ccd) {
   all_scores <- all_scores[
     !is.na(all_scores$Building.Code) &
       !(all_scores$Building.Name %in% c("STATEWIDE", "ISDWIDE", "DISTRICTWIDE")),]
-  
-  colnames(all_scores)[colnames(all_scores)=="Average.Scale.Score.2011.1"]  <-
-      "Average.Scale.Score.2012"
-  colnames(all_scores)[colnames(all_scores)=="Average.Scale.Score.2011.2"]  <-
-      "Average.Scale.Score.2011"
+
+  stopifnot(sum(substr(colnames(all_scores),1,24)=="Average.Scale.Score.2011")==2)
+  colnames(all_scores)[substr(colnames(all_scores),1,24
+                              )=="Average.Scale.Score.2011"]  <-
+      paste0("Average.Scale.Score.201", 2:1)
   
   out_cols <- Reduce(
     cbind,
@@ -144,10 +144,37 @@ clean_scores <- function(all_scores, ccd) {
   all_scores
 }
 
+##' Retrieve external data files from NCES and MI's CEPI
+stopifnot(exists("extdataURLs"),
+          require("readxl"), require("httr")
+          )
+
+.tf <- tempfile()
+download.file(extdataURLs$CCD, .tf)
+ccd <- read.delim(unz(.tf, "sc132a.txt"))
+unlink(.tf)
 cleaned_ccd <-  read.delim("sc132a.txt") |> clean_ccd()
-all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv"
-                       ) |>  clean_scores(cleaned_ccd)
-all_schools <- merge(all_scores, cleaned_ccd, by = "merge_id", all = TRUE)
+
+.tf  <- tempfile(fileext=".zip")
+headers = c(
+  `user-agent` = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36'
+)
+httr::GET(url=extdataURLs$MME,
+                 httr::add_headers(.headers=headers)
+          )$content |>
+writeBin(.tf)
+
+.td  <- tempdir()
+mme_xls  <-
+    unzip(.tf,
+          files="Spring2011-2014MMEFourYearDemographicDataFile-Sortable.xls",
+          exdir=.td)
+
+mme  <-  read_excel(mme_xls, .name_repair="universal")
+rm(.tf, mme_xls)
+
+all_schools <- clean_scores(mme, cleaned_ccd) |>
+               merge(cleaned_ccd, by = "merge_id", all = TRUE)
 
 analysis1data <- all_schools[
   !is.na(all_schools$DemographicGroup) &

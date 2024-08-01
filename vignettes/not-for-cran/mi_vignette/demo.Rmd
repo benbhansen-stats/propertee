@@ -1,5 +1,5 @@
 ---
-title: "OLS effect and error estimation with an auxiliary sample and a separate, non-necessarily-linear covariance model"
+title: "OLS effect and error estimation with an auxiliary sample and a separate, not-necessarily-linear covariance model"
 subtitle: "Real-data demonstration with a finely stratified cluster RCT and a broader administrative database"
 author: "Josh Wasserman, Ben B. Hansen"
 date: "2024-08-01"
@@ -27,21 +27,25 @@ We also use school-level characteristics from the [Common Core of Data](https://
 The last necessary file can be be loaded from the `propertee` package by calling `data(michigan_school_pairs)`. This dataframe tracks which schools were paired together in the study and which schools were assigned to intervention and control.
 
 ## Package Installation
-This vignette requires the installation of two packages, `propertee` being the first and `robustbase` being the second. `robustbase` provides functionality for outlier-robust regressions. We use it here to demonstrate how `propertee` can handle alternatives to ordinary least squares for covariance adjustment modeling.
+This vignette requires the installation of three package in addition to `propertee`: `httr` and `readxl`, which we'll use to import the Michigan schools data; and `robustbase`, providing functionality for outlier-robust regression. The vignette uses `robustbase` to demonstrate how `propertee` can handle alternatives to ordinary least squares for covariance adjustment modeling.
 
 ## Walkthrough
-After loading the installed packages and reading in the downloaded data files, we clean the MME scores and school characteristics datasets. The scores data has rows corresponding to state-, intermediate school district (ISD)-, district-, and campus-wide averages. In addition to averages taken over all students in these subpopulations, some rows correspond to averages taken within substrata formed by gender, race/ethnicity, learning ability, or economic background. In the cleaning script `clean_data.R` (which we also provide as part of the `propertee` package), we create two cleaned datasets, one for an analysis of the marginal effect of the intervention and one for an analysis of the heterogeneity of the intervention effect. Both datasets keep only rows corresponding to schools where MME scores were reported campus-wide or for the particular substratum in each of 2012, 2013, and 2014.
+After loading the installed packages and reading in the downloaded data files, we clean the MME scores and school characteristics datasets. The scores data has rows corresponding to state-, intermediate school district (ISD)-, district-, and campus-wide averages. In addition to averages taken over all students in these subpopulations, some rows correspond to averages taken within substrata formed by gender, race/ethnicity, learning ability, or economic background. In the provided cleaning script (`get_and_clean_external_data.R`), we create two cleaned datasets, one for an analysis of the marginal effect of the intervention and one for an analysis of the heterogeneity of the intervention effect. Both datasets keep only rows corresponding to schools where MME scores were reported campus-wide or for the particular substratum in each of 2012, 2013, and 2014.
 
-The school characteristics data spans the universe of public schools in the United States, so to clean it for this vignette, we first limit it to schools relevant to the study. The MME is taken almost exclusively by 11th graders and, as the name suggests, only taken by students in Michigan, so we first subset the data to schools in Michigan serving 11th graders. Then, we perform feature generation, creating derived covariates such as demographic breakdowns by gender, race/ethnicity, and free- or reduced-price lunch eligibility at the school level and in the 11th grade specifically. These cleaning steps are also performed in `clean_data.R`.
+The school characteristics data spans the universe of public schools in the United States, so to clean it for this vignette, we first limit it to schools relevant to the study. The MME is taken almost exclusively by 11th graders and, as the name suggests, only taken by students in Michigan, so we first subset the data to schools in Michigan serving 11th graders. Then, we perform feature generation, creating derived covariates such as demographic breakdowns by gender, race/ethnicity, and free- or reduced-price lunch eligibility at the school level and in the 11th grade specifically. (The provided cleaning script performs these steps also.)
 
-```{r load_and_clean}
+```{r load_and_clean, message=FALSE}
 if (!require("robustbase")) library(robustbase)
+if (!require("readxl")) library(readxl)
+if (!require("httr")) library(httr)
 if (!require("propertee")) library(propertee)
 
-all_scores <- read.csv("Spring2011-2014MMEFourYearDemographicDataFile-Sortable.csv")
-ccd <- read.delim("sc132a.txt")
+extdataURLs <- list(
+CCD="https://nces.ed.gov/ccd/data/zip/sc132a_txt.zip",
+MME="https://www.michigan.gov/cepi/-/media/Project/Websites/cepi/MiSchoolData/historical/Historical_Assessments/2011-2014MME.zip"
+)
 data(michigan_school_pairs)
-source("clean_data.R")
+source("get_and_clean_external_data.R")
 ```
 
 #### Creating the `Design` Object
