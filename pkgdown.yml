@@ -2,6 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
+  not-for-cran/mi_vignette/demo: not-for-cran/mi_vignette/demo.html
   design_based_SEs: design_based_SEs.html
   not-for-cran/geex_vs_propertee: not-for-cran/geex_vs_propertee.html
   intro-to-propertee: intro-to-propertee.html
@@ -9,7 +10,7 @@ articles:
   non-binary-treatment: non-binary-treatment.html
   RDD: RDD.html
   sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2024-08-01T18:10Z
+last_built: 2024-08-02T10:54Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
