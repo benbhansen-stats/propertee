@@ -12,6 +12,9 @@ navbar:
     - text: Introduction to propertee
       href: articles/intro-to-propertee.html
     - text: ----------
+    - text: Real-data demonstration with a finely stratified cluster RCT and a broader administrative database
+      href: articles/not-for-cran/mi_vignette/demo.html
+    - text: ----------
     - text: Advanced
     - text: Non-binary Treatment Specification
       href: articles/non-binary-treatment.html
