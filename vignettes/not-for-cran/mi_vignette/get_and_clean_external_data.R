@@ -153,7 +153,7 @@ stopifnot(exists("extdataURLs"),
 download.file(extdataURLs$CCD, .tf)
 ccd <- read.delim(unz(.tf, "sc132a.txt"))
 unlink(.tf)
-cleaned_ccd <-  read.delim("sc132a.txt") |> clean_ccd()
+cleaned_ccd <- clean_ccd(ccd)
 
 .tf  <- tempfile(fileext=".zip")
 headers = c(
