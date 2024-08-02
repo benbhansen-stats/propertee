@@ -149,7 +149,7 @@ stopifnot(exists("extdataURLs"),
           require("readxl"), require("httr")
           )
 
-.tf <- tempfile()
+.tf <- tempfile(fileext=".zip")
 download.file(extdataURLs$CCD, .tf)
 ccd <- read.delim(unz(.tf, "sc132a.txt"))
 unlink(.tf)
