@@ -6,11 +6,11 @@
 \alias{obs_design}
 \title{Generates a \code{Design} object with the given specifications.}
 \usage{
-rct_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
+rct_design(formula, data, subset = NULL, na.fail = TRUE)
 
-rd_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
+rd_design(formula, data, subset = NULL, na.fail = TRUE)
 
-obs_design(formula, data, subset = NULL, dichotomy = NULL, na.fail = TRUE)
+obs_design(formula, data, subset = NULL, na.fail = TRUE)
 }
 \arguments{
 \item{formula}{a \code{formula} defining the \code{Design} components. See
@@ -23,10 +23,6 @@ assignment (as opposed to the units of analysis).}
 
 \item{subset}{optional, subset the data before creating the \code{Design}
 object}
-
-\item{dichotomy}{optional, a formula defining the dichotomy of the treatment
-variable if it isn't already 0/1 or \code{logical}. See the \code{\link[=dichotomy]{dichotomy()}}
-function for details.}
 
 \item{na.fail}{If \code{TRUE} (default), any missing data found in the
 variables specified in \code{formula} (excluding treatment) will trigger
@@ -60,11 +56,8 @@ example, \code{factor} and \code{ordered} are converted to \code{numeric}
 if the levels are \code{numeric}, otherwise to \code{character}). If the
 treatment is not \code{logical} or \code{numeric} with only values 0 and
 1, in order to generate weights with \code{\link[=ate]{ate()}} or \code{\link[=ett]{ett()}}, the
-\code{dichotomy} argument must be used to identify the treatment and
-control groups. The \code{Design} creation functions (\code{rct_design()},
-\code{rd_design()}, \code{obs_design()}) all support the \code{dichotomy}
-argument, or instead \code{dichotomy} can be passed to \code{\link[=ett]{ett()}} and \code{\link[=ate]{ate()}}
-directly. See \code{\link[=dichotomy]{dichotomy()}} for more details on specifying a
+\code{dichotomy} argument must be used in those functions to identify the
+treatment and control groups. See \code{\link[=ett]{ett()}} for more details on specifying a
 \code{dichotomy}.
 }
 \examples{

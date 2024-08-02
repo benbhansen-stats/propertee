@@ -15,7 +15,7 @@ these automatically.}
 
 \item{dichotomy}{optional; a formula defining the dichotomy of the treatment
 variable if it isn't already \code{0}/\code{1}. See details of help for
-\code{rct_design()} e.g. for details.}
+\code{ate()} or \code{ett()} e.g. for details.}
 
 \item{by}{optional; named vector or list connecting names of unit of
 assignment/ variables in \code{design} to unit of assignment/cluster

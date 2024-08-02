@@ -12,7 +12,6 @@ design_table(
   sort = FALSE,
   decreasing = TRUE,
   use_var_names = FALSE,
-  treatment_binary = TRUE,
   ...
 )
 
@@ -23,7 +22,6 @@ dtable(
   sort = FALSE,
   decreasing = TRUE,
   use_var_names = FALSE,
-  treatment_binary = TRUE,
   ...
 )
 }
@@ -48,11 +46,6 @@ descending (\code{TRUE}, default) or ascending (\code{FALSE}).}
 variable names. If \code{FALSE} (default), name by their function (e.g.
 "treatment" or "blocks"). Passing the \code{dnn} argument in \code{...}
 (an argument of \code{\link[=table]{table()}}) overrides whatever is requested here.}
-
-\item{treatment_binary}{Should the treatment (if requested) be dichotomized
-of \code{design} contains a \code{dichotomy}? Ignored if \code{design}
-does not contain a \code{dichotomy}, or if neither \code{x} or \code{y} is
-"treatment".}
 
 \item{...}{additional arguments \code{\link[=table]{table()}}}
 }

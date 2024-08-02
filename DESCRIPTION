@@ -1,5 +1,5 @@
 Package: propertee
-Version: 0.3.10
+Version: 0.4.1
 Title: Design-Informed Direct Adjustment with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of ERrors
     (for Treatment Effect Estimation) package facilitates direct adjustment
@@ -29,7 +29,7 @@ License_restricts_use: no
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Suggests:
     knitr,
     rmarkdown,
@@ -48,21 +48,23 @@ URL: https://github.com/benbhansen-stats/propertee
 BugReports: https://github.com/benbhansen-stats/propertee/issues
 Collate:
     'Design.R'
-    'WeightedDesign.R'
-    'CombinedWeightedDesign.R'
     'DesignAccessors.R'
     'DesignConverters.R'
     'DesignStructure.R'
     'DesignUtilities.R'
     'SandwichLayer.R'
     'SandwichLayerVariance.R'
+    'WeightedDesign.R'
     'areg.center.R'
     'confint_lm.R'
     'teeMod.R'
     'as.lmitt.R'
+    'as_data_frame.R'
     'assigned.R'
+    'c_weightedDesign.R'
     'cov_adj.R'
     'data.R'
+    'dichotomy.R'
     'dtable.R'
     'expand.model.frame_tee.R'
     'get_cov_adj.R'

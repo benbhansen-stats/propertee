@@ -14,6 +14,8 @@ test_that("internal weight function", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
@@ -28,17 +30,11 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
+
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
                "Invalid weight target")
-
-  expect_error(propertee:::.weights_calc(des, data = 1, by = NULL, target = "ate",
-                             dichotomy = NULL),
-               "`data` must be")
-
-  expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
-                             target = "ate", dichotomy = 1),
-               "`dichotomy` must be")
 
 })
 
@@ -49,12 +45,10 @@ test_that("dichotomy issues", {
 
   expect_error(propertee:::.weights_calc(des, data = simdata, by = NULL,
                              target = "ate", dichotomy = NULL),
-               "must have a dichotomy")
-
-  dichotomy(des) <- . ~ dose > 150
+               "Must provide a dichotomy")
 
   wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate",
-                        dichotomy = NULL)
+                        dichotomy = . ~ dose > 150)
   expect_s4_class(wdes, "WeightedDesign")
   expect_true(is.numeric(wdes@.Data))
   expect_s4_class(wdes@Design, "Design")
@@ -65,13 +59,8 @@ test_that("dichotomy issues", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
-
-  expect_warning(wdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
-                                       target = "ate",
-                                       dichotomy = dose > 200 ~ .),
-                 "over-writing")
-  expect_identical(deparse(dichotomy(wdes@Design)), "dose > 200 ~ .")
-
+  
+  expect_identical(deparse(. ~ dose > 150), deparse(wdes@dichotomy))
 })
 
 test_that("internal and external weight function agreement", {
@@ -81,12 +70,30 @@ test_that("internal and external weight function agreement", {
   iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ate", dichotomy = NULL)
   ewdes <- ate(des, data = simdata)
-  expect_identical(iwdes, ewdes)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(iwdes, slot)),
+                           deparse(methods::slot(ewdes, slot)))
+                } else {
+                  identical(methods::slot(iwdes, slot), methods::slot(ewdes, slot))
+                },
+               logical(1L)))
+  )
 
   iwdes <- propertee:::.weights_calc(des, data = simdata, by = NULL,
                          target = "ett", dichotomy = NULL)
   ewdes <- ett(des, data = simdata)
-  expect_identical(iwdes, ewdes)
+  expect_true(
+    all(vapply(c(".Data", "Design", "target", "dichotomy"),
+               function(slot) if (slot == "dichotomy") {
+                 identical(deparse(methods::slot(iwdes, slot)),
+                           deparse(methods::slot(ewdes, slot)))
+               } else {
+                 identical(methods::slot(iwdes, slot), methods::slot(ewdes, slot))
+               },
+               logical(1L)))
+  )
 
 })
 
@@ -110,6 +117,7 @@ test_that("ate and ett with data argument", {
   expect_equal(nrow(mtcars), length(wdes))
   expect_true(all(wdes == wdes@.Data))
 
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
   # n_clusters < n
   data(simdata)
@@ -127,6 +135,8 @@ test_that("ate and ett with data argument", {
 
   expect_equal(nrow(simdata), length(wdes))
   expect_true(all(wdes == wdes@.Data))
+  
+  expect_identical(deparse(stats::formula()), deparse(wdes@dichotomy))
 
 })
 
@@ -136,11 +146,11 @@ test_that("ate and ett in lm call", {
 
   mod <- lm(y ~ x, data = simdata, weights = ate(des))
 
-  expect_equal(mod$weights, ate(des, data = simdata)@.Data)
+  expect_equal(mod$weights@.Data, ate(des, data = simdata)@.Data)
 
   mod <- lm(y ~ x, data = simdata, weights = ett(des))
 
-  expect_equal(mod$weights, ett(des, data = simdata)@.Data)
+  expect_equal(mod$weights@.Data, ett(des, data = simdata)@.Data)
 
 })
 
@@ -565,4 +575,84 @@ test_that("#131 numeric blocks don't cause NA weights", {
   expect_true(all(!is.na(mod$weights)))
 
 
+})
+
+test_that(paste("weights with attention to blocks when `data` has different order",
+                "from design data"), {
+  set.seed(31)
+  design_dat <- data.frame(id = letters[seq_len(10)],
+           z = c(rep(c(1, 1, 0), 2), rep(c(0, 1), 2)),
+           blk = c(rep(LETTERS[1:2], each = 3),
+                   rep(LETTERS[3:4], each = 2)))
+  des <- rct_design(z ~ unitid(id) + block(blk), design_dat)
+  
+  analysis_dat <- rbind(design_dat[design_dat$blk == "B",],
+                        design_dat[design_dat$blk == "D",],
+                        design_dat[design_dat$blk == "A",],
+                        design_dat[design_dat$blk == "C",])
+  
+  wts <- .weights_calc(des, target = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
+  expected_triplet_wts <- c(rep(3/2, 2), 3)
+  expected_pair_wts <- rep(2, 2)
+  expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
+                            expected_triplet_wts, expected_pair_wts))
+})
+
+test_that("#180 non-exhaustive dichotomies", {
+  # no missing block ID's
+  data(simdata)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  wdes  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                         dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes) == nrow(simdata))
+  expect_true(all.equal(which(wdes == 0), which(simdata$dose == 200)))
+  expect_true(all.equal(which(wdes == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200,])
+  )
+  
+  # Ben's tests
+  wdes2  <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ate", dichotomy = dose >200 ~ dose <200)
+  expect_true(all(wdes2[simdata$dose==200]==0))
+  expect_true(all(wdes2[simdata$dose!=200]!=0))
+  
+  wdes3  <- propertee:::.weights_calc(des, data = simdata, by = NULL, target = "ett", dichotomy = dose >200 ~ dose <100)
+  expect_true(all(wdes3[simdata$bid==3]==0))
+  
+  # missing block ID's
+  simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, "bid"] <- NA_integer_
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
+  wdes4  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                          dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes4) == nrow(simdata))
+  expect_true(all.equal(which(wdes4 == 0), which(simdata$dose == 200 | is.na(simdata$bid))))
+  expect_true(all.equal(which(wdes4 == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes4,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200 & !is.na(simdata$bid),])
+  )
+  
+  # missing unit ID's
+  data(simdata)
+  simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, paste0("uoa", c(1, 2))] <- NA_integer_
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
+  wdes5  <- .weights_calc(des, data = simdata, by = NULL, target = "ate", 
+                          dichotomy = dose >200 ~ dose <200)
+  
+  expect_true(length(wdes5) == nrow(simdata))
+  expect_true(all.equal(which(wdes5 == 0), which(simdata$dose == 200 | is.na(simdata$uoa1))))
+  expect_true(all.equal(which(wdes5 == 0),
+                        which(is.na(.bin_txt(des, simdata, dose > 200 ~ dose<200)))))
+  expect_equal(
+    nrow(lmitt(y~1, design = des, data = simdata, weights = wdes4,
+               dichotomy = dose >200 ~ dose <200)$model),
+    nrow(simdata[simdata$dose != 200 & !is.na(simdata$uoa1),])
+  )
 })

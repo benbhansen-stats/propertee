@@ -138,48 +138,47 @@ test_that("non-binary treatment, in all data, dichotomization in design", {
   # Treatment exists in data
   data(simdata)
 
-  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
-                    dichotomy = dose >= 200 ~ .)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   camod <- lm(y ~ x, data = simdata)
 
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  expect_silent(a <- lm(y ~ assigned(des, dichotomy = dose >= 200 ~ .), data = simdata))
   # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                                     weights = ett(des))))
+                                     weights = ett(des, dichotomy = dose >= 200 ~ .))))
   expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
-                                     weights = ett(des))))
+                                     weights = ett(des, dichotomy = dose >= 200 ~ .))))
 
   # assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .), data = simdata,
                             offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des, dichotomy = dose >= 200 ~ .), data = simdata,
                             offset = cov_adj(camod, design = des))))
 
   # weights + assigned + cov_adj
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(des),
+                            weights = ett(des, dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod))))
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(),
+                            weights = ett(dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod, design = des))))
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(des),
+                            weights = ett(des, dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
   expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
-                            data = simdata, weights = ett(des))))
+                            data = simdata, weights = ett(des, dichotomy = dose >= 200 ~ .))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
   #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
   expect_silent(as.lmitt(lm(y ~ assigned() +
                               offset(cov_adj(camod, design = des)),
-                            data = simdata, weights = ett(des))))
+                            data = simdata, weights = ett(des, dichotomy = dose >= 200 ~ .))))
 
 })
 
@@ -189,48 +188,47 @@ test_that("non-binary treatment, not in data2, dichotomization in design", {
   # Treatment exists in data
   data(simdata)
 
-  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
-                    dichotomy = dose >= 200 ~ .)
+  des <- rct_design(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   camod <- lm(y ~ x, data = simdata)
   simdata$dose <- NULL
 
 
   # Adopters alone
-  expect_silent(a <- lm(y ~ assigned(des), data = simdata))
+  expect_silent(a <- lm(y ~ assigned(des, dichotomy = dose >= 200 ~ .), data = simdata))
   # teeMod doesnt look in assigned for Design
   # expect_silent(as.lmitt(a))
 
   # Weight + assigned
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(des))))
+                            weights = ett(des, dichotomy = dose >= 200 ~ .))))
   expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
-                            weights = ett(des))))
+                            weights = ett(des, dichotomy = dose >= 200 ~ .))))
 
   # assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .), data = simdata,
                    offset = cov_adj(camod, design = des))))
-  expect_silent(as.lmitt(lm(y ~ assigned(des), data = simdata,
+  expect_silent(as.lmitt(lm(y ~ assigned(des, dichotomy = dose >= 200 ~ .), data = simdata,
                    offset = cov_adj(camod, design = des))))
 
   # weights + assigned + cov_adj
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(des),
+                            weights = ett(des, dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod))))
   expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
-                            weights = ett(),
+                            weights = ett(dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod, design = des))))
   expect_silent(as.lmitt(lm(y ~ z.(), data = simdata,
-                            weights = ett(des),
+                            weights = ett(des, dichotomy = dose >= 200 ~ .),
                             offset = cov_adj(camod, design = des))))
 
   # weight + adopter + cov_adj in formula
   expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
-                            data = simdata, weights = ett(des))))
+                            data = simdata, weights = ett(des, dichotomy = dose >= 200 ~ .))))
   # Fails when trying to obtain Design from a cov_adj inside offset in formula
   #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, design = des)),
   #                      data = simdata, weights = ett()))
   expect_silent(as.lmitt(lm(y ~ assigned() +
                               offset(cov_adj(camod, design = des)),
-                            data = simdata, weights = ett(des))))
+                            data = simdata, weights = ett(des, dichotomy = dose >= 200 ~ .))))
 
 })

@@ -18,10 +18,6 @@
 ##'   variable names. If \code{FALSE} (default), name by their function (e.g.
 ##'   "treatment" or "blocks"). Passing the \code{dnn} argument in \code{...}
 ##'   (an argument of [table()]) overrides whatever is requested here.
-##' @param treatment_binary Should the treatment (if requested) be dichotomized
-##'   of \code{design} contains a \code{dichotomy}? Ignored if \code{design}
-##'   does not contain a \code{dichotomy}, or if neither \code{x} or \code{y} is
-##'   "treatment".
 ##' @param ... additional arguments [table()]
 ##' @return A table of the requested variables.
 ##' @export
@@ -39,7 +35,6 @@ dtable <- function(design,
                    sort = FALSE,
                    decreasing = TRUE,
                    use_var_names = FALSE,
-                   treatment_binary = TRUE,
                    ...) {
 
   # Internal function to match partial names and standardize across uoa/unit of
@@ -75,12 +70,8 @@ dtable <- function(design,
 
       # Since .fix_xy ensures that `x` and `y` contain valid function names,
       # this executes them.
-      if (z == "treatment" & is_binary_or_dichotomized(design)) {
-        # Pass down `treatment_binary`
-        zdat <- match.fun(z)(design, binary = treatment_binary)
-      } else {
-        zdat <- match.fun(z)(design)
-      }
+      zdat <- match.fun(z)(design)
+
       if (ncol(zdat) == 0) {
         # This is hit if user request an element not in the design (e.g.
         # requests block, but design is created without blocks

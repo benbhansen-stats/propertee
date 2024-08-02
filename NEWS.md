@@ -1,3 +1,16 @@
+# propertee 0.4.1
+
+## Bug Fixes
+* Fixed bug where use of `dichotomy` and moderator variables in `lmitt()` could lead to errors due to too long of a formula.
+
+# propertee 0.4.0
+
+## New Features
+* `lmitt()`, weights calculation functions `ate()` and `ett()`, and assignment vector generation function `assigned()` now accept a `dichotomy` argument that can be used for studies with time-varying treatment assignment. The `Design` object, unlike before, will not carry information about this dichotomization. Instead, the information stored there reflecting when units were assigned to treatment (if they were assigned to treatment) will be leveraged to create inverse probability of assignment weights and assignment indicators for datasets that have longitudinal data for the study units.
+
+## Bug Fixes
+* Standard error calculations no longer error when a `by` column is used to uniquely identify rows in the covariance adjustment or effect estimation sample that cannot be distinguished with information in the `Design` alone
+
 # propertee 0.3.10
 
 ## Bug Fixes
