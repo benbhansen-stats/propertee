@@ -5,16 +5,12 @@
 \alias{show,DesignStructure-method}
 \title{\code{Design} Structure Information}
 \usage{
-get_structure(design, binary = FALSE)
+get_structure(design)
 
 \S4method{show}{DesignStructure}(object)
 }
 \arguments{
 \item{design}{a \code{Design} object}
-
-\item{binary}{default \code{FALSE}. If \code{TRUE} and the design contains a
-\code{dichotomy}, replace the treatment column with its binary
-representation. Has no effect if \code{design} is not dichotomized.}
 
 \item{object}{a \code{DesignStructure} object, typically the output of
 \code{\link[=get_structure]{get_structure()}}}

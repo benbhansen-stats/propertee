@@ -62,7 +62,10 @@
 ##' @param weights Which weights should be generated? Options are \code{"ate"}
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
-##' @param ... Additional arguments passed to [lm()].
+##' @param ... Additional arguments passed to [lm()]. One such argument is
+##' \code{dichotomy}, which can be used to dichotomize a non-binary treatment
+##' variable in \code{design}. See the Details section of the \code{ett()} or
+##' \code{att()} help pages for information on specifying this formula.
 ##' @return \code{teeMod} model.
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
@@ -100,20 +103,19 @@ lmitt.formula <- function(obj,
   #lmitt.call contains design, absorb. lm.call contains only things that get
   #passed to lm, model.matrix
 
+  data <- .as_data_frame(data)
+
   # Save the subset and remove it from `lm.call`, to be re-added at the enc
   savedsubset <- lm.call$subset
   lm.call$subset <- NULL
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
+  dichotomy <- lmitt.call$dichotomy
   wt <- lmitt.call$weights
   if (is(wt, "character")) {
-    if (tolower(wt) == "ate") {
-      lm.call$weights <- quote(ate())
-      lmitt.call$weights <- quote(ate())
-    } else if (tolower(wt) == "ett") {
-      lm.call$weights <- quote(ett())
-      lmitt.call$weights <- quote(ett())
+    if ((wt_call <- tolower(wt)) %in% c("ate", "ett")) {
+      lm.call$weights <- lmitt.call$weights <- call(wt_call, dichotomy = dichotomy)
     } else {
       warning(paste("Character other than \"ate\" or \"ett\" passed to",
                     "`weights=` argument.\nIf you are trying to pass a",
@@ -122,7 +124,7 @@ lmitt.formula <- function(obj,
                     "weight generation, only \"ate\" and \"ett\" are",
                     "accepted."))
     }
-  }
+  } else if (is.call(wt) & is.null(dichotomy)) dichotomy <- wt$dichotomy
 
   # First, make sure we have a valid `design=` - if given a formula, make a new
   # `Design`, otherwise ensure `design=` is `Design` class.
@@ -140,14 +142,7 @@ lmitt.formula <- function(obj,
       # Build new call. All calls must include obj and data
       new_d_call <- paste0(des_call, "(",
                            "formula = ", deparse(design),
-                           ", data = ", deparse(lmitt.call$data))
-      # If user passed dichotomy, include it. We do this so the
-      # `design@call` will be in agreement.
-      if (!is.null(lmitt.call$dichotomy)) {
-        new_d_call <- paste0(new_d_call, ", dichotomy = ",
-                             deparse(lmitt.call$dichotomy))
-      }
-      new_d_call <- paste0(new_d_call, ")")
+                           ", data = ", deparse(lmitt.call$data), ")")
       # str2lang converts character into call
       design <- eval(str2lang(new_d_call))
     } else if (is(design, "WeightedDesign")) {
@@ -158,7 +153,7 @@ lmitt.formula <- function(obj,
     }
 
     # #126 block on factor treatments
-    if (is.factor(treatment(design)[, 1])) {
+    if (is.factor(treatment(design)[, 1]) & is.null(dichotomy)) {
       if (is.ordered(treatment(design)[, 1])) {
         fact_or_ord <- "Ordered"
       } else {
@@ -276,23 +271,28 @@ lmitt.formula <- function(obj,
 
   # Generate formula for the internal `lm`
   if (rhstype == "intercept") {
-    new.form <- formula(~ a.())
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ")"))
     moderator <- character()
   } else if (rhstype == "categorical") {
-    new.form <- stats::reformulate(paste0("a.():", rhs, "+", rhs))
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), "):",
+                                          rhs, "+", rhs))
     moderator <- rhs
   } else {
-    new.form <- stats::reformulate(paste0("a.() + a.():", rhs, "+", rhs))
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ") + ",
+                                          "a.(dichotomy=", deparse(dichotomy), "):",
+                                          rhs, "+", rhs))
     moderator <- rhs
   }
   mm.call <- lm.call
-  mm.call[[2]] <- str2lang(deparse(new.form))
+  mm.call[[2]] <- str2lang(paste(deparse(new.form, width.cutoff = 500L), collapse = ""))
   # model.matrix.lm supports as `na.action` argument where
   # model.matrix.default doesn't
   mm.call[[1]] <- quote(stats::model.matrix.lm)
   mm.call$na.action <- "na.pass"
   names(mm.call)[2] <- "object"
   mm <- eval(mm.call, parent.frame())
+  colnames(mm) <- gsub(paste0("dichotomy = ", deparse(dichotomy)), "", colnames(mm),
+                       fixed = TRUE)
 
   if (absorb) {
     mm <- areg.center(mm, as.factor(blocks), lm.call$weights)

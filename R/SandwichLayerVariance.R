@@ -41,7 +41,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   var_func <- get(paste0(".vcov_", type))
   args <- list(...)
   args$x <- x
-  args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  args$cluster_cols <- cluster
   args$cluster <- .make_uoa_ids(x, vcov_type = substr(type, 1, 2), cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
@@ -68,8 +69,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
-  vmat <- .check_df_moderator_estimates(vmat, x, args$cluster)
-  
+  vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+
   attr(vmat, "type") <- "CR0"
   return(vmat)
 }
@@ -124,15 +125,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param vmat output of \code{.vcov_XXX()} called with input to \code{model}
 #'  argument below as the first argument
 #' @param model a fitted \code{teeMod} model
-#' @param cluster a character or factor vector denoting clusters the units of
-#'  observation used to fit \code{model} belong to. Most conveniently, the
-#'  output of \code{.make_uoa_ids()}
+#' @param cluster_cols a character vector indicating the column(s) defining cluster ID's
 #' @param model_data dataframe or name of dataframe used to fit \code{model}
 #' @param envir environment to get \code{model_data} from if \code{model_data} has class \code{name}
 #' @return A variance-covariance matrix with NA's for estimates lacking sufficient
 #' degrees of freedom
 #' @keywords internal
-.check_df_moderator_estimates <- function(vmat, model, cluster, model_data = quote(data),
+.check_df_moderator_estimates <- function(vmat, model, cluster_cols, model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "teeMod")) {
     stop("`model` must be a teeMod object")
@@ -155,6 +154,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   # estimation for valid SE estimation.
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
   mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(stats::model.frame(model)),,drop=FALSE]
+  cluster <- .sanitize_Q_ids(model, cluster_cols)$cluster
   if (ncol(mod_vars) > 1) {
     mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
                         rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")

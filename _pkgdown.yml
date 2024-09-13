@@ -11,6 +11,8 @@ navbar:
     - text: Basic
     - text: Introduction to propertee
       href: articles/intro-to-propertee.html
+    - text: Real-data demonstration with a finely stratified cluster RCT and a broader administrative database
+      href: articles/not-for-cran/mi_vignette/demo.html
     - text: ----------
     - text: Advanced
     - text: Non-binary Treatment Specification
@@ -37,8 +39,7 @@ reference:
 - subtitle: Accessors/Replacers for `Design` Objects
 - contents:
     - treatment
-    - is_dichotomized
-    - dichotomy
+    - has_binary_treatment
 - subtitle: Summary and print methods
 - contents:
     - show,Design-method
@@ -94,3 +95,4 @@ reference:
     - lsoSynth
     - schooldata
     - simdata
+    - michigan_school_pairs

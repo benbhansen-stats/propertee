@@ -181,8 +181,7 @@ test_that("Differing designs found", {
 
   data(simdata)
   des <- obs_design(z ~ cluster(uoa1, uoa2), data = simdata)
-  des2 <- obs_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata,
-                     dichotomy = o >= 3 ~ .)
+  des2 <- obs_design(o ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   # This should error, since there's no `design` argument to `lm`, `assigned()`
   # finds both the `des` inside `ate()` and `des2` inside `cov_adj()`
@@ -237,12 +236,6 @@ test_that("Differing designs found", {
   # No error with a dichotomy
   expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
                              weights = ate(des3, dichotomy = o > 2 ~ .)))
-
-  des4 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata,
-                     dichotomy = o > 2 ~ .)
-
-  expect_silent(mod <- lmitt(y ~ 1, data = simdata, design = des3,
-                              weights = ett(des4)))
 
 })
 
@@ -1039,6 +1032,138 @@ test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by' argument
   expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
 })
 
+test_that(".make_uoa_ids with `by` when Q ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(id = letters[1:15],
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ yr, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  by_overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
+  nonoverlap <- as.character(seq(1, 15, 3))
+  overlap_Q_ix <- match(by_overlap, analysis_dat$by_col)
+  overlap_C_ix <- match(by_overlap, cmod_data$by_col)
+  
+  out <- c(analysis_dat$id[overlap_Q_ix],
+           cmod_data$id[match(nonoverlap, cmod_data$by_col)])
+  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+                                           by = "by_col")),
+               15)
+  expect_equal(ids, factor(out, levels = unique(out)))
+  expect_equal(ids, .make_uoa_ids(mod_w_by, vcov_type = "HC0", cluster = "id",
+                                  by = "by_col"))
+})
+
+test_that(".make_uoa_ids with `by` when C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = letters[1:5],
+                             x = rnorm(5),
+                             a = c(rep(1, 3), rep(0, 2)),
+                             y = rnorm(5),
+                             by_col = seq(3, 15, 3))
+  mod <- lmitt(y ~ 1, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ 1, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  by_overlap <- sort(as.character(seq(3, 15, 3)))
+  nonoverlap <- as.character(setdiff(seq_len(15), seq(3, 15, 3)))
+  overlap_Q_ix <- match(by_overlap, analysis_dat$by_col)
+  overlap_C_ix <- match(by_overlap, cmod_data$by_col)
+  
+  out <- c(analysis_dat$id[overlap_Q_ix],
+           cmod_data$id[match(nonoverlap, cmod_data$by_col)])
+  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+                                           by = "by_col")),
+               15)
+  expect_equal(ids, factor(out, levels = unique(out)))
+  expect_equal(ids, .make_uoa_ids(mod_w_by, vcov_type = "HC0", cluster = "id",
+                                  by = "by_col"))
+})
+
+test_that(".make_uoa_ids with `by` when Q and C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ yr, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  by_overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
+  nonoverlap <- as.character(seq(1, 15, 3))
+  overlap_Q_ix <- match(by_overlap, analysis_dat$by_col)
+  overlap_C_ix <- match(by_overlap, cmod_data$by_col)
+  
+  out <- c(analysis_dat$id[overlap_Q_ix],
+           cmod_data$id[match(nonoverlap, cmod_data$by_col)])
+  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+                                           by = "by_col")),
+               15)
+  expect_equal(ids, factor(out, levels = unique(out)))
+  expect_equal(ids, .make_uoa_ids(mod_w_by, vcov_type = "HC0", cluster = "id",
+                                  by = "by_col"))
+})
+
+test_that(".make_uoa_ids without `by` when Q and C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  expect_error(.make_uoa_ids(mod, vcov_type = "HC0", cluster = "id"),
+               "not uniquely specified. Provide a `by` argument")
+})
+
 test_that("model-based .make_uoa_ids replaces uoa ID's in small blocks with block ID's", {
   data(simdata)
 
@@ -1207,6 +1332,123 @@ test_that(".order_samples when no `by` argument provided", {
 
   expect_true(all.equal(out$Q_not_C, Q_uoas, check.attributes = FALSE))
   expect_true(all.equal(out$C_not_Q, C_uoas, check.attributes = FALSE))
+})
+
+test_that(".order_samples with `by` when Q ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(id = letters[1:15],
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ yr, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
+  nonoverlap <- as.character(seq(1, 15, 3))
+  out <- list("Q_not_C" = setNames(character(0L), character(0L)),
+              "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
+              "C_in_Q" = setNames(overlap, match(overlap, cmod_data$by_col)),
+              "C_not_Q" = setNames(nonoverlap, which(cmod_data$by_col %in% nonoverlap)))
+  expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
+  expect_equal(ord, .order_samples(mod_w_by))
+})
+
+test_that(".order_samples with `by` when C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = letters[1:5],
+                             x = rnorm(5),
+                             a = c(rep(1, 3), rep(0, 2)),
+                             y = rnorm(5),
+                             by_col = seq(3, 15, 3))
+  mod <- lmitt(y ~ 1, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ 1, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  overlap <- sort(as.character(seq(3, 15, 3)))
+  nonoverlap <- as.character(setdiff(seq_len(15), seq(3, 15, 3)))
+  out <- list("Q_not_C" = setNames(character(0L), character(0L)),
+              "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
+              "C_in_Q" = setNames(overlap, match(overlap, cmod_data$by_col)),
+              "C_not_Q" = setNames(nonoverlap, which(cmod_data$by_col %in% nonoverlap)))
+  expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
+  expect_equal(.order_samples(mod_w_by), ord)
+})
+
+test_that(".order_samples with `by` when both Q and C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  mod_w_by <- lmitt(y ~ yr, design = newdes, data = analysis_dat,
+                    offset = cov_adj(cmod, by = "by_col"))
+  
+  overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
+  nonoverlap <- as.character(seq(1, 15, 3))
+  out <- list("Q_not_C" = setNames(character(0L), character(0L)),
+              "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
+              "C_in_Q" = setNames(overlap, match(overlap, cmod_data$by_col)),
+              "C_not_Q" = setNames(nonoverlap, which(cmod_data$by_col %in% nonoverlap)))
+  expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
+  expect_equal(.order_samples(mod_w_by), ord)
+})
+
+test_that(".order_samples without `by` when Q or C ID's aren't unique", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  expect_error(.order_samples(mod),
+               "not uniquely specified. Provide a `by` argument")
 })
 
 test_that("sanitize_Q_ids succeeds with valid `by` argument", {

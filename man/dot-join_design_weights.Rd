@@ -5,7 +5,7 @@
 \title{(Internal) Expand unit of assignment level weights to the level of
 the data}
 \usage{
-.join_design_weights(weights, design, target, data)
+.join_design_weights(weights, design, target, data, dichotomy)
 }
 \arguments{
 \item{weights}{a vector of weights sorted according to the \code{Design}}
@@ -15,6 +15,10 @@ the data}
 \item{target}{One of "ate" or "ett"}
 
 \item{data}{New data}
+
+\item{dichotomy}{formula used to specify a dichotomy of a non-binary treatment variable.
+The output \code{WeightedDesign} object will store this as its \code{dichotomy} slot,
+unless it is NULL, in which case it will be translated to an empty \code{formula}.}
 }
 \value{
 a \code{WeightedDesign}

@@ -7,8 +7,7 @@
 summary.Design <- function(object, ..., treatment_binary = TRUE) {
   out <- list()
   out$Design <- object
-  out$treatment_table <- dtable(object, "treatment",
-                                treatment_binary = treatment_binary)
+  out$treatment_table <- dtable(object, "treatment", ...)
   class(out) <- "summary.Design"
   return(out)
 }

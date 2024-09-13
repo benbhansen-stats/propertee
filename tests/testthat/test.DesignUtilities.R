@@ -49,68 +49,27 @@ test_that("Design formula checking", {
 })
 
 test_that("binary treatment and dichotomy", {
-  expect_error(is_dichotomized(1),
-               "must be")
   expect_error(has_binary_treatment(1),
-               "must be")
-  expect_error(is_binary_or_dichotomized(1),
                "must be")
 
   des1 <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata)
   des2 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata)
-  des3 <- obs_design(o ~ uoa(uoa1, uoa2), data = simdata,
-                     dichotomy = o > 3 ~ o == 1)
-  des4 <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata,
-                     dichotomy = z == 1 ~ z == 0)
 
-  expect_false(is_dichotomized(des1))
   expect_true(has_binary_treatment(des1))
-  expect_true(is_binary_or_dichotomized(des1))
 
-  expect_false(is_dichotomized(des2))
   expect_false(has_binary_treatment(des2))
-  expect_false(is_binary_or_dichotomized(des2))
-
-  expect_true(is_dichotomized(des3))
-  expect_false(has_binary_treatment(des3))
-  expect_true(is_binary_or_dichotomized(des3))
-
-  expect_true(is_dichotomized(des4))
-  expect_true(has_binary_treatment(des4))
-  expect_true(is_binary_or_dichotomized(des4))
-
-  # Adding afterwards
-  dichotomy(des2) <- o >= 2 ~ .
-  expect_true(is_dichotomized(des2))
-  expect_false(has_binary_treatment(des2))
-  expect_true(is_binary_or_dichotomized(des2))
-
-  # Removing
-  dichotomy(des3) <- NULL
-  expect_false(is_dichotomized(des3))
-  expect_false(has_binary_treatment(des3))
-  expect_false(is_binary_or_dichotomized(des3))
 })
 
 test_that("identical_Designs function", {
   data(simdata)
 
   des1 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
-  des2 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata,
-                     dichotomy = dose > 200 ~ dose <= 200)
+  des2 <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
   des3 <- rct_design(dose ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_true(identical_Designs(des1, des2))
   expect_false(identical_Designs(des1, des3))
   expect_false(identical_Designs(des2, des3))
-
-  expect_false(identical_Designs(des1, des2, TRUE))
-  expect_false(identical_Designs(des1, des3, TRUE))
-  expect_false(identical_Designs(des2, des3, TRUE))
-
-  # Was hitting an error if the Design passed in via `design=` contained a
-  # dichotomy. `des2` above has a dichotomy.
-  expect_no_error(lmitt(y ~ 1, design = des2, data = simdata, weights = "ate"))
 
 })
 

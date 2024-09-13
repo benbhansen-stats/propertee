@@ -2293,6 +2293,47 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
 })
 
+test_that("#177 vcov with by argument", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod))
+  expect_error(vcov(mod), "not uniquely specified. Provide a `by` argument")
+  expect_silent(vcov_tee(mod, by = "by_col"))
+})
+
+test_that("#177 vcov with by", {
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                          id = rep(letters[1:5], each = 3),
+                          x = rnorm(5 * 3),
+                          y = rnorm(5 * 3),
+                          by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                             yr = rep(c("01", "02"), 5),
+                             x = rnorm(10),
+                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                             y = rnorm(10),
+                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod, by = "by_col"))
+  expect_equal(vcov(mod), vcov(mod, by = "by_col"))
+})
+
 test_that("vcov_tee does not error when asking for design-based SE for model
           with covariance adjustment but without absorbed block effects",{
   data(simdata)
@@ -2326,7 +2367,7 @@ test_that(".combine_block_ID correctly combines multiple block columns", {
   expect_equal(
     propertee:::.combine_block_ID(df=df, ids=c("block1", "block2"))$block1,
     df_comb$block1
-    )
+  )
 })
 
 test_that(".get_DB_se returns correct value for designs with small blocks",{

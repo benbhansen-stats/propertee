@@ -57,6 +57,8 @@ cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {
           stop(paste(e$message, "in covariance adjustment data"), call. = FALSE)
         })
       })
+  } else {
+    newdata <- .as_data_frame(newdata)
   }
 
   if (!is.null(design)) {
