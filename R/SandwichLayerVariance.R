@@ -573,6 +573,18 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("x must have been fitted using lmitt.formula")
   }
   
+  if (x@Design@type != "RCT"){
+    stop("x must be an RCT design")
+  }
+  
+  # if ate() is not called for weights, throw a warning
+  if (sum(grepl("ate", x@lmitt_call$weights)) == 0){
+    warning(paste("When calculating design-based standard errors,",
+                  "ensure that inverse probability weights are applied.",
+                  "This could be done by specifying weights = ate() in",
+                  "lmitt() or lm()."))
+  }
+  
   if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
     if (!all(os@keys$in_Q)){
       stop(paste("Design-based standard errors cannot be computed for teeMod",
