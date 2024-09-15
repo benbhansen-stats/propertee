@@ -573,8 +573,19 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("x must have been fitted using lmitt.formula")
   }
   
+  if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
+    if (!all(os@keys$in_Q)){
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
+                 "models with external sample for covariance adjustment"))
+    }
+  
   if (x@Design@type != "RCT"){
     stop("x must be an RCT design")
+  }
+  
+  if (length(x@moderator) > 0){
+    stop(paste("Design-based standard errors cannot be computed for teeMod",
+               "models with moderators"))
   }
   
   # if ate() is not called for weights, throw a warning
@@ -585,12 +596,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                   "lmitt() or lm()."))
   }
   
-  if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
-    if (!all(os@keys$in_Q)){
-      stop(paste("Design-based standard errors cannot be computed for teeMod",
-                 "models with external sample for covariance adjustment"))
-  }
-  
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -598,6 +603,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   args$x <- x
   args$db <- TRUE
+  print(stats::expand.model.frame(damod, args$cluster))
   n <- length(args$cluster)
   
   if (x@absorbed_intercepts) {
@@ -612,12 +618,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     if (!is.null(x$call$offset)){
       vmat <- .get_DB_covadj_se(x)
     }
-    else if (length(x@moderator) > 0){
-      stop(paste("Design-based standard errors cannot be computed for teeMod",
-                 "models with moderators"))
-    }
     else {
-      vmat <- .get_DB_se(x)
+      vmat <- .get_DB_wo_covadj_se(x)
     }
   }
   name <- colnames(x$model)[grep("z", colnames(x$model))]
@@ -632,42 +634,30 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param x a fitted \code{DirectAdjusted} model
 #' @details Calculate bread matrix for design-based variance estimate for 
 #'  ITT effect models with covariance adjustment and without absorbed effects
-#'  when only moderate or large strata are present
 #' @return design-based estimation of variance 
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
-  design_obj <- x@Design
-  data <- x$call$data
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
-  cid <- .combine_block_ID(data, name_clu)[, name_clu[1]]
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
   
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  bid <- data[, res[[2]]] # block ids
-  zobs <- data[, res[[3]]] # observed zs
-  nbk <- design_table(design=design_obj, x="treatment",y="block")
+  bread <- .get_DB_covadj_bread(x)
   
-  name_y <- as.character(x$terms[[2]]) # name of the outcome column
-  X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
-  p <- ncol(X1)
-  n <- nrow(X1)
+  signs1 <- ifelse(t(t(bread$b1[2,])) %*% bread$b1[2,] > 0, 1, 0)
+  signs2 <- ifelse(t(t(bread$b1[2,])) %*% bread$b2[2,] > 0, 1, 0)
+  signs3 <- ifelse(t(t(bread$b2[2,])) %*% bread$b2[2,] > 0, 1, 0)
   
-  wc <- x$call$offset@fitted_covariance_model$weight
-  if (is.null(wc)) wc <- 1
-  X1 <- matrix(rep(wc * (x$call$data[,name_y] - x$offset), p),
-               ncol = p) * X1  # n by p, wic * residual * xi
-  wi <- x$weights
-  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
+  meat <- .get_DB_covadj_meat(x)
   
-  XX <- cbind(X1, X2)
-  XX <- aggregate(XX, by = list(cid), FUN = sum)[, 2:(p+2)]
-  const <- sqrt(nbk[,1] * nbk[,2] / rowSums(nbk))
-  XX <- sweep(XX, 1, const[bid], '*')
+  term1 <- bread$b1 %*% (meat$m1u * signs1 + meat$m1l * (1-signs1)) %*% t(bread$b1)
+  term2 <- bread$b2 %*% t(meat$m2u * signs2 + meat$m2l * (1-signs2)) %*% t(bread$b1)
+  term3 <- bread$b2 %*% (meat$m3u * signs3 + meat$m3l * (1-signs3)) %*% t(bread$b2)
   
-  V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
-  V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
-  V01 <- .cov01_est(XX, zobs, bid)
-  
+  vmat <- term1 + 2*term2 + term3
+  return(as.matrix(vmat[2,2]))
+}
+
+.get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
   a22inv <- .get_a22_inverse(x)
@@ -675,31 +665,74 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   a22inv <- matrix(c(1,0,-1,1), nrow = 2, byrow = TRUE)
   C <- matrix(c(1,0,0,1), nrow = 2, byrow = TRUE)
   
+  n <- nrow(x$model)
   bread1 <- a22inv %*% a21 %*% a11inv / n
   bread2 <- - a22inv %*% C / n
   
-  signs1 <- ifelse(t(t(bread1[2,])) %*% bread1[2,] > 0, 1, 0)
-  signs2 <- ifelse(t(t(bread1[2,])) %*% bread2[2,] > 0, 1, 0)
-  signs3 <- ifelse(t(t(bread2[2,])) %*% bread2[2,] > 0, 1, 0)
+  return(list(b1 = bread1, b2 = bread2))
+}
+
+.get_DB_covadj_meat <- function(x, ...) {
+  agg <- .aggregate_individuals(x)
+  data <- agg[[1]]
+  bid <- data[, agg[[2]]]  # block ids
+  zobs <- data[, agg[[3]]] # observed zs
+  
+  p <- length(x$coefficients)
+  XX <- .prepare_DB_matrix_X(x)
+  
+  V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
+  V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
+  V01 <- .cov01_est(XX, zobs, bid)
   
   idl <- (p+2):(2*p+1)
   meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
   meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
-  term1 <- bread1 %*% (meat1u * signs1 + meat1l * (1 - signs1)) %*% t(bread1)
   
   meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
   meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
-  term2 <- bread2 %*% t(meat2u * signs2 + meat2l * (1 - signs2)) %*% t(bread1)
   
   meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
   meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
-  term3 <- bread2 %*% (meat3u * signs3 + meat3l * (1 - signs3)) %*% t(bread2)
   
-  vmat <- term1 + 2*term2 + term3
-  return(as.matrix(vmat[2,2]))
+  return(list(m1u = meat1u, m1l = meat1l,
+              m2u = meat2u, m2l = meat2l,
+              m3u = meat3u, m3l = meat3l))
 }
 
-#' @title (Internal) Design-based variance estimate helper function
+.prepare_DB_matrix_X <- function(x, ...) {
+  design_obj <- x@Design
+  data <- x$call$data
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  cid <- .combine_block_ID(data, name_clu)[, name_clu[1]]
+  
+  agg <- .aggregate_individuals(x)
+  bid <- agg[[1]][, agg[[2]]]  # block ids
+  
+  name_y <- as.character(x$terms[[2]]) # name of the outcome column
+  X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
+  p <- ncol(X1)
+  
+  wc <- x$call$offset@fitted_covariance_model$weight
+  if (is.null(wc)) wc <- 1
+  X1 <- matrix(
+    rep(wc * (data[, name_y] - x$offset), p), ncol = p
+    ) * X1 # n by p, wic * residual * xi
+  
+  wi <- x$weights
+  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
+  
+  XX <- cbind(X1, X2)
+  XX <- aggregate(XX, by = list(cid), FUN = sum)[,-1]
+  
+  # multiple sqrt(product of #treated divided by block sizes) to XX by group
+  nbk <- design_table(design = design_obj, x = "treatment", y = "block")
+  const <- sqrt(nbk[, 1] * nbk[, 2] / rowSums(nbk))
+  XX <- sweep(XX, 1, const[bid], '*')
+  return(XX)
+}
+
+#' @title (Internal) Helper function for design-based variance estimate
 #' @keywords internal
 .cov_mat_est <- function(XXz, bidz){
   cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
@@ -716,7 +749,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V00u, V00l))
 }
 
-#' @title (Internal) Design-based variance estimate helper function
+#' @title (Internal) Helper function for design-based variance estimate
 #' @keywords internal
 .add_mat_diag <- function(A, B){
   d <- nrow(A)
@@ -726,7 +759,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return((A + B) / 2)
 }
 
-#' @title (Internal) Design-based variance estimate helper function
+#' @title (Internal) Helper function for design-based variance estimate
 #' @keywords internal
 .add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
@@ -740,7 +773,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   else return(- (A - B)^2 / 2)
 }
 
-#' @title (Internal) Design-based variance estimate helper function
+#' @title (Internal) Helper function for design-based variance estimate
 #' @keywords internal
 .cov01_est <- function(XX, zobs, bid){
   cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
@@ -758,7 +791,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V01u, V01l))
 }
 
-#' @title (Internal) Design-based variance estimate helper function
+#' @title (Internal) Helper function for design-based variance estimate
 #' @keywords internal
 .add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
   A <- X[zobs==0 & bid==b, ]
@@ -778,15 +811,21 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param x a fitted \code{DirectAdjusted} model
 #' @return the design-based variance estimate
 #' @keywords internal
-.get_DB_se <- function(x, ...){
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  block <- res[[2]]
+.get_DB_wo_covadj_se <- function(x, ...){
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
+  if (!is.null(x$call$offset)){
+    stop("x should not have covariance adjustment")
+  }
+  agg <- .aggregate_individuals(x)
+  data <- agg[[1]]
+  block <- agg[[2]]
   
   ws <- data$.w
-  yobs <- data$.wy  # observed ys
-  zobs <- data[, res[[3]]]  # observed zs
-  bid <- data[, block] # block ids
+  yobs <- data$.wy  # observed ys by cluster
+  zobs <- data[, agg[[3]]]  # observed zs by cluster
+  bid <- data[, block] # block ids of clusters
   
   nbk <- design_table(design=x@Design, x="treatment",y="block")
   # number of units by block and treatment, B by K
@@ -901,7 +940,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   ws <- if (is.null(x$weights)) 1 else x$weights
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=x$call$data),
+  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=data_temp),
                      .wy = ws * data_temp[, name_y])
   
   design_obj <- x@Design
