@@ -14,6 +14,7 @@ NULL
 #' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
 #' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
 #' in the direct adjustment sample.
+#' - \code{"DB0"} for design-based HC0 variance estimates
 #'
 #' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 #' \code{type = "XXX"} will now use your method. Your method should return a
@@ -559,8 +560,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   out <- nq / n * out
 }
 
-#' @title Design-based standard errors with HC0 adjustment
-#' @param x a fitted \code{DirectAdjusted} model
+#' @title Design-based variance estimates with HC0 adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details The design-based variance estimates can be calculated for 
+#' \code{teeMod} models satisfying the following requirements:
+#' - The model uses \code{rct_design} as \code{Design}
+#' - The model only estimates a main treatment effect
+#' - Inverse probability weighting is incorporated
+#' 
 #' @keywords internal
 #' @rdname var_estimators
 .vcov_DB0 <- function(x, ...) {
@@ -603,7 +610,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   args$x <- x
   args$db <- TRUE
-  print(stats::expand.model.frame(damod, args$cluster))
   n <- length(args$cluster)
   
   if (x@absorbed_intercepts) {
@@ -630,11 +636,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @title (Internal) Compute design-based variance estimate
-#' @param x a fitted \code{DirectAdjusted} model
+#' @title (Internal) Design-based variance for models with covariance adjustment
+#' @param x a fitted \code{teeMod} model
 #' @details Calculate bread matrix for design-based variance estimate for 
-#'  ITT effect models with covariance adjustment and without absorbed effects
-#' @return design-based estimation of variance 
+#'  \code{teeMod} models with covariance adjustment and without absorbed effects
+#' @return design-based variance estimate of the main treatment effect estimate
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
@@ -657,6 +663,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(as.matrix(vmat[2,2]))
 }
 
+#' @title (Internal) Bread matrix of design-based variance
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  \code{teeMod} models with covariance adjustment and without absorbed effects
+#' @return a list of bread matrices
+#' @keywords internal
 .get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
@@ -672,6 +684,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(list(b1 = bread1, b2 = bread2))
 }
 
+#' @title (Internal) Meat matrix of design-based variance
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate upper and lower bound estimates of meat matrix 
+#' for design-based variance estimate for \code{teeMod} models 
+#' with covariance adjustment and without absorbed effects
+#' @return a list of meat matrix bounds
+#' @keywords internal
 .get_DB_covadj_meat <- function(x, ...) {
   agg <- .aggregate_individuals(x)
   data <- agg[[1]]
@@ -700,6 +719,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
               m3u = meat3u, m3l = meat3l))
 }
 
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @param x a fitted \code{teeMod} model
+#' @keywords internal
 .prepare_DB_matrix_X <- function(x, ...) {
   design_obj <- x@Design
   data <- x$call$data
@@ -732,7 +754,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(XX)
 }
 
-#' @title (Internal) Helper function for design-based variance estimate
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .cov_mat_est <- function(XXz, bidz){
   cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
@@ -749,7 +771,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V00u, V00l))
 }
 
-#' @title (Internal) Helper function for design-based variance estimate
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .add_mat_diag <- function(A, B){
   d <- nrow(A)
@@ -759,7 +781,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return((A + B) / 2)
 }
 
-#' @title (Internal) Helper function for design-based variance estimate
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
@@ -773,7 +795,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   else return(- (A - B)^2 / 2)
 }
 
-#' @title (Internal) Helper function for design-based variance estimate
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .cov01_est <- function(XX, zobs, bid){
   cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
@@ -791,7 +813,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V01u, V01l))
 }
 
-#' @title (Internal) Helper function for design-based variance estimate
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
   A <- X[zobs==0 & bid==b, ]
@@ -806,10 +828,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(cov01u)
 }
 
-#' Design-based variance estimate for ITT effect models 
-#' without covariance adjustment and without absorbed effects
-#' @param x a fitted \code{DirectAdjusted} model
-#' @return the design-based variance estimate
+#' @title (Internal) Design-based variance for models without covariance adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  \code{teeMod} models without covariance adjustment and 
+#'  without absorbed effects
+#' @return design-based variance estimate of the main treatment effect estimate
 #' @keywords internal
 .get_DB_wo_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
@@ -853,10 +877,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(as.matrix(varest))
 }
 
-#' This function calculates grave{phi}
+#' @title (Internal) Calculate grave{phi}
 #' @keywords internal
-#' @param x a fitted \code{DirectAdjusted} model
-#' @param ... arguments to pass to internal functions
+#' @param x a fitted \code{teeMod} model
 .get_phi_tilde <- function(x, ...){
   ws <- x$weights
   n <- length(ws) # number of units in Q
@@ -890,11 +913,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(phitilde)
 }
 
-#' This function calculates the product of two matrices A_{pp}^{-1} A_{tau p}^T
+#' @title (Internal) Product of \eqn{A_{pp}^{-1} A_{\tau p}^T}
 #' @keywords internal
-#' @param x a fitted \code{DirectAdjusted} model
-#' @param ... arguments to pass to internal functions
-#' @return An \eqn{s\times k} matrix A_{pp}^{-1} A_{tau p}^T
+#' @param x a fitted \code{teeMod} model
+#' @return An \eqn{s\times k} matrix \eqn{A_{pp}^{-1} A_{\tau p}^T}
 .get_appinv_atp <- function(x, ...){
   ws <- x$weights
   # estimated treatment effect tau1 <- x$coefficients
@@ -931,10 +953,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(mat)
 }
 
-#' Aggregate individual-level weights and outcomes to cluster-level
-#' @param x a fitted \code{DirectAdjusted} model
-#' @return a list of a data frame of weights, outcomes, treatments, and block ids;
-#'    the name of the treatment id column; the name of the block id column
+#' @title (Internal) Aggregate weights and outcomes to cluster level
+#' @param x a fitted \code{teeMod} model
+#' @details aggregate individual weights and outcomes to cluster weighted sums
+#' @return a list of 
+#' - a data frame of cluster weights, outcomes, treatments, and block ids;
+#' - treatment id column name; 
+#' - block id column name
 #' @keywords internal
 .aggregate_individuals <- function(x, ...){
   ws <- if (is.null(x$weights)) 1 else x$weights
@@ -965,14 +990,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(list(data = data_aggr, block = name_blk, z = name_trt))
 }
 
-#' Combine multiple block IDs to one column 
-#' @details
-#' the returned data frame has a column named as ids[1] that
-#' contains unique numbers based on the combinations of the values
-#' in the multiple block ID columns
+#' @title (Internal) Merge multiple block IDs
 #' @param df a data frame 
 #' @param ids a vector of block IDs, column names of df
-#' @return data frame df with a column that contains unique block number IDs
+#' @details merge multiple block ID columns by the value combinations
+#' and store the new block ID in the column \code{ids[1]}
+#' @return a data frame with a column that contains unique block number IDs
 #' @keywords internal
 .combine_block_ID <- function(df, ids){
   df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
@@ -986,69 +1009,3 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(df)
 }
 
-#' @title (Internal) Compute design-based variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details Calculate bread matrix for design-based variance estimate for 
-#'  ITT effect models without covariance adjustment and without absorbed effects
-#'  when only moderate or large strata are present
-#' @return inverse of bread matrix 
-#' @keywords internal
-.get_DB_a_inverse <- function(x, ...){
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  bid <- data[, res[[2]]] # block ids
-  
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
-  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
-  
-  A <- matrix(c(rep(0,6), 1,-1,1), nrow = 3, byrow = TRUE)
-  ws_agg <- aggregate(data$.w, by = list(bid), FUN = sum)[,2]
-  A[1,1] <- sum(pbk[,1] * ws_agg)
-  A[2,2] <- sum(pbk[,2] * ws_agg)
-  return(solve(A))
-}
-
-#' @title (Internal) Compute design-based variance blocks
-#' @param x a fitted \code{DirectAdjusted} model
-#' @details Calculate meat matrix for design-based variance estimate for 
-#'  ITT effect models without covariance adjustment and without absorbed effects
-#'  when only moderate or large strata are present
-#' @return meat matrix 
-#' @keywords internal
-.get_DB_meat <- function(x, ...){
-  # Calculate sum of x[i] * x[j] with i not equal to j
-  # x is a numeric vector
-  .prod_sum <- function(x){
-    return(sum(x * sum(x)) - sum(x^2))
-  }
-  res <- .aggregate_individuals(x)
-  data <- res[[1]]
-  
-  ws <- data$.w
-  yobs <- data$.wy # observed ys
-  bid <- data[, res[[2]]] # block ids
-  zobs <- data[, res[[3]]] # observed zs
-  
-  rho <- c(sum((1-zobs) * ws * yobs) / sum((1-zobs) * ws),
-           sum(zobs * ws * yobs) / sum(zobs * ws))
-  
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
-  # number of units in each block and treatment, B by K
-  pbk <- nbk / rowSums(nbk) # assignment probabilities, B by K
-  delbk <- (nbk - 1) / (rowSums(nbk) - 1) * pbk # second assignment probabilities
-  
-  B <- matrix(0, nrow = 3, ncol = 3)
-  wy0_agg <- aggregate((1-zobs)*ws^2*(yobs-rho[1])^2, by = list(bid), FUN = sum)[,2]
-  wy1_agg <- aggregate(zobs*ws^2*(yobs-rho[2])^2, by = list(bid), FUN = sum)[,2]
-  
-  wyy0_agg <- aggregate((ws*(yobs-rho[1]))[zobs == 0], 
-                        by = list(bid[zobs == 0]), FUN = .prod_sum)[,2]
-  wyy1_agg <- aggregate((ws*(yobs-rho[2]))[zobs == 1], 
-                        by = list(bid[zobs == 1]), FUN = .prod_sum)[,2]
-  
-  B[1,1] <- sum((1-pbk[,1]) * wy0_agg) + sum((1-pbk[,1]^2/delbk[,1]) * wyy0_agg)
-  B[2,2] <- sum((1-pbk[,2]) * wy1_agg) + sum((1-pbk[,2]^2/delbk[,2]) * wyy1_agg)
-  B[1,2] <- - (B[1,1] + B[2,2]) / 2
-  B[2,1] <- B[1,2]
-  return(B)
-}
