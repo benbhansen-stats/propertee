@@ -560,7 +560,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   out <- nq / n * out
 }
 
-#' @title Design-based variance estimates with HC0 adjustment
+#' @title (Internal) Design-based variance estimates with HC0 adjustment
 #' @param x a fitted \code{teeMod} model
 #' @details The design-based variance estimates can be calculated for 
 #' \code{teeMod} models satisfying the following requirements:
@@ -719,6 +719,111 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
               m3u = meat3u, m3l = meat3l))
 }
 
+#' @title (Internal) Design-based variance for models without covariance adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  \code{teeMod} models without covariance adjustment and 
+#'  without absorbed effects
+#' @return design-based variance estimate of the main treatment effect estimate
+#' @keywords internal
+.get_DB_wo_covadj_se <- function(x, ...){
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
+  if (!is.null(x$call$offset)){
+    stop("x should not have covariance adjustment")
+  }
+  agg <- .aggregate_individuals(x)
+  data <- agg[[1]]
+  block <- agg[[2]]
+  
+  ws <- data$.w
+  yobs <- data$.wy  # observed ys by cluster
+  zobs <- data[, agg[[3]]]  # observed zs by cluster
+  bid <- data[, block] # block ids of clusters
+  
+  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  # number of units by block and treatment, B by K
+  small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
+  
+  nb <- rowSums(nbk)
+  rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
+           sum(ws * yobs * zobs) / sum(ws * zobs))
+  
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
+  gamsbk <- list()  # s^2_b,j, sample variance
+  for (k in 1:2){
+    indk <- zobs == (k-1)
+    gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
+    gamsbk[[k]] <- aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
+  }
+  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
+  gamsbk[is.na(gamsbk)] <- 0
+  gamsb <- aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
+  
+  nu1 <- rowSums(gamsbk / nbk)
+  nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb - 
+    (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
+  varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
+  return(as.matrix(varest))
+}
+
+#' @title (Internal) Aggregate weights and outcomes to cluster level
+#' @param x a fitted \code{teeMod} model
+#' @details aggregate individual weights and outcomes to cluster weighted sums
+#' @return a list of 
+#' - a data frame of cluster weights, outcomes, treatments, and block ids;
+#' - treatment id column name; 
+#' - block id column name
+#' @keywords internal
+.aggregate_individuals <- function(x, ...){
+  ws <- if (is.null(x$weights)) 1 else x$weights
+  data_temp <- x$call$data
+  name_y <- as.character(x$terms[[2]]) # the column of y
+  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=data_temp),
+                     .wy = ws * data_temp[, name_y])
+  
+  design_obj <- x@Design
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  
+  data_temp <- .combine_block_ID(data_temp, name_blk)
+  name_blk <- name_blk[1]
+  
+  eq_clu <- paste(name_clu, collapse = " + ")
+  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
+  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
+  
+  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
+  data_aggr <- cbind(
+    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
+    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
+  )
+  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
+  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
+  return(list(data = data_aggr, block = name_blk, z = name_trt))
+}
+
+#' @title (Internal) Merge multiple block IDs
+#' @param df a data frame 
+#' @param ids a vector of block IDs, column names of df
+#' @details merge multiple block ID columns by the value combinations
+#' and store the new block ID in the column \code{ids[1]}
+#' @return a data frame with a column that contains unique block number IDs
+#' @keywords internal
+.combine_block_ID <- function(df, ids){
+  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
+  unique_ids <- data.frame(unique(df[,ids[1]]))
+  colnames(unique_ids) <- ids[1]
+  unique_ids$.ID <- seq_len(nrow(unique_ids))
+  
+  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
+  df[,ids[1]] <- df$.ID
+  df$.ID <- NULL
+  return(df)
+}
+
 #' @title (Internal) Helper function for design-based meat matrix calculation
 #' @param x a fitted \code{teeMod} model
 #' @keywords internal
@@ -828,55 +933,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(cov01u)
 }
 
-#' @title (Internal) Design-based variance for models without covariance adjustment
-#' @param x a fitted \code{teeMod} model
-#' @details Calculate bread matrix for design-based variance estimate for 
-#'  \code{teeMod} models without covariance adjustment and 
-#'  without absorbed effects
-#' @return design-based variance estimate of the main treatment effect estimate
-#' @keywords internal
-.get_DB_wo_covadj_se <- function(x, ...){
-  if (x@absorbed_intercepts) {
-    stop("x should not have absorbed intercepts")
-  }
-  if (!is.null(x$call$offset)){
-    stop("x should not have covariance adjustment")
-  }
-  agg <- .aggregate_individuals(x)
-  data <- agg[[1]]
-  block <- agg[[2]]
-  
-  ws <- data$.w
-  yobs <- data$.wy  # observed ys by cluster
-  zobs <- data[, agg[[3]]]  # observed zs by cluster
-  bid <- data[, block] # block ids of clusters
-  
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
-  # number of units by block and treatment, B by K
-  small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
-  
-  nb <- rowSums(nbk)
-  rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
-             sum(ws * yobs * zobs) / sum(ws * zobs))
-  
-  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
-  gamsbk <- list()  # s^2_b,j, sample variance
-  for (k in 1:2){
-    indk <- zobs == (k-1)
-    gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
-    gamsbk[[k]] <- aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
-  }
-  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
-  gamsbk[is.na(gamsbk)] <- 0
-  gamsb <- aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
-  
-  nu1 <- rowSums(gamsbk / nbk)
-  nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb - 
-    (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
-  varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
-  return(as.matrix(varest))
-}
-
 #' @title (Internal) Calculate grave{phi}
 #' @keywords internal
 #' @param x a fitted \code{teeMod} model
@@ -951,61 +1007,5 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
   }
   return(mat)
-}
-
-#' @title (Internal) Aggregate weights and outcomes to cluster level
-#' @param x a fitted \code{teeMod} model
-#' @details aggregate individual weights and outcomes to cluster weighted sums
-#' @return a list of 
-#' - a data frame of cluster weights, outcomes, treatments, and block ids;
-#' - treatment id column name; 
-#' - block id column name
-#' @keywords internal
-.aggregate_individuals <- function(x, ...){
-  ws <- if (is.null(x$weights)) 1 else x$weights
-  data_temp <- x$call$data
-  name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=data_temp),
-                     .wy = ws * data_temp[, name_y])
-  
-  design_obj <- x@Design
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
-  
-  data_temp <- .combine_block_ID(data_temp, name_blk)
-  name_blk <- name_blk[1]
-  
-  eq_clu <- paste(name_clu, collapse = " + ")
-  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
-  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
-  
-  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
-  data_aggr <- cbind(
-    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
-    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
-  )
-  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
-  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
-  return(list(data = data_aggr, block = name_blk, z = name_trt))
-}
-
-#' @title (Internal) Merge multiple block IDs
-#' @param df a data frame 
-#' @param ids a vector of block IDs, column names of df
-#' @details merge multiple block ID columns by the value combinations
-#' and store the new block ID in the column \code{ids[1]}
-#' @return a data frame with a column that contains unique block number IDs
-#' @keywords internal
-.combine_block_ID <- function(df, ids){
-  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
-  unique_ids <- data.frame(unique(df[,ids[1]]))
-  colnames(unique_ids) <- ids[1]
-  unique_ids$.ID <- seq_len(nrow(unique_ids))
-  
-  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
-  df[,ids[1]] <- df$.ID
-  df$.ID <- NULL
-  return(df)
 }
 
