@@ -692,13 +692,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @return a list of meat matrix bounds
 #' @keywords internal
 .get_DB_covadj_meat <- function(x, ...) {
-  agg <- .aggregate_individuals(x)
+  agg <- .aggregate_to_cluster(x)
   data <- agg[[1]]
   bid <- data[, agg[[2]]]  # block ids
   zobs <- data[, agg[[3]]] # observed zs
   
   p <- length(x$coefficients)
-  XX <- .prepare_DB_matrix_X(x)
+  XX <- .prepare_design_matrix(x)
   
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
   V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
@@ -733,7 +733,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
-  agg <- .aggregate_individuals(x)
+  agg <- .aggregate_to_cluster(x)
   data <- agg[[1]]
   block <- agg[[2]]
   
@@ -776,7 +776,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' - treatment id column name; 
 #' - block id column name
 #' @keywords internal
-.aggregate_individuals <- function(x, ...){
+.aggregate_to_cluster <- function(x, ...){
   ws <- if (is.null(x$weights)) 1 else x$weights
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
@@ -788,7 +788,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
   
-  data_temp <- .combine_block_ID(data_temp, name_blk)
+  data_temp <- .merge_block_id_cols(data_temp, name_blk)
   name_blk <- name_blk[1]
   
   eq_clu <- paste(name_clu, collapse = " + ")
@@ -812,7 +812,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' and store the new block ID in the column \code{ids[1]}
 #' @return a data frame with a column that contains unique block number IDs
 #' @keywords internal
-.combine_block_ID <- function(df, ids){
+.merge_block_id_cols <- function(df, ids){
   df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
   unique_ids <- data.frame(unique(df[,ids[1]]))
   colnames(unique_ids) <- ids[1]
@@ -827,13 +827,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @title (Internal) Helper function for design-based meat matrix calculation
 #' @param x a fitted \code{teeMod} model
 #' @keywords internal
-.prepare_DB_matrix_X <- function(x, ...) {
+.prepare_design_matrix <- function(x, ...) {
   design_obj <- x@Design
   data <- x$call$data
   name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
-  cid <- .combine_block_ID(data, name_clu)[, name_clu[1]]
+  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
   
-  agg <- .aggregate_individuals(x)
+  agg <- .aggregate_to_cluster(x)
   bid <- agg[[1]][, agg[[2]]]  # block ids
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
@@ -950,7 +950,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   
   # stratum ids 
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  df <- .combine_block_ID(df, name_blk)
+  df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
   s <- length(unique(stratum)) # number of blocks
@@ -986,7 +986,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   
   # stratum ids 
   name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  df <- .combine_block_ID(df, name_blk)
+  df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
   s <- length(unique(stratum)) # number of blocks
