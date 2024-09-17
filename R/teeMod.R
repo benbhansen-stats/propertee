@@ -451,12 +451,13 @@ update.teeMod <- function(object, ...) {
              "instead."))
 }
 
-#' Contributions to estimating equations from a \code{DirectAdjusted} model with
-#' absorbed intercepts
-#' @param x a fitted \code{DirectAdjusted} object
+#' @title Design-based estimating equations contributions 
+#' @param x a fitted \code{teeMod} object
 #' @param ... arguments passed to methods
-#' @return An \eqn{n\times k} matrix of contributions to empirical estimating 
-#' equations from a design-based perspective
+#' @details calculate contributions to empirical estimating equations
+#' from a \code{teeMod} model with absorbed intercepts 
+#' from the design-based perspective
+#' @return An \eqn{n\times k} matrix
 #' @keywords internal
 .estfun_DB_blockabsorb <- function (x, ...){
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
