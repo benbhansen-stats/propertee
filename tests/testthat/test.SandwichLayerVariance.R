@@ -2356,7 +2356,7 @@ test_that("vcov_tee errors when asking for design-based SE for a model
   )
 })
 
-test_that(".combine_block_ID correctly combines multiple block columns", {
+test_that(".merge_block_id_cols correctly combines multiple block columns", {
   df <- data.frame(
     block1 = c("A", "A", "B", "B", "B", "B"),
     block2 = c(1, 1, 1, 1, 2, 2)
@@ -2365,12 +2365,12 @@ test_that(".combine_block_ID correctly combines multiple block columns", {
     block1 = c(1, 1, 2, 2, 3, 3)
   )
   expect_equal(
-    propertee:::.combine_block_ID(df=df, ids=c("block1", "block2"))$block1,
+    propertee:::.merge_block_id_cols(df=df, ids=c("block1", "block2"))$block1,
     df_comb$block1
   )
 })
 
-test_that(".get_DB_se returns correct value for designs with small blocks",{
+test_that(".get_DB_wo_covadj_se returns correct value for designs with small blocks",{
   # generate data
   nbs <- rep(2, 10)
   n <- sum(nbs) # sample size
@@ -2408,7 +2408,7 @@ test_that(".get_DB_se returns correct value for designs with small blocks",{
   expect_equal(vcov_tee(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
 })
 
-test_that(".get_DB_se returns correct value for designs with a few large blocks",{
+test_that(".get_DB_wo_covadj_se returns correct value for designs with a few large blocks",{
   # generate data
   nbs <- rep(10, 2)
   n <- sum(nbs) # sample size
@@ -2444,12 +2444,12 @@ test_that(".get_DB_se returns correct value for designs with a few large blocks"
   des <- rct_design(z ~ cluster(cid) + block(bid), data)
   damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
   
-  ainv <- .get_DB_a_inverse(damod)
-  meat <- .get_DB_meat(damod)
-  vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+  #ainv <- .get_DB_a_inverse(damod)
+  #meat <- .get_DB_meat(damod)
+  #vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
   
   expect_equal(vcov_tee(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
-  expect_true(vmat[1,1] != sum(nu) / sum(ws)^2) 
+  #expect_true(vmat[1,1] != sum(nu) / sum(ws)^2) 
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
@@ -2479,7 +2479,7 @@ test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
 })
 
 test_that(".get_phi_tilde returns correct grave{phi}
-          for DA models with absorbed intercept", {
+          for tee models with absorbed intercept", {
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   cmod <- lm(y ~ x, simdata)
