@@ -595,14 +595,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                "models with moderators"))
   }
   
-  # if ate() is not called for weights, throw a warning
-  if (sum(grepl("ate", x@lmitt_call$weights)) == 0){
-    warning(paste("When calculating design-based standard errors,",
-                  "ensure that inverse probability weights are applied.",
-                  "This could be done by specifying weights = ate() in",
-                  "lmitt() or lm()."))
-  }
-  
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -621,6 +613,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     vmat <- as.matrix(vmat[name, name])
   }
   else {
+    # if ate() is not called for weights, throw a warning
+    if (sum(grepl("ate", x@lmitt_call$weights)) == 0){
+      warning(paste("When calculating design-based standard errors,",
+                    "ensure that inverse probability weights are applied.",
+                    "This could be done by specifying weights = ate() in",
+                    "lmitt() or lm()."))
+    }
+    
     if (!is.null(x$call$offset)){
       vmat <- .get_DB_covadj_se(x)
     }
