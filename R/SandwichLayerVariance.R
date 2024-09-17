@@ -646,6 +646,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (x@absorbed_intercepts) {
     stop("x should not have absorbed intercepts")
   }
+  design_obj <- x@Design
+  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  if (!is.na(x$call$offset@fitted_covariance_model$coefficients[name_trt])) {
+    stop(paste("Design-based standard errors cannot be calculated for",
+               "tee models with treatment in prior covariance adjustment"))
+  }
   
   bread <- .get_DB_covadj_bread(x)
   
@@ -697,7 +703,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   bid <- data[, agg[[2]]]  # block ids
   zobs <- data[, agg[[3]]] # observed zs
   
-  p <- length(x$coefficients)
+  p <- length(x$call$offset@fitted_covariance_model$coefficients)
   XX <- .prepare_design_matrix(x)
   
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
