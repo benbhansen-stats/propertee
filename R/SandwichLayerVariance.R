@@ -731,7 +731,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #'  \code{teeMod} models without covariance adjustment and 
 #'  without absorbed effects
 #' @return design-based variance estimate of the main treatment effect estimate
-#' @importFrom stats aggregate
+#' @importFrom stats aggregate var
 #' @keywords internal
 .get_DB_wo_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
@@ -762,7 +762,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   for (k in 1:2){
     indk <- zobs == (k-1)
     gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
-    gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
+    gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = stats::var)
   }
   gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
   gamsbk[is.na(gamsbk)] <- 0
