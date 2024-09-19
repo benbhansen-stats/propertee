@@ -2452,6 +2452,29 @@ test_that(".get_DB_wo_covadj_se returns correct value for designs with a few lar
   #expect_true(vmat[1,1] != sum(nu) / sum(ws)^2) 
 })
 
+test_that("design-based SE for tee models without absorption does not crash", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
+  teemod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod))
+  expect_silent(vcov_tee(teemod, type = "DB0"))
+  expect_silent(vcov_tee(teemod_off, type = "DB0"))
+})
+
+test_that("design-based SE for tee models with absorption does not crash", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  teemod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                      absorb = TRUE)
+  teemod_abs_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                          offset = cov_adj(cmod), absorb = TRUE)
+  expect_silent(vcov_tee(teemod_abs, type = "DB0"))
+  expect_silent(vcov_tee(teemod_abs_off, type = "DB0"))
+})
+
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
           for tee models with absorbed intercept", {
   data(simdata)
