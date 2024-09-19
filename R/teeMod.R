@@ -123,7 +123,7 @@ estfun.teeMod <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(.base_S3class_estfun(x) - do.call(.estfun_DB_blockabsorb, args))
+    return(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...))
   }
   
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -138,7 +138,7 @@ estfun.teeMod <- function(x, ...) {
 
   ## form matrix of estimating equations
   mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-  mat <- mat - do.call(.estfun_DB_blockabsorb, args)
+  mat <- mat - .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -459,10 +459,10 @@ update.teeMod <- function(object, ...) {
 #' from the design-based perspective
 #' @return An \eqn{n\times k} matrix
 #' @keywords internal
-.estfun_DB_blockabsorb <- function (x, ...){
+.estfun_DB_blockabsorb <- function (x, by = NULL, ...){
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
     # if the model involves SandwichLayer covariance adjustment
-    temp <- .align_and_extend_estfuns(x)[["psi"]]
+    temp <- .align_and_extend_estfuns(x, by = by, ...)[["psi"]]
   }
   else
     temp <- .base_S3class_estfun(x)
@@ -480,7 +480,7 @@ update.teeMod <- function(object, ...) {
     # if the model involves covariance adjustment
     # define the row ordering using .order_samples() and insert rows of 0's into
     # the matrices where necessary while maintaining observation alignment
-    id_order <- .order_samples(x, verbose = FALSE)
+    id_order <- .order_samples(x, by = by, verbose = FALSE)
     aligned_phitilde <- matrix(
       0, nrow = nrow(temp), ncol = ncol(phitilde),
       dimnames = list(seq_len(nrow(temp)), colnames(phitilde)))
