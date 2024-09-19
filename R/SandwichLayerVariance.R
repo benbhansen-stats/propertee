@@ -731,6 +731,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #'  \code{teeMod} models without covariance adjustment and 
 #'  without absorbed effects
 #' @return design-based variance estimate of the main treatment effect estimate
+#' @importFrom stats aggregate
 #' @keywords internal
 .get_DB_wo_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
@@ -761,11 +762,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   for (k in 1:2){
     indk <- zobs == (k-1)
     gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
-    gamsbk[[k]] <- aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
+    gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = var)
   }
   gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
   gamsbk[is.na(gamsbk)] <- 0
-  gamsb <- aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
+  gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
   
   nu1 <- rowSums(gamsbk / nbk)
   nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb - 
@@ -832,6 +833,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
 #' @param x a fitted \code{teeMod} model
+#' @importFrom stats aggregate
 #' @keywords internal
 .prepare_design_matrix <- function(x, ...) {
   design_obj <- x@Design
@@ -856,7 +858,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
   
   XX <- cbind(X1, X2)
-  XX <- aggregate(XX, by = list(cid), FUN = sum)[,-1]
+  XX <- stats::aggregate(XX, by = list(cid), FUN = sum)[,-1]
   
   # multiple sqrt(product of #treated divided by block sizes) to XX by group
   nbk <- design_table(design = design_obj, x = "treatment", y = "block")
@@ -866,9 +868,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
+#' @importFrom stats cov
 #' @keywords internal
 .cov_mat_est <- function(XXz, bidz){
-  cov0 <- tapply(1:nrow(XXz), bidz, function(s) cov(XXz[s,]))
+  cov0 <- tapply(1:nrow(XXz), bidz, function(s) stats::cov(XXz[s,]))
   covuu <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,]))
   covll <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,], upper=FALSE))
     
@@ -907,10 +910,17 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
+#' @importFrom stats cov
 #' @keywords internal
 .cov01_est <- function(XX, zobs, bid){
-  cov0 <- tapply(1:nrow(XX[zobs==0,]), bid[zobs==0], function(s) cov(XX[zobs==0,][s,]))
-  cov1 <- tapply(1:nrow(XX[zobs==1,]), bid[zobs==1], function(s) cov(XX[zobs==1,][s,]))
+  cov0 <- tapply(
+    1:nrow(XX[zobs==0,]), bid[zobs==0], 
+    function(s) stats::cov(XX[zobs==0,][s,])
+    )
+  cov1 <- tapply(
+    1:nrow(XX[zobs==1,]), bid[zobs==1], 
+    function(s) stats::cov(XX[zobs==1,][s,])
+    )
   cov01 <- lapply(1:length(cov0), function(s) .add_mat_diag(cov0[[s]], cov1[[s]]))
   
   cov01u <- lapply(1:length(cov0), 
