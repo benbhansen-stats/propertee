@@ -613,10 +613,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     vmat <- as.matrix(vmat[name, name])
   }
   else {
-    # if ate() is not called for weights, throw a warning
-    if (sum(grepl("ate", x@lmitt_call$weights)) == 0){
+    # if model weights does not incorporate IPW, throw a warning
+    if (!inherits(x@lmitt_call$weights, "call") | 
+        x@lmitt_call$weights[[1]] != "ate"){
       warning(paste("When calculating design-based standard errors,",
-                    "ensure that inverse probability weights are applied.",
+                    "please ensure that inverse probability weights are applied.",
                     "This could be done by specifying weights = ate() in",
                     "lmitt() or lm()."))
     }
@@ -638,17 +639,18 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' @title (Internal) Design-based variance for models with covariance adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate bread matrix for design-based variance estimate for 
+#' @details Calculate design-based variance estimate for 
 #'  \code{teeMod} models with covariance adjustment and without absorbed effects
 #' @return design-based variance estimate of the main treatment effect estimate
+#' @importFrom stats formula
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
     stop("x should not have absorbed intercepts")
   }
   design_obj <- x@Design
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  if (!is.na(x$call$offset@fitted_covariance_model$coefficients[name_trt])) {
+  name_trt <- var_names(design_obj, "t")
+  if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
     stop(paste("Design-based standard errors cannot be calculated for",
                "tee models with treatment in prior covariance adjustment"))
   }
@@ -677,10 +679,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 .get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x)
-  a22inv <- .get_a22_inverse(x)
-  a21 <- matrix(0, nrow = nrow(a21), ncol = ncol(a21))
   a22inv <- matrix(c(1,0,-1,1), nrow = 2, byrow = TRUE)
+  a21 <- matrix(0, nrow = nrow(a11inv), ncol = nrow(a22inv))
+  #a22inv <- .get_a22_inverse(x)
+  #a21 <- .get_a21(x)
+  
   C <- matrix(c(1,0,0,1), nrow = 2, byrow = TRUE)
   
   n <- nrow(x$model)
@@ -696,14 +699,15 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' for design-based variance estimate for \code{teeMod} models 
 #' with covariance adjustment and without absorbed effects
 #' @return a list of meat matrix bounds
+#' @importFrom stats model.frame
 #' @keywords internal
 .get_DB_covadj_meat <- function(x, ...) {
   agg <- .aggregate_to_cluster(x)
-  data <- agg[[1]]
-  bid <- data[, agg[[2]]]  # block ids
-  zobs <- data[, agg[[3]]] # observed zs
+  data <- agg$data
+  bid <- data[, agg$block]  # block ids
+  zobs <- data[, agg$z] # observed zs
   
-  p <- length(x$call$offset@fitted_covariance_model$coefficients)
+  p <- ncol(stats::model.frame(x$model$`(offset)`@fitted_covariance_model))
   XX <- .prepare_design_matrix(x)
   
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
@@ -740,20 +744,27 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
+  if (inherits(os <- x$model$`(offset)`, "SandwichLayer")){
+    stop("x should not have an offset of class `SandwichLayer`")
+  }
   agg <- .aggregate_to_cluster(x)
-  data <- agg[[1]]
-  block <- agg[[2]]
+  data <- agg$data
+  block <- agg$block
   
   ws <- data$.w
   yobs <- data$.wy  # observed ys by cluster
-  zobs <- data[, agg[[3]]]  # observed zs by cluster
+  zobs <- data[, agg$z]  # observed zs by cluster
   bid <- data[, block] # block ids of clusters
   
-  nbk <- design_table(design=x@Design, x="treatment",y="block")
+  if (length(unique(bid)) == 1) {
+    nbk <- t(design_table(design=x@Design, x="treatment"))
+  } else {
+    nbk <- design_table(design=x@Design, x="treatment",y="block")
+  }
   # number of units by block and treatment, B by K
   small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
-  
   nb <- rowSums(nbk)
+  
   rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
            sum(ws * yobs * zobs) / sum(ws * zobs))
   
@@ -791,13 +802,18 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                      .wy = ws * data_temp[, name_y])
   
   design_obj <- x@Design
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  name_trt <- var_names(design_obj, "t")
+  name_blk <- var_names(design_obj, "b")
+  name_clu <- var_names(design_obj, "u")
   
-  data_temp <- .merge_block_id_cols(data_temp, name_blk)
-  name_blk <- name_blk[1]
-  
+  if (length(name_blk) > 0) {
+    data_temp <- .merge_block_id_cols(data_temp, name_blk)
+    name_blk <- name_blk[1] # merged block id is stored at column name_blk[1]
+  }
+  else {
+    data_temp$bid <- 1
+    name_blk <- 'bid'
+  }
   eq_clu <- paste(name_clu, collapse = " + ")
   form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
   form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
@@ -838,17 +854,18 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 .prepare_design_matrix <- function(x, ...) {
   design_obj <- x@Design
   data <- x$call$data
-  name_clu <- colnames(design_obj@structure)[design_obj@column_index == "u"]
+  name_clu <- var_names(design_obj, "u")
   cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
+  # merged cluster id is stored at column name_clu[1]
   
   agg <- .aggregate_to_cluster(x)
-  bid <- agg[[1]][, agg[[2]]]  # block ids
+  bid <- agg$data[, agg$block]  # block ids
   
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
-  X1 <- model.matrix(x$call$offset@fitted_covariance_model) # design matrix
+  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model) # design matrix
   p <- ncol(X1)
   
-  wc <- x$call$offset@fitted_covariance_model$weight
+  wc <- x$model$`(offset)`@fitted_covariance_model$weight
   if (is.null(wc)) wc <- 1
   X1 <- matrix(
     rep(wc * (data[, name_y] - x$offset), p), ncol = p
@@ -861,7 +878,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   XX <- stats::aggregate(XX, by = list(cid), FUN = sum)[,-1]
   
   # multiple sqrt(product of #treated divided by block sizes) to XX by group
-  nbk <- design_table(design = design_obj, x = "treatment", y = "block")
+  if (length(unique(bid)) == 1) {
+    nbk <- t(design_table(design=x@Design, x="treatment"))
+  } else {
+    nbk <- design_table(design=x@Design, x="treatment",y="block")
+  }
   const <- sqrt(nbk[, 1] * nbk[, 2] / rowSums(nbk))
   XX <- sweep(XX, 1, const[bid], '*')
   return(XX)
@@ -959,13 +980,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   df <- x$call$data
   
   # treatment assignments
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_trt <- var_names(design_obj, "t")
   assignment <- df[[name_trt]]
   k <- length(unique(assignment))
   z_ind <- sapply(c(0,1), function(val) as.integer(assignment == val))
   
   # stratum ids 
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_blk <- var_names(design_obj, "b")
   df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
@@ -996,12 +1017,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   design_obj <- x@Design
   df <- x$call$data
   
-  name_trt <- colnames(design_obj@structure)[design_obj@column_index == "t"]
+  name_trt <- var_names(design_obj, "t")
   assignment <- df[[name_trt]]
   k <- length(unique(assignment))
   
   # stratum ids 
-  name_blk <- colnames(design_obj@structure)[design_obj@column_index == "b"]
+  name_blk <- var_names(design_obj, "b")
   df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
   stratum <- df[[name_blk]]
