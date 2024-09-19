@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.get_phi_tilde}
 \alias{.get_phi_tilde}
-\title{(Internal) Calculate grave{phi}}
+\title{(Internal) Calculate grave\{phi\}}
 \usage{
 .get_phi_tilde(x, ...)
 }
@@ -10,6 +10,6 @@
 \item{x}{a fitted \code{teeMod} model}
 }
 \description{
-(Internal) Calculate grave{phi}
+(Internal) Calculate grave\{phi\}
 }
 \keyword{internal}
