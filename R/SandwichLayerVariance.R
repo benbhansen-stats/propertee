@@ -949,7 +949,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(cov01u)
 }
 
-#' @title (Internal) Calculate grave{phi}
+#' @title (Internal) Calculate grave\{phi\}
 #' @keywords internal
 #' @param x a fitted \code{teeMod} model
 .get_phi_tilde <- function(x, ...){
@@ -1024,4 +1024,3 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   return(mat)
 }
-
