@@ -6,7 +6,15 @@
 \usage{
 .cov_mat_est(XXz, bidz)
 }
+\value{
+estimated upper and lower bounds of covariance matrix of
+estimating function vectors under either treatment or control
+}
 \description{
 (Internal) Helper function for design-based meat matrix calculation
+}
+\details{
+Diagonal elements are estimated by sample variances
+Off-diagonal elements are estimated using the Young's elementary inequality
 }
 \keyword{internal}

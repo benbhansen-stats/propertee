@@ -614,8 +614,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   else {
     # if model weights does not incorporate IPW, throw a warning
-    if (!inherits(x@lmitt_call$weights, "call") | 
-        x@lmitt_call$weights[[1]] != "ate"){
+    if (!(inherits(x@lmitt_call$weights, "call") & 
+          sum(grepl("ate", x@lmitt_call$weights)) > 0)){
       warning(paste("When calculating design-based standard errors,",
                     "please ensure that inverse probability weights are applied.",
                     "This could be done by specifying weights = ate() in",
@@ -849,6 +849,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
 #' @param x a fitted \code{teeMod} model
+#' @return a \eqn{m \items (p+2)} matrix of cluster sums of design-based 
+#'   estimating equations scaled by \eqn{\sqrt{m_{b0}m_{b1}}/m_{b}}.
+#'   Here \eqn{m} is the number of clusters, \eqn{p} is the number of covariates 
+#'   used in the prior covariance adjustment (excluding intercept)
 #' @importFrom stats aggregate
 #' @keywords internal
 .prepare_design_matrix <- function(x, ...) {
@@ -889,6 +893,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
+#' @details
+#' Diagonal elements are estimated by sample variances
+#' Off-diagonal elements are estimated using the Young's elementary inequality
+#' @return estimated upper and lower bounds of covariance matrix of 
+#'   estimating function vectors under either treatment or control
 #' @importFrom stats cov
 #' @keywords internal
 .cov_mat_est <- function(XXz, bidz){
@@ -931,6 +940,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
+#' @details the Young's elementary inequality is used
+#' @return estimated upper and lower bounds of covariance matrix of 
+#'   estimating function vectors under treatment and under control
 #' @importFrom stats cov
 #' @keywords internal
 .cov01_est <- function(XX, zobs, bid){

@@ -6,7 +6,14 @@
 \usage{
 .cov01_est(XX, zobs, bid)
 }
+\value{
+estimated upper and lower bounds of covariance matrix of
+estimating function vectors under treatment and under control
+}
 \description{
 (Internal) Helper function for design-based meat matrix calculation
+}
+\details{
+the Young's elementary inequality is used
 }
 \keyword{internal}
