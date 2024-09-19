@@ -2,9 +2,12 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{vcov_tee}
 \alias{vcov_tee}
+\alias{.vcov_DB0}
 \title{Variance/Covariance for \code{teeMod} objects}
 \usage{
 vcov_tee(x, type = "CR0", cluster = NULL, ...)
+
+.vcov_DB0(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
@@ -38,9 +41,19 @@ with HC1 corrections based on the direct adjustment estimate i.e.,
 \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
 \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
 in the direct adjustment sample.
+\item \code{"DB0"} for design-based HC0 variance estimates
 }
 
 To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 \code{type = "XXX"} will now use your method. Your method should return a
 matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
+
+The design-based variance estimates can be calculated for
+\code{teeMod} models satisfying the following requirements:
+\itemize{
+\item The model uses \code{rct_design} as \code{Design}
+\item The model only estimates a main treatment effect
+\item Inverse probability weighting is incorporated
 }
+}
+\keyword{internal}
