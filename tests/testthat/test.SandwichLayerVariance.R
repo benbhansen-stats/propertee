@@ -2527,6 +2527,13 @@ test_that("design-based SE for tee models without absorption does not crash", {
                      offset = cov_adj(cmod))
   expect_silent(vcov_tee(teemod, type = "DB0"))
   expect_silent(vcov_tee(teemod_off, type = "DB0"))
+  
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
+  teemod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                      offset = cov_adj(cmod))
+  expect_silent(vcov_tee(teemod, type = "DB0"))
+  expect_silent(vcov_tee(teemod_off, type = "DB0"))
 })
 
 test_that("design-based SE for tee models with absorption does not crash", {
