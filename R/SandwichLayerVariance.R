@@ -14,6 +14,7 @@ NULL
 #' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
 #' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
 #' in the direct adjustment sample.
+#' - \code{"DB0"} for design-based HC0 variance estimates
 #'
 #' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 #' \code{type = "XXX"} will now use your method. Your method should return a
@@ -46,7 +47,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   args$cluster <- .make_uoa_ids(x, vcov_type = substr(type, 1, 2), cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
-
+  
   return(est)
 }
 
@@ -55,7 +56,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-
+  
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -557,4 +558,493 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   n <- nq + nc_not_q
 
   out <- nq / n * out
+}
+
+#' @title (Internal) Design-based variance estimates with HC0 adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details The design-based variance estimates can be calculated for 
+#' \code{teeMod} models satisfying the following requirements:
+#' - The model uses \code{rct_design} as \code{Design}
+#' - The model only estimates a main treatment effect
+#' - Inverse probability weighting is incorporated
+#' 
+#' @keywords internal
+#' @rdname var_estimators
+.vcov_DB0 <- function(x, ...) {
+  if (!inherits(x, "teeMod")) {
+    stop("x must be a teeMod model")
+  }
+  
+  if (!x@lmitt_fitted){
+    # x@lmitt_fitted is false if someone created x using as.lmitt
+    stop("x must have been fitted using lmitt.formula")
+  }
+  
+  if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
+    if (!all(os@keys$in_Q)){
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
+                 "models with external sample for covariance adjustment"))
+    }
+  
+  if (x@Design@type != "RCT"){
+    stop("Design-based standard errors can only be computed for RCT designs")
+  }
+  
+  if (length(x@moderator) > 0){
+    stop(paste("Design-based standard errors cannot be computed for teeMod",
+               "models with moderators"))
+  }
+  
+  args <- list(...)
+  if ("type" %in% names(args)) {
+    stop(paste("Cannot override the `type` argument for meat",
+               "matrix computations"))
+  }
+  args$x <- x
+  args$db <- TRUE
+  n <- length(args$cluster)
+  
+  if (x@absorbed_intercepts) {
+    a22inv <- sandwich::bread(x)
+    meat <- do.call(sandwich::meatCL, args)
+    
+    vmat <- (1 / n) * a22inv %*% meat %*% a22inv
+    name <- paste0(var_names(x@Design, "t"), ".")
+    vmat <- as.matrix(vmat[name, name])
+  }
+  else {
+    # if model weights does not incorporate IPW, throw a warning
+    if (!(inherits(x@lmitt_call$weights, "call") & 
+          sum(grepl("ate", x@lmitt_call$weights)) > 0)){
+      warning(paste("When calculating design-based standard errors,",
+                    "please ensure that inverse probability weights are applied.",
+                    "This could be done by specifying weights = ate() in",
+                    "lmitt() or lm()."))
+    }
+    
+    if (!is.null(x$call$offset)){
+      vmat <- .get_DB_covadj_se(x)
+    }
+    else {
+      vmat <- .get_DB_wo_covadj_se(x)
+    }
+  }
+  name <- paste0(var_names(x@Design, "t"), ".")
+  colnames(vmat) <- name
+  rownames(vmat) <- name
+  
+  attr(vmat, "type") <- "DB0"
+  return(vmat)
+}
+
+#' @title (Internal) Design-based variance for models with covariance adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate design-based variance estimate for 
+#'  \code{teeMod} models with covariance adjustment and without absorbed effects
+#' @return design-based variance estimate of the main treatment effect estimate
+#' @importFrom stats formula
+#' @keywords internal
+.get_DB_covadj_se <- function(x, ...){
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
+  design_obj <- x@Design
+  name_trt <- var_names(design_obj, "t")
+  if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
+    stop(paste("Design-based standard errors cannot be calculated for",
+               "tee models with treatment in prior covariance adjustment"))
+  }
+  
+  bread <- .get_DB_covadj_bread(x)
+  
+  signs1 <- ifelse(t(t(bread$b1[2,])) %*% bread$b1[2,] > 0, 1, 0)
+  signs2 <- ifelse(t(t(bread$b1[2,])) %*% bread$b2[2,] > 0, 1, 0)
+  signs3 <- ifelse(t(t(bread$b2[2,])) %*% bread$b2[2,] > 0, 1, 0)
+  
+  meat <- .get_DB_covadj_meat(x)
+  
+  term1 <- bread$b1 %*% (meat$m1u * signs1 + meat$m1l * (1-signs1)) %*% t(bread$b1)
+  term2 <- bread$b2 %*% t(meat$m2u * signs2 + meat$m2l * (1-signs2)) %*% t(bread$b1)
+  term3 <- bread$b2 %*% (meat$m3u * signs3 + meat$m3l * (1-signs3)) %*% t(bread$b2)
+  
+  vmat <- term1 + 2*term2 + term3
+  return(as.matrix(vmat[2,2]))
+}
+
+#' @title (Internal) Bread matrix of design-based variance
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  \code{teeMod} models with covariance adjustment and without absorbed effects
+#' @return a list of bread matrices
+#' @keywords internal
+.get_DB_covadj_bread <- function(x, ...) {
+  a11inv <- .get_a11_inverse(x)
+  a21 <- .get_a21(x)
+  a22inv <- .get_a22_inverse(x)
+  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
+  
+  n <- nrow(x$model)
+  bread1 <- a22inv %*% a21 %*% a11inv / n
+  bread2 <- - a22inv %*% C / n
+  
+  return(list(b1 = bread1, b2 = bread2))
+}
+
+#' @title (Internal) Meat matrix of design-based variance
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate upper and lower bound estimates of meat matrix 
+#' for design-based variance estimate for \code{teeMod} models 
+#' with covariance adjustment and without absorbed effects
+#' @return a list of meat matrix bounds
+#' @importFrom stats model.frame
+#' @keywords internal
+.get_DB_covadj_meat <- function(x, ...) {
+  agg <- .aggregate_to_cluster(x)
+  data <- agg$data
+  bid <- data[, agg$block]  # block ids
+  zobs <- data[, agg$z] # observed zs
+  
+  p <- ncol(stats::model.frame(x$model$`(offset)`@fitted_covariance_model))
+  XX <- .prepare_design_matrix(x)
+  
+  V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
+  V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
+  V01 <- .cov01_est(XX, zobs, bid)
+  
+  idl <- (p+2):(2*p+1)
+  meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
+  meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
+  
+  meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
+  meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
+  
+  meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
+  meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
+  
+  return(list(m1u = meat1u, m1l = meat1l,
+              m2u = meat2u, m2l = meat2l,
+              m3u = meat3u, m3l = meat3l))
+}
+
+#' @title (Internal) Design-based variance for models without covariance adjustment
+#' @param x a fitted \code{teeMod} model
+#' @details Calculate bread matrix for design-based variance estimate for 
+#'  \code{teeMod} models without covariance adjustment and 
+#'  without absorbed effects
+#' @return design-based variance estimate of the main treatment effect estimate
+#' @importFrom stats aggregate var
+#' @keywords internal
+.get_DB_wo_covadj_se <- function(x, ...){
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
+  if (!is.null(x$call$offset)){
+    stop("x should not have covariance adjustment")
+  }
+
+  agg <- .aggregate_to_cluster(x)
+  data <- agg$data
+  block <- agg$block
+  
+  ws <- data$.w
+  yobs <- data$.wy  # observed ys by cluster
+  zobs <- data[, agg$z]  # observed zs by cluster
+  bid <- data[, block] # block ids of clusters
+  
+  if (length(unique(bid)) == 1) {
+    nbk <- t(design_table(design=x@Design, x="treatment"))
+  } else {
+    nbk <- design_table(design=x@Design, x="treatment",y="block")
+  }
+  # number of units by block and treatment, B by K
+  small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
+  nb <- rowSums(nbk)
+  
+  rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
+           sum(ws * yobs * zobs) / sum(ws * zobs))
+  
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
+  gamsbk <- list()  # s^2_b,j, sample variance
+  for (k in 1:2){
+    indk <- zobs == (k-1)
+    gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
+    gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = stats::var)
+  }
+  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
+  gamsbk[is.na(gamsbk)] <- 0
+  gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
+  
+  nu1 <- rowSums(gamsbk / nbk)
+  nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb - 
+    (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
+  varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
+  return(as.matrix(varest))
+}
+
+#' @title (Internal) Aggregate weights and outcomes to cluster level
+#' @param x a fitted \code{teeMod} model
+#' @details aggregate individual weights and outcomes to cluster weighted sums
+#' @return a list of 
+#' - a data frame of cluster weights, outcomes, treatments, and block ids;
+#' - treatment id column name; 
+#' - block id column name
+#' @keywords internal
+.aggregate_to_cluster <- function(x, ...){
+  ws <- if (is.null(x$weights)) 1 else x$weights
+  data_temp <- x$call$data
+  name_y <- as.character(x$terms[[2]]) # the column of y
+  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@Design, data=data_temp),
+                     .wy = ws * data_temp[, name_y])
+  
+  design_obj <- x@Design
+  name_trt <- var_names(design_obj, "t")
+  name_blk <- var_names(design_obj, "b")
+  name_clu <- var_names(design_obj, "u")
+  
+  if (length(name_blk) > 0) {
+    data_temp <- .merge_block_id_cols(data_temp, name_blk)
+    name_blk <- name_blk[1] # merged block id is stored at column name_blk[1]
+  }
+  else {
+    data_temp$bid <- 1
+    name_blk <- 'bid'
+  }
+  eq_clu <- paste(name_clu, collapse = " + ")
+  form <- paste("cbind(", name_trt, ", ", name_blk, ") ~ ", eq_clu, sep = "")
+  form2 <- paste("cbind(.wy, .w, .w0) ~ ", eq_clu, sep = "")
+  
+  # aggregate z and bid by mean, aggregate w, w0, and w*y by sum
+  data_aggr <- cbind(
+    do.call("aggregate", list(as.formula(form), FUN = mean, data = data_temp)),
+    do.call("aggregate", list(as.formula(form2), FUN = sum, data = data_temp))
+  )
+  data_aggr$.wy <- data_aggr$.wy / data_aggr$.w
+  data_aggr <- data_aggr[order(data_aggr[, name_blk]), ]
+  return(list(data = data_aggr, block = name_blk, z = name_trt))
+}
+
+#' @title (Internal) Merge multiple block IDs
+#' @param df a data frame 
+#' @param ids a vector of block IDs, column names of df
+#' @details merge multiple block ID columns by the value combinations
+#' and store the new block ID in the column \code{ids[1]}
+#' @return a data frame with a column that contains unique block number IDs
+#' @keywords internal
+.merge_block_id_cols <- function(df, ids){
+  if (!all(ids %in% colnames(df))){
+    stop("Some block IDs are not present in the dataframe")
+  }
+  df[[ids[1]]] <- as.numeric(factor(do.call(paste, c(df[ids], sep = "."))))
+  return(df)
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @param x a fitted \code{teeMod} model
+#' @return a \eqn{m \items (p+2)} matrix of cluster sums of design-based 
+#'   estimating equations scaled by \eqn{\sqrt{m_{b0}m_{b1}}/m_{b}}.
+#'   Here \eqn{m} is the number of clusters, \eqn{p} is the number of covariates 
+#'   used in the prior covariance adjustment (excluding intercept)
+#' @importFrom stats aggregate
+#' @keywords internal
+.prepare_design_matrix <- function(x, ...) {
+  design_obj <- x@Design
+  data <- x$call$data
+  name_clu <- var_names(design_obj, "u")
+  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
+  # merged cluster id is stored at column name_clu[1]
+  
+  agg <- .aggregate_to_cluster(x)
+  bid <- agg$data[, agg$block]  # block ids
+  
+  name_y <- as.character(x$terms[[2]]) # name of the outcome column
+  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model) # design matrix
+  p <- ncol(X1)
+  
+  wc <- x$model$`(offset)`@fitted_covariance_model$weight
+  if (is.null(wc)) wc <- 1
+  X1 <- matrix(
+    rep(wc * (data[, name_y] - x$offset), p), ncol = p
+    ) * X1 # n by p, wic * residual * xi
+  
+  wi <- x$weights
+  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
+  
+  XX <- cbind(X1, X2)
+  XX <- stats::aggregate(XX, by = list(cid), FUN = sum)[,-1]
+  
+  # multiple sqrt(product of #treated divided by block sizes) to XX by group
+  if (length(unique(bid)) == 1) {
+    nbk <- t(design_table(design=x@Design, x="treatment"))
+  } else {
+    nbk <- design_table(design=x@Design, x="treatment",y="block")
+  }
+  const <- sqrt(nbk[, 1] * nbk[, 2] / rowSums(nbk))
+  XX <- sweep(XX, 1, const[bid], '*')
+  return(XX)
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @details
+#' Diagonal elements are estimated by sample variances
+#' Off-diagonal elements are estimated using the Young's elementary inequality
+#' @return estimated upper and lower bounds of covariance matrix of 
+#'   estimating function vectors under either treatment or control
+#' @importFrom stats cov
+#' @keywords internal
+.cov_mat_est <- function(XXz, bidz){
+  cov0 <- tapply(1:nrow(XXz), bidz, function(s) stats::cov(XXz[s,]))
+  covuu <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,]))
+  covll <- tapply(1:nrow(XXz), bidz, function(s) .add_vec(XXz[s,], upper=FALSE))
+    
+  cov0u <- lapply(1:length(cov0), 
+                  function(s) if (is.na(cov0[[s]][1,1])) covuu[[s]] else cov0[[s]])
+  cov0l <- lapply(1:length(cov0), 
+                  function(s) if (is.na(cov0[[s]][1,1])) covll[[s]] else cov0[[s]])
+  
+  V00u <- Reduce('+', cov0u)
+  V00l <- Reduce('+', cov0l)
+  return(rbind(V00u, V00l))
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @keywords internal
+.add_mat_diag <- function(A, B){
+  d <- nrow(A)
+  A <- matrix(rep(diag(A), d), nrow = d, byrow = FALSE)
+  B <- matrix(rep(diag(B), d), nrow = d, byrow = TRUE)
+  #return(sqrt(abs(A * B)))
+  return((A + B) / 2)
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @keywords internal
+.add_vec <- function(a, upper = TRUE){
+  if (nrow(a) > 1) return(0)
+  a <- as.numeric(a)
+  d <- length(a)
+  A <- matrix(rep(a, d), nrow = d, byrow = FALSE)
+  B <- matrix(rep(a, d), nrow = d, byrow = TRUE)
+  #if (upper) return(A*B + sqrt(abs(A*B)))
+  #else return(A*B - sqrt(abs(A*B)))
+  if (upper) return((A + B)^2 / 2)
+  else return(- (A - B)^2 / 2)
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @details the Young's elementary inequality is used
+#' @return estimated upper and lower bounds of covariance matrix of 
+#'   estimating function vectors under treatment and under control
+#' @importFrom stats cov
+#' @keywords internal
+.cov01_est <- function(XX, zobs, bid){
+  cov0 <- tapply(
+    1:nrow(XX[zobs==0,]), bid[zobs==0], 
+    function(s) stats::cov(XX[zobs==0,][s,])
+    )
+  cov1 <- tapply(
+    1:nrow(XX[zobs==1,]), bid[zobs==1], 
+    function(s) stats::cov(XX[zobs==1,][s,])
+    )
+  cov01 <- lapply(1:length(cov0), function(s) .add_mat_diag(cov0[[s]], cov1[[s]]))
+  
+  cov01u <- lapply(1:length(cov0), 
+                   function(s) if (!is.na(cov01[[s]][1,1])) cov01[[s]]
+                   else .add_mat_sqdif(XX, zobs, bid, s))
+  cov01l <- lapply(1:length(cov0), 
+                   function(s) if (!is.na(cov01[[s]][1,1])) -cov01[[s]]
+                   else -.add_mat_sqdif(XX, zobs, bid, s, upper=FALSE))
+  V01u <- Reduce('+', cov01u)
+  V01l <- Reduce('+', cov01l)
+  return(rbind(V01u, V01l))
+}
+
+#' @title (Internal) Helper function for design-based meat matrix calculation
+#' @keywords internal
+.add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
+  A <- X[zobs==0 & bid==b, ]
+  if (upper) B <- X[zobs==1 & bid==b, ] else B <- -X[zobs==1 & bid==b, ]
+  cov01u <- matrix(0, nrow=ncol(A), ncol=ncol(A))
+  for (j in 1:ncol(B)){
+    for (h in 1:nrow(B)){
+      cov01u[,j] <- cov01u[,j] + colSums((A + B[h,j])^2)
+    }
+  }
+  cov01u <- cov01u / nrow(A) / nrow(B)
+  return(cov01u)
+}
+
+#' @title (Internal) Calculate grave\{phi\}
+#' @keywords internal
+#' @param x a fitted \code{teeMod} model
+.get_phi_tilde <- function(x, ...){
+  ws <- x$weights
+  n <- length(ws) # number of units in Q
+  design_obj <- x@Design
+  df <- x$call$data
+  
+  # treatment assignments
+  name_trt <- var_names(design_obj, "t")
+  assignment <- df[[name_trt]]
+  k <- length(unique(assignment))
+  z_ind <- sapply(c(0,1), function(val) as.integer(assignment == val))
+  
+  # stratum ids 
+  name_blk <- var_names(design_obj, "b")
+  df <- .merge_block_id_cols(df, name_blk)
+  name_blk <- name_blk[1]
+  stratum <- df[[name_blk]]
+  s <- length(unique(stratum)) # number of blocks
+  b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val)) 
+  
+  # nuisance parameters p
+  wb <- matrix(replicate(s, ws), ncol = s) * b_ind
+  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
+  p1 <- p[2, ]
+  
+  # calculate phi tilde
+  phitilde <- matrix(nrow = n, ncol = s)
+  for (j in 1:s){
+    phitilde[,j] <- ws * (z_ind[,2] - p1[j]) * b_ind[,j]
+  }
+  return(phitilde)
+}
+
+#' @title (Internal) Product of \eqn{A_{pp}^{-1} A_{\tau p}^T}
+#' @keywords internal
+#' @param x a fitted \code{teeMod} model
+#' @return An \eqn{s\times k} matrix \eqn{A_{pp}^{-1} A_{\tau p}^T}
+.get_appinv_atp <- function(x, ...){
+  ws <- x$weights
+  # estimated treatment effect tau1 <- x$coefficients
+  n <- length(ws) # number of units in Q(?)
+  design_obj <- x@Design
+  df <- x$call$data
+  
+  name_trt <- var_names(design_obj, "t")
+  assignment <- df[[name_trt]]
+  k <- length(unique(assignment))
+  
+  # stratum ids 
+  name_blk <- var_names(design_obj, "b")
+  df <- .merge_block_id_cols(df, name_blk)
+  name_blk <- name_blk[1]
+  stratum <- df[[name_blk]]
+  s <- length(unique(stratum)) # number of blocks
+  b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val)) 
+  
+  app <- list()
+  atp <- list()
+  for (i in 1:s){
+    atp[[i]] <- ws * (x$residuals) * b_ind[,i]
+    # atp[[i]] <- .get_upsilon(x) / term2 * b_ind[,i]
+    app[[i]] <- ws * b_ind[,i]
+  }
+  # w_ipv <- ate(x@Design, data = x$call$data) inverse probability weights
+  
+  mat <- matrix(0, nrow = (k-1)*s, ncol = k-1)
+  for (i in 1:s){
+    # mat[i,1] <- sum(app[[i]] * w_ipv) / sum(w_ipv)
+    mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
+  }
+  return(mat)
 }

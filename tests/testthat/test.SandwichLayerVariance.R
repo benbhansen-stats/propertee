@@ -2333,3 +2333,269 @@ test_that("#177 vcov with by", {
   mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, offset = cov_adj(cmod, by = "by_col"))
   expect_equal(vcov(mod), vcov(mod, by = "by_col"))
 })
+
+test_that("vcov_tee does not error when asking for design-based SE for model
+          with covariance adjustment but without absorbed block effects",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod))
+  expect_true(!is.na(vcov_tee(damod_off, type = "DB0")))
+})
+
+test_that("vcov_tee errors when asking for design-based SE for teeMod with
+           external sample for covariance adjustment",{
+  # Borrowing code from the #177 test
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                         id = rep(letters[1:5], each = 3),
+                         x = rnorm(5 * 3),
+                         y = rnorm(5 * 3),
+                         by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                            yr = rep(c("01", "02"), 5),
+                            x = rnorm(10),
+                            a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                            y = rnorm(10),
+                            by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, 
+               offset = cov_adj(cmod, by = "by_col"))
+  expect_error(
+    vcov_tee(mod, type = "DB0"), 
+    "teeMod models with external sample"
+  )
+})
+
+test_that("vcov_tee errors when asking for design-based SE for a non-RCT design",{
+  data(simdata)
+  des <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+  expect_error(
+    vcov_tee(damod, type = "DB0"), 
+    "can only be computed for RCT designs"
+  )
+})
+
+test_that("vcov_tee errors when asking for design-based SE for a model
+          with moderators",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  damod_sub <- lmitt(y ~ dose, design = des, data = simdata, weights = ate(des))
+  expect_error(
+    vcov_tee(damod_sub, type = "DB0"), 
+    "cannot be computed for teeMod models with moderators"
+  )
+})
+
+test_that("vcov_tee throws a warning when asking for design-based SE without IPW",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ett())
+  teemod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ett(des),
+                      absorb = TRUE)
+  expect_warning(
+    vcov_tee(teemod, type = "DB0"), 
+    "inverse probability weights"
+  )
+  expect_silent(vcov_tee(teemod_abs, type = "DB0"))
+})
+
+test_that(".merge_block_id_cols correctly combines multiple block columns", {
+  df1 <- data.frame(
+    block1 = c("A", "A", "B", "B", "B", "B"),
+    block2 = c(1, 1, 1, 1, 2, 2)
+  )
+  df2 <- data.frame(
+    block1 = c("A", "A", "B", "B", "B", "B"),
+    block2 = c(T, F, T, F, T, F)
+  )
+  df3 <- data.frame(
+    block1 = c("A", "A", "B", "B", "C", "C"),
+    block2 = c(T, F, T, T, T, T),
+    block3 = c(2, 2, 3, 3, 4, 4)
+  )
+  expect_equal(
+    propertee:::.merge_block_id_cols(df=df1, ids=c("block1", "block2"))$block1,
+    c(1, 1, 2, 2, 3, 3)
+  )
+  expect_equal(
+    propertee:::.merge_block_id_cols(df=df1, ids=c("block1"))$block1,
+    c(1, 1, 2, 2, 2, 2)
+  )
+  expect_equal(
+    propertee:::.merge_block_id_cols(df=df2, ids=c("block1", "block2"))$block1,
+    c(2, 1, 4, 3, 4, 3)
+  )
+  expect_equal(
+    .merge_block_id_cols(df=df3, ids=c("block1", "block2", "block3"))$block1,
+    c(2, 1, 3, 3, 4, 4)
+  )
+})
+
+test_that(".get_DB_wo_covadj_se returns correct value for designs with small blocks",{
+  # generate data
+  nbs <- rep(2, 10)
+  n <- sum(nbs) # sample size
+  B <- length(nbs) # number of blocks
+  ws <- round(rnorm(n=n, mean=50, sd=10))
+  yobs <- rnorm(n=n) # observed y's
+  zobs <- c() # treatment assignment, 1 or 2
+  for (b in 1:B){
+    zobs <- c(zobs, sample(c(1,2)))
+  }
+  
+  # calculate variance
+  pi_all <- matrix(rep(1/2,2*n), nrow=n) # assignment probabilities, n by 2
+  nbk_all <- matrix(rep(1,2*n), nrow=n) # nbk for all units, n by 2
+  gammas <- cbind(nbk_all[,1] * ws, nbk_all[,2] * ws) # gamma, n by K
+  nu <- c() # nu_b
+  
+  for (k in 1:2){
+    indk <- (zobs == k)
+    thetak <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k]) # Hajek estimators
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
+    for (b in 1:B){
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of block b
+      indbk <- (zobs[in_b] == k)
+      if (k > 1){
+        indb0 <- (zobs[in_b] == 1)
+        nu <- c(nu, (gammas[in_b,k][indbk] - gammas[in_b,1][indb0])^2)
+      }
+    }
+  }
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=2), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  expect_equal(vcov_tee(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
+})
+
+test_that(".get_DB_wo_covadj_se returns correct value for designs with a few large blocks",{
+  # generate data
+  nbs <- rep(10, 2)
+  n <- sum(nbs) # sample size
+  B <- length(nbs) # number of blocks
+  ws <- round(rnorm(n=n, mean=50, sd=10))
+  yobs <- rnorm(n=n) # observed y's
+  zobs <- rep(1, n) # treatment assignment, 1 or 2
+  zobs[c(sample(1:10, 5), sample(11:20, 4))] <- 2
+  
+  # calculate variance
+  pi_all <- matrix(c(rep(1/2,n), rep(c(0.6,0.4),10)), nrow=n, byrow = TRUE)  
+  # assignment probabilities, n by 2
+  nbk <- matrix(c(5,6,5,4), nrow=B)  # nbk, B by 2
+  gammas <- cbind(c(rep(5,10),rep(6,10)) * ws, 
+                  c(rep(5,10),rep(4,10)) * ws) # gamma, n by K
+  gamsbk <- matrix(nrow=B, ncol=2)  # s^2 b,j
+  nu <- c()
+  
+  for (k in 1:2){
+    indk <- (zobs == k)
+    thetak <- sum(ws[indk] * yobs[indk] / pi_all[indk, k]) /
+      sum(ws[indk] / pi_all[indk, k])  # Hajek estimator
+    gammas[indk,k] <- gammas[indk,k] / pi_all[indk, k] * (yobs[indk] - thetak)
+    for (b in 1:B){
+      in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of block b
+      gamsbk[b,k] <- var(gammas[in_b,k][zobs[in_b] == k])
+      if (k > 1){
+        nu <- c(nu, gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k])
+      }
+    }
+  }
+  data <- data.frame(cid = 1:n, bid = rep(1:B, each=10), y = yobs, z = zobs-1, w = ws)
+  des <- rct_design(z ~ cluster(cid) + block(bid), data)
+  damod <- lmitt(y ~ 1, design = des, data = data, weights = ate(des) * data$w)
+  
+  #ainv <- .get_DB_a_inverse(damod)
+  #meat <- .get_DB_meat(damod)
+  #vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
+  
+  expect_equal(vcov_tee(damod, type="DB0")[1,1], sum(nu) / sum(ws)^2) 
+  #expect_true(vmat[1,1] != sum(nu) / sum(ws)^2) 
+})
+
+test_that("design-based SE for tee models without absorption does not crash", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
+  teemod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     offset = cov_adj(cmod))
+  expect_silent(vcov_tee(teemod, type = "DB0"))
+  expect_silent(vcov_tee(teemod_off, type = "DB0"))
+  
+  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate())
+  teemod_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                      offset = cov_adj(cmod))
+  expect_silent(vcov_tee(teemod, type = "DB0"))
+  expect_silent(vcov_tee(teemod_off, type = "DB0"))
+})
+
+test_that("design-based SE for tee models with absorption does not crash", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  teemod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                      absorb = TRUE)
+  teemod_abs_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                          offset = cov_adj(cmod), absorb = TRUE)
+  expect_silent(vcov_tee(teemod_abs, type = "DB0"))
+  expect_silent(vcov_tee(teemod_abs_off, type = "DB0"))
+})
+
+test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
+          for tee models with absorbed intercept", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  damod_abs_off <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                         offset = cov_adj(cmod), absorb = TRUE)
+  
+  bid <- simdata$bid
+  B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
+  goal <- matrix(0, nrow = 3, ncol = 1)
+  for (blk in 1:3){
+    goal[blk] <- sum(damod_abs$weights * damod_abs$residuals * B[,blk]) / 
+      sum(damod_abs$weights * B[,blk])
+  }
+  expect_true(all.equal(goal, .get_appinv_atp(damod_abs, db = TRUE)))
+  
+  for (blk in 1:3){
+    goal[blk] <- sum(damod_abs_off$weights * damod_abs_off$residuals * B[,blk]) / 
+      sum(damod_abs_off$weights * B[,blk])
+  }
+  expect_true(all.equal(goal, propertee:::.get_appinv_atp(damod_abs_off, db = TRUE)))
+})
+
+test_that(".get_phi_tilde returns correct grave{phi}
+          for tee models with absorbed intercept", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  
+  bid <- simdata$bid
+  B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
+  Z <- cbind(as.integer(simdata$z == 0), as.integer(simdata$z == 1))
+  
+  ws <- damod_abs$weights
+  p <- matrix(0, nrow = 2, ncol = 3)
+  for (k in 1:2)
+    for (j in 1:3){
+      p[k, j] <- sum(ws * Z[,k] * B[,j]) / sum(ws * B[,j])
+    }
+  goal <- matrix(0, nrow = 50, ncol = 3)
+  for (s in 1:3){
+    goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
+  }
+  expect_true(all.equal(goal, propertee:::.get_phi_tilde(damod_abs, db = TRUE)))
+})
+

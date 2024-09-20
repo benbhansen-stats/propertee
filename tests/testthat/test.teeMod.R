@@ -1651,6 +1651,35 @@ test_that("Invalid input to .convert_to_lmitt", {
 
   expect_error(.convert_to_lmitt(1, des, FALSE, TRUE, "a",
                                  call("quote", call("ls"))))
+})
 
+test_that(".estfun_DB_blockabsorb returns 0 if not asking for 
+          design-based SE or tee model does not absorb intercepts", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  
+  expect_true(all(.estfun_DB_blockabsorb(damod) == 0))
+  expect_true(all(.estfun_DB_blockabsorb(damod, db = TRUE) == 0))
+  expect_true(all(.estfun_DB_blockabsorb(damod_abs) == 0))
+})
 
+test_that(".estfun_DB_blockabsorb returns correct value", {
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  cmod <- lm(y ~ x, simdata)
+  damod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des),
+                     absorb = TRUE)
+  
+  expect_false(all(.estfun_DB_blockabsorb(damod_abs, db = TRUE) == 0))
+  
+  phi <- .get_phi_tilde(damod_abs, db = TRUE)
+  aa <- .get_appinv_atp(damod_abs, db = TRUE)
+  expect_true(all.equal(
+    cbind(0, phi %*% aa), 
+    .estfun_DB_blockabsorb(damod_abs, db = TRUE)
+  ))
 })

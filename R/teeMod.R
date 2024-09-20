@@ -118,17 +118,19 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'  definition of \eqn{n}.
 ##' @exportS3Method
 estfun.teeMod <- function(x, ...) {
+  args <- list(...)
+  args$x <- x
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(.base_S3class_estfun(x))
+    return(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...))
   }
-
+  
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   estmats <- .align_and_extend_estfuns(x, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
-
+  
   ## get scaling constants
   nq <- nrow(stats::model.frame(x))
   nc <- nrow(stats::model.frame(sl@fitted_covariance_model))
@@ -136,7 +138,7 @@ estfun.teeMod <- function(x, ...) {
 
   ## form matrix of estimating equations
   mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-
+  mat <- mat - .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -448,3 +450,49 @@ update.teeMod <- function(object, ...) {
              "You can use `update` on the formula object passed to `lmitt`",
              "instead."))
 }
+
+#' @title Design-based estimating equations contributions 
+#' @param x a fitted \code{teeMod} object
+#' @param ... arguments passed to methods
+#' @details calculate contributions to empirical estimating equations
+#' from a \code{teeMod} model with absorbed intercepts 
+#' from the design-based perspective
+#' @return An \eqn{n\times k} matrix
+#' @keywords internal
+.estfun_DB_blockabsorb <- function (x, by = NULL, ...){
+  if (inherits(x$model$`(offset)`, "SandwichLayer")){
+    # if the model involves SandwichLayer covariance adjustment
+    temp <- .align_and_extend_estfuns(x, by = by, ...)[["psi"]]
+  }
+  else
+    temp <- .base_S3class_estfun(x)
+  
+  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
+  cl <- match.call()
+  db <- eval(cl[["db"]], parent.frame())
+  if (is.null(db) | !x@absorbed_intercepts){
+    return(matrix(0, nrow = nrow(temp), ncol = ncol(temp)))
+  }
+  phitilde <- .get_phi_tilde(x)
+  appinv_atp <- .get_appinv_atp(x)
+  
+  if (!is.null(x$call$offset)){
+    # if the model involves covariance adjustment
+    # define the row ordering using .order_samples() and insert rows of 0's into
+    # the matrices where necessary while maintaining observation alignment
+    id_order <- .order_samples(x, by = by, verbose = FALSE)
+    aligned_phitilde <- matrix(
+      0, nrow = nrow(temp), ncol = ncol(phitilde),
+      dimnames = list(seq_len(nrow(temp)), colnames(phitilde)))
+    
+    C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
+    aligned_phitilde[which(!is.na(C_order)),] <- phitilde[C_order[!is.na(C_order)], ]
+    mat <- aligned_phitilde %*% appinv_atp
+  }
+  else{
+    mat <- phitilde %*% appinv_atp
+  }
+  mat <- cbind(matrix(0, nrow = nrow(mat), ncol = ncol(temp) - ncol(mat)), mat)
+  return(mat)
+}
+
