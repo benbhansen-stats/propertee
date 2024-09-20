@@ -2344,11 +2344,46 @@ test_that("vcov_tee does not error when asking for design-based SE for model
   expect_true(!is.na(vcov_tee(damod_off, type = "DB0")))
 })
 
+test_that("vcov_tee errors when asking for design-based SE for teeMod with
+           external sample for covariance adjustment",{
+  # Borrowing code from the #177 test
+  set.seed(23)
+  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
+                         id = rep(letters[1:5], each = 3),
+                         x = rnorm(5 * 3),
+                         y = rnorm(5 * 3),
+                         by_col = seq_len(15))
+  cmod <- lm(y ~ x, cmod_data)
+  desdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  newdes <- rct_design(a ~ unitid(id), desdat)
+  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
+                            yr = rep(c("01", "02"), 5),
+                            x = rnorm(10),
+                            a = rep(c(rep(1, 3), rep(0, 2)), 2),
+                            y = rnorm(10),
+                            by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  mod <- lmitt(y ~ yr, design = newdes, data = analysis_dat, 
+               offset = cov_adj(cmod, by = "by_col"))
+  expect_error(
+    vcov_tee(mod, type = "DB0"), 
+    "teeMod models with external sample"
+  )
+})
+
+test_that("vcov_tee errors when asking for design-based SE for a non-RCT design",{
+  data(simdata)
+  des <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  damod <- lmitt(y ~ 1, design = des, data = simdata, weights = ate(des))
+  expect_error(
+    vcov_tee(damod, type = "DB0"), 
+    "can only be computed for RCT designs"
+  )
+})
+
 test_that("vcov_tee errors when asking for design-based SE for a model
           with moderators",{
   data(simdata)
   des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
-  cmod <- lm(y ~ x, simdata)
   damod_sub <- lmitt(y ~ dose, design = des, data = simdata, weights = ate(des))
   expect_error(
     vcov_tee(damod_sub, type = "DB0"), 
@@ -2356,17 +2391,48 @@ test_that("vcov_tee errors when asking for design-based SE for a model
   )
 })
 
+test_that("vcov_tee throws a warning when asking for design-based SE without IPW",{
+  data(simdata)
+  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  teemod <- lmitt(y ~ 1, design = des, data = simdata, weights = ett())
+  teemod_abs <- lmitt(y ~ 1, design = des, data = simdata, weights = ett(des),
+                      absorb = TRUE)
+  expect_warning(
+    vcov_tee(teemod, type = "DB0"), 
+    "inverse probability weights"
+  )
+  expect_silent(vcov_tee(teemod_abs, type = "DB0"))
+})
+
 test_that(".merge_block_id_cols correctly combines multiple block columns", {
-  df <- data.frame(
+  df1 <- data.frame(
     block1 = c("A", "A", "B", "B", "B", "B"),
     block2 = c(1, 1, 1, 1, 2, 2)
   )
-  df_comb <- data.frame(
-    block1 = c(1, 1, 2, 2, 3, 3)
+  df2 <- data.frame(
+    block1 = c("A", "A", "B", "B", "B", "B"),
+    block2 = c(T, F, T, F, T, F)
+  )
+  df3 <- data.frame(
+    block1 = c("A", "A", "B", "B", "C", "C"),
+    block2 = c(T, F, T, T, T, T),
+    block3 = c(2, 2, 3, 3, 4, 4)
   )
   expect_equal(
-    propertee:::.merge_block_id_cols(df=df, ids=c("block1", "block2"))$block1,
-    df_comb$block1
+    propertee:::.merge_block_id_cols(df=df1, ids=c("block1", "block2"))$block1,
+    c(1, 1, 2, 2, 3, 3)
+  )
+  expect_equal(
+    propertee:::.merge_block_id_cols(df=df1, ids=c("block1"))$block1,
+    c(1, 1, 2, 2, 2, 2)
+  )
+  expect_equal(
+    propertee:::.merge_block_id_cols(df=df2, ids=c("block1", "block2"))$block1,
+    c(2, 1, 4, 3, 4, 3)
+  )
+  expect_equal(
+    .merge_block_id_cols(df=df3, ids=c("block1", "block2", "block3"))$block1,
+    c(2, 1, 3, 3, 4, 4)
   )
 })
 

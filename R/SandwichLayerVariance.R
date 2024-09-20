@@ -587,7 +587,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     }
   
   if (x@Design@type != "RCT"){
-    stop("x must be an RCT design")
+    stop("Design-based standard errors can only be computed for RCT designs")
   }
   
   if (length(x@moderator) > 0){
@@ -609,7 +609,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     meat <- do.call(sandwich::meatCL, args)
     
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
-    name <- grep("z", colnames(x$model))
+    name <- paste0(var_names(x@Design, "t"), ".")
     vmat <- as.matrix(vmat[name, name])
   }
   else {
@@ -629,7 +629,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
       vmat <- .get_DB_wo_covadj_se(x)
     }
   }
-  name <- colnames(x$model)[grep("z", colnames(x$model))]
+  name <- paste0(var_names(x@Design, "t"), ".")
   colnames(vmat) <- name
   rownames(vmat) <- name
   
@@ -679,12 +679,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 .get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
-  a22inv <- matrix(c(1,0,-1,1), nrow = 2, byrow = TRUE)
-  a21 <- matrix(0, nrow = nrow(a11inv), ncol = nrow(a22inv))
-  #a22inv <- .get_a22_inverse(x)
-  #a21 <- .get_a21(x)
-  
-  C <- matrix(c(1,0,0,1), nrow = 2, byrow = TRUE)
+  a21 <- .get_a21(x)
+  a22inv <- .get_a22_inverse(x)
+  C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
   
   n <- nrow(x$model)
   bread1 <- a22inv %*% a21 %*% a11inv / n
@@ -836,14 +833,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @return a data frame with a column that contains unique block number IDs
 #' @keywords internal
 .merge_block_id_cols <- function(df, ids){
-  df[,ids[1]] <- apply(df[, ids, drop = FALSE], 1, paste, collapse = "_")
-  unique_ids <- data.frame(unique(df[,ids[1]]))
-  colnames(unique_ids) <- ids[1]
-  unique_ids$.ID <- seq_len(nrow(unique_ids))
-  
-  df <- merge(df, unique_ids, by = ids[1], all.x = TRUE)
-  df[,ids[1]] <- df$.ID
-  df$.ID <- NULL
+  if (!all(ids %in% colnames(df))){
+    stop("Some block IDs are not present in the dataframe")
+  }
+  df[[ids[1]]] <- as.numeric(factor(do.call(paste, c(df[ids], sep = "."))))
   return(df)
 }
 
