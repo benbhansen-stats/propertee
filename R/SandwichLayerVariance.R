@@ -741,9 +741,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
-  if (inherits(os <- x$model$`(offset)`, "SandwichLayer")){
-    stop("x should not have an offset of class `SandwichLayer`")
-  }
+
   agg <- .aggregate_to_cluster(x)
   data <- agg$data
   block <- agg$block
