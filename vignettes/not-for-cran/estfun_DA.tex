@@ -654,7 +654,9 @@ $\hat{\mathrm{A}}_{22}^{-1}$, which we can readily rescale to obtain $\hat{\tild
 
 
 \section{Accommodating intercept(s) via absorption}\label{sec:accomm-interc-via}
-As $\alpha$ is a nuisance parameter, let's use the
+For treatment effect estimators that partial out block fixed effects,
+but do so without saddling the comparison or Q-regression with a new
+parameter for each block, we use the
 Frisch-Waugh-Lovell (FWL) Theorem%
 \footnote{Or rather, we invoke the variant of the FWL theorem calling
   for regression of the unchanged independent variable on residualized
@@ -662,16 +664,22 @@ or partialed out dependent variables.  See e.g. Section 8.4.1,
 ``Regressing the partialled-out X on the full Y,'' of
 \href{https://bookdown.org/ts_robinson1994/10_fundamental_theorems_for_econometrics/frisch.html}{Robinson's
   blog writeup of Wooldridge's 10 biggest principles of econometrics},
-which in turn references Angrist \& Pitschke (2009).} to get rid of it.  In the process we'll
-introduce at least $k$ new nuisance parameters, but we can think of these as
-being estimated not simultaneously but in a prior regression fit.
-We can fold them into the estimator stack in the same way that a prior
+which in turn references Angrist \& Pitschke (2009).} to get rid of
+it.  In the process, we'll introduce at least $k$ new propensity score parameters
+for each block in order to ``absorb'' block effects into the
+independent variable(s) representing interest parameters. 
+These are ``slack'' parameters that
+in actuality are known, in RCTs and in observational studies analyzed
+according to the mimetic analysis template;  the fact that information about them
+need not accumulate as the sample size grows does not in itself
+threaten the asymptotics. Estimates of them are determined in a prior and separate regression
+fit, and have an instrumental role.
+For standard error estimation we fold them into the estimator stack in the same way that a prior
 covariance model is folded in.
 
-First, let's use $[\alpha_{1}, \ldots, \alpha_{s}]$
-as block-specific intercept parameters. Then 
-estimating function \eqref{eq:14} becomes
-
+The canonical reference implementation would have introduced $[\alpha_{1}, \ldots, \alpha_{s}]$
+as block-specific intercept parameters, turning
+estimating functions \eqref{eq:14} into
 \begin{multline}
   \label{eq:9}
   \psi(\vec{v}; \tau, \alpha, \beta) =
@@ -691,24 +699,12 @@ estimating function \eqref{eq:14} becomes
           {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                  \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
-\right).
+\right);
 \end{multline}
-
-Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.  If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14}, i.e.
-\begin{equation*}
-         \psi(\vec{v}_{i};
-  \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
-         \left( \begin{array}{l}
-           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha_0 - \tau_{z_{i}}\\
-           {}[y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \alpha_0-\tau_{1}]\cdot \indicator{z_{i}=1}\\
-                  \vdots \\
-           {}[y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \alpha_0 - \tau_{k}]\cdot \indicator{z_{i}=k}\\%
-                \end{array}\right).
-\end{equation*}
-In this case we rely on inverse probability weighting (via $\owt[]$ factors) to ensure causal interpretability in light of the design;  $\hat{\alpha}_0$ will correspond to an $\owt[]$-weighted control group mean. In contrast to the situation with a grand-mean intercept but no block effects, \eqref{eq:9}'s block-specific intercepts $\alpha_s$ do not ordinarily correspond to block means under control.\footnote{%
+we won't be introducing these parameters. 
+Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.
+In contrast to the situation with a grand-mean
+intercept but no block effects (as reflected in \eqref{eq:14}), \eqref{eq:9}'s block-specific intercepts $\alpha_s$ do not ordinarily correspond to block means under control.\footnote{%
 The argument of \S~\ref{sec:psit-rho_0-tau} no longer applies
 to show the system of equations
 $0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
@@ -733,7 +729,8 @@ block-specific control group means.  Accordingly its $\tau$-solutions
 do not necessarily bear interpretation as contrasts of Hajek estimators.
 }
 
-The FWL theorem is used to switch out the system of equations
+As applied to a \texttt{teeMod} object with
+\texttt{absorbed\_intercepts} set to \texttt{T}, we need \texttt{estfun()} to switch out the system of equations
 $0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
 for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ and
 $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
@@ -780,11 +777,31 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
     - g(\vec{x}_{i}\beta) - \alpha_{0}-
     \tau_{z_{i}}\big]
     (\indicator{z_{i}=k}
-    - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
+    - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\
+  \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
+(If \texttt{absorb=FALSE}, then we'll revert to \eqref{eq:14}, i.e.
+\begin{equation*}
+         \psi(\vec{v}_{i};
+  \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
+         \left( \begin{array}{l}
+           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha_0 - \tau_{z_{i}}\\
+           {}[y_{i}[1] - g(\vec{x}_{i}\beta)-
+                  \alpha_0-\tau_{1}]\cdot \indicator{z_{i}=1}\\
+                  \vdots \\
+           {}[y_{i}[k] - g(\vec{x}_{i}\beta)-
+                 \alpha_0 - \tau_{k}]\cdot \indicator{z_{i}=k}\\%
+                \end{array}\right),
+\end{equation*}
+skipping the introduction of slack parameters $\mathbf{p}$. 
+In this case users will have to use inverse probability weighting (via
+$\owt[]$ factors) to ensure causal interpretability in light of the
+design;  $\hat{\alpha}_0$ will correspond to an $\owt[]$-weighted
+control group mean.)
 
-In the model based formulation, $[Z_{i}: i]$ is held fixed, so
+Returning to \eqref{eq:upsilondef}, in the model based formulation $[Z_{i}: i]$ is held fixed, so
 solutions $\hat{\mathbf{p}}$ of
 $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ have
 covariance 0.  Writing $\acute{\Psi} =
