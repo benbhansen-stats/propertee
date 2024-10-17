@@ -142,16 +142,16 @@ I conjecture these decisions can be made in such away that
 \end{enumerate}
 
 \subsection{$\psi(\vec{V}_{i};
-  \alpha, \tau, \beta)$, an intercept-form equivalent of $\grave{\psi}(\vec{V}_{i};
+  \alpha_{0}, \tau, \beta)$, an intercept-form equivalent of $\grave{\psi}(\vec{V}_{i};
   \rho, \beta)$}
 \label{sec:psit-rho_0-tau}
 
 Write $\tau_{j}=\rho_{j}-\rho_{0}$ and introduce the intercept parameter ``$\alpha$,''  for the time being one-dimensional with $\alpha_{0}=\rho_{0}$.   The estimating equation $\sum_{i}\grave{\psi}(\vec{v}_{i}; \rho, \beta)=0$,
 $\grave{\psi}(\cdot; \cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\vec{v}_{i};
-  \alpha, \tau, \beta)=0$, with $\psi(\cdot; \cdot)$ as in \eqref{eq:14} immediately below:
+  \alpha_{0}, \tau, \beta)=0$, with $\psi(\cdot; \cdot)$ as in \eqref{eq:14} immediately below:
 \begin{equation} \label{eq:14}
          \psi(\vec{v}_{i};
-         \alpha, \tau, \beta) =
+         \alpha_{0}, \tau, \beta) =
          \indicator{i \in \bigcup \mathcal{Q}}
          \left( \begin{aligned}
            \owt[{[z_{i}]}] &\big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
@@ -169,7 +169,7 @@ Abbreviating ``$\owt{}$'' as ``$\owt[]$'' and ``$y_{i}[z_{i}]$'' as
 ``$y_{i}$,'' we have
 \begin{equation}\label{eq:27}
          \psi(\vec{v}_{i};
-         \alpha, \tau, \beta) =
+         \alpha_{0}, \tau, \beta) =
          \indicator{i \in \bigcup \mathcal{Q}}
   \owt[] \Big[y_{i} - g(\vec{x}_{i}\beta)-
                   \alpha_{0} -
@@ -179,7 +179,7 @@ Abbreviating ``$\owt{}$'' as ``$\owt[]$'' and ``$y_{i}[z_{i}]$'' as
 \end{equation}
 Since the solution in 
 $(\alpha_{0}, \tau_{1}, \ldots, \tau_{k})$ of
-$\sum_{i}\psi(\vec{v}_{i}; \alpha, \tau, \beta) =0$ satisfies
+$\sum_{i}\psi(\vec{v}_{i}; \alpha_{0}, \tau, \beta) =0$ satisfies
 \begin{equation} \label{eq:16}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt[][y_{i} - g(\vec{x}_{i}\beta)-
                   \alpha_{0}-\tau_{j}]\indicator{z_{i}=j}, \text{ each } j=1, \ldots, k,
@@ -215,7 +215,7 @@ Let $\hat\beta$, $\hat{\alpha}$ and $\hat\tau$ solve
 \alpha, \beta )  =0
   \]
   in $\beta$ and $\tau$, whereas $\beta_{(n)}$, $\alpha_{(n)}$ and $\tau_{(n)}$ solve or nearly solve\footnote{%
-In actuality we only need the estimator sequence to be consistent for the deterministic sequences $(\beta_{(n)}:n)$, $(\alpha_{(n)}:n)$ and $(\tau_{(n)}:n)$, i.e. $|\hat\beta - \beta_{(n)}|_{2}$, $|\hat\alpha - \alpha_{(n)}|_{2}$ and $|\hat\tau - \tau_{(n)}|_{2}$ are all $o_{P}(1)$.%
+In actuality we only need the estimator sequence to be consistent for the deterministic sequences $(\beta_{(n)}:n)$, $(\alpha_{(n)}:n)$ and $(\tau_{(n)}:n)$, i.e. $|\hat\beta - \beta_{(n)}|_{2}$, $|\hat{\alpha} - \alpha_{(n)}|_{2}$ and $|\hat\tau - \tau_{(n)}|_{2}$ are all $o_{P}(1)$.%
 }
 \[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\vec{V}_{i}; \beta )
   =0\quad\text{and}\quad
@@ -227,7 +227,7 @@ are taken as fixed but $Z_{i}$ and/or potential outcomes $(Y_{i}[z]:
 z=0, \ldots, k)$ may be random according as we follow a design- or
 model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Write
-  \begin{align}
+\begin{align}
 \nonumber
     A(\alpha, \beta, \tau) &= \left(
       \begin{array}{cc}
@@ -254,7 +254,7 @@ that $A_{21}(\alpha, \beta, \tau)$ and $A_{22}(\alpha, \beta, \tau)$
 are functions only of $\beta$ and of $(\alpha, \tau)$
 respectively. Assuming $A_{11}(\beta_{(n)})$ and $A_{22}(\alpha_{(n)},
 \tau_{(n)})$ to be invertible, define \textit{linearizations} (of
-$\hat\beta$ and $(\hat\alpha, \hat\tau)$) as follows:
+$\hat\beta$ and $(\hat{\alpha}_{0}, \hat\tau)$) as follows:
   \begin{align}
     \left(\begin{array}{c}\tilde{\beta}_{(n)}\\\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)
     \defeq& \left(\begin{array}{c}\beta_{(n)} \\\alpha_{(n)}\\
@@ -297,7 +297,7 @@ be numerical differences).
 Using the numbers of elements (not
 clusters) in the covariance and in the comparison samples,
 respectively, aligns the expressions with the computing procedures
-generating $\hat\beta$, $\hat\alpha$ and $\hat\tau$ from specific
+generating $\hat\beta$, $\hat{\alpha}$ and $\hat\tau$ from specific
 datasets, but our strategy for invoking the \texttt{sandwich} package
 in standard error computations calls for  $\psi()$ \texttt{estfun}'s
 of dimension $n$ rather than $n_{\mathcal{Q}}$.%
@@ -359,14 +359,14 @@ or equivalently
 \right).
 \end{equation*}
 Assume that: the linearization errors $|\hat\beta -\tilde{\beta}_{(n)}|_{2}$, 
-$|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat\alpha - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
+$|\hat\tau -\tilde{\tau}_{(n)}|_{2}$ and $|\hat{\alpha} - \tilde{\alpha}_{(n)}|_{2}$ tend in probability to 0;
 $A_{11}(\beta_{(n)})$ and $A_{22}(\beta_{(n)}, \tau_{(n)})$ are nonsingular
 with eigenvalues bounded away from 0; and $A_{11}(\cdot)$, $A_{21}(\cdot)$ and $A_{22}(\cdot, \cdot)$ are suitably
 regular\footnote{E.g, they admit of Lipschitz constants: see \S~9.8,
   \bibentry{keener2010TheorStats}, while bearing in mind issues raised
   by \bibentry{feng2014exact}.}. 
 Then we have the covariance approximation characteristic of M-estimation,
-\begin{align*} \operatorname{Cov}([\hat\beta',\hat\alpha', \hat\tau']) \approx&
+\begin{align*} \operatorname{Cov}([\hat\beta',\hat{\alpha}', \hat\tau']) \approx&
   \operatorname{Cov}([\tilde{\beta}_{(n)}',\hat{\alpha}_{(n)}',\tilde{\tau}_{(n)}'])\\
   &=
     \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)}) \times \\
@@ -472,8 +472,8 @@ design-based perspective.
   \subsubsection{Conceptual vs practical bread estimates} \label{sec:conc-vs-pract}
   \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices.}%
 In general $\EE
-[\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
-\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha, \tau )$; for many types of
+[\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha_{0},\tau ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha_{0}, \tau )$; for many types of
 covariance model one also has $\EE
 [\nabla_{\beta}\phi(\vec{V}_{i};  \beta ) \mid \mathcal{M}] \equiv
 \nabla_{\beta}\phi(\vec{V}_{i};  \beta )$. As a result, under the
@@ -603,7 +603,7 @@ we use
         \beta ),\\
   \hat{\tilde{A}}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
         \mathcal{Q}}\nabla_{\beta}\psi(\vec{v}_{j};
-        \tau, \alpha, \beta ),\\
+        \tau, \alpha_{0}, \beta ),\\
   \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{\tilde{A}}_{21}\defeq \hat{\tilde{A}}_{21}(\hat\beta).
 \end{align*}
 Under the model based
@@ -615,8 +615,8 @@ equivalence holds in general.)
 Alternately put,
 defining $\tilde{k}$ by 1 random matrices 
 \begin{equation}\label{eq:10}
-    \psi_\text{DA}(\vec{V}; \tau, \alpha, 
-    \beta) = \psi (\vec{V}; \tau,\alpha, 
+    \psi_\text{DA}(\vec{V}; \tau, \alpha_{0}, 
+    \beta) = \psi (\vec{V}; \tau,\alpha_{0}, 
     \beta) -
     \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
     \hat{{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{V}_{i};
@@ -642,8 +642,8 @@ coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respect
 
 This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{z_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}\label{eq:24}
-      \tilde{\psi}_\text{DA}(\vec{V}; \tau, \alpha, 
-    \beta) = \tilde{\psi} (\vec{V}; \tau,\alpha, 
+      \tilde{\psi}_\text{DA}(\vec{V}; \tau, \alpha_{0}, 
+    \beta) = \tilde{\psi} (\vec{V}; \tau,\alpha_{0}, 
     \beta) -
     \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
     \hat{\mathrm{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{V}_{i};
