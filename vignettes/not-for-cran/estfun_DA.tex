@@ -10,7 +10,7 @@
 
 \newcommand{\EE}{\operatorname{E}}
 \DeclarePairedDelimiter{\indicator}{\llbracket}{\rrbracket}
-\newcommand{\owt}[1][{[a_i]}]{\ensuremath{\check{w}_{i#1}}}
+\newcommand{\owt}[1][{[z_{i}]}]{\ensuremath{\check{w}_{i#1}}}
 \newcommand{\absorbInterceptsEF}{\upsilon}
 \newcommand{\AbsorbInterceptsEF}{\Upsilon}
 \newcommand{\absorbModeratorEF}{\grave{\upsilon}}
@@ -53,35 +53,35 @@ $n_{\mathcal{Q}}= \# \left( \bigcup \mathcal{Q}\right)$ and
 $n = \# \left[\left( \bigcup \mathcal{C}\right) \cup \left(\bigcup
     \mathcal{Q}\right)\right]$ the numbers of elements in the 3
 overlapping samples. There are random estimating functions
-$\Phi(\mathbf{Z}; \beta ) = [\indicator{ i \in
-  \mathcal{C}}\phi(\vec{Z}_{i}; \beta) : i]'$ that define the covariance
+$\Phi(\mathbf{V}; \beta ) = [\indicator{ i \in
+  \mathcal{C}}\phi(\vec{V}_{i}; \beta) : i]'$ that define the covariance
 regression, padding with rows of zeroes in
 the complement of the covariance sample so
 as to have dimension $n \times p$ rather than $n_{\mathcal{C}}\times
 p$; and estimating functions 
-$\grave{\Psi}(\mathbf{Z}; \rho, \beta) = [\psi(\vec{Z}_{i}; \rho,
+$\grave{\Psi}(\mathbf{V}; \rho, \beta) = [\psi(\vec{V}_{i}; \rho,
 \beta): i]'$, padded with zeroes on the complement of $\bigcup
 \mathcal{Q}$ in order also to have row extent $n$, to define the
 treatment condition comparison.  For now, let
 \begin{equation}
          \label{eq:5}
-         \grave{\psi}(\vec{Z}_{i}; \rho, \beta) =\\
+         \grave{\psi}(\vec{V}_{i}; \rho, \beta) =\\
          \left( \begin{array}{c}
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[0]}] [Y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \rho_{0}]\indicator{A_{i}=0}\\
+                  \rho_{0}]\indicator{Z_{i}=0}\\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[1]}] [Y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \rho_{1}]\indicator{A_{i}=1}\\
+                  \rho_{1}]\indicator{Z_{i}=1}\\
                   \vdots \\
            \indicator{i \in \bigcup \mathcal{Q}}\owt[{[k]}] [Y_{i}[k] - g(\vec{x}_{i}\beta)-
-                  \rho_{k}]\indicator{A_{i}=k}\\
+                  \rho_{k}]\indicator{Z_{i}=k}\\
                 \end{array}\right),
 \end{equation}
 where
 \begin{itemize}
 \item $Y_{i}[j]$ represents $i$'s potential outcome following
   assignment to condition $i$;
-\item $A_{i}$ is the treatment assignment of $i$'s cluster $[i]$;
-\item $\vec{Z}_{i} = (Y_{i}[0],\ldots, Y_{i}[k], \vec{x}_{i}, m_{i}, w_{i}, A_{i})$, where $\vec{x}_{i}$, $m_{i}$ and $w_{i}$ are covariates, an optional moderator variable and a
+\item $Z_{i}$ is the treatment assignment of $i$'s cluster $[i]$;
+\item $\vec{V}_{i} = (Y_{i}[0],\ldots, Y_{i}[k], \vec{x}_{i}, m_{i}, w_{i}, Z_{i})$, where $\vec{x}_{i}$, $m_{i}$ and $w_{i}$ are covariates, an optional moderator variable and a
   frequency or importance weight associating with $i$ (1 if no such weight was
   given); 
 \item $\owt[{[j]}]$ is either $w_i$ or, 
@@ -94,7 +94,7 @@ $\psi(\cdot)$ with equivalent solutions that is better aligned with
 \texttt{lm()}'s default treatment effect parameterizations, and
 \eqref{eq:9} in \S~\ref{sec:accomm-interc-via} below will generalize $\psi()$'s definition
 to add block-specific intercepts.)
-The interest parameter is $\tau \defeq \rho - \rho_{0}$. In the model-based interpretation, occurrences of ``$A_{i}$'' in \eqref{eq:5} may be replaced with ``$a_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
+The interest parameter is $(\rho_{0}, \tau)$, where $\tau \defeq (\rho_{1}, \ldots, \rho_{k}) - \rho_{0}$. In the model-based interpretation, occurrences of ``$Z_{i}$'' in \eqref{eq:5} may be replaced with ``$z_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
 \subsection{Goal} \label{sec:goal}
 We aim to define \texttt{estfun.teeMod()} associating
@@ -139,65 +139,65 @@ I conjecture these decisions can be made in such away that
   degree of freedom adjustments. 
 \end{enumerate}
 
-\subsection{$\psi(\vec{Z}_{i};
-  \alpha, \tau, \beta)$, an intercept-form equivalent of $\grave{\psi}(\vec{Z}_{i};
+\subsection{$\psi(\vec{V}_{i};
+  \alpha, \tau, \beta)$, an intercept-form equivalent of $\grave{\psi}(\vec{V}_{i};
   \rho, \beta)$}
 \label{sec:psit-rho_0-tau}
 
-Write $\tau_{j}=\rho_{j}-\rho_{0}$ and introduce the intercept parameter ``$\alpha$,''  for the time being one-dimensional with $\alpha_{0}=\rho_{0}$.   The estimating equation $\sum_{i}\grave{\psi}(\vec{z}_{i}; \rho, \beta)=0$,
-$\grave{\psi}(\cdot; \cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\vec{z}_{i};
+Write $\tau_{j}=\rho_{j}-\rho_{0}$ and introduce the intercept parameter ``$\alpha$,''  for the time being one-dimensional with $\alpha_{0}=\rho_{0}$.   The estimating equation $\sum_{i}\grave{\psi}(\vec{v}_{i}; \rho, \beta)=0$,
+$\grave{\psi}(\cdot; \cdot)$ as in \eqref{eq:5} above, has the same solutions as $\sum_{i}\psi(\vec{v}_{i};
   \alpha, \tau, \beta)=0$, with $\psi(\cdot; \cdot)$ as in \eqref{eq:14} immediately below:
 \begin{equation} \label{eq:14}
-         \psi(\vec{z}_{i};
+         \psi(\vec{v}_{i};
          \alpha, \tau, \beta) =
          \indicator{i \in \bigcup \mathcal{Q}}
          \left( \begin{aligned}
-           \owt[{[a_{i}]}] &\big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\\
-           \owt[{[1]}]\indicator{a_{i}=1} & \big[y_{i}[1] - g(\vec{x}_{i}\beta)-
+           \owt[{[z_{i}]}] &\big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\\
+           \owt[{[1]}]\indicator{z_{i}=1} & \big[y_{i}[1] - g(\vec{x}_{i}\beta)-
                   \alpha_{0}-\tau_{1}\big]\\
                   \vdots \\
-           \owt[{[k]}]\indicator{a_{i}=k} & \big[y_{i}[k] - g(\vec{x}_{i}\beta)-
+           \owt[{[k]}]\indicator{z_{i}=k} & \big[y_{i}[k] - g(\vec{x}_{i}\beta)-
                  \alpha_{0} - \tau_{k}\big]\\
                 \end{aligned}\right), 
 \end{equation}
-the omission of a ``$\indicator{a_{i}=0}$'' factor from the topmost
+the omission of a ``$\indicator{z_{i}=0}$'' factor from the topmost
 expression being intentional and deliberate.
-Abbreviating ``$\owt{}$'' as ``$\owt[]$'' and ``$y_{i}[a_{i}]$'' as
+Abbreviating ``$\owt{}$'' as ``$\owt[]$'' and ``$y_{i}[z_{i}]$'' as
 ``$y_{i}$,'' we have
 \begin{equation}\label{eq:27}
-         \psi(\vec{z}_{i};
+         \psi(\vec{v}_{i};
          \alpha, \tau, \beta) =
          \indicator{i \in \bigcup \mathcal{Q}}
   \owt[] \Big[y_{i} - g(\vec{x}_{i}\beta)-
                   \alpha_{0} -
-                  \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\Big]
-                  \begin{pmatrix} 1 \\ \indicator{a_{i}=1}\\ \vdots
-                    \\ \indicator{a_{i}=k}\end{pmatrix} .
+                  \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\Big]
+                  \begin{pmatrix} 1 \\ \indicator{z_{i}=1}\\ \vdots
+                    \\ \indicator{z_{i}=k}\end{pmatrix} .
 \end{equation}
 Since the solution in 
 $(\alpha_{0}, \tau_{1}, \ldots, \tau_{k})$ of
-$\sum_{i}\psi(\vec{z}_{i}; \alpha, \tau, \beta) =0$ satisfies
+$\sum_{i}\psi(\vec{v}_{i}; \alpha, \tau, \beta) =0$ satisfies
 \begin{equation} \label{eq:16}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt[][y_{i} - g(\vec{x}_{i}\beta)-
-                  \alpha_{0}-\tau_{j}]\indicator{a_{i}=j}, \text{ each } j=1, \ldots, k,
+                  \alpha_{0}-\tau_{j}]\indicator{z_{i}=j}, \text{ each } j=1, \ldots, k,
 \end{equation}
 this solution also satisfies
 \begin{equation*}
        0 = \sum_{i \in \bigcup \mathcal{Q}}\owt[]\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \alpha_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big]\indicator{a_{i}
+                  \alpha_{0}-\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big]\indicator{z_{i}
                   \neq 0}.
 \end{equation*}
-The complement of condition $\indicator{a\neq 0}$ being
-$\indicator{a=0}$, under which
-$\sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}=0$, it follows from \eqref{eq:16} that
+The complement of condition $\indicator{z\neq 0}$ being
+$\indicator{z=0}$, under which
+$\sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}=0$, it follows from \eqref{eq:16} that
 \begin{align*}
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[{[0]}]\big[y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \alpha_{0}\big]\indicator{a_{i}
+                  \alpha_{0}\big]\indicator{z_{i}
              =0}\\
            & \Updownarrow \\
          0 &= \sum_{i \in \bigcup \mathcal{Q}}\owt[]\big[y_{i} - g(\vec{x}_{i}\beta)-
-                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{a_{i}=j}\big].
+                  \alpha_{0} - \sum_{j=1}^{k}\tau_{j}\indicator{z_{i}=j}\big].
 \end{align*}
 Representations \eqref{eq:14} and \eqref{eq:27} better represent what
 \texttt{lm()} does, while \eqref{eq:5} centers the interpretation of $\rho_{0}$/$\alpha_{0}$ as a
@@ -207,22 +207,22 @@ marginal mean of the outcome, or partial residual outcome, under control.
   produce}\label{sec:covar-were-trying}
 
 Let $\hat\beta$, $\hat{\alpha}$ and $\hat\tau$ solve
-\[\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{z}_{i}; \beta )
+\[\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{v}_{i}; \beta )
   =0\quad\text{and}\quad
-\sum_{j\in \bigcup \mathcal{Q}}\psi(\vec{z}_{j}; \tau,
+\sum_{j\in \bigcup \mathcal{Q}}\psi(\vec{v}_{j}; \tau,
 \alpha, \beta )  =0
   \]
   in $\beta$ and $\tau$, whereas $\beta_{(n)}$, $\alpha_{(n)}$ and $\tau_{(n)}$ solve or nearly solve\footnote{%
 In actuality we only need the estimator sequence to be consistent for the deterministic sequences $(\beta_{(n)}:n)$, $(\alpha_{(n)}:n)$ and $(\tau_{(n)}:n)$, i.e. $|\hat\beta - \beta_{(n)}|_{2}$, $|\hat\alpha - \alpha_{(n)}|_{2}$ and $|\hat\tau - \tau_{(n)}|_{2}$ are all $o_{P}(1)$.%
 }
-\[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\vec{Z}_{i}; \beta )
+\[\sum_{i\in \bigcup \mathcal{C}}\EE\phi(\vec{V}_{i}; \beta )
   =0\quad\text{and}\quad
-\sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\vec{Z}_{j}; \tau,
+\sum_{j\in \bigcup \mathcal{Q}}\EE\psi(\vec{V}_{j}; \tau,
 \alpha, \beta )  =0.
   \]
 In these expectations and those that follow, $\vec{x}_{i}$ and $w_{i}$
-are taken as fixed but $A_{i}$ and/or potential outcomes $(Y_{i}[a]:
-a=0, \ldots, k)$ may be random according as we follow a design- or
+are taken as fixed but $Z_{i}$ and/or potential outcomes $(Y_{i}[z]:
+z=0, \ldots, k)$ may be random according as we follow a design- or
 model-based framework; see \S~\ref{sec:des-vs-mod-based}.
   Write
   \begin{align}
@@ -230,12 +230,12 @@ model-based framework; see \S~\ref{sec:des-vs-mod-based}.
     A(\alpha, \beta, \tau) &= \left(
       \begin{array}{cc}
         n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-        \mathcal{C}}\EE [\nabla_{\beta}\phi(\vec{Z}_{i};
+        \mathcal{C}}\EE [\nabla_{\beta}\phi(\vec{V}_{i};
         \beta )]&0\\
         n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{Z}_{j};
+        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )]  & n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
+        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )]
       \end{array}
                                   \right)\\
@@ -260,30 +260,30 @@ $\hat\beta$ and $(\hat\alpha, \hat\tau)$) as follows:
     + A^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\\
+      \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)})\\
       n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \mathcal{Q}}\psi(\vec{V}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
     \right),\, \text{i.e.} \nonumber \\
    \nonumber \\
        \tilde{\beta}_{(n)}
-    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})
+    \defeq& \beta_{(n)} + A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)})
   \, \text{and} \nonumber\\
 \left(\begin{array}{c}\tilde{\alpha}_{(n)}\\ \tilde{\tau}_{(n)} \end{array}\right)               &=\left(\begin{array}{c}\alpha_{(n)}\\
                          \tau_{(n)} \end{array}\right) +
     A_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:20}\\
     & \left[
                  n_{\mathcal{Q}}^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
-                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right],\nonumber
+                 \mathcal{Q}}\psi(\vec{V}_{j};
+                 \tau_{(n)},\beta_{(n)} ) - A_{21}(\beta_{(n)}) A_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)})\right],\nonumber
 \end{align}
 where we've used the block inversion relationship
 \begin{equation*}
   \label{eq:23}
-  \left(\begin{array}{cc}U & 0 \\ V & W \end{array} \right)^{-1} =
-  \left(\begin{array}{cc}U^{-1} & 0 \\ 0 & W^{-1} \end{array} \right)
-  \left(\begin{array}{cc} I & 0 \\ -VU^{-1} & I \end{array} \right)
+  \left(\begin{array}{cc}A & 0 \\ B & C \end{array} \right)^{-1} =
+  \left(\begin{array}{cc}A^{-1} & 0 \\ 0 & C^{-1} \end{array} \right)
+  \left(\begin{array}{cc} I & 0 \\ -BA^{-1} & I \end{array} \right)
 \end{equation*}
 (a special case of factorization and inversion based on Schur complements).
 
@@ -314,10 +314,10 @@ of dimension $n$ rather than $n_{\mathcal{Q}}$.%
 define
 \begin{align*}
   \tilde{A}_{21}(\beta) &= n^{-1} \sum_{j\in \bigcup
-        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{Z}_{j};
+        \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n} {A}_{21}(\beta),\\
   \tilde{A}_{22}(\alpha, \tau) &= n^{-1} \sum_{j\in \bigcup
-        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{Z}_{j};
+        \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n}
                                  {A}_{22}(\alpha, \tau),\\
   \tilde{A} &= \left(
@@ -335,11 +335,11 @@ $\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
     \tilde{A}_{22}^{-1}(\alpha_{(n)}, \tau_{(n)})\times \label{eq:21}\\
     & \left[
                  n^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \mathcal{Q}}\psi(\vec{V}_{j};
                  \tau_{(n)},\beta_{(n)} ) -
       \tilde{A}_{21}(\beta_{(n)})
       {A}_{11}^{-1}(\beta_{(n)})n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\right] \nonumber
+      \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)})\right] \nonumber
 \end{align}
 or equivalently
 \begin{equation*}
@@ -349,9 +349,9 @@ or equivalently
     + \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})\left(
     \begin{array}{c}
       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-      \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)})\\
+      \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)})\\
       n^{-1}\sum_{j\in \bigcup
-                 \mathcal{Q}}\psi(\vec{Z}_{j};
+                 \mathcal{Q}}\psi(\vec{V}_{j};
                  \tau_{(n)},\beta_{(n)} )
     \end{array}
 \right).
@@ -370,13 +370,13 @@ Then we have the covariance approximation characteristic of M-estimation,
     \tilde{A}^{-1}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)}) \times \\
   &\hspace{1.5em} \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta_{(n)} )\\
-       n^{-1}\sum_{j=1}^{n}\psi(\vec{Z}_{j}; \tau_{(n)}, \alpha_{(n)}, \beta_{(n)} )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{V}_{i}; \beta_{(n)} )\\
+       n^{-1}\sum_{j=1}^{n}\psi(\vec{V}_{j}; \tau_{(n)}, \alpha_{(n)}, \beta_{(n)} )
      \end{array}
     \right)
   \tilde{A}^{-t}(\alpha_{(n)}, \beta_{(n)}, \tau_{(n)})
 \end{align*}
-(recalling that we have so defined $\psi(\cdot)$ that $\psi(\vec{Z}_{j}; \tau, \alpha, \beta) = 0$ when
+(recalling that we have so defined $\psi(\cdot)$ that $\psi(\vec{V}_{j}; \tau, \alpha, \beta) = 0$ when
 $j\not\in \bigcup \mathcal{Q}$).
 
 
@@ -386,8 +386,8 @@ We have
 \[
 \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{Z}_{i}; \beta )\\
-       n^{-1}\sum_{j=1}^{n}\psi(\vec{Z}_{j}; \tau, \alpha, \beta )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup \mathcal{C}}\phi(\vec{V}_{i}; \beta )\\
+       n^{-1}\sum_{j=1}^{n}\psi(\vec{V}_{j}; \tau, \alpha, \beta )
      \end{array}
 \right) = \left(
   \begin{array}{cc}
@@ -400,13 +400,13 @@ where
 \[
   \begin{array}{cc}
     M_{11}  = \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
-             \mathcal{C}} \phi(\vec{Z}_{i}; \beta )] &
+             \mathcal{C}} \phi(\vec{V}_{i}; \beta )] &
                                                                   M_{12}=
                                                                   \operatorname{Cov}[n_{\mathcal{C}}^{-1/2}\sum_{i\in \bigcup
-             \mathcal{C}}\phi(\vec{Z}_{i};
+             \mathcal{C}}\phi(\vec{V}_{i};
                                                                   \beta
-                                                                  ), n^{-1/2}\sum_{j}\psi'(\vec{Z}_{j}; \tau, \alpha, \beta )]\\
-    M_{21}=M_{12}' & M_{22} = \operatorname{Cov}[n^{-1/2}\sum_{j}\psi(\vec{Z}_{j};
+                                                                  ), n^{-1/2}\sum_{j}\psi'(\vec{V}_{j}; \tau, \alpha, \beta )]\\
+    M_{21}=M_{12}' & M_{22} = \operatorname{Cov}[n^{-1/2}\sum_{j}\psi(\vec{V}_{j};
                      \tau, \alpha, \beta )] .
     \end{array}
 \]
@@ -445,17 +445,17 @@ $n$.)
 
 In the model-based perspective, expected value and covariance are
 conditional on
-\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, A_{i}: i \in c): c \in
+\[ \mathcal{M} = \sigma\left(\left[(X_{i}, W_{i}, M_{i}, Z_{i}: i \in c): c \in
       \mathcal{C}\cup \mathcal{Q} \right]\right)\]
 
 
 In the design-based perspective, $\mathcal{Q}$ is partitioned into
 blocks $b$, and expected value and covariance are
 conditional on
-\[\mathcal{Z} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+\[\mathcal{V} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
   i \in c; c\}, \{\sum_{c
-    \in b}\, \![A_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
-where $a_{c}$ denotes the common treatment assignment of all $i\in
+    \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+where $z_{c}$ denotes the common treatment assignment of all $i\in
 c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
 clusters $c \ni i$.)
 
@@ -469,11 +469,11 @@ design-based perspective.
   \subsubsection{Conceptual vs practical bread estimates} \label{sec:conc-vs-pract}
   \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices.}%
 In general $\EE
-[\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
-\nabla_{\beta}\psi(\vec{Z}_{i};  \beta, \alpha, \tau )$; for many types of
+[\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha,\tau ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha, \tau )$; for many types of
 covariance model one also has $\EE
-[\nabla_{\beta}\phi(\vec{Z}_{i};  \beta ) \mid \mathcal{M}] \equiv
-\nabla_{\beta}\phi(\vec{Z}_{i};  \beta )$. As a result, under the
+[\nabla_{\beta}\phi(\vec{V}_{i};  \beta ) \mid \mathcal{M}] \equiv
+\nabla_{\beta}\phi(\vec{V}_{i};  \beta )$. As a result, under the
 model-based perspective
 $A_{11}(\beta)$ and perhaps $A_{21}(\beta)$ are essentially observed,
 i.e.  $\hat{A}_{11}(\beta) \equiv A_{11}(\beta)$ and (perhaps)
@@ -561,10 +561,12 @@ the same, $M$'s are estimated as follows.
     \end{array} 
   \end{equation}
   In the more general case with potential clustering of observation
-units, by units of assignment and maybe more, we can express HC0
-type estimators with matrix rather than summation notation by using
-$F$ for the \{0,1\}-valued $n \times m$ matrix with an indicator
-column for each cluster:
+units, by units of assignment and maybe more, we can express
+basic estimators with matrix (rather than summation) notation as
+follows. Let 
+$F$ be the one-hot encoding of cluster membership, that is the \{0,1\}-valued $n \times m$ matrix with an indicator
+column for each cluster. The HC0 estimators of meat matrix components
+are then
 \begin{equation} \label{eq:8}
   \begin{array}{cc}
   \hat{M}_{11} =n_{\mathcal{C}}^{-1} (F'\Phi)'(F'\Phi) & \hat{M}_{12} = [n_{\mathcal{C}}^{-1/2} (F'\Phi)]'[n^{-1/2} (F'\Psi)]\\
@@ -594,10 +596,10 @@ $M$'s, and with $\hat{A}$'s for $A$'s.
 we use
 \begin{align*}
   \hat{A}_{11}(\beta) &\defeq  n_{\mathcal{C}}^{-1}\sum_{i\in \bigcup
-        \mathcal{C}}\nabla_{\beta}\phi(\vec{z}_{i};
+        \mathcal{C}}\nabla_{\beta}\phi(\vec{v}_{i};
         \beta ),\\
   \hat{\tilde{A}}_{21}(\beta) &\defeq n^{-1}\sum_{j\in \bigcup
-        \mathcal{Q}}\nabla_{\beta}\psi(\vec{z}_{j};
+        \mathcal{Q}}\nabla_{\beta}\psi(\vec{v}_{j};
         \tau, \alpha, \beta ),\\
   \hat{A}_{11}&\defeq \hat{A}_{11}(\hat\beta)\, \text{and}\, \hat{\tilde{A}}_{21}\defeq \hat{\tilde{A}}_{21}(\hat\beta).
 \end{align*}
@@ -610,16 +612,16 @@ equivalence holds in general.)
 Alternately put,
 defining $\tilde{k}$ by 1 random matrices 
 \begin{equation}\label{eq:10}
-    \psi_\text{DA}(\vec{Z}; \tau, \alpha, 
-    \beta) = \psi (\vec{Z}; \tau,\alpha, 
+    \psi_\text{DA}(\vec{V}; \tau, \alpha, 
+    \beta) = \psi (\vec{V}; \tau,\alpha, 
     \beta) -
     \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
-    \hat{{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{V}_{i};
     \beta), 
 \end{equation}
-we have in the model-based formulation 
+assuming the first-stage fit to be a glm, in the model-based formulation we have
 \begin{multline}
-  \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{Z}_{i}; \tau_{(n)},\alpha_{(n)},
+  \operatorname{Cov}\left(n^{-1/2}\sum_{i=1}^{n} \psi_\text{DA}(\vec{V}_{i}; \tau_{(n)},\alpha_{(n)},
     \beta_{(n)})\right) = \\
   M_{22} -
                                  \frac{n_{\mathcal{Q}}}{(n n_{\mathcal{C}})^{1/2}}[M_{21}A_{11}^{-t}\tilde{A}_{21}^t
@@ -627,21 +629,21 @@ we have in the model-based formulation
                                  \frac{n_{\mathcal{Q}}^{2}}{nn_C}{A}_{21}A_{11}^{-1}M_{11}A_{11}^{-t}{A}_{21}^{t}, \label{eq:12}
                                \end{multline}
 regardless of what adjustments for
-clustering or heteroskedasticity that we might seek to apply.
+clustering or heteroskedasticity we might seek to apply.
 
 
-In the design-based formulation there
-would likely be approximate equality here, as in that setting
+In the design-based formulation such equality would not generally
+hold, as in that setting
 $\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
 coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
-This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{a_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
+This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{z_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}\label{eq:24}
-      \tilde{\psi}_\text{DA}(\vec{Z}; \tau, \alpha, 
-    \beta) = \tilde{\psi} (\vec{Z}; \tau,\alpha, 
+      \tilde{\psi}_\text{DA}(\vec{V}; \tau, \alpha, 
+    \beta) = \tilde{\psi} (\vec{V}; \tau,\alpha, 
     \beta) -
     \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}
-    \hat{\mathrm{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{Z}_{i};
+    \hat{\mathrm{A}}_{21}(\beta) \hat{A}_{11}^{-1}(\beta)\phi(\vec{V}_{i};
     \beta)
 \end{equation*}
 in combination with $\hat{\tilde{A}}_{22}^{-1}$ as bread matrix. As long as the comparison regression value inherits from \texttt{lm} (or \texttt{glm}), \texttt{sandwich::bread()} as applied to it will with little or no modification return
@@ -669,121 +671,121 @@ estimating function \eqref{eq:14} becomes
 
 \begin{multline}
   \label{eq:9}
-  \psi(\vec{z}; \tau, \alpha, \beta) =
+  \psi(\vec{v}; \tau, \alpha, \beta) =
   \indicator{i \in \bigcup \mathcal{Q}} \owt[]\times \\  
   \left(
     \begin{array}{c}
-           [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+           [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{1} -
-      \tau_{a_{i}}]\indicator{b_{i}=1}\\
+      \tau_{z_{i}}]\indicator{b_{i}=1}\\
       \vdots\\ 
-          {} [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{s} -
-      \tau_{a_{i}}]\indicator{b_{i}=s}\\      
-         {}  [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{a_{i}=1}\\
+      \tau_{z_{i}}]\indicator{b_{i}=s}\\      
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-          {} [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{a_{i}=k}\\
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
 \end{multline}
 
 Recall that $\tau_{0} = \rho_{0}-\rho_{0}=0$.  If \texttt{absorb=FALSE}, then we revert to \eqref{eq:14}, i.e.
 \begin{equation*}
-         \psi(\vec{z}_{i};
+         \psi(\vec{v}_{i};
   \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
          \left( \begin{array}{l}
-           y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \alpha_0 - \tau_{a_{i}}\\
+           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \alpha_0 - \tau_{z_{i}}\\
            {}[y_{i}[1] - g(\vec{x}_{i}\beta)-
-                  \alpha_0-\tau_{1}]\cdot \indicator{a_{i}=1}\\
+                  \alpha_0-\tau_{1}]\cdot \indicator{z_{i}=1}\\
                   \vdots \\
            {}[y_{i}[k] - g(\vec{x}_{i}\beta)-
-                 \alpha_0 - \tau_{k}]\cdot \indicator{a_{i}=k}\\%
+                 \alpha_0 - \tau_{k}]\cdot \indicator{z_{i}=k}\\%
                 \end{array}\right).
 \end{equation*}
 In this case we rely on inverse probability weighting (via $\owt[]$ factors) to ensure causal interpretability in light of the design;  $\hat{\alpha}_0$ will correspond to an $\owt[]$-weighted control group mean. In contrast to the situation with a grand-mean intercept but no block effects, \eqref{eq:9}'s block-specific intercepts $\alpha_s$ do not ordinarily correspond to block means under control.\footnote{%
 The argument of \S~\ref{sec:psit-rho_0-tau} no longer applies
 to show the system of equations
-$0=\sum_{i}\psi(\vec{z}_{i}; \tau, \alpha, \beta)$
-equivalent to $0=\sum_{i}\grave{\psi}(\vec{z}_{i}; \tau,
-\alpha, \beta)$, where $\grave{\psi}(\vec{z}; \tau,
+$0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
+equivalent to $0=\sum_{i}\grave{\psi}(\vec{v}_{i}; \tau,
+\alpha, \beta)$, where $\grave{\psi}(\vec{v}; \tau,
 \alpha, \beta)$ has uppermost $s$ entries
 \begin{equation*}
     \left(
     \begin{array}{c}
            [y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \alpha_{1} ]\indicator{b_{i}=1} \indicator{a_{i}=0}\\
+                  \alpha_{1} ]\indicator{b_{i}=1} \indicator{z_{i}=0}\\
       \vdots\\ 
           {} [y_{i}[0] - g(\vec{x}_{i}\beta)-
-                  \alpha_{s}]\indicator{b_{i}=s} \indicator{a_{i}=0}\\      
+                  \alpha_{s}]\indicator{b_{i}=s} \indicator{z_{i}=0}\\      
     \end{array}
     \right),
   \end{equation*}
-in parallel with \eqref{eq:5}, but bottom $k$ entries the same as ${\psi}(\vec{z}_{i}; \tau,
+in parallel with \eqref{eq:5}, but bottom $k$ entries the same as ${\psi}(\vec{v}_{i}; \tau,
 \alpha, \beta)$'s. That is, it may not be the case that the $\alpha$-solutions of
-$0=\sum_{i}\psi(\vec{z}_{i}; \tau, \alpha, \beta)$ are
+$0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$ are
 block-specific control group means.  Accordingly its $\tau$-solutions
 do not necessarily bear interpretation as contrasts of Hajek estimators.
 }
 
 The FWL theorem is used to switch out the system of equations
-$0=\sum_{i}\psi(\vec{z}_{i}; \tau, \alpha, \beta)$
-for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{z}_{i}; \mathbf{p})$ and
-$0= \sum_{i}\acute{\psi}(\vec{z}_{i}; \tau, \mathbf{p},
+$0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
+for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ and
+$0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
 \beta)$,  where
 \begin{align}
-  \absorbInterceptsEF(\vec{z}; \mathbf{p}) &=
+  \absorbInterceptsEF(\vec{v}; \mathbf{p}) &=
                                              \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}\left(%
     \left(
     \begin{array}{ccc}
-      % (\indicator{a_{i}=0}-p_{01})\indicator{b_{i}=1}
+      % (\indicator{z_{i}=0}-p_{01})\indicator{b_{i}=1}
       % &\ldots
       % &
-      %   (\indicator{a_{i}=0}-p_{0s})\indicator{b_{i}=s}
+      %   (\indicator{z_{i}=0}-p_{0s})\indicator{b_{i}=s}
       % \\
-      (\indicator{a_{i}=1}-p_{11})\indicator{b_{i}=1}
+      (\indicator{z_{i}=1}-p_{11})\indicator{b_{i}=1}
       &\ldots
       &
-        (\indicator{a_{i}=1}-p_{1s})\indicator{b_{i}=s}
+        (\indicator{z_{i}=1}-p_{1s})\indicator{b_{i}=s}
       \\
       \vdots & \vdots & \vdots \\
-      (\indicator{a_{i}=k}-p_{k1})\indicator{b_{i}=1}
+      (\indicator{z_{i}=k}-p_{k1})\indicator{b_{i}=1}
       &\ldots
       &
-        (\indicator{a_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
+        (\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
   \right)%
   \right) ;\nonumber \\
-  \acute{\psi}(\vec{z}; \tau, \mathbf{p}, \beta) &=
+  \acute{\psi}(\vec{v}; \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber \\
 &\left(
   \begin{array}{c}                                               
-    % \big[y_{i}[a_{i}]
+    % \big[y_{i}[z_{i}]
     % -
-    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
     % (
-    % \indicator{a_{i}=0} - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r})\\
-    \big[y_{i}[a_{i}]
+    % \indicator{z_{i}=0} - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r})\\
+    \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
     (
-    \indicator{a_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
+    \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
     \vdots \\
-    {}\big[y_{i}[a_{i}]
+    {}\big[y_{i}[z_{i}]
     - g(\vec{x}_{i}\beta) - \alpha_{0}-
-    \tau_{a_{i}}\big]
-    (\indicator{a_{i}=k}
+    \tau_{z_{i}}\big]
+    (\indicator{z_{i}=k}
     - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) . \label{eq:upsilondef}
 \end{align}
 
-In the model based formulation, $[A_{i}: i]$ is held fixed, so
+In the model based formulation, $[Z_{i}: i]$ is held fixed, so
 solutions $\hat{\mathbf{p}}$ of
-$0 = \sum_{i}\absorbInterceptsEF(\vec{z}_{i}; \mathbf{p})$ have
+$0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ have
 covariance 0.  Writing $\acute{\Psi} =
-[\acute{\psi}(\vec{z}_{i}; \mathbf{p}, \beta, \tau) : i]'$, one
+[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \tau) : i]'$, one
 obtains valid\footnote{%
 The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not remove stratum
 effects, as conventional covariance estimators for this scenario
@@ -807,9 +809,9 @@ $\Psi$ in \eqref{eq:15}.  That is, for a
 \end{cases}
 \end{equation*}
 
-In design-based formulation, randomness of $A$ can propagate to
+In the design-based formulation, randomness of $Z$ can propagate to
 sampling variability of $\hat{\mathbf{p}}$,  so we must attend to
-variance contributions from $[\absorbInterceptsEF(a_{i}, \mathbf{p}): i]$. 
+variance contributions from $[\absorbInterceptsEF(z_{i}, \mathbf{p}): i]$. 
 The $\mathbf{p}$ being another nuisance parameter estimated in a
 preliminary regression, we can get variance propagation for it by
 another elaboration of estimating functions along the lines of
@@ -827,11 +829,11 @@ helper \texttt{estfun\_DB\_blockabsorb()}, applying to
 \end{cases}
 \end{equation*}
 where 
-$\AbsorbInterceptsEF= [\absorbInterceptsEF(\vec{z}_{i}; \mathbf{p}): i]'$, 
+$\AbsorbInterceptsEF= [\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p}): i]'$, 
 $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
-  \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{Z}_{i};
+  \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
-  \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\acute{\psi}(\vec{Z}_{i};
+  \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \tau)]$.  For design-based variance-covariance
 estimation one uses as estimating function
 \begin{multline*}\label{eq:25}
@@ -850,16 +852,16 @@ estimation one uses as estimating function
 \end{multline*}
 
 In these displays, $A_{\mathbf{p}, \mathbf{p}}$ is
-an average of diagonal matrices $\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{Z}_{i};
+an average of diagonal matrices $\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
 b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
 $r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
-  \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{Z}_{i};
+  \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
-  \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{Z}_{i};
+  \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \tau)$ is estimable by corresponding means of
-random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{Z}_{i};
-\mathbf{p}, \beta, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{z}_{i};
+random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
+\mathbf{p}, \beta, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
 \mathbf{p}, \beta, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
@@ -876,44 +878,44 @@ As of this writing, we do not plan to implement moderator effect estimation by w
 
 For a continuous moderator $m$, absorption of the moderator into the assignment variable
 corresponds to solving the system $0 = \sum
-\absorbModeratorEF(\vec{z}_{i}; \mathbf{p},{\gamma})$ for
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\gamma})$ for
 $\gamma$, where $\mathbf{p}$ solves $0 =
-\sum_{i}\absorbInterceptsEF(\vec{z}_{i}; \mathbf{p})$,
+\sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$,
 $\absorbInterceptsEF(\cdot)$ as above, 
 \begin{equation}
   \label{eq:18}
-    \absorbModeratorEF(\vec{z}_{i}; \mathbf{\gamma})=
+    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})=
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
        \begin{array}{c}
          % (
-         % \indicator{a_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % \indicator{z_{i}=0}-p_{0b_{i}}-\gamma_{0}
          % \tilde{m}_{i}
          % )m_{i} \\
          (
-         \indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         \indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
          \tilde{m}_{i}
          )m_{i} \\
          \vdots\\
-         (\indicator{a_{i}=k}-p_{kb_{i}}
+         (\indicator{z_{i}=k}-p_{kb_{i}}
          - \gamma_{k} \tilde{m}_{i})m_{i}\\
        \end{array}
   \right)%
 \end{equation}
 and $\tilde{m}$ is $m$ with block centering. Equivalently, $\gamma$
 solves $0 = \sum
-\absorbModeratorEF(\vec{z}_{i}; \mathbf{p},{\gamma})$ with 
-$\absorbModeratorEF(\vec{z}_{i}; \mathbf{\gamma})$ given by 
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\gamma})$ with 
+$\absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})$ given by 
 \begin{equation*}
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
        \begin{array}{c}
-         % (\indicator{a_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % (\indicator{z_{i}=0}-p_{0b_{i}}-\gamma_{0}
          % \tilde{m}_{i})\tilde{m}_{i} \\
-         (\indicator{a_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
          \tilde{m}_{i})\tilde{m}_{i} \\
          \vdots\\
-         (\indicator{a_{i}=k}-p_{kb_{i}}
+         (\indicator{z_{i}=k}-p_{kb_{i}}
          - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
        \end{array}
      \right).
@@ -922,29 +924,29 @@ If there were no blocks,
 or no absorption of block intercepts, then $\tilde{m} = m -
 \bar{m}_{w}$,  where $\bar{m}_{w}$ is $m$'s weighted mean, and $p_{jk}
 \equiv p_{j}$, with $\hat{p}_{j}$ equal to a weighted mean of
-$\indicator{a_{i}=j}$. 
+$\indicator{z_{i}=j}$. 
 
 For a subgrouping variable $m$ with $t>1$ levels, and corresponding
 indicator variables $m_{\ell} =\indicator{m_{i}=\ell}$, $\ell=1,
 \ldots, t$, and block-centered versions $\tilde{m}_{\ell}$  moderator absorption into the assignment variable
 corresponds to solving $0 = \sum
-\absorbModeratorEF(\vec{z}_{i}; \mathbf{p}, {\gamma})$ for $\gamma$, where
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p}, {\gamma})$ for $\gamma$, where
 \begin{align}
-    \absorbModeratorEF(\vec{z}_{i}; \mathbf{\gamma})
+    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})
 &=
                                                  \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}  \left(%
                                                  \left(
                                                  \begin{array}{ccc}
-                                                   % (\indicator{a_{i}=0}-p_{0b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{a_{i}=0}-p_{0s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   % (\indicator{z_{i}=0}-p_{0b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=0}-p_{0s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
                                                    % \\
-                                                   (\indicator{a_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{a_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
                                                    \\
                                                    \vdots & \vdots &
                                                                      \vdots
                                                    \\
-                                                   (\indicator{a_{i}=k}-p_{kb_{i}}
-                                                   - \tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{a_{i}=k}-p_{ks}-\tilde{m}_{ti}\gamma_{t})m_{ti}\\                                                 \end{array}
+                                                   (\indicator{z_{i}=k}-p_{kb_{i}}
+                                                   - \tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=k}-p_{ks}-\tilde{m}_{ti}\gamma_{t})m_{ti}\\                                                 \end{array}
   \right)%
   \right) .  \label{eq:17}
 \end{align}
@@ -954,30 +956,30 @@ accounting in covariance estimation, since both $A$ and the moderating
 variable are held fixed by conditioning. We get a legit covariance
 without doing anything special, using an $\acute{\psi}$ given by
 \begin{multline*}
-  \acute{\psi}(\vec{z}; \tau, \mathbf{p}, \beta) =
+  \acute{\psi}(\vec{v}; \tau, \mathbf{p}, \beta) =
     \indicator{i \in \bigcup \mathcal{Q}}\owt[] \times \\
 \left(
   \begin{array}{r}
-    % \big[y_{i}[a_{i}]
+    % \big[y_{i}[z_{i}]
     % -
-    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
     % (
-    % \indicator{a_{i}=0} -
+    % \indicator{z_{i}=0} -
     % \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}
     % - \tilde{m}_{i}\gamma)\\
-    \big[y_{i}[a_{i}]
+    \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{a_{i}}\big]
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
     (
-    \indicator{a_{i}=1}-
+    \indicator{z_{i}=1}-
     \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
     - \tilde{m}_{i}\gamma)\\
     \vdots \\
-    {}\big[y_{i}[a_{i}]
+    {}\big[y_{i}[z_{i}]
     - g(\vec{x}_{i}\beta) -\alpha_{0} -
-    \tau_{a_{i}}\big]
+    \tau_{z_{i}}\big]
     (
-    \indicator{a_{i}=k}
+    \indicator{z_{i}=k}
     -
     \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
     -
@@ -1018,45 +1020,45 @@ way given the $\absorbModeratorEF()$ definitions stated just above.
 \st{Potentially helpful} probably unhelpful observation:
 % I updated these expressions to use random weights without
 % stopping to consider whether the original idea properly allowed
-% for the weights to depend on $A_{i}$.
+% for the weights to depend on $Z_{i}$.
 design-based covariances satisfy
 \begin{align*}
-  \operatorname{Cov}[&n^{-1}\sum_{i}\upsilon(\vec{Z}_{i};
+  \operatorname{Cov}[&n^{-1}\sum_{i}\upsilon(\vec{V}_{i};
   \mathbf{p}, \beta, \tau)] \\
                      &=   \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-                       \owt[{[A_{i}]}]
+                       \owt[{[Z_{i}]}]
 \left(
                                              \begin{array}{c}                                               
            % {}[y_{i}[0]
            %                                     -
            %                                     g(\vec{x}_{i}\beta)-\alpha_{0}](
-           %                                     \indicator{A_{i}=0} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
+           %                                     \indicator{Z_{i}=0} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
            {}[y_{i}[1]
                                                -
                                                g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{1}](
-                                               \indicator{A_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
+                                               \indicator{Z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
                   \vdots \\
 {}           [y_{i}[k]
                                                - g(\vec{x}_{i}\beta) - \alpha_{0} -
-                                               \tau_{k}](\indicator{A_{i}=k}
+                                               \tau_{k}](\indicator{Z_{i}=k}
                                                - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\                                             \end{array}
 \right) \right]\\
                      &\stackrel{\text{sometimes}}{=}  \operatorname{Cov}\left[n^{-1}\sum_{i \in \bigcup \mathcal{Q}}
-\owt[{[A_{i}]}]
+\owt[{[Z_{i}]}]
 \left(
                                              \begin{array}{c}                                               
            % [y_{i}[0]
            %                                     -
            %                                     g(\vec{x}_{i}\beta)-\alpha_{0}]
-           %                                     \indicator{A_{i}=0}\\
+           %                                     \indicator{Z_{i}=0}\\
            {}[y_{i}[1]
                                                -
                                                g(\vec{x}_{i}\beta)-\alpha_{0} -\tau_{1}]
-                                               \indicator{A_{i}=1}\\
+                                               \indicator{Z_{i}=1}\\
                   \vdots \\
 {}           [y_{i}[k]
                                                - g(\vec{x}_{i}\beta) - \alpha_{0}-
-                                               \tau_{k}]\indicator{A_{i}=k}\\                                             \end{array}
+                                               \tau_{k}]\indicator{Z_{i}=k}\\                                             \end{array}
 \right)
 \right].
 \end{align*}
@@ -1077,48 +1079,48 @@ longer be design constants.
 Similar considerations yield
 \begin{align}
 \operatorname{Cov}_{d}[
-  &n^{-1}\sum_{i}\absorbInterceptsEF(\vec{Z}; \mathbf{p})] \nonumber\\
+  &n^{-1}\sum_{i}\absorbInterceptsEF(\vec{V}; \mathbf{p})] \nonumber\\
   =&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
-     \mathcal{Q}} \owt[{[A_{i}]}] \times \nonumber \\
+     \mathcal{Q}} \owt[{[Z_{i}]}] \times \nonumber \\
 &  \operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
-                                                   % (\indicator{A_{i}=0}-p_{01})\indicator{b_{i}=1}&\ldots&(\indicator{A_{i}=0}-p_{0s})\indicator{b_{i}=s}\\                           
-                                                   (\indicator{A_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{A_{i}=1}-p_{1s})\indicator{b_{i}=s}\\
+                                                   % (\indicator{Z_{i}=0}-p_{01})\indicator{b_{i}=1}&\ldots&(\indicator{Z_{i}=0}-p_{0s})\indicator{b_{i}=s}\\                           
+                                                   (\indicator{Z_{i}=1}-p_{11})\indicator{b_{i}=1}&\ldots&(\indicator{Z_{i}=1}-p_{1s})\indicator{b_{i}=s}\\
                                                    \vdots & \vdots &
                                                                      \vdots
                                                    \\
-                                                   (\indicator{A_{i}=k}-p_{k1})\indicator{b_{i}=1}&\ldots&(\indicator{A_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                                   
+                                                   (\indicator{Z_{i}=k}-p_{k1})\indicator{b_{i}=1}&\ldots&(\indicator{Z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                                   
                                                  \end{array}
   \right)%
   \right)
   \Biggr] \nonumber \\ 
   \stackrel{\text{sometimes}}{=}&\operatorname{Cov}_{d}[n^{-1}
                                                  \sum_{i \in \bigcup
-     \mathcal{Q}} \owt[{[A_{i}]}] \times \nonumber \\
+     \mathcal{Q}} \owt[{[Z_{i}]}] \times \nonumber \\
   &\operatorname{vec}\left(%
                                                  \left(
                                                  \begin{array}{ccc}
-                                                   % \indicator{A_{i}=0}\indicator{b_{i}=1}&\ldots&\indicator{A_{i}=0}\indicator{b_{i}=s}\\                                             
-                                                   \indicator{A_{i}=1}\indicator{b_{i}=1}&\ldots&\indicator{A_{i}=1}\indicator{b_{i}=s}\\
+                                                   % \indicator{Z_{i}=0}\indicator{b_{i}=1}&\ldots&\indicator{Z_{i}=0}\indicator{b_{i}=s}\\                                             
+                                                   \indicator{Z_{i}=1}\indicator{b_{i}=1}&\ldots&\indicator{Z_{i}=1}\indicator{b_{i}=s}\\
                                                    \vdots & \vdots &
                                                                      \vdots
                                                    \\
-                                                   \indicator{A_{i}=k}\indicator{b_{i}=1}&\ldots&\indicator{A_{i}=k}\indicator{b_{i}=s}\\                                                   
+                                                   \indicator{Z_{i}=k}\indicator{b_{i}=1}&\ldots&\indicator{Z_{i}=k}\indicator{b_{i}=s}\\                                                   
                                                  \end{array}  
   \right)%
   \right)
     \Biggr] \label{eq:11}
 \end{align}
 Can we also represent estimating functions
-$\phi(\vec{Z}_{i}; \beta)$ in form
-$b(\mathbf{x}_{i}) + \sum_{j=0}^{k}c_{j}(y_{i}[j], \vec{x}_{i}, \beta)\indicator{A_{i}=j}$, after conditioning
+$\phi(\vec{V}_{i}; \beta)$ in form
+$b(\mathbf{x}_{i}) + \sum_{j=0}^{k}c_{j}(y_{i}[j], \vec{x}_{i}, \beta)\indicator{Z_{i}=j}$, after conditioning
 on potential outcomes? If so, then as a consequence we can think of
 \eqref{eq:10} as having rows that are also of this form.
-\eqref{eq:11} says $\absorbInterceptsEF(\vec{Z}_{i}; \mathbf{p})$
+\eqref{eq:11} says $\absorbInterceptsEF(\vec{V}_{i}; \mathbf{p})$
 has this form, so if we can get represent
-$\phi(\vec{Z}_{i}; \beta)$ in this way then \eqref{eq:19}
+$\phi(\vec{V}_{i}; \beta)$ in this way then \eqref{eq:19}
 will have this form as well. That strikes me as likely to facilitate
 derivation, 
 presentation in print and coding in R of these design-based covariances. 
@@ -1138,29 +1140,29 @@ with covariates.
 
 \begin{multline}
   \label{eq:9}
-  \psi(\vec{z}; \tau, \alpha, \beta) =
+  \psi(\vec{v}; \tau, \alpha, \beta) =
   \indicator{i \in \bigcup \mathcal{Q}} \owt[]\times \\  
   \left(
     \begin{array}{c}
-           y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+           y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{0} - \beta m_{i}-
-      \sum_{j=1}^{k}(\tau_{j}+\delta_{j}m_{j})\indicator{a_{i}=j} \\
-      \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j}m_{j})\indicator{z_{i}=j} \\
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{0} - \beta m_{i}-
-      \sum_{j=1}^{k}(\tau_{j}+\delta_{j} m_{i})\indicator{a_{i}=j}
+      \sum_{j=1}^{k}(\tau_{j}+\delta_{j} m_{i})\indicator{z_{i}=j}
       \big] m_{i}\\
-      \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{0} - \beta m_{i}-
-      (\tau_{1}+\delta_{1} m_{i}) \big](m_{i}\indicator{a_{i}=1})\\      
+      (\tau_{1}+\delta_{1} m_{i}) \big](m_{i}\indicator{z_{i}=1})\\      
 \vdots \\
-      \big[y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
+      \big[y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_{0} - \beta  m_{i}-
-      (\tau_{k}+\delta_{k} m_{i}) \big](m_{i}\indicator{a_{i}=k})\\      
-         {}  [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{a_{i}=1}\\
+      (\tau_{k}+\delta_{k} m_{i}) \big](m_{i}\indicator{z_{i}=k})\\      
+         {}  [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                  \sum_{r=1}^s\alpha_r\indicator{b_i=r}-\tau_{1}]\indicator{z_{i}=1}\\
                   \vdots \\
-          {} [y_{i}[a_{i}] - g(\vec{x}_{i}\beta)-
-                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{a_{i}=k}\\
+          {} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
+                 \sum_{r=1}^s\alpha_r\indicator{b_i=r} - \tau_{k}]\indicator{z_{i}=k}\\
     \end{array}
 \right).
 \end{multline}
@@ -1169,15 +1171,15 @@ with covariates.
 \[
   \begin{array}{cc}
     M_{11}  = n_{\mathcal{C}}^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
-             \mathcal{C}} \phi(\vec{Z}_{i}; \beta )] &
+             \mathcal{C}} \phi(\vec{V}_{i}; \beta )] &
                                                                   M_{12}=
                                                                   n_{\mathcal{C}}^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
-             \mathcal{C}}\phi(\vec{Z}_{i};
+             \mathcal{C}}\phi(\vec{V}_{i};
                                                                   \beta
                                                                   ), \sum_{i\in \bigcup
-                                                                  \mathcal{Q}}\psi'(\vec{Z}_{i}; \tau, \alpha, \beta )]\\
+                                                                  \mathcal{Q}}\psi'(\vec{V}_{i}; \tau, \alpha, \beta )]\\
     M_{21}=M_{12}' & M_{22} = n^{-1}\operatorname{Cov}[\sum_{i\in \bigcup
-                                                                  \mathcal{Q}}\psi(\vec{Z}_{i};
+                                                                  \mathcal{Q}}\psi(\vec{V}_{i};
                      \tau, \alpha, \beta )] .
     \end{array}
 \]
@@ -1201,40 +1203,40 @@ We can express HC0 type estimators with matrix rather than summation notation, u
 
 \section{Communicated in ``Josh/Xinhe Meeting Notes," Nov 30 2022
   post-mtg note}
-There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}}\phi(\vec{Z}_{i}; \beta)$  and 
+There are random estimating functions $n_{\mathcal{C}}^{-1}\sum_{i\in\mathcal{C}}\phi(\vec{V}_{i}; \beta)$  and 
        $n_{\mathcal{Q}}^{-1}\sum_{i\in
-         \mathcal{Q}}\psi(\vec{Z}_{i}; \tau, \alpha, \beta)$,
-       $\psi(\vec{Z}_{i}; \tau, \alpha, \beta) =
-       \owt[][y_{i} - \tau(a_{i} - \bar{a}) -
-       g(\vec{x}_{i}\beta)](a_{i} - \bar{a})$ where $\bar{a}$ solves
+         \mathcal{Q}}\psi(\vec{V}_{i}; \tau, \alpha, \beta)$,
+       $\psi(\vec{V}_{i}; \tau, \alpha, \beta) =
+       \owt[][y_{i} - \tau(z_{i} - \bar{a}) -
+       g(\vec{x}_{i}\beta)](z_{i} - \bar{a})$ where $\bar{a}$ solves
        \begin{equation}
          \label{eq:4}
-         0=\sum_{i \in \mathcal{Q}}w_{i \mathcal{Q}}(a_{i} - \bar{a}),
+         0=\sum_{i \in \mathcal{Q}}w_{i \mathcal{Q}}(z_{i} - \bar{a}),
        \end{equation}
        inducing corresponding estimating equations
 \[ \begin{array}{c} 0 \\ 0 
    \end{array} = \left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{z}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{z}_{i}; \tau, \alpha, \beta )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{v}_{i}; \beta )\\
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{v}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right).
 \]
 
 We seek to represent $\sum_{i\in
-         \mathcal{Q}}\psi(\vec{Z}_{i}; \tau, \alpha, \beta)$ as a
+         \mathcal{Q}}\psi(\vec{V}_{i}; \tau, \alpha, \beta)$ as a
        linear combination of
        \begin{align}
          \label{eq:1}
          \sum_{i \in \mathcal{Q}}\psi_{0i} =& \sum_{i \in
                                              \mathcal{Q}}\owt[][y_{i}
                                              - g(\vec{x}_{i}\beta) -
-                                             \rho_{0}](1-a_{i})\\
+                                             \rho_{0}](1-z_{i})\\
          \label{eq:2}
          \sum_{i \in \mathcal{Q}}\psi_{1i} =& \sum_{i \in
                                              \mathcal{Q}}\owt[][y_{i}
                                              - g(\vec{x}_{i}\beta) -
-                                              \rho_{1}]a_{i}\\
+                                              \rho_{1}]z_{i}\\
          \label{eq:3}
          &\rho_{1} - \rho_{0} - \tau.
        \end{align}
@@ -1242,7 +1244,7 @@ We seek to represent $\sum_{i\in
        If my algebra is OK, we have
        \begin{equation*}
          \sum_{i\in
-         \mathcal{Q}}\psi(\vec{Z}_{i}; \tau, \alpha, \beta) =
+         \mathcal{Q}}\psi(\vec{V}_{i}; \tau, \alpha, \beta) =
        \sum_{i \in \mathcal{Q}}\psi_{0i} -  \bar{a}\sum_{i \in \mathcal{Q}}(\psi_{0i} + \psi_{1i})
      \end{equation*}
      by some algebra including \eqref{eq:4}.  I had to call time
@@ -1255,8 +1257,8 @@ M-estimation's characteristic covariance approximation is
 \[ \operatorname{Cov}([\hat\beta',\hat\tau']) \approx
   A^{-1} \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{Z}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{Z}_{i}; \tau, \alpha, \beta )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{V}_{i}; \beta )\\
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{V}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right)A^{-1}
 \]
@@ -1265,8 +1267,8 @@ The right-hand side covariance isn't quite a constant multiple of $B$ as in prev
 \[
 \operatorname{Cov}\left(
      \begin{array}{c}
-       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{Z}_{i}; \beta )\\
-       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{Z}_{i}; \tau, \alpha, \beta )
+       n_{\mathcal{C}}^{-1}\sum_{i\in \mathcal{C}}\phi(\vec{V}_{i}; \beta )\\
+       n_{\mathcal{Q}}^{-1}\sum_{i\in \mathcal{Q}}\psi(\vec{V}_{i}; \tau, \alpha, \beta )
      \end{array}
 \right) = \left(
   \begin{array}{cc}
