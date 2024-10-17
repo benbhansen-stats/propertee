@@ -733,7 +733,7 @@ As applied to a \texttt{teeMod} object with
 \texttt{absorbed\_intercepts} set to \texttt{T}, we need \texttt{estfun()} to switch out the system of equations
 $0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
 for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ and
-$0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
+$0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
 \beta)$,  where
 \begin{align}
   \absorbInterceptsEF(\vec{v}; \mathbf{p}) &=
@@ -741,11 +741,11 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
   &\operatorname{vec}\left(%
     \left(
     \begin{array}{ccc}
-      % (\indicator{z_{i}=0}-p_{01})\indicator{b_{i}=1}
-      % &\ldots
-      % &
-      %   (\indicator{z_{i}=0}-p_{0s})\indicator{b_{i}=s}
-      % \\
+      (\indicator{z_{i}=0}-p_{01})\indicator{b_{i}=1}
+      &\ldots
+      &
+        (\indicator{z_{i}=0}-p_{0s})\indicator{b_{i}=s}
+      \\
       (\indicator{z_{i}=1}-p_{11})\indicator{b_{i}=1}
       &\ldots
       &
@@ -758,33 +758,51 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \mathbf{p},
         (\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
   \right)%
   \right) ;\nonumber \\
-  \acute{\psi}(\vec{v}; \tau, \mathbf{p}, \beta) &=
+  \acute{\psi}(\vec{v}; \alpha_{0}, \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber \\
 &\left(
-  \begin{array}{c}                                               
-    % \big[y_{i}[z_{i}]
-    % -
-    % g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
-    % (
-    % \indicator{z_{i}=0} - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r})\\
+  \begin{aligned}                                               
+    \indicator{z_{i}=0} \big[y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}\big]
+    &(
+   1 - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}) \\
     \big[y_{i}[z_{i}]
     -
     g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
-    (
+    &(
     \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
     \vdots \\
     {}\big[y_{i}[z_{i}]
     - g(\vec{x}_{i}\beta) - \alpha_{0}-
     \tau_{z_{i}}\big]
-    (\indicator{z_{i}=k}
+    &(\indicator{z_{i}=k}
     - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\
-  \end{array}
+  \end{aligned}
 \right) . \label{eq:upsilondef}
 \end{align}
-(If \texttt{absorb=FALSE}, then we'll revert to \eqref{eq:14}, i.e.
+Note that this defines an intercept parameter $\alpha_{0}$ that does not arise
+in the canonical reference implementation, which has $\alpha_{1},
+\ldots, \alpha_{s}$ but not $\alpha_{0}$. It averages control group
+observations within each block, with weights proportional to
+$\owt[0]$, before averaging these blockwise averages using weights
+proportional to $\sum_{i\in b}\owt \hat{p}_{0b}(1-\hat{p}_{0b})$. In
+the two-group case, effect estimates $\hat{\tau}$ coincide with
+averages of stratumwise differences,
+\begin{equation*}
+  \{\sum_{i \in b}
+z_{i}w_{i}[y_{i}[1] - g(\vec{x}_{i}\beta)]\}/(\sum_{i \in b}
+z_{i}w_{i}) - \{\sum_{i \in b}
+(1-z_{i})w_{i}[y_{i}[0] - g(\vec{x}_{i}\beta)]\}/(\sum_{i \in b}
+(1-z_{i})w_{i}),
+\end{equation*}
+also weighting contribution blocks $b$ in proportion with $\sum_{i\in b}\owt
+\hat{p}_{0b}(1-\hat{p}_{0b})$.
+
+(If \texttt{absorb\_intercepts=FALSE}, then we'll revert to \eqref{eq:14}, i.e.
 \begin{equation*}
          \psi(\vec{v}_{i};
-  \alpha, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
+  \alpha_{0}, \tau, \beta) = \indicator{i \in \bigcup \mathcal{Q}}\owt[]
          \left( \begin{array}{l}
            y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-
                   \alpha_0 - \tau_{z_{i}}\\
@@ -805,7 +823,7 @@ Returning to \eqref{eq:upsilondef}, in the model based formulation $[Z_{i}: i]$ 
 solutions $\hat{\mathbf{p}}$ of
 $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ have
 covariance 0.  Writing $\acute{\Psi} =
-[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \tau) : i]'$, one
+[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \alpha_{0}, \tau) : i]'$, one
 obtains valid\footnote{%
 The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not remove stratum
 effects, as conventional covariance estimators for this scenario
@@ -854,7 +872,7 @@ $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \tau)]$.  For design-based variance-covariance
+\mathbf{p}, \beta, \alpha_{0}, \tau)]$.  For design-based variance-covariance
 estimation one uses as estimating function
 \begin{multline*}\label{eq:25}
   \mathtt{estfun.teeMod(DA)} -
@@ -873,16 +891,15 @@ estimation one uses as estimating function
 
 In these displays, $A_{\mathbf{p}, \mathbf{p}}$ is
 an average of diagonal matrices $\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_{i};
-\mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)s+1, \ldots,
-b_{i}s$ and zeros in diagonal entries $r+1, \ldots, r+k$, each
-$r \in \{1, \ldots, s\}\setminus \{b_{i}\}$, while $A_{\tau,
+\mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)(k+1)+1, \ldots,
+b_{i}(k+1) +1$ and zeros elsewhere, while $A_{\tau,
   \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
+\mathbf{p}, \beta, \alpha_{0}, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
   \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \tau)$ is estimable by corresponding means of
+\mathbf{p}, \beta, \alpha_{0}, \tau)$ is estimable by corresponding means of
 random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
-\mathbf{p}, \beta, \tau)$ is the product of the $k \times k$
+\mathbf{p}, \beta, \alpha_{0}, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
+\mathbf{p}, \beta, \alpha_{0}, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
 consisting of the opposite of the $k\times k$ identity at the
