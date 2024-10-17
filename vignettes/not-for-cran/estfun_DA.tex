@@ -81,7 +81,7 @@ where
 \item $Y_{i}[j]$ represents $i$'s potential outcome following
   assignment to condition $i$;
 \item $Z_{i}$ is the treatment assignment of $i$'s cluster $[i]$;
-\item $\vec{V}_{i} = (Y_{i}[0],\ldots, Y_{i}[k], \vec{x}_{i}, m_{i}, w_{i}, Z_{i})$, where $\vec{x}_{i}$, $m_{i}$ and $w_{i}$ are covariates, an optional moderator variable and a
+\item $\vec{V}_{i} = (Y_{i}[0],\ldots, Y_{i}[k], \vec{X}_{i}, M_{i}, W_{i}, Z_{i})$, where $\vec{X}_{i}$, $M_{i}$ and $W_{i}$ are covariates, an optional moderator variable and a
   frequency or importance weight associating with $i$ (1 if no such weight was
   given); 
 \item $\owt[{[j]}]$ is either $w_i$ or, 
@@ -93,7 +93,9 @@ where
 $\psi(\cdot)$ with equivalent solutions that is better aligned with
 \texttt{lm()}'s default treatment effect parameterizations, and
 \eqref{eq:9} in \S~\ref{sec:accomm-interc-via} below will generalize $\psi()$'s definition
-to add block-specific intercepts.)
+to add block-specific intercepts.  The symbols $\vec{x}_{i}$, $m_{i}$
+and $w_{i}$ are given in lowercase as we in general condition upon
+$\{(\vec{X}_{i}, M_{i}, W_{i}): i\}$.)
 The interest parameter is $(\rho_{0}, \tau)$, where $\tau \defeq (\rho_{1}, \ldots, \rho_{k}) - \rho_{0}$. In the model-based interpretation, occurrences of ``$Z_{i}$'' in \eqref{eq:5} may be replaced with ``$z_{i}$,'' while under design-based we can write ``$y_{i}[j]$'' instead of ``$Y_{i}[j]$''; see Section~\ref{sec:des-vs-mod-based} below.
 
 \subsection{Goal} \label{sec:goal}
@@ -452,9 +454,10 @@ conditional on
 In the design-based perspective, $\mathcal{Q}$ is partitioned into
 blocks $b$, and expected value and covariance are
 conditional on
-\[\mathcal{V} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
-  i \in c; c\}, \{\sum_{c
-    \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} )\]
+\[\mathcal{X} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
+  i \in c; c\})\]
+and
+\[\mathcal{Z} = \sigma(\{\sum_{c \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} ),\]
 where $z_{c}$ denotes the common treatment assignment of all $i\in
 c$. (So estimating equations ${\Psi}_{i}$s are independent across but not within
 clusters $c \ni i$.)
