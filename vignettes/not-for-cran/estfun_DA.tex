@@ -729,6 +729,7 @@ block-specific control group means.  Accordingly its $\tau$-solutions
 do not necessarily bear interpretation as contrasts of Hajek estimators.
 }
 
+\subsection{Right-side-only absorption}\label{sec:right-side-only}
 As applied to a \texttt{teeMod} object with
 \texttt{absorbed\_intercepts} set to \texttt{T}, we need \texttt{estfun()} to switch out the system of equations
 $0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
@@ -736,7 +737,7 @@ for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p}
 $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
 \beta)$,  where
 \begin{align}
-  \absorbInterceptsEF(\vec{v}; \mathbf{p}) &=
+  \absorbInterceptsEF(\vec{v}_{i}; \mathbf{p}) &=
                                              \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}\left(%
     \left(
@@ -758,7 +759,7 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
         (\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
   \right)%
   \right) ;\nonumber \\
-  \acute{\psi}(\vec{v}; \alpha_{0}, \tau, \mathbf{p}, \beta) &=
+  \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber \\
 &\left(
   \begin{aligned}                                               
@@ -796,8 +797,52 @@ z_{i}w_{i}) - \{\sum_{i \in b}
 (1-z_{i})w_{i}[y_{i}[0] - g(\vec{x}_{i}\beta)]\}/(\sum_{i \in b}
 (1-z_{i})w_{i}),
 \end{equation*}
-also weighting contribution blocks $b$ in proportion with $\sum_{i\in b}\owt
+also weighting contribution blocks $b$ in proportion with $\sum_{i\in
+  (\bigcup b)}\owt
 \hat{p}_{0b}(1-\hat{p}_{0b})$.
+
+By simplifying sums of \eqref{eq:upsilondef},  block $b$'s contribution
+$\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau,
+\mathbf{p}, \beta)$ can be seen to equal
+\begin{multline}
+  \big(\sum_{i} \owt[]\big)
+        \left(
+          \begin{array}{c}
+            (1-{p}_{0b})
+            \hat{p}_{0b}\left(\frac{\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=0}}\owt[]}
+            \right)\\
+         {} (1-{p}_{1b})
+            \hat{p}_{1b}\frac{\sum_{{z_i=1}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=1}}\owt[]}  -
+      p_{1b}(1-\hat{p}_{1b})\frac{\sum_{{z_i\neq
+            1}}\owt[]\tilde{y}_{i}}{\sum_{{z_i\neq 1}}\owt[]}\\
+      \vdots\\
+         {}
+            (1-{p}_{kb})\hat{p}_{kb}\frac{\sum_{{z_i=k}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=k}}\owt[]}  -
+      p_{kb}(1-\hat{p}_{kb})\frac{\sum_{{z_i\neq
+            k}}\owt[]\tilde{y}_{i}}{\sum_{{z_i\neq k}}\owt[]} \\
+          \end{array}
+        \right)\\
+= 
+        \left(
+          \begin{array}{c}
+            (1-{p}_{0b})
+            {\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}
+            \\
+         {} (1-{p}_{1b})
+            {\sum_{{z_i=1}}\owt[]\tilde{y}_{i}}  -
+      p_{1b}{\sum_{{z_i\neq
+            1}}\owt[]\tilde{y}_{i}}\\
+      \vdots\\
+         {}
+            (1-{p}_{kb}){\sum_{{z_i=k}}\owt[]\tilde{y}_{i}}  -
+      p_{kb}{\sum_{{z_i\neq
+            k}}\owt[]\tilde{y}_{i}} \\
+          \end{array}
+        \right)\\
+  \label{eq:28}
+\end{multline}
+where sums range over $\bigcup b$ and $\tilde{y}_{i}$ is the residual
+$y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$.
 
 (If \texttt{absorb\_intercepts=FALSE}, then we'll revert to \eqref{eq:14}, i.e.
 \begin{equation*}
@@ -905,6 +950,142 @@ diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 consisting of the opposite of the $k\times k$ identity at the
 $b_{i}$th block and the 0 matrix for the $r$th $k \times k$ block whenever
 $r\neq b_{i}$.
+\subsection{Both-sides absorption} \label{sec:both-sides-absorpt}
+
+As ordinarily applied,  FWL Theorem ``partials out'' fixed effects
+from both dependent and independent variables, but so far we've only
+done so with independent variables.  Which of these we do makes no
+difference for point estimates, but standard errors are another
+matter.  Here we describe a design-based variance estimator making use
+of both-sides absorption plus additional assumptions.
+
+To ensure
+applicability with small and moderately sized strata, we must do this without
+introducing parameter for each block. Instead, define the
+block residual mean function
+\begin{equation*}
+  \hat{\alpha}(\mathbf{v}_{b}; \theta) \defeq \left\{\sum_{i \in
+    (\bigcup b)}\owt{} [y_{i}[z_{i}] - g(\vec{x}_{i}\beta) -
+  \alpha_{0} - \tau_{z_{i}}]\right\}\Big/ \left(\sum_{i \in (\bigcup b)}w_{i}\right),
+\end{equation*}
+where $\mathbf{v}_{b} = \Big\{\vec{v}_{i} : i \in \big(\bigcup b \big)\Big\}$ is the matrix of
+data-and-potential-outcomes vectors for block $b \subseteq \mathcal{Q}$ and $\theta = (\tau, \alpha_{0}, \beta)$.  Now consider the pair
+of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$
+and
+$0= \sum_{i}\breve{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
+\beta)$, where $\absorbInterceptsEF(\cdot)$ is as above and for blocks
+$b \subseteq \mathcal{Q}$,
+\begin{multline}
+  % \absorbInterceptsEF(\vec{v}; \mathbf{p}) &=
+  %                                            \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
+  % &\operatorname{vec}\left(%
+  %   \left(
+  %   \begin{array}{ccc}
+  %     (\indicator{z_{i}=0}-p_{01})\indicator{b_{i}=1}
+  %     &\ldots
+  %     &
+  %       (\indicator{z_{i}=0}-p_{0s})\indicator{b_{i}=s}
+  %     \\
+  %     (\indicator{z_{i}=1}-p_{11})\indicator{b_{i}=1}
+  %     &\ldots
+  %     &
+  %       (\indicator{z_{i}=1}-p_{1s})\indicator{b_{i}=s}
+  %     \\
+  %     \vdots & \vdots & \vdots \\
+  %     (\indicator{z_{i}=k}-p_{k1})\indicator{b_{i}=1}
+  %     &\ldots
+  %     &
+  %       (\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
+  % \right)%
+  % \right) ;\nonumber \\
+  \breve{\psi}(\vec{v}_{b}; \theta, \mathbf{p}) =
+\sum_{i \in (\bigcup b)}\owt[] \times  \\
+\left(
+  \begin{aligned}                                               
+    \indicator{z_{i}=0} \big[y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}\big]
+    &(1 - p_{0b}) \\
+    \big[y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}} - \hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
+    &(
+    \indicator{z_{i}=1} - p_{1b})\\
+    \vdots \\
+    {}\big[y_{i}[z_{i}]
+    - g(\vec{x}_{i}\beta) - \alpha_{0}-
+    \tau_{z_{i}} - \hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
+    &(\indicator{z_{i}=k} - p_{kb})\\
+  \end{aligned}
+\right) . \label{eq:upsilon-rsa-def}
+\end{multline}
+Denoting as $(\hat{p}_{0b}, \ldots, \hat{p}_{kb})$ the solutions in
+$({p}_{0b}, \ldots, {p}_{kb})$ of
+$0= \sum \{\absorbInterceptsEF(\vec{v}_{i}; {p}_{0b}, \ldots,
+{p}_{kb}) : i \in (\bigcup b)\}$, and recalling that  $\tilde{y}_{i}$
+is the residual
+$y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$, 
+\eqref{eq:upsilon-rsa-def} gives, with sums understood to range over
+$(\bigcup b)$:
+\begin{multline*}
+    \breve{\psi}(\vec{v}_{b}; \theta, \mathbf{p}) = \Big(\sum_{i} \owt[]\Big) \times\\
+        \left(
+          \begin{array}{c}
+            (1-{p}_{0b})
+            \hat{p}_{0b}\left[\frac{\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=0}}\owt[]}
+            -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)\right]\\
+         {} (1-{p}_{1b})
+            \hat{p}_{1b}\frac{\sum_{{z_i=1}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}{\sum_{{z_i=1}}\owt[]}  -
+      p_{1b}(1-\hat{p}_{1b})\frac{\sum_{{z_i\neq
+            1}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}{\sum_{{z_i\neq 1}}\owt[]}\\
+      \vdots\\
+         {}
+            (1-{p}_{kb})\hat{p}_{kb}\frac{\sum_{{z_i=k}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}{\sum_{{z_i=k}}\owt[]}  -
+      p_{kb}(1-\hat{p}_{kb})\frac{\sum_{{z_i\neq
+            k}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}{\sum_{{z_i\neq k}}\owt[]} \\
+          \end{array}
+        \right)\\
+= 
+        \left(
+          \begin{array}{c}
+            (1-{p}_{0b})
+            {\sum_{{z_i=0}}\owt[][\tilde{y}_{i}}
+            -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]\\
+         {} (1-{p}_{1b})
+            {\sum_{{z_i=1}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}  -
+      p_{1b}{\sum_{{z_i\neq
+            1}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}\\
+      \vdots\\
+         {}
+            (1-{p}_{kb}){\sum_{{z_i=k}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]}  -
+      p_{kb}{\sum_{{z_i\neq
+            k}}\owt[][\tilde{y}_{i} -
+    \hat{\alpha}(\mathbf{v}_{b}; \theta)]} \\
+          \end{array}
+        \right).\\
+\end{multline*}
+Under the assumption that $\tau$ captures person-level treatment
+effects, $\operatorname{Var}[ \hat{\alpha}(\mathbf{v}_{b}; \theta) \mid \mathcal{X},
+\mathcal{Z}]=0$. Under this assumption, then, design-based covariances
+of $\breve{\psi}(\vec{v}_{b}; \theta, \mathbf{p})$ are calculated in
+the same way that design-based covariances of
+$\acute{\psi}(\vec{v}_{b}; \theta, \mathbf{p})$ are calculated from
+\eqref{eq:28}.  (To implement this design-based estimator, we can
+define a function operation on \texttt{teeMod} objects that replaces
+the residuals $\tilde{y}_{i}$ with block-centered residuals  $\tilde{y}_{i} -
+\hat{\alpha}(\mathbf{v}_{b}; \hat\theta)$, where $b \ni i$, and then
+proceeds as the calculation of design-based vcov with right-side absorption.)
 
 \section{Of possible future relevance}
 
