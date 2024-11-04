@@ -384,14 +384,29 @@ setMethod("unitids<-", "Design", function(x, value) {
 
 ##' @export
 ##' @rdname Design_extractreplace
-setGeneric("blocks", function(x, newdata = NULL, by = NULL) standardGeneric("blocks"))
+setGeneric("blocks", function(x,
+                              newdata = NULL,
+                              by = NULL,
+                              ...) standardGeneric("blocks"))
 
 ##' @export
 ##' @rdname Design_extractreplace
-setMethod("blocks", "Design", function(x, newdata = NULL, by = NULL) {
+setMethod("blocks", "Design", function(x,
+                                       newdata = NULL,
+                                       by = NULL,
+                                       ...,
+                                       implicit = FALSE) {
   .design_accessors_newdata_validate(newdata, by)
   if (!is.null(newdata)) {
-    return(.get_col_from_new_data(x, newdata, type = "b", by))
+    return(.get_col_from_new_data(x,
+                                  newdata,
+                                  type = "b",
+                                  by,
+                                  implicitBlock = implicit,
+                                  ...))
+  }
+  if (!any(x@column_index == "b") & implicit) {
+    return(data.frame(".blocks_internal" = rep(1, nrow(x@structure))))
   }
   return(x@structure[x@column_index == "b"])
 })
@@ -593,23 +608,31 @@ setMethod("forcings<-", "Design", function(x, value) {
 ##' @return The column(s) belonging to the requested \code{type} in
 ##' @keywords internal
 ##' @importFrom stats model.matrix
-.get_col_from_new_data <- function(design, newdata, type, by = NULL, ...) {
+.get_col_from_new_data <- function(design,
+                                   newdata,
+                                   type,
+                                   by = NULL,
+                                   implicitBlock = FALSE,
+                                   ...) {
 
   if (!is.null(by)) {
     design <- .update_by(design, newdata, by)
   }
 
-  form_for_design <- as.formula(paste("~",
-                                       paste(c(var_names(design, "u"),
-                                               var_names(design, type)),
-                                             collapse = "+"),
-                                       " - 1"))
+  form_for_design <-
+    as.formula(paste("~",
+                     paste(c(var_names(design, "u"),
+                             var_names(design, type,
+                                       implicitBlock = implicitBlock)),
+                           collapse = "+"),
+                     " - 1"))
   form_for_newdata <- as.formula(paste("~",
                                        paste(var_names(design, "u"),
                                              collapse = "+"),
                                        " - 1"))
 
   design_data <- stats::model.frame(form_for_design, design@structure)
+
   newdata_data <- stats::model.frame(form_for_newdata, newdata)
 
   merged <- merge(newdata_data, design_data, by = var_names(design, "u"),

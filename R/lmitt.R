@@ -246,9 +246,11 @@ lmitt.formula <- function(obj,
     if (length(var_names(design, "b")) == 0) {
       stop("No blocks found in Design, cannot absorb")
     }
-    blocks <- .get_col_from_new_data(design,
-                                     eval(lm.call$data, parent.frame()),
-                                     "b", all.x = TRUE)[, 1]
+
+    blocks <- blocks(design,
+                    eval(lm.call$data, parent.frame()),
+                    all.x = TRUE,
+                    implicit = TRUE)[,1]
     # To be used below
   }
 

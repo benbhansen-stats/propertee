@@ -467,10 +467,13 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
 ##' @export
 ##' @rdname Design_var_names
 ##' @order 2
-var_names <- function(design, type) {
+var_names <- function(design, type, implicitBlocks = FALSE) {
   stopifnot(inherits(design, "Design"))
   stopifnot(length(type) == 1)
   stopifnot(type %in% c("t", "u", "b", "f"))
+  if (type == "b" && !("b" %in% design@column_index) && implicitBlocks) {
+    return(".blocks_internal")
+  }
   return(names(design@structure)[design@column_index == type])
 }
 
