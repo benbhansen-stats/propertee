@@ -243,9 +243,9 @@ lmitt.formula <- function(obj,
   }
 
   if (absorb) {
-    if (length(var_names(design, "b")) == 0) {
-      stop("No blocks found in Design, cannot absorb")
-    }
+    ## if (length(var_names(design, "b")) == 0) {
+    ##   stop("No blocks found in Design, cannot absorb")
+    ## }
 
     blocks <- blocks(design,
                     eval(lm.call$data, parent.frame()),

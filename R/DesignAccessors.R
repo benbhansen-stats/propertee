@@ -619,19 +619,22 @@ setMethod("forcings<-", "Design", function(x, value) {
     design <- .update_by(design, newdata, by)
   }
 
-  form_for_design <-
-    as.formula(paste("~",
-                     paste(c(var_names(design, "u"),
-                             var_names(design, type,
-                                       implicitBlock = implicitBlock)),
-                           collapse = "+"),
-                     " - 1"))
+  form_for_design <- as.formula(paste("~",
+                                      paste(c(var_names(design, "u"),
+                                              var_names(design, type)),
+                                            collapse = "+"),
+                                      " - 1"))
   form_for_newdata <- as.formula(paste("~",
                                        paste(var_names(design, "u"),
                                              collapse = "+"),
                                        " - 1"))
 
   design_data <- stats::model.frame(form_for_design, design@structure)
+  if (type == "b" &&
+        var_names(design, "b", implicitBlocks = TRUE)[1] == ".blocks_internal") {
+    design_data$.blocks_internal <- rep(1, nrow(design_data))
+  }
+
 
   newdata_data <- stats::model.frame(form_for_newdata, newdata)
 
