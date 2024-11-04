@@ -641,7 +641,7 @@ setMethod("forcings<-", "Design", function(x, value) {
   merged <- merge(newdata_data, design_data, by = var_names(design, "u"),
                   sort = FALSE, ...)
 
-  return(merged[var_names(design, type)])
+  return(merged[var_names(design, type, implicitBlocks = TRUE)])
 
 
 }
