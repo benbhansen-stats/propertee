@@ -340,7 +340,8 @@ test_that("absorbed_intercepts", {
   blocked_not_lmitt_fitted <- as.lmitt(lm(y ~ assigned(blockeddes), data = simdata),
                                        design = blockeddes)
 
-  expect_error(lmitt(y ~ 1, data = simdata, design = noblocksdes, absorb = TRUE))
+  noblocks_lmitt_fitted_absorbed <- lmitt(y ~ 1, data = simdata,
+                                          design = noblocksdes, absorb = TRUE)
   noblocks_lmitt_fitted_not_absorbed <- lmitt(y ~ 1, data = simdata,
                                               design = noblocksdes, absorb = FALSE)
 
@@ -348,6 +349,7 @@ test_that("absorbed_intercepts", {
   expect_false(blocked_lmitt_fitted_not_absorbed@absorbed_intercepts)
   expect_false(blocked_not_lmitt_fitted@absorbed_intercepts)
   expect_false(noblocks_lmitt_fitted_not_absorbed@absorbed_intercepts)
+  expect_true(noblocks_lmitt_fitted_absorbed@absorbed_intercepts)
 })
 
 test_that("@moderator slot", {
