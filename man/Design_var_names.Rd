@@ -7,7 +7,7 @@
 \usage{
 var_table(design, compress = TRUE, report_all = FALSE)
 
-var_names(design, type)
+var_names(design, type, implicitBlocks = FALSE)
 }
 \arguments{
 \item{design}{a \code{Design} object}
@@ -21,6 +21,10 @@ don't exist in the \code{Design}? Default \code{FALSE}.}
 
 \item{type}{one of "t", "u", "b", "f"; for "treatment",
 "unit_of_assignment", "block", and "forcing" respectively}
+
+\item{implicitBlocks}{If the \code{Design} is created without blocks,
+setting this to \code{TRUE} will return "\code{.blocks_internal}" as the
+variable name corresponding to the blocks.}
 }
 \value{
 \code{\link[=var_table]{var_table()}} returns the requested table. \code{\link[=var_names]{var_names()}} returns a

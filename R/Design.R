@@ -464,6 +464,9 @@ var_table <- function(design, compress = TRUE, report_all = FALSE) {
 
 ##' @param type one of "t", "u", "b", "f"; for "treatment",
 ##'   "unit_of_assignment", "block", and "forcing" respectively
+##' @param implicitBlocks If the \code{Design} is created without blocks,
+##'   setting this to \code{TRUE} will return "\code{.blocks_internal}" as the
+##'   variable name corresponding to the blocks.
 ##' @export
 ##' @rdname Design_var_names
 ##' @order 2

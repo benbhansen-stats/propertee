@@ -60,9 +60,9 @@ unitids(x) <- value
 
 \S4method{unitids}{Design}(x) <- value
 
-blocks(x, newdata = NULL, by = NULL)
+blocks(x, newdata = NULL, by = NULL, ...)
 
-\S4method{blocks}{Design}(x, newdata = NULL, by = NULL)
+\S4method{blocks}{Design}(x, newdata = NULL, by = NULL, ..., implicit = FALSE)
 
 blocks(x) <- value
 
@@ -86,8 +86,8 @@ unit of assignment variable is found in \code{newdata}, then the requested
 variable type for each unit of \code{newdata} is returned. See \code{by}
 argument if the name of the unit of assignment differs.}
 
-\item{dichotomy}{optional; a formula specifying how to dichotomize
-a non-binary treatment variable. See the Details section of the \code{ett()}
+\item{dichotomy}{optional; a formula specifying how to dichotomize a
+non-binary treatment variable. See the Details section of the \code{ett()}
 or \code{att()} help pages for information on specifying this formula}
 
 \item{by}{optional; named vector or list connecting names of unit of
@@ -101,6 +101,9 @@ needed if variable names differ.}
 \item{value}{replacement. Either a \code{vector}/\code{matrix} of
 appropriate dimension, or a named \code{data.frame} if renaming variable
 as well. See \code{Details}.}
+
+\item{implicit}{Should a block-less \code{Design} return a constant 1 when
+extracting \code{blocks}?}
 }
 \value{
 \code{data.frame} containing requested variable, or an updated

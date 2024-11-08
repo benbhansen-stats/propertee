@@ -46,14 +46,16 @@ setGeneric("treatment",
 ##'   unit of assignment variable is found in \code{newdata}, then the requested
 ##'   variable type for each unit of \code{newdata} is returned. See \code{by}
 ##'   argument if the name of the unit of assignment differs.
-##' @param dichotomy optional; a formula specifying how to dichotomize
-##' a non-binary treatment variable. See the Details section of the \code{ett()}
-##' or \code{att()} help pages for information on specifying this formula
+##' @param dichotomy optional; a formula specifying how to dichotomize a
+##'   non-binary treatment variable. See the Details section of the \code{ett()}
+##'   or \code{att()} help pages for information on specifying this formula
 ##' @param by optional; named vector or list connecting names of unit of
 ##'   assignment/unitid/cluster variables in \code{x} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
 ##'   variables in \code{x}; values represent variables in \code{newdata}. Only
 ##'   needed if variable names differ.
+##' @param implicit Should a block-less \code{Design} return a constant 1 when
+##'   extracting \code{blocks}?
 ##' @param ... ignored.
 ##' @return \code{data.frame} containing requested variable, or an updated
 ##'   \code{Design}. [treatment()] works slightly differently, see
@@ -604,6 +606,9 @@ setMethod("forcings<-", "Design", function(x, value) {
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
 ##'   variables in the Design; values represent variables in the data. Only
 ##'   needed if variable names differ.
+##' @param implicitBlock If the \code{Design} does not include a block,
+##'   \code{TRUE} will return a constant 1 for the blocks if \code{type}
+##'   requests it.
 ##' @param ... Additional arguments to \code{merge()}.
 ##' @return The column(s) belonging to the requested \code{type} in
 ##' @keywords internal

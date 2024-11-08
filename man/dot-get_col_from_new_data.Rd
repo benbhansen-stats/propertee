@@ -4,7 +4,14 @@
 \alias{.get_col_from_new_data}
 \title{(Internal) Extract specified \code{type} from new data set}
 \usage{
-.get_col_from_new_data(design, newdata, type, by = NULL, ...)
+.get_col_from_new_data(
+  design,
+  newdata,
+  type,
+  by = NULL,
+  implicitBlock = FALSE,
+  ...
+)
 }
 \arguments{
 \item{design}{A \code{Design}}
@@ -22,6 +29,10 @@ assignment/unitid/cluster variables in \code{design} to unit of
 assignment/unitid/cluster variables in \code{data}. Names represent
 variables in the Design; values represent variables in the data. Only
 needed if variable names differ.}
+
+\item{implicitBlock}{If the \code{Design} does not include a block,
+\code{TRUE} will return a constant 1 for the blocks if \code{type}
+requests it.}
 
 \item{...}{Additional arguments to \code{merge()}.}
 }
