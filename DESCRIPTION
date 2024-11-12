@@ -53,6 +53,7 @@ Collate:
     'DesignStructure.R'
     'DesignUtilities.R'
     'SandwichLayer.R'
+    'block_center_residuals.R'
     'SandwichLayerVariance.R'
     'WeightedDesign.R'
     'areg.center.R'

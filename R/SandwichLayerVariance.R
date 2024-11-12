@@ -1,4 +1,4 @@
-#' @include Design.R SandwichLayer.R
+#' @include Design.R SandwichLayer.R block_center_residuals.R
 NULL
 
 #' @title Variance/Covariance for \code{teeMod} objects
@@ -600,7 +600,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     stop(paste("Cannot override the `type` argument for meat",
                "matrix computations"))
   }
-  args$x <- x
+  
+  args$x <- if (isTRUE(args$const_effect)) block_center_residuals(x) else x
   args$db <- TRUE
   n <- length(args$cluster)
   
