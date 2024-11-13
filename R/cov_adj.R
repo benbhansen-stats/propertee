@@ -36,7 +36,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {
   if (is.null(design)) {
     design <- .get_design(NULL_on_error = TRUE)
   }
-  
+
   if (is.null(newdata)) {
     form <- .update_ca_model_formula(model, by, design)
     newdata <- tryCatch(
@@ -71,10 +71,7 @@ cov_adj <- function(model, newdata = NULL, design =  NULL, by = NULL) {
       } else if (is.factor(treatment(design)[, 1])) {
         newdata[[trt_name]] <- levels(treatment(design)[, 1])[1]
       } else {
-        warning(paste("The treatment variable is in the covariance adjustment",
-                      "model, and is neither logical or numeric; for now,",
-                      "partial residuals only implemented for logical or",
-                      "numeric treatments"))
+        warning("If treatment is an independent variable of the covariance model, predictions may (incorrectly) include treatment contributions. For now, setting these contributions to 0 is implemented only for logical or numeric treatments, but this treatment is a factor.")
       }
   }
 
