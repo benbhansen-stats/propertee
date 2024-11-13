@@ -39,10 +39,10 @@ merged$math <- pmax(merged$math, 0)
 
 studentdata <- merge(studentdata, merged[, c("studentid", "math")], by = "studentid")
 
-des <- obs_design(treatment ~ uoa(schoolid), data = schooldata)
+spec <- obs_spec(treatment ~ uoa(schoolid), data = schooldata)
 
-mod1 <- lmitt(math ~ as.factor(grade), design = des, data = studentdata)
-mod2 <- lmitt(math ~ as.factor(grade), design = des, data = merged)
+mod1 <- lmitt(math ~ as.factor(grade), specification = spec, data = studentdata)
+mod2 <- lmitt(math ~ as.factor(grade), specification = spec, data = merged)
 mod3 <- lm(math ~ as.factor(grade):treatment + as.factor(grade), data = merged)
 
 stopifnot(all.equal(mod1$coef, mod2$coef,

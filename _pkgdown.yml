@@ -20,43 +20,43 @@ navbar:
     - text: propertee vs. geex
       href: articles/geex_vs_propertee.html
 reference:
-- title: Design
-- subtitle: Creation of `Design` Objects
+- title: StudySpecification
+- subtitle: Creation of `StudySpecification` Objects
 - contents:
-    - rct_design
+    - rct_spec
     - unit_of_assignment
-    - as_rct_design
-- subtitle: Accessors/Replacers for `Design` Objects
+    - as_rct_spec
+- subtitle: Accessors/Replacers for `StudySpecification` Objects
 - contents:
     - treatment
     - has_binary_treatment
 - subtitle: Summary and print methods
 - contents:
-    - show,Design-method
-    - summary.Design
-    - print.summary.Design
-- subtitle: Structure of `Design` objects
+    - show,StudySpecification-method
+    - summary.StudySpecification
+    - print.summary.StudySpecification
+- subtitle: Structure of `StudySpecification` objects
 - contents:
     - get_structure
-    - design_table
+    - specification_table
     - var_names
     - var_table
-- subtitle: Utility Functions for `Design` Objects
+- subtitle: Utility Functions for `StudySpecification` Objects
 - contents:
     - identify_small_blocks
-    - design_data_concordance
-    - identical_Designs
+    - specification_data_concordance
+    - identical_StudySpecifications
 - title: Weights
   desc: Functions to create or interact with Weights
 - contents:
     - ett
-- subtitle: Working with `WeightedDesign` objects
+- subtitle: Working with `WeightedStudySpecification` objects
 - contents:
-    - weights,WeightedDesign-method
-    - +,WeightedDesign,numeric-method
-    - c,WeightedDesign-method
-    - subset,WeightedDesign-method
-    - show,WeightedDesign-method
+    - weights,WeightedStudySpecification-method
+    - +,WeightedStudySpecification,numeric-method
+    - c,WeightedStudySpecification-method
+    - subset,WeightedStudySpecification-method
+    - show,WeightedStudySpecification-method
 - title: Covariance Adjustment & SandwichLayer
 - contents:
     - cov_adj
@@ -68,7 +68,7 @@ reference:
     - estfun.lmrob
     - estfun.glmrob
 - title: Estimating Model
-  desc: Functions to carry out the treatment estimation accounting for the Design
+  desc: Functions to carry out the treatment estimation accounting for the StudySpecification
 - contents:
     - lmitt
     - assigned
