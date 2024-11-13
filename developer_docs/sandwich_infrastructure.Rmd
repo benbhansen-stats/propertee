@@ -12,9 +12,9 @@ date: "April 2022 (+ subsequent non-substantive updates)"
 
 ## Context
 
-The user has specified a comparative study design and separately fitted a covariance model. E.g.:
+The user has specified a comparative study specification and separately fitted a covariance model. E.g.:
 ```{r eval=FALSE}
-des <- obs_design(treat ~ strata(district) + cluster(school, classroom),
+spec <- obs_spec(treat ~ strata(district) + cluster(school, classroom),
                   data =Q_)
 cmod <- glm(promotion ~ pretest + gender,
             family=binomial(), data = C)
@@ -29,7 +29,7 @@ Next she uses `lm()` (or propertee's `lm()`-wrapper, `lmitt()`) to
 calculate directly adjusted^[Much or all of what's said here can later
 be made to apply with intention-to-treat models of nearby forms, for
 example `lm(promotion ~ treat + cov_adj(covmod), data=Q,
-weights=ate(des))` or `lm(promotion ~ treat * cov_adj(covmod),
+weights=ate(spec))` or `lm(promotion ~ treat * cov_adj(covmod),
 <...>)`. But for now our focus is covariance modeling followed by
 direct adjustment, ie what's shown in the display.] estimates of an
 intention-to-treat effect:
@@ -37,7 +37,7 @@ intention-to-treat effect:
 ```{r eval=FALSE}
 m <- lm(promotion ~ treat * gender, data = Q,
         offset = cov_adj(cmod),
-        weights = ate(des))
+        weights = ate(spec))
 coef(m) # spits out effect estimates
 ```
 where `Q` may be the same as `Q_`, or `Q_` may describe aggregates of
@@ -46,7 +46,7 @@ units described in `Q`; the offset is similar to what `predict(cmod, newdata=Q, 
 At this point `m` has class `lm`, but with
 additional information tucked away in `m[['model']]`: this data frame
 will have special columns `(weights)` and
-`offset(cov_adj(cmod))`.  The **propertee** package implements an S4 class `WeightedDesign` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information.
+`offset(cov_adj(cmod))`.  The **propertee** package implements an S4 class `WeightedStudySpecification` that extends the base numeric vector type and encodes information beyond unit weights necessary for standard error calculations, and arranges that `m[['model']][['(weights)']]` is of this type.  This note describes two classes appropriate for `m[['model']][['offset(cov_adj(cmod))']]`: `SandwichLayer`, and a fallback option `PreSandwichLayer`, for use when the call to `cov_adj()` producing this object is able to locate some but not all of the necessary information.
 
 Standard errors will be obtained through subsequent steps, e.g.
 ```{r eval=FALSE}
@@ -59,7 +59,7 @@ m <- as.teeMod(m,
 		       )
 vcov(m)
 ```
-with "`uoa1`" and "`uoa2`" the column names of `clusters(des)`, while `altuoa1` and `altuoa2` corresponding column names of `C`,  or
+with "`uoa1`" and "`uoa2`" the column names of `clusters(spec)`, while `altuoa1` and `altuoa2` corresponding column names of `C`,  or
 ```r
 m <- as.teeMod(m,
                        by=keys_data_frame)
@@ -67,9 +67,9 @@ vcov(m)
 ```
 where `keys_data_frame` has rows aligned with those of `C` and columns including "`uoa1`" and "`uoa2`".
 
-Either way, once `m` has been coerced to class `teeMod`, it has acquired a `@Design` slot for the information in `des`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
+Either way, once `m` has been coerced to class `teeMod`, it has acquired a `@StudySpecification` slot for the information in `spec`, while `m[['model']]` will have a column `offset(cov_adj(cmod))` of class `SandwichLayer`.  Together these objects  will contain the necessary additional information to perform standard error calculations that:
 
-- attend to the structure of the design, as recorded in `des`; and
+- attend to the structure of the specification, as recorded in `spec`; and
 - propagate errors from the fitting of covariance model `cmod` into standard errors reported for `treat * gender` coefficients.
 
 
@@ -79,7 +79,7 @@ Either way, once `m` has been coerced to class `teeMod`, it has acquired a `@Des
 ```{r classdiagram, eval=FALSE, echo=FALSE, fig.height=6, fig.width=6}
 DiagrammeR::mermaid("
 classDiagram
-  numeric <|-- WeightedDesign
+  numeric <|-- WeightedStudySpecification
   numeric <|-- PreSandwichLayer
   PreSandwichLayer <|-- SandwichLayer
   lm <|-- teeMod
@@ -87,26 +87,26 @@ classDiagram
   PreSandwichLayer: +list fitted_covariance_model
   PreSandwichLayer: +double .Data
   PreSandwichLayer: +double prediction_gradient
-  PreSandwichLayer: +as.SandwichLayer(x, design, by=NULL)
+  PreSandwichLayer: +as.SandwichLayer(x, specification, by=NULL)
 
   SandwichLayer: +data.frame keys
 
-  WeightedDesign: +Design Design
-  teeMod: +Design Design
+  WeightedStudySpecification: +StudySpecification StudySpecification
+  teeMod: +StudySpecification StudySpecification
 ")
 ```
 <!-- Rendering from https://mermaid.live/ -->
 ![](images/sandwich_layers.png)
 
-Like the existing class `WeightedDesign`, the `PreSandwichLayer` and `SandwichLayer` classes extend the base numeric vector type, with numeric vectors (of predictions) in their `@.Data` slots.  `PreSandwichLayer` and `SandwichLayer` also have a `@prediction_gradient` slot, for a numeric matrix of dimension
+Like the existing class `WeightedStudySpecification`, the `PreSandwichLayer` and `SandwichLayer` classes extend the base numeric vector type, with numeric vectors (of predictions) in their `@.Data` slots.  `PreSandwichLayer` and `SandwichLayer` also have a `@prediction_gradient` slot, for a numeric matrix of dimension
 ```r
 c(nrow(@.Data), length(coef(fitted_covariance_model)))
 ```
 
 
-Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `SandwichLayer` amounts to providing a mapping from the rows of `model.matrix(x)` or `sandwich::estfun(x)` to units of assignment recorded in `des`. This mapping is to be recorded in the `@keys` data frame, which has as many rows as `model.matrix(x)` and columns storing unit-of-assignment (clustering) information as well as a Boolean variable indicating whether such unit of assignments could be found in `des`.
+Regarding `as.SandwichLayer()`: Turning a `PreSandwichLayer`, `x`, into a `SandwichLayer` amounts to providing a mapping from the rows of `model.matrix(x)` or `sandwich::estfun(x)` to units of assignment recorded in `spec`. This mapping is to be recorded in the `@keys` data frame, which has as many rows as `model.matrix(x)` and columns storing unit-of-assignment (clustering) information as well as a Boolean variable indicating whether such unit of assignments could be found in `spec`.
 
-The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `design`, `desvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[desvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `desvars`.
+The mapping can be effected via `expand.model.frame(x, vars, <...>)`. If `by=NULL`, then `vars` is the vector of names of unit-of-assignment variables given in the `specification`, `specvars` say. Otherwise `by` is a named character vector giving a crosswalk, the second argument to `expand.model.frame()` should be `by[specvars]`, and those names should be switched out of column names inthe data frame `expand.model.frame()` returns in favor of `specvars`.
 
 In order for `vcov.teeMod(m)` to work, the following functions must have methods applicable to `m@fitted_covariance_model`: `model.matrix()`, `sandwich::estfun()`, `sandwich::bread()`.  These are similar requirements to those of `sandwich::vcovHC()`.
 
@@ -140,7 +140,7 @@ and from the subsequent expression for
 $\mathrm{var}(\hat{{B}})$: i.e., turn the A and B matrices
 into sums not means.
 Carroll et al's formulas for $A_{11}$, $A_{21}$ and
-$A_{22}$ then apply, although design-based standard errors call for
+$A_{22}$ then apply, although specification-based standard errors call for
 different calculations of $B_{11}$, $B_{12}$ and $B_{22}$.
 (When we get around to putting the multidecker sandwich together, we'll need
 to be cognizant of the fact that its As and Bs are means not sums,
@@ -190,7 +190,7 @@ calculated with conditioning on potential outcomes, ie the finite
 population perspective, or with conditioning on treatment assignment,
 the model based perspective. In the special case of quantile regression^[Strictly speaking, the estimating equations of a quantile regression aren't differentiable in $\alpha$. All directional derivatives will exist, and I'm expecting this to be enough for our purposes, but I haven't thought it through.], observed information isn't ordinarily used in standard error calculations, and it may take some doing to get.
 
-Regarding (6), $B_{11}$ is not needed for design-based standard
+Regarding (6), $B_{11}$ is not needed for specification-based standard
 errors, as in this setting observations outside of the
 quasiexperimental sample do not contribute to the covariance model's B
 matrix.  Only quasiexperimental sample observations do, and we'll have
@@ -203,7 +203,7 @@ $B_{22}$.
 ## Software implementation comments on 1--6 above, including contents of {`Sandwich`/`Vegan`}{`Layer`/`LayerKit`} objects
 
 
-1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate Design object).  The association can be many-one (but not one-many); it is not required that named units appear in the design. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the design will need. A falsy value in the `in_Q` column of `keys` indicates an observation not appearing in the `Design` object.
+1\. A `SandwichLayer` object `s_l_o` carries a `keys` data frame with which to identify rows of `model.matrix(s_l_o)` with units of assignment (as named in a separate StudySpecification object).  The association can be many-one (but not one-many); it is not required that named units appear in the specification. As `covmod` itself won't be aware of these cluster associations, assembling this info at runtime calls for trickery, as well as a means for users to override the trickery and directly provide key variables that the specification will need. A falsy value in the `in_Q` column of `keys` indicates an observation not appearing in the `StudySpecification` object.
 
 2\.  Estimating functions may need to be aggregated (summed) to the cluster level before calculation of $B_{21}$.  There should be a dedicated function to calculate $B_{21}$ from the cluster-aggregated estimating function matrices.
 
@@ -213,7 +213,7 @@ The `@prediction_gradient` slot carries $\{\nabla_\alpha f_{\alpha}(\tilde{\math
 
 For `glm` and similarly typed objects `cmod`, such predictions are a joint function of `family(cmod)` and the `model.matrix` generated in the process of creating predictions from `cmod`.
 
-4\. The `SandwichLayer` class isn't implicated in (4).  We can take extant calculations of a direct adjustment model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied. For design-based SEs we'll need our own B matrix calculation.  For model-based SEs we can plug in to extant routines for $B_{22}$ also, but being careful ensure clustering on the units of assignment (as named in a Design object). Scaling of these matrices should default to the conventions of the sandwich package. (I haven't considered whether use of HC0--3 etc for $B_{22}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{11}$, nor whether heuristics animating these adjustments make sense in this context.)
+4\. The `SandwichLayer` class isn't implicated in (4).  We can take extant calculations of a direct adjustment model's information matrix, with the proviso that we keep track of whatever scaling those calculations may have applied. For specification-based SEs we'll need our own B matrix calculation.  For model-based SEs we can plug in to extant routines for $B_{22}$ also, but being careful ensure clustering on the units of assignment (as named in a StudySpecification object). Scaling of these matrices should default to the conventions of the sandwich package. (I haven't considered whether use of HC0--3 etc for $B_{22}$ calls for corresponding adjustment to estimation of $B_{21}$ and/or $B_{11}$, nor whether heuristics animating these adjustments make sense in this context.)
 
 5\. `sandwich::bread()` will be used to retrieve $A_{11}^{-1}$.
 

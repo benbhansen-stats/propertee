@@ -1,5 +1,5 @@
 #' This script serves as validation for the adjustments made to `teeMod`'s
-#' `sandwich::estfun` method in February 2023. The goal of this change was to 
+#' `sandwich::estfun` method in February 2023. The goal of this change was to
 #' write a new `estfun` method such that when `sandwich::vcovCL` was called on a
 #' `teeMod` object (and thus invoking `estfun`) it would return a meat
 #' matrix corresponding to the covariance matrix of our stacked estimating
@@ -34,35 +34,35 @@ estfun.newPsiTildeDAClass <- function(object) {
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
-  
+
   ## if ITT model offset doesn't contain info about covariance model, psi should
   ## be the matrix of estimating equations returned
   ca <- object$model$`(offset)`
   if (is.null(ca) | !inherits(ca, "SandwichLayer")) {
     return(psi)
   }
-  
+
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   cmod <- ca@fitted_covariance_model
   C_uoas <- ca@keys
   phi <- estfun(cmod)
   nc <- nrow(phi)
   uoa_cols <- colnames(C_uoas)
-  
+
   ## figure out if rows need to be added to the matrix of estimating equations
   Q_uoas <- stats::expand.model.frame(object, uoa_cols, na.expand = TRUE)[, uoa_cols, drop = FALSE]
   Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
-  
+
   C_uoas <- apply(C_uoas, 1, function(...) paste(..., collapse = "_"))
   C_uoas[vapply(strsplit(C_uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
-  
+
   nas <- is.na(C_uoas)
   if (any(nas)) {
     # give unique ID's to uoa's in C but not Q
     n_Q_uoas <- length(unique(Q_uoas))
     C_uoas[nas] <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
   }
-  
+
   # add rows if necessary
   add_C_uoas <- setdiff(unique(C_uoas), unique(Q_uoas))
   add_Q_uoas <- setdiff(unique(Q_uoas), unique(C_uoas))
@@ -72,13 +72,13 @@ estfun.newPsiTildeDAClass <- function(object) {
   if (length(add_Q_uoas) > 0) {
     phi <- rbind(matrix(0, nrow = sum(Q_uoas %in% add_Q_uoas), ncol = ncol(phi)), phi)
   }
-  
+
   ## form matrix of estimating equations
   n <- nrow(psi)
   a11_inv <- .get_a11_inverse(object)
   a21 <- .get_a21(object)
   mat <- psi - phi %*% a11_inv %*% t(a21)
-  
+
   return(mat)
 }
 
@@ -97,7 +97,7 @@ estfun.oldPsiTildeDAClass <- function(object) {
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
   psi <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(object)
-  
+
   return(psi)
 }
 
@@ -107,16 +107,16 @@ estfun.oldPsiTildeDAClass <- function(object) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
-  
+
   out <- sandwich::bread(cmod) / nc
   return(out)
 }
@@ -125,28 +125,28 @@ estfun.oldPsiTildeDAClass <- function(object) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   # Get contribution to the estimating equation from the ITT effect model
   w <- if (is.null(x$weights)) 1 else x$weights
-  
+
   nq <- nrow(x$model)
   extra_nc <- sum(apply(is.na(sl@keys), 1, any))
   n <- nq + extra_nc
-  
-  damod_mm <- stats::model.matrix(formula(x),
+
+  ssmod_mm <- stats::model.matrix(formula(x),
                                   stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
-            apply(!is.na(damod_mm), 1, all))
-  
-  out <- crossprod(damod_mm[msk, , drop = FALSE] * w,
+            apply(!is.na(ssmod_mm), 1, all))
+
+  out <- crossprod(ssmod_mm[msk, , drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
-  
+
   return(out)
 }
 
@@ -154,11 +154,11 @@ estfun.oldPsiTildeDAClass <- function(object) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   # Get expected information per sandwich_infrastructure vignette
   w <- if (is.null(x$weights)) 1 else x$weights
   out <- solve(crossprod(stats::model.matrix(x) * sqrt(w)))
-  
+
   return(out)
 }
 
@@ -166,29 +166,29 @@ estfun.oldPsiTildeDAClass <- function(object) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!inherits(sl, "SandwichLayer")) {
     stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
+
   cmod <- sl@fitted_covariance_model
   nc <- sum(summary(cmod)$df[1L:2L])
-  
+
   # Get units of assignment for clustering
   dots <- list(...)
   uoas <- sl@keys
   cluster_cols <- colnames(uoas)
-  
-  # Replace NA's for rows not in the experimental design with a unique cluster ID
+
+  # Replace NA's for rows not in the experimental specification with a unique cluster ID
   if (ncol(uoas) == 1) {
     uoas <- uoas[, 1]
   } else {
     uoas <- Reduce(function(...) paste(..., sep = "_"), uoas[, cluster_cols])
     uoas[vapply(strsplit(uoas, "_"), function(x) all(x == "NA"), logical(1))] <- NA_character_
   }
-  
+
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
   if (any(nas)) {
@@ -196,7 +196,7 @@ estfun.oldPsiTildeDAClass <- function(object) {
   }
   uoas <- factor(uoas)
   nuoas <- length(unique(uoas))
-  
+
   # if the covariance model only uses one cluster, produce warning
   if (nuoas == 1) {
     warning(paste("Covariance adjustment model has meat matrix numerically",
@@ -207,7 +207,7 @@ estfun.oldPsiTildeDAClass <- function(object) {
   }
   dots$cluster <- uoas
   dots$x <- cmod
-  
+
   out <- do.call(sandwich::meatCL, dots) * nc
   return(out)
 }
@@ -216,28 +216,28 @@ estfun.oldPsiTildeDAClass <- function(object) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   sl <- x$model$`(offset)`
   if (!is(sl, "SandwichLayer")) {
     stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "for direct adjustment standard errors"))
   }
-  
-  cluster_cols <- var_names(x@Design, "u")
+
+  cluster_cols <- var_names(x@StudySpecification, "u")
   keys <- sl@keys
-  
+
   if (ncol(keys) == 1) {
     uoas <- keys[, 1]
   } else {
     uoas <- Reduce(function(...) paste(..., sep = "_"), keys)
     uoas[grepl("NA", uoas)] <- NA_character_
   }
-  
+
   message(paste(sum(!is.na(uoas)),
                 "rows in the covariance adjustment model",
                 "data joined to the ITT effect model data\n"))
-  
-  
+
+
   # Check number of overlapping clusters n_QC; if n_QC <= 1, return 0 (but
   # similarly to .get_b11(), throw a warning when only one cluster overlaps)
   uoas_overlap <- length(unique(uoas))
@@ -253,13 +253,13 @@ estfun.oldPsiTildeDAClass <- function(object) {
              ncol = dim(stats::model.matrix(x))[2])
     )
   }
-  
+
   # Sum est eqns to cluster level; since non-overlapping rows are NA in `keys`,
   # `by` call excludes them from being summed
   cmod_estfun <- sandwich::estfun(sl@fitted_covariance_model)
   cmod_aggfun <- ifelse(dim(cmod_estfun)[2] > 1, colSums, sum)
   cmod_eqns <- Reduce(rbind, by(cmod_estfun, uoas, cmod_aggfun))
-  
+
   # get rows from overlapping clusters in experimental data
   Q_uoas <- stats::expand.model.frame(x, cluster_cols, na.expand = TRUE)[cluster_cols]
   if (ncol(Q_uoas) == 1) {
@@ -268,29 +268,29 @@ estfun.oldPsiTildeDAClass <- function(object) {
     Q_uoas <- Reduce(function(...) paste(..., sep = "_"), Q_uoas)
     Q_uoas[grepl("NA", Q_uoas)] <- NA_integer_
   }
-  
+
   msk <- Q_uoas %in% unique(uoas[!is.na(uoas)])
-  damod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
-  damod_aggfun <- ifelse(dim(damod_estfun)[2] > 1, colSums, sum)
-  damod_eqns <- Reduce(rbind, by(damod_estfun, Q_uoas[msk], damod_aggfun))
-  
+  ssmod_estfun <- sandwich::estfun(x)[msk, , drop = FALSE]
+  ssmod_aggfun <- ifelse(dim(ssmod_estfun)[2] > 1, colSums, sum)
+  ssmod_eqns <- Reduce(rbind, by(ssmod_estfun, Q_uoas[msk], ssmod_aggfun))
+
   matmul_func <- if (length(unique(uoas[!is.na(uoas)])) == 1) tcrossprod else crossprod
-  return(matmul_func(cmod_eqns, damod_eqns))
+  return(matmul_func(cmod_eqns, ssmod_eqns))
 }
 
 .get_b22 <- function(x, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-  
+
   nq <- nrow(sandwich::estfun(x))
-  
+
   # Create cluster ID matrix depending on cluster argument (or its absence)
   dots <- list(...)
   uoas <- stats::expand.model.frame(x,
-                                    var_names(x@Design, "u"))[, var_names(x@Design, "u"),
+                                    var_names(x@StudySpecification, "u"))[, var_names(x@StudySpecification, "u"),
                                                               drop = FALSE]
-  
+
   if (ncol(uoas) == 1) {
     uoas <- factor(uoas[,1])
   } else {
@@ -298,9 +298,9 @@ estfun.oldPsiTildeDAClass <- function(object) {
   }
   dots$cluster <- uoas
   dots$x <- x
-  
+
   out <- do.call(sandwich::meatCL, dots) * nq
-  
+
   return(out)
 }
 
@@ -352,7 +352,7 @@ compute_meat_matrix_no_estfun <- function(object) {
   m11 <- crossprod(phi) / nc
   m12 <- crossprod(phi, psi) / sqrt(n * nc)
   m22 <- crossprod(psi) / n
-  
+
   return(
     n * (m22 - sqrt(n / nc) * (t(m12) %*% a11_inv %*% t(a21) + a21 %*% a11_inv %*% m12) +
       n / nc * (a21 %*% a11_inv %*% m11 %*% a11_inv %*% t(a21)))
@@ -362,8 +362,8 @@ compute_meat_matrix_no_estfun <- function(object) {
 #' This function computes the full model-based sandwich variance estimate using
 #' the new `estfun` method
 new_vcovMB_CR0 <- function(object, ...) {
-  cluster <- var_names(object@Design, "u")
-  # Get the unit of assignment ID's in Q given the manual cluster argument or the Design info
+  cluster <- var_names(object@StudySpecification, "u")
+  # Get the unit of assignment ID's in Q given the manual cluster argument or the StudySpecification info
   Q_uoas <- stats::expand.model.frame(object, cluster, na.expand = TRUE)[, cluster, drop = FALSE]
   Q_uoas <- apply(Q_uoas, 1, function(...) paste(..., collapse = "_"))
   names(Q_uoas) <- NULL
@@ -383,7 +383,7 @@ new_vcovMB_CR0 <- function(object, ...) {
     new_C_uoas <- paste0(n_Q_uoas + seq_len(sum(nas)), "*")
     all_uoas <- c(Q_uoas, new_C_uoas)
   }
-  
+
   uoa_ids <- factor(all_uoas, levels = unique(all_uoas))
   n <- length(uoa_ids)
 
@@ -402,11 +402,11 @@ old_vcovMB_CR0 <- function(x, ...) {
   a21 <- .get_a21(x)
   a11inv <- .get_a11_inverse(x)
   b12 <- .get_b12(x)
-  
+
   a22inv <- .get_a22_inverse(x)
   b22 <- .get_b22(x, type = "HC0", ...)
   b11 <- .get_b11(x,  type = "HC0", ...)
-  
+
   meat <- (
     b22 -
       a21 %*% a11inv %*% b12 -
@@ -414,7 +414,7 @@ old_vcovMB_CR0 <- function(x, ...) {
       a21 %*% a11inv %*% b11 %*% t(a11inv) %*% t(a21)
   )
   vmat <- a22inv %*% meat %*% a22inv
-  
+
   return(vmat)
 }
 
@@ -440,11 +440,11 @@ newdata <- as.data.frame(cbind(seq_len(n), newdata, newdata %*% beta + 0.1 * rno
 colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
 
 cmod1 <- lm(y ~ x1 + x2, newdata)
-des1 <- rct_design(z ~ unitid(uoa_id), data = newdata)
-damod1 <- lmitt(y ~ assigned(), data = newdata, design = des1, weights = ate(des1),
+spec!1 <- rct_spec(z ~ unitid(uoa_id), data = newdata)
+ssmod1 <- lmitt(y ~ assigned(), data = newdata, specification = spec!1, weights = ate(spec!1),
                 offset = cov_adj(cmod1))
-new_psi_tilde_da1 <- new("newPsiTildeDAClass", damod1)
-old_psi_tilde_da1 <- new("oldPsiTildeDAClass", damod1)
+new_psi_tilde_da1 <- new("newPsiTildeDAClass", ssmod1)
+old_psi_tilde_da1 <- new("oldPsiTildeDAClass", ssmod1)
 
 testthat::expect_equal(crossprod(estfun(new_psi_tilde_da1)),
                        compute_meat_matrix_no_estfun(old_psi_tilde_da1))
@@ -460,11 +460,11 @@ cmod_data <- as.data.frame(cbind(seq(n + 1, 3 * n), cmod_data, cmod_data %*% bet
 colnames(cmod_data) <- c("uoa_id", "x1", "x2", "z", "y")
 
 cmod2 <- lm(y ~ x1 + x2, cmod_data)
-des2 <- rct_design(z ~ unitid(uoa_id), data = newdata)
-damod2 <- lmitt(y ~ assigned(), data = newdata, design = des2, weights = ate(des2),
+spec!2 <- rct_spec(z ~ unitid(uoa_id), data = newdata)
+ssmod2 <- lmitt(y ~ assigned(), data = newdata, specification = spec!2, weights = ate(spec!2),
                 offset = cov_adj(cmod2))
-new_psi_tilde_da2 <- new("newPsiTildeDAClass", damod2)
-old_psi_tilde_da2 <- new("oldPsiTildeDAClass", damod2)
+new_psi_tilde_da2 <- new("newPsiTildeDAClass", ssmod2)
+old_psi_tilde_da2 <- new("oldPsiTildeDAClass", ssmod2)
 
 testthat::expect_equal(crossprod(estfun(new_psi_tilde_da2)),
                        compute_meat_matrix_no_estfun(old_psi_tilde_da2))
@@ -490,11 +490,11 @@ newdata <- as.data.frame(
 colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
 
 cmod3 <- lm(y ~ x1 + x2, newdata)
-des3 <- rct_design(z ~ cluster(uoa_id), data = newdata)
-damod3 <- lmitt(y ~ assigned(), data = newdata, design = des3, weights = ate(des3),
+spec!3 <- rct_spec(z ~ cluster(uoa_id), data = newdata)
+ssmod3 <- lmitt(y ~ assigned(), data = newdata, specification = spec!3, weights = ate(spec!3),
                 offset = cov_adj(cmod3))
-new_psi_tilde_da3 <- new("newPsiTildeDAClass", damod3)
-old_psi_tilde_da3 <- new("oldPsiTildeDAClass", damod3)
+new_psi_tilde_da3 <- new("newPsiTildeDAClass", ssmod3)
+old_psi_tilde_da3 <- new("oldPsiTildeDAClass", ssmod3)
 
 testthat::expect_equal(
   crossprod(Reduce(rbind, by(estfun(new_psi_tilde_da3), newdata$uoa_id, colSums))),
@@ -519,11 +519,11 @@ newdata <- as.data.frame(cbind(seq_len(n), newdata,
 colnames(newdata) <- c("uoa_id", "x1", "x2", "z", "y")
 
 cmod4 <- glm(y ~ x1 + x2, newdata, family = binomial())
-des4 <- rct_design(z ~ unitid(uoa_id), data = newdata)
-damod4 <- lmitt(y ~ assigned(), data = newdata, design = des4, weights = ate(des4),
+spec!4 <- rct_spec(z ~ unitid(uoa_id), data = newdata)
+ssmod4 <- lmitt(y ~ assigned(), data = newdata, specification = spec!4, weights = ate(spec!4),
                 offset = cov_adj(cmod4))
-new_psi_tilde_da4 <- new("newPsiTildeDAClass", damod4)
-old_psi_tilde_da4 <- new("oldPsiTildeDAClass", damod4)
+new_psi_tilde_da4 <- new("newPsiTildeDAClass", ssmod4)
+old_psi_tilde_da4 <- new("oldPsiTildeDAClass", ssmod4)
 
 testthat::expect_equal(crossprod(estfun(new_psi_tilde_da4)),
                        compute_meat_matrix_no_estfun(old_psi_tilde_da4))

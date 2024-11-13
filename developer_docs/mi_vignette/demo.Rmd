@@ -11,13 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Overview
-The `propertee` package offers tools for enhancing evaluations of treatments, policies, and interventions that respect the statistical properties endowed by the study design. One such offering is a routine for covariance adjustment that allows researchers to model exogenous variation in outcomes of interest using data from their study as well as available auxiliary data. `propertee` accommodates linear, generalized linear, and robust regression models, providing users flexibility in functional form, fitting procedure, and fitting sample. This vignette serves as a step-by-step walkthrough of how users can use a prior covariance  adjustment model fit to inform estimates of intervention effects--as well as associated standard errors--with the software in `propertee`.
+The `propertee` package offers tools for enhancing evaluations of treatments, policies, and interventions that respect the statistical properties endowed by the study specification. One such offering is a routine for covariance adjustment that allows researchers to model exogenous variation in outcomes of interest using data from their study as well as available auxiliary data. `propertee` accommodates linear, generalized linear, and robust regression models, providing users flexibility in functional form, fitting procedure, and fitting sample. This vignette serves as a step-by-step walkthrough of how users can use a prior covariance  adjustment model fit to inform estimates of intervention effects--as well as associated standard errors--with the software in `propertee`.
 
 Pane et al. (2014) mounted a large-scale cluster randomized trail in seven states to study the effectiveness of Cognitive Tutor, an online/in-person blended algebra learning program.  Their report assessed program effectiveness in terms of scores on a test administered as part of the study.  However, scores on prior and subsequent state achievement tests are available for study schools as well as others in their states and districts, and these could be used for a complementary, perhaps more precise, assessment of the program's effects. Here we demonstrate this idea using state and district data from Michigan, where the Cognitive Tutor study had a significant footprint and where rich school achievement data are available for download from state websites.
 
-Pane and coauthors kindly shared with us the names, pre-randomization pairings and treatment assignments of their study's 14 Michigan schools, but were not at liberty to make this information public.  To create a functionally similar case study while maintaining the participating schools's anonymity, we optimally pair-matched them to schools from a large nearby county in Michigan, Oakland. The pseudo-RCT considered in this vignette replaces each Michigan Cognitive Tutor study school with the Oakland County school it was paired to, otherwise inheriting from the actual RCT salient design characteristics, such as the composition of school pairs and triples within which randomization was conducted.
+Pane and coauthors kindly shared with us the names, pre-randomization pairings and treatment assignments of their study's 14 Michigan schools, but were not at liberty to make this information public.  To create a functionally similar case study while maintaining the participating schools's anonymity, we optimally pair-matched them to schools from a large nearby county in Michigan, Oakland. The pseudo-RCT considered in this vignette replaces each Michigan Cognitive Tutor study school with the Oakland County school it was paired to, otherwise inheriting from the actual RCT salient specification characteristics, such as the composition of school pairs and triples within which randomization was conducted.
 
-Valid analysis of an RCT calls for careful attention to such characteristics, both for selecting a compatible estimator and for correctly implementing it.  By introducing a dedicated S4 structure for such characteristics, the `Design`, along with Design-aware functions for such tasks as inverse probability weighting and effect estimation with optional stratum fixed effects, `propertee` helps the analyst stay on top of implementation details. Its `cov_adj()`, a specialized `predict()`, decouples effect estimation from covariance adjustment while continuing to track what's necessary for valid standard error estimation, significantly broadening the range of estimators that are compatible with a given `Design`.
+Valid analysis of an RCT calls for careful attention to such characteristics, both for selecting a compatible estimator and for correctly implementing it.  By introducing a dedicated S4 structure for such characteristics, the `StudySpecification`, along with StudySpecification-aware functions for such tasks as inverse probability weighting and effect estimation with optional stratum fixed effects, `propertee` helps the analyst stay on top of implementation details. Its `cov_adj()`, a specialized `predict()`, decouples effect estimation from covariance adjustment while continuing to track what's necessary for valid standard error estimation, significantly broadening the range of estimators that are compatible with a given `StudySpecification`.
 
 ## Data
 To run this vignette, first download the necessary data. We will use school-level averages of student performance on the Michigan Merit Examination (MME) in 2014 to measure intervention effects, and we will use school-level averages of scores on the 2012 and 2013 tests as covariates in our covariance adjustment model. These scores can be downloaded as a zipped file from the [Michigan Department of Education website](https://mischooldata.org/historical-assessment-data-files/). After unzipping that file, convert the resulting .xls file to a .csv to facilitate the use of base R commands for loading it into an R session.
@@ -48,16 +48,16 @@ data(michigan_school_pairs)
 source("get_and_clean_external_data.R")
 ```
 
-#### Creating the `Design` Object
-The first step in estimating intervention effects using `propertee` is to create a `Design` object. This will store the information from `michigan_school_pairs` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. In studies where units of observation within units of assignment are used to estimate intervention effects--for example, if we had student-level scores data--this data structure would also facilitate the definition of a vector of assignment indicators at the unit of observation level we could use for estimating the intervention effect.
+#### Creating the `StudySpecification` Object
+The first step in estimating intervention effects using `propertee` is to create a `StudySpecification` object. This will store the information from `michigan_school_pairs` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. In studies where units of observation within units of assignment are used to estimate intervention effects--for example, if we had student-level scores data--this data structure would also facilitate the definition of a vector of assignment indicators at the unit of observation level we could use for estimating the intervention effect.
 ```{r}
-des <- rct_design(z ~ unitid(schoolid) + block(blk), michigan_school_pairs)
+spec <- rct_spec(z ~ unitid(schoolid) + block(blk), michigan_school_pairs)
 ```
-In this `rct_design()` call, the lefthand side indicates the assignment variable, and the righthand side indicates the unit of assignment and, if applicable, variable that identify matched sets or strata.  There also `rd_design()` and `obs_design()` constructors, for regression discontinuity and for observational studies/quasiexperimental designs, respectively.
+In this `rct_spec()` call, the lefthand side indicates the assignment variable, and the righthand side indicates the unit of assignment and, if applicable, variable that identify matched sets or strata.  There also `rd_spec()` and `obs_spec()` constructors, for regression discontinuity and for observational studies/quasiexperimental specifications, respectively.
 
-The `Design` object's `structure` slot lists units of assignment, their allocations to conditions and, if applicable, blocks within which they were allocated. 
+The `StudySpecification` object's `structure` slot lists units of assignment, their allocations to conditions and, if applicable, blocks within which they were allocated.
 ```{r}
-des@structure
+spec@structure
 ```
 
 #### Fitting the Covariance Adjustment Model
@@ -111,18 +111,18 @@ rob_county_camod <- robustbase::lmrob(
 ```
 
 #### Estimating Marginal Intervention Effects
-With the `Design` object created and the covariance adjustment model fit, we're prepared to evaluate the intervention. `propertee` supports calculations of inverse probability of assignment weights appropriate for estimating either the average intervention effect (ATE) or the average effect of the intervention on those in the intervention group (ETT)^[Although not demonstrated in this vignette, it also supports average effect estimation with block fixed effects rather than explicit weights, via `lmitt(<...>, absorb=TRUE)`.]. These weights can be combined with additional unit weights to reflect varying sizes of units in the sample. In this analysis and the one that follows, we estimate the student-level ATE by calculating inverse probability of assignment weights for each school using the `ate()` function, then multiplying those weights by the number of students at the corresponding school who took the test. We incorporate the prognostic model using the `cov_adj()` function, which generates model predictions for each school and identifies overlap between the prognostic sample and the study sample.
+With the `StudySpecification` object created and the covariance adjustment model fit, we're prepared to evaluate the intervention. `propertee` supports calculations of inverse probability of assignment weights appropriate for estimating either the average intervention effect (ATE) or the average effect of the intervention on those in the intervention group (ETT)^[Although not demonstrated in this vignette, it also supports average effect estimation with block fixed effects rather than explicit weights, via `lmitt(<...>, absorb=TRUE)`.]. These weights can be combined with additional unit weights to reflect varying sizes of units in the sample. In this analysis and the one that follows, we estimate the student-level ATE by calculating inverse probability of assignment weights for each school using the `ate()` function, then multiplying those weights by the number of students at the corresponding school who took the test. We incorporate the prognostic model using the `cov_adj()` function, which generates model predictions for each school and identifies overlap between the prognostic sample and the study sample.
 ```{r}
 study1data <- merge(michigan_school_pairs, analysis1data, by = "schoolid", all.x = TRUE)
-ip_wts <- propertee::ate(des, data = study1data) * study1data$Total.Tested.2014
-lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study1data, design = des)
+ip_wts <- propertee::ate(spec, data = study1data) * study1data$Total.Tested.2014
+lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study1data, specification = spec)
 ```
 
-To estimate the intervention effect, we pass the weights to the `weights` argument and the predictions to the `offset` argument of the `lmitt()` function, a function that looks almost exactly like the base R function for linear regression, `lm()`. The only major difference is that `lmitt()` expects a `design` argument, where we will pass the `Design` object we created.
+To estimate the intervention effect, we pass the weights to the `weights` argument and the predictions to the `offset` argument of the `lmitt()` function, a function that looks almost exactly like the base R function for linear regression, `lm()`. The only major difference is that `lmitt()` expects a `specification` argument, where we will pass the `StudySpecification` object we created.
 ```{r}
 main_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~1"))
 lm_ca_effect <- propertee::lmitt(
-  main_effect_fmla, design = des, data = study1data, weights = ip_wts,
+  main_effect_fmla, specification = spec, data = study1data, weights = ip_wts,
   offset = lm_ca
 )
 ```
@@ -141,16 +141,16 @@ summary(lm_ca_effect, vcov.type = "HC1")
 
 If parts of the auxiliary sample (here, Oakland County other than the 14 study schools) follow a different pattern of association between covariates and response, covariance adjustment might wind up doing more harm than good.  We can increase robustness to "contamination" within the auxiliary sample by using robust linear regression to generate the predictions we incorporate using `cov_adj()`.
 ```{r}
-rob_ca <- propertee::cov_adj(rob_county_camod, newdata = study1data, design = des)
+rob_ca <- propertee::cov_adj(rob_county_camod, newdata = study1data, specification = spec)
 rob_ca_effect <- propertee::lmitt(
-  main_effect_fmla, design = des, data = study1data, weights = ip_wts,
+  main_effect_fmla, specification = spec, data = study1data, weights = ip_wts,
   offset = rob_ca
 )
 summary(rob_ca_effect, vcov.type = "HC1")
 ```
 
 #### Estimating Heterogeneous Intervention Effects
-We use the second cleaned dataset to estimate average intervention effects conditional on different race/ethnicity groups. `propertee` will report heterogeneous effect estimates we can interpret as the average effect of the intervention on the average MME score for students in a given race/ethnicity group. The user experience for this process is largely the same as the process for estimating the marginal effect, save for two exceptions. The first is general to heterogeneous effect estimation using `propertee`. Instead of passing a formula to `lmitt()` that has a 1 on the righthand side, users should provide a formula that specifies the subgroup variable on the righthand side. The second exception arises when units of assignment contribute multiple observations to heterogeneous effect estimation. This analysis is one such example, since schools have students in multiple race/ethnicity groups. The `Design` object does not provide enough information to uniquely identify these rows, which causes an issue for standard error calculations that must determine the exact overlap between the covariance adjustment and effect estimation samples. To alleviate this issue, both dataframes must have a column that uniquely identifies each row. If the two dataframes have overlapping rows, these unique identifiers should match up.
+We use the second cleaned dataset to estimate average intervention effects conditional on different race/ethnicity groups. `propertee` will report heterogeneous effect estimates we can interpret as the average effect of the intervention on the average MME score for students in a given race/ethnicity group. The user experience for this process is largely the same as the process for estimating the marginal effect, save for two exceptions. The first is general to heterogeneous effect estimation using `propertee`. Instead of passing a formula to `lmitt()` that has a 1 on the righthand side, users should provide a formula that specifies the subgroup variable on the righthand side. The second exception arises when units of assignment contribute multiple observations to heterogeneous effect estimation. This analysis is one such example, since schools have students in multiple race/ethnicity groups. The `StudySpecification` object does not provide enough information to uniquely identify these rows, which causes an issue for standard error calculations that must determine the exact overlap between the covariance adjustment and effect estimation samples. To alleviate this issue, both dataframes must have a column that uniquely identifies each row. If the two dataframes have overlapping rows, these unique identifiers should match up.
 
 ```{r}
 not_missing_resp <- !is.na(analysis2data[[RESPONSE_COL]])
@@ -165,13 +165,12 @@ lm_county_mod_camod <- lm(mod_camod_form, county_mod_camod_dat,
 study2data <- merge(michigan_school_pairs, analysis2data, by = "schoolid", all.x = TRUE)
 study2data <- study2data[study2data$DemographicGroup %in%
                            c("White", "Black or African American"),]
-ip_wts <- propertee::ate(des, data = study2data) * study2data$Total.Tested.2014
+ip_wts <- propertee::ate(spec, data = study2data) * study2data$Total.Tested.2014
 lm_mod_ca <- propertee::cov_adj(lm_county_mod_camod, newdata = study2data,
-                                design = des, by = "uniqueid")
+                                specification = spec, by = "uniqueid")
 mod_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~ DemographicGroup"))
-lm_ca_mod_effect <- propertee::lmitt(mod_effect_fmla, design = des,
+lm_ca_mod_effect <- propertee::lmitt(mod_effect_fmla, specification = spec,
                                      data = study2data, weights = ip_wts,
                                      offset = lm_mod_ca)
 summary(lm_ca_mod_effect, vcov.type = "CR1", cluster = "schoolid")
 ```
-

@@ -58,7 +58,7 @@ olsPoly <- function(dat,deg){
 }
 
 flexPoly <- function(dat,deg){
-  des <- rd_design(Z ~ forcing(R) + unitid(id), data=dat)
+  spec <- rd_spec(Z ~ forcing(R) + unitid(id), data=dat)
 
 ### we can use poly(.) once issue #61 is resolved
 ### covForm <- Y~Z+poly(R,deg,raw=TRUE)
@@ -70,7 +70,7 @@ flexPoly <- function(dat,deg){
 
   covMod <- lmrob(covForm,data=dat,method='MM')
 
-  res <- lmitt(Y~1,design=des,offset=cov_adj(covMod),data=dat)|>
+  res <- lmitt(Y~1,specification=spec,offset=cov_adj(covMod),data=dat)|>
     summary()|>
     getElement('coefficients')
 
