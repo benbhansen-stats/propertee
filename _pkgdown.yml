@@ -21,14 +21,6 @@ navbar:
       href: articles/RDD.html
     - text: propertee vs. geex
       href: articles/not-for-cran/geex_vs_propertee.html
-    - text: ----------
-    - text: Theory
-    - text: Data structures to support standard error calculations for direct adjustment assisted by a prior covariance model
-      href: articles/sandwich_infrastructure.html
-    - text: Variance Estimation Testing Using A Simple Linear Specification
-      href: articles/LinearModelVarianceEstimation.html
-    - text: Design based sandwich SEs for differences of Hajek estimators
-      href: articles/design_based_SEs.html
 reference:
 - title: Design
 - subtitle: Creation of `Design` Objects
