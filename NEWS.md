@@ -1,5 +1,8 @@
 # propertee 0.4.1
 
+## New Features
+* Passing `absorb = TRUE` to `lmitt` without specifying a block proceeds as if the entire sample is a single block.
+
 ## Bug Fixes
 * Fixed bug where use of `dichotomy` and moderator variables in `lmitt()` could lead to errors due to too long of a formula.
 
