@@ -193,19 +193,20 @@ setValidity("StudySpecification", function(object) {
              call = call))
 }
 
-##' @title Generates a \code{StudySpecification} object with the given specifications.
+##' @title Generates a \code{StudySpecification} object with the given
+##'   specifications.
 ##'
 ##' @description Generate a randomized control treatment StudySpecification
-##'   ([rct_spec()]), or an observational StudySpecification ([obs_spec()]), or a
-##'   regression discontinuity StudySpecification ([rd_spec()]).
+##'   ([rct_spec()]), or an observational StudySpecification ([obs_spec()]), or
+##'   a regression discontinuity StudySpecification ([rd_spec()]).
 ##'
 ##' @details The formula must include exactly one [unit_of_assignment()] to
 ##'   identify the units of assignment (one or more variables). (\code{uoa},
 ##'   \code{cluster}, or \code{unitid} are synonyms for
 ##'   \code{unit_of_assignment}; the choice of which has no impact on the
-##'   analysis.) If defining an \code{rd_spec}, the formula must also include
-##'   a [forcing()] entry. The formula may optionally include a [block()] as
-##'   well. Each of these can take in multiple variables, e.g. to pass both a
+##'   analysis.) If defining an \code{rd_spec}, the formula must also include a
+##'   [forcing()] entry. The formula may optionally include a [block()] as well.
+##'   Each of these can take in multiple variables, e.g. to pass both a
 ##'   household ID and individual ID as unit of assignment, use \code{uoa(hhid,
 ##'   iid)} and not \code{uoa(hhid) + uoa(iid)}.
 ##'
@@ -220,20 +221,22 @@ setValidity("StudySpecification", function(object) {
 ##'   treatment and control groups. See [ett()] for more details on specifying a
 ##'   \code{dichotomy}.
 ##'
-##' @param formula a \code{formula} defining the \code{StudySpecification} components. See
-##'   `Details` for specification.
-##' @param data the data set from which to build the StudySpecification. Note that this data
-##'   need not be the same as used to estimate the treatment effect; rather the
-##'   \code{data} passed should contain information about the units of treatment
-##'   assignment (as opposed to the units of analysis).
-##' @param subset optional, subset the data before creating the \code{StudySpecification}
-##'   object
+##'   There are a few aliases for each version.
+##'
+##' @param formula a \code{formula} defining the \code{StudySpecification}
+##'   components. See `Details` for specification.
+##' @param data the data set from which to build the StudySpecification. Note
+##'   that this data need not be the same as used to estimate the treatment
+##'   effect; rather the \code{data} passed should contain information about the
+##'   units of treatment assignment (as opposed to the units of analysis).
+##' @param subset optional, subset the data before creating the
+##'   \code{StudySpecification} object
 ##' @param na.fail If \code{TRUE} (default), any missing data found in the
 ##'   variables specified in \code{formula} (excluding treatment) will trigger
 ##'   an error. If \code{FALSE}, non-complete cases will be dropped before the
 ##'   creation of the \code{StudySpecification}
-##' @return a \code{StudySpecification} object of the requested type for use in further
-##'   analysis.
+##' @return a \code{StudySpecification} object of the requested type for use in
+##'   further analysis.
 ##' @export
 ##' @rdname StudySpecification_objects
 ##' @examples
@@ -289,6 +292,29 @@ obs_spec <- function(formula,
                      call = match.call(),
                      na.fail = na.fail))
 }
+
+
+################### Aliases
+##' @export
+##' @rdname StudySpecification_objects
+rct_specification <- rct_spec
+
+##' @export
+##' @rdname StudySpecification_objects
+rd_specification <- rd_spec
+
+##' @export
+##' @rdname StudySpecification_objects
+obs_specification <- obs_spec
+
+##' @export
+##' @rdname StudySpecification_objects
+obsstudy_spec <- obs_spec
+
+##' @export
+##' @rdname StudySpecification_objects
+obsstudy_specification <- obs_spec
+
 
 ##' @title Show a \code{StudySpecification}
 ##' @description Display information about a \code{StudySpecification} object

@@ -4,25 +4,41 @@
 \alias{rct_spec}
 \alias{rd_spec}
 \alias{obs_spec}
-\title{Generates a \code{StudySpecification} object with the given specifications.}
+\alias{rct_specification}
+\alias{rd_specification}
+\alias{obs_specification}
+\alias{obsstudy_spec}
+\alias{obsstudy_specification}
+\title{Generates a \code{StudySpecification} object with the given
+specifications.}
 \usage{
 rct_spec(formula, data, subset = NULL, na.fail = TRUE)
 
 rd_spec(formula, data, subset = NULL, na.fail = TRUE)
 
 obs_spec(formula, data, subset = NULL, na.fail = TRUE)
+
+rct_specification(formula, data, subset = NULL, na.fail = TRUE)
+
+rd_specification(formula, data, subset = NULL, na.fail = TRUE)
+
+obs_specification(formula, data, subset = NULL, na.fail = TRUE)
+
+obsstudy_spec(formula, data, subset = NULL, na.fail = TRUE)
+
+obsstudy_specification(formula, data, subset = NULL, na.fail = TRUE)
 }
 \arguments{
-\item{formula}{a \code{formula} defining the \code{StudySpecification} components. See
-\code{Details} for specification.}
+\item{formula}{a \code{formula} defining the \code{StudySpecification}
+components. See \code{Details} for specification.}
 
-\item{data}{the data set from which to build the StudySpecification. Note that this data
-need not be the same as used to estimate the treatment effect; rather the
-\code{data} passed should contain information about the units of treatment
-assignment (as opposed to the units of analysis).}
+\item{data}{the data set from which to build the StudySpecification. Note
+that this data need not be the same as used to estimate the treatment
+effect; rather the \code{data} passed should contain information about the
+units of treatment assignment (as opposed to the units of analysis).}
 
-\item{subset}{optional, subset the data before creating the \code{StudySpecification}
-object}
+\item{subset}{optional, subset the data before creating the
+\code{StudySpecification} object}
 
 \item{na.fail}{If \code{TRUE} (default), any missing data found in the
 variables specified in \code{formula} (excluding treatment) will trigger
@@ -30,22 +46,22 @@ an error. If \code{FALSE}, non-complete cases will be dropped before the
 creation of the \code{StudySpecification}}
 }
 \value{
-a \code{StudySpecification} object of the requested type for use in further
-analysis.
+a \code{StudySpecification} object of the requested type for use in
+further analysis.
 }
 \description{
 Generate a randomized control treatment StudySpecification
-(\code{\link[=rct_spec]{rct_spec()}}), or an observational StudySpecification (\code{\link[=obs_spec]{obs_spec()}}), or a
-regression discontinuity StudySpecification (\code{\link[=rd_spec]{rd_spec()}}).
+(\code{\link[=rct_spec]{rct_spec()}}), or an observational StudySpecification (\code{\link[=obs_spec]{obs_spec()}}), or
+a regression discontinuity StudySpecification (\code{\link[=rd_spec]{rd_spec()}}).
 }
 \details{
 The formula must include exactly one \code{\link[=unit_of_assignment]{unit_of_assignment()}} to
 identify the units of assignment (one or more variables). (\code{uoa},
 \code{cluster}, or \code{unitid} are synonyms for
 \code{unit_of_assignment}; the choice of which has no impact on the
-analysis.) If defining an \code{rd_spec}, the formula must also include
-a \code{\link[=forcing]{forcing()}} entry. The formula may optionally include a \code{\link[=block]{block()}} as
-well. Each of these can take in multiple variables, e.g. to pass both a
+analysis.) If defining an \code{rd_spec}, the formula must also include a
+\code{\link[=forcing]{forcing()}} entry. The formula may optionally include a \code{\link[=block]{block()}} as well.
+Each of these can take in multiple variables, e.g. to pass both a
 household ID and individual ID as unit of assignment, use \code{uoa(hhid,
   iid)} and not \code{uoa(hhid) + uoa(iid)}.
 
@@ -59,6 +75,8 @@ treatment is not \code{logical} or \code{numeric} with only values 0 and
 \code{dichotomy} argument must be used in those functions to identify the
 treatment and control groups. See \code{\link[=ett]{ett()}} for more details on specifying a
 \code{dichotomy}.
+
+There are a few aliases for each version.
 }
 \examples{
 data(simdata)
