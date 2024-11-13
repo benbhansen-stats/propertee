@@ -6,7 +6,7 @@
 # Subgroup Yes/No
 # Absorb Yes/No
 # CovAdj Yes/No
-# Subset No/In `Design`/in `lm`
+# Subset No/In `StudySpecification`/in `lm`
 
 # To avoid a bunch of messages being printed:
 save_options <- options()
@@ -15,7 +15,7 @@ options("propertee_message_on_unused_blocks" = FALSE)
 test_that("equivalent of lm and lmitt calls - no subset", {
   data(simdata)
   simdata$o <- as.factor(simdata$o)
-  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
 
@@ -30,49 +30,49 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |   No   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata)
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des)
+  mod_lm <- lm(y ~ assigned(spec), data = simdata)
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   No     |   No   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata, weights = ate(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate")
+  mod_lm <- lm(y ~ assigned(spec), data = simdata, weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |   No   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata)
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des)
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata)
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   Yes    |   No   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata, weights = ett(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, weights = "ett")
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |  Yes   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata)
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE)
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata)
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   No     |  Yes   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
-               weights = ett(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+               weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
@@ -80,17 +80,17 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |  Yes   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o  + as.factor(bid), data = simdata)
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE)
+  mod_lm <- lm(y ~ assigned(spec):o + o  + as.factor(bid), data = simdata)
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   Yes    |  Yes   |   No   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
-               weights = ate(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+               weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
@@ -98,8 +98,8 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |   No   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata, offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+  mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
@@ -107,8 +107,8 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |   Yes   |   No     |   No   |  Yes   |   No   |
 
   mod_lm <- lm(y ~ assigned(), data = simdata, offset = cov_adj(cmod),
-               weights = ate(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des,
+               weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec,
                      offset = cov_adj(cmod), weights = ate())
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
@@ -116,8 +116,8 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |   No   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata, offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des,
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
@@ -125,9 +125,9 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   Yes    |   No   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata,
-               offset = cov_adj(cmod), weights = ett(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, offset = cov_adj(cmod),
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata,
+               offset = cov_adj(cmod), weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, offset = cov_adj(cmod),
                      weights = ett())
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
@@ -135,9 +135,9 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
                offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
@@ -145,9 +145,9 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   No     |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod), weights = ett(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+               offset = cov_adj(cmod), weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod), weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
@@ -155,9 +155,9 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
                offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
@@ -165,19 +165,19 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   Yes   |   Yes    |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod), weights = ate(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+               offset = cov_adj(cmod), weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod), weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
 
 })
 
-test_that("subset in design", {
+test_that("subset in specification", {
   data(simdata)
   simdata$o <- as.factor(simdata$o)
-  des <- obs_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
                     subset = !(simdata$uoa1 == 5 & simdata$uoa2 == 2))
   cmod <- lm(y ~ x, data = simdata)
 
@@ -192,146 +192,146 @@ test_that("subset in design", {
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   No     |   No   |   No   | Design |
+  ## |   No    |   No     |   No   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata)
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des)
+  mod_lm <- lm(y ~ assigned(spec), data = simdata)
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   No     |   No   |   No   | Design |
+  ## |   Yes   |   No     |   No   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata, weights = ate(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate")
+  mod_lm <- lm(y ~ assigned(spec), data = simdata, weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   Yes    |   No   |   No   | Design |
+  ## |   No    |   Yes    |   No   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata)
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des)
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata)
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   Yes    |   No   |   No   | Design |
+  ## |   Yes   |   Yes    |   No   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata, weights = ett(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, weights = "ett")
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   No     |  Yes   |   No   | Design |
+  ## |   No    |   No     |  Yes   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata)
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE)
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata)
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   No     |  Yes   |   No   | Design |
+  ## |   Yes   |   No     |  Yes   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
-               weights = ett(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+               weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   Yes    |  Yes   |   No   | Design |
+  ## |   No    |   Yes    |  Yes   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o  + as.factor(bid), data = simdata)
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE)
+  mod_lm <- lm(y ~ assigned(spec):o + o  + as.factor(bid), data = simdata)
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE)
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   Yes    |  Yes   |   No   | Design |
+  ## |   Yes   |   Yes    |  Yes   |   No   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
-               weights = ate(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+               weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   No     |   No   |  Yes   | Design |
+  ## |   No    |   No     |   No   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des), data = simdata, offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, offset = cov_adj(cmod))
+  mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   No     |   No   |  Yes   | Design |
+  ## |   Yes   |   No     |   No   |  Yes   | StudySpecification |
 
   mod_lm <- lm(y ~ assigned(), data = simdata, offset = cov_adj(cmod),
-               weights = ate(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des,
+               weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec,
                      offset = cov_adj(cmod), weights = ate())
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   Yes    |   No   |  Yes   | Design |
+  ## |   No    |   Yes    |   No   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata, offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des,
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   Yes    |   No   |  Yes   | Design |
+  ## |   Yes   |   Yes    |   No   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o, data = simdata,
-               offset = cov_adj(cmod), weights = ett(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, offset = cov_adj(cmod),
+  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata,
+               offset = cov_adj(cmod), weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, offset = cov_adj(cmod),
                      weights = ett())
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   No     |  Yes   |  Yes   | Design |
+  ## |   No    |   No     |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
                offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   No     |  Yes   |  Yes   | Design |
+  ## |   Yes   |   No     |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des) + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod), weights = ett(des))
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+               offset = cov_adj(cmod), weights = ett(spec))
+  mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod), weights = "ett")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   No    |   Yes    |  Yes   |  Yes   | Design |
+  ## |   No    |   Yes    |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
                offset = cov_adj(cmod))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
-  ## |   Yes   |   Yes    |  Yes   |  Yes   | Design |
+  ## |   Yes   |   Yes    |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(des):o + o + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod), weights = ate(des))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, design = des, absorb = TRUE,
+  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+               offset = cov_adj(cmod), weights = ate(spec))
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod), weights = "ate")
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
 })

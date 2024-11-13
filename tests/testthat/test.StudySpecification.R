@@ -1,14 +1,14 @@
 # fake call
 fc <- call("ls")
 
-identical_designs <- function(a, b) {
+identical_specs <- function(a, b) {
   expect_identical(a, b)
 }
 
-test_that("Design creation", {
+test_that("StudySpecification creation", {
 
   tests <- function(d) {
-      expect_s4_class(d, "Design")
+      expect_s4_class(d, "StudySpecification")
       expect_s3_class(d@structure, "data.frame")
       expect_type(d@column_index, "character")
       expect_type(d@type, "character")
@@ -21,7 +21,7 @@ test_that("Design creation", {
   }
 
   # binary treatment
-  d <- new("Design",
+  d <- new("StudySpecification",
            structure = data.frame(a = 0:1, b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
@@ -31,7 +31,7 @@ test_that("Design creation", {
   tests(d)
 
   # logical treatment
-  d <- new("Design",
+  d <- new("StudySpecification",
            structure = data.frame(a = c(TRUE, FALSE), b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
@@ -41,7 +41,7 @@ test_that("Design creation", {
   tests(d)
 
   # >2 treatment levels
-  d <- new("Design",
+  d <- new("StudySpecification",
            structure = data.frame(a = 0:2, b = c(2, 4, 6)),
            column_index = c("t", "u"),
            type = "RCT",
@@ -52,7 +52,7 @@ test_that("Design creation", {
 
   # character treatment
 
-  d <- new("Design",
+  d <- new("StudySpecification",
            structure = data.frame(a = letters[1:2], b = c(2, 4)),
            column_index = c("t", "u"),
            type = "RCT",
@@ -62,7 +62,7 @@ test_that("Design creation", {
   tests(d)
 
   # >2 character treatment levels
-  d <- new("Design",
+  d <- new("StudySpecification",
            structure = data.frame(a = letters[1:3], b = c(2, 4, 6)),
            column_index = c("t", "u"),
            type = "RCT",
@@ -73,9 +73,9 @@ test_that("Design creation", {
 
 })
 
-test_that("Design validity", {
+test_that("StudySpecification validity", {
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(),
                    column_index = "t",
                    type = "RCT",
@@ -83,7 +83,7 @@ test_that("Design validity", {
                    call = fc),
                "positive dimensions")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = 0:1,
                                           b = 0:1),
                    column_index = c("t", "t"),
@@ -92,7 +92,7 @@ test_that("Design validity", {
                    call = fc),
                "one treatment")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = c(1, 0), a = c(1, 0)),
                    column_index = c("u", "b"),
                    type = "RCT",
@@ -100,7 +100,7 @@ test_that("Design validity", {
                    call = fc),
                "Missing treatment")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = c(0, 0), a = c(1, 0)),
                    column_index = c("t", "u"),
                    type = "RCT",
@@ -108,7 +108,7 @@ test_that("Design validity", {
                    call = fc),
                "treatment can not be constant")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "b"),
@@ -117,7 +117,7 @@ test_that("Design validity", {
                    call = fc),
                "unknown @type")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = c(1, 2),
                                           b = as.factor(c(1, 0)),
                                           c = c(2, 0)),
@@ -127,7 +127,7 @@ test_that("Design validity", {
                    call = fc),
                "number of columns")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = 0:1,
                                           b = c(2, 4)),
                    column_index = c("t", "k"),
@@ -136,7 +136,7 @@ test_that("Design validity", {
                    call = fc),
                "unknown elements")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "f"),
@@ -145,7 +145,7 @@ test_that("Design validity", {
                    call = fc),
                "Forcing variables only valid")
 
-  expect_error(new("Design",
+  expect_error(new("StudySpecification",
                    structure = data.frame(a = 0:1,
                                           b = c(1, 0)),
                    column_index = c("t", "u"),
@@ -156,116 +156,117 @@ test_that("Design validity", {
 
 })
 
-test_that("Design creation", {
+test_that("StudySpecification creation", {
   data(mtcars)
   mtcars <- mtcars[-c(5, 11), ]
 
-  d_rct <- .new_Design(vs ~ cluster(qsec), data = mtcars,
+  spec_rct <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
                       type = "RCT", call = fc)
 
-  expect_s4_class(d_rct, "Design")
-  expect_s3_class(d_rct@structure, "data.frame")
-  expect_type(d_rct@column_index, "character")
-  expect_type(d_rct@type, "character")
-  expect_type(d_rct@unit_of_assignment_type, "character")
-  expect_type(d_rct@call, "language")
-  expect_true(inherits(d_rct@call, "call"))
+  expect_s4_class(spec_rct, "StudySpecification")
+  expect_s3_class(spec_rct@structure, "data.frame")
+  expect_type(spec_rct@column_index, "character")
+  expect_type(spec_rct@type, "character")
+  expect_type(spec_rct@unit_of_assignment_type, "character")
+  expect_type(spec_rct@call, "language")
+  expect_true(inherits(spec_rct@call, "call"))
 
-  expect_equal(dim(d_rct@structure), c(30, 2))
-  expect_length(d_rct@column_index, 2)
-  expect_length(d_rct@type, 1)
+  expect_equal(dim(spec_rct@structure), c(30, 2))
+  expect_length(spec_rct@column_index, 2)
+  expect_length(spec_rct@type, 1)
 
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
-  expect_true(all(d_rct@structure == mtcars_subset))
-  expect_equal(d_rct@column_index, c("t", "u"), ignore_attr = TRUE)
-  expect_equal(d_rct@unit_of_assignment_type, "cluster")
-  expect_equal(d_rct@type, "RCT")
+  expect_true(all(spec_rct@structure == mtcars_subset))
+  expect_equal(spec_rct@column_index, c("t", "u"), ignore_attr = TRUE)
+  expect_equal(spec_rct@unit_of_assignment_type, "cluster")
+  expect_equal(spec_rct@type, "RCT")
 
   # subset
 
-  d_obs <- .new_Design(vs ~ cluster(qsec), data = mtcars, type = "Obs",
-                  subset = mtcars$mpg > 17, call = fc)
+  spec_obs <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
+                                      type = "Obs", subset = mtcars$mpg > 17,
+                                      call = fc)
 
-  expect_equal(dim(d_obs@structure), c(sum(mtcars$mpg >  17), 2))
-  expect_length(d_obs@column_index, 2)
-  expect_length(d_obs@type, 1)
+  expect_equal(dim(spec_obs@structure), c(sum(mtcars$mpg >  17), 2))
+  expect_length(spec_obs@column_index, 2)
+  expect_length(spec_obs@type, 1)
 
   mtcars_subset <- subset(mtcars, select = c("vs", "qsec"),
                           subset = mtcars$mpg > 17)
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
-  expect_true(all(d_obs@structure == mtcars_subset))
-  expect_equal(d_obs@column_index, c("t", "u"), ignore_attr = TRUE)
-  expect_equal(d_obs@unit_of_assignment_type, "cluster")
-  expect_equal(d_obs@type, "Obs")
+  expect_true(all(spec_obs@structure == mtcars_subset))
+  expect_equal(spec_obs@column_index, c("t", "u"), ignore_attr = TRUE)
+  expect_equal(spec_obs@unit_of_assignment_type, "cluster")
+  expect_equal(spec_obs@type, "Obs")
 
-  ### Complex design
-  d_rd <- .new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+  ### Complex specification
+  spec_rd <- .new_StudySpecification(vs ~ block(disp, gear) + forcing(wt, cyl) +
                        cluster(mpg, qsec),
                   data = mtcars, type = "RD", call = fc)
 
   mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
-  expect_true(all(d_rd@structure == mtcars_subset))
-  expect_equal(d_rd@column_index, c("t", "b", "b", "f", "f", "u", "u"),
+  expect_true(all(spec_rd@structure == mtcars_subset))
+  expect_equal(spec_rd@column_index, c("t", "b", "b", "f", "f", "u", "u"),
                ignore_attr = TRUE)
-  expect_equal(d_rd@unit_of_assignment_type, "cluster")
-  expect_equal(d_rd@type, "RD")
+  expect_equal(spec_rd@unit_of_assignment_type, "cluster")
+  expect_equal(spec_rd@type, "RD")
 
-  ### Complex design with unitid
-  d_rd2 <- .new_Design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+  ### Complex specification with unitid
+  spec_rd2 <- .new_StudySpecification(vs ~ block(disp, gear) + forcing(wt, cyl) +
                         unitid(mpg, qsec),
                   data = mtcars, type = "RD", call = fc)
 
   mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
                                              "wt", "cyl", "mpg", "qsec"))
   mtcars_subset$vs <- as.factor(mtcars_subset$vs)
-  expect_true(all(d_rd2@structure == mtcars_subset))
-  expect_equal(d_rd2@column_index, c("t", "b", "b", "f", "f", "u", "u"),
+  expect_true(all(spec_rd2@structure == mtcars_subset))
+  expect_equal(spec_rd2@column_index, c("t", "b", "b", "f", "f", "u", "u"),
                ignore_attr = TRUE)
-  expect_equal(d_rd2@unit_of_assignment_type, "unitid")
-  expect_equal(d_rd2@type, "RD")
+  expect_equal(spec_rd2@unit_of_assignment_type, "unitid")
+  expect_equal(spec_rd2@type, "RD")
 
-  ### Specific designs
-  rct_des <- rct_design(vs ~ cluster(qsec), data = mtcars)
-  rct_des@call <- fc
-  identical_designs(d_rct, rct_des)
+  ### Specific specifications
+  rct_spec <- rct_spec(vs ~ cluster(qsec), data = mtcars)
+  rct_spec@call <- fc
+  identical_specs(spec_rct, rct_spec)
 
-  obs_des <- obs_design(vs ~ cluster(qsec), data = mtcars,
+  obs_spec <- obs_spec(vs ~ cluster(qsec), data = mtcars,
                         subset = mtcars$mpg > 17)
-  obs_des@call <- fc
-  identical_designs(d_obs, obs_des)
+  obs_spec@call <- fc
+  identical_specs(spec_obs, obs_spec)
 
-  rd_des <- rd_design(vs ~ block(disp, gear) + forcing(wt, cyl) +
+  rd_spec <- rd_spec(vs ~ block(disp, gear) + forcing(wt, cyl) +
                         cluster(mpg, qsec),
                       data = mtcars)
-  rd_des@call <- fc
-  identical_designs(d_rd, rd_des)
+  rd_spec@call <- fc
+  identical_specs(spec_rd, rd_spec)
 
 
   # Missing call
 
-  expect_warning(des <- .new_Design(vs ~ cluster(qsec), data = mtcars,
+  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
                                    type = "RCT"),
                  "Invalid call")
-  expect_identical(des@call[[1]], as.name(".new_Design"))
+  expect_identical(spec@call[[1]], as.name(".new_StudySpecification"))
 
-  expect_warning(des <- .new_Design(vs ~ cluster(qsec), data = mtcars,
+  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
                                    type = "RCT", call = 1),
                  "Invalid call")
-  expect_identical(des@call[[1]], as.name(".new_Design"))
+  expect_identical(spec@call[[1]], as.name(".new_StudySpecification"))
 })
 
 test_that("unit of assignment differs from unit of analysis", {
 
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
-  expect_s4_class(desrct, "Design")
-  expect_equal(nrow(desrct@structure), 10)
+  specrct <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  expect_s4_class(specrct, "StudySpecification")
+  expect_equal(nrow(specrct@structure), 10)
 
-  expect_output(expect_error(rct_design(z ~ cluster(uoa1) + block(bid),
+  expect_output(expect_error(rct_spec(z ~ cluster(uoa1) + block(bid),
                                         data = simdata),
                              "must be constant"),
                 "uoa1")
@@ -273,75 +274,75 @@ test_that("unit of assignment differs from unit of analysis", {
   data(mtcars)
   mtcars$prop <- rep(1:8, 4)
 
-  expect_output(expect_error(rct_design(vs ~ cluster(prop), data = mtcars),
+  expect_output(expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
                              "must be constant"),
                 "prop")
-  expect_output(expect_error(rct_design(vs ~ cluster(prop), data = mtcars),
+  expect_output(expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
                              "must be constant"),
                 "...")
 
   data(simdata)
   simdata$z[1] <- 1
-  expect_output(expect_error(rct_design(z ~ cluster(uoa1, uoa2),
+  expect_output(expect_error(rct_spec(z ~ cluster(uoa1, uoa2),
                                         data = simdata),
                              "must be constant"),
                 "uoa1")
 
   simdata$z[1] <- NA
-  expect_output(expect_error(rct_design(z ~ cluster(uoa1, uoa2),
+  expect_output(expect_error(rct_spec(z ~ cluster(uoa1, uoa2),
                                         data = simdata),
                              "must be constant"),
                 "uoa1")
 })
 
-test_that("Design printing", {
+test_that("StudySpecification printing", {
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
+  specrct <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  specrd  <-  rd_spec(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                        data = simdata)
-  desobs <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  specobs <- obs_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
-  expect_output(print(desrct), "Randomized")
-  expect_output(show(desrct),  "Randomized")
+  expect_output(print(specrct), "Randomized")
+  expect_output(show(specrct),  "Randomized")
 
-  expect_silent(invisible(capture.output(expect_identical(desrct,
-                                                          show(desrct)))))
-  expect_silent(invisible(capture.output(expect_identical(desrct,
-                                                          print(desrct)))))
+  expect_silent(invisible(capture.output(expect_identical(specrct,
+                                                          show(specrct)))))
+  expect_silent(invisible(capture.output(expect_identical(specrct,
+                                                          print(specrct)))))
 
-  expect_output(print(desrd), "Discontinuity")
-  expect_output(show(desrd),  "Discontinuity")
-  expect_output(print(desobs), "Observational")
-  expect_output(show(desobs),  "Observational")
+  expect_output(print(specrd), "Discontinuity")
+  expect_output(show(specrd),  "Discontinuity")
+  expect_output(print(specobs), "Observational")
+  expect_output(show(specobs),  "Observational")
 
-  expect_output(show(desrct), "z")
-  expect_output(show(desrct), "uoa1")
-  expect_output(show(desrct), "bid")
+  expect_output(show(specrct), "z")
+  expect_output(show(specrct), "uoa1")
+  expect_output(show(specrct), "bid")
 
-  expect_output(show(desobs), "z")
-  expect_output(show(desobs), "uoa1")
-  expect_output(show(desobs), "bid")
+  expect_output(show(specobs), "z")
+  expect_output(show(specobs), "uoa1")
+  expect_output(show(specobs), "bid")
 
-  expect_output(show(desrd), "z")
-  expect_output(show(desrd), "uoa1")
-  expect_output(show(desrd), "bid")
-  expect_output(show(desrd), "force")
+  expect_output(show(specrd), "z")
+  expect_output(show(specrd), "uoa1")
+  expect_output(show(specrd), "bid")
+  expect_output(show(specrd), "force")
 })
 
 
-test_that("Design type conversions", {
+test_that("StudySpecification type conversions", {
 
-  # Helper function to check equivalence of Designs without worrying about some
+  # Helper function to check equivalence of StudySpecifications without worrying about some
   # oddities in @call
-  check_equiv_design <- function(d1, d2) {
+  check_equiv_spec <- function(d1, d2) {
     expect_identical(d1@type, d2@type)
     expect_identical(d1@structure, d2@structure)
     expect_identical(d1@column_index, d2@column_index)
     expect_identical(d1@unit_of_assignment_type, d2@unit_of_assignment_type)
 
     # Due to formula hacking in the @call, the calls can be non-identical.
-    # However, they should both produce the same Design if `eval`'d.
+    # However, they should both produce the same StudySpecification if `eval`'d.
     d1redux <- eval(d1@call)
     d2redux <- eval(d2@call)
     expect_identical(d1redux@type, d2redux@type)
@@ -355,57 +356,57 @@ test_that("Design type conversions", {
 
   data(simdata)
 
-  desrct <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
-  desrd  <-  rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
+  specrct <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  specrd  <-  rd_spec(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                        data = simdata)
-  desobs <- obs_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  specobs <- obs_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
   # Obs <-> RCT
-  expect_identical(desrct, as_rct_design(desobs))
-  expect_identical(desobs, as_obs_design(desrct))
+  expect_identical(specrct, as_rct_spec(specobs))
+  expect_identical(specobs, as_obs_spec(specrct))
 
   # RD -> Obs/RCT
-  expect_error(as_rct_design(desrd), "will be dropped")
-  expect_error(as_obs_design(desrd), "will be dropped")
-  check_equiv_design(desrct, as_rct_design(desrd, loseforcing = TRUE))
-  check_equiv_design(desobs, as_obs_design(desrd, loseforcing = TRUE))
+  expect_error(as_rct_spec(specrd), "will be dropped")
+  expect_error(as_obs_spec(specrd), "will be dropped")
+  check_equiv_spec(specrct, as_rct_spec(specrd, loseforcing = TRUE))
+  check_equiv_spec(specobs, as_obs_spec(specrd, loseforcing = TRUE))
 
   # RCT/RD -> Obs
-  expect_error(as_rd_design(desrct))
-  check_equiv_design(desrd, as_rd_design(desrct, data = simdata,
+  expect_error(as_rd_spec(specrct))
+  check_equiv_spec(specrd, as_rd_spec(specrct, data = simdata,
                                       forcing = ~ . + forcing(force)))
-  check_equiv_design(desrd, as_rd_design(desrct, data = simdata,
+  check_equiv_spec(specrd, as_rd_spec(specrct, data = simdata,
                                       forcing = . ~ . + forcing(force)))
-  check_equiv_design(desrd, as_rd_design(desobs, data = simdata,
+  check_equiv_spec(specrd, as_rd_spec(specobs, data = simdata,
                                       forcing = ~ . + forcing(force)))
-  check_equiv_design(desrd, as_rd_design(desobs, data = simdata,
+  check_equiv_spec(specrd, as_rd_spec(specobs, data = simdata,
                                        forcing = . ~ . + forcing(force)))
-  expect_error(as_rd_design(desobs, data = simdata, forcing = simdata$force),
+  expect_error(as_rd_spec(specobs, data = simdata, forcing = simdata$force),
                "as a formula")
 
 })
 
 
-test_that("variable transformations in Design", {
+test_that("variable transformations in StudySpecification", {
 
   data(simdata)
 
-  des <- rct_design(dose + 3 ~ uoa(uoa1, uoa2), data = simdata)
-  expect_true(all(treatment(des)[, 1] %in% (simdata$dose + 3)))
+  spec <- rct_spec(dose + 3 ~ uoa(uoa1, uoa2), data = simdata)
+  expect_true(all(treatment(spec)[, 1] %in% (simdata$dose + 3)))
 
-  des <- rd_design(force > 4 & bid < 2 ~ cluster(uoa1, uoa2) + forcing(force),
+  spec <- rd_spec(force > 4 & bid < 2 ~ cluster(uoa1, uoa2) + forcing(force),
                    data = simdata)
-  expect_true(is.logical(treatment(des)[, 1]))
+  expect_true(is.logical(treatment(spec)[, 1]))
 })
 
 test_that("#26 cbind in identification variables", {
   data(simdata)
-  des1 <- obs_design(o ~ cluster(cbind(uoa1, uoa2)), data = simdata)
-  des2 <- obs_design(o ~ cluster(uoa1, uoa2), data = simdata)
+  spec1 <- obs_spec(o ~ cluster(cbind(uoa1, uoa2)), data = simdata)
+  spec2 <- obs_spec(o ~ cluster(uoa1, uoa2), data = simdata)
 
-  des1@call <- fc
-  des2@call <- fc
-  expect_identical(des1, des2)
+  spec1@call <- fc
+  spec2@call <- fc
+  expect_identical(spec1, spec2)
 
 })
 
@@ -414,23 +415,23 @@ test_that("variable_concordance", {
   data(simdata)
 
   # No issues
-  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
+  spec <- rd_spec(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
-  expect_silent(expect_true(design_data_concordance(des, simdata)))
+  expect_silent(expect_true(specification_data_concordance(spec, simdata)))
 
   # inconsistent block
   sd <- simdata
   sd$bid[1] <- 2
 
-  expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(a <- specification_data_concordance(spec, sd),
                  "Inconsistencies.*`bid`")
   expect_false(a)
 
   # Inconsistent block & force
   sd$force[2] <- 2
 
-  expect_warning(expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(expect_warning(a <- specification_data_concordance(spec, sd),
                                 "Inconsistencies.*`bid`"),
                   "Inconsistencies.*`force`")
   expect_false(a)
@@ -439,124 +440,124 @@ test_that("variable_concordance", {
   sd <- simdata
   sd$z[1] <- 1
 
-  expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(a <- specification_data_concordance(spec, sd),
                  "Inconsistencies.*`z`")
 
   # Missing variables
   sd <- simdata
   sd$z <- NULL
-  expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(a <- specification_data_concordance(spec, sd),
                  "`z` not found")
   expect_false(a)
-  expect_silent(a <- design_data_concordance(des, sd,
+  expect_silent(a <- specification_data_concordance(spec, sd,
                                              warn_on_nonexistence = FALSE))
   expect_true(a)
 
   sd <- simdata
   sd$bid <- NULL
-  expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(a <- specification_data_concordance(spec, sd),
                  "`bid` not found")
   expect_false(a)
-  expect_silent(a <- design_data_concordance(des, sd,
+  expect_silent(a <- specification_data_concordance(spec, sd,
                                              warn_on_nonexistence = FALSE))
   expect_true(a)
 
   sd <- simdata
   sd$force <- NULL
-  expect_warning(a <- design_data_concordance(des, sd),
+  expect_warning(a <- specification_data_concordance(spec, sd),
                  "`force` not found")
   expect_false(a)
-  expect_silent(a <- design_data_concordance(des, sd,
+  expect_silent(a <- specification_data_concordance(spec, sd,
                                              warn_on_nonexistence = FALSE))
   expect_true(a)
 
   sd$uoa1 <- NULL
-  expect_error(design_data_concordance(des, sd),
+  expect_error(specification_data_concordance(spec, sd),
                "missing a `by=`")
 
   # No block
-  des <- rd_design(z ~ cluster(uoa1, uoa2) + forcing(force),
+  spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force),
                    data = simdata)
-  expect_silent(expect_true(design_data_concordance(des, simdata)))
+  expect_silent(expect_true(specification_data_concordance(spec, simdata)))
 
   # multiple variables
   sd <- simdata
   sd$force2 <- sd$force + 1
-  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force, force2),
+  spec <- rd_spec(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force, force2),
                    data = sd)
-  expect_silent(expect_true(design_data_concordance(des, sd)))
+  expect_silent(expect_true(specification_data_concordance(spec, sd)))
 
-  expect_warning(design_data_concordance(des, simdata),
+  expect_warning(specification_data_concordance(spec, simdata),
                  "`force2` not found")
 
   sd$force[1] <- 1
-  expect_warning(design_data_concordance(des, sd),
+  expect_warning(specification_data_concordance(spec, sd),
                  "Inconsistencies.*`force`$")
 
   sd2 <- simdata
   sd2$force[1] <- 1
-  expect_warning(expect_warning(design_data_concordance(des, sd2),
+  expect_warning(expect_warning(specification_data_concordance(spec, sd2),
                                 "Inconsistencies.*`force`$"),
                  "`force2` not found")
 
   sd$force2[1] <- 2
-  expect_warning(expect_warning(design_data_concordance(des, sd),
+  expect_warning(expect_warning(specification_data_concordance(spec, sd),
                                 "Inconsistencies.*`force`$"),
                  "Inconsistencies.*`force2`$")
 
   data(simdata)
 
-  des <- rd_design(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
+  spec <- rd_spec(z ~ cluster(uoa1, uoa2) + block(bid) + forcing(force),
                    data = simdata)
 
   names(simdata)[names(simdata) == "uoa1"] <- "ccc"
   names(simdata)[names(simdata) == "force"] <- "fff"
 
   expect_silent(expect_true({
-    design_data_concordance(des, simdata,
+    specification_data_concordance(spec, simdata,
                             by = list(force = "fff",
                                       uoa1 = "ccc"))
   }))
 
 })
 
-test_that("NA's in data to create Design", {
+test_that("NA's in data to create StudySpecification", {
   data(simdata)
   sd2 <- simdata
   sd2$uoa1[1] <- NA
 
-  expect_error(obs_design(z ~ unitid(uoa1, uoa2), data = sd2),
+  expect_error(obs_spec(z ~ unitid(uoa1, uoa2), data = sd2),
                "Missing values cannot be found")
 
-  des1 <- obs_design(z ~ unitid(uoa1, uoa2), data = simdata)
-  des2 <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
+  spec1 <- obs_spec(z ~ unitid(uoa1, uoa2), data = simdata)
+  spec2 <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
 
-  des1@call <- call("c")
-  des2@call <- call("c")
+  spec1@call <- call("c")
+  spec2@call <- call("c")
 
-  expect_identical(des1, des2)
+  expect_identical(spec1, spec2)
 
   sd2 <- simdata
   sd2$bid <- NA
 
-  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2))
-  expect_error(obs_design(z ~ unitid(uoa1, uoa2) + block(bid), data = sd2),
+  expect_silent(spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2))
+  expect_error(obs_spec(z ~ unitid(uoa1, uoa2) + block(bid), data = sd2),
                "Missing values cannot be found")
 
   # Shouldn't affect treatment
   sd2 <- simdata
   sd2$z[1:10] <- NA
-  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2,
+  expect_silent(spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2,
                                   na.fail = TRUE))
-  expect_equal(nrow(des@structure), 10)
-  expect_silent(des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2,
+  expect_equal(nrow(spec@structure), 10)
+  expect_silent(spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2,
                                   na.fail = FALSE))
-  expect_equal(nrow(des@structure), 10)
+  expect_equal(nrow(spec@structure), 10)
 
   sd2 <- simdata
   sd2$uoa1[1:4] <- NA
-  des <- obs_design(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
-  expect_equal(nrow(des@structure), 9)
+  spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
+  expect_equal(nrow(spec@structure), 9)
 
 })
 
@@ -564,6 +565,6 @@ test_that("column name 'cluster' doesn't cause issues", {
   data(simdata)
   simdata$cluster <- simdata$uoa1
 
-  expect_no_error(rct_design(z ~ cluster(cluster, uoa2), data = simdata))
+  expect_no_error(rct_spec(z ~ cluster(cluster, uoa2), data = simdata))
 
 })
