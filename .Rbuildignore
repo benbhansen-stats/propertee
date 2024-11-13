@@ -16,8 +16,10 @@ README.md
 .DS_Store
 coverage.html
 lib/*
-vignettes/not-for-cran/*
 _pkgdown.yml
 docs
 hexsticker
 tests/testthat/hashed_functions/*
+developer_docs
+pkgdown
+vignettes/geex_vs_propertee.Rmd

@@ -11,8 +11,6 @@ navbar:
     - text: Basic
     - text: Introduction to propertee
       href: articles/intro-to-propertee.html
-    - text: Real-data demonstration with a finely stratified cluster RCT and a broader administrative database
-      href: articles/not-for-cran/mi_vignette/demo.html
     - text: ----------
     - text: Advanced
     - text: Non-binary Treatment Specification
@@ -20,7 +18,7 @@ navbar:
     - text: Regression Discontinuity Designs
       href: articles/RDD.html
     - text: propertee vs. geex
-      href: articles/not-for-cran/geex_vs_propertee.html
+      href: articles/geex_vs_propertee.html
 reference:
 - title: Design
 - subtitle: Creation of `Design` Objects

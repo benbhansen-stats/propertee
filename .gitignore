@@ -20,3 +20,4 @@ lib/*
 /Doc/*.R*
 /doc/
 /docs/
+/pkgdown/
