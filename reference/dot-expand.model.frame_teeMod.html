@@ -86,21 +86,19 @@ new variables to be added</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>When building a <code>teeMod</code> object inside <code><a href="lmitt.html">lmitt()</a></code>, we do a
-lot of manipulation of the variables involved in the model such that by the
-time the <code>teeMod</code> is produced, neither the outcome nor
-predictors actually fit in the model exist in the <code>data</code> passed into
-the call.</p>
+    <p>When building a <code>teeMod</code> object inside <code><a href="lmitt.html">lmitt()</a></code>, we do a lot of
+manipulation of the variables involved in the model such that by the time
+the <code>teeMod</code> is produced, neither the outcome nor predictors actually
+fit in the model exist in the <code>data</code> passed into the call.</p>
 <p>(E.g. to be specific, if a user calls <code>myda &lt;- lmitt(y ~ 1, data =
 mydata)</code>, then <code>model.frame(myda)</code> would contain column names not found
 in <code>mydata</code>.)</p>
-<p>This is a clone of <code><a href="https://rdrr.io/r/stats/expand.model.frame.html" class="external-link">stats::expand.model.frame()</a></code> which has one
-addition - after extracting the <code>model$call$data</code> from <code>model</code>, it
-adds columns from <code>model.frame(model)</code> to the object. This ensures that
-the additional variables created during <code><a href="lmitt.html">lmitt()</a></code> can be found.</p>
-<p>Trivial modifications from <code><a href="https://rdrr.io/r/stats/expand.model.frame.html" class="external-link">stats::expand.model.frame()</a></code> include
-ensuring <code>model</code> is a <code>teeMod</code> object, and using the
-<code>::</code> syntax as appropriate.</p>
+<p>This is a clone of <code><a href="https://rdrr.io/r/stats/expand.model.frame.html" class="external-link">stats::expand.model.frame()</a></code> which has one addition</p><ul><li><p>after extracting the <code>model$call$data</code> from <code>model</code>, it adds
+columns from <code>model.frame(model)</code> to the object. This ensures that the
+additional variables created during <code><a href="lmitt.html">lmitt()</a></code> can be found.</p></li>
+</ul><p>Trivial modifications from <code><a href="https://rdrr.io/r/stats/expand.model.frame.html" class="external-link">stats::expand.model.frame()</a></code> include
+ensuring <code>model</code> is a <code>teeMod</code> object, and using the <code>::</code>
+syntax as appropriate.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

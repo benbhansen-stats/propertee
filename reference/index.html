@@ -41,14 +41,14 @@
     </div>
 
     <div class="section level2">
-      <h2 id="design">Design<a class="anchor" aria-label="anchor" href="#design"></a></h2>
+      <h2 id="studyspecification">StudySpecification<a class="anchor" aria-label="anchor" href="#studyspecification"></a></h2>
 
 
 
 
     </div><div class="section level2">
 
-      <h3 id="creation-of-design-objects">Creation of <code>Design</code> Objects<a class="anchor" aria-label="anchor" href="#creation-of-design-objects"></a></h3>
+      <h3 id="creation-of-studyspecification-objects">Creation of <code>StudySpecification</code> Objects<a class="anchor" aria-label="anchor" href="#creation-of-studyspecification-objects"></a></h3>
 
 
 
@@ -59,25 +59,25 @@
 
       <dl><dt>
 
-          <code><a href="Design_objects.html">rct_design()</a></code> <code><a href="Design_objects.html">rd_design()</a></code> <code><a href="Design_objects.html">obs_design()</a></code>
+          <code><a href="StudySpecification_objects.html">rct_spec()</a></code> <code><a href="StudySpecification_objects.html">rd_spec()</a></code> <code><a href="StudySpecification_objects.html">obs_spec()</a></code>
 
         </dt>
-        <dd>Generates a <code>Design</code> object with the given specifications.</dd>
+        <dd>Generates a <code>StudySpecification</code> object with the given specifications.</dd>
       </dl><dl><dt>
 
-          <code><a href="DesignSpecials.html">unit_of_assignment()</a></code> <code><a href="DesignSpecials.html">unitid()</a></code> <code><a href="DesignSpecials.html">cluster()</a></code> <code><a href="DesignSpecials.html">uoa()</a></code> <code><a href="DesignSpecials.html">block()</a></code> <code><a href="DesignSpecials.html">forcing()</a></code>
+          <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code> <code><a href="StudySpecificationSpecials.html">unitid()</a></code> <code><a href="StudySpecificationSpecials.html">cluster()</a></code> <code><a href="StudySpecificationSpecials.html">uoa()</a></code> <code><a href="StudySpecificationSpecials.html">block()</a></code> <code><a href="StudySpecificationSpecials.html">forcing()</a></code>
 
         </dt>
-        <dd>Special terms in <code>Design</code> creation formula</dd>
+        <dd>Special terms in <code>StudySpecification</code> creation formula</dd>
       </dl><dl><dt>
 
-          <code><a href="designconversion.html">as_rct_design()</a></code> <code><a href="designconversion.html">as_obs_design()</a></code> <code><a href="designconversion.html">as_rd_design()</a></code>
+          <code><a href="specificationconversion.html">as_rct_spec()</a></code> <code><a href="specificationconversion.html">as_obs_spec()</a></code> <code><a href="specificationconversion.html">as_rd_spec()</a></code>
 
         </dt>
-        <dd>Convert <code>Design</code> between types</dd>
+        <dd>Convert <code>StudySpecification</code> between types</dd>
       </dl></div><div class="section level2">
 
-      <h3 id="accessors-replacers-for-design-objects">Accessors/Replacers for <code>Design</code> Objects<a class="anchor" aria-label="anchor" href="#accessors-replacers-for-design-objects"></a></h3>
+      <h3 id="accessors-replacers-for-studyspecification-objects">Accessors/Replacers for <code>StudySpecification</code> Objects<a class="anchor" aria-label="anchor" href="#accessors-replacers-for-studyspecification-objects"></a></h3>
 
 
 
@@ -88,16 +88,16 @@
 
       <dl><dt>
 
-          <code><a href="Design_extractreplace.html">treatment()</a></code> <code><a href="Design_extractreplace.html">`treatment&lt;-`()</a></code> <code><a href="Design_extractreplace.html">units_of_assignment()</a></code> <code><a href="Design_extractreplace.html">`units_of_assignment&lt;-`()</a></code> <code><a href="Design_extractreplace.html">clusters()</a></code> <code><a href="Design_extractreplace.html">`clusters&lt;-`()</a></code> <code><a href="Design_extractreplace.html">unitids()</a></code> <code><a href="Design_extractreplace.html">`unitids&lt;-`()</a></code> <code><a href="Design_extractreplace.html">blocks()</a></code> <code><a href="Design_extractreplace.html">`blocks&lt;-`()</a></code> <code><a href="Design_extractreplace.html">has_blocks()</a></code> <code><a href="Design_extractreplace.html">forcings()</a></code> <code><a href="Design_extractreplace.html">`forcings&lt;-`()</a></code>
+          <code><a href="StudySpecification_extractreplace.html">treatment()</a></code> <code><a href="StudySpecification_extractreplace.html">`treatment&lt;-`()</a></code> <code><a href="StudySpecification_extractreplace.html">units_of_assignment()</a></code> <code><a href="StudySpecification_extractreplace.html">`units_of_assignment&lt;-`()</a></code> <code><a href="StudySpecification_extractreplace.html">clusters()</a></code> <code><a href="StudySpecification_extractreplace.html">`clusters&lt;-`()</a></code> <code><a href="StudySpecification_extractreplace.html">unitids()</a></code> <code><a href="StudySpecification_extractreplace.html">`unitids&lt;-`()</a></code> <code><a href="StudySpecification_extractreplace.html">blocks()</a></code> <code><a href="StudySpecification_extractreplace.html">`blocks&lt;-`()</a></code> <code><a href="StudySpecification_extractreplace.html">has_blocks()</a></code> <code><a href="StudySpecification_extractreplace.html">forcings()</a></code> <code><a href="StudySpecification_extractreplace.html">`forcings&lt;-`()</a></code>
 
         </dt>
-        <dd>Accessors and Replacers for <code>Design</code> objects</dd>
+        <dd>Accessors and Replacers for <code>StudySpecification</code> objects</dd>
       </dl><dl><dt>
 
           <code><a href="has_binary_treatment.html">has_binary_treatment()</a></code>
 
         </dt>
-        <dd>Check whether treatment stored in a <code>Design</code> object is binary</dd>
+        <dd>Check whether treatment stored in a <code>StudySpecification</code> object is binary</dd>
       </dl></div><div class="section level2">
 
       <h3 id="summary-and-print-methods">Summary and print methods<a class="anchor" aria-label="anchor" href="#summary-and-print-methods"></a></h3>
@@ -111,19 +111,19 @@
 
       <dl><dt>
 
-          <code><a href="show-Design-method.html">show(<i>&lt;Design&gt;</i>)</a></code>
+          <code><a href="show-StudySpecification-method.html">show(<i>&lt;StudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd>Show a <code>Design</code></dd>
+        <dd>Show a <code>StudySpecification</code></dd>
       </dl><dl><dt>
 
-          <code><a href="Design_summary.html">summary(<i>&lt;Design&gt;</i>)</a></code> <code><a href="Design_summary.html">print(<i>&lt;summary.Design&gt;</i>)</a></code>
+          <code><a href="StudySpecification_summary.html">summary(<i>&lt;StudySpecification&gt;</i>)</a></code> <code><a href="StudySpecification_summary.html">print(<i>&lt;summary.StudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summarizing <code>Design</code> objects</dd>
+        <dd>Summarizing <code>StudySpecification</code> objects</dd>
       </dl></div><div class="section level2">
 
-      <h3 id="structure-of-design-objects">Structure of <code>Design</code> objects<a class="anchor" aria-label="anchor" href="#structure-of-design-objects"></a></h3>
+      <h3 id="structure-of-studyspecification-objects">Structure of <code>StudySpecification</code> objects<a class="anchor" aria-label="anchor" href="#structure-of-studyspecification-objects"></a></h3>
 
 
 
@@ -134,25 +134,25 @@
 
       <dl><dt>
 
-          <code><a href="Design_structure.html">get_structure()</a></code> <code><a href="Design_structure.html">show(<i>&lt;DesignStructure&gt;</i>)</a></code>
+          <code><a href="StudySpecification_structure.html">get_structure()</a></code> <code><a href="StudySpecification_structure.html">show(<i>&lt;StudySpecificationStructure&gt;</i>)</a></code>
 
         </dt>
-        <dd><code>Design</code> Structure Information</dd>
+        <dd><code>StudySpecification</code> Structure Information</dd>
       </dl><dl><dt>
 
-          <code><a href="design_table.html">design_table()</a></code> <code><a href="design_table.html">dtable()</a></code>
+          <code><a href="specification_table.html">specification_table()</a></code> <code><a href="specification_table.html">stable()</a></code>
 
         </dt>
-        <dd>Table of elements from a <code>Design</code></dd>
+        <dd>Table of elements from a <code>StudySpecification</code></dd>
       </dl><dl><dt>
 
-          <code><a href="Design_var_names.html">var_table()</a></code> <code><a href="Design_var_names.html">var_names()</a></code>
+          <code><a href="StudySpecification_var_names.html">var_table()</a></code> <code><a href="StudySpecification_var_names.html">var_names()</a></code>
 
         </dt>
-        <dd>Extract Variable Names from <code>Design</code></dd>
+        <dd>Extract Variable Names from <code>StudySpecification</code></dd>
       </dl></div><div class="section level2">
 
-      <h3 id="utility-functions-for-design-objects">Utility Functions for <code>Design</code> Objects<a class="anchor" aria-label="anchor" href="#utility-functions-for-design-objects"></a></h3>
+      <h3 id="utility-functions-for-studyspecification-objects">Utility Functions for <code>StudySpecification</code> Objects<a class="anchor" aria-label="anchor" href="#utility-functions-for-studyspecification-objects"></a></h3>
 
 
 
@@ -169,16 +169,16 @@
         <dd>Identify fine strata</dd>
       </dl><dl><dt>
 
-          <code><a href="design_data_concordance.html">design_data_concordance()</a></code>
+          <code><a href="specification_data_concordance.html">specification_data_concordance()</a></code>
 
         </dt>
         <dd>Check for variable agreement within units of assignment</dd>
       </dl><dl><dt>
 
-          <code><a href="identical_Designs.html">identical_Designs()</a></code>
+          <code><a href="identical_StudySpecifications.html">identical_StudySpecifications()</a></code>
 
         </dt>
-        <dd>Test equality of two <code>Design</code> objects</dd>
+        <dd>Test equality of two <code>StudySpecification</code> objects</dd>
       </dl></div><div class="section level2">
       <h2 id="weights">Weights<a class="anchor" aria-label="anchor" href="#weights"></a></h2>
 
@@ -198,7 +198,7 @@
         <dd>Generate Direct Adjusted Weights for Treatment Effect Estimation</dd>
       </dl></div><div class="section level2">
 
-      <h3 id="working-with-weighteddesign-objects">Working with <code>WeightedDesign</code> objects<a class="anchor" aria-label="anchor" href="#working-with-weighteddesign-objects"></a></h3>
+      <h3 id="working-with-weightedstudyspecification-objects">Working with <code>WeightedStudySpecification</code> objects<a class="anchor" aria-label="anchor" href="#working-with-weightedstudyspecification-objects"></a></h3>
 
 
 
@@ -209,34 +209,34 @@
 
       <dl><dt>
 
-          <code><a href="weights-WeightedDesign-method.html">weights(<i>&lt;WeightedDesign&gt;</i>)</a></code>
+          <code><a href="weights-WeightedStudySpecification-method.html">weights(<i>&lt;WeightedStudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd>Extract Weights from <code>WeightedDesign</code></dd>
+        <dd>Extract Weights from <code>WeightedStudySpecification</code></dd>
       </dl><dl><dt>
 
-          <code><a href="WeightedDesignOps.html">`+`(<i>&lt;WeightedDesign&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`+`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedDesign&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`-`(<i>&lt;WeightedDesign&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`-`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedDesign&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`*`(<i>&lt;WeightedDesign&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`*`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedDesign&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`/`(<i>&lt;WeightedDesign&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedDesignOps.html">`/`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedDesign&gt;</i>)</a></code>
+          <code><a href="WeightedStudySpecificationOps.html">`+`(<i>&lt;WeightedStudySpecification&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`+`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedStudySpecification&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`-`(<i>&lt;WeightedStudySpecification&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`-`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedStudySpecification&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`*`(<i>&lt;WeightedStudySpecification&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`*`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedStudySpecification&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`/`(<i>&lt;WeightedStudySpecification&gt;</i>,<i>&lt;numeric&gt;</i>)</a></code> <code><a href="WeightedStudySpecificationOps.html">`/`(<i>&lt;numeric&gt;</i>,<i>&lt;WeightedStudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd><code>WeightedDesign</code> Operations</dd>
+        <dd><code>WeightedStudySpecification</code> Operations</dd>
       </dl><dl><dt>
 
-          <code><a href="c-WeightedDesign-method.html">c(<i>&lt;WeightedDesign&gt;</i>)</a></code>
+          <code><a href="c-WeightedStudySpecification-method.html">c(<i>&lt;WeightedStudySpecification&gt;</i>)</a></code>
 
         </dt>
         <dd>Concatenate weights</dd>
       </dl><dl><dt>
 
-          <code><a href="WeightedDesign.subset.html">subset(<i>&lt;WeightedDesign&gt;</i>)</a></code> <code><a href="WeightedDesign.subset.html">`[`(<i>&lt;WeightedDesign&gt;</i>)</a></code>
+          <code><a href="WeightedStudySpecification.subset.html">subset(<i>&lt;WeightedStudySpecification&gt;</i>)</a></code> <code><a href="WeightedStudySpecification.subset.html">`[`(<i>&lt;WeightedStudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd><code>WeightedDesign</code> subsetting</dd>
+        <dd><code>WeightedStudySpecification</code> subsetting</dd>
       </dl><dl><dt>
 
-          <code><a href="show-WeightedDesign-method.html">show(<i>&lt;WeightedDesign&gt;</i>)</a></code>
+          <code><a href="show-WeightedStudySpecification-method.html">show(<i>&lt;WeightedStudySpecification&gt;</i>)</a></code>
 
         </dt>
-        <dd>Show a <code>WeightedDesign</code></dd>
+        <dd>Show a <code>WeightedStudySpecification</code></dd>
       </dl></div><div class="section level2">
       <h2 id="covariance-adjustment-sandwichlayer">Covariance Adjustment &amp; SandwichLayer<a class="anchor" aria-label="anchor" href="#covariance-adjustment-sandwichlayer"></a></h2>
 
@@ -259,7 +259,7 @@
           <code><a href="as.SandwichLayer.html">as.SandwichLayer()</a></code>
 
         </dt>
-        <dd>Convert a <code>PreSandwichLayer</code> to a <code>SandwichLayer</code> with a <code>Design</code> object</dd>
+        <dd>Convert a <code>PreSandwichLayer</code> to a <code>SandwichLayer</code> with a <code>StudySpecification</code> object</dd>
       </dl><dl><dt>
 
           <code><a href="PreSandwichLayer.subset.html">subset(<i>&lt;PreSandwichLayer&gt;</i>)</a></code> <code><a href="PreSandwichLayer.subset.html">`[`(<i>&lt;PreSandwichLayer&gt;</i>)</a></code>
@@ -299,7 +299,7 @@
       </dl></div><div class="section level2">
       <h2 id="estimating-model">Estimating Model<a class="anchor" aria-label="anchor" href="#estimating-model"></a></h2>
 
-      <div class="section-desc"><p>Functions to carry out the treatment estimation accounting for the Design</p></div>
+      <div class="section-desc"><p>Functions to carry out the treatment estimation accounting for the StudySpecification</p></div>
 
 
     </div><div class="section level2">
@@ -318,7 +318,7 @@
           <code><a href="AssignedAliases.html">assigned()</a></code> <code><a href="AssignedAliases.html">adopters()</a></code> <code><a href="AssignedAliases.html">a.()</a></code> <code><a href="AssignedAliases.html">z.()</a></code>
 
         </dt>
-        <dd>Obtain Treatment from Design</dd>
+        <dd>Obtain Treatment from StudySpecification</dd>
       </dl><dl><dt>
 
           <code><a href="as_lmitt.html">as.lmitt()</a></code> <code><a href="as_lmitt.html">as.teeMod()</a></code>

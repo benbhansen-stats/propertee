@@ -54,35 +54,34 @@ ett() creates weights to estimate Effect of Treatment on the Treated."><meta pro
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ett</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ett</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">ate</span><span class="op">(</span>design <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">ate</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-design">design<a class="anchor" aria-label="anchor" href="#arg-design"></a></dt>
-<dd><p>optional; a <code>Design</code> object created by one of
-<code><a href="Design_objects.html">rct_design()</a></code>, <code><a href="Design_objects.html">rd_design()</a></code>, or <code><a href="Design_objects.html">obs_design()</a></code>.</p></dd>
+<dl><dt id="arg-specification">specification<a class="anchor" aria-label="anchor" href="#arg-specification"></a></dt>
+<dd><p>optional; a <code>StudySpecification</code> object created by
+one of <code><a href="StudySpecification_objects.html">rct_spec()</a></code>, <code><a href="StudySpecification_objects.html">rd_spec()</a></code>, or <code><a href="StudySpecification_objects.html">obs_spec()</a></code>.</p></dd>
 
 
 <dt id="arg-dichotomy">dichotomy<a class="anchor" aria-label="anchor" href="#arg-dichotomy"></a></dt>
 <dd><p>optional; a formula defining the dichotomy of the treatment
-variable if it isn't already <code>0</code>/<code>1</code>. See details for more information.
-If <code>ett()</code> or <code>ate()</code> is
-called within a <code><a href="lmitt.html">lmitt()</a></code> call that specifies a <code>dichotomy</code>
-argument, that <code>dichotomy</code> will be used if the argument here has not
-been specified.</p></dd>
+variable if it isn't already <code>0</code>/<code>1</code>. See details for more
+information. If <code>ett()</code> or <code>ate()</code> is called within a
+<code><a href="lmitt.html">lmitt()</a></code> call that specifies a <code>dichotomy</code> argument, that
+<code>dichotomy</code> will be used if the argument here has not been specified.</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
 <dd><p>optional; named vector or list connecting names of unit of
-assignment/ variables in <code>design</code> to unit of
+assignment/ variables in <code>specification</code> to unit of
 assignment/unitid/cluster variables in <code>data</code>. Names represent
-variables in the Design; values represent variables in the data. Only
-needed if variable names differ.</p></dd>
+variables in the StudySpecification; values represent variables in the
+data. Only needed if variable names differ.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -93,17 +92,18 @@ a model.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>a <code>WeightedDesign</code> object, which is a vector of numeric weights</p>
+    <p>a <code>WeightedStudySpecification</code> object, which is a vector of
+numeric weights</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>These functions should primarily be used in the <code>weight</code>
 argument of <code><a href="lmitt.html">lmitt()</a></code> or<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. All arguments are optional if used within
-those functions. If used on their own, <code>design</code> and <code>data</code> must
-be provided.</p>
-<p>In a <code>Design</code> with <code>block</code>s, the weights are generated as a
-function of the ratio of the number of treated units in a block versus the
-total number of units in a block.</p>
+those functions. If used on their own, <code>specification</code> and
+<code>data</code> must be provided.</p>
+<p>In a <code>StudySpecification</code> with <code>block</code>s, the weights are
+generated as a function of the ratio of the number of treated units in a
+block versus the total number of units in a block.</p>
 <p>In any blocks where that ratio is 0 or 1 (that is, all units in the block
 have the same treatment status), the weights will be 0. In effect this
 removes from the target population any block in which there is no basis
@@ -115,12 +115,12 @@ levels associated with "treatment") and the right hand side (identifying
 treatment levels associated with "control"). For example, if your
 treatment variable was called <code>dose</code> and doses above 250 are
 considered treatment, you might write:</p>
-<p><code>dichotomy(des) &lt;- dose &gt; 250 ~ dose &lt;= 250</code></p>
+<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ dose &lt;= 250</code></p>
 <p>The period (<code>.</code>) can be used to assign all other units of assignment.
 For example, we could have written the same treatment regime as either</p>
-<p><code>dichotomy(des) &lt;- dose &gt; 250 ~ .</code></p>
+<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ .</code></p>
 <p>or</p>
-<p><code>dichotomy(des) &lt;- . ~ dose &lt;= 250</code></p>
+<p><code>dichotomy(spec) &lt;- . ~ dose &lt;= 250</code></p>
 <p>The <code>dichotomy</code> formula supports Relational Operators (see
 <a href="https://rdrr.io/r/base/Comparison.html" class="external-link">Comparison</a>), Logical Operators (see <a href="https://rdrr.io/r/base/Logic.html" class="external-link">Logic</a>), and <code>%in%</code> (see
 <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code>).</p>
@@ -136,11 +136,11 @@ the sizes of the comparison groups specified by the <code>dichotomy</code>.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">simdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">des</span> <span class="op">&lt;-</span> <span class="fu"><a href="Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="DesignSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">simdata</span>, design <span class="op">=</span> <span class="va">des</span>, weights <span class="op">=</span> <span class="fu">ate</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">simdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="fu">ate</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lmitt(y ~ 1, data = simdata, design = des, weights = ate())</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lmitt(y ~ 1, data = simdata, specification = spec, weights = ate())</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Treatment Effects :</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Estimate Std. Error t value Pr(&gt;|t|)</span>

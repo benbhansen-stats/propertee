@@ -74,8 +74,8 @@
 <div class="section level2">
 <h2 id="binary-treatment">Binary Treatment<a class="anchor" aria-label="anchor" href="#binary-treatment"></a>
 </h2>
-<p>When creating a Design, handling binary treatment variables is
-straightforward. If the treatment variable is either
+<p>When creating a StudySpecification, handling binary treatment
+variables is straightforward. If the treatment variable is either
 <code>numeric</code> with only values 0/1, or is <code>logical</code>,
 then <code><a href="../reference/lmitt.html">lmitt()</a></code> will estimate a treatment effect of the
 difference between the outcome in the treated group (<code>1</code> or
@@ -92,7 +92,7 @@ models fit via <code><a href="../reference/lmitt.html">lmitt()</a></code>.</p>
 <div class="section level2">
 <h2 id="non-binary-treatment">Non-binary Treatment<a class="anchor" aria-label="anchor" href="#non-binary-treatment"></a>
 </h2>
-<p>However, the <a href="../reference/Design_objects.html"><code>_design()</code></a>
+<p>However, the <a href="../reference/StudySpecification_objects.html"><code>_spec()</code></a>
 functions can take in any (reasonable) form of treatment assignment.</p>
 <p>If the treatment variable is a <code>numeric</code> with non-binary
 values, it is treated as a continuous treatment effect and
@@ -104,8 +104,8 @@ will estimate treatment effects against a reference category. The
 reference category is the first level defined according to <a href="https://rdrr.io/r/base/Comparison.html" class="external-link">R’s comparison of
 characters</a>.</p>
 <p><code>factor</code> and <code>ordered</code> objects are tricky to
-deal with, so while a <code>Design</code> can be created with
-<code>factor</code> or <code>ordered</code> treatment variables,
+deal with, so while a <code>StudySpecification</code> can be created
+with <code>factor</code> or <code>ordered</code> treatment variables,
 <code><a href="../reference/lmitt.html">lmitt()</a></code> will refuse to estimate a model unless it is also
 provided a <a href="#dichotomzing-a-non-binary-treatment"><code>dichotomy</code></a>
 (see below).</p>
@@ -117,15 +117,16 @@ treatment to units in varying intensities. Researchers may be interested
 in estimating treatment effects at different times or given a certain
 threshold of provided treatment, however. <code>propertee</code>
 accommodates these wishes by storing the time or intensity of treatment
-for treated units in the <a href="../reference/Design_objects.html"><code>Design</code></a>, then
-offering a <code>dichotomy=</code> argument to the weights calculation
-functions <code><a href="../reference/WeightCreators.html">ett()</a></code>/<code><a href="../reference/WeightCreators.html">ate()</a></code> and the assginment
-creation function <code><a href="../reference/AssignedAliases.html">assigned()</a></code> A <code>dichotomy</code> is
-presented as a formula, where the left-hand side is a logical statement
-defining inclusion in the treatment group, and the right-hand side is a
-logical statement defining inclusion in the control group. For example,
-if <code>dose</code> represents the intensity of a given treatment, we
-could set a threshold of 200, say, mg:</p>
+for treated units in the <a href="../reference/StudySpecification_objects.html"><code>StudySpecification</code></a>,
+then offering a <code>dichotomy=</code> argument to the weights
+calculation functions <code><a href="../reference/WeightCreators.html">ett()</a></code>/<code><a href="../reference/WeightCreators.html">ate()</a></code> and the
+assginment creation function <code><a href="../reference/AssignedAliases.html">assigned()</a></code> A
+<code>dichotomy</code> is presented as a formula, where the left-hand
+side is a logical statement defining inclusion in the treatment group,
+and the right-hand side is a logical statement defining inclusion in the
+control group. For example, if <code>dose</code> represents the
+intensity of a given treatment, we could set a threshold of 200, say,
+mg:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dose</span> <span class="op">&gt;</span> <span class="fl">200</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">200</span></span></code></pre></div>
 <p>All units of assignment with <code>dose</code> above 200 are treated
@@ -154,8 +155,8 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  50 100 200 250 300 </span></span>
 <span><span class="co">#&gt;  10  10  10  10  10</span></span>
-<span><span class="va">des1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Design_objects.html">rct_design</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/DesignSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">des1</span><span class="op">)</span></span>
+<span><span class="va">spec1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">dose</span> <span class="op">~</span> <span class="fu"><a href="../reference/StudySpecificationSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">spec1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Randomized Control Trial</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Structure          Variables </span></span>
@@ -170,12 +171,12 @@ ignored in the estimation of treatment effects.</p>
 <span><span class="co">#&gt;      200         2</span></span>
 <span><span class="co">#&gt;      ...          </span></span>
 <span><span class="co">#&gt; 2 smaller treatment groups excluded.</span></span>
-<span><span class="co">#&gt; Use `dtable` function to view full results.</span></span></code></pre></div>
+<span><span class="co">#&gt; Use `specification_table` function to view full results.</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1.5 1.5 1.5 1.5 0.0 0.0</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/AssignedAliases.html">assigned</a></span><span class="op">(</span><span class="va">des1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/AssignedAliases.html">assigned</a></span><span class="op">(</span><span class="va">spec1</span>, data <span class="op">=</span> <span class="va">simdata</span>, dichotomy <span class="op">=</span> <span class="va">dose</span> <span class="op">&gt;=</span> <span class="fl">300</span> <span class="op">~</span> <span class="va">dose</span> <span class="op">&lt;=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  0  0  0  0 NA NA</span></span></code></pre></div>
 </div>
 </div>

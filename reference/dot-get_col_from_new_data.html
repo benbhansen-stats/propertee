@@ -38,7 +38,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>(Internal) Extract specified <code>type</code> from new data set</h1>
-      <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/R/DesignAccessors.R" class="external-link"><code>R/DesignAccessors.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/R/StudySpecificationAccessors.R" class="external-link"><code>R/StudySpecificationAccessors.R</code></a></small>
       <div class="d-none name"><code>dot-get_col_from_new_data.Rd</code></div>
     </div>
 
@@ -49,7 +49,7 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.get_col_from_new_data</span><span class="op">(</span></span>
-<span>  <span class="va">design</span>,</span>
+<span>  <span class="va">specification</span>,</span>
 <span>  <span class="va">newdata</span>,</span>
 <span>  <span class="va">type</span>,</span>
 <span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -62,16 +62,16 @@
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-design">design<a class="anchor" aria-label="anchor" href="#arg-design"></a></dt>
-<dd><p>A <code>Design</code></p></dd>
+<dl><dt id="arg-specification">specification<a class="anchor" aria-label="anchor" href="#arg-specification"></a></dt>
+<dd><p>A <code>StudySpecification</code></p></dd>
 
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p>A <code>data.frame</code>, which may or may not be the one which
-was used to create <code>design</code>. It must have the units of assignment
-variable(s) (though <code>by=</code> argument can be used if the name differ),
-and will appropriately merge with the <code>design</code> the blocks, treatment
-or forcings.</p></dd>
+was used to create <code>specification</code>. It must have the units of
+assignment variable(s) (though <code>by=</code> argument can be used if the name
+differ), and will appropriately merge with the <code>specification</code> the
+blocks, treatment or forcings.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -80,15 +80,15 @@ or forcings.</p></dd>
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
 <dd><p>optional; named vector or list connecting names of unit of
-assignment/unitid/cluster variables in <code>design</code> to unit of
+assignment/unitid/cluster variables in <code>specification</code> to unit of
 assignment/unitid/cluster variables in <code>data</code>. Names represent
-variables in the Design; values represent variables in the data. Only
-needed if variable names differ.</p></dd>
+variables in the StudySpecification; values represent variables in the
+data. Only needed if variable names differ.</p></dd>
 
 
 <dt id="arg-implicitblock">implicitBlock<a class="anchor" aria-label="anchor" href="#arg-implicitblock"></a></dt>
-<dd><p>If the <code>Design</code> does not include a block,
-<code>TRUE</code> will return a constant 1 for the blocks if <code>type</code>
+<dd><p>If the <code>StudySpecification</code> does not include a
+block, <code>TRUE</code> will return a constant 1 for the blocks if <code>type</code>
 requests it.</p></dd>
 
 

@@ -51,9 +51,9 @@ object so that it can be used to properly account for standard errors.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">as.lmitt</span><span class="op">(</span><span class="va">x</span>, design <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">as.lmitt</span><span class="op">(</span><span class="va">x</span>, specification <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">as.teeMod</span><span class="op">(</span><span class="va">x</span>, design <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">as.teeMod</span><span class="op">(</span><span class="va">x</span>, specification <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -61,18 +61,19 @@ object so that it can be used to properly account for standard errors.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p><code>lm</code> object with weights containing a <code>WeightedDesign</code>,
-or an offset from <code><a href="cov_adj.html">cov_adj()</a></code>.</p></dd>
+<dd><p><code>lm</code> object with weights containing a
+<code>WeightedStudySpecification</code>, or an offset from <code><a href="cov_adj.html">cov_adj()</a></code>.</p></dd>
 
 
-<dt id="arg-design">design<a class="anchor" aria-label="anchor" href="#arg-design"></a></dt>
-<dd><p>Optional, explicitly specify the <code>Design</code> to be used. If
-the <code>Design</code> is specified elsewhere in <code>x</code> (e.g. passed as an
-argument to any of <code><a href="WeightCreators.html">ate()</a></code>, <code><a href="WeightCreators.html">ett()</a></code>, <code><a href="cov_adj.html">cov_adj()</a></code> or
-<code><a href="AssignedAliases.html">assigned()</a></code>) it will be found automatically and does not need to be
-passed here as well. (If different <code>Design</code> objects are passed
-(either through the <code>lm</code> in weights or covariance adjustment, or
-through this argument), an error will be produced.)</p></dd>
+<dt id="arg-specification">specification<a class="anchor" aria-label="anchor" href="#arg-specification"></a></dt>
+<dd><p>Optional, explicitly specify the
+<code>StudySpecification</code> to be used. If the <code>StudySpecification</code> is
+specified elsewhere in <code>x</code> (e.g. passed as an argument to any of
+<code><a href="WeightCreators.html">ate()</a></code>, <code><a href="WeightCreators.html">ett()</a></code>, <code><a href="cov_adj.html">cov_adj()</a></code> or <code><a href="AssignedAliases.html">assigned()</a></code>) it will
+be found automatically and does not need to be passed here as well. (If
+different <code>StudySpecification</code> objects are passed (either through the
+<code>lm</code> in weights or covariance adjustment, or through this argument),
+an error will be produced.)</p></dd>
 
 </dl></div>
     <div class="section level2">

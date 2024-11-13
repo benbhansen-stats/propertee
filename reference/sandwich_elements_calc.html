@@ -83,18 +83,19 @@ variable in the direct adjustment model</p>
 the dimension of the covariance adjustment model, including an intercept</p>
 <p><code>.get_a21()</code>/<code>.get_tilde_a21()</code>: A \(2\times p\) matrix
 where the number of rows are given by the intercept and the treatment
-variable in the direct adjustment model, and the number of columns are given
-by the dimension of the covariance adjustment model</p>
+variable in the direct adjustment model, and the number of columns are
+given by the dimension of the covariance adjustment model</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>.get_a22_inverse()</code>/<code>.get_tilde_a22_inverse()</code>: \(A_{22}^{-1}\) is the "bread" of the
-sandwich covariance matrix returned by <code><a href="var_estimators.html">vcov_tee()</a></code> whether one has fit
-a prior covariance adjustment model or not.</p>
-<p><code>.get_a11_inverse()</code>: \(A_{11}^{-1}\) is the "bread" of
-the sandwich covariance matrix for the covariance adjustment model. This
-matrix contributes to the meat matrix of the direct adjustment sandwich
-covariance matrix.</p>
+    <p><code>.get_a22_inverse()</code>/<code>.get_tilde_a22_inverse()</code>:
+\(A_{22}^{-1}\) is the "bread" of the sandwich covariance matrix returned
+by <code><a href="var_estimators.html">vcov_tee()</a></code> whether one has fit a prior covariance adjustment
+model or not.</p>
+<p><code>.get_a11_inverse()</code>: \(A_{11}^{-1}\) is the "bread" of the
+sandwich covariance matrix for the covariance adjustment model. This matrix
+contributes to the meat matrix of the direct adjustment sandwich covariance
+matrix.</p>
 <p><code>.get_a21()</code>/<code>.get_tilde_a21()</code>: \(A_{21}\) is the
 gradient of the estimating equations for the direct adjustment model taken
 with respect to the covariance adjustment model parameters. This matrix is
