@@ -1,4 +1,4 @@
-#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R
+#' @include StudySpecification.R WeightedStudySpecification.R StudySpecificationAccessors.R SandwichLayerVariance.R
 #' @include teeMod.R
 NULL
 
@@ -10,20 +10,21 @@ NULL
 ##' @details The formula with which \code{x} was created must include a
 ##'   treatment identifier (e.g. [assigned()]).
 ##'
-##' @param x \code{lm} object with weights containing a \code{WeightedDesign},
-##'   or an offset from [cov_adj()].
-##' @param design Optional, explicitly specify the \code{Design} to be used. If
-##'   the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
-##'   argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-##'   \code{assigned()}) it will be found automatically and does not need to be
-##'   passed here as well. (If different \code{Design} objects are passed
-##'   (either through the \code{lm} in weights or covariance adjustment, or
-##'   through this argument), an error will be produced.)
+##' @param x \code{lm} object with weights containing a
+##'   \code{WeightedStudySpecification}, or an offset from [cov_adj()].
+##' @param specification Optional, explicitly specify the
+##'   \code{StudySpecification} to be used. If the \code{StudySpecification} is
+##'   specified elsewhere in \code{x} (e.g. passed as an argument to any of
+##'   \code{ate()}, \code{ett()}, \code{cov_adj()} or \code{assigned()}) it will
+##'   be found automatically and does not need to be passed here as well. (If
+##'   different \code{StudySpecification} objects are passed (either through the
+##'   \code{lm} in weights or covariance adjustment, or through this argument),
+##'   an error will be produced.)
 ##' @return \code{teeMod} object
 ##' @rdname as_lmitt
 ##' @importFrom stats formula
 ##' @export
-as.lmitt <- function(x, design = NULL) {
+as.lmitt <- function(x, specification = NULL) {
   if (!inherits(x, "lm")) {
     stop("input must be lm object")
   }
@@ -37,7 +38,7 @@ as.lmitt <- function(x, design = NULL) {
   ### if the user does not include `assigned()` in the `lm`.
   ## # Update formula to use `assigned()` if needed
   ## ff <- stats::formula(x)
-  ## newff <- formula(gsub(var_names(design, "t"), "assigned()", deparse(ff)))
+  ## newff <- formula(gsub(var_names(specification, "t"), "assigned()", deparse(ff)))
   ## environment(newff) <- environment(ff)
 
   ## # Ensure updated model will be the same.
@@ -84,7 +85,7 @@ as.lmitt <- function(x, design = NULL) {
     lmitt_call <- sys.call()
   }
   return(.convert_to_lmitt(x,
-                           design,
+                           specification,
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
                            moderator = vector("character"),
@@ -96,7 +97,7 @@ as.lmitt <- function(x, design = NULL) {
 as.teeMod <- as.lmitt
 
 .convert_to_lmitt <- function(lm_model,
-                              design,
+                              specification,
                               lmitt_fitted,
                               absorbed_intercepts,
                               moderator,
@@ -105,47 +106,47 @@ as.teeMod <- as.lmitt
     stop("input must be lm object")
   }
 
-  # Ensure `design=` is a proper object
-  if (!is.null(design) & !is(design, "Design")) {
-    # Allow WeightedDesign just in case
-    if (is(design, "WeightedDesign")) {
-      design <- design@Design
+  # Ensure `specification=` is a proper object
+  if (!is.null(specification) & !is(specification, "StudySpecification")) {
+    # Allow WeightedStudySpecification just in case
+    if (is(specification, "WeightedStudySpecification")) {
+      specification <- specification@StudySpecification
     } else {
-      stop(paste("If provided, `design` must be a `Design` or",
-                 "`WeightedDesign` object"))
+      stop(paste("If provided, `specification` must be a `StudySpecification` or",
+                 "`WeightedStudySpecification` object"))
     }
   }
 
-  # Check if we can find a design in either Weights (preferred) or cov_adj
-  design_weights <- tryCatch(lm_model$model$"(weights)"@Design,
+  # Check if we can find a specification in either Weights (preferred) or cov_adj
+  specification_weights <- tryCatch(lm_model$model$"(weights)"@StudySpecification,
                              error = function(e) NULL)
-  design_cov_adj <- tryCatch(.get_cov_adj(lm_model)@Design,
+  specification_cov_adj <- tryCatch(.get_cov_adj(lm_model)@StudySpecification,
                              error = function(e) NULL)
 
-  designs <- list(design, design_weights, design_cov_adj)
-  designs <- designs[!vapply(designs, is.null, logical(1))]
+  specifications <- list(specification, specification_weights, specification_cov_adj)
+  specifications <- specifications[!vapply(specifications, is.null, logical(1))]
 
-  # The list contains all designs possible found (one passed in, and one in each
+  # The list contains all specifications possible found (one passed in, and one in each
   # of weights and cov_adj). Passing `unique` removes any duplicates (since
   # duplicates are OK).
-  unique_designs <- unique(designs)
+  unique_specs <- unique(specifications)
 
-  # At this point, if the length of `unique_designs` is 1, we're done. More than
+  # At this point, if the length of `unique_specs` is 1, we're done. More than
   # one is an error.
-  if (length(unique_designs) == 1) {
-    design <- unique_designs[[1]]
-  } else if (length(unique_designs) > 1) {
-    stop("Multiple differing `Design` found in object.")
+  if (length(unique_specs) == 1) {
+    specification <- unique_specs[[1]]
+  } else if (length(unique_specs) > 1) {
+    stop("Multiple differing `StudySpecification` found in object.")
   } else {
     # This should never be hit
-    stop("Cannot locate a `Design`, pass via it `design=` argument")
+    stop("Cannot locate a `StudySpecification`, pass via it `specification=` argument")
   }
 
   # #123 Make PreSandwichLayer to SandwichLayer if necessary
   ca <- .get_cov_adj(lm_model)
   if (is(ca, "PreSandwichLayer") & !is(ca, "SandwichLayer")) {
     lm_model$model$`(offset)` <- as.SandwichLayer(.get_cov_adj(lm_model),
-                                                  design = design)
+                                                  specification = specification)
   }
 
   eval_env <- new.env(parent = environment(formula(lm_model)))
@@ -177,7 +178,7 @@ as.teeMod <- as.lmitt
   }
   lm_model$call$data <- data
   assign("data", data, envir = eval_env)
-  assign("design", design, envir = eval_env)
+  assign("specification", specification, envir = eval_env)
   environment(lm_model$terms) <- eval_env
   if (inherits(lm_model, "glm")) {
     lm_model$formula <- as.formula(lm_model, env = eval_env)
@@ -185,7 +186,7 @@ as.teeMod <- as.lmitt
 
   return(new("teeMod",
              lm_model,
-             Design = design,
+             StudySpecification = specification,
              absorbed_intercepts = absorbed_intercepts,
              moderator = moderator,
              lmitt_call = call("quote", lmitt_call),

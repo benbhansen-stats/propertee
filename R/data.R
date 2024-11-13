@@ -24,7 +24,7 @@
 #'   \bold{synthpop} package in R based on data originally collected by Lindo,
 #'   Sanders, and Oreopoulos (2010).
 #'
-#' @details See the "Regression Discontinuity Designs" vignette on the
+#' @details See the "Regression Discontinuity StudySpecifications" vignette on the
 #'   \code{propertee} website for more details on the original data, a link to
 #'   the code used to generate this synthethic data, and a detailed example.
 #'
@@ -83,13 +83,13 @@
 #'   \item {math} Standarized math score (out of 100).
 #' }
 #' @examples
-#' des <- obs_design(treatment ~ uoa(schoolid), data = schooldata)
+#' soec <- obs_spec(treatment ~ uoa(schoolid), data = schooldata)
 #'
 #' # Treatment effect
-#' mod1 <- lmitt(math ~ 1, design = des, data = studentdata)
+#' mod1 <- lmitt(math ~ 1, specification = soec, data = studentdata)
 #'
 #' # Treatment effect by grade
-#' mod2 <- lmitt(math ~ as.factor(grade), design = des, data = studentdata)
+#' mod2 <- lmitt(math ~ as.factor(grade), specification = soec, data = studentdata)
 #' @keywords dataset
 "schooldata"
 

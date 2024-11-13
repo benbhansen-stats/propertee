@@ -31,15 +31,15 @@ Extract bread matrix from an \code{lmrob()} fit
 \details{
 This is part of a workaround for an issue in the robustbase code
 affecting sandwich covariance estimation. The issue in question is issue
-#6471, robustbase project on R-Forge. This function contributes to providing
-sandwich estimates of covariance-adjusted standard errors for robust linear
-covariance adjustment models.
+#6471, robustbase project on R-Forge. This function contributes to
+providing sandwich estimates of covariance-adjusted standard errors for
+robust linear covariance adjustment models.
 
 This is part of a workaround for an issue in the robustbase code
 affecting sandwich covariance estimation. The issue in question is issue
-#6471, robustbase project on R-Forge. This function contributes to providing
-sandwich estimates of covariance-adjusted standard errors for robust linear
-covariance adjustment models.
+#6471, robustbase project on R-Forge. This function contributes to
+providing sandwich estimates of covariance-adjusted standard errors for
+robust linear covariance adjustment models.
 }
 \author{
 Ben B. Hansen

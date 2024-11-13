@@ -18,7 +18,7 @@ a data frame with a column that contains unique block number IDs
 (Internal) Merge multiple block IDs
 }
 \details{
-merge multiple block ID columns by the value combinations
-and store the new block ID in the column \code{ids[1]}
+merge multiple block ID columns by the value combinations and store
+the new block ID in the column \code{ids[1]}
 }
 \keyword{internal}

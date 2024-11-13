@@ -3,7 +3,8 @@
 \name{estfun.glmrob}
 \alias{estfun.glmrob}
 \alias{bread.glmrob}
-\title{Extract empirical estimating equations from a \code{glmbrob} model fit}
+\title{Extract empirical estimating equations from a \code{glmbrob} model
+fit}
 \usage{
 \method{estfun}{glmrob}(x, ...)
 
@@ -15,12 +16,14 @@
 \item{...}{arguments passed to methods}
 }
 \value{
-matrix, estimating functions evaluated at data points and fitted parameters
+matrix, estimating functions evaluated at data points and fitted
+parameters
 
 matrix, inverse Hessian of loss as evaluated at fitted parameters
 }
 \description{
-Extract empirical estimating equations from a \code{glmbrob} model fit
+Extract empirical estimating equations from a \code{glmbrob} model
+fit
 
 Extract bread matrix from an \code{lmrob()} fit
 }

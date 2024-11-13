@@ -1,9 +1,9 @@
-#' @include Design.R
+#' @include StudySpecification.R
 NULL
 
 # (Internal) Extract SandwichLayer from model. Can exist in two places,
-# depending on whether model was called as `lm(y ~ z, offset = cov_adj(des))` or
-# `lm(y ~ z + offset(cov_adj(des))`. Returns `NULL` if it can't find it.
+# depending on whether model was called as `lm(y ~ z, offset = cov_adj(spec))`
+# or `lm(y ~ z + offset(cov_adj(spec))`. Returns `NULL` if it can't find it.
 .get_cov_adj <- function(x) {
 
   # Look for an `offset = ` argument

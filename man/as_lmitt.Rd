@@ -5,21 +5,22 @@
 \alias{as.teeMod}
 \title{Convert \code{lm} object into \code{teeMod}}
 \usage{
-as.lmitt(x, design = NULL)
+as.lmitt(x, specification = NULL)
 
-as.teeMod(x, design = NULL)
+as.teeMod(x, specification = NULL)
 }
 \arguments{
-\item{x}{\code{lm} object with weights containing a \code{WeightedDesign},
-or an offset from \code{\link[=cov_adj]{cov_adj()}}.}
+\item{x}{\code{lm} object with weights containing a
+\code{WeightedStudySpecification}, or an offset from \code{\link[=cov_adj]{cov_adj()}}.}
 
-\item{design}{Optional, explicitly specify the \code{Design} to be used. If
-the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
-argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-\code{assigned()}) it will be found automatically and does not need to be
-passed here as well. (If different \code{Design} objects are passed
-(either through the \code{lm} in weights or covariance adjustment, or
-through this argument), an error will be produced.)}
+\item{specification}{Optional, explicitly specify the
+\code{StudySpecification} to be used. If the \code{StudySpecification} is
+specified elsewhere in \code{x} (e.g. passed as an argument to any of
+\code{ate()}, \code{ett()}, \code{cov_adj()} or \code{assigned()}) it will
+be found automatically and does not need to be passed here as well. (If
+different \code{StudySpecification} objects are passed (either through the
+\code{lm} in weights or covariance adjustment, or through this argument),
+an error will be produced.)}
 }
 \value{
 \code{teeMod} object

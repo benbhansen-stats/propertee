@@ -20,5 +20,6 @@ An S3method for \code{sandwich::bread} that extracts the bread of the
 direct adjustment model sandwich covariance matrix.
 }
 \details{
-This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
+This function is a thin wrapper around
+\code{.get_tilde_a22_inverse()}.
 }

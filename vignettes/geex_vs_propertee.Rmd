@@ -43,8 +43,8 @@ cmod_df$in_q <- c(rep(0, n/2), rep(1, n/2))
 q_df <- cmod_df[cmod_df$in_q == 1,]
 
 cmod <- lm(y ~ x1 + x2, cmod_df)
-des <- rct_design(z ~ unitid(uid), q_df)
-damod <- lmitt(y ~ 1, design = des, data = q_df, weights = ate(des), offset = cov_adj(cmod))
+spec <- rct_spec(z ~ unitid(uid), q_df)
+damod <- lmitt(y ~ 1, specification = spec, data = q_df, weights = ate(spec), offset = cov_adj(cmod))
 
 estFun <- function(data){
   function(theta) {
@@ -68,7 +68,7 @@ estFun <- function(data){
 
 geexRes <- geex::m_estimate(estFun,
                             data = cbind(cmod_df,
-                                         "weight" = c(rep(1, n/2), ate(des, data = q_df))),
+                                         "weight" = c(rep(1, n/2), ate(spec, data = q_df))),
                             root_control = geex::setup_root_control(start = rep(0.1,5)))
 print(paste("geex estimate of var(tau_hat):", round(geexRes@vcov[5,5], 8)))
 print(paste("propertee estimate of var(tau_hat):",
@@ -105,8 +105,8 @@ cmod_df$in_q <- c(rep(0, mi), rep(1, 3 * mi))
 q_df <- cmod_df[cmod_df$in_q == 1,]
 
 cmod <- lm(y ~ x1 + x2, cmod_df)
-des <- rct_design(z ~ cluster(cid), q_df)
-damod <- lmitt(y ~ 1, design = des, data = q_df, weights = ate(des), offset = cov_adj(cmod))
+spec <- rct_spec(z ~ cluster(cid), q_df)
+damod <- lmitt(y ~ 1, specification = spec, data = q_df, weights = ate(spec), offset = cov_adj(cmod))
 
 clusterEstFunc <- function(data){
   function(theta) {
@@ -133,7 +133,7 @@ clusterEstFunc <- function(data){
 
 geexRes <- geex::m_estimate(clusterEstFunc,
                             data = cbind(cmod_df,
-                                         "weight" = c(rep(1, mi), ate(des, data = q_df))),
+                                         "weight" = c(rep(1, mi), ate(spec, data = q_df))),
                             units = "cid",
                             root_control = geex::setup_root_control(start = rep(0.1,5)))
 

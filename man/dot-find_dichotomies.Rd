@@ -7,15 +7,16 @@
 .find_dichotomies()
 }
 \value{
-A list where elements are either formulas or NULL, depending on whether
-a \code{dichotomy} argument was found in \code{lmitt.formula()} or its
-\code{weights} argument
+A list where elements are either formulas or NULL, depending on
+whether a \code{dichotomy} argument was found in \code{lmitt.formula()} or
+its \code{weights} argument
 }
 \description{
 (Internal) Find \code{dichotomy} formulas in the call stack
 }
 \details{
-\code{.find_dichotomies()} searches for \code{lmitt.formula()} calls
-and their \code{weights} arguments for any \code{dichotomy} arguments.
+\code{.find_dichotomies()} searches for \code{lmitt.formula()}
+calls and their \code{weights} arguments for any \code{dichotomy}
+arguments.
 }
 \keyword{internal}

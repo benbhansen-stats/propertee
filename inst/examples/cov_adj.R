@@ -7,9 +7,9 @@ covariance_y0_read <- lm(readk ~ gender + ethnicity + lunchk +
                                  ladderk + experiencek + tethnicityk,
                          data = STARdata, subset = !treatment)
 
-STARdata_design <- rct_design(treatment ~ cluster(studentid), data = STARdata)
-STARdata_ate    <- ate(STARdata_design, data = STARdata)
-STARdata_ett    <- ett(STARdata_design, data = STARdata)
+STARdata_spec <- rct_spec(treatment ~ cluster(studentid), data = STARdata)
+STARdata_ate    <- ate(STARdata_spec, data = STARdata)
+STARdata_ett    <- ett(STARdata_spec, data = STARdata)
 
 ett_read <- lm(readk ~ treatment,
                offset = cov_adj(covariance_y0_read, newdata = STARdata),

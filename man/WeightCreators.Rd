@@ -5,33 +5,33 @@
 \alias{ate}
 \title{Generate Direct Adjusted Weights for Treatment Effect Estimation}
 \usage{
-ett(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
+ett(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
 
-ate(design = NULL, dichotomy = NULL, by = NULL, data = NULL)
+ate(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
 }
 \arguments{
-\item{design}{optional; a \code{Design} object created by one of
-\code{rct_design()}, \code{rd_design()}, or \code{obs_design()}.}
+\item{specification}{optional; a \code{StudySpecification} object created by
+one of \code{rct_spec()}, \code{rd_spec()}, or \code{obs_spec()}.}
 
 \item{dichotomy}{optional; a formula defining the dichotomy of the treatment
-variable if it isn't already \code{0}/\code{1}. See details for more information.
-If \code{ett()} or \code{ate()} is
-called within a \code{lmitt()} call that specifies a \code{dichotomy}
-argument, that \code{dichotomy} will be used if the argument here has not
-been specified.}
+variable if it isn't already \code{0}/\code{1}. See details for more
+information. If \code{ett()} or \code{ate()} is called within a
+\code{lmitt()} call that specifies a \code{dichotomy} argument, that
+\code{dichotomy} will be used if the argument here has not been specified.}
 
 \item{by}{optional; named vector or list connecting names of unit of
-assignment/ variables in \code{design} to unit of
+assignment/ variables in \code{specification} to unit of
 assignment/unitid/cluster variables in \code{data}. Names represent
-variables in the Design; values represent variables in the data. Only
-needed if variable names differ.}
+variables in the StudySpecification; values represent variables in the
+data. Only needed if variable names differ.}
 
 \item{data}{optional; the data for the analysis to be performed on. May be
 excluded if these functions are included as the \code{weights} argument of
 a model.}
 }
 \value{
-a \code{WeightedDesign} object, which is a vector of numeric weights
+a \code{WeightedStudySpecification} object, which is a vector of
+numeric weights
 }
 \description{
 These should primarily be used inside models. See Details.
@@ -41,12 +41,12 @@ These should primarily be used inside models. See Details.
 \details{
 These functions should primarily be used in the \code{weight}
 argument of \code{\link[=lmitt]{lmitt()}} or\code{\link[=lm]{lm()}}. All arguments are optional if used within
-those functions. If used on their own, \code{design} and \code{data} must
-be provided.
+those functions. If used on their own, \code{specification} and
+\code{data} must be provided.
 
-In a \code{Design} with \code{block}s, the weights are generated as a
-function of the ratio of the number of treated units in a block versus the
-total number of units in a block.
+In a \code{StudySpecification} with \code{block}s, the weights are
+generated as a function of the ratio of the number of treated units in a
+block versus the total number of units in a block.
 
 In any blocks where that ratio is 0 or 1 (that is, all units in the block
 have the same treatment status), the weights will be 0. In effect this
@@ -62,16 +62,16 @@ treatment levels associated with "control"). For example, if your
 treatment variable was called \code{dose} and doses above 250 are
 considered treatment, you might write:
 
-\code{dichotomy(des) <- dose > 250 ~ dose <= 250}
+\code{dichotomy(spec) <- dose > 250 ~ dose <= 250}
 
 The period (\code{.}) can be used to assign all other units of assignment.
 For example, we could have written the same treatment regime as either
 
-\code{dichotomy(des) <- dose > 250 ~ .}
+\code{dichotomy(spec) <- dose > 250 ~ .}
 
 or
 
-\code{dichotomy(des) <- . ~ dose <= 250}
+\code{dichotomy(spec) <- . ~ dose <= 250}
 
 The \code{dichotomy} formula supports Relational Operators (see
 \link{Comparison}), Logical Operators (see \link{Logic}), and \code{\%in\%} (see
@@ -88,6 +88,6 @@ Code for the computation of the weights was contributed by Tim Lycurgus.
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-summary(lmitt(y ~ 1, data = simdata, design = des, weights = ate()))
+spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()))
 }

@@ -3,36 +3,37 @@
 \name{as.SandwichLayer}
 \alias{as.SandwichLayer}
 \title{Convert a \code{PreSandwichLayer} to a \code{SandwichLayer} with a
-\code{Design} object}
+\code{StudySpecification} object}
 \usage{
-as.SandwichLayer(x, design, by = NULL, Q_data = NULL)
+as.SandwichLayer(x, specification, by = NULL, Q_data = NULL)
 }
 \arguments{
 \item{x}{a \code{PreSandwichLayer} object}
 
-\item{design}{a \code{Design} object}
+\item{specification}{a \code{StudySpecification} object}
 
 \item{by}{optional; a string or named vector of unique identifier columns in
-the data used to create \code{design} and the data used to fit the covariance
-adjustment model. Default is NULL, in which case unit of assignment columns
-are used for identification (even if they do not uniquely identify units of
-observation). If a named vector is provided, names should represent variables
-in the data used to create \code{design}, while values should represent
-variables in the covariance adjustment data.}
+the data used to create \code{specification} and the data used to fit the
+covariance adjustment model. Default is NULL, in which case unit of
+assignment columns are used for identification (even if they do not
+uniquely identify units of observation). If a named vector is provided,
+names should represent variables in the data used to create
+\code{specification}, while values should represent variables in the
+covariance adjustment data.}
 
 \item{Q_data}{dataframe of direct adjustment sample, which is needed to
 generate the \code{keys} slot of the \code{SandwichLayer} object. Defaults
-to NULL, in which case if \code{by} is NULL, the data used to create \code{design}
-is used, and if \code{by} is not NULL, appropriate data further up the call
-stack (passed as arguments to \code{cov_adj()} or \code{lmitt.formula()},
-for example) is used.}
+to NULL, in which case if \code{by} is NULL, the data used to create
+\code{specification} is used, and if \code{by} is not NULL, appropriate
+data further up the call stack (passed as arguments to \code{cov_adj()} or
+\code{lmitt.formula()}, for example) is used.}
 }
 \value{
 a \code{SandwichLayer} object
 }
 \description{
-\code{as.SandwichLayer()} uses the \code{Design} object passed to the
-\code{design} argument to populate the slots in a \code{SandwichLayer}
-object that a \code{PreSandwichLayer} does not have sufficient information
-for.
+\code{as.SandwichLayer()} uses the \code{StudySpecification}
+object passed to the \code{specification} argument to populate the slots
+in a \code{SandwichLayer} object that a \code{PreSandwichLayer} does not
+have sufficient information for.
 }

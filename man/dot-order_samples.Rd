@@ -2,8 +2,8 @@
 % Please edit documentation in R/teeMod.R
 \name{.order_samples}
 \alias{.order_samples}
-\title{(Internal) Order observations used to fit a \code{teeMod} model
-and a prior covariance adjustment model}
+\title{(Internal) Order observations used to fit a \code{teeMod} model and a
+prior covariance adjustment model}
 \usage{
 .order_samples(x, by = NULL, ...)
 }
@@ -17,30 +17,31 @@ is NULL, in which case unit of assignment ID's are used for ordering.}
 }
 \value{
 A list of four named vectors. The \code{Q_not_C} element holds the
-ordering for units of observation in the direct adjustment sample but not the
-covariance adjustment samples; \code{Q_in_C} and \code{C_in_Q}, the ordering
-for units in both; and \code{C_not_Q}, the ordering for units in the covariance
-adjustment sample only. \code{Q_in_C} and \code{C_in_Q} differ in that the
-names of the \code{Q_in_C} vector correspond to row indices of the original matrix of
-estimating equations for the direct adjustment model, while the names of
-\code{C_in_Q} correspond to row indices of the matrix of estimating equations for
-the covariance adjustment model. Similarly, the names of \code{Q_not_C} and
-\code{C_not_Q} correspond to row indices of the direct adjustment and covariance
-adjustment samples, respectively. Ultimately, the order of \code{.make_uoa_ids()}
-and \code{estfun.teeMod()} is given by concatenating the vectors stored
-in \code{Q_not_C}, \code{Q_in_C}, and \code{C_not_q}.
+ordering for units of observation in the direct adjustment sample but not
+the covariance adjustment samples; \code{Q_in_C} and \code{C_in_Q}, the
+ordering for units in both; and \code{C_not_Q}, the ordering for units in
+the covariance adjustment sample only. \code{Q_in_C} and \code{C_in_Q}
+differ in that the names of the \code{Q_in_C} vector correspond to row
+indices of the original matrix of estimating equations for the direct
+adjustment model, while the names of \code{C_in_Q} correspond to row
+indices of the matrix of estimating equations for the covariance adjustment
+model. Similarly, the names of \code{Q_not_C} and \code{C_not_Q} correspond
+to row indices of the direct adjustment and covariance adjustment samples,
+respectively. Ultimately, the order of \code{.make_uoa_ids()} and
+\code{estfun.teeMod()} is given by concatenating the vectors stored in
+\code{Q_not_C}, \code{Q_in_C}, and \code{C_not_q}.
 }
 \description{
-(Internal) Order observations used to fit a \code{teeMod} model
-and a prior covariance adjustment model
+(Internal) Order observations used to fit a \code{teeMod} model and a
+prior covariance adjustment model
 }
 \details{
-\code{.order_samples()} underpins the ordering for \code{.make_uoa_ids()}
-and \code{estfun.teeMod()}. This function orders the outputs of those
-functions, but also informs how the original matrices of contributions to
-estimating equations need to be indexed to align units of observations'
-contributions to both sets of estimating equations.\cr\cr When a \code{by}
-argument is provided to \code{cov_adj()}, it is used to construct the order
-of \code{.order_samples()}.
+\code{.order_samples()} underpins the ordering for
+\code{.make_uoa_ids()} and \code{estfun.teeMod()}. This function orders the
+outputs of those functions, but also informs how the original matrices of
+contributions to estimating equations need to be indexed to align units of
+observations' contributions to both sets of estimating equations.\cr\cr
+When a \code{by} argument is provided to \code{cov_adj()}, it is used to
+construct the order of \code{.order_samples()}.
 }
 \keyword{internal}

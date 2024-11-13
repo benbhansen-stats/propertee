@@ -1,22 +1,24 @@
-##' Helper function used to update the variable names of a \code{Design} when
-##' user passes a \code{by=} argument to align variable names between data sets.
-##' @title (Internal) Use \code{by} to update \code{Design} with new variable
-##'   names
-##' @param design A \code{Design}
+##' Helper function used to update the variable names of a
+##' \code{StudySpecification} when user passes a \code{by=} argument to align
+##' variable names between data sets.
+##' @title (Internal) Use \code{by} to update \code{StudySpecification} with new
+##'   variable names
+##' @param specification A \code{StudySpecification}
 ##' @param data \code{Data set}
 ##' @param by named vector or list connecting names of unit of
-##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{specification} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
-##'   variables in the Design; values represent variables in the data.
-##' @return A \code{Design} with updated variable names
+##'   variables in the StudySpecification; values represent variables in the
+##'   data.
+##' @return A \code{StudySpecification} with updated variable names
 ##' @keywords internal
-.update_by <- function(design, data, by) {
+.update_by <- function(specification, data, by) {
   .check_by(by)
 
   # Ensure all names and replacements are valid
-  missingnames <- !(names(by) %in% colnames(design@structure))
+  missingnames <- !(names(by) %in% colnames(specification@structure))
   if (any(missingnames)) {
-    warning(paste("by labels not found in Design. unknown elements:",
+    warning(paste("by labels not found in StudySpecification. unknown elements:",
                   paste(names(by)[missingnames], collapse = ", ")))
   }
   missingdata <-  !(by %in% colnames(data))
@@ -25,11 +27,11 @@
                   paste(by[missingnames], collapse = ", ")))
   }
 
-  # if we have any names or replacements missing in the design or data,
+  # if we have any names or replacements missing in the specification or data,
   # there's a warning, and then don't try to replace that element
   by <- by[!missingnames & !missingdata]
 
-  newnames <- vapply(colnames(design@structure), function(x) {
+  newnames <- vapply(colnames(specification@structure), function(x) {
     pos <- names(by) == x
     if (any(pos)) {
       return(by[[which(pos)]])
@@ -37,9 +39,9 @@
     return(x)
   }, "character")
 
-  colnames(design@structure) <- newnames
-  validObject(design)
-  return(design)
+  colnames(specification@structure) <- newnames
+  validObject(specification)
+  return(specification)
 }
 
 ##' Thie ensures that the \code{by=} argument is of the proper type, is named,
@@ -47,9 +49,10 @@
 ##'
 ##' @title (Internal) A few checks to ensure \code{by=} is valid
 ##' @param by named vector or list connecting names of unit of
-##'   assignment/unitid/cluster variables in \code{design} to unit of
+##'   assignment/unitid/cluster variables in \code{specification} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
-##'   variables in the Design; values represent variables in the data.
+##'   variables in the StudySpecification; values represent variables in the
+##'   data.
 ##' @return \code{NULL} if no errors are found
 ##' @keywords internal
 .check_by <- function(by) {

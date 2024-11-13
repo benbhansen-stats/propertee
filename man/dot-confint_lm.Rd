@@ -26,9 +26,10 @@ limits for each parameter. These will be labelled as (1-level)/2 and 1 -
 Produce confidence intervals for linear models
 }
 \details{
-\code{.confint_lm()} is a copy of \code{stats::confint.lm} but passes
-arguments in \code{...} to the \code{vcov()} call. When called on a
+\code{.confint_lm()} is a copy of \code{stats::confint.lm} but
+passes arguments in \code{...} to the \code{vcov()} call. When called on a
 \code{teeMod} model, this produces confidence intervals where standard
-errors are computed based on the desired formulation of the \code{vcov_tee()} call.
+errors are computed based on the desired formulation of the
+\code{vcov_tee()} call.
 }
 \keyword{internal}
