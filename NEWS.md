@@ -1,3 +1,11 @@
+# propertee 0.5.0
+
+## Major Changes
+* All references to "design" have been changed to "specification".
+  - `*_design` is now `*_spec` (e.g. `rct_design` is now `rct_spec`)
+  - `Design` objects are now `StudySpecification` objects
+  - The `design=` argument to `lmitt()` is now `specification=`.
+
 # propertee 0.4.1
 
 ## New Features
