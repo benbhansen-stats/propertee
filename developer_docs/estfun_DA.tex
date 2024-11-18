@@ -314,21 +314,21 @@ of dimension $n$ rather than $n_{\mathcal{Q}}$.%
   our $\hat{A}_{21}$ and $\hat{A}_{22}$ observe compatible scalings.}%
  This leads us to
 define
-\begin{align*}
+\begin{align}\label{eq:29}
   \tilde{A}_{21}(\beta) &= n^{-1} \sum_{j\in \bigcup
         \mathcal{Q}}\EE[ \nabla_{\beta}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n} {A}_{21}(\beta),\\
   \tilde{A}_{22}(\alpha, \tau) &= n^{-1} \sum_{j\in \bigcup
         \mathcal{Q}}\EE[ \nabla_{\alpha, \tau}\psi(\vec{V}_{j};
         \tau, \alpha, \beta )] = \frac{n_{\mathcal{Q}}}{n}
-                                 {A}_{22}(\alpha, \tau),\\
+                                 {A}_{22}(\alpha, \tau) \text{ and}\nonumber\\
   \tilde{A} &= \left(
               \begin{array}{cc}
                 A_{11} & 0 \\
                 \tilde{A}_{21} & \tilde{A}_{22}\\
               \end{array}
-\right).
-\end{align*}
+\right).\nonumber
+\end{align}
 Substitution into  expression \eqref{eq:20} for
 $\tilde{\alpha}_{(n)}$ and $\tilde{\beta}_{(n)}$ gives
 \begin{align}
@@ -485,12 +485,18 @@ hold under the specification-based perspective, but under that perspective
 the same matrices do serve as estimates of $A_{11}(\beta)$ and
 $A_{21}(\beta)$ as given in \eqref{eq:13}.
 
-\paragraph{Numerical stability by combining ${A}_{21}$ and $\tilde{A}_{22}$, rather than either
+\paragraph{Numerical stability by combining ${A}_{21}$ and
+  $\tilde{A}_{22}$, rather than either
   ${A}_{21}$ and ${A}_{22}$ or $\tilde{A}_{21}$ and $\tilde{A}_{22}$.}
-  In situations with $n_{\mathcal{C}} \gg n_{\mathcal{Q}}$, scaling
-  by $n^{-1}$, as $\tilde{A}_{21}$ and $\tilde{A}_{22}$ do, may
-  invite numerical instability. In setups with $n_{\mathcal{C}} \gg
-  n_{\mathcal{Q}}$, $n^{-1}$-scaling may lead to underflows,
+Recall from \eqref{eq:29} that $A_{2*}$ and $\tilde{A}_{2*}$ are
+scaled sums of expected $\psi$-gradients differing only in their
+scaling factors of $n_{\mathcal{Q}}^{-1}$ and $n^{-1}$,
+respectively. The $n^{-1}$-scaling embedded
+in $\tilde{A}_{21}$ and $\tilde{A}_{22}$ may invite numerical
+instability.
+
+  In setups with
+  $n_{\mathcal{C}} \gg n_{\mathcal{Q}}$, $n^{-1}$-scaling may lead to underflows,
   collapsing of distinct values into numeric zeroes, if performed
   before taking sums; even if we don't scale before summing,
   $n_{\mathcal{Q}}^{-1}$ scaling of these matrices could faciliated improved
