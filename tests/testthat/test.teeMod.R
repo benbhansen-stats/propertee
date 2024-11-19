@@ -256,7 +256,7 @@ test_that("teeMod object has its own evaluation environment", {
   expect_equal(environment(formula(mod1))$specification, environment(formula(mod2))$specification)
 })
 
-test_that("vcov.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
+test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -266,10 +266,12 @@ test_that("vcov.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
 
   vmat1 <- vcov(ssmod1)
   vmat2 <- vcov(ssmod1, type = "CR0")
+  vmat3 <- vcov(ssmod1, cadjust = FALSE)
 
   expect_error(vcov(ssmod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcov_tee(ssmod1))
+  expect_identical(vmat3, vcov_tee(ssmod1, cadjust = FALSE))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   vmat3 <- vcov(ssmod2)

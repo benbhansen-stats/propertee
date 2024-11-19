@@ -51,13 +51,10 @@ setMethod("show", "teeMod", function(object) {
 ##' @exportS3Method
 vcov.teeMod <- function(object, ...) {
   cl <- match.call()
+  cl[[1L]] <-  quote(vcov_tee)
+  names(cl)[2L] <- "x"
 
-  cl$x <- cl$object
-  argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
-  new_cl <- cl[c(1L, argmatch)]
-  new_cl[[1L]] <-  quote(vcov_tee)
-
-  vmat <- eval(new_cl, parent.frame())
+  vmat <- eval(cl, parent.frame())
   return(vmat)
 }
 
