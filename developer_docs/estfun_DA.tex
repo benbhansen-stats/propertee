@@ -664,16 +664,26 @@ $\hat{\mathrm{A}}_{22}^{-1}$, which we can readily rescale to obtain $\hat{\tild
 For treatment effect estimators that partial out block fixed effects,
 but do so without saddling the comparison or Q-regression with a new
 parameter for each block, we use the
-Frisch-Waugh-Lovell (FWL) Theorem%
-\footnote{Or rather, we invoke the variant of the FWL theorem calling
+Frisch-Waugh-Lovell (FWL) Theorem to get rid of
+it: use preliminary $\owt[]$-weighted least-squares regressions of
+treatment and of moderator variables, if present, on block indicator
+variables, to create block-mean centered versions of these intended
+regressors; optionally recenter the outcome variable by subtracting
+off some measure of central tendency; and finally regress intended outcome variables (with or without
+prior centering) on the transformed
+regressors.\footnote{This is the variant of the FWL theorem calling
   for regression of the unchanged independent variable on residualized
 or partialed out dependent variables.  See e.g. Section 8.4.1,
 ``Regressing the partialled-out X on the full Y,'' of
 \href{https://bookdown.org/ts_robinson1994/10_fundamental_theorems_for_econometrics/frisch.html}{Robinson's
   blog writeup of Wooldridge's 10 biggest principles of econometrics},
-which in turn references Angrist \& Pitschke (2009).} to get rid of
-it.  In the process, we'll introduce at least $k$ new propensity score parameters
-for each block in order to ``absorb'' block effects into the
+which in turn references Angrist \& Pitschke (2009).}
+This ``absorbed'' regression involving transformed regressors is also weighted by $\owt[]$,
+and can be fitted with or without an intercept.\footnote{Setting aside
+numerical differences, the presence or absence of an intercept won't
+matter.}  
+In the process, we implicitly introduce at least $k$ new propensity score parameters
+for each block in order to absorb block effects into the
 independent variable(s) representing interest parameters.
 These are ``slack'' parameters that
 in actuality are known, in RCTs and in observational studies analyzed
@@ -789,28 +799,43 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
 \right) . \label{eq:upsilondef}
 \end{align}
 Note that this defines a new intercept parameter $\alpha_{0}$ that does not arise
-in the canonical reference implementation, which has $\alpha_{1},
-\ldots, \alpha_{s}$ but not $\alpha_{0}$. It and its corresponding
-$\acute{\Psi}$-column, $\hat{A}_{21}$ row and $\hat{\tilde{A}}_{22}$ row are not
-determined by the \texttt{lm} object furnishing the remaining coefficients
-and $\acute{\Psi}$, $\hat{A}_{21}$ or $\hat{\tilde{A}}_{22}$ entries,
-and will have to be figured separately.
+in the canonical reference implementation \eqref{eq:9} without absorption, which has $\alpha_{1},
+\ldots, \alpha_{s}$ but not $\alpha_{0}$. Furthermore, if the absorbed regression
+was fit with an intercept term, the intercept it estimates does not
+coincide with $\alpha_{0}$: It and its corresponding
+$\acute{\Psi}$-column, $\hat{A}_{21}$ row and $\hat{\tilde{A}}_{22}$
+row
+% are not determined by the \texttt{lm} object furnishing the remaining
+% coefficients and $\acute{\Psi}$, $\hat{A}_{21}$ or
+%$\hat{\tilde{A}}_{22}$ entries, and
+will have to be figured separately.
 It is interpretable as a weighted average of control group
 observations, as described in Section~\ref{sec:interc-relat-aspects} below.
-% within each block, with weights proportional to
-% $\owt[0]$, before averaging these blockwise averages using weights
-% proportional to $\sum_{i\in b}\owt \hat{p}_{0b}(1-\hat{p}_{0b})$. In
-% the two-group case, effect estimates $\hat{\tau}$ coincide with
-% averages of stratumwise differences,
-% \begin{equation*}
-%   \{\sum_{i \in b}
-% z_{i}w_{i}[y_{i}[1] - g(\vec{x}_{i}\beta)]\}/(\sum_{i \in b}
-% z_{i}w_{i}) - \{\sum_{i \in b}
-% (1-z_{i})w_{i}[y_{i}[0] - g(\vec{x}_{i}\beta)]\}/(\sum_{i \in b}
-% (1-z_{i})w_{i}),
-% \end{equation*}
-% also weighting contribution blocks $b$ in proportion with $\sum_{i\in b}\owt
-% \hat{p}_{0b}(1-\hat{p}_{0b})$.
+(As \eqref{eq:upsilondef} defines $\acute{\psi}(\cdot)$, outcomes are
+presumed to have been recentered around $\hat{\alpha}_{0}$ before
+the regression on block-absorbed regressors; but this is optional, in
+the sense that both it and the alternate definition using residuals
+$y_{i}[z_{i}] - g(\vec{x}_{i}\beta) - \tau_{z_{i}}$ rather
+than $y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$
+gives rise to the same $A_{21}$ and to similarly structured $A_{22}$s involving their
+respective residuals in parallel ways. In particular, both $A_{22}$ matrices have zeroes off the diagonal of
+the row and column\footnote{%
+  For either variant of $\acute{\psi}(\cdot)$, that the $\alpha_{0}$
+  row of $A_{22}$ is zero off the diagonal flows from the fact
+  that $\tau_{1}, \ldots, \tau_{k}$ do not figure in the
+  $\acute{\psi}(\cdot)$ vector's first entry. 
+  For the variant of $\acute{\psi}(\cdot)$ omitting $\alpha_{0}$'s
+  from residuals, that the $\alpha_{0}$ column of $A_{22}$ is zero
+  outside of the diagonal is immediate from the
+  form of this variant of $\acute{\psi}(\cdot)$.  For
+  $\acute{\psi}(\cdot)$ as defined in \eqref{eq:upsilondef}, that the
+  $\alpha_{0}$ column of $A_{22}$ is zero outside of the diagonal
+  follows from the fact that in light of $p_{jr}$'s implicit definition via
+  $\EE \absorbInterceptsEF(\vec{V}; \mathbf{p})=0$,
+  $\sum_{i: b_{i}=r}\EE\{\owt[][\indicator{Z_{i}=j} - p_{jr}]\}$=0.}
+corresponding to $\alpha_{0}$, just as
+\eqref{eq:upsilondef}'s definition does.)
+
 (If \texttt{absorb\_intercepts=FALSE}, then we revert to \eqref{eq:14}, i.e.
 \begin{equation*}
          \psi(\vec{v}_{i};
@@ -1024,7 +1049,7 @@ and, respectively,
     \vdots&  &&&&&&\ddots &\\
     \text{z.:sgk}& &&&&&&&1\\
     \end{block}
-  \end{blockarray}
+  \end{blockarray},
 \end{equation*}
 with blanks indicating zeros.
 
@@ -1068,30 +1093,54 @@ otherwise.)
 
 
 With a binary or dichotomized treatment, we'll report in the
-\texttt{(Intercept)} position the $w_{\text{BFE}}$-weighted
+\texttt{(Intercept)} or $\alpha_{0}$ position the $w_{\text{BFE}}$-weighted
 control group average of $y[0] - g(\vec{x}\hat\beta)$ (or of $y[0]$ if
-there was no prior covariance adjustment model); call this $\hat{\alpha}_{0}$. As the
+there was no prior covariance adjustment model); this
+$\hat{\alpha}_{0}$ solves the empirical estimating equation $\sum_{i
+  \in \bigcup\mathcal{Q}}\acute{\psi}_{i1}(\alpha)=0$, where
+$\acute{\psi}_{ij}(\cdot)$ is a first coordinate of
+$\acute{\psi}_{i}$ as in \eqref{eq:upsilondef}. As the
 averaging is over controls, the relevant weights $w_{\text{BFE}i}$ take
 the form $\hat{p}_{[i]} \owt[]$, where $[i]$ denotes the block $s$
 that contains $i$.  (Treatment being
 binary, I have simplified `` $p_{0s}$'' and ``$p_{1s}$'' to 
-and ``$(1-p_{s})$'' and ``$p_{s}$'' respectively.)  The
-\texttt{(Intercept)} column of an object \texttt{estfun.teeMod(DA)} has entries
-$\hat{p}_{[i]}\owt[](1-z_{i})(y - \hat{\alpha}_{0})$; see also first
-entry of $\acute{\psi}$ in \eqref{eq:upsilondef}. The
-\texttt{(Intercept)} row of $A_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
-p_{[i]}(1-\hat{p}_{[i]})\owt[]$ in the
-$\alpha_{0}$ column and 0 elsewhere; for $\hat{A}_{22}$ we resolve the
-``$p_{[i]}$'' in this expression as $\hat{p}_{[i]}$.  Design-based
-calculations call for adjusting this by subtracting off
+and ``$(1-p_{s})$'' and ``$p_{s}$'' respectively.)
+Reinterpreting \eqref{eq:upsilondef} in light of
+this simplification, the
+$\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
+$\hat{p}_{[i]}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta}) -
+\hat{\alpha}_{0})$, and the $\alpha_{0}$ row of $A_{21}$ is 
+\begin{equation*}
+  -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
+  \hat{p}_{[i]}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i}.
+\end{equation*}
+The
+$\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
+p_{[i]}(1-\hat{p}_{[i]})w_{\text{BFE}i}$ in the
+$\alpha_{0}$ column and 0 elsewhere; for $\hat{\tilde{A}}_{22}$ we resolve the
+``$p_{[i]}$'' in this expression as $\hat{p}_{[i]}$.%
+\footnote{In RCTs $p_{[i]}$ can be calculated. Another approach would
+  be to perform that calculation and use it rather than
+  $\hat{p}_{[i]}$ for $p_{[i]}$; another approach would be to use
+  $p_{[i]}$ in RCTs and $\hat{p}_{[i]}$ in observational studies.}
+The $\alpha_{0}$
+column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well, because the
+defining property $\sum_{i \in \bigcup \mathcal{Q}}\EE
+\absorbInterceptsEF(\vec{V}_{i}; \mathbf{p}) =0$ of $\mathbf{p} = (p_{jr}: 1\leq j\leq k, 1\leq r\leq s)$
+entails that for blocks $s \in \mathcal{Q}$ and coordinates $t=2,
+\ldots, k+1$ of the $k+1$ vector $\acute{\psi}$,  $\sum_{i \in
+  s}(\partial/\partial \alpha_{0})\acute{\psi}_{i t} = 0$. 
+
+
+Design-based calculations call for adjusting objects \texttt{estfun.teeMod(DA)} by subtracting off
 \texttt{estfun\_DB\_blockabsorb(DA)} = $\AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}'$, per \S~\ref{sec:accomm-interc-via}
-  above; the $\alpha_{0}$ row of $A_{\alpha_{0}\tau\,\mathbf{p}}$ has in
+  above. The $\alpha_{0}$ row of $A_{\alpha_{0}\tau\,\mathbf{p}}$ has in
   its column $s$ (partial w/r/t $p_{s}$, $s \in \mathcal{Q}$)
   \begin{equation*}
   \left[n^{-1}\sum_{i: b_{i}=s}\owt[](1-\pi_{i})\right](\alpha_{0\mathcal{D}s} - \alpha_{0\mathcal{D}})
   \end{equation*}
-  with: $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
+  where $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
   $\pi_{i} = p_{i}$ in an RCT but not necessarily otherwise;
   \begin{equation*}
  \alpha_{0\mathcal{D}s}=
@@ -1110,7 +1159,7 @@ calculations call for adjusting this by subtracting off
     g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r, z_{i}=0}\owt[]}$ for $\alpha_{0\mathcal{D}r}$.
 \subsubsection{Main effect and continuous moderator}
 Again let $m$ denote a continuous moderator, $\gamma$ its
-coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}
+coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}/$\alpha_{0}$
 coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\gamma}m$. In parallel with that case, under absorption we need to report the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\gamma}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
@@ -1173,7 +1222,21 @@ All but the first column of this $\acute{\Psi}$ estfun will be
 recovered by \texttt{estfun.lm} as applied to the \texttt{lm} fitted
 after absorption.  This first column can be recovered as a
 $w_{\text{BFE}}$-weighted average of control group residuals, just as
-with the main effect only. Design-based calculations from
+with the main effect only. That is, the 
+$\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
+$\hat{p}_{[i]}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta})
+-{\gamma}m -
+\hat{\alpha}_{0})$. Again the $\alpha_{0}$ row of $A_{21}$ is 
+\begin{equation*}
+  -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
+  \hat{p}_{[i]}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i},
+\end{equation*}
+while the
+$\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
+p_{[i]}(1-\hat{p}_{[i]})w_{\text{BFE}i}$ in the
+$\alpha_{0}$ column and 0 elsewhere.
+
+Design-based calculations from
 \texttt{estfun\_DB\_blockabsorb()} need to be filled out to reflect
 the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\mu \mathbf{p}\,
   \mu\mathbf{p}}$ and of $A_{\tau\,\mathbf{p}}$ (or more accurately\footnote{%
@@ -1271,7 +1334,7 @@ The salient generalization of \eqref{eq:upsilondef} is now
   \end{aligned}
 \right), 
 \end{align}
-with corresponding elaborations of $A_{\mathbf{p}\mathbf{p}}$ and
+with corresponding elaborations of $A_{21}$, $\tilde{A}_{22}$,  $A_{\mathbf{p}\mathbf{p}}$ and
 $A_{\tau \mathbf{p}}$. 
 \section{Of possible future relevance}
 
