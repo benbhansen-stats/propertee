@@ -1165,13 +1165,13 @@ coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(
 \hat{\lambda}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
 \eqref{eq:upsilondef} is replaced by
 \begin{align}
-    \absorbInterceptsEF(\vec{v}; \mu, \mathbf{p}) &=
+    \absorbInterceptsEF(\vec{v}; \nu, \mathbf{p}) &=
                                              \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}\left(%
     \left(
     \begin{array}{rrr}
-      (m_{i} - \mu_{1}) \indicator{b_{i}=1} & \ldots & 
-(m_{i} - \mu_{s}) \indicator{b_{i}=s} \\
+      (m_{i} - \nu_{1}) \indicator{b_{i}=1} & \ldots & 
+(m_{i} - \nu_{s}) \indicator{b_{i}=s} \\
       (\indicator{z_{i}=0}-p_{01})\indicator{b_{i}=1}
       &\ldots
       &
@@ -1202,7 +1202,7 @@ coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(
 \big[y_{i}[z_{i}]
     -
     g(\vec{x}_{i}\beta)-\alpha_{0}- {\lambda}m-\tau_{z_{i}}\big]
-    &(m_{i} - \sum_{r=1}^{s}\mu_{r}\indicator{b_{i}=r})
+    &(m_{i} - \sum_{r=1}^{s}\nu_{r}\indicator{b_{i}=r})
     \\
    \big[y_{i}[z_{i}]
     -
@@ -1238,13 +1238,13 @@ $\alpha_{0}$ column and 0 elsewhere.
 
 Design-based calculations from
 \texttt{estfun\_DB\_blockabsorb()} need to be filled out to reflect
-the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\mu \mathbf{p}\,
-  \mu\mathbf{p}}$ and of $A_{\tau\,\mathbf{p}}$ (or more accurately\footnote{%
+the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\nu \mathbf{p}\,
+  \nu\mathbf{p}}$ and of $A_{\tau\,\mathbf{p}}$ (or more accurately\footnote{%
 The model artifacts of the block-absorbed \texttt{lm} will include
 appropriate $\lambda$- as well as $\tau$-related
 material. Only the $\alpha_{0}$-related material needs to be generated
 separately.
-}, $A_{\lambda\tau\,\mathbf{p}}$) by $A_{\alpha_{0}\lambda \tau\, \mu\mathbf{p}}$.
+}, $A_{\lambda\tau\,\mathbf{p}}$) by $A_{\alpha_{0}\lambda \tau\, \nu\mathbf{p}}$.
 
 \subsubsection{Subgroup effects}
 When estimating subgroup effects with absorption of blocks,
