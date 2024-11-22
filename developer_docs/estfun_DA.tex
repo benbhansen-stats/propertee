@@ -647,7 +647,7 @@ hold, as in that setting
 $\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
 coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 
-This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\gamma_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\gamma_{j} g(\vec{x}\beta)\indicator{z_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
+This generalizes readily beyond comparison regressions of the type encoded in \eqref{eq:14}. Should $\tilde{\psi}(\cdot; \cdot)$ encode such a regression with a subgroup or continuous moderator variable, or even with the offset $g(\vec{x}\beta)$ replaced with independent variables $\lambda_{0}g(\vec{x}\beta) + \sum_{j=1}^{k}\lambda_{j} g(\vec{x}\beta)\indicator{z_{i}=j}$, then we only have to generate a corresponding ${A}_{21}(\cdot)$ to use
 \begin{equation*}\label{eq:24}
       \tilde{\psi}_\text{DA}(\vec{V}; \tau, \alpha_{0},
     \beta) = \tilde{\psi} (\vec{V}; \tau,\alpha_{0},
@@ -978,7 +978,7 @@ With a continuous moderator \texttt{m}/$m$, our calls to \texttt{lm()} or
 \texttt{lm.wfit()} return both intercept and moderator main
 effect coefficients, ``\texttt{(Intercept)}'' and ``\texttt{m}.''
 Without absorption, \texttt{(Intercept)} is the $\owt[0]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
-\hat{\gamma}m$. In the scenario with absorption, we'll also report
+\hat{\lambda}m$. In the scenario with absorption, we'll also report
 ``\texttt{(Intercept)}'' and ``\texttt{m}'' coefficients, with the
 \texttt{m} coefficient taken from the same \texttt{lm()} fit providing
 effect estimates but with a separate calculation, described in Section~\ref{sec:interc-relat-aspects} below,
@@ -1158,11 +1158,11 @@ Design-based calculations call for adjusting objects \texttt{estfun.teeMod(DA)} 
   \frac{\sum_{i: b_{i}=r, z_{i}=0}\owt[][y_{i}[0] -
     g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r, z_{i}=0}\owt[]}$ for $\alpha_{0\mathcal{D}r}$.
 \subsubsection{Main effect and continuous moderator}
-Again let $m$ denote a continuous moderator, $\gamma$ its
+Again let $m$ denote a continuous moderator, $\lambda$ its
 coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}/$\alpha_{0}$
 coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
-\hat{\gamma}m$. In parallel with that case, under absorption we need to report the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
-\hat{\gamma}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
+\hat{\lambda}m$. In parallel with that case, under absorption we need to report the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
+\hat{\lambda}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
 \eqref{eq:upsilondef} is replaced by
 \begin{align}
     \absorbInterceptsEF(\vec{v}; \mu, \mathbf{p}) &=
@@ -1196,22 +1196,22 @@ coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(
   \begin{aligned}                                               
     \indicator{z_{i}=0} \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta) - {\gamma}m-\alpha_{0}\big]
+    g(\vec{x}_{i}\beta) - {\lambda}m-\alpha_{0}\big]
     &(
    1 - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}) \\
 \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}- {\gamma}m-\tau_{z_{i}}\big]
+    g(\vec{x}_{i}\beta)-\alpha_{0}- {\lambda}m-\tau_{z_{i}}\big]
     &(m_{i} - \sum_{r=1}^{s}\mu_{r}\indicator{b_{i}=r})
     \\
    \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}- {\gamma}m-\tau_{z_{i}}\big]
+    g(\vec{x}_{i}\beta)-\alpha_{0}- {\lambda}m-\tau_{z_{i}}\big]
     &(
     \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
     \vdots \\
     {}\big[y_{i}[z_{i}]
-    - g(\vec{x}_{i}\beta) - \alpha_{0}- {\gamma}m -
+    - g(\vec{x}_{i}\beta) - \alpha_{0}- {\lambda}m -
     \tau_{z_{i}}\big]
     &(\indicator{z_{i}=k}
     - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\
@@ -1225,7 +1225,7 @@ $w_{\text{BFE}}$-weighted average of control group residuals, just as
 with the main effect only. That is, the 
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
 $\hat{p}_{[i]}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta})
--{\gamma}m -
+-{\lambda}m -
 \hat{\alpha}_{0})$. Again the $\alpha_{0}$ row of $A_{21}$ is 
 \begin{equation*}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
@@ -1241,10 +1241,10 @@ Design-based calculations from
 the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\mu \mathbf{p}\,
   \mu\mathbf{p}}$ and of $A_{\tau\,\mathbf{p}}$ (or more accurately\footnote{%
 The model artifacts of the block-absorbed \texttt{lm} will include
-appropriate $\gamma$- as well as $\tau$-related
+appropriate $\lambda$- as well as $\tau$-related
 material. Only the $\alpha_{0}$-related material needs to be generated
 separately.
-}, $A_{\gamma\tau\,\mathbf{p}}$) by $A_{\alpha_{0}\gamma \tau\, \mu\mathbf{p}}$.
+}, $A_{\lambda\tau\,\mathbf{p}}$) by $A_{\alpha_{0}\lambda \tau\, \mu\mathbf{p}}$.
 
 \subsubsection{Subgroup effects}
 When estimating subgroup effects with absorption of blocks,
@@ -1345,45 +1345,45 @@ As of this writing, we do not plan to implement moderator effect estimation by w
 
 For a continuous moderator $m$, absorption of the moderator into the assignment variable
 corresponds to solving the system $0 = \sum
-\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\gamma})$ for
-$\gamma$, where $\mathbf{p}$ solves $0 =
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\lambda})$ for
+$\lambda$, where $\mathbf{p}$ solves $0 =
 \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$,
 $\absorbInterceptsEF(\cdot)$ as above,
 \begin{equation}
   \label{eq:18}
-    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})=
+    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\lambda})=
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
        \begin{array}{c}
          % (
-         % \indicator{z_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % \indicator{z_{i}=0}-p_{0b_{i}}-\lambda_{0}
          % \tilde{m}_{i}
          % )m_{i} \\
          (
-         \indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         \indicator{z_{i}=1}-p_{1b_{i}}-\lambda_{1}
          \tilde{m}_{i}
          )m_{i} \\
          \vdots\\
          (\indicator{z_{i}=k}-p_{kb_{i}}
-         - \gamma_{k} \tilde{m}_{i})m_{i}\\
+         - \lambda_{k} \tilde{m}_{i})m_{i}\\
        \end{array}
   \right)%
 \end{equation}
-and $\tilde{m}$ is $m$ with block centering. Equivalently, $\gamma$
+and $\tilde{m}$ is $m$ with block centering. Equivalently, $\lambda$
 solves $0 = \sum
-\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\gamma})$ with
-$\absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})$ given by
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p},{\lambda})$ with
+$\absorbModeratorEF(\vec{v}_{i}; \mathbf{\lambda})$ given by
 \begin{equation*}
     \indicator{i \in \bigcup \mathcal{Q}} \owt[]
      \left(
        \begin{array}{c}
-         % (\indicator{z_{i}=0}-p_{0b_{i}}-\gamma_{0}
+         % (\indicator{z_{i}=0}-p_{0b_{i}}-\lambda_{0}
          % \tilde{m}_{i})\tilde{m}_{i} \\
-         (\indicator{z_{i}=1}-p_{1b_{i}}-\gamma_{1}
+         (\indicator{z_{i}=1}-p_{1b_{i}}-\lambda_{1}
          \tilde{m}_{i})\tilde{m}_{i} \\
          \vdots\\
          (\indicator{z_{i}=k}-p_{kb_{i}}
-         - \gamma_{k} \tilde{m}_{i})\tilde{m}_{i}\\
+         - \lambda_{k} \tilde{m}_{i})\tilde{m}_{i}\\
        \end{array}
      \right).
 \end{equation*}
@@ -1397,23 +1397,23 @@ For a subgrouping variable $m$ with $t>1$ levels, and corresponding
 indicator variables $m_{\ell} =\indicator{m_{i}=\ell}$, $\ell=1,
 \ldots, t$, and block-centered versions $\tilde{m}_{\ell}$  moderator absorption into the assignment variable
 corresponds to solving $0 = \sum
-\absorbModeratorEF(\vec{v}_{i}; \mathbf{p}, {\gamma})$ for $\gamma$, where
+\absorbModeratorEF(\vec{v}_{i}; \mathbf{p}, {\lambda})$ for $\lambda$, where
 \begin{align}
-    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\gamma})
+    \absorbModeratorEF(\vec{v}_{i}; \mathbf{\lambda})
 &=
                                                  \indicator{i \in \bigcup \mathcal{Q}} \owt[] \times \nonumber \\
   &\operatorname{vec}  \left(%
                                                  \left(
                                                  \begin{array}{ccc}
-                                                   % (\indicator{z_{i}=0}-p_{0b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=0}-p_{0s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   % (\indicator{z_{i}=0}-p_{0b_{i}}-\tilde{m}_{1i}\lambda_{1})m_{1i}&\ldots&(\indicator{z_{i}=0}-p_{0s}-\tilde{m}_{ti}\lambda_{t})m_{ti}
                                                    % \\
-                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=1}-p_{1s}-\tilde{m}_{ti}\gamma_{t})m_{ti}
+                                                   (\indicator{z_{i}=1}-p_{1b_{i}}-\tilde{m}_{1i}\lambda_{1})m_{1i}&\ldots&(\indicator{z_{i}=1}-p_{1s}-\tilde{m}_{ti}\lambda_{t})m_{ti}
                                                    \\
                                                    \vdots & \vdots &
                                                                      \vdots
                                                    \\
                                                    (\indicator{z_{i}=k}-p_{kb_{i}}
-                                                   - \tilde{m}_{1i}\gamma_{1})m_{1i}&\ldots&(\indicator{z_{i}=k}-p_{ks}-\tilde{m}_{ti}\gamma_{t})m_{ti}\\                                                 \end{array}
+                                                   - \tilde{m}_{1i}\lambda_{1})m_{1i}&\ldots&(\indicator{z_{i}=k}-p_{ks}-\tilde{m}_{ti}\lambda_{t})m_{ti}\\                                                 \end{array}
   \right)%
   \right) .  \label{eq:17}
 \end{align}
@@ -1433,14 +1433,14 @@ without doing anything special, using an $\acute{\psi}$ given by
     % (
     % \indicator{z_{i}=0} -
     % \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}
-    % - \tilde{m}_{i}\gamma)\\
+    % - \tilde{m}_{i}\lambda)\\
     \big[y_{i}[z_{i}]
     -
     g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
     (
     \indicator{z_{i}=1}-
     \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r}
-    - \tilde{m}_{i}\gamma)\\
+    - \tilde{m}_{i}\lambda)\\
     \vdots \\
     {}\big[y_{i}[z_{i}]
     - g(\vec{x}_{i}\beta) -\alpha_{0} -
@@ -1450,7 +1450,7 @@ without doing anything special, using an $\acute{\psi}$ given by
     -
     \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r}
     -
-    \tilde{m}_{i}\gamma)\\
+    \tilde{m}_{i}\lambda)\\
   \end{array}
 \right) .
 \end{multline*}
@@ -1466,7 +1466,7 @@ For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
  should return
  \begin{equation*}
    A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' +
-  \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'.
+  \AbsorbModeratorEF{}A_{\lambda \lambda}^{-1}\hat{A}_{\tau \lambda}'.
  \end{equation*}
  In this way, the overall estimating function
  \texttt{estfun.teeMod(DA)} $-$ \texttt{estfun\_DB\_blockabsorb(DA)}
@@ -1477,9 +1477,9 @@ For design-based calculations, \texttt{estfun\_DB\_blockabsorb(DA)}
   \frac{n_{\mathcal{Q}}}{n_{\mathcal{C}}}\Phi
   \hat{A}_{11}^{-t}\hat{A}_{21}' - \AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tau\,\mathbf{p}}' -
-  \AbsorbModeratorEF{}A_{\gamma \gamma}^{-1}\hat{A}_{\tau \gamma}'
+  \AbsorbModeratorEF{}A_{\lambda \lambda}^{-1}\hat{A}_{\tau \lambda}'
  \end{equation}
-with $A_{\gamma \gamma}$ and $A_{\tau \gamma}$ defined in the natural
+with $A_{\lambda \lambda}$ and $A_{\tau \lambda}$ defined in the natural
 way given the $\absorbModeratorEF()$ definitions stated just above.
 
 \subsection{Notes regarding design-based variance calculations}
