@@ -19,7 +19,7 @@ coef(ett_read)
 ett_read |> as.lmitt() |> vcov()
 
 ate_read <- lmitt(readk ~ 1, STARspec, STARdata,
-                  dichotomy= stark =="small" ~., 
+                  dichotomy= stark =="small" ~.,
                   offset = cov_adj(y0hat_read, newdata = STARdata),
                   weights = "ate")
 show(ate_read)
@@ -28,9 +28,7 @@ vcov(ate_read)
 
 ate_read_loc <-
     lmitt(readk ~ schoolk, STARspec, STARdata,
-          dichotomy= stark =="small" ~., 
+          dichotomy= stark =="small" ~.,
           offset = cov_adj(y0hat_read, newdata = STARdata),
           weights = "ate")
 show(ate_read_loc)
-
-
