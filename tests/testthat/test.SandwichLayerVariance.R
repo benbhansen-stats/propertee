@@ -1224,10 +1224,10 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
   pg <- stats::model.matrix(formula(cmod), m_data)
   nq <- nrow(ssmod_mm)
 
-  a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
+  a21_as.lmitt <- suppressWarnings(.get_a21(m_as.lmitt))
   expect_true(all.equal(a21_as.lmitt, crossprod(ssmod_mm, pg) / nq,
                         check.attributes = FALSE))
-  a21_lmitt.form <- suppressWarnings(propertee:::.get_a21(m_lmitt.form))
+  a21_lmitt.form <- suppressWarnings(.get_a21(m_lmitt.form))
   expect_true(all.equal(a21_lmitt.form, crossprod(ssmod_mm, pg) / nq,
                         check.attributes = FALSE))
 })
@@ -1238,18 +1238,21 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
   simdata[simdata$uoa1 %in% c(2, 4), "z"] <- NA_integer_
   cmod <- lm(y ~ x, data = simdata, subset = uoa1 %in% c(2, 4))
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
-  m_as.lmitt <- lmitt(lm(y ~ assigned(), simdata, offset = cov_adj(cmod, specification = spec)))
-  m_lmitt.form <- lmitt(y ~ 1, simdata, specification = spec, offset = cov_adj(cmod))
+  m_as.lmitt <- lmitt(
+    lm(y ~ assigned(), simdata, w = ate(spec, data = simdata),
+       offset = cov_adj(cmod, specification = spec)))
+  m_lmitt.form <- lmitt(y ~ 1, simdata, specification = spec, w = ate(spec), offset = cov_adj(cmod))
 
   ssmod_mm <- stats::model.matrix(m_as.lmitt)
+  nonna_wts <- m_as.lmitt$weights
   pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
   nq <- nrow(ssmod_mm)
 
-  a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
-  expect_true(all.equal(a21_as.lmitt, crossprod(ssmod_mm, pg) / nq,
+  a21_as.lmitt <- suppressWarnings(.get_a21(m_as.lmitt))
+  expect_true(all.equal(a21_as.lmitt, crossprod(ssmod_mm * nonna_wts, pg) / nq,
                         check.attributes = FALSE))
-  a21_lmitt.form <- suppressWarnings(propertee:::.get_a21(m_lmitt.form))
-  expect_true(all.equal(a21_lmitt.form, crossprod(ssmod_mm, pg) / nq,
+  a21_lmitt.form <- suppressWarnings(.get_a21(m_lmitt.form))
+  expect_true(all.equal(a21_lmitt.form, crossprod(ssmod_mm * nonna_wts, pg) / nq,
                         check.attributes = FALSE))
 })
 
