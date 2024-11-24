@@ -3,10 +3,11 @@ pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   geex_vs_propertee: geex_vs_propertee.html
+  mi_vignette/index: mi_vignette/index.html
   intro-to-propertee: intro-to-propertee.html
   non-binary-treatment: non-binary-treatment.html
   RDD: RDD.html
-last_built: 2024-11-22T01:36Z
+last_built: 2024-11-24T11:53Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles

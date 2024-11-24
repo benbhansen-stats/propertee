@@ -35,6 +35,7 @@ adjustment model coefficients."><meta property="og:image" content="www.github.co
     <li><a class="dropdown-item" href="../articles/non-binary-treatment.html">Non-binary Treatment Specification</a></li>
     <li><a class="dropdown-item" href="../articles/RDD.html">Regression Discontinuity Designs</a></li>
     <li><a class="dropdown-item" href="../articles/geex_vs_propertee.html">propertee vs. geex</a></li>
+    <li><a class="dropdown-item" href="../articles/mi_vignette/index.html">Real-data demonstration with a finely stratified cluster RCT and a broader administrative database</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -124,54 +125,57 @@ match the number of rows of the dataframe used.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span> <span class="op">&lt;-</span> <span class="va">STARdata</span><span class="op">$</span><span class="va">stark</span> <span class="op">==</span> <span class="st">"small"</span></span></span>
-<span class="r-in"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">treatment</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentID</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">covariance_y0_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>                                 <span class="va">ladderk</span> <span class="op">+</span> <span class="va">experiencek</span> <span class="op">+</span> <span class="va">tethnicityk</span>,</span></span>
-<span class="r-in"><span>                         data <span class="op">=</span> <span class="va">STARdata</span>, subset <span class="op">=</span> <span class="op">!</span><span class="va">treatment</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">y0hat_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>                     <span class="va">ladderk</span> <span class="op">+</span> <span class="va">experiencek</span> <span class="op">+</span> <span class="va">tethnicityk</span>,</span></span>
+<span class="r-in"><span>                 data <span class="op">=</span> <span class="va">STARdata</span>, subset <span class="op">=</span> <span class="va">stark</span> <span class="op">!=</span><span class="st">"small"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">STARdata_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">treatment</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">cluster</a></span><span class="op">(</span><span class="va">studentid</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">STARdata_ate</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">STARdata_spec</span>, data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">STARdata_ett</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STARdata_spec</span>, data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">STARspec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">stark</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">studentID</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                     data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ett_wts</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STARspec</span>, data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
+<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ett_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span>,</span></span>
-<span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">ett_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fu"><a href="AssignedAliases.html">assigned</a></span><span class="op">(</span>dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="co">### expect warning about NAs generated here:</span></span></span>
+<span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>               data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>               weights <span class="op">=</span> <span class="va">STARdata_ett</span><span class="op">)</span></span></span>
+<span class="r-in"><span>               weights <span class="op">=</span> <span class="va">ett_wts</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ett_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -1.079602e-13  5.554179e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                (Intercept) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                              -1.150011e-13 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                               5.554179e+00 </span>
+<span class="r-in"><span><span class="va">ett_read</span> <span class="op">|&gt;</span> <span class="fu"><a href="as_lmitt.html">as.lmitt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .make_uoa_cluster_df(x@StudySpecification, id_col):</span> Could not find studentID column in the specification data</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span>,</span></span>
-<span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>               data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>               weights <span class="op">=</span> <span class="va">STARdata_ate</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
+<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
+<span class="r-in"><span>                  offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                  weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
+<span class="r-in"><span><span class="fu">show</span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   stark. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5.554179 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept) treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> -1.022791e-13  5.554179e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept)        stark. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> -1.066237e-13  5.554179e+00 </span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .make_uoa_cluster_df(x@StudySpecification, id_col):</span> Could not find studentID column in the specification data</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ate_read_eth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">treatment</span> <span class="op">*</span> <span class="va">ethnicity</span>,</span></span>
-<span class="r-in"><span>                   offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">covariance_y0_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                   data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>                   weights <span class="op">=</span> <span class="va">STARdata_ate</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ate_read_loc</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">schoolk</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
+<span class="r-in"><span>          dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
+<span class="r-in"><span>          offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>          weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read_eth</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     (Intercept)                   treatmentTRUE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -9.603676e-14                    5.901494e+00 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   ethnicityafam                  ethnicityasian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -1.612015e-14                    1.965411e-14 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               ethnicityhispanic               ethnicityamindian </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    6.700549e-13                    1.565857e-15 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                  ethnicityother     treatmentTRUE:ethnicityafam </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -6.431281e-14                   -1.289929e+00 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    treatmentTRUE:ethnicityasian treatmentTRUE:ethnicityhispanic </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   -2.494972e+01                    3.214437e+01 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> treatmentTRUE:ethnicityamindian    treatmentTRUE:ethnicityother </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    1.391799e+01                    3.202748e+00 </span>
+<span class="r-in"><span><span class="fu">show</span><span class="op">(</span><span class="va">ate_read_loc</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> `stark._schoolkinner-city`     stark._schoolksuburban </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   5.403909                   5.888685 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        stark._schoolkrural        stark._schoolkurban </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                   5.980288                   2.155538 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
