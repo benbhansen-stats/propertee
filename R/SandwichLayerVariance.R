@@ -73,11 +73,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (inherits(x, "teeMod")) {
     vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
   } else {
-    vmat_ix <- 1:length(x[[1L]]$coefficients)
-    for (ix in seq_along(x)) {
-      mod <- x[[ix]]
+    start_ix <- 0
+    for (mod_ix in seq_along(x)) {
+      mod <- x[[mod_ix]]
+      vmat_ix <- start_ix + seq_along(mod$coefficients)
       vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
-      vmat_ix <- vmat_ix + length(mod$coefficients)
+      start_ix <- start_ix + length(mod$coefficients)
     }
     vmat[apply(is.na(vmat), 1, any),] <- NA_real_
     vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
