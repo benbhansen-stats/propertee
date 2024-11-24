@@ -1013,13 +1013,26 @@ To improve clarity we rotate and relabel within \texttt{lmitt.formula}:
 \end{itemize}
 
 These modifications would have to be reflected also in
-\texttt{bread.teeMod()}, which needs to be pre-multiplied by the inverted
-Jacobian\marginpar{Check me!} of a linear transformation
+\texttt{estfun.teeMod()} and 
+\texttt{bread.teeMod()}. In \texttt{estfun.teeMod()}, the values of
+\texttt{.get\_a21()} and\texttt{.get\_tilde\_a21()} have to be
+post-multiplied by the Jacobian of a linear transformation
 taking the new parameters \texttt{sg1}, \texttt{sg2}, \ldots,
 \texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
 \texttt{z.:sgk}) back to the old parameters (\texttt{(Intercept)}, \texttt{sg2}, \ldots,
 \texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
-\texttt{z.:sgk}).  This Jacobian and its inverse take the forms
+\texttt{z.:sgk}).
+For \texttt{bread.teeMod()}, the values of \texttt{.get\_a22\_inverse()}
+and \texttt{.get\_tilde\_a22\_inverse()} need to be pre-multiplied by
+the inverse of the same Jacobian. %\marginpar{Check me!}
+% --This checks out. Let
+% $\tilde{theta}$ be the (old) parametrization with intercept and $\theta$
+% the new parametrization without intercept, and let 
+% $f: \theta \mapsto \tilde{\theta}$. The Jacobian of
+% $\Psi_{i}(f(\theta)$ is
+% $J_{\Psi_{i}}(\tilde\theta)J_{f}(\theta)$;
+% inversion switches the ordering of the inverted Jacobians.
+This Jacobian and its inverse take the forms
 \begin{equation*}
   \begin{blockarray}{rcccccccc}
 & \text{sg1}& \text{sg2} & \cdots & \text{sgk} & \text{z.:sg1} & \text{z.:sg2}& \cdots & \text{z.:sgk} \\ 
