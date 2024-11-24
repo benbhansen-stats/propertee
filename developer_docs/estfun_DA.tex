@@ -1013,18 +1013,14 @@ To improve clarity we rotate and relabel within \texttt{lmitt.formula}:
 \end{itemize}
 
 These modifications would have to be reflected also in
-\texttt{estfun.teeMod()} and 
-\texttt{bread.teeMod()}. In \texttt{estfun.teeMod()}, the values of
-\texttt{.get\_a21()} and\texttt{.get\_tilde\_a21()} have to be
-post-multiplied by the Jacobian of a linear transformation
-taking the new parameters \texttt{sg1}, \texttt{sg2}, \ldots,
-\texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
-\texttt{z.:sgk}) back to the old parameters (\texttt{(Intercept)}, \texttt{sg2}, \ldots,
-\texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
-\texttt{z.:sgk}).
+%\texttt{estfun.teeMod()} and 
+\texttt{bread.teeMod()}.
+% In \texttt{estfun.teeMod()}, the values of
+% \texttt{.get\_a21()} and\texttt{.get\_tilde\_a21()} have to be
+% post-multiplied by the Jacobian...
 For \texttt{bread.teeMod()}, the values of \texttt{.get\_a22\_inverse()}
 and \texttt{.get\_tilde\_a22\_inverse()} need to be pre-multiplied by
-the inverse of the same Jacobian. %\marginpar{Check me!}
+the inverse Jacobian %\marginpar{Check me!}
 % --This checks out. Let
 % $\tilde{theta}$ be the (old) parametrization with intercept and $\theta$
 % the new parametrization without intercept, and let 
@@ -1032,6 +1028,12 @@ the inverse of the same Jacobian. %\marginpar{Check me!}
 % $\Psi_{i}(f(\theta)$ is
 % $J_{\Psi_{i}}(\tilde\theta)J_{f}(\theta)$;
 % inversion switches the ordering of the inverted Jacobians.
+of the linear transformation
+taking the new parameters \texttt{sg1}, \texttt{sg2}, \ldots,
+\texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
+\texttt{z.:sgk}) back to the old parameters (\texttt{(Intercept)}, \texttt{sg2}, \ldots,
+\texttt{sgk}, \texttt{z.:sg1}, \texttt{z.:sg2}, \ldots,
+\texttt{z.:sgk}).
 This Jacobian and its inverse take the forms
 \begin{equation*}
   \begin{blockarray}{rcccccccc}
