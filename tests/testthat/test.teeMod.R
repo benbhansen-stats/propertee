@@ -454,6 +454,34 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   )
 })
 
+test_that("estfun.teeMod with missing values", {
+  set.seed(438)
+  data(simdata)
+  simdata_copy <- simdata
+  simdata_copy$z[1:3] <- NA_real_
+  nc <- 30
+  nq <- nrow(simdata_copy)
+  n <- nc + nq
+  cmod_ssta <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_ssta)
+  
+  simdata_copy$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), simdata_copy)
+  dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
+  
+  ef <- estfun(dmod)
+  expect_equal(nrow(ef), nc + nq)
+  expect_true(all.equal(ef[1:3,], matrix(0, nrow = 3, ncol = 2), check.attributes = FALSE))
+  class(dmod$na.action) <- "exclude"
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  a11_inv <- .get_a11_inverse(dmod)
+  a21 <- .get_a21(dmod)
+  expect_equal(
+    ef,
+    ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+  )
+})
+
 test_that(paste("estfun.teeMod returns correct dimensions and alignment",
                 "when exact alignment between C and Q is possible"), {
   set.seed(438)

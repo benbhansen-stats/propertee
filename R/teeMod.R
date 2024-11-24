@@ -114,7 +114,7 @@ estfun.teeMod <- function(x, ...) {
   args <- list(...)
   args$x <- x
   # change model object's na.action to na.exclude so estfun returns NA rows
-  class(x$na.action) <- "exclude"
+  if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
 
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations

@@ -540,33 +540,58 @@ test_that(".get_a22_inverse correct w/ covariance adjustment", {
                         check.attributes = FALSE))
 })
 
-test_that(".get_tilde_a22_inverse correct w/o covariance adjustment", {
-  data(simdata)
-
-  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec)))
-  m_lmitt.form <- lmitt(y ~ 1, data = simdata, specification = spec, weights = ate(spec))
-
-  expect_equal(.get_tilde_a22_inverse(m_as.lmitt), .get_a22_inverse(m_as.lmitt))
-  expect_equal(.get_tilde_a22_inverse(m_lmitt.form), .get_a22_inverse(m_lmitt.form))
-})
-
-test_that(".get_a22_inverse correct w/o covariance adjustment", {
+test_that(".get_a22_inverse with missing values", {
   set.seed(438)
   data(simdata)
+  simdata$z[1:3] <- NA_real_
   nc <- 30
   nq <- nrow(simdata)
   n <- nc + nq
   cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
   cmod <- lm(y ~ x, cmod_data)
-
+  
   simdata$id <- seq(nq)
   spec <- rct_spec(z ~ unitid(id), simdata)
-
+  
   m_as.lmitt <- as.lmitt(lm(
     y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)
   ))
   m_lmitt.form <- lmitt(y ~ 1, data = simdata, specification = spec,
+                        weights = ate(spec), offset = cov_adj(cmod))
+  
+  expect_true(all.equal(.get_a22_inverse(m_as.lmitt), nq * chol2inv(m_as.lmitt$qr$qr), check.attributes = FALSE))
+  expect_true(all.equal(.get_a22_inverse(m_lmitt.form), nq * chol2inv(m_lmitt.form$qr$qr), check.attributes = FALSE))
+})
+
+test_that(".get_tilde_a22_inverse correct w/o covariance adjustment", {
+  data(simdata)
+  new_data <- simdata
+
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = new_data)
+  m_as.lmitt <- as.lmitt(lm(y ~ assigned(), data = new_data, weights = ate(spec)))
+  m_lmitt.form <- lmitt(y ~ 1, data = new_data, specification = spec, weights = ate(spec))
+
+  expect_equal(.get_tilde_a22_inverse(m_as.lmitt), .get_a22_inverse(m_as.lmitt))
+  expect_equal(.get_tilde_a22_inverse(m_lmitt.form), .get_a22_inverse(m_lmitt.form))
+})
+
+test_that(".get_tilde_a22_inverse correct w/ covariance adjustment", {
+  set.seed(438)
+  data(simdata)
+  new_data <- simdata
+  nc <- 30
+  nq <- nrow(new_data)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
+
+  new_data$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), new_data)
+
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), data = new_data, weights = ate(spec), offset = cov_adj(cmod)
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, data = new_data, specification = spec,
                         weights = ate(spec), offset = cov_adj(cmod))
 
   inv_fim <- n * chol2inv(m_as.lmitt$qr$qr)
@@ -575,6 +600,32 @@ test_that(".get_a22_inverse correct w/o covariance adjustment", {
                         check.attributes = FALSE))
   expect_true(all.equal(propertee:::.get_tilde_a22_inverse(m_lmitt.form), inv_fim,
                         check.attributes = FALSE))
+})
+
+test_that(".get_tilde_a22_inverse with missing values", {
+  set.seed(438)
+  data(simdata)
+  new_data <- simdata
+  new_data$z[1:3] <- NA_real_
+  nc <- 30
+  nq <- nrow(new_data)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  new_data$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), new_data)
+  
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), data = new_data, weights = ate(spec), offset = cov_adj(cmod)
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, data = new_data, specification = spec,
+                        weights = ate(spec), offset = cov_adj(cmod))
+  
+  inv_fim <- n * chol2inv(m_as.lmitt$qr$qr)
+  
+  expect_true(all.equal(.get_tilde_a22_inverse(m_as.lmitt), inv_fim, check.attributes = FALSE))
+  expect_true(all.equal(.get_tilde_a22_inverse(m_lmitt.form), inv_fim, check.attributes = FALSE))
 })
 
 test_that(".get_b22 returns correct value for lm object w/o offset", {
@@ -1202,6 +1253,31 @@ test_that(".get_tilde_a21 correct values", {
   expect_equal(.get_tilde_a21(m_lmitt.form), nq / n * .get_a21(m_lmitt.form))
 })
 
+test_that(".get_tilde_a21 with missing", {
+  set.seed(438)
+  data(simdata)
+  
+  new_df <- simdata
+  new_df$z[1:3] <- NA_real_
+  nc <- 30
+  nq <- nrow(new_df)
+  n <- nc + nq
+  cmod_data <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_data)
+  
+  new_df$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), new_df)
+  
+  m_as.lmitt <- as.lmitt(lm(
+    y ~ assigned(), new_df, weights = ate(spec), offset = cov_adj(cmod, by = "id")
+  ))
+  m_lmitt.form <- lmitt(y ~ 1, specification = spec, data = new_df,
+                        weights = ate(spec), offset = cov_adj(cmod, by = "id"))
+  
+  expect_equal(.get_tilde_a21(m_as.lmitt), nq / n * .get_a21(m_as.lmitt))
+  expect_equal(.get_tilde_a21(m_lmitt.form), nq / n * .get_a21(m_lmitt.form))
+})
+
 test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
                 "has NA values for some covariate values"), {
   data(simdata)
@@ -1222,7 +1298,7 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
 
   ssmod_mm <- stats::model.matrix(m_as.lmitt)
   pg <- stats::model.matrix(formula(cmod), m_data)
-  nq <- nrow(ssmod_mm)
+  nq <- nrow(m_data)
 
   a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
   expect_true(all.equal(a21_as.lmitt, crossprod(ssmod_mm, pg) / nq,
@@ -1243,7 +1319,7 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
 
   ssmod_mm <- stats::model.matrix(m_as.lmitt)
   pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
-  nq <- nrow(ssmod_mm)
+  nq <- nrow(simdata)
 
   a21_as.lmitt <- suppressWarnings(propertee:::.get_a21(m_as.lmitt))
   expect_true(all.equal(a21_as.lmitt, crossprod(ssmod_mm, pg) / nq,
