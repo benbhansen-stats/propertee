@@ -177,6 +177,8 @@ as.teeMod <- as.lmitt
     }
   }
   lm_model$call$data <- data
+  # set call's na.action to na.pass so expand.model.frame includes NA rows
+  lm_model$call$na.action <- "na.pass"
   assign("data", data, envir = eval_env)
   assign("specification", specification, envir = eval_env)
   environment(lm_model$terms) <- eval_env

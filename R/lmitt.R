@@ -336,9 +336,12 @@ lmitt.formula <- function(obj,
 
   # restore subset
   lm.call$subset <- savedsubset
-
+  
   model <- eval(lm.call, parent.frame())
-
+  
+  # set call's na.action to na.pass so expand.model.frame includes NA rows
+  model$call$na.action <- "na.pass"
+  
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&
       !is.null(sys.call(-1)) &&

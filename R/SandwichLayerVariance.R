@@ -53,8 +53,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' @keywords internal
 .vcov_CR0 <- function(x, ...) {
-  if (!inherits(x, "teeMod")) {
-    stop("x must be a teeMod model")
+  if (!inherits(x, c("teeMod", "mmm"))) {
+    stop("x must be a teeMod or mmm object")
   }
 
   args <- list(...)
@@ -70,7 +70,18 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
-  vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+  if (inherits(x, "teeMod")) {
+    vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+  } else {
+    vmat_ix <- 1:length(mods[[1L]]$coefficients)
+    for (ix in seq_along(mods)) {
+      mod <- x[[ix]]
+      vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
+      vmat_ix <- vmat_ix + length(mod$coefficients)
+    }
+    vmat[apply(is.na(vmat), 1, any),] <- NA_real_
+    vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
+  }
 
   attr(vmat, "type") <- "CR0"
   return(vmat)
@@ -527,8 +538,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
   out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
                    sl@prediction_gradient[msk, , drop = FALSE])
-  # scale by nq
-  nq <- sum(msk)
+  # scale by nq and keep it consistent with other nq calculations with na.action = na.pass
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
 
   return(out / nq)
 }
@@ -542,7 +553,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     return(out)
   }
 
-  nq <- nrow(stats::model.frame(x))
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
 
@@ -556,7 +567,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 .get_tilde_a21 <- function(x) {
   out <- .get_a21(x)
 
-  nq <- nrow(stats::model.frame(x))
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
   sl <- x$model$`(offset)`
   nc_not_q <- sum(!sl@keys$in_Q)
   n <- nq + nc_not_q
