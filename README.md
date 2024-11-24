@@ -2,7 +2,7 @@
 # propertee: **P**rognostic **R**egression **O**ffsets with **P**ropagation of **ER**rors, for **T**reatment **E**ffect **E**stimation <img src="man/figures/logo.png" align="right" alt="propertee website" style="width: 150px;"/>
 
 <!-- badges: start -->
-[![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
+[![R-CMD-check](https://github.com/benbhansen-stats/propertee/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/benbhansen-stats/propertee/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **propertee** enables flexible direct adjustment with specification-informed standard errors
