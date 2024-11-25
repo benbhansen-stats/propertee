@@ -21,3 +21,6 @@ lib/*
 /doc/
 /docs/
 /pkgdown/
+*.RData
+*.Rapp.history
+*.Rhistory
