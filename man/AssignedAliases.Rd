@@ -5,39 +5,39 @@
 \alias{adopters}
 \alias{a.}
 \alias{z.}
-\title{Obtain Treatment from Design}
+\title{Obtain Treatment from StudySpecification}
 \usage{
-assigned(design = NULL, data = NULL, dichotomy = NULL)
+assigned(specification = NULL, data = NULL, dichotomy = NULL)
 
-adopters(design = NULL, data = NULL, dichotomy = NULL)
+adopters(specification = NULL, data = NULL, dichotomy = NULL)
 
-a.(design = NULL, data = NULL, dichotomy = NULL)
+a.(specification = NULL, data = NULL, dichotomy = NULL)
 
-z.(design = NULL, data = NULL, dichotomy = NULL)
+z.(specification = NULL, data = NULL, dichotomy = NULL)
 }
 \arguments{
-\item{design}{Optional \code{Design}. If the \code{Design} can't be
-identified in the model (usually because neither weights (\code{ate()} or
-\code{ett()}) nor a covariate adjustment model (\code{cov_adj()}) are
-found), the \code{Design} can be passed diretly.}
+\item{specification}{Optional \code{StudySpecification}. If the
+\code{StudySpecification} can't be identified in the model (usually
+because neither weights (\code{ate()} or \code{ett()}) nor a covariate
+adjustment model (\code{cov_adj()}) are found), the
+\code{StudySpecification} can be passed diretly.}
 
 \item{data}{Optional data set. By default \code{\link[=assigned]{assigned()}} will attempt to
 identify the appropriate data, if this fails (or you want to overwrite
 it), you can pass the data here.}
 
 \item{dichotomy}{optional; a formula defining the dichotomy of the treatment
-variable if it isn't already \code{0}/\code{1}. See details for more information.
-If \code{ett()} or \code{ate()} is
-called within a \code{lmitt()} call that specifies a \code{dichotomy}
-argument, that \code{dichotomy} will be used if the argument here has not
-been specified.}
+variable if it isn't already \code{0}/\code{1}. See details for more
+information. If \code{ett()} or \code{ate()} is called within a
+\code{lmitt()} call that specifies a \code{dichotomy} argument, that
+\code{dichotomy} will be used if the argument here has not been specified.}
 }
 \value{
 The treatment variable to be placed in the regression formula.
 }
 \description{
 When passing a \code{lm} object to \code{\link[=lmitt]{lmitt()}}, extract and use
-the treatment variable specified in the \code{Design}.
+the treatment variable specified in the \code{StudySpecification}.
 }
 \details{
 When passing a \code{lm} object to \code{\link[=lmitt]{lmitt()}}, the treatment
@@ -47,31 +47,33 @@ use one of these functions, to allow \code{\link[=lmitt]{lmitt()}} to identify t
 variable.
 
 To keep the formula in the \code{\link[=lm]{lm()}} call concise, instead of passing
-\code{design} and \code{data} arguments to these functions, one can
-pass a \code{WeightedDesign} object to the \code{weights} argument of the
-\code{\link[=lm]{lm()}} call or a \code{SandwichLayer} object to the \code{offset} argument.
+\code{specification} and \code{data} arguments to these functions, one can
+pass a \code{WeightedStudySpecification} object to the \code{weights}
+argument of the \code{\link[=lm]{lm()}} call or a \code{SandwichLayer} object to the
+\code{offset} argument.
 
-Alternatively, you can pass the \code{design} and \code{data} arguments.
+Alternatively, you can pass the \code{specification} and \code{data}
+arguments.
 
 While \code{assigned()} can be used in any situation, it is most useful
 for scenarios where the treatment variable is non-binary and the
-\code{Design} contains a \code{Dichotomy}. For example, say \code{q} is a
-3-level ordinal treatment variable, and the binary comparison of interest
-is captured in \code{dichotomy = q == 3 ~ q < 3}. If you were to fit a
-model including \code{q} as a predictor, e.g. \code{lm(y ~ q, ...)},
-\code{lm} would treat \code{q} as the full ordinal variable. On the other
-hand, by calling \code{lm(y ~ assigned(), weights = ate(des), ...)},
-\code{assigned()} will generate the appropriate binary variable to allow
-estimation of treatment effects.
+\code{StudySpecification} contains a \code{Dichotomy}. For example, say
+\code{q} is a 3-level ordinal treatment variable, and the binary
+comparison of interest is captured in \code{dichotomy = q == 3 ~ q < 3}.
+If you were to fit a model including \code{q} as a predictor, e.g.
+\code{lm(y ~ q, ...)}, \code{lm} would treat \code{q} as the full ordinal
+variable. On the other hand, by calling \code{lm(y ~ assigned(), weights =
+  ate(spec), ...)}, \code{assigned()} will generate the appropriate binary
+variable to allow estimation of treatment effects.
 
 If called outside of a model call and without a \code{data} argument, this
-will extract the treatment from the \code{design}. If this is the goal,
-the \code{\link[=treatment]{treatment()}} function is better suited for this purpose.
+will extract the treatment from the \code{specification}. If this is the
+goal, the \code{\link[=treatment]{treatment()}} function is better suited for this purpose.
 }
 \examples{
 data(simdata)
-des <- obs_design(z ~ uoa(uoa1, uoa2), data = simdata)
-mod <- lm(y ~ assigned(), data = simdata, weights = ate(des))
+spec <- obs_spec(z ~ uoa(uoa1, uoa2), data = simdata)
+mod <- lm(y ~ assigned(), data = simdata, weights = ate(spec))
 lmittmod <- lmitt(mod)
 summary(lmittmod)
 }

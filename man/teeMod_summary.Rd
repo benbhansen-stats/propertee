@@ -20,8 +20,8 @@
 \item{vcov.type}{A string indicating the desired variance estimator. See
 \code{\link[=vcov_tee]{vcov_tee()}} for details on accepted types.}
 
-\item{...}{Additional arguments to \code{\link[=vcov_tee]{vcov_tee()}}, such as the desired
-finite sample heteroskedasticity-robust standard error adjustment.}
+\item{...}{Additional arguments to \code{\link[=vcov_tee]{vcov_tee()}}, such as the desired finite
+sample heteroskedasticity-robust standard error adjustment.}
 
 \item{x}{\code{summary.teeMod} object}
 
@@ -37,9 +37,8 @@ object of class \code{summary.teeMod}
 \code{\link[=summary]{summary()}} method for class \code{teeMod}
 }
 \details{
-If a \code{teeMod} object is fit with a
-\code{SandwichLayer} offset, then the usual \code{stats::summary.lm()}
-output is enhanced by the use of covariance-adjusted sandwich standard
-errors, with t-test values recalculated to reflect the new standard
-errors.
+If a \code{teeMod} object is fit with a \code{SandwichLayer}
+offset, then the usual \code{stats::summary.lm()} output is enhanced by
+the use of covariance-adjusted sandwich standard errors, with t-test
+values recalculated to reflect the new standard errors.
 }

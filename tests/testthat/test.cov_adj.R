@@ -19,55 +19,55 @@ test_ca <- function(ca, cov_mod,  Q_) {
   return(NULL)
 }
 
-test_that("cov_adj outside of lm call specifying newdata and design, data has NULLs", {
-  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+test_that("cov_adj outside of lm call specifying newdata and specification, data has NULLs", {
+  spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
 
-  expect_warning(cov_adj(cmod, design = des, newdata = Q_w_nulls),
+  expect_warning(cov_adj(cmod, specification = spec, newdata = Q_w_nulls),
                  "adjustments are NA")
-  ca <- suppressWarnings(cov_adj(cmod, design = des, newdata = Q_w_nulls))
+  ca <- suppressWarnings(cov_adj(cmod, specification = spec, newdata = Q_w_nulls))
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "SandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call specifying newdata and design, data has no NULLs", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
+test_that("cov_adj outside of lm call specifying newdata and specification, data has no NULLs", {
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
-  ca <- cov_adj(cmod, design = des, newdata = Q_wo_nulls)
+  ca <- cov_adj(cmod, specification = spec, newdata = Q_wo_nulls)
   test_ca(ca, cmod, Q_wo_nulls)
   expect_true(inherits(ca, "SandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call specifying newdata and design, data has partial overlap", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
+test_that("cov_adj outside of lm call specifying newdata and specification, data has partial overlap", {
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
-  ca <- cov_adj(cmod, design = des, newdata = Q_partial_overlap)
+  ca <- cov_adj(cmod, specification = spec, newdata = Q_partial_overlap)
   test_ca(ca, cmod, Q_partial_overlap)
   expect_true(inherits(ca, "SandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call specifying newdata but no design, data has NULLs", {
+test_that("cov_adj outside of lm call specifying newdata but no specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   ca <- cov_adj(cmod, newdata = Q_w_nulls)
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call specifying newdata but no design, data has no NULLs", {
+test_that("cov_adj outside of lm call specifying newdata but no specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, newdata = Q_wo_nulls)
   test_ca(ca, cmod, Q_wo_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call specifying newdata but no design, data has partial overlap", {
+test_that("cov_adj outside of lm call specifying newdata but no specification, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   ca <- cov_adj(cmod, newdata = Q_partial_overlap)
   test_ca(ca, cmod, Q_partial_overlap)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call not specifying newdata or design, data has NULLs", {
+test_that("cov_adj outside of lm call not specifying newdata or specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
@@ -77,7 +77,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call not specifying newdata or design, data has no NULLs", {
+test_that("cov_adj outside of lm call not specifying newdata or specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
@@ -87,7 +87,7 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
-test_that("cov_adj outside of lm call not specifying newdata or design, data has partial overlap", {
+test_that("cov_adj outside of lm call not specifying newdata or specification, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   w <- capture_warnings(cov_adj(cmod))
   expect_true(any(vapply(w, grepl, logical(1),
@@ -98,13 +98,13 @@ test_that("cov_adj outside of lm call not specifying newdata or design, data has
 })
 
 test_that("cov_adj as offset with weights, data has NULLs", {
-  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+  spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
-                    offset = cov_adj(cmod), weights = ate(des)),
+                    offset = cov_adj(cmod), weights = ate(spec)),
                  "adjustments are NA")
   m <- suppressWarnings(lm(readk ~ stark == "small", data = Q_w_nulls,
-                           offset = cov_adj(cmod), weights = ate(des)))
+                           offset = cov_adj(cmod), weights = ate(spec)))
 
   form <- paste("~", paste(unique(c(all.vars(formula(cmod)), all.vars(formula(m)))),
                            collapse = "+"))
@@ -115,55 +115,55 @@ test_that("cov_adj as offset with weights, data has NULLs", {
 })
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
-  m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod), weights = ate(des))
+  m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod), weights = ate(spec))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
 test_that("cov_adj as offset with weights, data has partial overlap", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_partial_overlap)
-  m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod), weights = ate(des))
+  m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod), weights = ate(spec))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ newdata and design, no weights, data has NULLs", {
-  des <- rct_design(stark == "small" ~ unitid(id), data = Q_w_nulls)
+test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has NULLs", {
+  spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   expect_warning(lm(readk ~ stark == "small", data = Q_w_nulls,
-                    offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)),
+                    offset = cov_adj(cmod, newdata = Q_w_nulls, specification = spec)),
                  "adjustments are NA")
   m <- suppressWarnings(
     lm(readk ~ stark == "small", data = Q_w_nulls,
-       offset = cov_adj(cmod, newdata = Q_w_nulls, design = des)))
+       offset = cov_adj(cmod, newdata = Q_w_nulls, specification = spec)))
   all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
   keep_idx <- apply(is.na(Q_w_nulls[, all_vars]), 1, sum) == 0
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ newdata and design, no weights, data has no NULLs", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
+test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has no NULLs", {
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls,
-          offset = cov_adj(cmod, newdata = Q_wo_nulls, design = des))
+          offset = cov_adj(cmod, newdata = Q_wo_nulls, specification = spec))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ newdata and design, no weights, data has partial overlap", {
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
+test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has partial overlap", {
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_partial_overlap)
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_partial_overlap,
-          offset = cov_adj(cmod, newdata = Q_partial_overlap, design = des))
+          offset = cov_adj(cmod, newdata = Q_partial_overlap, specification = spec))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has NULLs", {
+test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   m <- lm(readk ~ stark == "small", data = Q_w_nulls, offset = cov_adj(cmod))
   all_vars <- c(all.vars(cmod$call$formula[-2]), all.vars(m$call$formula))
@@ -172,14 +172,14 @@ test_that("cov_adj as offset specified w/ no newdata nor design, no weights, dat
   expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has no NULLs", {
+test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   m <- lm(y ~ z, data = Q_wo_nulls, offset = cov_adj(cmod))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
   expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
 
-test_that("cov_adj as offset specified w/ no newdata nor design, no weights, data has partial overlap", {
+test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has partial overlap", {
   cmod <- lm(y ~ x, data = Q_partial_overlap)
   m <- lm(y ~ z, data = Q_partial_overlap, offset = cov_adj(cmod))
   test_ca(m$model$`(offset)`, cmod, Q_partial_overlap)
@@ -191,16 +191,16 @@ test_that("cov_adj with named `by` argument called within `lmitt`", {
   Q_wo_nulls$obs_id <- seq_len(nrow(Q_wo_nulls))
 
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
-  m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
+  m <- lmitt(y ~ 1, specification = spec, data = Q_wo_nulls,
              offset = cov_adj(cmod, by = "obs_id"))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
 })
 
 test_that("cov_adj with `by` argument that's the same as the default called within `lmitt`", {
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
-  m <- lmitt(y ~ 1, design = des, data = Q_wo_nulls,
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
+  m <- lmitt(y ~ 1, specification = spec, data = Q_wo_nulls,
              offset = cov_adj(cmod, by = c("uoa1", "uoa2")))
   test_ca(m$model$`(offset)`, cmod, Q_wo_nulls)
 })
@@ -213,13 +213,13 @@ test_that(paste("cov_adj without `lmitt` call with named `by` argument and cmod"
   C_data$uid <- seq_len(nrow(C_data))
 
   cmod <- lm(C_data$y ~ C_data$x)
-  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
 
   expect_error(
     expect_warning(
       expect_warning(
         expect_warning(
-          cov_adj(cmod, design = des, by = c("obs_id" = "uid")),
+          cov_adj(cmod, specification = spec, by = c("obs_id" = "uid")),
           "No call to"
         ),
         "Unable to detect"
@@ -237,12 +237,12 @@ test_that(paste("cov_adj with unnamed `by` argument without `lmitt` call and cmo
   C_data$c2 <- Q_wo_nulls$uoa2
 
   cmod <- lm(y ~ x, Q_wo_nulls)
-  des <- rct_design(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), Q_wo_nulls)
 
   expect_warning(
     expect_warning(
       expect_warning(
-        ca <- cov_adj(cmod, design = des, by = c("uoa1", "uoa2")),
+        ca <- cov_adj(cmod, specification = spec, by = c("uoa1", "uoa2")),
         "No call to"
       ),
       "Unable to detect"
@@ -258,18 +258,18 @@ test_that("cov_adj coltypes for treatment", {
   n <- 10
   cmod_data <- data.frame(x = rnorm(n), y = rnorm(n), uid = 10 + seq_len(10))
   cmod <- lm(y ~ x, cmod_data)
-  desdata <- data.frame(x = rnorm(n), a = factor(rep(c(0, 1), each = 5)),
+  specdata <- data.frame(x = rnorm(n), a = factor(rep(c(0, 1), each = 5)),
                         uid = seq_len(10))
-  des <- rct_design(a ~ unitid(uid), desdata)
-  ca <- cov_adj(cmod, desdata, des)
+  spec <- rct_spec(a ~ unitid(uid), specdata)
+  ca <- cov_adj(cmod, specdata, spec)
   expect_true(inherits(ca, "SandwichLayer"))
-  
-  desdata$a <- as.character(desdata$a)
-  des <- rct_design(a ~ unitid(uid), desdata)
-  expect_warning(cov_adj(cmod, desdata, des))
+
+  specdata$a <- as.character(specdata$a)
+  spec <- rct_spec(a ~ unitid(uid), specdata)
+  expect_warning(cov_adj(cmod, specdata, spec))
 })
 
-test_that(paste(".update_ca_model_formula with NULL `by` and NULL `design` returns",
+test_that(paste(".update_ca_model_formula with NULL `by` and NULL `specification` returns",
                 "returns original model formula"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
@@ -296,25 +296,25 @@ test_that(paste(".update_ca_model_formula with unnamed `by`"), {
                "y ~ x + uid")
 })
 
-test_that(paste(".update_ca_model_formula with NULL `by` and non-NULL `design`"), {
+test_that(paste(".update_ca_model_formula with NULL `by` and non-NULL `specification`"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
-  design_df <- data.frame(z = rep(c(0, 1), each = 5), uid = seq_len(10))
-  des <- rct_design(z ~ unitid(uid), design_df)
+  specification_df <- data.frame(z = rep(c(0, 1), each = 5), uid = seq_len(10))
+  spec <- rct_spec(z ~ unitid(uid), specification_df)
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, design = des)),
+  expect_equal(deparse(.update_ca_model_formula(model, specification = spec)),
                "y ~ x + uid")
 })
 
-test_that(paste(".update_ca_model_formula with non-NULL `by` and non-NULL `design`"), {
+test_that(paste(".update_ca_model_formula with non-NULL `by` and non-NULL `specification`"), {
   set.seed(819)
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
-  design_df <- data.frame(z = rep(c(0, 1), each = 5), clust = rep(c(1, 2), each = 5), uid = seq_len(10))
-  des <- rct_design(z ~ cluster(clust), design_df)
+  specification_df <- data.frame(z = rep(c(0, 1), each = 5), clust = rep(c(1, 2), each = 5), uid = seq_len(10))
+  spec <- rct_spec(z ~ cluster(clust), specification_df)
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, by = "uid", design = des)),
+  expect_equal(deparse(.update_ca_model_formula(model, by = "uid", specification = spec)),
                "y ~ x + clust + uid")
 })
 
@@ -327,7 +327,7 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
   x2 <- c(rep(1, k), rep(-1, 2 * k), rep(1, k))
   z <- c(rep(1, k), rep(-1, k), rep(1, k), rep(-1, k))
 
-  # all orthogonal by design
+  # all orthogonal by specification
   expect_equal((t(x1) %*% x2)[1], 0)
   expect_equal((t(x1) %*% z)[1], 0)
   expect_equal((t(x2) %*% z)[1], 0)
@@ -350,8 +350,8 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
   expect_equal(coef(mboth), c(coef(m1), coef(m2)[2:3]))
 
   # now repeat with cov_adj
-  design <- rct_design(z == 1 ~ unitid(id), data = df)
-  m2ca <- glm(y ~ x2 + z, data = df, offset = cov_adj(m1, design = design))
+  specification <- rct_spec(z == 1 ~ unitid(id), data = df)
+  m2ca <- glm(y ~ x2 + z, data = df, offset = cov_adj(m1, specification = specification))
 
   expect_equal(coef(mboth), c(coef(m1), coef(m2ca)[2:3]))
 
@@ -432,8 +432,8 @@ test_that("cov_adj variance estimates for correlated predictors", {
   expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
 
   # now repeat with cov_adj
-  design <- rct_design(z ~ unitid(id), data = df)
-  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, design = design), weights = ate(design))
+  specification <- rct_spec(z ~ unitid(id), data = df)
+  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, specification = specification), weights = ate(specification))
 
   m2ca_da <- as.lmitt(m2ca)
 
@@ -446,7 +446,7 @@ options(old_opt)
 # Error in model.frame.default(formula = readk ~ birth + lunchk, data =
 #STARdata, : variable lengths differ (found for '(weights)')
 # mod <- lm(readk ~ birth + lunchk, data = STARdata,
-#          offset = cov_adj(cmod, newdata = STARdata), weights = ate(des))
+#          offset = cov_adj(cmod, newdata = STARdata), weights = ate(spec))
 
 
 
@@ -454,9 +454,9 @@ test_that("Basics of replacing treatment variable with reference level", {
   data(simdata)
 
   # Binary treatment
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data = simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   camod <- lm(y ~ x + z, data = simdata)
-  ca <- cov_adj(camod, newdata = simdata, design = des)
+  ca <- cov_adj(camod, newdata = simdata, specification = spec)
 
   simdata2 <- simdata
   simdata2$z <- 0
@@ -470,9 +470,9 @@ test_that("Basics of replacing treatment variable with reference level", {
   expect_false(all(manual == ca))
 
   # Numeric treatment
-  des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  spec <- rct_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
   camod <- lm(y ~ x + dose, data = simdata)
-  ca <- cov_adj(camod, newdata = simdata, design = des)
+  ca <- cov_adj(camod, newdata = simdata, specification = spec)
 
   simdata2 <- simdata
   simdata2$dose <- 50
@@ -482,9 +482,9 @@ test_that("Basics of replacing treatment variable with reference level", {
 
   # Factor treatment
   ## simdata$dose <- as.factor(simdata$dose)
-  ## des <- rct_design(dose ~ cluster(uoa1, uoa2), data = simdata)
+  ## spec <- rct_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
   ## camod <- lm(y ~ x + dose, data = simdata)
-  ## ca <- cov_adj(camod, newdata = simdata, design = des)
+  ## ca <- cov_adj(camod, newdata = simdata, specification = spec)
 
   ## simdata2 <- simdata
   ## simdata2$dose <- levels(simdata2$dose)[1]
@@ -508,13 +508,13 @@ test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
   dat <- data.frame(R=R,Z=Z,x=x,Y=Y)
 
   dat$id=1:nrow(dat)
-  des=rd_design(Z~forcing(R)+unitid(id),data=dat)
+  spec=rd_spec(Z~forcing(R)+unitid(id),data=dat)
 
   modHet=glm(Y~R+Z*x,family=binomial,data=dat)
 
   ## propertee cov_adj
   ##(offset is in the @.Data slot)
-  ca=cov_adj(modHet, newdata=dat,design=des )
+  ca=cov_adj(modHet, newdata=dat,specification=spec )
 
   ##what we want cov_adj to be
   mm0 = model.matrix(modHet)

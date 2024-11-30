@@ -5,30 +5,42 @@
 \alias{as.teeMod}
 \title{Convert \code{lm} object into \code{teeMod}}
 \usage{
-as.lmitt(x, design = NULL)
+as.lmitt(x, specification = NULL)
 
-as.teeMod(x, design = NULL)
+as.teeMod(x, specification = NULL)
 }
 \arguments{
-\item{x}{\code{lm} object with weights containing a \code{WeightedDesign},
-or an offset from \code{\link[=cov_adj]{cov_adj()}}.}
+\item{x}{\code{lm} object with weights containing a
+\code{WeightedStudySpecification}, or an offset from \code{\link[=cov_adj]{cov_adj()}}.}
 
-\item{design}{Optional, explicitly specify the \code{Design} to be used. If
-the \code{Design} is specified elsewhere in \code{x} (e.g. passed as an
-argument to any of \code{ate()}, \code{ett()}, \code{cov_adj()} or
-\code{assigned()}) it will be found automatically and does not need to be
-passed here as well. (If different \code{Design} objects are passed
-(either through the \code{lm} in weights or covariance adjustment, or
-through this argument), an error will be produced.)}
+\item{specification}{Optional, explicitly specify the
+\code{StudySpecification} to be used. If the \code{StudySpecification} is
+specified elsewhere in \code{x} (e.g. passed as an argument to any of
+\code{ate()}, \code{ett()}, \code{cov_adj()} or \code{assigned()}) it will
+be found automatically and does not need to be passed here as well. (If
+different \code{StudySpecification} objects are passed (either through the
+\code{lm} in weights or covariance adjustment, or through this argument),
+an error will be produced.)}
 }
 \value{
 \code{teeMod} object
 }
 \description{
 Converts the output of \code{\link[=lm]{lm()}} into a \code{teeMod}
-object so that it can be used to properly account for standard errors.
+object, for standard errors that account for block and cluster
+information carried with the \code{lm}'s weights, and/or an
+offset incorporating predictions of the outcome from a
+separate model.
 }
 \details{
-The formula with which \code{x} was created must include a
-treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).
+The formula with which \code{x} was created must include
+a treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).  If a model-based
+offset is incorportated, the model's predictions would have to
+have been extracted using \code{\link[=cov_adj]{cov_adj()}} (as opposed to
+\code{predict{}} in order for \code{teeMod} standard error
+calculations to reflect propagation of error from these
+predictions. This mechanism only supports treatment main effects:
+to estimate interactions of treatment assignment with a moderator
+variable, use \code{\link[=lmitt]{lmitt()}} instead of \code{lm()} and
+\code{as.lmitt()}.
 }

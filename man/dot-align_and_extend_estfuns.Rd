@@ -2,8 +2,8 @@
 % Please edit documentation in R/teeMod.R
 \name{.align_and_extend_estfuns}
 \alias{.align_and_extend_estfuns}
-\title{(Internal) Align the dimensions and rows of direct adjustment and covariance
-adjustment model estimating equations matrices}
+\title{(Internal) Align the dimensions and rows of direct adjustment and
+covariance adjustment model estimating equations matrices}
 \usage{
 .align_and_extend_estfuns(x, by = NULL, ...)
 }
@@ -11,27 +11,27 @@ adjustment model estimating equations matrices}
 \item{x}{a fitted \code{teeMod} model}
 
 \item{by}{character vector; indicates unit of assignment columns to generate
-ID's from; default is NULL, which uses the unit of assignment columns specified
-in the \code{teeMod} object's \code{Design} slot}
+ID's from; default is NULL, which uses the unit of assignment columns
+specified in the \code{teeMod} object's \code{StudySpecification} slot}
 
 \item{...}{arguments passed to methods}
 }
 \value{
 A list of two matrices, one being the aligned contributions to the
-estimating equations for the direct adjustment model, and the other being the
-aligned contributions to the covariance adjustment model.
+estimating equations for the direct adjustment model, and the other being
+the aligned contributions to the covariance adjustment model.
 }
 \description{
-(Internal) Align the dimensions and rows of direct adjustment and covariance
-adjustment model estimating equations matrices
+(Internal) Align the dimensions and rows of direct adjustment and
+covariance adjustment model estimating equations matrices
 }
 \details{
-\code{.align_and_extend_estfuns()} first extracts the matrices of contributions
-to the empirical estimating equations for the direct adjustment and covariance
-adjustment models; then, it pads the matrices with zeros to account for units
-of observation that appear in one model-fitting sample but not the other;
-finally it orders the matrices so units of observation
-(or if unit of observation-level ordering is impossible, units of assignment)
-are aligned.
+\code{.align_and_extend_estfuns()} first extracts the matrices of
+contributions to the empirical estimating equations for the direct
+adjustment and covariance adjustment models; then, it pads the matrices
+with zeros to account for units of observation that appear in one
+model-fitting sample but not the other; finally it orders the matrices so
+units of observation (or if unit of observation-level ordering is
+impossible, units of assignment) are aligned.
 }
 \keyword{internal}

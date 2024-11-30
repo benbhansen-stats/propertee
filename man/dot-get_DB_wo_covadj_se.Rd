@@ -2,7 +2,8 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.get_DB_wo_covadj_se}
 \alias{.get_DB_wo_covadj_se}
-\title{(Internal) Design-based variance for models without covariance adjustment}
+\title{(Internal) StudySpecification-based variance for models without
+covariance adjustment}
 \usage{
 .get_DB_wo_covadj_se(x, ...)
 }
@@ -10,14 +11,16 @@
 \item{x}{a fitted \code{teeMod} model}
 }
 \value{
-design-based variance estimate of the main treatment effect estimate
+specification-based variance estimate of the main treatment effect
+estimate
 }
 \description{
-(Internal) Design-based variance for models without covariance adjustment
+(Internal) StudySpecification-based variance for models without
+covariance adjustment
 }
 \details{
-Calculate bread matrix for design-based variance estimate for
-\code{teeMod} models without covariance adjustment and
-without absorbed effects
+Calculate bread matrix for specification-based variance estimate for
+\code{teeMod} models without covariance adjustment and without absorbed
+effects
 }
 \keyword{internal}

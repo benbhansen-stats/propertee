@@ -2,29 +2,30 @@
 % Please edit documentation in R/SandwichLayer.R
 \name{.make_PreSandwichLayer}
 \alias{.make_PreSandwichLayer}
-\title{(Internal) Get covariance adjustments and their gradient with
-respect to covariance adjustment model coefficients}
+\title{(Internal) Get covariance adjustments and their gradient with respect
+to covariance adjustment model coefficients}
 \usage{
 .make_PreSandwichLayer(model, newdata = NULL, ...)
 }
 \arguments{
-\item{model}{a fitted model to use for generating covariance adjustment values}
+\item{model}{a fitted model to use for generating covariance adjustment
+values}
 
 \item{newdata}{a dataframe with columns called for in \code{model}}
 
 \item{...}{additional arguments to pass on to \code{model.frame} and
 \code{model.matrix}. These cannot include \code{na.action}, \code{xlev},
-or \code{contrasts.arg}: the former is fixed to be \code{na.pass},
-while the latter two are provided by elements of the \code{model} argument.}
+or \code{contrasts.arg}: the former is fixed to be \code{na.pass}, while
+the latter two are provided by elements of the \code{model} argument.}
 }
 \value{
 A \code{PreSandwichLayer} object
 }
 \description{
 \code{.make_PreSandwichLayer()} takes a fitted covariance
-adjustment model passed to the \code{model} argument and generates adjustments to
-outcomes for observations in the \code{newdata} argument. It also evaluates
-the gradient of the adjustments taken with respect to the coefficients at
-the coefficient estimates.
+adjustment model passed to the \code{model} argument and generates
+adjustments to outcomes for observations in the \code{newdata} argument.
+It also evaluates the gradient of the adjustments taken with respect to
+the coefficients at the coefficient estimates.
 }
 \keyword{internal}

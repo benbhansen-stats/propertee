@@ -1,21 +1,21 @@
 test_that("absorb= argument", {
 
   data(simdata)
-  des <- rd_design(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
+  spec <- rd_spec(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
-  da <- lmitt(y ~ 1, weights = ate(), data = simdata, design = des)
-  expect_length(coefficients(da), 2)
+  mod <- lmitt(y ~ 1, weights = ate(), data = simdata, specification = spec)
+  expect_length(coefficients(mod), 2)
 
-  da <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_length(coefficients(da), 2)
+  mod <- lmitt(y ~ 1, weights = ate(), data = simdata, absorb = TRUE, specification = spec)
+  expect_length(coefficients(mod), 2)
 
   # subgroup effects
-  da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, design = des)
-  expect_length(coefficients(da), 8)
+  mod <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, specification = spec)
+  expect_length(coefficients(mod), 8)
 
-  da <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, absorb = TRUE, design = des)
-  expect_length(coefficients(da), 8)
+  mod <- lmitt(y ~ as.factor(o), weights = ate(), data = simdata, absorb = TRUE, specification = spec)
+  expect_length(coefficients(mod), 8)
 
 })
 
@@ -24,10 +24,10 @@ test_that("multiple variables in blocks", {
   simdata$bid1 <- (simdata$bid > 1) + 1
   simdata$bid2 <- (simdata$bid != 2) + 2
 
-  des <- rct_design(z ~ cluster(uoa2, uoa1) + block(bid1, bid2),
+  spec <- rct_spec(z ~ cluster(uoa2, uoa1) + block(bid1, bid2),
                    data = simdata)
 
-  da <- lmitt(y ~ dose, data = simdata, absorb = TRUE, design = des)
-  expect_true(length(da$coefficients) == 4)
+  mod <- lmitt(y ~ dose, data = simdata, absorb = TRUE, specification = spec)
+  expect_length(coefficients(mod), 4)
 
 })

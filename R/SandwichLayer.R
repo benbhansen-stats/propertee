@@ -1,4 +1,4 @@
-#' @include Design.R DesignAccessors.R
+#' @include StudySpecification.R StudySpecificationAccessors.R
 NULL
 
 setClass("PreSandwichLayer",
@@ -40,7 +40,7 @@ setValidity("PreSandwichLayer", function(object) {
 setClass("SandwichLayer",
          contains = "PreSandwichLayer",
          slots = c(keys = "data.frame",
-                   Design = "Design"))
+                   StudySpecification = "StudySpecification"))
 
 setValidity("SandwichLayer", function(object) {
   if (nrow(object@keys) != nrow(stats::model.matrix(object@fitted_covariance_model))) {
@@ -113,19 +113,20 @@ setMethod("[", "PreSandwichLayer",
 
           })
 
-##' @title (Internal) Get covariance adjustments and their gradient with
-##' respect to covariance adjustment model coefficients
+##' @title (Internal) Get covariance adjustments and their gradient with respect
+##'   to covariance adjustment model coefficients
 ##' @description \code{.make_PreSandwichLayer()} takes a fitted covariance
-##' adjustment model passed to the \code{model} argument and generates adjustments to
-##' outcomes for observations in the \code{newdata} argument. It also evaluates
-##' the gradient of the adjustments taken with respect to the coefficients at
-##' the coefficient estimates.
-##' @param model a fitted model to use for generating covariance adjustment values
+##'   adjustment model passed to the \code{model} argument and generates
+##'   adjustments to outcomes for observations in the \code{newdata} argument.
+##'   It also evaluates the gradient of the adjustments taken with respect to
+##'   the coefficients at the coefficient estimates.
+##' @param model a fitted model to use for generating covariance adjustment
+##'   values
 ##' @param newdata a dataframe with columns called for in \code{model}
 ##' @param ... additional arguments to pass on to \code{model.frame} and
-##' \code{model.matrix}. These cannot include \code{na.action}, \code{xlev},
-##' or \code{contrasts.arg}: the former is fixed to be \code{na.pass},
-##' while the latter two are provided by elements of the \code{model} argument.
+##'   \code{model.matrix}. These cannot include \code{na.action}, \code{xlev},
+##'   or \code{contrasts.arg}: the former is fixed to be \code{na.pass}, while
+##'   the latter two are provided by elements of the \code{model} argument.
 ##' @return A \code{PreSandwichLayer} object
 ##' @keywords internal
 .make_PreSandwichLayer <- function(model, newdata = NULL, ...) {
@@ -140,7 +141,7 @@ setMethod("[", "PreSandwichLayer",
   )
 
   if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-  
+
   mf <- stats::model.frame(stats::delete.response(terms(model)),
                            data = newdata,
                            na.action = na.pass,
@@ -151,7 +152,7 @@ setMethod("[", "PreSandwichLayer",
                            data = mf,
                            contrasts.arg = model$contrasts, # contrasts.arg also follows `predict.lm`
                            ...)
-  
+
   # use the `stats` package's method for handling model fits not of full rank
   p <- model$rank
   p1 <- seq_len(p)
@@ -159,10 +160,10 @@ setMethod("[", "PreSandwichLayer",
   if(p < ncol(X)) {
     X <- X[, piv, drop = FALSE]
   }
-  
+
   # TODO: support predict(..., type = "response"/"link"/other?)
   xb <- drop(X %*% model$coefficients[piv])
-  
+
   return(new("PreSandwichLayer",
              xb,
              fitted_covariance_model = model,
@@ -178,7 +179,7 @@ setMethod("[", "PreSandwichLayer",
   )
 
   if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-  
+
   mf <- stats::model.frame(stats::delete.response(terms(model)),
                            data = newdata,
                            na.action = na.pass,
@@ -189,14 +190,14 @@ setMethod("[", "PreSandwichLayer",
                            data = mf,
                            contrasts.arg = model$contrasts,
                            ...)
-  
+
   p <- model$rank
   p1 <- seq_len(p)
   piv <- if(p) model$qr$pivot[p1]
   if(p < ncol(X)) {
     X <- X[, piv, drop = FALSE]
   }
-  
+
   # TODO: support predict(..., type = "response"/"link"/other?)
   xb <- drop(X %*% model$coefficients[piv])
 
@@ -215,7 +216,7 @@ setMethod("[", "PreSandwichLayer",
   )
 
   if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-  
+
   mf <- stats::model.frame(stats::delete.response(terms(model)),
                            data = newdata,
                            na.action = na.pass,
@@ -226,7 +227,7 @@ setMethod("[", "PreSandwichLayer",
                            data = mf,
                            contrasts.arg = model$contrasts,
                            ...)
-  
+
   QR <- qr(model$w.r * stats::model.matrix(model))
   p <- QR$rank
   p1 <- seq_len(p)
@@ -234,10 +235,10 @@ setMethod("[", "PreSandwichLayer",
   if(p < ncol(X)) {
     X <- X[, piv, drop = FALSE]
   }
-  
+
   # TODO: support predict(..., type = "response"/"link"/other?)
   xb <- drop(X %*% model$coefficients[piv])
-  
+
   return(new("PreSandwichLayer",
              model$family$linkinv(xb),
              fitted_covariance_model = model,
@@ -247,37 +248,37 @@ setMethod("[", "PreSandwichLayer",
 
 
 ##' @title Convert a \code{PreSandwichLayer} to a \code{SandwichLayer} with a
-##' \code{Design} object
-##' @description
-##'   \code{as.SandwichLayer()} uses the \code{Design} object passed to the
-##'   \code{design} argument to populate the slots in a \code{SandwichLayer}
-##'   object that a \code{PreSandwichLayer} does not have sufficient information
-##'   for.
+##'   \code{StudySpecification} object
+##' @description \code{as.SandwichLayer()} uses the \code{StudySpecification}
+##'   object passed to the \code{specification} argument to populate the slots
+##'   in a \code{SandwichLayer} object that a \code{PreSandwichLayer} does not
+##'   have sufficient information for.
 ##' @param x a \code{PreSandwichLayer} object
-##' @param design a \code{Design} object
+##' @param specification a \code{StudySpecification} object
 ##' @param by optional; a string or named vector of unique identifier columns in
-##'   the data used to create \code{design} and the data used to fit the covariance
-##'   adjustment model. Default is NULL, in which case unit of assignment columns
-##'   are used for identification (even if they do not uniquely identify units of
-##'   observation). If a named vector is provided, names should represent variables
-##'   in the data used to create \code{design}, while values should represent
-##'   variables in the covariance adjustment data.
+##'   the data used to create \code{specification} and the data used to fit the
+##'   covariance adjustment model. Default is NULL, in which case unit of
+##'   assignment columns are used for identification (even if they do not
+##'   uniquely identify units of observation). If a named vector is provided,
+##'   names should represent variables in the data used to create
+##'   \code{specification}, while values should represent variables in the
+##'   covariance adjustment data.
 ##' @param Q_data dataframe of direct adjustment sample, which is needed to
 ##'   generate the \code{keys} slot of the \code{SandwichLayer} object. Defaults
-##'   to NULL, in which case if \code{by} is NULL, the data used to create \code{design}
-##'   is used, and if \code{by} is not NULL, appropriate data further up the call
-##'   stack (passed as arguments to \code{cov_adj()} or \code{lmitt.formula()},
-##'   for example) is used.
+##'   to NULL, in which case if \code{by} is NULL, the data used to create
+##'   \code{specification} is used, and if \code{by} is not NULL, appropriate
+##'   data further up the call stack (passed as arguments to \code{cov_adj()} or
+##'   \code{lmitt.formula()}, for example) is used.
 ##' @return a \code{SandwichLayer} object
 ##' @export
-as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
+as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
   if (!inherits(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")
   }
 
   if (is.null(by)) {
-    by <- stats::setNames(var_names(design, "u"), var_names(design, "u"))
-    if (is.null(Q_data)) Q_data <- design@structure
+    by <- stats::setNames(var_names(specification, "u"), var_names(specification, "u"))
+    if (is.null(Q_data)) Q_data <- specification@structure
   } else {
     if (is.null(names(by))) {
       names(by) <- by
@@ -286,20 +287,20 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
     }
 
     if (is.null(Q_data)) {
-      form <- .update_ca_model_formula(x@fitted_covariance_model, by, design)
+      form <- .update_ca_model_formula(x@fitted_covariance_model, by, specification)
       Q_data <- tryCatch(
         .get_data_from_model("cov_adj", form),
         error = function(e) {
           warning(paste("Could not find direct adjustment data in the call stack,",
                         "or it did not contain the columns specified in `by`.",
-                        "Searching for `names(by)` in `design@structure`.",
+                        "Searching for `names(by)` in `specification@structure`.",
                         "Supply the direct adjustment data to the `Q_data`",
                         "argument when using `by` to avoid this error."),
                   call. = FALSE)
           tryCatch({
-            design@structure[, names(by), drop = FALSE]
+            specification@structure[, names(by), drop = FALSE]
           }, error = function(e) {
-            stop("Could not find columns specified in `by` in design@structure",
+            stop("Could not find columns specified in `by` in specification@structure",
                  call. = FALSE)
           })
 
@@ -325,9 +326,9 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
 
   keys$in_Q <- apply(
     mapply(
-      function(covmod_col, des_col) {
-        unique(Q_data[[des_col]])[
-          match(keys[[covmod_col]], unique(Q_data[[des_col]]), incomparables = NA)
+      function(covmod_col, spec_col) {
+        unique(Q_data[[spec_col]])[
+          match(keys[[covmod_col]], unique(Q_data[[spec_col]]), incomparables = NA)
         ]
       },
       by, names(by)
@@ -339,26 +340,27 @@ as.SandwichLayer <- function(x, design, by = NULL, Q_data = NULL) {
   return(new("SandwichLayer",
              x,
              keys = keys,
-             Design = design))
+             StudySpecification = specification))
 }
 
 #' @title (Internal) Return ID's used to order observations in the covariance
-#' adjustment sample
+#'   adjustment sample
 #' @param x a \code{SandwichLayer} object
-#' @param id_col character vector or list; optional. Specifies column names that appear in
-#' botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
-#' in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
-#' slot will be used to generate ID's.
+#' @param id_col character vector or list; optional. Specifies column names that
+#'   appear in botn the covariance adjustment and direct adjustmet samples.
+#'   Defaults to NULL, in which case unit of assignment columns in the
+#'   \code{SandwichLayer}'s \code{StudySpecification} slot will be used to
+#'   generate ID's.
 #' @param ... arguments passed to methods
 #' @return A vector of length equal to the number of units of observation used
-#' to fit the covariance adjustment model
+#'   to fit the covariance adjustment model
 #' @keywords internal
 .sanitize_C_ids <- function(x, id_col = NULL, sorted = FALSE, ...) {
   if (!inherits(x, "SandwichLayer")) {
     stop("x must be a `SandwichLayer` object")
   }
   if (is.null(id_col)) {
-    id_col <- var_names(x@Design, "u")
+    id_col <- var_names(x@StudySpecification, "u")
   }
 
   C_ids <- tryCatch(

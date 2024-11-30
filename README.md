@@ -2,30 +2,30 @@
 # propertee: **P**rognostic **R**egression **O**ffsets with **P**ropagation of **ER**rors, for **T**reatment **E**ffect **E**stimation <img src="man/figures/logo.png" align="right" alt="propertee website" style="width: 150px;"/>
 
 <!-- badges: start -->
-[![R-build-check](https://github.com/benbhansen-stats/propertee/workflows/R-build-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions)
+[![R-CMD-check](https://github.com/benbhansen-stats/propertee/actions/workflows/R-CMD-check/badge.svg)](https://github.com/benbhansen-stats/propertee/actions/workflows/R-CMD-check)
 <!-- badges: end -->
 
-**propertee** enables flexible direct adjustment with design-informed standard errors
+**propertee** enables flexible direct adjustment with specification-informed standard errors
 and optional prior covariance adjustment.
 
 Random trials often utilize units of assignment and blocking in assigning
-treatment status as a way to simplify implementation. This design information
+treatment status as a way to simplify implementation. This specification information
 must be utilized in future analyses. Using **propertee**, a user can generate a
-Design object which will keep track of the design structure.
+StudySpecification object which will keep track of the specification structure.
 
-    des <- rct_design(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
+    spec <- rct_spec(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
 
-(Also supported are observational studies (`obs_design`) and regression
-discontinuity designs (`rdd_design` which requires a `forcing()` variable as
+(Also supported are observational studies (`obs_spec`) and regression
+discontinuity specifications (`rdd_spec` which requires a `forcing()` variable as
 well.)
 
-In order to pass the design information into the model using the `weights=`
-argument, functions `ett()` and `ate()` will be used to convert the Design into
-a numeric vector with the Design object as an attribute.
+In order to pass the specification information into the model using the `weights=`
+argument, functions `ett()` and `ate()` will be used to convert the StudySpecification into
+a numeric vector with the StudySpecification object as an attribute.
 
-    lm(y ~ txt, data = studentdata, weights = ate(des))
+    lm(y ~ txt, data = studentdata, weights = ate(spec))
 
-Note that the Design is created with teacher level data (`teacherdata`), but the
+Note that the StudySpecification is created with teacher level data (`teacherdata`), but the
 analysis is carried out at the student level (`studentdata`); the `ate()` (and
 its alternative `ett()`) will expand the weights appropriately.
 
@@ -33,7 +33,7 @@ Optionally, we can also include a covariance adjustment model through the
 `cov_adj()` function.
 
     covadjmod <- lm(y ~ x1 + x2 + ..., data = studentdata, subset = !txt)
-    lm(y ~ txt, studentdata, weights = ett(des),
+    lm(y ~ txt, studentdata, weights = ett(spec),
        offset = cov_adj(covadjmod, data = studentdata)
     )
 

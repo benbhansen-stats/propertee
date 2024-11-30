@@ -16,12 +16,12 @@ A \eqn{2\times 2} matrix corresponding to an intercept and the
 treatment variable in the direct adjustment model
 }
 \description{
-An S3method for \code{stats::vcov} that computes standard errors for
-\code{teeMod} models using \code{vcov_tee()}.
+An S3method for \code{stats::vcov} that computes standard
+errors for \code{teeMod} models using \code{vcov_tee()}.
 }
 \details{
 \code{vcov.teeMod()} wraps around \code{vcov_tee()}, so additional
-arguments passed to \code{...} will be passed to the \code{vcov_tee()} call.
-See documentation for \code{vcov_tee()} for information about necessary
-arguments.
+arguments passed to \code{...} will be passed to the \code{vcov_tee()}
+call. See documentation for \code{vcov_tee()} for information about
+necessary arguments.
 }

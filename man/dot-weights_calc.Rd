@@ -4,11 +4,11 @@
 \alias{.weights_calc}
 \title{(Internal) Worker function for weight calculation}
 \usage{
-.weights_calc(design, target, dichotomy, by, data)
+.weights_calc(specification, target, dichotomy, by, data)
 }
 \arguments{
-\item{design}{a \code{Design} object created by one of \code{rct_design()},
-\code{rd_design()}, or \code{obs_design()}.}
+\item{specification}{a \code{StudySpecification} object created by one of
+\code{rct_spec()}, \code{rd_spec()}, or \code{obs_spec()}.}
 
 \item{target}{One of "ate" or "ett"; \code{ate()} and \code{ett()} chooses
 these automatically.}
@@ -18,16 +18,17 @@ variable if it isn't already \code{0}/\code{1}. See details of help for
 \code{ate()} or \code{ett()} e.g. for details.}
 
 \item{by}{optional; named vector or list connecting names of unit of
-assignment/ variables in \code{design} to unit of assignment/cluster
-variables in \code{data}. Names represent variables in the Design; values
-represent variables in the data. Only needed if variable names differ.}
+assignment/ variables in \code{specification} to unit of
+assignment/cluster variables in \code{data}. Names represent variables in
+the StudySpecification; values represent variables in the data. Only
+needed if variable names differ.}
 
 \item{data}{optionally the data for the analysis to be performed on. May be
 excluded if these functions are included as the \code{weights} argument of
 a model.}
 }
 \value{
-a \code{WeightedDesign} object
+a \code{WeightedStudySpecification} object
 }
 \description{
 Called from \code{ate()} or \code{ett()}.

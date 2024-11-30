@@ -6,33 +6,42 @@
 \alias{lmitt.lm}
 \title{Linear Model for Intention To Treat}
 \usage{
-lmitt(obj, design, data, ...)
+lmitt(obj, specification, data, ...)
 
-\method{lmitt}{formula}(obj, design, data, absorb = FALSE, offset = NULL, weights = NULL, ...)
+\method{lmitt}{formula}(
+  obj,
+  specification,
+  data,
+  absorb = FALSE,
+  offset = NULL,
+  weights = NULL,
+  ...
+)
 
-\method{lmitt}{lm}(obj, design = NULL, ...)
+\method{lmitt}{lm}(obj, specification = NULL, ...)
 }
 \arguments{
 \item{obj}{A \code{formula} or a \code{lm} object. See Details.}
 
-\item{design}{The \code{Design} to be used. Alternatively, a formula
-creating a design (of the type of that would be passed as the first
-argument to \code{\link[=rd_design]{rd_design()}}, \code{\link[=rct_design]{rct_design()}}, or \code{\link[=obs_design]{obs_design()}}). If the
-formula includes a \code{\link[=forcing]{forcing()}} element, an RD design is created. Otherwise
-an observational design is created. An RCT design must be created manually
-using \code{\link[=rct_design]{rct_design()}}.}
+\item{specification}{The \code{StudySpecification} to be used.
+Alternatively, a formula creating a specification (of the type of that
+would be passed as the first argument to \code{\link[=rd_spec]{rd_spec()}}, \code{\link[=rct_spec]{rct_spec()}}, or
+\code{\link[=obs_spec]{obs_spec()}}). If the formula includes a \code{\link[=forcing]{forcing()}} element, an RD
+specification is created. Otherwise an observational specification is
+created. An RCT specification must be created manually using \code{\link[=rct_spec]{rct_spec()}}.}
 
 \item{data}{A \code{data.frame} such as would be passed into \code{\link[=lm]{lm()}}.}
 
 \item{...}{Additional arguments passed to \code{\link[=lm]{lm()}}. One such argument is
 \code{dichotomy}, which can be used to dichotomize a non-binary treatment
-variable in \code{design}. See the Details section of the \code{ett()} or
-\code{att()} help pages for information on specifying this formula.}
+variable in \code{specification}. See the Details section of the
+\code{ett()} or \code{att()} help pages for information on specifying this
+formula.}
 
 \item{absorb}{If \code{TRUE}, fixed effects are included for blocks
-identified in the \code{Design}. Excluded in \code{FALSE}. Default is
-\code{FALSE}. The estimates of these fixed effects are suppressed from the
-returned object.}
+identified in the \code{StudySpecification}. Excluded in \code{FALSE}.
+Default is \code{FALSE}. The estimates of these fixed effects are
+suppressed from the returned object.}
 
 \item{offset}{Offset of the kind which would be passed into \code{\link[=lm]{lm()}}. Ideally,
 this should be the output of \code{\link[=cov_adj]{cov_adj()}}.}
@@ -46,7 +55,8 @@ or \code{ett()} can be used.}
 }
 \description{
 Generates a linear model object to estimate a treatment effect,
-with proper estimation of variances accounting for the study design.
+with proper estimation of variances accounting for the study
+specification.
 }
 \details{
 The first argument to \code{\link[=lmitt]{lmitt()}} should be a formula specifying the
@@ -66,36 +76,36 @@ Alternatively, \code{obj} can be a pre-created \code{lm} object. No
 modification is made to the formula of the object. See the help for
 \code{as.lmitt()} for details of this conversion.
 
-Note that although the \code{Design} creation functions (e.g.
-\code{\link[=rct_design]{rct_design()}}) take an optional \code{subset=} argument used in the
-creation of the \code{Design}, this is \bold{not} the same as the
+Note that although the \code{StudySpecification} creation functions (e.g.
+\code{\link[=rct_spec]{rct_spec()}}) take an optional \code{subset=} argument used in the creation
+of the \code{StudySpecification}, this is \bold{not} the same as the
 \code{subset=} argument passed to \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}}. The \code{subset=}
-argument when creating a \code{Design} restricts the data used to generate
-the \code{Design}, but has no direct impact on the future \code{lm()} or
-\code{lmitt()} calls using that \code{Design}. (It can indirectly have an
-impact by excluding particular units of assignment from receiving a
-treatment assignment and thus complete case analysis removes them from the
-model.)
+argument when creating a \code{StudySpecification} restricts the data used
+to generate the \code{StudySpecification}, but has no direct impact on the
+future \code{lm()} or \code{lmitt()} calls using that
+\code{StudySpecification}. (It can indirectly have an impact by excluding
+particular units of assignment from receiving a treatment assignment and
+thus complete case analysis removes them from the model.)
 
 On the other hand, the \code{subset=} argument in \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}} refers
 only to subsetting the \code{data} argument passed into \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}}.
 
 To avoid variable name collision, the treatment variable defined in the
-\code{design} will have a "\code{.}" appended to it. For example, if you
-request a main treatment effect (with a formula of \code{~ 1}) with a
+\code{specification} will have a "\code{.}" appended to it. For example, if
+you request a main treatment effect (with a formula of \code{~ 1}) with a
 treatment variable named "txt", you can obtain it's estimate from the
 returned \code{teeMod} object via \code{$coefficients["txt."]}.
 
-\code{\link[=lmitt]{lmitt()}} will produce a message if the \code{Design} passed in has block
-information that is not being utilized in the model. Note that this is
-\emph{not} an error, but could be an oversight. To disable this message, run
-\code{options("propertee_message_on_unused_blocks" = FALSE)}.
+\code{\link[=lmitt]{lmitt()}} will produce a message if the \code{StudySpecification} passed in
+has block information that is not being utilized in the model. Note that
+this is \emph{not} an error, but could be an oversight. To disable this
+message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 }
 \examples{
 data(simdata)
-des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-mod1 <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate")
-mod2 <- lmitt(y ~ as.factor(o), data = simdata, design = des, weights = "ate")
+spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
+mod2 <- lmitt(y ~ as.factor(o), data = simdata, specification = spec, weights = "ate")
 mod3 <- lmitt(y ~ 1, data = simdata,
-              design = z ~ uoa(uoa1, uoa2) + forcing(force))
+              specification = z ~ uoa(uoa1, uoa2) + forcing(force))
 }

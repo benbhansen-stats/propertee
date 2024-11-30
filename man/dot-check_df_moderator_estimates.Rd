@@ -2,8 +2,8 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.check_df_moderator_estimates}
 \alias{.check_df_moderator_estimates}
-\title{(Internal) Replace standard errors for moderator effect estimates with insufficient
-degrees of freedom with \code{NA}}
+\title{(Internal) Replace standard errors for moderator effect estimates with
+insufficient degrees of freedom with \code{NA}}
 \usage{
 .check_df_moderator_estimates(
   vmat,
@@ -19,18 +19,20 @@ argument below as the first argument}
 
 \item{model}{a fitted \code{teeMod} model}
 
-\item{cluster_cols}{a character vector indicating the column(s) defining cluster ID's}
+\item{cluster_cols}{a character vector indicating the column(s) defining
+cluster ID's}
 
 \item{model_data}{dataframe or name of dataframe used to fit \code{model}}
 
-\item{envir}{environment to get \code{model_data} from if \code{model_data} has class \code{name}}
+\item{envir}{environment to get \code{model_data} from if \code{model_data}
+has class \code{name}}
 }
 \value{
-A variance-covariance matrix with NA's for estimates lacking sufficient
-degrees of freedom
+A variance-covariance matrix with NA's for estimates lacking
+sufficient degrees of freedom
 }
 \description{
-(Internal) Replace standard errors for moderator effect estimates with insufficient
-degrees of freedom with \code{NA}
+(Internal) Replace standard errors for moderator effect estimates with
+insufficient degrees of freedom with \code{NA}
 }
 \keyword{internal}

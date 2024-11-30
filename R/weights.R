@@ -6,12 +6,12 @@
 ##'
 ##' @details These functions should primarily be used in the \code{weight}
 ##'   argument of [lmitt()] or[lm()]. All arguments are optional if used within
-##'   those functions. If used on their own, \code{design} and \code{data} must
-##'   be provided.
+##'   those functions. If used on their own, \code{specification} and
+##'   \code{data} must be provided.
 ##'
-##'   In a \code{Design} with \code{block}s, the weights are generated as a
-##'   function of the ratio of the number of treated units in a block versus the
-##'   total number of units in a block.
+##'   In a \code{StudySpecification} with \code{block}s, the weights are
+##'   generated as a function of the ratio of the number of treated units in a
+##'   block versus the total number of units in a block.
 ##'
 ##'   In any blocks where that ratio is 0 or 1 (that is, all units in the block
 ##'   have the same treatment status), the weights will be 0. In effect this
@@ -19,7 +19,7 @@
 ##'   for estimating either means under treatment or means under control.
 ##'
 ##'   If block is missing for a given observation, a weight of 0 is applied.
-##'   
+##'
 ##'   A \code{dichotomy} is specified by a \code{formula} consisting of a
 ##'   conditional statement on both the left-hand side (identifying treatment
 ##'   levels associated with "treatment") and the right hand side (identifying
@@ -27,16 +27,16 @@
 ##'   treatment variable was called \code{dose} and doses above 250 are
 ##'   considered treatment, you might write:
 ##'
-##'   \code{dichotomy(des) <- dose > 250 ~ dose <= 250}
+##'   \code{dichotomy(spec) <- dose > 250 ~ dose <= 250}
 ##'
 ##'   The period (\code{.}) can be used to assign all other units of assignment.
 ##'   For example, we could have written the same treatment regime as either
 ##'
-##'   \code{dichotomy(des) <- dose > 250 ~ .}
+##'   \code{dichotomy(spec) <- dose > 250 ~ .}
 ##'
 ##'   or
 ##'
-##'   \code{dichotomy(des) <- . ~ dose <= 250}
+##'   \code{dichotomy(spec) <- . ~ dose <= 250}
 ##'
 ##'   The \code{dichotomy} formula supports Relational Operators (see
 ##'   [Comparison]), Logical Operators (see [Logic]), and \code{%in%} (see
@@ -51,31 +51,31 @@
 ##'
 ##'   Code for the computation of the weights was contributed by Tim Lycurgus.
 ##'
-##' @param design optional; a \code{Design} object created by one of
-##'   \code{rct_design()}, \code{rd_design()}, or \code{obs_design()}.
+##' @param specification optional; a \code{StudySpecification} object created by
+##'   one of \code{rct_spec()}, \code{rd_spec()}, or \code{obs_spec()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
-##'   variable if it isn't already \code{0}/\code{1}. See details for more information.
-##'   If \code{ett()} or \code{ate()} is
-##'   called within a \code{lmitt()} call that specifies a \code{dichotomy}
-##'   argument, that \code{dichotomy} will be used if the argument here has not
-##'   been specified.
+##'   variable if it isn't already \code{0}/\code{1}. See details for more
+##'   information. If \code{ett()} or \code{ate()} is called within a
+##'   \code{lmitt()} call that specifies a \code{dichotomy} argument, that
+##'   \code{dichotomy} will be used if the argument here has not been specified.
 ##' @param by optional; named vector or list connecting names of unit of
-##'   assignment/ variables in \code{design} to unit of
+##'   assignment/ variables in \code{specification} to unit of
 ##'   assignment/unitid/cluster variables in \code{data}. Names represent
-##'   variables in the Design; values represent variables in the data. Only
-##'   needed if variable names differ.
+##'   variables in the StudySpecification; values represent variables in the
+##'   data. Only needed if variable names differ.
 ##' @param data optional; the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
-##' @return a \code{WeightedDesign} object, which is a vector of numeric weights
+##' @return a \code{WeightedStudySpecification} object, which is a vector of
+##'   numeric weights
 ##' @export
 ##' @rdname WeightCreators
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-##' summary(lmitt(y ~ 1, data = simdata, design = des, weights = ate()))
-ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
-  return(.weights_calc(design = design,
+##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()))
+ett <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
                        target = "ett",
                        dichotomy = dichotomy,
                        by = by,
@@ -84,8 +84,8 @@ ett <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
 ##' @export
 ##' @rdname WeightCreators
-ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
-  return(.weights_calc(design = design,
+ate <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
                        target = "ate",
                        dichotomy = dichotomy,
                        by = by,
@@ -94,31 +94,32 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
 ##' Called from \code{ate()} or \code{ett()}.
 ##' @title (Internal) Worker function for weight calculation
-##' @param design a \code{Design} object created by one of \code{rct_design()},
-##'   \code{rd_design()}, or \code{obs_design()}.
+##' @param specification a \code{StudySpecification} object created by one of
+##'   \code{rct_spec()}, \code{rd_spec()}, or \code{obs_spec()}.
 ##' @param dichotomy optional; a formula defining the dichotomy of the treatment
 ##'   variable if it isn't already \code{0}/\code{1}. See details of help for
 ##'   \code{ate()} or \code{ett()} e.g. for details.
 ##' @param target One of "ate" or "ett"; \code{ate()} and \code{ett()} chooses
 ##'   these automatically.
 ##' @param by optional; named vector or list connecting names of unit of
-##'   assignment/ variables in \code{design} to unit of assignment/cluster
-##'   variables in \code{data}. Names represent variables in the Design; values
-##'   represent variables in the data. Only needed if variable names differ.
+##'   assignment/ variables in \code{specification} to unit of
+##'   assignment/cluster variables in \code{data}. Names represent variables in
+##'   the StudySpecification; values represent variables in the data. Only
+##'   needed if variable names differ.
 ##' @param data optionally the data for the analysis to be performed on. May be
 ##'   excluded if these functions are included as the \code{weights} argument of
 ##'   a model.
-##' @return a \code{WeightedDesign} object
+##' @return a \code{WeightedStudySpecification} object
 ##' @keywords internal
-.weights_calc <- function(design, target, dichotomy, by, data) {
+.weights_calc <- function(specification, target, dichotomy, by, data) {
   if (!(target %in% c("ate", "ett"))) {
     stop("Invalid weight target")
   }
-  
-  if (is.null(design)) {
-    design <- .get_design()
+
+  if (is.null(specification)) {
+    specification <- .get_spec()
   }
-  
+
   # get `dichotomy` argument and validate against any up the call stack
   if (is.null(dichotomy)) {
     possible_dichotomies <- .find_dichotomies()
@@ -130,7 +131,7 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   if (is.null(data)) {
     # Only thing we need from the data is unit of assignment info to enable
     # later merge
-    form <- as.formula(paste("~", paste(var_names(design, "u"),
+    form <- as.formula(paste("~", paste(var_names(specification, "u"),
                                         collapse = "+")))
 
     data <- .get_data_from_model("weights", form, by)
@@ -141,18 +142,18 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
   if (!is.null(by)) {
     # .update_by handles checking input
-    design <- .update_by(design, data, by)
+    specification <- .update_by(specification, data, by)
   }
 
   # getting the unique rows of `data` will ensure we calculate weights at the
   # level of assignment
-  txt <- .bin_txt(design,
-                  unique(data[, var_names(design, "u"), drop = FALSE]),
+  txt <- .bin_txt(specification,
+                  unique(data[, var_names(specification, "u"), drop = FALSE]),
                   dichotomy)
 
   #### generate weights
 
-  if (length(var_names(design, "b")) == 0) {
+  if (length(var_names(specification, "b")) == 0) {
     # If no block is specified, then e_z is the proportion of units of
     # assignment who receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
@@ -168,18 +169,18 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
     # Identify number of units per block, and number of treated units per block
     # NOTE 5/21/24: since .bin_txt() returns NA elements, need to replace
-    # `blocks(design)` with a matrix that has NA elements at the same indices
+    # `blocks(specification)` with a matrix that has NA elements at the same indices
     # (and is aligned to the order of the ID's in `data`)
     blks <- as.data.frame(matrix(nrow = length(txt),
-                                 ncol = length(var_names(design, "b")),
+                                 ncol = length(var_names(specification, "b")),
                                  dimnames = list(rownames = NULL,
-                                                 colnames = var_names(design, "b"))))
+                                                 colnames = var_names(specification, "b"))))
     blks[!is.na(txt),] <- .merge_preserve_order(
-      unique(data[, var_names(design, "u"), drop=FALSE]),
-      cbind(design@structure[, var_names(design, "b"), drop=FALSE],
-            design@structure[, var_names(design, "u"), drop=FALSE]),
+      unique(data[, var_names(specification, "u"), drop=FALSE]),
+      cbind(specification@structure[, var_names(specification, "b"), drop=FALSE],
+            specification@structure[, var_names(specification, "u"), drop=FALSE]),
       all = FALSE, all.x = TRUE
-    )[!is.na(txt), var_names(design, "b")]
+    )[!is.na(txt), var_names(specification, "b")]
     block_units <- table(blks[!is.na(txt), ])
     block_tx_units <- tapply(txt,
                              blks,
@@ -205,44 +206,50 @@ ate <- function(design = NULL, dichotomy = NULL, by = NULL, data = NULL) {
 
   }
 
-  return(.join_design_weights(weights, design, target = target, data = data, dichotomy = dichotomy))
+  return(.join_spec_weights(weights,
+                            specification,
+                            target = target,
+                            data = data,
+                            dichotomy = dichotomy))
 }
 
 ##' Helper function called during creation of the weights via \code{ate()} or
 ##' \code{ett()}
 ##' @title (Internal) Expand unit of assignment level weights to the level of
 ##'   the data
-##' @param weights a vector of weights sorted according to the \code{Design}
-##' @param design a \code{Design}
+##' @param weights a vector of weights sorted according to the
+##'   \code{StudySpecification}
+##' @param specification a \code{StudySpecification}
 ##' @param target One of "ate" or "ett"
 ##' @param data New data
-##' @param dichotomy formula used to specify a dichotomy of a non-binary treatment variable.
-##' The output \code{WeightedDesign} object will store this as its \code{dichotomy} slot,
-##' unless it is NULL, in which case it will be translated to an empty \code{formula}.
-##' @return a \code{WeightedDesign}
+##' @param dichotomy formula used to specify a dichotomy of a non-binary
+##'   treatment variable. The output \code{WeightedStudySpecification} object
+##'   will store this as its \code{dichotomy} slot, unless it is NULL, in which
+##'   case it will be translated to an empty \code{formula}.
+##' @return a \code{WeightedStudySpecification}
 ##' @keywords internal
-.join_design_weights <- function(weights, design, target, data, dichotomy) {
-  uoanames <- var_names(design, "u")
+.join_spec_weights <- function(weights, specification, target, data, dichotomy) {
+  uoanames <- var_names(specification, "u")
 
   # Merge uoa data with weights at uoa level
-  # NOTE 5/21/24: changed this from taking `design@structure` because the order
-  # of the weights now reflects the ordering of the data rather than `design@structure`
+  # NOTE 5/21/24: changed this from taking `specification@structure` because the order
+  # of the weights now reflects the ordering of the data rather than `specification@structure`
   # due to changes in .bin_txt()
-  uoadata <- unique(data[, var_names(design, "u"), drop = FALSE])
-  uoadata$design_weights <- weights
+  uoadata <- unique(data[, var_names(specification, "u"), drop = FALSE])
+  uoadata$specification_weights <- weights
 
   # Merge with data to expand weights to unit of analysis level
   weights <- .merge_preserve_order(data, uoadata,
                                    by = uoanames,
-                                   all.x = TRUE)$design_weights
+                                   all.x = TRUE)$specification_weights
 
   # Replace NA weights with 0 so they don't contribute to the model, but aren't
   # droppde
   weights[is.na(weights)] <- 0
 
-  return(new("WeightedDesign",
+  return(new("WeightedStudySpecification",
              weights,
-             Design = design,
+             StudySpecification = specification,
              target = target,
              dichotomy = as.formula(dichotomy)))
 }

@@ -1,45 +1,45 @@
 test_that("Obtaining data for weights", {
   data(simdata)
-  des <- rct_design(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
-  mod <- lm(y ~ x, data = simdata, weights = ate(des))
+  mod <- lm(y ~ x, data = simdata, weights = ate(spec))
 
   #Handling multiple models in the stack
-  mod1 <- lm(predict(lm(y~x, data = simdata, weights = ate(des))) ~ 1)
-  mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(des),
+  mod1 <- lm(predict(lm(y~x, data = simdata, weights = ate(spec))) ~ 1)
+  mod2 <- lm(predict(lm(y~x, data = simdata)) ~ 1, weights = ate(spec),
              data = simdata)
   expect_true(mod1$coefficients[1] != mod2$coefficients[1])
 
   # linear glm and lm are equivalent
-  mod3 <- glm(y ~ x, data = simdata, weights = ate(des))
+  mod3 <- glm(y ~ x, data = simdata, weights = ate(spec))
   expect_equal(mod$coefficients,
                mod3$coefficients)
 
   # Works using `with`
   mod4 <- with(simdata,
-               lm(y ~ x, weights = ate(des)))
+               lm(y ~ x, weights = ate(spec)))
   expect_equal(mod$coefficients,
                mod4$coefficients)
 
   # Works using `attach`
   attach(simdata)
-  mod5 <- lm(y ~ x, weights = ate(des))
+  mod5 <- lm(y ~ x, weights = ate(spec))
   expect_equal(mod$coefficients,
                mod5$coefficients)
   detach(simdata)
 
   # Allow simple manipulation of weights
-  mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(des)))
-  mod7 <- lm(y ~ x, data = simdata, weights = simdata$o*ate(des))
+  mod6 <- lm(y ~ x, data = simdata, weights = sqrt(ate(spec)))
+  mod7 <- lm(y ~ x, data = simdata, weights = simdata$o*ate(spec))
 
   # additional arguments in weights
-  des2 <- rct_design(o ~ cluster(uoa1, uoa2), data = simdata)
-  mod8 <- lm(y ~ x, data = simdata, weights = ett(des2, dichotomy = o >= 3 ~ .))
+  spec2 <- rct_spec(o ~ cluster(uoa1, uoa2), data = simdata)
+  mod8 <- lm(y ~ x, data = simdata, weights = ett(spec2, dichotomy = o >= 3 ~ .))
 
 
   # Test for fallback if no model.frame call
 
-  w <- capture_warnings(with(simdata, ate(des)))
+  w <- capture_warnings(with(simdata, ate(spec)))
   expect_equal(length(w), 4)
   expect_true(any(sapply(w, grepl, pattern = "No call")))
   expect_true(any(sapply(w, grepl, pattern = "trying fallback")))
@@ -66,19 +66,19 @@ test_that("Obtaining data for weights", {
 
 test_that("get_data_from_model finds data in lmitt object's eval env", {
   data(simdata)
-  des <- rct_design(z ~ cluster(uoa1, uoa2), simdata)
-  damod <- lmitt(y ~ 1, design = des, data = simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata)
 
   lmitt_func <- function(x, ...) {
     rhs <- formula(x)[[3L]]
     eval(rhs, environment(formula(x)))
   }
 
-  #expect_warning(lmitt_func(damod), "No call to `model.frame`")
-  out <- model.matrix(formula(damod), environment(formula(damod))$data)
+  #expect_warning(lmitt_func(ssmod), "No call to `model.frame`")
+  out <- model.matrix(formula(ssmod), environment(formula(ssmod))$data)
   expect_true(is.numeric(out))
   expect_equal(dim(out), c(nrow(simdata), 2))
-  expect_true(all(out[, 2] == damod$model[, 2]))
+  expect_true(all(out[, 2] == ssmod$model[, 2]))
 })
 
 test_that(paste("get_data_from_model frame recursion doesn't return",
@@ -90,12 +90,12 @@ test_that(paste("get_data_from_model frame recursion doesn't return",
 
   data(simdata)
   data <- simdata
-  des <- rct_design(z ~ cluster(uoa1, uoa2), data)
-  damod <- lmitt(y ~ 1, design = des, data = data)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data)
+  ssmod <- lmitt(y ~ 1, specification = spec, data = data)
 
   non_lmitt_func <- function(data = NULL) {
     if (is.null(data)) data <- .get_data_from_model("weights",
-                                                    y ~ assigned(design = des))
+                                                    y ~ assigned(specification = spec))
     data$newcol <- 5
     return(data)
   }

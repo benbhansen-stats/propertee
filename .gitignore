@@ -20,3 +20,7 @@ lib/*
 /Doc/*.R*
 /doc/
 /docs/
+/pkgdown/
+*.RData
+*.Rapp.history
+*.Rhistory

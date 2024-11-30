@@ -1,7 +1,8 @@
 ##' @title Linear Model for Intention To Treat
 ##'
 ##' @description Generates a linear model object to estimate a treatment effect,
-##'   with proper estimation of variances accounting for the study design.
+##'   with proper estimation of variances accounting for the study
+##'   specification.
 ##'
 ##' @details The first argument to [lmitt()] should be a formula specifying the
 ##'   outcome on the left hand side. The right hand side of the formula can be
@@ -20,65 +21,66 @@
 ##' modification is made to the formula of the object. See the help for
 ##' \code{as.lmitt()} for details of this conversion.
 ##'
-##' Note that although the \code{Design} creation functions (e.g.
-##' [rct_design()]) take an optional \code{subset=} argument used in the
-##' creation of the \code{Design}, this is \bold{not} the same as the
+##' Note that although the \code{StudySpecification} creation functions (e.g.
+##' [rct_spec()]) take an optional \code{subset=} argument used in the creation
+##' of the \code{StudySpecification}, this is \bold{not} the same as the
 ##' \code{subset=} argument passed to [lm()] or [lmitt()]. The \code{subset=}
-##' argument when creating a \code{Design} restricts the data used to generate
-##' the \code{Design}, but has no direct impact on the future \code{lm()} or
-##' \code{lmitt()} calls using that \code{Design}. (It can indirectly have an
-##' impact by excluding particular units of assignment from receiving a
-##' treatment assignment and thus complete case analysis removes them from the
-##' model.)
+##' argument when creating a \code{StudySpecification} restricts the data used
+##' to generate the \code{StudySpecification}, but has no direct impact on the
+##' future \code{lm()} or \code{lmitt()} calls using that
+##' \code{StudySpecification}. (It can indirectly have an impact by excluding
+##' particular units of assignment from receiving a treatment assignment and
+##' thus complete case analysis removes them from the model.)
 ##'
 ##' On the other hand, the \code{subset=} argument in [lm()] or [lmitt()] refers
 ##' only to subsetting the \code{data} argument passed into [lm()] or [lmitt()].
 ##'
 ##' To avoid variable name collision, the treatment variable defined in the
-##' \code{design} will have a "\code{.}" appended to it. For example, if you
-##' request a main treatment effect (with a formula of \code{~ 1}) with a
+##' \code{specification} will have a "\code{.}" appended to it. For example, if
+##' you request a main treatment effect (with a formula of \code{~ 1}) with a
 ##' treatment variable named "txt", you can obtain it's estimate from the
 ##' returned \code{teeMod} object via \code{$coefficients["txt."]}.
 ##'
-##' [lmitt()] will produce a message if the \code{Design} passed in has block
-##' information that is not being utilized in the model. Note that this is
-##' \emph{not} an error, but could be an oversight. To disable this message, run
-##' \code{options("propertee_message_on_unused_blocks" = FALSE)}.
+##' [lmitt()] will produce a message if the \code{StudySpecification} passed in
+##' has block information that is not being utilized in the model. Note that
+##' this is \emph{not} an error, but could be an oversight. To disable this
+##' message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
 ##' @param obj A \code{formula} or a \code{lm} object. See Details.
-##' @param design The \code{Design} to be used. Alternatively, a formula
-##'   creating a design (of the type of that would be passed as the first
-##'   argument to [rd_design()], [rct_design()], or [obs_design()]). If the
-##'   formula includes a [forcing()] element, an RD design is created. Otherwise
-##'   an observational design is created. An RCT design must be created manually
-##'   using [rct_design()].
+##' @param specification The \code{StudySpecification} to be used.
+##'   Alternatively, a formula creating a specification (of the type of that
+##'   would be passed as the first argument to [rd_spec()], [rct_spec()], or
+##'   [obs_spec()]). If the formula includes a [forcing()] element, an RD
+##'   specification is created. Otherwise an observational specification is
+##'   created. An RCT specification must be created manually using [rct_spec()].
 ##' @param data A \code{data.frame} such as would be passed into [lm()].
 ##' @param absorb If \code{TRUE}, fixed effects are included for blocks
-##'   identified in the \code{Design}. Excluded in \code{FALSE}. Default is
-##'   \code{FALSE}. The estimates of these fixed effects are suppressed from the
-##'   returned object.
+##'   identified in the \code{StudySpecification}. Excluded in \code{FALSE}.
+##'   Default is \code{FALSE}. The estimates of these fixed effects are
+##'   suppressed from the returned object.
 ##' @param offset Offset of the kind which would be passed into [lm()]. Ideally,
 ##'   this should be the output of [cov_adj()].
 ##' @param weights Which weights should be generated? Options are \code{"ate"}
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
 ##' @param ... Additional arguments passed to [lm()]. One such argument is
-##' \code{dichotomy}, which can be used to dichotomize a non-binary treatment
-##' variable in \code{design}. See the Details section of the \code{ett()} or
-##' \code{att()} help pages for information on specifying this formula.
+##'   \code{dichotomy}, which can be used to dichotomize a non-binary treatment
+##'   variable in \code{specification}. See the Details section of the
+##'   \code{ett()} or \code{att()} help pages for information on specifying this
+##'   formula.
 ##' @return \code{teeMod} model.
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt
 ##' @examples
 ##' data(simdata)
-##' des <- rct_design(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-##' mod1 <- lmitt(y ~ 1, data = simdata, design = des, weights = "ate")
-##' mod2 <- lmitt(y ~ as.factor(o), data = simdata, design = des, weights = "ate")
+##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
+##' mod2 <- lmitt(y ~ as.factor(o), data = simdata, specification = spec, weights = "ate")
 ##' mod3 <- lmitt(y ~ 1, data = simdata,
-##'               design = z ~ uoa(uoa1, uoa2) + forcing(force))
+##'               specification = z ~ uoa(uoa1, uoa2) + forcing(force))
 lmitt <- function(obj,
-                  design,
+                  specification,
                   data,
                   ...) {
   UseMethod("lmitt")
@@ -87,7 +89,7 @@ lmitt <- function(obj,
 ##' @export
 ##' @rdname lmitt
 lmitt.formula <- function(obj,
-                          design,
+                          specification,
                           data,
                           absorb = FALSE,
                           offset = NULL,
@@ -100,7 +102,7 @@ lmitt.formula <- function(obj,
   lm.call <- lmitt.call[c(1L, m)]
   names(lm.call)[2] <- "formula"
   lm.call[[1]] <- quote(stats::lm)
-  #lmitt.call contains design, absorb. lm.call contains only things that get
+  #lmitt.call contains specification, absorb. lm.call contains only things that get
   #passed to lm, model.matrix
 
   data <- .as_data_frame(data)
@@ -126,35 +128,35 @@ lmitt.formula <- function(obj,
     }
   } else if (is.call(wt) & is.null(dichotomy)) dichotomy <- wt$dichotomy
 
-  # First, make sure we have a valid `design=` - if given a formula, make a new
-  # `Design`, otherwise ensure `design=` is `Design` class.
-  if (!missing(design)) {
-    if (inherits(design, "formula")) {
+  # First, make sure we have a valid `specification=` - if given a formula, make a new
+  # `StudySpecification`, otherwise ensure `specification=` is `StudySpecification` class.
+  if (!missing(specification)) {
+    if (inherits(specification, "formula")) {
       # If there's a `forcing()`, user wants RDD. If not, force Obs. To do RCT,
-      # must create Design manually.
-      if (!is.null(attr(terms(design, specials = "forcing"),
+      # must create StudySpecification manually.
+      if (!is.null(attr(terms(specification, specials = "forcing"),
                         "specials")$forcing)) {
-        des_call <- "rd_design"
+        spec_call <- "rd_spec"
       } else {
-        des_call <- "obs_design"
+        spec_call <- "obs_spec"
       }
 
       # Build new call. All calls must include obj and data
-      new_d_call <- paste0(des_call, "(",
-                           "formula = ", deparse(design),
+      new_d_call <- paste0(spec_call, "(",
+                           "formula = ", deparse(specification),
                            ", data = ", deparse(lmitt.call$data), ")")
       # str2lang converts character into call
-      design <- eval(str2lang(new_d_call))
-    } else if (is(design, "WeightedDesign")) {
-      design <- design@Design
-    } else if (!is(design, "Design")) {
-      stop(paste("`design=` must be an object created by `*_design`",
-                 "function, or a formula specifying such a design"))
+      specification <- eval(str2lang(new_d_call))
+    } else if (is(specification, "WeightedStudySpecification")) {
+      specification <- specification@StudySpecification
+    } else if (!is(specification, "StudySpecification")) {
+      stop(paste("`specification=` must be an object created by `*_spec`",
+                 "function, or a formula specifying such a specification"))
     }
 
     # #126 block on factor treatments
-    if (is.factor(treatment(design)[, 1]) & is.null(dichotomy)) {
-      if (is.ordered(treatment(design)[, 1])) {
+    if (is.factor(treatment(specification)[, 1]) & is.null(dichotomy)) {
+      if (is.ordered(treatment(specification)[, 1])) {
         fact_or_ord <- "Ordered"
       } else {
         fact_or_ord <- "Factor"
@@ -197,44 +199,44 @@ lmitt.formula <- function(obj,
   lm.call$offset <- eval.parent(lm.call$offset)
 
 
-  # Ensure same design is used in weights and offset, if they're there
-  wtdes <- try(lm.call$weights@Design, silent = TRUE)
-  ofdes <- try(lm.call$offset@Design, silent = TRUE)
+  # Ensure same specification is used in weights and offset, if they're there
+  wtspec <- try(lm.call$weights@StudySpecification, silent = TRUE)
+  offspec <- try(lm.call$offset@StudySpecification, silent = TRUE)
 
-  if (missing(design) & is(wtdes, "Design")) {
-    stop(paste("You've passed a `Design` into the weight function (`ate()`",
+  if (missing(specification) & is(wtspec, "StudySpecification")) {
+    stop(paste("You've passed a `StudySpecification` into the weight function (`ate()`",
                 "or `ett()`) but not the `lmitt()` call. Please pass the",
-                "`Design` into the `design=` argument of `lmitt()`. It is",
+                "`StudySpecification` into the `specification=` argument of `lmitt()`. It is",
                 "not needed in `ate()` or `ett()` when passed as the",
-                "`design=` argument to `lmitt()`."))
+                "`specification=` argument to `lmitt()`."))
   }
 
-  if (missing(design) & is(ofdes, "Design")) {
-    stop(paste("You've passed a `Design` into the offset function",
+  if (missing(specification) & is(offspec, "StudySpecification")) {
+    stop(paste("You've passed a `StudySpecification` into the offset function",
                 " (`cov_adj()`) but not the `lmitt()` call. Please pass the",
-                "`Design` into the `design=` argument of `lmitt()`. It is",
-                "not needed in `cov_adj()` when passed as the `design=`",
+                "`StudySpecification` into the `specification=` argument of `lmitt()`. It is",
+                "not needed in `cov_adj()` when passed as the `specification=`",
                 "argument to `lmitt()`."))
   }
 
-  if (is(wtdes, "Design")) {
-    if (!identical_Designs(design, wtdes)) {
-      stop(paste("Multiple differing `Design` found (`design` argument to",
-                 " `lmitt` and `design` object inside the weights differ)."))
+  if (is(wtspec, "StudySpecification")) {
+    if (!identical_StudySpecifications(specification, wtspec)) {
+      stop(paste("Multiple differing `StudySpecification` found (`specification` argument to",
+                 " `lmitt` and `specification` object inside the weights differ)."))
     }
   }
 
-  if (is(ofdes, "Design")) {
-    if (!identical_Designs(design, ofdes)) {
-      stop(paste("Multiple differing `Design` found (`design` argument to",
-                 " `lmitt` and `design` object inside the offset differ)."))
+  if (is(offspec, "StudySpecification")) {
+    if (!identical_StudySpecifications(specification, offspec)) {
+      stop(paste("Multiple differing `StudySpecification` found (`specification` argument to",
+                 " `lmitt` and `specification` object inside the offset differ)."))
     }
   }
 
-  if (!is(lm.call$weights, "WeightedDesign") & !absorb) {
-    if ("b" %in% design@column_index) {
+  if (!is(lm.call$weights, "WeightedStudySpecification") & !absorb) {
+    if ("b" %in% specification@column_index) {
       if (options()$propertee_message_on_unused_blocks) {
-        message(paste("The Design object contains block-level information,",
+        message(paste("The StudySpecification object contains block-level information,",
                       "but it is not used in this model. Block information",
                       "is used when weights are defined via `ate()` or `ett()`",
                       "or if the `absorb=TRUE` argument is passed."))
@@ -243,12 +245,14 @@ lmitt.formula <- function(obj,
   }
 
   if (absorb) {
-    if (length(var_names(design, "b")) == 0) {
-      stop("No blocks found in Design, cannot absorb")
-    }
-    blocks <- .get_col_from_new_data(design,
-                                     eval(lm.call$data, parent.frame()),
-                                     "b", all.x = TRUE)[, 1]
+    ## if (length(var_names(specification, "b")) == 0) {
+    ##   stop("No blocks found in StudySpecification, cannot absorb")
+    ## }
+
+    blocks <- blocks(specification,
+                    eval(lm.call$data, parent.frame()),
+                    all.x = TRUE,
+                    implicit = TRUE)[,1]
     # To be used below
   }
 
@@ -305,7 +309,7 @@ lmitt.formula <- function(obj,
   # Rename `a.()` to treatment named, adding a "." after to avoid conflict with
   # original treatment variable.
   colnames(mm) <- gsub("a\\.\\(\\)",
-                       paste0(var_names(design, "t"), "."),
+                       paste0(var_names(specification, "t"), "."),
                        colnames(mm))
 
   # Replace : with _ for interaction to try and avoid backticks
@@ -346,7 +350,7 @@ lmitt.formula <- function(obj,
     lmitt_call <- sys.call()
   }
   return(.convert_to_lmitt(model,
-                           design,
+                           specification,
                            lmitt_fitted = TRUE,
                            moderator = moderator,
                            absorbed_intercepts = absorb,
@@ -356,7 +360,7 @@ lmitt.formula <- function(obj,
 ##' @export
 ##' @rdname lmitt
 lmitt.lm <- function(obj,
-                     design = NULL,
+                     specification = NULL,
                      ...) {
-  return(as.lmitt(obj, design))
+  return(as.lmitt(obj, specification))
 }

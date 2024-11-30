@@ -5,22 +5,24 @@
 \title{(Internal) Add columns for merging covariance adjustment and direct
 adjustment samples to model formula}
 \usage{
-.update_ca_model_formula(model, by = NULL, design = NULL)
+.update_ca_model_formula(model, by = NULL, specification = NULL)
 }
 \arguments{
 \item{model}{any model that inherits from a \code{glm}, \code{lm}, or
 \code{robustbase::lmrob} object}
 
 \item{by}{optional; a string or named vector of unique identifier columns in
-the data used to create \code{design} and the data used to fit the covariance
-adjustment model. Default is NULL, in which case unit of assignment columns
-are used for identification (even if they do not uniquely identify units of
-observation). If a named vector is provided, names should represent variables
-in the data used to create \code{design}, while values should represent
-variables in the covariance adjustment data.}
+the data used to create \code{specification} and the data used to fit the
+covariance adjustment model. Default is NULL, in which case unit of
+assignment columns are used for identification (even if they do not
+uniquely identify units of observation). If a named vector is provided,
+names should represent variables in the data used to create
+\code{specification}, while values should represent variables in the
+covariance adjustment data.}
 
-\item{design}{a \code{Design} object. Default is NULL, in which case a
-\code{Design} object is sought from higher up the call stack.}
+\item{specification}{a \code{StudySpecification} object. Default is NULL, in
+which case a \code{StudySpecification} object is sought from higher up the
+call stack.}
 }
 \value{
 formula
@@ -30,8 +32,9 @@ formula
 adjustment samples to model formula
 }
 \details{
-This function is typically used prior to \code{.get_data_from_model()}
-and incorporates information provided in a \code{by} argument to ensure the necessary
-columns for merging the two samples are included in any \code{model.frame()} calls.
+This function is typically used prior to
+\code{.get_data_from_model()} and incorporates information provided in a
+\code{by} argument to ensure the necessary columns for merging the two
+samples are included in any \code{model.frame()} calls.
 }
 \keyword{internal}
