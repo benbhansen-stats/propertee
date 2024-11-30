@@ -9,13 +9,13 @@ on the values of treatment assignments \(A \in
 \{0, \ldots, K\}\), importance or frequency weights \(W\), and covariates \(X\), but
 not the values of potential responses \(\{Y_k: k \leq K\}\).  (This
 document takes $i$ to range over intact clusters.)  With the i.i.d assumption, these model-based SEs are valid
-even if the specification specification isn't, provided that the outcome
-model is well-specified. The role of the study specification is to provide
+even if the design specification isn't, provided that the outcome
+model is well-specified. The role of the study design is to provide
 analysis weights which, if respected, ensure desired interpretations
 of marginal effect estimators if the \(Y\)-model happens to be
 misspecified.
 
-An alternative would be to offer sandwich standard errors under a specification-based
+An alternative would be to offer sandwich standard errors under a design-based
 interpretation, differing from the above principally in terms of
 conditioning on
 
@@ -52,15 +52,15 @@ $\mathrm{Var}(\sum_i \check{w}_{i[k]} [\![A_i=k]\!] \mid \mathcal{Z}) = \mathrm{
 \check{w}_{i[0]} [\![A_i=0]\!] \mid \mathcal{Z}) = 0$, but the biases are
 in various senses controlled. Under the i.i.d. sampling model that
 stands behind model-based variance estimates, for instance, they are
-consistent; taking the specification perspective, BH and MF have preliminary
+consistent; taking the design perspective, BH and MF have preliminary
 findings about how to eliminate or control the biases through further
 conditioning.} estimate of the population average treatment
 effect.
 
-\section*{StudySpecification-based SEs for differences of Hajek estimators}
+\section*{Design-based SEs for differences of Hajek estimators}
 \subsection*{A one-stratum special case: Neyman's insight}
 
-In one special case a specification-based SE for \eqref{eq:hajekdiff} has been available for some time, with an optional interpretation in terms of M-estimation emerging more recently.  Suppose:
+In one special case a design-based SE for \eqref{eq:hajekdiff} has been available for some time, with an optional interpretation in terms of M-estimation emerging more recently.  Suppose:
 \begin{itemize}
 \item  simple or complete random assignment within a single
 stratum, \(\mathcal{P} = \{\{1,\ldots,n\}\}\); with
@@ -76,9 +76,9 @@ not identified; as far as the data are concerned, it could lie anywhere
 between \(\pm s_{v} s_{u}\), where
 \(s_{v}^2 = s_{vv} = (n-1)^{-1} \sum_{i=1}^n (v_i - \bar v)^2\). Assuming
 \(s_{vu} = s_{v}s_{u}\), then the ordinary unpooled variance is unbiased for
-the specification-based variance (conditional variance given \(\mathcal{Z}\))
+the design-based variance (conditional variance given \(\mathcal{Z}\))
 of \eqref{eq:hajekdiff}. If on the other hand \(s_{uv} \leq s_{v}s_{u}\), then the expected value of this ordinary
-unpooled variance exceeds \eqref{eq:hajekdiff}'s specification-based variance
+unpooled variance exceeds \eqref{eq:hajekdiff}'s design-based variance
 \citep[][A32--34]{neyman:1990,freedman:purv:pisa:1998}. The
 possibilities \(s_{vu} = s_{v}s_{u}\) and \(s_{vu} \leq s_{v}s_{u}\) being
 exhaustive, by Cauchy-Schwartz, the expected value of the unpooled
@@ -90,14 +90,14 @@ As shown by \citet{samiiAronow2012HC2equivNeyman}, in
 this case the same variance estimate coincides with the HC2 flavor of
 the Huber-White estimate.  As a result, it's sometimes said that
 ordinary sandwich or cluster-robust variance estimates admit of
-specification-based interpretations provided that one uses the HC2
+design-based interpretations provided that one uses the HC2
 form. I suspect this works only in special cases, however, perhaps not going far
 beyond the one delimited above.
 
 \subsection*{Impediments to application of the Neyman insight to
-  experiment specifications beyond the 1-stratum special case}
+  experiment designs beyond the 1-stratum special case}
 
-The use of the Neyman insight to get specification-based SEs through
+The use of the Neyman insight to get design-based SEs through
 Huber-White covariance estimates intended for model-based interpretation
 has several important limitations.
 
@@ -112,7 +112,7 @@ $y_{ki}$ and so on
 represent means over all observations clustered within unit of
 assignment $i$.
 \item \label{it:moderators-multiple-outcomes}  It remains to be
-  articulated how the Neyman insight can be made to furnish specification-based SEs
+  articulated how the Neyman insight can be made to furnish design-based SEs
   for effect estimates specific to a subgroup or domain. (E.g., ``What was
   the benefit for girls?'') How such
   effect estimates covary with main effect
@@ -122,19 +122,19 @@ assignment $i$.
 \item \label{it:prob-multreps}
   The unequal variances two-sample \(t\) statistic requires that the two
   conditions being contrasted each have multiple representatives within
-  each stratum. When this doesn't hold, as in matched specifications, it's
+  each stratum. When this doesn't hold, as in matched designs, it's
   unclear what it can be replaced with.
 \item \label{it:prob-covars}
   Samii and Aronow's result does not allow for covariates other than the
   treatment assignment variable. In a two-group setting with covariates
   as well as a treatment indicator, does HC2 continue to be valid as a
-  specification-based SE? Under what conditions? I suspect the answer is either
+  design-based SE? Under what conditions? I suspect the answer is either
   no, or yes but only under restrictive conditions.\footnote{Samii and
     Aronow didn't discuss this and I couldn't immediately find it in
     later papers citing theirs. There is a Abadie et al 2021 paper that
     may indirectly address this, but I suspect that if they'd found a
     standard model-based Huber-White estimator to have a valid
-    specification-based interpretation, they would have said just that.}
+    design-based interpretation, they would have said just that.}
   If this is correct,  there's still a need for a general-purpose SE
   estimator for effect estimates calculated with
 covariate adjustments; HC2 does not fill this role.
@@ -144,7 +144,7 @@ covariate adjustments; HC2 does not fill this role.
   separate and disjoint sample or to some combination of the two,
   followed by a difference-of-Hajek estimates step involving residuals
   of these preliminary regressions' residuals --- off-the-shelf
-  sandwich-type variance estimates such as HC2 can't admit a specification-based interpretation as well as
+  sandwich-type variance estimates such as HC2 can't admit a design-based interpretation as well as
   a  model-based one. The calculation would have to recognize differing statuses of observations within and outside of the experimental or quasiexperimental sample, something the conventional estimates don't do.
 \item \label{it:prob-nonexperimentals-as-nonrandom}
   When the covariance adjustment model has been fit to an extraneous or
@@ -233,7 +233,7 @@ can be handled with straightforward extensions of the Neyman insight.)
 
 \paragraph*{A near-immediate solution to
   Impediment~\ref{it:quantile-regr-SEs}}
-Under the specification-based interpretation, variances and covariances of
+Under the design-based interpretation, variances and covariances of
 quantile regression estimating functions --- for a quantile regression
 with covariates $X$ and $c_{i}$ observations per cluster $i$,
 \begin{equation*}
@@ -293,14 +293,14 @@ from the perspective of $M$-estimation, whatever the representation of
 conditions $k$ and 0 within stratum $S$.
 
 In separate hand-written
-notes I begin fleshing this out into methods of estimating specification-based second
+notes I begin fleshing this out into methods of estimating design-based second
 moments of first differences of the estimating functions
 \eqref{eq:ee-hajekdiff} that define the Hajek estimators, which
 can in turn be used to approximate the corresponding B-matrix terms;
 extending this work might be a suitable problem for a PhD student.
 
 \begin{quote}
-\textit{Code specification notes:}\\
+\textit{Code design notes:}\\
 1. Because we don't really estimate
 \begin{equation*}
   \mathrm{Cov}\left\{
@@ -311,7 +311,7 @@ extending this work might be a suitable problem for a PhD student.
 but only impute this covariance based on
 $\sum_{i\in S} [\![A_i=k]\!] \check{w}_{i[k]} (y_{ki} - \mu_k)$'s and
 $\sum_{i\in S} [\![A_i=0]\!] \check{w}_{i[0]} (y_{0i} - \mu_0)$'s estimated
-variances and presumed correlation of 1, we should consider software specification that doesn't tempt the user into
+variances and presumed correlation of 1, we should consider software design that doesn't tempt the user into
 treating our stand-in for it as a real estimate, perhaps in some
 unanticipated situation.  This could be accomplished through a
 function returning differences of Hajek
@@ -333,9 +333,9 @@ and columns of the information matrix prior to returning.)\\
 applicable to estimating equations arising from both the ultimate
 Hajek estimation and earlier-stage covariance estimation, i.e. early as well as final
 steps of the estimator chain.\\
-3. Current literature \citet[e.g.,][\ldots]{mukerjeeDasguptaRubin18,pashleymiratrix18varestimationblockedspecifications} may well present other specification-based covariance
+3. Current literature \citet[e.g.,][\ldots]{mukerjeeDasguptaRubin18,pashleymiratrix18varestimationblockeddesigns} may well present other design-based covariance
 estimators worth implementing as alternative B-matrix estimators.
-It'd be best to specification in such a way as to facilitate alternating
+It'd be best to design in such a way as to facilitate alternating
 among B-matrix estimation routines.
 \end{quote}
 %<!--For a stratum $S$ s.t. $\sum_{i \in S}  [\![A_i=k]\!] =  \sum_{i
@@ -354,7 +354,7 @@ these A and B matrices would give legitimate standard errors for
 differences of Hajek estimators as before, but now with adjustment for
 covariates\footnote{Formally it would also seem to furnish SEs for the
 covariate effects themselves; I haven't thought through whether these
-would indeed be interpretable as specification-based SEs.%
+would indeed be interpretable as design-based SEs.%
 }.
 
 %<!-- init segment of document shared w/ Xinhe W, early Feb22, ends here-->
@@ -398,13 +398,13 @@ are available \citep[e.g.][p.373 of \S~A.6.6.]{carroll2006measurement}.  Further
 simplification of B matrices is possible given our conditioning on
 $\mathcal{Z}$ in \eqref{eq:Zdefextended}; the B matrix continues to be
 a sum of form~\eqref{eq:Bform}, with clusters $i\not\in \mathcal{E}$
-making no contribution. (The specification-based interpretation has no bearing on
+making no contribution. (The design-based interpretation has no bearing on
 calculation of \(A\) matrices.)
 
 \begin{quote}
-  \textit{Code specification note:}
+  \textit{Code design note:}
   When the final comparison of Hajek estimates builds upon a chain of
-  earlier estimates, specification-based standard errors require information
+  earlier estimates, design-based standard errors require information
   from the earlier-stage fit just as model-based covariance estimates
   would, but there's an important different in the information that's
   required. From either perspective  information or A matrices from
@@ -415,7 +415,7 @@ calculation of \(A\) matrices.)
   external sample, then conditional on $\mathcal{Z}$ these estimates
   are nonrandom, and the corresponding $B$ matrices are 0, and can be
   ignored.  If the sample used for the earlier stage fit overlaps with
-  the experimental sample, then from the specification-based perspective it
+  the experimental sample, then from the design-based perspective it
   does have a B-matrix, but only the experimental observations
   contribute to it.
 
@@ -436,6 +436,6 @@ calculation of \(A\) matrices.)
 <!--
 %%% Local Variables:
 %%% mode: latex
-%%% TeX-master: "specification_based_SEs_"
+%%% TeX-master: "design_based_SEs_"
 %%% End:
 -->
