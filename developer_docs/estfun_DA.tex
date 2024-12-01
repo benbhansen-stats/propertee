@@ -839,9 +839,9 @@ corresponding to $\alpha_{0}$, just as
 
 By simplifying sums of \eqref{eq:upsilondef},  block $b$'s contribution
 $\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau,
-\mathbf{p}, \beta)$ can be seen to equal
+\mathbf{p}, \beta)$ can be seen to be
 \begin{multline}
-  \big(\sum_{i} \owt[]\big)
+\sum\acute{\psi}_{i}=  \big(\sum_{i} \owt[]\big)
         \left(
           \begin{array}{c}
             (1-{p}_{0b})
@@ -1128,7 +1128,7 @@ proceeds as the calculation of design-based vcov with right-side absorption.)
 Section~\ref{sec:psit-rho_0-tau} establishes that for estimation of
 main effects, with blocks (if present) accommodated by weights rather than
 absorption of one-way fixed effects, the intercept equals the
-$\owt[0]$-weighted control group mean of partial residuals
+$\owt[{[0]}]$-weighted control group mean of partial residuals
 $y[0] - g(\vec{x}\hat\beta)$. Display~\eqref{eq:upsilondef} and subsequent discussion of
 Section~\ref{sec:accomm-interc-via} indicated that our one-way fixed effects absorption will
 also report a weighted control group
@@ -1157,7 +1157,7 @@ and \ref{sec:interc-relat-aspects} below.)
 With a continuous moderator \texttt{m}/$m$, our calls to \texttt{lm()} or
 \texttt{lm.wfit()} return both intercept and moderator main
 effect coefficients, ``\texttt{(Intercept)}'' and ``\texttt{m}.''
-Without absorption, \texttt{(Intercept)} is the $\owt[0]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
+Without absorption, \texttt{(Intercept)} is the $\owt[{[0]}]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\lambda}m$. In the scenario with absorption, we'll also report
 ``\texttt{(Intercept)}'' and ``\texttt{m}'' coefficients, with the
 \texttt{m} coefficient taken from the same \texttt{lm()} fit providing
@@ -1261,68 +1261,71 @@ g(\vec{x}\hat\beta)$, with weights following the
 block fixed effects estimator's implicit weighting scheme.
 
 \subsubsection{Main effect only}
-With block fixed effects, the main effect estimator $\hat{\tau}_{j}$,
-$1\leq j \leq k$,  can be seen to
-estimate the treatment effect as a difference of weighted averages
-under treatment and control, with unit weights $\{w_{\text{BFE}i}:
-i\}$ determined as follows. For blocks $s \in \mathcal{Q}$, 
-empirical solutions $\{\hat{p}_{js}:s\}$  of $\sum_{i \in s}
-\absorbInterceptsEF (z_{i}; p_{js})=0$ (cf. \eqref{eq:upsilondef}) and
-for $i \in s$,
+With block fixed effects, estimating equations defining
+the main effect estimators $\hat{\tau}_{j}$,
+$1\leq j \leq k$,  admit expression in terms of differences of weighted averages
+under treatment and control.  For each $j$ there are unit weights $\{w_{\text{BFE}i}:
+i\}$ determined as follows. For blocks $b \subseteq \mathcal{Q}$,
+empirical solutions $\{\hat{p}_{jb}:b\}$  of $\sum_{i \in \bigcup b}
+\absorbInterceptsEF (z_{i}; p_{jb})=0$ (cf. \eqref{eq:upsilondef}) and
+for $i \in \bigcup b$,
 \begin{equation} \label{eq:28}
 w_{\text{BFE}i} = 
   \begin{cases}
-(1-\hat{p}_{js})\owt[]& z_i=j \text{ and } 0 < \sum_{i
-    \in s} \owt[] \indicator{z_i=j} < \sum_s \owt[];\\ 
-\hat{p}_{js} \owt[] & z_i\neq j \text{ and }0 < \sum_{i
-  \in s} \owt[] \indicator{z_i=j} < \sum_s \owt[]\\
-0 &  \sum_{i \in s} \owt[] \indicator{z_i=j} = 0 \text{ or }
-  \sum_{i \in s} \owt[].
+(1-\hat{p}_{jb})\owt[]& z_i=j \text{ and } 0 < \sum_{i \in \bigcup b} \owt[] \indicator{z_i=j} < \sum_{i \in \bigcup b} \owt[];\\ 
+\hat{p}_{jb} \owt[] & z_i\neq j \text{ and }0 < \sum_{i
+  \in s} \owt[] \indicator{z_i=j} < \sum_{i \in \bigcup b} \owt[]\\
+0 &  \sum_{i \in \bigcup b} \owt[] \indicator{z_i=j} = 0 \text{ or }
+  \sum_{i \in \bigcup b} \owt[].
 \end{cases}
 \end{equation}
-(These resemble overlap weights, $z_{i}(1-p_{js}) +
-(1-z_{i})p_{js}$ for $i\in s$ with $z$ binary. They coincide with
+(These resemble overlap weights, $z_{i}(1-p_{jb}) +
+(1-z_{i})p_{jb}$ for $i\in \bigcup b$ with $z$ binary. They coincide with
 overlap weighting if units of analysis and assignment coincide and
 any prior case weights $\{w_{i}:i\}$ do not vary within block, but not
 otherwise.)
 
 
-With a binary or dichotomized treatment, we'll report in the
+With a binary or dichotomized treatment, these 
+weights' role in determining effect estimates admits a
+succinct description: $\hat{\tau}$ is simply the difference of block fixed
+effects-weighted averages of treatment and control groups.  So in this
+case we'll report in the
 \texttt{(Intercept)} or $\alpha_{0}$ position the $w_{\text{BFE}}$-weighted
 control group average of $y[0] - g(\vec{x}\hat\beta)$ (or of $y[0]$ if
 there was no prior covariance adjustment model); this
 $\hat{\alpha}_{0}$ solves the empirical estimating equation $\sum_{i
   \in \bigcup\mathcal{Q}}\acute{\psi}_{i1}(\alpha)=0$, where
-$\acute{\psi}_{ij}(\cdot)$ is a first coordinate of
+$\acute{\psi}_{i1}(\cdot)$ is a first coordinate of
 $\acute{\psi}_{i}$ as in \eqref{eq:upsilondef}. As the
 averaging is over controls, the relevant weights $w_{\text{BFE}i}$ take
-the form $\hat{p}_{[i]} \owt[]$, where $[i]$ denotes the block $s$
-that contains $i$.  (Treatment being
-binary, I have simplified `` $p_{0s}$'' and ``$p_{1s}$'' to 
-and ``$(1-p_{s})$'' and ``$p_{s}$'' respectively.)
+the form $\hat{p}_{b_{i}} \owt[]$, where $b_{i}$ denotes the block $b$
+that contains (the cluster containing) $i$.  (Treatment being
+binary, I have simplified ``$p_{0b}$'' and ``$p_{1b}$'' to
+``$(1-p_{b})$'' and ``$p_{b}$'' respectively.)
 Reinterpreting \eqref{eq:upsilondef} in light of
 this simplification, the
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
-$\hat{p}_{[i]}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta}) -
+$\hat{p}_{b_{i}}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta}) -
 \hat{\alpha}_{0})$, and the $\alpha_{0}$ row of $A_{21}$ is 
 \begin{equation*}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
-  \hat{p}_{[i]}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i}.
+  \hat{p}_{b_{i}}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i}.
 \end{equation*}
 The
 $\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
-p_{[i]}(1-\hat{p}_{[i]})w_{\text{BFE}i}$ in the
+p_{b_{i}}(1-\hat{p}_{b_{i}})w_{\text{BFE}i}$ in the
 $\alpha_{0}$ column and 0 elsewhere; for $\hat{\tilde{A}}_{22}$ we resolve the
-``$p_{[i]}$'' in this expression as $\hat{p}_{[i]}$.%
-\footnote{In RCTs $p_{[i]}$ can be calculated. Another approach would
+``$p_{b_{i}}$'' in this expression as $\hat{p}_{b_{i}}$.%
+\footnote{In RCTs $p_{b_{i}}$ can be calculated. Another approach would
   be to perform that calculation and use it rather than
-  $\hat{p}_{[i]}$ for $p_{[i]}$; another approach would be to use
-  $p_{[i]}$ in RCTs and $\hat{p}_{[i]}$ in observational studies.}
+  $\hat{p}_{b_{i}}$ for $p_{b_{i}}$; another approach would be to use
+  $p_{b_{i}}$ in RCTs and $\hat{p}_{b_{i}}$ in observational studies.}
 The $\alpha_{0}$
 column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well, because the
 defining property $\sum_{i \in \bigcup \mathcal{Q}}\EE
 \absorbInterceptsEF(\vec{V}_{i}; \mathbf{p}) =0$ of $\mathbf{p} = (p_{jr}: 1\leq j\leq k, 1\leq r\leq s)$
-entails that for blocks $s \in \mathcal{Q}$ and coordinates $t=2,
+entails that for blocks $s \subseteq \mathcal{Q}$ and coordinates $t=2,
 \ldots, k+1$ of the $k+1$ vector $\acute{\psi}$,  $\sum_{i \in
   s}(\partial/\partial \alpha_{0})\acute{\psi}_{i t} = 0$. 
 
@@ -1336,7 +1339,7 @@ Design-based calculations call for adjusting objects \texttt{estfun.teeMod(DA)} 
   \left[n^{-1}\sum_{i: b_{i}=s}\owt[](1-\pi_{i})\right](\alpha_{0\mathcal{D}s} - \alpha_{0\mathcal{D}})
   \end{equation*}
   where $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
-  $\pi_{i} = p_{i}$ in an RCT but not necessarily otherwise;
+  $\pi_{i} = p_{b_{i}}$ in an RCT but not necessarily otherwise;
   \begin{equation*}
  \alpha_{0\mathcal{D}s}=
   \frac{\sum_{i \in s}\owt[](1-\pi_{i})[y_{i}[0] -
@@ -1347,15 +1350,15 @@ Design-based calculations call for adjusting objects \texttt{estfun.teeMod(DA)} 
     \alpha_{0\mathcal{D}s}}{\sum_{s}p_{s}\big[\sum_{i \in s}\owt[](1-\pi_{i})\big]};
   \end{equation*}
   and to obtain $\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}$ we plug into our
-  ${A}_{\alpha_{0}\tau\,\mathbf{p}}$-expression $\hat{p}_{[i]}$s for
-  $\pi_{i}$s, ``$[i]$'' denoting the block/element of $\mathcal{Q}$
-  that contains $i$, as well as  $\hat{\alpha}_{0 r}=
+  ${A}_{\alpha_{0}\tau\,\mathbf{p}}$-expression $\hat{p}_{b_{i}}$s for
+  $\pi_{i}$s, ``$b_{i}$'' denoting the block within $\mathcal{Q}$
+  that contains $i$ or $i$'s cluster $[i]$, as well as  $\hat{\alpha}_{0 r}=
   \frac{\sum_{i: b_{i}=r, z_{i}=0}\owt[][y_{i}[0] -
     g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r, z_{i}=0}\owt[]}$ for $\alpha_{0\mathcal{D}r}$.
 \subsubsection{Main effect and continuous moderator}
 Again let $m$ denote a continuous moderator, $\lambda$ its
 coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}/$\alpha_{0}$
-coefficient works out to the $\owt[0]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
+coefficient works out to the $\owt[{[0]}]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\lambda}m$. In parallel with that case, under absorption we need to report the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\lambda}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
 \eqref{eq:upsilondef} is replaced by
@@ -1419,16 +1422,16 @@ after absorption.  This first column can be recovered as a
 $w_{\text{BFE}}$-weighted average of control group residuals, just as
 with the main effect only. That is, the 
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
-$\hat{p}_{[i]}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta})
+$\hat{p}_{b_{i}}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta})
 -{\lambda}m -
 \hat{\alpha}_{0})$. Again the $\alpha_{0}$ row of $A_{21}$ is 
 \begin{equation*}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
-  \hat{p}_{[i]}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i},
+  \hat{p}_{b_{i}}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i},
 \end{equation*}
 while the
 $\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
-p_{[i]}(1-\hat{p}_{[i]})w_{\text{BFE}i}$ in the
+p_{b_{i}}(1-\hat{p}_{b_{i}})w_{\text{BFE}i}$ in the
 $\alpha_{0}$ column and 0 elsewhere.
 
 Design-based calculations from
