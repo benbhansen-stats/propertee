@@ -14,7 +14,7 @@ NULL
 #' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
 #' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
 #' in the direct adjustment sample.
-#' - \code{"DB0"} for specification-based HC0 variance estimates
+#' - \code{"DB0"} for design-based HC0 variance estimates
 #'
 #' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 #' \code{type = "XXX"} will now use your method. Your method should return a
@@ -565,9 +565,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   out <- nq / n * out
 }
 
-#' @title (Internal) StudySpecification-based variance estimates with HC0 adjustment
+#' @title (Internal) Design-based variance estimates with HC0 adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details The specification-based variance estimates can be calculated for
+#' @details The design-based variance estimates can be calculated for
 #' \code{teeMod} models satisfying the following requirements:
 #' - The model uses \code{rct_spec} as \code{StudySpecification}
 #' - The model only estimates a main treatment effect
@@ -587,16 +587,16 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
   if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
     if (!all(os@keys$in_Q)){
-      stop(paste("StudySpecification-based standard errors cannot be computed for teeMod",
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
                  "models with external sample for covariance adjustment"))
     }
 
   if (x@StudySpecification@type != "RCT"){
-    stop("StudySpecification-based standard errors can only be computed for RCT specifications")
+    stop("Design-based standard errors can only be computed for RCT specifications")
   }
 
   if (length(x@moderator) > 0){
-    stop(paste("StudySpecification-based standard errors cannot be computed for teeMod",
+    stop(paste("Design-based standard errors cannot be computed for teeMod",
                "models with moderators"))
   }
 
@@ -621,7 +621,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     # if model weights does not incorporate IPW, throw a warning
     if (!(inherits(x@lmitt_call$weights, "call") &
           sum(grepl("ate", x@lmitt_call$weights)) > 0)){
-      warning(paste("When calculating specification-based standard errors,",
+      warning(paste("When calculating design-based standard errors,",
                     "please ensure that inverse probability weights are applied.",
                     "This could be done by specifying weights = ate() in",
                     "lmitt() or lm()."))
@@ -642,12 +642,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
-#' @title (Internal) StudySpecification-based variance for models with
+#' @title (Internal) Design-based variance for models with
 #'   covariance adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate specification-based variance estimate for \code{teeMod}
+#' @details Calculate design-based variance estimate for \code{teeMod}
 #'   models with covariance adjustment and without absorbed effects
-#' @return specification-based variance estimate of the main treatment effect
+#' @return design-based variance estimate of the main treatment effect
 #'   estimate
 #' @importFrom stats formula
 #' @keywords internal
@@ -658,7 +658,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
   if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
-    stop(paste("StudySpecification-based standard errors cannot be calculated for",
+    stop(paste("Design-based standard errors cannot be calculated for",
                "tee models with treatment in prior covariance adjustment"))
   }
 
@@ -678,9 +678,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(as.matrix(vmat[2,2]))
 }
 
-#' @title (Internal) Bread matrix of specification-based variance
+#' @title (Internal) Bread matrix of design-based variance
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate bread matrix for specification-based variance estimate for
+#' @details Calculate bread matrix for design-based variance estimate for
 #'  \code{teeMod} models with covariance adjustment and without absorbed effects
 #' @return a list of bread matrices
 #' @keywords internal
@@ -697,10 +697,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(list(b1 = bread1, b2 = bread2))
 }
 
-#' @title (Internal) Meat matrix of specification-based variance
+#' @title (Internal) Meat matrix of design-based variance
 #' @param x a fitted \code{teeMod} model
 #' @details Calculate upper and lower bound estimates of meat matrix for
-#'   specification-based variance estimate for \code{teeMod} models with
+#'   design-based variance estimate for \code{teeMod} models with
 #'   covariance adjustment and without absorbed effects
 #' @return a list of meat matrix bounds
 #' @importFrom stats model.frame
@@ -733,13 +733,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
               m3u = meat3u, m3l = meat3l))
 }
 
-#' @title (Internal) StudySpecification-based variance for models without
+#' @title (Internal) Design-based variance for models without
 #'   covariance adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate bread matrix for specification-based variance estimate for
+#' @details Calculate bread matrix for design-based variance estimate for
 #'   \code{teeMod} models without covariance adjustment and without absorbed
 #'   effects
-#' @return specification-based variance estimate of the main treatment effect
+#' @return design-based variance estimate of the main treatment effect
 #'   estimate
 #' @importFrom stats aggregate var
 #' @keywords internal
@@ -847,10 +847,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(df)
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix
+#' @title (Internal) Helper function for design-based meat matrix
 #'   calculation
 #' @param x a fitted \code{teeMod} model
-#' @return a \eqn{m \items (p+2)} matrix of cluster sums of specification-based
+#' @return a \eqn{m \items (p+2)} matrix of cluster sums of design-based
 #'   estimating equations scaled by \eqn{\sqrt{m_{b0}m_{b1}}/m_{b}}. Here
 #'   \eqn{m} is the number of clusters, \eqn{p} is the number of covariates used
 #'   in the prior covariance adjustment (excluding intercept)
@@ -893,7 +893,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(XX)
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix
+#' @title (Internal) Helper function for design-based meat matrix
 #'   calculation
 #' @details Diagonal elements are estimated by sample variances Off-diagonal
 #'   elements are estimated using the Young's elementary inequality
@@ -916,7 +916,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V00u, V00l))
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix calculation
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .add_mat_diag <- function(A, B){
   d <- nrow(A)
@@ -926,7 +926,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return((A + B) / 2)
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix calculation
+#' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
 .add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
@@ -940,7 +940,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   else return(- (A - B)^2 / 2)
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix
+#' @title (Internal) Helper function for design-based meat matrix
 #'   calculation
 #' @details the Young's elementary inequality is used
 #' @return estimated upper and lower bounds of covariance matrix of estimating
@@ -969,7 +969,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(rbind(V01u, V01l))
 }
 
-#' @title (Internal) Helper function for specification-based meat matrix
+#' @title (Internal) Helper function for design-based meat matrix
 #'   calculation
 #' @keywords internal
 .add_mat_sqdif <- function(X, zobs, bid, b, upper = TRUE){
