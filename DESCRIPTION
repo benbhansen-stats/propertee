@@ -1,16 +1,19 @@
 Package: propertee
-Version: 0.5.0
-Title: Study Specification-Informed Direct Adjustment with Optional Prior Covariance Adjustment
-Description: The Prognostic Regression Offsets with Propagation of ERrors
-    (for Treatment Effect Estimation) package facilitates direct adjustment
-    for experiments and observational studies with specification-informed
-    standard errors and flexible options for covariance adjustment. It uses
-    explicit specification of study specification to provide probability of
-    assignment weights and standard errors that appropriately reflect the
-    specification. For covariance adjustment of its Hajek and (one-way) fixed
-    effects estimates, it enables offsetting the outcome against predictions
-    from a dedicated covariance model, with standard error calculations
-    propagating error as appropriate from the covariance model.
+Version: 0.5.1
+Title: Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment
+Description: The Prognostic Regression Offsets with Propagation of
+    ERrors (for Treatment Effect Estimation) package facilitates
+    direct adjustment for experiments and observational studies that
+    is compatible with a range of study designs and covariance
+    adjustment strategies. It uses explicit specification of clusters,
+    blocks and treatment allocations to furnish probability of
+    assignment-based weights targeting any of several average
+    treatment effect parameters, and for standard error calculations
+    reflecting these design parameters. For covariance adjustment of
+    its Hajek and (one-way) fixed effects estimates, it enables
+    offsetting the outcome against predictions from a dedicated
+    covariance model, with standard error calculations propagating
+    error as appropriate from the covariance model.
 Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
                     email = "jerrick@umich.edu"),
              person("Josh", "Wasserman", role = "aut",

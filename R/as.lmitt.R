@@ -5,10 +5,21 @@ NULL
 ##' @title Convert \code{lm} object into \code{teeMod}
 ##'
 ##' @description Converts the output of [lm()] into a \code{teeMod}
-##'   object so that it can be used to properly account for standard errors.
+##'   object, for standard errors that account for block and cluster
+##'   information carried with the \code{lm}'s weights, and/or an
+##'   offset incorporating predictions of the outcome from a
+##'   separate model.
 ##'
-##' @details The formula with which \code{x} was created must include a
-##'   treatment identifier (e.g. [assigned()]).
+##' @details The formula with which \code{x} was created must include
+##'   a treatment identifier (e.g. [assigned()]).  If a model-based
+##'   offset is incorportated, the model's predictions would have to
+##'   have been extracted using [cov_adj()] (as opposed to
+##'   \code{predict{}} in order for \code{teeMod} standard error
+##'   calculations to reflect propagation of error from these
+##'   predictions. This mechanism only supports treatment main effects:
+##'   to estimate interactions of treatment assignment with a moderator
+##'   variable, use [lmitt()] instead of \code{lm()} and
+##'   \code{as.lmitt()}.
 ##'
 ##' @param x \code{lm} object with weights containing a
 ##'   \code{WeightedStudySpecification}, or an offset from [cov_adj()].

@@ -19,6 +19,8 @@ navbar:
       href: articles/RDD.html
     - text: propertee vs. geex
       href: articles/geex_vs_propertee.html
+    - text: Real-data demonstration with a finely stratified cluster RCT and a broader administrative database
+      href: articles/mi_vignette/index.html
 reference:
 - title: StudySpecification
 - subtitle: Creation of `StudySpecification` Objects

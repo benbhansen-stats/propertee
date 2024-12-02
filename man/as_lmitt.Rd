@@ -27,9 +27,20 @@ an error will be produced.)}
 }
 \description{
 Converts the output of \code{\link[=lm]{lm()}} into a \code{teeMod}
-object so that it can be used to properly account for standard errors.
+object, for standard errors that account for block and cluster
+information carried with the \code{lm}'s weights, and/or an
+offset incorporating predictions of the outcome from a
+separate model.
 }
 \details{
-The formula with which \code{x} was created must include a
-treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).
+The formula with which \code{x} was created must include
+a treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).  If a model-based
+offset is incorportated, the model's predictions would have to
+have been extracted using \code{\link[=cov_adj]{cov_adj()}} (as opposed to
+\code{predict{}} in order for \code{teeMod} standard error
+calculations to reflect propagation of error from these
+predictions. This mechanism only supports treatment main effects:
+to estimate interactions of treatment assignment with a moderator
+variable, use \code{\link[=lmitt]{lmitt()}} instead of \code{lm()} and
+\code{as.lmitt()}.
 }
