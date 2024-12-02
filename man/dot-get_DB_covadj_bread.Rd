@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.get_DB_covadj_bread}
 \alias{.get_DB_covadj_bread}
-\title{(Internal) Bread matrix of specification-based variance}
+\title{(Internal) Bread matrix of design-based variance}
 \usage{
 .get_DB_covadj_bread(x, ...)
 }
@@ -13,10 +13,10 @@
 a list of bread matrices
 }
 \description{
-(Internal) Bread matrix of specification-based variance
+(Internal) Bread matrix of design-based variance
 }
 \details{
-Calculate bread matrix for specification-based variance estimate for
+Calculate bread matrix for design-based variance estimate for
 \code{teeMod} models with covariance adjustment and without absorbed effects
 }
 \keyword{internal}

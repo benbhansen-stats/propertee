@@ -223,7 +223,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #'   \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
 #'   correct contributions to estimating equations within clusters.
 #' @param x a fitted \code{teeMod} object
-#' @param vcov_type a string indicating model-based or specification-based
+#' @param vcov_type a string indicating model-based or design-based
 #'   covariance estimation. Currently, "MB", "CR", and "HC" are the only strings
 #'   registered as indicating model-based estimation.
 #' @param cluster character vector or list; optional. Specifies column names
@@ -451,11 +451,11 @@ update.teeMod <- function(object, ...) {
              "instead."))
 }
 
-#' @title StudySpecification-based estimating equations contributions
+#' @title Design-based estimating equations contributions
 #' @param x a fitted \code{teeMod} object
 #' @param ... arguments passed to methods
 #' @details calculate contributions to empirical estimating equations from a
-#'   \code{teeMod} model with absorbed intercepts from the specification-based
+#'   \code{teeMod} model with absorbed intercepts from the design-based
 #'   perspective
 #' @return An \eqn{n\times k} matrix
 #' @keywords internal
@@ -467,7 +467,7 @@ update.teeMod <- function(object, ...) {
   else
     temp <- .base_S3class_estfun(x)
 
-  # return 0 if not asking for a specification-based SE or DA does not absorb intercepts
+  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
   cl <- match.call()
   db <- eval(cl[["db"]], parent.frame())
   if (is.null(db) | !x@absorbed_intercepts){
