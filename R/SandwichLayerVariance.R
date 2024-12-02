@@ -179,7 +179,15 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
   cluster <- .sanitize_Q_ids(model, cluster_cols)$cluster
   if (ncol(mod_vars) > 1) {
-    mod_counts <- rowsum(mod_vars, cluster, na.rm = TRUE)
+    # Since we include rows with NA's model_vars and cluster, we need to makeI think this will work for determining the rows actually used in the model
+    # fit
+    in_model_fit <- as.numeric(
+      apply(mapply(function(c) is.na(c),
+                   eval(attr(terms(as.formula(model$call$formula)), "variables"), env = model_data)),
+            1,
+            function(r) sum(r) == 0)
+    )
+    mod_counts <- rowsum(mod_vars * in_model_fit, cluster, na.rm = TRUE)
     valid_mods <- colSums(mod_counts != 0) > 2
   } else {
     valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
