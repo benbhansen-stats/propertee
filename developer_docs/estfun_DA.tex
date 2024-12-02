@@ -1270,20 +1270,33 @@ empirical solutions $\{\hat{p}_{jb}:b\}$  of $\sum_{i \in \bigcup b}
 \absorbInterceptsEF (z_{i}; p_{jb})=0$ (cf. \eqref{eq:upsilondef}) and
 for $i \in \bigcup b$,
 \begin{equation} \label{eq:28}
-w_{\text{BFE}i} = 
+w_{\text{BFE}i(j)} = 
   \begin{cases}
 (1-\hat{p}_{jb})\owt[]& z_i=j \text{ and } 0 < \sum_{i \in \bigcup b} \owt[] \indicator{z_i=j} < \sum_{i \in \bigcup b} \owt[];\\ 
 \hat{p}_{jb} \owt[] & z_i\neq j \text{ and }0 < \sum_{i
-  \in s} \owt[] \indicator{z_i=j} < \sum_{i \in \bigcup b} \owt[]\\
+  \in \bigcup b} \owt[] \indicator{z_i=j} < \sum_{i \in \bigcup b} \owt[]\\
 0 &  \sum_{i \in \bigcup b} \owt[] \indicator{z_i=j} = 0 \text{ or }
   \sum_{i \in \bigcup b} \owt[].
 \end{cases}
 \end{equation}
-(These resemble overlap weights, $z_{i}(1-p_{jb}) +
-(1-z_{i})p_{jb}$ for $i\in \bigcup b$ with $z$ binary. They coincide with
-overlap weighting if units of analysis and assignment coincide and
-any prior case weights $\{w_{i}:i\}$ do not vary within block, but not
-otherwise.)
+With a binary treatment this is
+\begin{equation*}
+w_{\text{BFE}i} = 
+  \begin{cases}
+(1-\hat{p}_{b_{i}})\owt[]& z_i=1 \text{ and } 0 < \sum_{i \in \bigcup b} z_i\owt[] < \sum_{i \in \bigcup b} \owt[];\\ 
+\hat{p}_{b_{i}} \owt[] & z_i=0 \text{ and }0 < \sum_{i
+  \in \bigcup b} z_i\owt[] < \sum_{i \in \bigcup b} \owt[]\\
+0 &  \sum_{i \in \bigcup b} z_i\owt[]  = 0 \text{ or }
+  \sum_{i \in \bigcup b} \owt[],
+\end{cases}
+\end{equation*}
+with ``$(1-p_{b})$'' and ``$p_{b}$'' corresponding to``$p_{0b}$''
+and ``$p_{1b}$,'' respectively, as defined by \eqref{eq:upsilondef}.
+These ``block fixed effects weights'' then resemble overlap weights, $z_{i}(1-\pi_{i}) +
+(1-z_{i})\pi_{i}$ for $i\in \bigcup b$. (They coincide with
+overlap weighting in the special case of RCTs with binary treatment,
+units of analysis that coincide with units of assignment,
+and prior case weights $\{w_{i}:i\}$ not present or not varying within blocks.)
 
 
 With a binary or dichotomized treatment, these 
@@ -1300,9 +1313,7 @@ $\acute{\psi}_{i1}(\cdot)$ is a first coordinate of
 $\acute{\psi}_{i}$ as in \eqref{eq:upsilondef}. As the
 averaging is over controls, the relevant weights $w_{\text{BFE}i}$ take
 the form $\hat{p}_{b_{i}} \owt[]$, where $b_{i}$ denotes the block $b$
-that contains (the cluster containing) $i$.  (Treatment being
-binary, I have simplified ``$p_{0b}$'' and ``$p_{1b}$'' to
-``$(1-p_{b})$'' and ``$p_{b}$'' respectively.)
+that contains (the cluster containing) $i$.
 Reinterpreting \eqref{eq:upsilondef} in light of
 this simplification, the
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
