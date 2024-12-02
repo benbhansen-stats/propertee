@@ -1292,8 +1292,8 @@ w_{\text{BFE}i} =
 \end{equation*}
 with ``$(1-p_{b})$'' and ``$p_{b}$'' corresponding to``$p_{0b}$''
 and ``$p_{1b}$,'' respectively, as defined by \eqref{eq:upsilondef}.
-These ``block fixed effects weights'' then resemble overlap weights, $z_{i}(1-\pi_{i}) +
-(1-z_{i})\pi_{i}$ for $i\in \bigcup b$. (They coincide with
+These ``block fixed effects weights'' then resemble overlap weights,
+$z_{i}(1-\pi_{i}) + (1-z_{i})\pi_{i}$ for $i\in \bigcup b$. (They coincide with
 overlap weighting in the special case of RCTs with binary treatment,
 units of analysis that coincide with units of assignment,
 and prior case weights $\{w_{i}:i\}$ not present or not varying within blocks.)
@@ -1317,53 +1317,83 @@ that contains (the cluster containing) $i$.
 Reinterpreting \eqref{eq:upsilondef} in light of
 this simplification, the
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
-$\hat{p}_{b_{i}}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta}) -
-\hat{\alpha}_{0})$, and the $\alpha_{0}$ row of $A_{21}$ is 
-\begin{equation*}
+$$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})\hat{p}_{b_{i}}\owt[{[0]}] (y - g(\vec{x}\hat{\beta}) -
+\hat{\alpha}_{0}),$$
+and the $\alpha_{0}$ row of $A_{21}$ is 
+\begin{equation}\label{eq:11}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
-  \hat{p}_{b_{i}}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i}.
-\end{equation*}
+  (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}] g'(\vec{x}_{i}\hat{\beta})
+  \vec{x}_{i}, 
+\end{equation}
+with $(1-z_{i})$ replaced by $\operatorname{Pr}_{\mathcal{D}}(Z_{i}=0)
+= 1-\pi_{i}$ in the design-based formulation. 
 The
-$\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
-p_{b_{i}}(1-\hat{p}_{b_{i}})w_{\text{BFE}i}$ in the
-$\alpha_{0}$ column and 0 elsewhere; for $\hat{\tilde{A}}_{22}$ we resolve the
+$\alpha_{0}$ row of $\tilde{A}_{22}$ has
+in the $\alpha_{0}$ column
+\begin{equation}\label{eq:32}
+  -n^{-1}\sum_{i \in \cup \mathcal{Q}}
+(1-z_{i}){p}_{b_{{i}}}\owt[{[0]}],
+\end{equation}
+or $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
+(1-\pi_{i}){p}_{b_{{i}}}\owt[{[0]}]$ in the design-based formulation,
+and zeroes in remaining columns (as $\tau$ parameters don't
+contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we resolve the
 ``$p_{b_{i}}$'' in this expression as $\hat{p}_{b_{i}}$.%
 \footnote{In RCTs $p_{b_{i}}$ can be calculated. Another approach would
   be to perform that calculation and use it rather than
   $\hat{p}_{b_{i}}$ for $p_{b_{i}}$; another approach would be to use
   $p_{b_{i}}$ in RCTs and $\hat{p}_{b_{i}}$ in observational studies.}
 The $\alpha_{0}$
-column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well, because the
+column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well:
+for blocks $b \subseteq \mathcal{Q}$ and coordinates $t=2,
+\ldots, k+1$ of the $k+1$ vector $\acute{\psi}$, \eqref{eq:31} gives
+that
+\begin{align*}
+  \sum_{i \in
+  \bigcup b}\frac{\partial}{\partial \alpha_{0}}\acute{\psi}_{i t} &=
+                                                                     -[(1-p_{b})\sum_{z_{i}=1}\owt[] - p_{b}\sum_{z_{i}=0}\owt[]]\\
+                                                                    &=
+                                                                      -\sum
+                                                                      [z_{i}(1-p_{b}) +(1-z_{i})(0-p_{b})]\owt[]\\
+   &= \sum (\indicator{z_{i}=1} - p_{b})\owt[],
+\end{align*}
+evaluating in expectation to 0 
+because of \eqref{eq:upsilondef}'s
 defining property $\sum_{i \in \bigcup \mathcal{Q}}\EE
-\absorbInterceptsEF(\vec{V}_{i}; \mathbf{p}) =0$ of $\mathbf{p} = (p_{jr}: 1\leq j\leq k, 1\leq r\leq s)$
-entails that for blocks $s \subseteq \mathcal{Q}$ and coordinates $t=2,
-\ldots, k+1$ of the $k+1$ vector $\acute{\psi}$,  $\sum_{i \in
-  s}(\partial/\partial \alpha_{0})\acute{\psi}_{i t} = 0$. 
+\absorbInterceptsEF(\vec{V}_{i}; \mathbf{p}) =0$ of $\mathbf{p} =
+(p_{jr}: 1\leq j\leq k, 1\leq r\leq s)$. 
 
+To estimate $A_{21}$ and $A_{22}$ under the design-based formulation
+we'll continue to use \eqref{eq:11} and \eqref{eq:32} to approximate
+the $\alpha_{0}$ row of $A_{21}$ and the $\alpha_{0}$ column of
+$\tilde{A}_{22}$, respectively. This avoids having to keep track of
+$\owt[{[0]}]$ for observations $i$ for which $z_{i}\neq 0$, and in
+observational studies it avoids the 
+need to estimate $(\pi_{i}: i)$.
 
-Design-based calculations call for adjusting objects \texttt{estfun.teeMod(DA)} by subtracting off
+Design-based calculations also call for adjusting objects \texttt{estfun.teeMod(DA)} by subtracting off
 \texttt{estfun\_DB\_blockabsorb(DA)} = $\AbsorbInterceptsEF{}
   A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}'$, per \S~\ref{sec:accomm-interc-via}
   above. The $\alpha_{0}$ row of $A_{\alpha_{0}\tau\,\mathbf{p}}$ has in
   its column $s$ (partial w/r/t $p_{s}$, $s \in \mathcal{Q}$)
   \begin{equation*}
-  \left[n^{-1}\sum_{i: b_{i}=s}\owt[](1-\pi_{i})\right](\alpha_{0\mathcal{D}s} - \alpha_{0\mathcal{D}})
+  \left[n^{-1}\sum_{i: b_{i}=s}\owt[{[0]}] (1-\pi_{i})\right](\alpha_{0\mathcal{D}s} - \alpha_{0\mathcal{D}})
   \end{equation*}
   where $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
   $\pi_{i} = p_{b_{i}}$ in an RCT but not necessarily otherwise;
   \begin{equation*}
  \alpha_{0\mathcal{D}s}=
-  \frac{\sum_{i \in s}\owt[](1-\pi_{i})[y_{i}[0] -
-    g(\vec{x}_{i}\beta)]}{\sum_{i \in s}\owt[](1-\pi_{i})}
+  \frac{\sum_{i \in s}\owt[{[0]}](1-\pi_{i})[y_{i}[0] -
+    g(\vec{x}_{i}\beta)]}{\sum_{i \in s}\owt[{[0]}](1-\pi_{i})}
   \text{ and }
   \alpha_{0\mathcal{D}} = \frac{\sum_{s}p_{s}\big[\sum_{i \in
-      s}\owt[](1-\pi_{i})\big]
-    \alpha_{0\mathcal{D}s}}{\sum_{s}p_{s}\big[\sum_{i \in s}\owt[](1-\pi_{i})\big]};
+      s}\owt[{[0]}](1-\pi_{i})\big]
+    \alpha_{0\mathcal{D}s}}{\sum_{s}p_{s}\big[\sum_{i \in s}\owt[{[0]}](1-\pi_{i})\big]};
   \end{equation*}
   and to obtain $\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}$ we plug into our
-  ${A}_{\alpha_{0}\tau\,\mathbf{p}}$-expression $\hat{p}_{b_{i}}$s for
+  ${A}_{\alpha_{0}\tau\,\mathbf{p}}$-expression $z_{i}$'s for
   $\pi_{i}$s, ``$b_{i}$'' denoting the block within $\mathcal{Q}$
-  that contains $i$ or $i$'s cluster $[i]$, as well as  $\hat{\alpha}_{0 r}=
+  that contains $i$ or $i$'s cluster $[i]$, so that  $\hat{\alpha}_{0 r}=
   \frac{\sum_{i: b_{i}=r, z_{i}=0}\owt[][y_{i}[0] -
     g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r, z_{i}=0}\owt[]}$ for $\alpha_{0\mathcal{D}r}$.
 \subsubsection{Main effect and continuous moderator}
@@ -1433,18 +1463,14 @@ after absorption.  This first column can be recovered as a
 $w_{\text{BFE}}$-weighted average of control group residuals, just as
 with the main effect only. That is, the 
 $\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
-$\hat{p}_{b_{i}}w_{\text{BFE}i}(1-z_{i})(y - g(\vec{x}\hat{\beta})
+$$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})
+\hat{p}_{b_{i}}\owt[{[0]}] (y - g(\vec{x}\hat{\beta})
 -{\lambda}m -
-\hat{\alpha}_{0})$. Again the $\alpha_{0}$ row of $A_{21}$ is 
-\begin{equation*}
-  -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
-  \hat{p}_{b_{i}}w_{\text{BFE}i} (1-z_{i})g'(\vec{x}_{i}\hat{\beta}) \vec{x}_{i},
-\end{equation*}
-while the
-$\alpha_{0}$ row of $\tilde{A}_{22}$ has $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
-p_{b_{i}}(1-\hat{p}_{b_{i}})w_{\text{BFE}i}$ in the
-$\alpha_{0}$ column and 0 elsewhere.
-
+\hat{\alpha}_{0}).$$
+Again the $\alpha_{0}$ row of $A_{21}$ and $(\alpha_{0}, \alpha_{0})$
+entry of $\tilde{A}_{22}$ are given by \eqref{eq:11} and
+\eqref{eq:32}, respectively, with zeroes in off-diagonal positions of
+$\tilde{A}_{22}$'s $\alpha_{0}$ row and column.
 Design-based calculations from
 \texttt{estfun\_DB\_blockabsorb()} need to be filled out to reflect
 the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\nu \mathbf{p}\,
