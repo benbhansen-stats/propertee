@@ -279,7 +279,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                                  nms = colnames(spec_blocks))
       )
       Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      Q_obs$cluster[Q_obs$small_block] <- Q_obs$block_replace_id[Q_obs$small_block]
+      Q_obs$cluster[Q_obs$small_block &
+                      !is.na(Q_obs[[var_names(x@StudySpecification, "b")]])] <- Q_obs$block_replace_id[
+                        Q_obs$small_block &
+                          !is.na(Q_obs[[var_names(x@StudySpecification, "b")]])]
       Q_obs_ids <- Q_obs$cluster
     }
   }

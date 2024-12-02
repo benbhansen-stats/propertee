@@ -159,8 +159,17 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
   } else if (!inherits(model_data, "data.frame")) {
-    stop("`data` must be a dataframe or a quoted object name")
+    stop("`model_data` must be a dataframe or a quoted object name")
   }
+  
+  if (!inherits(model_data, "data.frame")) {
+    stop(paste("Could not find argument passed to `model_data` in the given `envir`"))
+  }
+  
+  # set these attributes so model.matrix() includes rows with NA's, which will match
+  # the length of `cluster` generated below
+  attr(model_data, "terms") <- NULL
+  attr(model_data, "na.action") <- "na.pass"
 
   # For categorical moderators, count the clusters contributing to estimation
   # for each level of the moderator variable; for continuous moderators, just
@@ -168,11 +177,9 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   # moderator variable) must have at least three clusters contributing to
   # estimation for valid SE estimation.
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
-  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(stats::model.frame(model)),,drop=FALSE]
   cluster <- .sanitize_Q_ids(model, cluster_cols)$cluster
   if (ncol(mod_vars) > 1) {
-    mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
-                        rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
+    mod_counts <- rowsum(mod_vars, cluster, na.rm = TRUE)
     valid_mods <- colSums(mod_counts != 0) > 2
   } else {
     valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)

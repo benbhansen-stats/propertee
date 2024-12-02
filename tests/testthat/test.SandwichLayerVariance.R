@@ -2318,7 +2318,7 @@ test_that(".check_df_moderator_estimates other warnings", {
   expect_error(.check_df_moderator_estimates(vmat, ssmod, cluster_ids,
                                              cbind(y = simdata$y, z = simdata$z),
                                              envir = parent.frame()),
-               "`data` must be a dataframe")
+               "`model_data` must be a dataframe")
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
