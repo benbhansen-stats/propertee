@@ -1,3 +1,7 @@
+# propertee 0.5.1
+## Bug Fixes
+* Variance estimation routine fixes miscalculations in the case when there is covariance adjustment and rows are omitted from the `lmitt()` fit due to `NA`'s in the covariates or treatment assignment
+
 # propertee 0.5.0
 
 ## Major Changes

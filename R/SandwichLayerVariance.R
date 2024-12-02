@@ -504,6 +504,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #'   where the number of rows are given by the intercept and the treatment
 #'   variable in the direct adjustment model, and the number of columns are
 #'   given by the dimension of the covariance adjustment model
+#' @importFrom stats weights
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x) {
@@ -518,14 +519,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
 
   # Get contribution to the estimating equation from the direct adjustment model
-  w <- if (is.null(x$weights)) 1 else x$weights
-
   damod_mm <- stats::model.matrix(
     formula(x), stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
+  if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
+  w <- if (is.null(w <- stats::weights(x))) numeric(length(msk)) + 1 else replace(w, is.na(w), 0) 
 
-  out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
+  out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w[msk],
                    sl@prediction_gradient[msk, , drop = FALSE])
   # scale by nq
   nq <- sum(msk)
