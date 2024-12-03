@@ -1005,7 +1005,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   # calculate phi tilde
   phitilde <- matrix(nrow = n, ncol = s)
   for (j in 1:s){
-    phitilde[,j] <- ws * (z_ind[,2] - p1[j]) * b_ind[,j]
+    phitilde[,j] <- ws * x$residuals * (z_ind[,2] - p1[j]) * b_ind[,j]
   }
   return(phitilde)
 }
@@ -1016,8 +1016,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @return An \eqn{s\times k} matrix \eqn{A_{pp}^{-1} A_{\tau p}^T}
 .get_appinv_atp <- function(x, ...){
   ws <- x$weights
-  # estimated treatment effect tau1 <- x$coefficients
-  n <- length(ws) # number of units in Q(?)
+  n <- length(ws)
   design_obj <- x@Design
   df <- x$call$data
   
@@ -1037,14 +1036,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   atp <- list()
   for (i in 1:s){
     atp[[i]] <- ws * (x$residuals) * b_ind[,i]
-    # atp[[i]] <- .get_upsilon(x) / term2 * b_ind[,i]
     app[[i]] <- ws * b_ind[,i]
   }
-  # w_ipv <- ate(x@Design, data = x$call$data) inverse probability weights
   
   mat <- matrix(0, nrow = (k-1)*s, ncol = k-1)
   for (i in 1:s){
-    # mat[i,1] <- sum(app[[i]] * w_ipv) / sum(w_ipv)
     mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
   }
   return(mat)
