@@ -42,13 +42,13 @@ sets, one encoding school information (including treatment status) and one
 encoding student information (which does not include treatment status).
 }
 \examples{
-des <- obs_design(treatment ~ uoa(schoolid), data = schooldata)
+soec <- obs_spec(treatment ~ uoa(schoolid), data = schooldata)
 
 # Treatment effect
-mod1 <- lmitt(math ~ 1, design = des, data = studentdata)
+mod1 <- lmitt(math ~ 1, specification = soec, data = studentdata)
 
 # Treatment effect by grade
-mod2 <- lmitt(math ~ as.factor(grade), design = des, data = studentdata)
+mod2 <- lmitt(math ~ as.factor(grade), specification = soec, data = studentdata)
 }
 \keyword{dataset}
 \keyword{datasets}

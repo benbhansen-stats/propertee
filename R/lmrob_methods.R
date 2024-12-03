@@ -1,14 +1,14 @@
 ##' @title Generate matrix of estimating equations for \code{lmrob()} fit
 ##' @details This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation. The issue in question is issue
-##' #6471, robustbase project on R-Forge. This function contributes to providing
-##' sandwich estimates of covariance-adjusted standard errors for robust linear
-##' covariance adjustment models.
+##'   affecting sandwich covariance estimation. The issue in question is issue
+##'   #6471, robustbase project on R-Forge. This function contributes to
+##'   providing sandwich estimates of covariance-adjusted standard errors for
+##'   robust linear covariance adjustment models.
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{estfun}
 ##' @return A \eqn{n\times }(p+1) matrix where the first column corresponds to
-##' the scale estimate and the remaining \eqn{p} colums correspond to the
-##' coefficients
+##'   the scale estimate and the remaining \eqn{p} colums correspond to the
+##'   coefficients
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method
@@ -51,16 +51,16 @@ estfun.lmrob <- function(x, ...) {
 
 ##' @title Extract bread matrix from an \code{lmrob()} fit
 ##' @details This is part of a workaround for an issue in the robustbase code
-##' affecting sandwich covariance estimation. The issue in question is issue
-##' #6471, robustbase project on R-Forge. This function contributes to providing
-##' sandwich estimates of covariance-adjusted standard errors for robust linear
-##' covariance adjustment models.
+##'   affecting sandwich covariance estimation. The issue in question is issue
+##'   #6471, robustbase project on R-Forge. This function contributes to
+##'   providing sandwich estimates of covariance-adjusted standard errors for
+##'   robust linear covariance adjustment models.
 ##'
 ##' @param x An \code{lmrob} object produced using an MM/SM estimator chain
 ##' @param ... Additional arguments to be passed to \code{bread}
 ##' @return A \eqn{p\times }(p+1) matrix where the first column corresponds to
-##' the scale estimate and the remaining \eqn{p} colums correspond to the
-##' coefficients
+##'   the scale estimate and the remaining \eqn{p} colums correspond to the
+##'   coefficients
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method

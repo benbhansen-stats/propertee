@@ -1,7 +1,9 @@
-##' @title Extract empirical estimating equations from a \code{glmbrob} model fit
+##' @title Extract empirical estimating equations from a \code{glmbrob} model
+##'   fit
 ##' @param x a fitted \code{glmrob} object
 ##' @param ... arguments passed to methods
-##' @return matrix, estimating functions evaluated at data points and fitted parameters
+##' @return matrix, estimating functions evaluated at data points and fitted
+##'   parameters
 ##' @importFrom stats family model.matrix
 ##' @importFrom utils getFromNamespace
 ##' @rdname glmrob_methods

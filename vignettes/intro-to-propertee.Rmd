@@ -22,22 +22,23 @@ library(propertee)
 
 The **propertee** package, Prognostic Regression Offsets with Propagation of
 ERrors (for Treatment Effect Estimation), facilitates direct adjustment for
-experiments and observational studies with design-informed standard errors and
-flexible options for covariance adjustment. It uses explicit specification of
-study design to provide probability of assignment weights and standard errors
-that appropriately reflect the design. For covariance adjustment of its Hajek
-and (one-way) fixed effects estimates, it enables offsetting the outcome against
-predictions from a dedicated covariance model, with standard error calculations
-propagating error as appropriate from the covariance model.
+experiments and observational studies with specification-informed standard
+errors and flexible options for covariance adjustment. It uses explicit
+specification of study specification to provide probability of assignment
+weights and standard errors that appropriately reflect the specification. For
+covariance adjustment of its Hajek and (one-way) fixed effects estimates, it
+enables offsetting the outcome against predictions from a dedicated covariance
+model, with standard error calculations propagating error as appropriate from
+the covariance model.
 
 The main workflow consists of two main steps and one optional step:
 
-1. Generate a `Design` object which encodes the study design, including the unit
-   of assignment, treatment status of each unit of assignment, and optionally
-   block information. This is accomplished with the `obs_design()`,
-   `rct_design()` or `rd_design()` functions.
+1. Generate a `StudySpecification` object which encodes the study specification,
+   including the unit of assignment, treatment status of each unit of
+   assignment, and optionally block information. This is accomplished with the
+   `obs_spec()`, `rct_spec()` or `rd_spec()` functions.
 2. Optionally, fit a covariate adjustment model.
-3. Fit a model to estimate a treatment effect, accounting for the design
+3. Fit a model to estimate a treatment effect, accounting for the specification
    information, and optionally the covariate adjustment. This is done via the
    `lmitt()` function.
 
@@ -88,34 +89,34 @@ head(STARdata$studentid)
 
 ## A Basic Example
 
-### Defining the `Design`
+### Defining the `StudySpecification`
 
-The three `_design` functions (`rct_design()`, `obj_design()`, and
-`rd_design()`) operate similarly. The first argument is the most important, and
-encodes all the design information through the use of a formula. The left-hand
-side of the formula identifies the treatment variable. The right-hand side of
-the formula consists of the following potential pieces of information:
+The three `_spec` functions (`rct_spec()`, `obj_spec()`, and `rd_spec()`)
+operate similarly. The first argument is the most important, and encodes all the
+specification information through the use of a formula. The left-hand side of
+the formula identifies the treatment variable. The right-hand side of the
+formula consists of the following potential pieces of information:
 
 1. `unit_of_assignment()`: This identifies the variable(s) which indicate the
-   units of assignment. This is required for all designs. The alias `uoa()` can
-   be used in its place.
+   units of assignment. This is required for all specifications. The alias
+   `uoa()` can be used in its place.
 2. `block()`: The identifies the variable(s) which contain block information.
    Optional.
-3. `forcing()`: In regression discontinuity designs (`rd_design()`), this
+3. `forcing()`: In regression discontinuity specifications (`rd_spec()`), this
    identifies the variable(s) which contain forcing information.
 
-To define a `Design` in our example:
+To define a `StudySpecification` in our example:
 
 ```{r}
-des <- obs_design(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
+spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
                   data = STARdata, na.fail = FALSE)
-summary(des)
+summary(spec)
 ```
 
 Should more than one variable be needed to identify the unit of assignment,
 block, or forcing, they can be included. For example, perhaps `schoolidk` may be
 unique within district, but potentially not unique across districts. Then we'd
-use something like `block(districtid, schoolidk)` in the `_design` function.
+use something like `block(districtid, schoolidk)` in the `_spec` function.
 
 ### Estimating the treatment effect
 
@@ -124,19 +125,20 @@ takes in three main required arguments:
 
 1. A formula specifying the outcome and the desired treatment effect.
 2. The data set containing the outcome information.
-3. A [`Design`](#defining-the-design).
+3. A [`StudySpecification`](#defining-the-specification).
 
 Note that the data set does **not** need to be the same data set which generated
-the `Design`; it does however need to include the same variables to identify the
-units of assignment. (If the variable names differ, the `by=` argument can be
-used to link them, though we recommend renaming to reduce the likelihood of
-issues.)
+the `StudySpecification`; it does however need to include the same variables to
+identify the units of assignment. (If the variable names differ, the `by=`
+argument can be used to link them, though we recommend renaming to reduce the
+likelihood of issues.)
 
 For example, you may have one dataset containing school-level information, and a
 separate dataset containing student-level information. Assume school is the unit
 of assignment. While you could of course merge those two data-sets,
-**propertee** can instead use the school-level data to define the `Design`, and
-the student-level data to estimate the treatment effect.
+**propertee** can instead use the school-level data to define the
+`StudySpecification`, and the student-level data to estimate the treatment
+effect.
 
 The formula entering `lmitt()` can take on one of two forms:
 
@@ -157,36 +159,36 @@ treatment-`x` interaction effect is estimated.
 Therefore, to estimate the treatment effect in our example, we can run:
 
 ```{r}
-te <- lmitt(readk ~ 1, data = STARdata, design = des)
+te <- lmitt(readk ~ 1, data = STARdata, specification = spec)
 summary(te)
 ```
 
 The data includes ethnicity; we can estimate subgroup effects by ethnicity:
 
 ```{r}
-te_s <- lmitt(readk ~ ethnicity, data = STARdata, design = des)
+te_s <- lmitt(readk ~ ethnicity, data = STARdata, specification = spec)
 summary(te_s)
 ```
 
-### Including design weights
+### Including specification weights
 
-Design weights can be easily included in this estimation. **propertee** supports
-average treatment effect (ATE) and effect of the treatment on the treated (ETT)
-weights.
+Study specification weights can be easily included in this estimation.
+**propertee** supports average treatment effect (ATE) and effect of the
+treatment on the treated (ETT) weights.
 
 To include one of the weights, simply include the `weights = "ate"` or
 `weights = "ett"` argument to `lmitt()`:
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, design = des, weights = "ate")
-lmitt(readk ~ 1, data = STARdata, design = des, weights = "ett")
+lmitt(readk ~ 1, data = STARdata, specification = spec, weights = "ate")
+lmitt(readk ~ 1, data = STARdata, specification = spec, weights = "ett")
 ```
 
 Internally, these call the `ate()` or `ett()` functions which can be used
 directly.
 
 ```{r}
-head(ate(des, data = STARdata))
+head(ate(spec, data = STARdata))
 ```
 
 When included inside `lmitt()`, you do not need to specify any additional
@@ -209,7 +211,7 @@ The `cov_adj()` function can be used to process the covariance adjustment model
 and produce the required values; and its output can be passed as an `offset=`.
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, design = des,
+lmitt(readk ~ 1, data = STARdata, specification = spec,
       weights = "ate", offset = cov_adj(camod))
 ```
 
@@ -227,7 +229,7 @@ Also, similarly to weights, `cov_adj()` can be used in normal modeling commands
 as well.
 
 ```{r}
-lm(readk ~ starkbinary, data = STARdata, weights = ate(des),
+lm(readk ~ starkbinary, data = STARdata, weights = ate(spec),
    offset = cov_adj(camod))
 ```
 
@@ -237,5 +239,5 @@ If fixed effects for blocks are desired, which can be absorbed away to avoid
 estimating, the `absorb=TRUE` argument can be passed.
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, design = des, absorb = TRUE)
+lmitt(readk ~ 1, data = STARdata, specification = spec, absorb = TRUE)
 ```

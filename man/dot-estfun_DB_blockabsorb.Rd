@@ -2,7 +2,7 @@
 % Please edit documentation in R/teeMod.R
 \name{.estfun_DB_blockabsorb}
 \alias{.estfun_DB_blockabsorb}
-\title{Design-based estimating equations contributions}
+\title{StudySpecification-based estimating equations contributions}
 \usage{
 .estfun_DB_blockabsorb(x, by = NULL, ...)
 }
@@ -15,11 +15,11 @@
 An \eqn{n\times k} matrix
 }
 \description{
-Design-based estimating equations contributions
+StudySpecification-based estimating equations contributions
 }
 \details{
-calculate contributions to empirical estimating equations
-from a \code{teeMod} model with absorbed intercepts
-from the design-based perspective
+calculate contributions to empirical estimating equations from a
+\code{teeMod} model with absorbed intercepts from the specification-based
+perspective
 }
 \keyword{internal}

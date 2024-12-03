@@ -10,10 +10,11 @@ adjustment sample}
 \arguments{
 \item{x}{a \code{SandwichLayer} object}
 
-\item{id_col}{character vector or list; optional. Specifies column names that appear in
-botn the covariance adjustment and direct adjustmet samples. Defaults to NULL,
-in which case unit of assignment columns in the \code{SandwichLayer}'s \code{Design}
-slot will be used to generate ID's.}
+\item{id_col}{character vector or list; optional. Specifies column names that
+appear in botn the covariance adjustment and direct adjustmet samples.
+Defaults to NULL, in which case unit of assignment columns in the
+\code{SandwichLayer}'s \code{StudySpecification} slot will be used to
+generate ID's.}
 
 \item{...}{arguments passed to methods}
 }

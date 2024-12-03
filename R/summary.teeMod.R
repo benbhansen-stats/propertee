@@ -2,17 +2,16 @@
 ##'
 ##' @description [summary()] method for class \code{teeMod}
 ##'
-##' @details If a \code{teeMod} object is fit with a
-##'   \code{SandwichLayer} offset, then the usual \code{stats::summary.lm()}
-##'   output is enhanced by the use of covariance-adjusted sandwich standard
-##'   errors, with t-test values recalculated to reflect the new standard
-##'   errors.
+##' @details If a \code{teeMod} object is fit with a \code{SandwichLayer}
+##'   offset, then the usual \code{stats::summary.lm()} output is enhanced by
+##'   the use of covariance-adjusted sandwich standard errors, with t-test
+##'   values recalculated to reflect the new standard errors.
 ##'
 ##' @param object \code{teeMod} object
 ##' @param vcov.type A string indicating the desired variance estimator. See
 ##'   [vcov_tee()] for details on accepted types.
-##' @param ... Additional arguments to [vcov_tee()], such as the desired
-##'   finite sample heteroskedasticity-robust standard error adjustment.
+##' @param ... Additional arguments to [vcov_tee()], such as the desired finite
+##'   sample heteroskedasticity-robust standard error adjustment.
 ##' @return object of class \code{summary.teeMod}
 ##' @export
 ##' @method summary teeMod
@@ -81,7 +80,7 @@ print.summary.teeMod <- function(x,
     }
     if (x$teeMod@lmitt_fitted) {
       toprint <- grepl(paste0("^\\`?",
-                              var_names(x$teeMod@Design, "t"), "\\."),
+                              var_names(x$teeMod@StudySpecification, "t"), "\\."),
                        rownames(coefs))
     } else {
       toprint <- rep(TRUE, nrow(coefs))

@@ -2,8 +2,7 @@
 % Please edit documentation in R/expand.model.frame_tee.R
 \name{.expand.model.frame_teeMod}
 \alias{.expand.model.frame_teeMod}
-\title{Add new variables to a model frame from a \code{teeMod}
-object}
+\title{Add new variables to a model frame from a \code{teeMod} object}
 \usage{
 .expand.model.frame_teeMod(
   model,
@@ -30,23 +29,24 @@ A variation of expand.model.frame which works for \code{teeMod}
 objects
 }
 \details{
-When building a \code{teeMod} object inside \code{lmitt()}, we do a
-lot of manipulation of the variables involved in the model such that by the
-time the \code{teeMod} is produced, neither the outcome nor
-predictors actually fit in the model exist in the \code{data} passed into
-the call.
+When building a \code{teeMod} object inside \code{lmitt()}, we do a lot of
+manipulation of the variables involved in the model such that by the time
+the \code{teeMod} is produced, neither the outcome nor predictors actually
+fit in the model exist in the \code{data} passed into the call.
 
 (E.g. to be specific, if a user calls \code{myda <- lmitt(y ~ 1, data =
 mydata)}, then \code{model.frame(myda)} would contain column names not found
 in \code{mydata}.)
 
-This is a clone of \code{stats::expand.model.frame()} which has one
-addition - after extracting the \code{model$call$data} from \code{model}, it
-adds columns from \code{model.frame(model)} to the object. This ensures that
-the additional variables created during \code{lmitt()} can be found.
+This is a clone of \code{stats::expand.model.frame()} which has one addition
+\itemize{
+\item after extracting the \code{model$call$data} from \code{model}, it adds
+columns from \code{model.frame(model)} to the object. This ensures that the
+additional variables created during \code{lmitt()} can be found.
+}
 
 Trivial modifications from \code{stats::expand.model.frame()} include
-ensuring \code{model} is a \code{teeMod} object, and using the
-\code{::} syntax as appropriate.
+ensuring \code{model} is a \code{teeMod} object, and using the \code{::}
+syntax as appropriate.
 }
 \keyword{internal}

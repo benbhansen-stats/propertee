@@ -9,28 +9,29 @@
 \arguments{
 \item{x}{a fitted \code{teeMod} object}
 
-\item{vcov_type}{a string indicating model-based or design-based covariance
-estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
-indicating model-based estimation.}
+\item{vcov_type}{a string indicating model-based or specification-based
+covariance estimation. Currently, "MB", "CR", and "HC" are the only strings
+registered as indicating model-based estimation.}
 
-\item{cluster}{character vector or list; optional. Specifies column names that appear
-in both the covariance adjustment and direct adjustment model dataframes.
-Defaults to NULL, in which case unit of assignment columns indicated in
-the Design will be used for clustering. If there are multiple clustering columns,
-they are concatenated together for each row and separated by "_".}
+\item{cluster}{character vector or list; optional. Specifies column names
+that appear in both the covariance adjustment and direct adjustment model
+dataframes. Defaults to NULL, in which case unit of assignment columns
+indicated in the StudySpecification will be used for clustering. If there
+are multiple clustering columns, they are concatenated together for each
+row and separated by "_".}
 
 \item{...}{arguments passed to methods}
 }
 \value{
-A vector with length equal to the number of unique units of observation
-used to fit the two models. See Details of \code{estfun.teeMod()} for
-the method for determining uniqueness.
+A vector with length equal to the number of unique units of
+observation used to fit the two models. See Details of
+\code{estfun.teeMod()} for the method for determining uniqueness.
 }
 \description{
-\code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
-with the order of the units of observations' contributions in
-\code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()}
-calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
+\code{.make_uoa_ids()} returns a factor vector of cluster ID's
+that align with the order of the units of observations' contributions in
+\code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()} calls
+\code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
 correct contributions to estimating equations within clusters.
 }
 \keyword{internal}

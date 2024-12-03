@@ -1,4 +1,15 @@
+# propertee 0.5.0
+
+## Major Changes
+* All references to "design" have been changed to "specification".
+  - `*_design` is now `*_spec` (e.g. `rct_design` is now `rct_spec`)
+  - `Design` objects are now `StudySpecification` objects
+  - The `design=` argument to `lmitt()` is now `specification=`.
+
 # propertee 0.4.1
+
+## New Features
+* Passing `absorb = TRUE` to `lmitt` without specifying a block proceeds as if the entire sample is a single block.
 
 ## Bug Fixes
 * Fixed bug where use of `dichotomy` and moderator variables in `lmitt()` could lead to errors due to too long of a formula.

@@ -1,9 +1,9 @@
 test_that("var_table", {
   data(simdata)
   # RCT and Obs
-  des <- rct_design(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
-  tbl <- var_table(des)
+  tbl <- var_table(spec)
 
   expect_true(inherits(tbl, "matrix"))
   expect_type(tbl, "character")
@@ -14,7 +14,7 @@ test_that("var_table", {
   # Only find multiple variables in cluster
   expect_equal(grepl(",", tbl[, 2]), c(FALSE, TRUE, FALSE))
 
-  tbl2 <- var_table(des, compress = FALSE)
+  tbl2 <- var_table(spec, compress = FALSE)
   expect_true(inherits(tbl2, "matrix"))
   expect_type(tbl2, "character")
   expect_equal(colnames(tbl2)[-1], c("Variable 1", "Variable 2"))
@@ -23,16 +23,16 @@ test_that("var_table", {
   expect_true(!is.na(tbl2[2, 3]))
   expect_true(is.na(tbl2[3, 3]))
 
-  tbl3 <- var_table(des, report_all = TRUE)
+  tbl3 <- var_table(spec, report_all = TRUE)
   expect_identical(tbl, tbl3)
 
-  tbl4 <- var_table(des, compress = FALSE, report_all = TRUE)
+  tbl4 <- var_table(spec, compress = FALSE, report_all = TRUE)
   expect_identical(tbl2, tbl4)
 
   # RD
-  des <- rd_design(z ~ uoa(uoa1, uoa2) + forcing(force), data = simdata)
+  spec <- rd_spec(z ~ uoa(uoa1, uoa2) + forcing(force), data = simdata)
 
-  tbl <- var_table(des)
+  tbl <- var_table(spec)
 
   expect_true(inherits(tbl, "matrix"))
   expect_type(tbl, "character")
@@ -43,7 +43,7 @@ test_that("var_table", {
   # Only find multiple variables in cluster
   expect_equal(grepl(",", tbl[, 2]), c(FALSE, TRUE, FALSE))
 
-  tbl2 <- var_table(des, compress = FALSE)
+  tbl2 <- var_table(spec, compress = FALSE)
   expect_true(inherits(tbl2, "matrix"))
   expect_type(tbl2, "character")
   expect_equal(dim(tbl2), c(3, 3))
@@ -51,7 +51,7 @@ test_that("var_table", {
   expect_true(!is.na(tbl2[2, 3]))
   expect_true(is.na(tbl2[3, 3]))
 
-  tbl3 <- var_table(des, report_all = TRUE)
+  tbl3 <- var_table(spec, report_all = TRUE)
   expect_true(inherits(tbl3, "matrix"))
   expect_type(tbl3, "character")
   expect_equal(dim(tbl3), c(4, 2))
@@ -60,7 +60,7 @@ test_that("var_table", {
   expect_true(is.na(tbl3[3, 2]))
   expect_true(!is.na(tbl3[4, 2]))
 
-  tbl4 <- var_table(des, compress = FALSE, report_all = TRUE)
+  tbl4 <- var_table(spec, compress = FALSE, report_all = TRUE)
   expect_true(inherits(tbl4, "matrix"))
   expect_type(tbl4, "character")
   expect_equal(dim(tbl4), c(4, 3))
@@ -75,9 +75,9 @@ test_that("var_table", {
 
   # No double-variables
   simdata$cid <- paste(simdata$uoa1, simdata$uoa2)
-  des <- rct_design(z ~ uoa(cid), data = simdata)
+  spec <- rct_spec(z ~ uoa(cid), data = simdata)
 
-  expect_identical(var_table(des),
-                   var_table(des, compress = FALSE))
+  expect_identical(var_table(spec),
+                   var_table(spec, compress = FALSE))
 
 })

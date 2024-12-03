@@ -24,7 +24,7 @@
     stop(paste("Internal error: which_fn is invalid,", which_fn))
   }
 
-  # Formula should be from a Design; it is used inside `model.frame` below
+  # Formula should be from a StudySpecification; it is used inside `model.frame` below
   if (!(is.call(form) | inherits(form, "formula") | is.name(form))) {
     stop("internal error: form must be a formula or name")
   }
@@ -35,7 +35,7 @@
     # callstack. Per the documentation, it is experimental
     # and should be used with caution. We should only be hitting
     # this if the user passes a predefined formula, e.g.:
-    # f <- y ~ x; rct_design(f, ...)
+    # f <- y ~ x; rct_spec(f, ...)
     form <- dynGet(form)
   } else if (is.call(form)) {
     form <- as.formula(form)
@@ -126,7 +126,7 @@
 
   if (length(mf_pos) == 0) {
     # If no model.frames were identified
-    warning(paste0("No call to `model.frame` with Design weights in the ",
+    warning(paste0("No call to `model.frame` with StudySpecification weights in the ",
                    "call stack found."))
   } else {
     # We've identified at least one model.frame.default

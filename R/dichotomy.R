@@ -1,9 +1,10 @@
 ##' @title (Internal) Find \code{dichotomy} formulas in the call stack
-##' @details \code{.find_dichotomies()} searches for \code{lmitt.formula()} calls
-##' and their \code{weights} arguments for any \code{dichotomy} arguments.
-##' @return A list where elements are either formulas or NULL, depending on whether
-##' a \code{dichotomy} argument was found in \code{lmitt.formula()} or its
-##' \code{weights} argument
+##' @details \code{.find_dichotomies()} searches for \code{lmitt.formula()}
+##'   calls and their \code{weights} arguments for any \code{dichotomy}
+##'   arguments.
+##' @return A list where elements are either formulas or NULL, depending on
+##'   whether a \code{dichotomy} argument was found in \code{lmitt.formula()} or
+##'   its \code{weights} argument
 ##' @keywords internal
 .find_dichotomies <- function() {
   found_lmitt <- grepl("^lmitt\\.formula$",
@@ -25,20 +26,20 @@
     dichotomies$weights <- mapply(
       function(cc, pos) {
         if (is.call(cc)) cc$dichotomy else if (
-          inherits(wd <- eval("weights", pos), "WeightedDesign")) wd@dichotomy else NULL
+          inherits(wd <- eval("weights", pos), "WeightedStudySpecification")) wd@dichotomy else NULL
         },
       weights.calls[valid_pos],
       valid_pos,
       SIMPLIFY = FALSE)[[1L]]
   }
-  
+
   return(dichotomies)
 }
 
 #' @title (Internal) Validate a dichotomy against other dichotomies found in the
-#' call stack
+#'   call stack
 #' @param possible_dichotomy a list or a formula, the former coming from
-#' \code{.find_dichotomies()}
+#'   \code{.find_dichotomies()}
 #' @return formula for a dichotomy or NULL
 #' @keywords internal
 .validate_dichotomy <- function(possible_dichotomy) {
@@ -63,6 +64,6 @@
       }
     }
   }
-  
+
   return(invisible(dichotomy))
 }

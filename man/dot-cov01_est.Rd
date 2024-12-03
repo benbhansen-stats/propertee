@@ -2,16 +2,18 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.cov01_est}
 \alias{.cov01_est}
-\title{(Internal) Helper function for design-based meat matrix calculation}
+\title{(Internal) Helper function for specification-based meat matrix
+calculation}
 \usage{
 .cov01_est(XX, zobs, bid)
 }
 \value{
-estimated upper and lower bounds of covariance matrix of
-estimating function vectors under treatment and under control
+estimated upper and lower bounds of covariance matrix of estimating
+function vectors under treatment and under control
 }
 \description{
-(Internal) Helper function for design-based meat matrix calculation
+(Internal) Helper function for specification-based meat matrix
+calculation
 }
 \details{
 the Young's elementary inequality is used

@@ -29,7 +29,7 @@ The data for this example were randomly simulated using the
 Sanders, and Oreopoulos (2010).
 }
 \details{
-See the "Regression Discontinuity Designs" vignette on the
+See the "Regression Discontinuity StudySpecifications" vignette on the
 \code{propertee} website for more details on the original data, a link to
 the code used to generate this synthethic data, and a detailed example.
 }

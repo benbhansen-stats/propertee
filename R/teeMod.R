@@ -1,11 +1,11 @@
-#' @include Design.R WeightedDesign.R DesignAccessors.R SandwichLayerVariance.R confint_lm.R
+#' @include StudySpecification.R WeightedStudySpecification.R StudySpecificationAccessors.R SandwichLayerVariance.R confint_lm.R
 NULL
-# The above ensures that `Design`, `WeightedDesign`, and `vcov_tee` are defined
-# prior to `teeMod`
+# The above ensures that `StudySpecification`, `WeightedStudySpecification`, and
+# `vcov_tee` are defined prior to `teeMod`
 
 setClass("teeMod",
          contains = "lm",
-         slots = c(Design = "Design",
+         slots = c(StudySpecification = "StudySpecification",
                    lmitt_fitted = "logical",
                    absorbed_intercepts = "logical",
                    moderator = "character",
@@ -29,7 +29,7 @@ setMethod("show", "teeMod", function(object) {
   # Display only treatment effects
   if (object@lmitt_fitted) {
     # This should match any coefficients starting with the "txt." or "`txt."
-    toprint <- grepl(paste0("^\\`?", var_names(object@Design, "t"), "\\."),
+    toprint <- grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."),
                      names(coeffs))
     print(coeffs[toprint])
   } else {
@@ -39,14 +39,12 @@ setMethod("show", "teeMod", function(object) {
 })
 
 ##' @title Compute variance-covariance matrix for fitted \code{teeMod} model
-##' @description
-##'   An S3method for \code{stats::vcov} that computes standard errors for
-##'   \code{teeMod} models using \code{vcov_tee()}.
-##' @details
-##'   \code{vcov.teeMod()} wraps around \code{vcov_tee()}, so additional
-##'   arguments passed to \code{...} will be passed to the \code{vcov_tee()} call.
-##'   See documentation for \code{vcov_tee()} for information about necessary
-##'   arguments.
+##' @description An S3method for \code{stats::vcov} that computes standard
+##'   errors for \code{teeMod} models using \code{vcov_tee()}.
+##' @details \code{vcov.teeMod()} wraps around \code{vcov_tee()}, so additional
+##'   arguments passed to \code{...} will be passed to the \code{vcov_tee()}
+##'   call. See documentation for \code{vcov_tee()} for information about
+##'   necessary arguments.
 ##' @param object a fitted \code{teeMod} model
 ##' @param ... additional arguments to \code{vcov_tee()}.
 ##' @inherit vcov_tee return
@@ -63,17 +61,17 @@ vcov.teeMod <- function(object, ...) {
   return(vmat)
 }
 
-##' @title Confidence intervals with standard errors provided by \code{vcov.teeMod()}
-##' @description
-##'   An S3method for \code{stats::confint} that uses standard errors computed
-##'   using \code{vcov.teeMod()}. Additional arguments passed to this
+##' @title Confidence intervals with standard errors provided by
+##'   \code{vcov.teeMod()}
+##' @description An S3method for \code{stats::confint} that uses standard errors
+##'   computed using \code{vcov.teeMod()}. Additional arguments passed to this
 ##'   function, such as \code{cluster} and \code{type}, specify the arguments of
 ##'   the \code{vcov.teeMod()} call.
-##' @details
-##'   Rather than call \code{stats::confint.lm()}, \code{confint.teeMod()}
-##'   calls \code{.confint_lm()}, a function internal to the \code{propertee}
-##'   package that ensures additional arguments in the \code{...} of the
-##'   \code{confint.teeMod()} call are passed to the internal \code{vcov()} call.
+##' @details Rather than call \code{stats::confint.lm()},
+##'   \code{confint.teeMod()} calls \code{.confint_lm()}, a function internal to
+##'   the \code{propertee} package that ensures additional arguments in the
+##'   \code{...} of the \code{confint.teeMod()} call are passed to the internal
+##'   \code{vcov()} call.
 ##' @inheritParams .confint_lm
 ##' @inherit .confint_lm return
 ##' @exportS3Method
@@ -84,32 +82,30 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 }
 
 ##' @title Extract empirical estimating equations from a \code{teeMod} model fit
-##' @description
-##'   An S3method for \code{sandwich::estfun} for producing a matrix of contributions
-##'   to the direct adjustment estimating equations.
-##' @details
-##'   If a prior covariance adjustment model has
-##'   been passed to the \code{offset} argument of the \code{teeMod} model
-##'   using \code{cov_adj()}, \code{estfun.teeMod()} incorporates
-##'   contributions to the estimating equations of the covariance adjustment model.\cr\cr
-##'   The covariance adjustment sample may not fully overlap with the direct
-##'   adjustment sample, in which case \code{estfun.teeMod()} returns a
-##'   matrix with the same number of rows as the number of unique units of observation
-##'   used to fit the two models. Uniqueness is determined by matching units of
-##'   assignment used to fit the covariance adjustment model to units of assignment
-##'   in the \code{teeMod} model's \code{Design} slot; units of observation
+##' @description An S3method for \code{sandwich::estfun} for producing a matrix
+##'   of contributions to the direct adjustment estimating equations.
+##' @details If a prior covariance adjustment model has been passed to the
+##'   \code{offset} argument of the \code{teeMod} model using \code{cov_adj()},
+##'   \code{estfun.teeMod()} incorporates contributions to the estimating
+##'   equations of the covariance adjustment model.\cr\cr The covariance
+##'   adjustment sample may not fully overlap with the direct adjustment sample,
+##'   in which case \code{estfun.teeMod()} returns a matrix with the same number
+##'   of rows as the number of unique units of observation used to fit the two
+##'   models. Uniqueness is determined by matching units of assignment used to
+##'   fit the covariance adjustment model to units of assignment in the
+##'   \code{teeMod} model's \code{StudySpecification} slot; units of observation
 ##'   within units of assignment that do not match are additional units that add
-##'   to the row count.\cr\cr
-##'   The\code{by} argument in \code{cov_adj()} can provide a column or a pair of
-##'   columns (a named vector where the name specifies a column in the direct
-##'   adjustment sample and the value a column in the covariance adjustment
-##'   sample) that uniquely specifies units of observation in each sample. This
-##'   information can be used to align each unit of observation's contributions
-##'   to the two sets of estimating equations. If no \code{by} argument is
-##'   provided and units of observation cannot be uniquely specified, contributions
-##'   are aligned up to the unit of assignment level. If standard errors are
-##'   clustered no finer than that, they will provide the same result as if each
-##'   unit of observation's contributions were aligned exactly.
+##'   to the row count.\cr\cr The\code{by} argument in \code{cov_adj()} can
+##'   provide a column or a pair of columns (a named vector where the name
+##'   specifies a column in the direct adjustment sample and the value a column
+##'   in the covariance adjustment sample) that uniquely specifies units of
+##'   observation in each sample. This information can be used to align each
+##'   unit of observation's contributions to the two sets of estimating
+##'   equations. If no \code{by} argument is provided and units of observation
+##'   cannot be uniquely specified, contributions are aligned up to the unit of
+##'   assignment level. If standard errors are clustered no finer than that,
+##'   they will provide the same result as if each unit of observation's
+##'   contributions were aligned exactly.
 ##'
 ##' @param x a fitted \code{teeMod} model
 ##' @param ... arguments passed to methods
@@ -125,12 +121,12 @@ estfun.teeMod <- function(x, ...) {
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
     return(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...))
   }
-  
+
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   estmats <- .align_and_extend_estfuns(x, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
-  
+
   ## get scaling constants
   nq <- nrow(stats::model.frame(x))
   nc <- nrow(stats::model.frame(sl@fitted_covariance_model))
@@ -147,31 +143,31 @@ estfun.teeMod <- function(x, ...) {
 ##'   An S3method for \code{sandwich::bread} that extracts the bread of the
 ##'   direct adjustment model sandwich covariance matrix.
 ##'
-##' @details This function is a thin wrapper around \code{.get_tilde_a22_inverse()}.
+##' @details This function is a thin wrapper around
+##'   \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{teeMod} model
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
-##' @title (Internal) Align the dimensions and rows of direct adjustment and covariance
-##' adjustment model estimating equations matrices
-##' @details
-##'   \code{.align_and_extend_estfuns()} first extracts the matrices of contributions
-##'   to the empirical estimating equations for the direct adjustment and covariance
-##'   adjustment models; then, it pads the matrices with zeros to account for units
-##'   of observation that appear in one model-fitting sample but not the other;
-##'   finally it orders the matrices so units of observation
-##'   (or if unit of observation-level ordering is impossible, units of assignment)
-##'   are aligned.
+##' @title (Internal) Align the dimensions and rows of direct adjustment and
+##'   covariance adjustment model estimating equations matrices
+##' @details \code{.align_and_extend_estfuns()} first extracts the matrices of
+##'   contributions to the empirical estimating equations for the direct
+##'   adjustment and covariance adjustment models; then, it pads the matrices
+##'   with zeros to account for units of observation that appear in one
+##'   model-fitting sample but not the other; finally it orders the matrices so
+##'   units of observation (or if unit of observation-level ordering is
+##'   impossible, units of assignment) are aligned.
 ##' @param x a fitted \code{teeMod} model
 ##' @param by character vector; indicates unit of assignment columns to generate
-##' ID's from; default is NULL, which uses the unit of assignment columns specified
-##' in the \code{teeMod} object's \code{Design} slot
+##'   ID's from; default is NULL, which uses the unit of assignment columns
+##'   specified in the \code{teeMod} object's \code{StudySpecification} slot
 ##' @param ... arguments passed to methods
 ##' @return A list of two matrices, one being the aligned contributions to the
-##' estimating equations for the direct adjustment model, and the other being the
-##' aligned contributions to the covariance adjustment model.
+##'   estimating equations for the direct adjustment model, and the other being
+##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
 .align_and_extend_estfuns <- function(x, by = NULL, ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
@@ -221,25 +217,25 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
-#' @description
-#'   \code{.make_uoa_ids()} returns a factor vector of cluster ID's that align
-#'    with the order of the units of observations' contributions in
-#'    \code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()}
-#'    calls \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
-#'    correct contributions to estimating equations within clusters.
+#' @description \code{.make_uoa_ids()} returns a factor vector of cluster ID's
+#'   that align with the order of the units of observations' contributions in
+#'   \code{estfun.teeMod()}. This is to ensure that when \code{vcov_tee()} calls
+#'   \code{sandwich::meatCL()}, the \code{cluster} argument aggregates the
+#'   correct contributions to estimating equations within clusters.
 #' @param x a fitted \code{teeMod} object
-#' @param vcov_type a string indicating model-based or design-based covariance
-#' estimation. Currently, "MB", "CR", and "HC" are the only strings registered as
-#' indicating model-based estimation.
-#' @param cluster character vector or list; optional. Specifies column names that appear
-#' in both the covariance adjustment and direct adjustment model dataframes.
-#' Defaults to NULL, in which case unit of assignment columns indicated in
-#' the Design will be used for clustering. If there are multiple clustering columns,
-#' they are concatenated together for each row and separated by "_".
+#' @param vcov_type a string indicating model-based or specification-based
+#'   covariance estimation. Currently, "MB", "CR", and "HC" are the only strings
+#'   registered as indicating model-based estimation.
+#' @param cluster character vector or list; optional. Specifies column names
+#'   that appear in both the covariance adjustment and direct adjustment model
+#'   dataframes. Defaults to NULL, in which case unit of assignment columns
+#'   indicated in the StudySpecification will be used for clustering. If there
+#'   are multiple clustering columns, they are concatenated together for each
+#'   row and separated by "_".
 #' @param ... arguments passed to methods
-#' @return A vector with length equal to the number of unique units of observation
-#' used to fit the two models. See Details of \code{estfun.teeMod()} for
-#' the method for determining uniqueness.
+#' @return A vector with length equal to the number of unique units of
+#'   observation used to fit the two models. See Details of
+#'   \code{estfun.teeMod()} for the method for determining uniqueness.
 #' @keywords internal
 .make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
   if (!inherits(x, "teeMod")) {
@@ -249,30 +245,31 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
   # Must be a teeMod object for this logic to occur
   if (!inherits(cluster, "character")) {
-    cluster <- var_names(x@Design, "u")
+    cluster <- var_names(x@StudySpecification, "u")
   }
 
-  # get observation-level unit of assignment and cluster ID's for observations in Q
+  # get observation-level unit of assignment and cluster ID's for observations
+  # in Q
   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
   Q_obs_ids <- Q_obs$cluster
 
-  # for model-based vcov calls on blocked designs when clustering is called for
-  # at the assignment level, replace unit of assignment ID's with block ID's
-  # for small blocks
-  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@Design)) {
-    uoa_cols <- var_names(x@Design, "u")
+  # for model-based vcov calls on blocked specifications when clustering is
+  # called for at the assignment level, replace unit of assignment ID's with
+  # block ID's for small blocks
+  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
+    uoa_cols <- var_names(x@StudySpecification, "u")
     if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
-      des_blocks <- blocks(x@Design)
-      # uoa_block_ids <- apply(des_blocks, 1, function(...) paste(..., collapse = ","))
-      uoa_block_ids <- apply(des_blocks, 1,
+      spec_blocks <- blocks(x@StudySpecification)
+      # uoa_block_ids <- apply(spec_blocks, 1, function(...) paste(..., collapse = ","))
+      uoa_block_ids <- apply(spec_blocks, 1,
                              function(...) paste(..., collapse = ","))
-      small_blocks <- identify_small_blocks(x@Design)
+      small_blocks <- identify_small_blocks(x@StudySpecification)
       structure_w_small_blocks <- cbind(
-        x@Design@structure,
+        x@StudySpecification@structure,
         small_block = small_blocks[uoa_block_ids],
-        block_replace_id = apply(des_blocks, 1,
+        block_replace_id = apply(spec_blocks, 1,
                                  function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
-                                 nms = colnames(des_blocks))
+                                 nms = colnames(spec_blocks))
       )
       Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
       Q_obs$cluster[Q_obs$small_block] <- Q_obs$block_replace_id[Q_obs$small_block]
@@ -289,7 +286,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
   # does, use the columns exclusively specified in `by` to produce the order
   if (is.null(by <- mc$by)) by <- setdiff(colnames(ca@keys),
-                                            c(var_names(x@Design, "u"), "in_Q"))
+                                            c(var_names(x@StudySpecification, "u"), "in_Q"))
   if (length(by) == 0) {
     by <- cluster
   }
@@ -320,32 +317,33 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(factor(ids, levels = unique(ids)))
 }
 
-#' @title (Internal) Order observations used to fit a \code{teeMod} model
-#' and a prior covariance adjustment model
-#' @details \code{.order_samples()} underpins the ordering for \code{.make_uoa_ids()}
-#' and \code{estfun.teeMod()}. This function orders the outputs of those
-#' functions, but also informs how the original matrices of contributions to
-#' estimating equations need to be indexed to align units of observations'
-#' contributions to both sets of estimating equations.\cr\cr When a \code{by}
-#' argument is provided to \code{cov_adj()}, it is used to construct the order
-#' of \code{.order_samples()}.
+#' @title (Internal) Order observations used to fit a \code{teeMod} model and a
+#'   prior covariance adjustment model
+#' @details \code{.order_samples()} underpins the ordering for
+#'   \code{.make_uoa_ids()} and \code{estfun.teeMod()}. This function orders the
+#'   outputs of those functions, but also informs how the original matrices of
+#'   contributions to estimating equations need to be indexed to align units of
+#'   observations' contributions to both sets of estimating equations.\cr\cr
+#'   When a \code{by} argument is provided to \code{cov_adj()}, it is used to
+#'   construct the order of \code{.order_samples()}.
 #' @param x a fitted \code{teeMod} model
 #' @param by character vector of columns to get ID's for ordering from. Default
-#' is NULL, in which case unit of assignment ID's are used for ordering.
+#'   is NULL, in which case unit of assignment ID's are used for ordering.
 #' @param ... arguments passed to methods
 #' @return A list of four named vectors. The \code{Q_not_C} element holds the
-#' ordering for units of observation in the direct adjustment sample but not the
-#' covariance adjustment samples; \code{Q_in_C} and \code{C_in_Q}, the ordering
-#' for units in both; and \code{C_not_Q}, the ordering for units in the covariance
-#' adjustment sample only. \code{Q_in_C} and \code{C_in_Q} differ in that the
-#' names of the \code{Q_in_C} vector correspond to row indices of the original matrix of
-#' estimating equations for the direct adjustment model, while the names of
-#' \code{C_in_Q} correspond to row indices of the matrix of estimating equations for
-#' the covariance adjustment model. Similarly, the names of \code{Q_not_C} and
-#' \code{C_not_Q} correspond to row indices of the direct adjustment and covariance
-#' adjustment samples, respectively. Ultimately, the order of \code{.make_uoa_ids()}
-#' and \code{estfun.teeMod()} is given by concatenating the vectors stored
-#' in \code{Q_not_C}, \code{Q_in_C}, and \code{C_not_q}.
+#'   ordering for units of observation in the direct adjustment sample but not
+#'   the covariance adjustment samples; \code{Q_in_C} and \code{C_in_Q}, the
+#'   ordering for units in both; and \code{C_not_Q}, the ordering for units in
+#'   the covariance adjustment sample only. \code{Q_in_C} and \code{C_in_Q}
+#'   differ in that the names of the \code{Q_in_C} vector correspond to row
+#'   indices of the original matrix of estimating equations for the direct
+#'   adjustment model, while the names of \code{C_in_Q} correspond to row
+#'   indices of the matrix of estimating equations for the covariance adjustment
+#'   model. Similarly, the names of \code{Q_not_C} and \code{C_not_Q} correspond
+#'   to row indices of the direct adjustment and covariance adjustment samples,
+#'   respectively. Ultimately, the order of \code{.make_uoa_ids()} and
+#'   \code{estfun.teeMod()} is given by concatenating the vectors stored in
+#'   \code{Q_not_C}, \code{Q_in_C}, and \code{C_not_q}.
 #' @keywords internal
 .order_samples <- function(x, by = NULL, ...) {
   if (!inherits(x, "teeMod") | !inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
@@ -357,14 +355,14 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   ## `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
   ## does, use the columns exclusively specified in `by` to merge.
   if (is.null(by) | length(setdiff(colnames(ca@keys),
-                                   c(var_names(x@Design, "u"), "in_Q"))) > 0) {
-    by <- setdiff(colnames(ca@keys), c(var_names(x@Design, "u"), "in_Q"))
+                                   c(var_names(x@StudySpecification, "u"), "in_Q"))) > 0) {
+    by <- setdiff(colnames(ca@keys), c(var_names(x@StudySpecification, "u"), "in_Q"))
   }
 
   ## Should only hit this if a custom `cluster` argument hasn't been passed to
   ## vcov_tee or no `by` was specified in `cov_adj`
   if (length(by) == 0) {
-    by <- var_names(x@Design, "u")
+    by <- var_names(x@StudySpecification, "u")
   }
 
   # The order, given by the names of the output vector, will be:
@@ -384,7 +382,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   Q_in_C <- sort(Q_in_C)
   C_in_Q <- stats::setNames(C_ids[which(C_ids %in% Q_ids)], which(C_ids %in% Q_ids))
   C_in_Q <- sort(C_in_Q)
-  
+
   if (length(Q_in_C) != length(C_in_Q)) {
     stop(paste("Contributions to covariance adjustment and/or effect estimation",
                "are not uniquely specified. Provide a `by` argument to `cov_adj()`",
@@ -401,20 +399,22 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   return(out)
 }
 
-#' @title (Internal) Return ID's used to order observations in the direct adjustment sample
+#' @title (Internal) Return ID's used to order observations in the direct
+#'   adjustment sample
 #' @param x a fitted \code{teeMod} model
 #' @param id_col character vector; optional. Specifies column(s) whose ID's will
-#' be returned. The column must exist in the data that created the \code{Design}
-#' object. Default is NULL, in which case unit of assignment columns indicated
-#' in the design will be used to generate ID's.
+#'   be returned. The column must exist in the data that created the
+#'   \code{StudySpecification} object. Default is NULL, in which case unit of
+#'   assignment columns indicated in the specification will be used to generate
+#'   ID's.
 #' @param ... arguments passed to methods
 #' @return A vector with length equal to the number of units of observation in
-#' the direct adjustment sample
+#'   the direct adjustment sample
 #' @keywords internal
 .sanitize_Q_ids <- function(x, id_col = NULL, ...) {
-  # link the units of assignment in the Design with desired cluster ID's
-  uoa_cls_df <- .make_uoa_cluster_df(x@Design, id_col)
-  uoa_cols <- var_names(x@Design, "u")
+  # link the units of assignment in the StudySpecification with desired cluster ID's
+  uoa_cls_df <- .make_uoa_cluster_df(x@StudySpecification, id_col)
+  uoa_cols <- var_names(x@StudySpecification, "u")
   if (nrow(uoa_cls_df) == nrow(x$model)) {
     expand_cols <- unique(c(uoa_cols, id_col))
     by.y <- if (length(expand_cols) == length(uoa_cols)) uoa_cols else c(uoa_cols, "cluster")
@@ -451,12 +451,12 @@ update.teeMod <- function(object, ...) {
              "instead."))
 }
 
-#' @title Design-based estimating equations contributions 
+#' @title StudySpecification-based estimating equations contributions
 #' @param x a fitted \code{teeMod} object
 #' @param ... arguments passed to methods
-#' @details calculate contributions to empirical estimating equations
-#' from a \code{teeMod} model with absorbed intercepts 
-#' from the design-based perspective
+#' @details calculate contributions to empirical estimating equations from a
+#'   \code{teeMod} model with absorbed intercepts from the specification-based
+#'   perspective
 #' @return An \eqn{n\times k} matrix
 #' @keywords internal
 .estfun_DB_blockabsorb <- function (x, by = NULL, ...){
@@ -466,8 +466,8 @@ update.teeMod <- function(object, ...) {
   }
   else
     temp <- .base_S3class_estfun(x)
-  
-  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
+
+  # return 0 if not asking for a specification-based SE or DA does not absorb intercepts
   cl <- match.call()
   db <- eval(cl[["db"]], parent.frame())
   if (is.null(db) | !x@absorbed_intercepts){
@@ -475,7 +475,7 @@ update.teeMod <- function(object, ...) {
   }
   phitilde <- .get_phi_tilde(x)
   appinv_atp <- .get_appinv_atp(x)
-  
+
   if (!is.null(x$call$offset)){
     # if the model involves covariance adjustment
     # define the row ordering using .order_samples() and insert rows of 0's into
@@ -484,7 +484,7 @@ update.teeMod <- function(object, ...) {
     aligned_phitilde <- matrix(
       0, nrow = nrow(temp), ncol = ncol(phitilde),
       dimnames = list(seq_len(nrow(temp)), colnames(phitilde)))
-    
+
     C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
     aligned_phitilde[which(!is.na(C_order)),] <- phitilde[C_order[!is.na(C_order)], ]
     mat <- aligned_phitilde %*% appinv_atp
@@ -495,4 +495,3 @@ update.teeMod <- function(object, ...) {
   mat <- cbind(matrix(0, nrow = nrow(mat), ncol = ncol(temp) - ncol(mat)), mat)
   return(mat)
 }
-

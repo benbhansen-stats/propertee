@@ -2,26 +2,28 @@
 % Please edit documentation in R/update_by.R
 \name{.update_by}
 \alias{.update_by}
-\title{(Internal) Use \code{by} to update \code{Design} with new variable
-names}
+\title{(Internal) Use \code{by} to update \code{StudySpecification} with new
+variable names}
 \usage{
-.update_by(design, data, by)
+.update_by(specification, data, by)
 }
 \arguments{
-\item{design}{A \code{Design}}
+\item{specification}{A \code{StudySpecification}}
 
 \item{data}{\code{Data set}}
 
 \item{by}{named vector or list connecting names of unit of
-assignment/unitid/cluster variables in \code{design} to unit of
+assignment/unitid/cluster variables in \code{specification} to unit of
 assignment/unitid/cluster variables in \code{data}. Names represent
-variables in the Design; values represent variables in the data.}
+variables in the StudySpecification; values represent variables in the
+data.}
 }
 \value{
-A \code{Design} with updated variable names
+A \code{StudySpecification} with updated variable names
 }
 \description{
-Helper function used to update the variable names of a \code{Design} when
-user passes a \code{by=} argument to align variable names between data sets.
+Helper function used to update the variable names of a
+\code{StudySpecification} when user passes a \code{by=} argument to align
+variable names between data sets.
 }
 \keyword{internal}

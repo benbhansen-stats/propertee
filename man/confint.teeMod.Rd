@@ -2,7 +2,8 @@
 % Please edit documentation in R/teeMod.R
 \name{confint.teeMod}
 \alias{confint.teeMod}
-\title{Confidence intervals with standard errors provided by \code{vcov.teeMod()}}
+\title{Confidence intervals with standard errors provided by
+\code{vcov.teeMod()}}
 \usage{
 \method{confint}{teeMod}(object, parm, level = 0.95, ...)
 }
@@ -23,14 +24,15 @@ limits for each parameter. These will be labelled as (1-level)/2 and 1 -
 (1-level)/2 in \% (by default 2.5\% and 97.5\%)
 }
 \description{
-An S3method for \code{stats::confint} that uses standard errors computed
-using \code{vcov.teeMod()}. Additional arguments passed to this
+An S3method for \code{stats::confint} that uses standard errors
+computed using \code{vcov.teeMod()}. Additional arguments passed to this
 function, such as \code{cluster} and \code{type}, specify the arguments of
 the \code{vcov.teeMod()} call.
 }
 \details{
-Rather than call \code{stats::confint.lm()}, \code{confint.teeMod()}
-calls \code{.confint_lm()}, a function internal to the \code{propertee}
-package that ensures additional arguments in the \code{...} of the
-\code{confint.teeMod()} call are passed to the internal \code{vcov()} call.
+Rather than call \code{stats::confint.lm()},
+\code{confint.teeMod()} calls \code{.confint_lm()}, a function internal to
+the \code{propertee} package that ensures additional arguments in the
+\code{...} of the \code{confint.teeMod()} call are passed to the internal
+\code{vcov()} call.
 }
