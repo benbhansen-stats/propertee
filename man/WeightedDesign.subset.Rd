@@ -2,12 +2,12 @@
 % Please edit documentation in R/WeightedDesign.R
 \name{subset,WeightedDesign-method}
 \alias{subset,WeightedDesign-method}
-\alias{[,WeightedDesign-method}
+\alias{[,WeightedDesign,ANY,ANY,ANY-method}
 \title{\code{WeightedDesign} subsetting}
 \usage{
 \S4method{subset}{WeightedDesign}(x, subset)
 
-\S4method{[}{WeightedDesign}(x, i)
+\S4method{[}{WeightedDesign,ANY,ANY,ANY}(x, i)
 }
 \arguments{
 \item{x}{\code{WeightedDesign} object}
