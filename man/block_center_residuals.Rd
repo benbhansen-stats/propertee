@@ -10,9 +10,13 @@ block_center_residuals(x)
 \item{x}{a fitted \code{teeMod} model}
 }
 \value{
-the fitted \code{teeMod} with updated block center residuals
+the fitted \code{teeMod} with updated block center residuals.
 }
 \description{
 Adjust residuals for both-sides absorption
+}
+\details{
+This function subtracts off the block residual mean function
+\eqn{\hat \alpha(v_b, \theta)} for each observation from model residuals
 }
 \keyword{internal}
