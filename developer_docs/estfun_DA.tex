@@ -985,7 +985,18 @@ b_{i}(k+1) +1$ and zeros elsewhere, while $A_{\tau,
   \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \alpha_{0}, \tau)$ is estimable by corresponding means of
 random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
+\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$. For the estimator
+$\hat{A}_{\tau, \mathbf{p}}$, this average of random variables is
+approximated by the average of observables obtained by plugging
+in\footnote{%
+In contrast, should 
+``${p}_{ij}$'' be needed we would infer its value from the
+\texttt{StudySpecification} and the equation $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
+\mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
+$\hat{p}_{b_{i}}$ as empirically defined via $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
+\hat{\mathbf{p}})=0$.}
+estimates $\hat\beta$, $\hat{\tilde{\alpha}}$, $\hat{\alpha}$ and
+$\hat{\tau}$ as necessary.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
 \mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
@@ -1348,12 +1359,17 @@ in the $\tilde{\alpha}_{0}$ column
 or $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
 (1-\pi_{i}){p}_{b_{{i}}}\owt[{[0]}]$ in the design-based formulation,
 and zeroes in remaining columns (as $\tau$ parameters don't
-contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we resolve the
-``$p_{b_{i}}$'' in this expression as $\hat{p}_{b_{i}}$.%
-\footnote{In RCTs $p_{b_{i}}$ can be calculated. Another approach would
-  be to perform that calculation and use it rather than
-  $\hat{p}_{b_{i}}$ for $p_{b_{i}}$; another approach would be to use
-  $p_{b_{i}}$ in RCTs and $\hat{p}_{b_{i}}$ in observational studies.}
+contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we use
+the \texttt{StudySpecification} to infer the values of 
+$p_{b_{i}}$ solving $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
+\mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
+$\hat{p}_{b_{i}}$ as empirically defined via  $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
+\hat{\mathbf{p}})=0$.  In both observational studies
+as well as RCTs, the expectations in this expression are evaluated by combining
+\texttt{StudySpecification} information with an assumption
+of block random assignment of clusters. (This circumvents the problem
+of these $\hat{p}_{b}$'s not being consistently estimated under
+asymptotics in which block sizes stay fixed.)
 The $\tilde{\alpha}_{0}$
 column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well:
 for blocks $b \subseteq \mathcal{Q}$ and the $\tau$-coordinates $t=2,
