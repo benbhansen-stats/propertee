@@ -751,7 +751,7 @@ As applied to a \texttt{teeMod} object with
 \texttt{absorbed\_intercepts} set to \texttt{T}, we need \texttt{estfun()} to switch out the system of equations
 $0=\sum_{i}\psi(\vec{v}_{i}; \tau, \alpha, \beta)$
 for the pair of systems $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ and
-$0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
+$0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \tilde{\alpha}_{0}, \alpha_{0}, \mathbf{p},
 \beta)$,  where
 \begin{align}
   \absorbInterceptsEF(\vec{v}_{i}; \mathbf{p}) &=
@@ -782,70 +782,76 @@ $0= \sum_{i}\acute{\psi}(\vec{v}_{i}; \tau, \alpha_{0}, \mathbf{p},
   \begin{aligned}
     \indicator{z_{i}=0} \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}\big]
+    g(\vec{x}_{i}\beta)-\tilde{\alpha}_{0}\big]
     &(
    1 - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}) \\
-    \big[y_{i}[z_{i}]
+\big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}\big]
+    g(\vec{x}_{i}\beta)-{\alpha}_{0}-\tau_{z_{i}}\big]& \\
+   \big[y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-{\alpha}_{0}-\tau_{z_{i}}\big]
     &(
     \indicator{z_{i}=1} - \sum_{r=1}^{s}p_{1r}\indicator{b_{i}=r})\\
     \vdots \\
     {}\big[y_{i}[z_{i}]
-    - g(\vec{x}_{i}\beta) - \alpha_{0}-
+    - g(\vec{x}_{i}\beta) - {\alpha}_{0}-
     \tau_{z_{i}}\big]
     &(\indicator{z_{i}=k}
     - \sum_{r=1}^{s}p_{kr}\indicator{b_{i}=r})\\
   \end{aligned}
 \right) . \label{eq:upsilondef}
 \end{align}
-Note that this defines a new intercept parameter $\alpha_{0}$ that does not arise
+Here $\alpha_{0}$ is a single intercept
+that does not arise
 in the canonical reference implementation \eqref{eq:9} without absorption, which has $\alpha_{1},
-\ldots, \alpha_{s}$ but not $\alpha_{0}$. Furthermore, if the absorbed regression
-was fit with an intercept term, the intercept it estimates does not
-coincide with $\alpha_{0}$: It and its corresponding
+\ldots, \alpha_{s}$ but not $\alpha_{0}$,
+but is presumed to be included in the
+regression of the outcome on block-absorbed treatment indicators.  And
+$\tilde{\alpha}_{0}$ is a new intercept parameter determined following
+that regression, using partial residuals $y - g(\vec{x}\beta)$ and
+estimated blockwise treatment proportions $(\hat{p}_{ij}:i \leq k, j
+\leq r)$. In general $\alpha_{0}$ and $\tilde{\alpha}_{0}$ do not
+coincide: $\tilde{\alpha}_{0}$ and its corresponding
 $\acute{\Psi}$-column, $\hat{A}_{21}$ row and $\hat{\tilde{A}}_{22}$
 row
 % are not determined by the \texttt{lm} object furnishing the remaining
 % coefficients and $\acute{\Psi}$, $\hat{A}_{21}$ or
 %$\hat{\tilde{A}}_{22}$ entries, and
-will have to be figured separately.
-It is interpretable as a weighted average of control group
-observations, as described in Section~\ref{sec:interc-relat-aspects} below.
-(As \eqref{eq:upsilondef} defines $\acute{\psi}(\cdot)$, outcomes are
-presumed to have been recentered around $\hat{\alpha}_{0}$ before
-the regression on block-absorbed regressors; but this is optional, in
-the sense that both it and the alternate definition using residuals
-$y_{i}[z_{i}] - g(\vec{x}_{i}\beta) - \tau_{z_{i}}$ rather
-than $y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$
-gives rise to the same $A_{21}$ and to similarly structured $A_{22}$s involving their
-respective residuals in parallel ways. In particular, both $A_{22}$ matrices have zeroes off the diagonal of
-the row and column\footnote{%
-  For either variant of $\acute{\psi}(\cdot)$, that the $\alpha_{0}$
-  row of $A_{22}$ is zero off the diagonal flows from the fact
-  that $\tau_{1}, \ldots, \tau_{k}$ do not figure in the
-  $\acute{\psi}(\cdot)$ vector's first entry. 
-  For the variant of $\acute{\psi}(\cdot)$ omitting $\alpha_{0}$'s
-  from residuals, that the $\alpha_{0}$ column of $A_{22}$ is zero
-  outside of the diagonal is immediate from the
-  form of this variant of $\acute{\psi}(\cdot)$.  For
-  $\acute{\psi}(\cdot)$ as defined in \eqref{eq:upsilondef}, that the
-  $\alpha_{0}$ column of $A_{22}$ is zero outside of the diagonal
+will have to be figured separately (and can replace
+${\alpha}_{0}$ entries of the \texttt{coefficient} vector,
+columns of the \texttt{estfun} and rows and columns of bread
+matrices)\footnote{%
+  We don't need the ${\alpha}_{0}$ row of $A_{21}$ or $A_{22}$ because we
+  aren't interested in standard errors or covariances involving
+  ${\alpha}_{0}$; so it's OK to replace to those rows with
+  $\tilde{\alpha}_{0}$ rows. Matrix $A_{22}$'s $\tilde{\alpha}_{0}$- and
+  ${\alpha}_{0}$-columns are zero except for diagonal entries
+  $(\tilde{\alpha}_{0}, \tilde{\alpha}_{0})$ and $(\alpha_{0},
+  \alpha_{0})$:
+  that the ${\alpha}_{0}$ column of $A_{22}$ is zero outside of the diagonal
   follows from the fact that in light of $p_{jr}$'s implicit definition via
   $\EE \absorbInterceptsEF(\vec{V}; \mathbf{p})=0$,
-  $\sum_{i: b_{i}=r}\EE\{\owt[][\indicator{Z_{i}=j} - p_{jr}]\}$=0.}
-corresponding to $\alpha_{0}$, just as
-\eqref{eq:upsilondef}'s definition does.)
+  $\sum_{i: b_{i}=r}\EE\{\owt[][\indicator{Z_{i}=j} - p_{jr}]\}$=0; the
+  $\tilde{\alpha}_{0}$ column is 0 because $\tilde{\alpha}_{0}$ doesn't figure in
+  other terms. So, having replaced ${\alpha}_{0}$ rows
+  of $A_{2*}$ with 
+  with $\tilde{\alpha}_{0}$ rows, nothing else in the
+  ${\alpha}_{0}$ column of $A_{22}$ needs to be replaced in order to relabel
+it with ``$\tilde{\alpha}_{0}$.''}.
+It is interpretable as a weighted average of control group
+observations, as described in Section~\ref{sec:interc-relat-aspects} below.
 
 By simplifying sums of \eqref{eq:upsilondef},  block $b$'s contribution
-$\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau,
-\mathbf{p}, \beta)$ can be seen to be
+$\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i};
+\tilde{\alpha}_{0}, \alpha_{0} \tau,
+\mathbf{p}, \beta)$ can be seen to be 
 \begin{multline}
 \sum\acute{\psi}_{i}=  \big(\sum_{i} \owt[]\big)
         \left(
           \begin{array}{c}
             (1-{p}_{0b})
-            \hat{p}_{0b}\left(\frac{\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=0}}\owt[]}
+            \hat{p}_{0b}\left(\frac{\sum_{{z_i=0}}\owt[][y_{i}[0] - g(\vec{x}_{i}\beta)-\tilde{\alpha}_{0}] }{\sum_{{z_i=0}}\owt[]}
             \right)\\
          {} (1-{p}_{1b})
             \hat{p}_{1b}\frac{\sum_{{z_i=1}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=1}}\owt[]}  -
@@ -862,7 +868,7 @@ $\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau,
         \left(
           \begin{array}{c}
             (1-{p}_{0b})
-            {\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}
+            {\sum_{{z_i=0}}\owt[] [y_{i}[0] - g(\vec{x}_{i}\beta)-\tilde{\alpha}_{0}]}
             \\
          {} (1-{p}_{1b})
             {\sum_{{z_i=1}}\owt[]\tilde{y}_{i}}  -
@@ -878,7 +884,7 @@ $\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i}; \alpha_{0}, \tau,
   \label{eq:31}
 \end{multline}
 where sums range over $\bigcup b$ and $\tilde{y}_{i}$ is the residual
-$y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$.
+$y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-{\alpha}_{0}-\tau_{z_{i}}$.
 
 (If \texttt{absorb\_intercepts=FALSE}, then we'll revert to \eqref{eq:14}, i.e.
 \begin{equation*}
@@ -894,7 +900,8 @@ $y_{i}[z_{i}] - g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}}$.
                  \alpha_0 - \tau_{k}]\cdot \indicator{z_{i}=k}\\%
                 \end{array}\right),
 \end{equation*}
-skipping the introduction of slack parameters $\mathbf{p}$.
+skipping the introduction of slack parameters $\mathbf{p}$ and
+replacement intercept $\tilde{\alpha}_{0}$.
 In this case users will have to use inverse probability weighting (via
 $\owt[]$ factors) to ensure causal interpretability in light of the
 specification;  $\hat{\alpha}_0$ will correspond to an $\owt[]$-weighted
@@ -904,7 +911,7 @@ Returning to \eqref{eq:upsilondef}, in the model based formulation $[Z_{i}: i]$ 
 solutions $\hat{\mathbf{p}}$ of
 $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ have
 covariance 0.  Writing $\acute{\Psi} =
-[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \alpha_{0}, \tau) : i]'$, one
+[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau) : i]'$, one
 obtains valid\footnote{%
 The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not remove stratum
 effects, as conventional covariance estimators for this scenario
@@ -952,7 +959,7 @@ $A_{\mathbf{p}, \mathbf{p}} = n^{-1}\sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E} [\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p})]$, and $A_{\tau, \mathbf{p}} = n^{-1} \sum_{i\in \bigcup
   \mathcal{Q}}\mathbb{E}[\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \alpha_{0}, \tau)]$.  For design-based variance-covariance
+\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)]$.  For design-based variance-covariance
 estimation one uses as estimating function
 \begin{multline*}\label{eq:25}
   \mathtt{estfun.teeMod(DA)} -
@@ -974,12 +981,12 @@ an average of diagonal matrices $\nabla_{\mathbf{p}}\absorbInterceptsEF(\vec{V}_
 \mathbf{p})$ with $-1$s for diagonal entries $(b_{i}-1)(k+1)+1, \ldots,
 b_{i}(k+1) +1$ and zeros elsewhere, while $A_{\tau,
   \mathbf{p}}$ is a scaled sum of $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \alpha_{0}, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
+\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$ terms, $i \in \bigcup \mathcal{Q}$. The average $A_{\tau,
   \mathbf{p}}$ of expected contributions $\mathbb{E} \nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \alpha_{0}, \tau)$ is estimable by corresponding means of
 random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
-\mathbf{p}, \beta, \alpha_{0}, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
-\mathbf{p}, \beta, \alpha_{0}, \tau)$ is the product of the $k \times k$
+\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
+\mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
 consisting of the opposite of the $k\times k$ identity at the
@@ -1037,20 +1044,23 @@ $b \subseteq \mathcal{Q}$,
 \sum_{i \in (\bigcup b)}\owt[] \times  \\
 \left(
   \begin{aligned}                                               
-    \indicator{z_{i}=0} \big[y_{i}[z_{i}]
-    -
-    g(\vec{x}_{i}\beta)-\alpha_{0}\big]
-    &(1 - p_{0b}) \\
     \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}} - \hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
-    &(
+    g(\vec{x}_{i}\beta)-\tilde{\alpha}_{0}\big]
+    &\indicator{z_{i}=0} (1 - p_{0b}) \\
+    y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-{\alpha}_{0} - \tau_{z_{i}}&\\
+    \big[y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{0}-\tau_{z_{i}} - &\hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
+    (
     \indicator{z_{i}=1} - p_{1b})\\
     \vdots \\
     {}\big[y_{i}[z_{i}]
     - g(\vec{x}_{i}\beta) - \alpha_{0}-
-    \tau_{z_{i}} - \hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
-    &(\indicator{z_{i}=k} - p_{kb})\\
+    \tau_{z_{i}} - &\hat{\alpha}(\mathbf{v}_{b}; \theta)\big]
+    (\indicator{z_{i}=k} - p_{kb})\\
   \end{aligned}
 \right) . \label{eq:upsilon-rsa-def}
 \end{multline}
@@ -1069,9 +1079,10 @@ $(\bigcup b)$:
         \left(
           \begin{array}{c}
             (1-{p}_{0b})
-            \hat{p}_{0b}\left[\frac{\sum_{{z_i=0}}\owt[]\tilde{y}_{i}}{\sum_{{z_i=0}}\owt[]}
+            \hat{p}_{0b}\left[\frac{\sum_{{z_i=0}}\owt[][{y}_{i}[0] - g(\vec{x}_{i}\beta)]}{\sum_{{z_i=0}}\owt[]}
             -
-    \hat{\alpha}(\mathbf{v}_{b}; \theta)\right]\\
+            \tilde{\alpha}\right]\\
+            \frac{\sum \owt[] \tilde{y}_{i}}{\sum \owt[]} \\
          {} (1-{p}_{1b})
             \hat{p}_{1b}\frac{\sum_{{z_i=1}}\owt[][\tilde{y}_{i} -
     \hat{\alpha}(\mathbf{v}_{b}; \theta)]}{\sum_{{z_i=1}}\owt[]}  -
@@ -1091,9 +1102,10 @@ $(\bigcup b)$:
         \left(
           \begin{array}{c}
             (1-{p}_{0b})
-            {\sum_{{z_i=0}}\owt[][\tilde{y}_{i}}
+            {\sum_{{z_i=0}}\owt[]{[{y}_{i}[0] - g(\vec{x}_{i}\beta)
             -
-    \hat{\alpha}(\mathbf{v}_{b}; \theta)]\\
+            \tilde{\alpha}_{0}]}}\\
+            \sum \owt[] \tilde{y}_{i}\\
          {} (1-{p}_{1b})
             {\sum_{{z_i=1}}\owt[][\tilde{y}_{i} -
     \hat{\alpha}(\mathbf{v}_{b}; \theta)]}  -
@@ -1149,9 +1161,9 @@ With a main effect only, our \texttt{(Intercept)} coefficient
 represents a control group mean. Without absorption, we get this by
 default from \texttt{lm()}; neither the
 coefficient nor its name calls for adjustment.  (With absorption, we'll
-report as \texttt{(Intercept)} the $\hat{\alpha}_{0}$ determined by
+report the $\hat{\tilde{\alpha}}_{0}$ determined by
 the top entry in \eqref{eq:upsilondef}'s specification of
-$\acute{\psi}(\cdot)$; see Sections~\ref{sec:accomm-interc-via} above
+$\acute{\psi}(\cdot)$, also interpretable as a weighted control group mean; see Sections~\ref{sec:accomm-interc-via} above
 and \ref{sec:interc-relat-aspects} below.)
 
 With a continuous moderator \texttt{m}/$m$, our calls to \texttt{lm()} or
@@ -1304,10 +1316,10 @@ weights' role in determining effect estimates admits a
 succinct description: $\hat{\tau}$ is simply the difference of block fixed
 effects-weighted averages of treatment and control groups.  So in this
 case we'll report in the
-\texttt{(Intercept)} or $\alpha_{0}$ position the $w_{\text{BFE}}$-weighted
+$\tilde{\alpha}_{0}$ position the $w_{\text{BFE}}$-weighted
 control group average of $y[0] - g(\vec{x}\hat\beta)$ (or of $y[0]$ if
 there was no prior covariance adjustment model); this
-$\hat{\alpha}_{0}$ solves the empirical estimating equation $\sum_{i
+$\hat{\tilde{\alpha}}_{0}$ solves the empirical estimating equation $\sum_{i
   \in \bigcup\mathcal{Q}}\acute{\psi}_{i1}(\alpha)=0$, where
 $\acute{\psi}_{i1}(\cdot)$ is a first coordinate of
 $\acute{\psi}_{i}$ as in \eqref{eq:upsilondef}. As the
@@ -1316,10 +1328,10 @@ the form $\hat{p}_{b_{i}} \owt[]$, where $b_{i}$ denotes the block $b$
 that contains (the cluster containing) $i$.
 Reinterpreting \eqref{eq:upsilondef} in light of
 this simplification, the
-$\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
+$\tilde{alpha}_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
 $$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})\hat{p}_{b_{i}}\owt[{[0]}] (y - g(\vec{x}\hat{\beta}) -
-\hat{\alpha}_{0}),$$
-and the $\alpha_{0}$ row of $A_{21}$ is 
+\hat{\tilde{\alpha}}_{0}),$$
+and the $\tilde{\alpha}_{0}$ row of $A_{21}$ is 
 \begin{equation}\label{eq:11}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
   (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}] g'(\vec{x}_{i}\hat{\beta})
@@ -1327,9 +1339,8 @@ and the $\alpha_{0}$ row of $A_{21}$ is
 \end{equation}
 with $(1-z_{i})$ replaced by $\operatorname{Pr}_{\mathcal{D}}(Z_{i}=0)
 = 1-\pi_{i}$ in the design-based formulation. 
-The
-$\alpha_{0}$ row of $\tilde{A}_{22}$ has
-in the $\alpha_{0}$ column
+The $\tilde{\alpha}_{0}$ row of $\tilde{A}_{22}$ has
+in the $\tilde{\alpha}_{0}$ column
 \begin{equation}\label{eq:32}
   -n^{-1}\sum_{i \in \cup \mathcal{Q}}
 (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}],
@@ -1343,14 +1354,14 @@ contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we resolve the
   be to perform that calculation and use it rather than
   $\hat{p}_{b_{i}}$ for $p_{b_{i}}$; another approach would be to use
   $p_{b_{i}}$ in RCTs and $\hat{p}_{b_{i}}$ in observational studies.}
-The $\alpha_{0}$
+The $\tilde{\alpha}_{0}$
 column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well:
 for blocks $b \subseteq \mathcal{Q}$ and coordinates $t=2,
 \ldots, k+1$ of the $k+1$ vector $\acute{\psi}$, \eqref{eq:31} gives
 that
 \begin{align*}
   \sum_{i \in
-  \bigcup b}\frac{\partial}{\partial \alpha_{0}}\acute{\psi}_{i t} &=
+  \bigcup b}\frac{\partial}{\partial \tilde{\alpha}_{0}}\acute{\psi}_{i t} &=
                                                                      -[(1-p_{b})\sum_{z_{i}=1}\owt[] - p_{b}\sum_{z_{i}=0}\owt[]]\\
                                                                     &=
                                                                       -\sum
@@ -1365,7 +1376,7 @@ defining property $\sum_{i \in \bigcup \mathcal{Q}}\EE
 
 To estimate $A_{21}$ and $A_{22}$ under the design-based formulation
 we'll continue to use \eqref{eq:11} and \eqref{eq:32} to approximate
-the $\alpha_{0}$ row of $A_{21}$ and the $\alpha_{0}$ column of
+the $\tilde{\alpha}_{0}$ row of $A_{21}$ and the $\tilde{\alpha}_{0}$ column of
 $\tilde{A}_{22}$, respectively. This avoids having to keep track of
 $\owt[{[0]}]$ for observations $i$ for which $z_{i}\neq 0$, and in
 observational studies it avoids the 
@@ -1373,34 +1384,49 @@ need to estimate $(\pi_{i}: i)$.
 
 Design-based calculations also call for adjusting objects \texttt{estfun.teeMod(DA)} by subtracting off
 \texttt{estfun\_DB\_blockabsorb(DA)} = $\AbsorbInterceptsEF{}
-  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}'$, per \S~\ref{sec:accomm-interc-via}
-  above. The $\alpha_{0}$ row of $A_{\alpha_{0}\tau\,\mathbf{p}}$ has in
+  A_{\mathbf{p}\,\mathbf{p}}^{-1}\hat{A}_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}'$, per \S~\ref{sec:accomm-interc-via}
+  above. The $\tilde{\alpha}_{0}$ row of $A_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}$ has in
   its column $s$ (partial w/r/t $p_{s}$, $s \in \mathcal{Q}$)
-  \begin{equation*}
-  \left[n^{-1}\sum_{i: b_{i}=s}\owt[{[0]}] (1-\pi_{i})\right](\alpha_{0\mathcal{D}s} - \alpha_{0\mathcal{D}})
-  \end{equation*}
-  where $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
+  \begin{multline}\label{eq:33}
+  \left[n^{-1}\sum_{i: b_{i}=s}\owt[{[0]}]
+    (1-\pi_{i})\right](\tilde{\alpha}_{0\mathcal{D}s} -
+  \tilde{\alpha}_{0\mathcal{D}}) =\\ n^{-1}\left\{\left[\sum_{i: b_{i}=s}\owt[{[0]}]
+    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{D}s} - \left[\sum_{i: b_{i}=s}\owt[{[0]}]
+    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{D}}\right\}, 
+  \end{multline}
+  for $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
   $\pi_{i} = p_{b_{i}}$ in an RCT but not necessarily otherwise;
   \begin{equation*}
- \alpha_{0\mathcal{D}s}=
-  \frac{\sum_{i \in s}\owt[{[0]}](1-\pi_{i})[y_{i}[0] -
-    g(\vec{x}_{i}\beta)]}{\sum_{i \in s}\owt[{[0]}](1-\pi_{i})}
+ \tilde{\alpha}_{0\mathcal{D}r}=
+  \frac{\sum_{b_{i} =r}\owt[{[0]}](1-\pi_{i})[y_{i}[0] -
+    g(\vec{x}_{i}\beta)]}{\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})}
   \text{ and }
-  \alpha_{0\mathcal{D}} = \frac{\sum_{s}p_{s}\big[\sum_{i \in
-      s}\owt[{[0]}](1-\pi_{i})\big]
-    \alpha_{0\mathcal{D}s}}{\sum_{s}p_{s}\big[\sum_{i \in s}\owt[{[0]}](1-\pi_{i})\big]};
+  \tilde{\alpha}_{0\mathcal{D}} = \frac{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]
+    \tilde{\alpha}_{0\mathcal{D}r}}{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]};
   \end{equation*}
-  and to obtain $\hat{A}_{\alpha_{0}\tau\,\mathbf{p}}$ we plug into our
-  ${A}_{\alpha_{0}\tau\,\mathbf{p}}$-expression $z_{i}$'s for
+  and to obtain $\hat{A}_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}$ we plug into our
+  ${A}_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}$-expression $z_{i}$'s for
   $\pi_{i}$s, ``$b_{i}$'' denoting the block within $\mathcal{Q}$
-  that contains $i$ or $i$'s cluster $[i]$, so that  $\hat{\alpha}_{0 r}=
+  that contains $i$ or $i$'s cluster $[i]$. The resulting estimators
+  \begin{align*}
+  \hat{\tilde{\alpha}}_{0 r}=&
   \frac{\sum_{i: b_{i}=r, z_{i}=0}\owt[][y_{i}[0] -
-    g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r, z_{i}=0}\owt[]}$ for $\alpha_{0\mathcal{D}r}$.
+                               g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r,
+                               z_{i}=0}\owt[]} \text{ and}\\
+    \hat{\tilde{\alpha}}_{0\mathcal{D}} =&
+  \frac{\sum_{r}p_{r} (\sum_{i: b_{i}=r, z_{i}=0}\owt[]) \hat{\tilde{\alpha}}_{0 r}}{%
+\sum_{r}p_{r} (\sum_{i: b_{i}=r, z_{i}=0}\owt[])}
+  \end{align*}
+  give unbiased estimation of the first term at right of
+  \eqref{eq:33}, with the second term at right of
+  \eqref{eq:33} the product of an unbiased term ($\sum_{i: b_{i}=r, z_{i}=0}\owt[]$)
+  and a consistent ratio estimator ($\hat{\tilde{\alpha}}_{0\mathcal{D}}$).
 \subsubsection{Main effect and continuous moderator}
 Again let $m$ denote a continuous moderator, $\lambda$ its
 coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}/$\alpha_{0}$
 coefficient works out to the $\owt[{[0]}]$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
-\hat{\lambda}m$. In parallel with that case, under absorption we need to report the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
+\hat{\lambda}m$. In parallel with that case, under absorption we need
+to report as $\tilde{\alpha}_{0}$ the  $w_{\text{BFE}}$-weighted control group mean of $y[0] - g(\vec{x}\hat\beta) -
 \hat{\lambda}m$. Equivalently, the $\acute{\psi}(\cdot)$ of
 \eqref{eq:upsilondef} is replaced by
 \begin{align}
@@ -1428,16 +1454,19 @@ coefficient works out to the $\owt[{[0]}]$-weighted control group mean of $y[0] 
         (\indicator{z_{i}=k}-p_{ks})\indicator{b_{i}=s}\\                                      \end{array}
   \right)%
   \right) ;\nonumber \\
-    \acute{\psi}(\vec{v}; \alpha_{0}, \tau, \mathbf{p}, \beta) &=
+    \acute{\psi}(\vec{v}; \tilde{\alpha}_{0}, \alpha_{0}, \tau, \mathbf{p}, \beta) &=
     \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber
   \\
 &\left(
   \begin{aligned}                                               
     \indicator{z_{i}=0} \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta) - {\lambda}m-\alpha_{0}\big]
+    g(\vec{x}_{i}\beta) - {\lambda}m-\tilde{\alpha}_{0}\big]
     &(
-   1 - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}) \\
+    1 - \sum_{r=1}^{s}p_{0r}\indicator{b_{i}=r}) \\
+    y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta) - {\lambda}m-\alpha_{0}-\tau_{z_{i}}& \\
 \big[y_{i}[z_{i}]
     -
     g(\vec{x}_{i}\beta)-\alpha_{0}- {\lambda}m-\tau_{z_{i}}\big]
@@ -1457,29 +1486,29 @@ coefficient works out to the $\owt[{[0]}]$-weighted control group mean of $y[0] 
   \end{aligned}
 \right) .\label{eq:30}
 \end{align}
-All but the first column of this $\acute{\Psi}$ estfun will be
+All but the $\tilde{\alpha}_{0}$ column of this $\acute{\Psi}$ estfun will be
 recovered by \texttt{estfun.lm} as applied to the \texttt{lm} fitted
-after absorption.  This first column can be recovered as a
+after absorption.  This $\tilde{\alpha}_{0}$ column can be recovered as a
 $w_{\text{BFE}}$-weighted average of control group residuals, just as
 with the main effect only. That is, the 
-$\alpha_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
+$\tilde{\alpha}_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
 $$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})
 \hat{p}_{b_{i}}\owt[{[0]}] (y - g(\vec{x}\hat{\beta})
 -{\lambda}m -
-\hat{\alpha}_{0}).$$
-Again the $\alpha_{0}$ row of $A_{21}$ and $(\alpha_{0}, \alpha_{0})$
+\hat{\tilde{\alpha}}_{0}).$$
+Again the $\tilde{\alpha}_{0}$ row of $A_{21}$ and $(\tilde{\alpha}_{0}, \tilde{\alpha}_{0})$
 entry of $\tilde{A}_{22}$ are given by \eqref{eq:11} and
 \eqref{eq:32}, respectively, with zeroes in off-diagonal positions of
-$\tilde{A}_{22}$'s $\alpha_{0}$ row and column.
+$\tilde{A}_{22}$'s $\tilde{\alpha}_{0}$ row and column.
 Design-based calculations from
 \texttt{estfun\_DB\_blockabsorb()} need to be filled out to reflect
 the replacement of $A_{\mathbf{p}\mathbf{p}}$ by $A_{\nu \mathbf{p}\,
   \nu\mathbf{p}}$ and of $A_{\tau\,\mathbf{p}}$ (or more accurately\footnote{%
 The model artifacts of the block-absorbed \texttt{lm} will include
 appropriate $\lambda$- as well as $\tau$-related
-material. Only the $\alpha_{0}$-related material needs to be generated
+material. Only the $\tilde{\alpha}_{0}$-related material needs to be generated
 separately.
-}, $A_{\lambda\tau\,\mathbf{p}}$) by $A_{\alpha_{0}\lambda \tau\, \nu\mathbf{p}}$.
+}, $A_{\lambda\tau\,\mathbf{p}}$) by $A_{\tilde{\alpha}_{0}\lambda \tau\, \nu\mathbf{p}}$.
 
 \subsubsection{Subgroup effects}
 When estimating subgroup effects with absorption of blocks,
@@ -1538,23 +1567,30 @@ The salient generalization of \eqref{eq:upsilondef} is now
     \end{array}
   \right)%
   \right) ;\nonumber \\
-  \acute{\psi}(\vec{v}; \alpha_{0}, \tau, \mathbf{p}, \beta) &=
+  \acute{\psi}(\vec{v}; \tilde{\alpha}_{0}, \alpha_{0}, \tau, \mathbf{p}, \beta) &=
 \indicator{i \in \bigcup \mathcal{Q}}\owt[] \nonumber \\
 &\left(
   \begin{aligned}                                               
     \indicator{z_{i}=0, m_{i}=\ell_{1}} \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{\ell_{1}}\big]
+    g(\vec{x}_{i}\beta)-\tilde{\alpha}_{\ell_{1}}\big]
     &(
   1 -
    \sum_{r=1}^{s}p_{0r\ell_{1}}\indicator{b_{i}=r}) \\
    \vdots\\
     \indicator{z_{i}=0, m_{i}=\ell_{g}} \big[y_{i}[z_{i}]
     -
-    g(\vec{x}_{i}\beta)-\alpha_{\ell_{g}}\big]
+    g(\vec{x}_{i}\beta)-\tilde{\alpha}_{\ell_{g}}\big]
     &(
    1 -
-   \sum_{r=1}^{s}p_{0r\ell_{g}}\indicator{b_{i}=r}) \\   
+   \sum_{r=1}^{s}p_{0r\ell_{g}}\indicator{b_{i}=r}) \\
+   y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{\ell_{1}}-\tau_{z_{i}}&\\
+    \vdots&\\
+       y_{i}[z_{i}]
+    -
+    g(\vec{x}_{i}\beta)-\alpha_{\ell_{g}}-\tau_{z_{i}}&\\
     \big[y_{i}[z_{i}]
     -
     g(\vec{x}_{i}\beta)-\alpha_{m_{i}}-\tau_{z_{i}}\big]
