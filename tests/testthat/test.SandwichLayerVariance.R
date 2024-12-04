@@ -2597,7 +2597,7 @@ test_that(".get_phi_tilde returns correct grave{phi}
     }
   goal <- matrix(0, nrow = 50, ncol = 3)
   for (s in 1:3){
-    goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
+    goal[,s] <- ws * damod_abs$residuals * (Z[,2] - p[2,s]) * B[,s]
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(ssmod_abs, db = TRUE)))
 })
