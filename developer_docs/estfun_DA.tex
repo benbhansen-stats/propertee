@@ -1328,7 +1328,7 @@ the form $\hat{p}_{b_{i}} \owt[]$, where $b_{i}$ denotes the block $b$
 that contains (the cluster containing) $i$.
 Reinterpreting \eqref{eq:upsilondef} in light of
 this simplification, the
-$\tilde{alpha}_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
+$\tilde{\alpha}_{0}$ column of an object \texttt{estfun.teeMod(DA)} has entries
 $$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})\hat{p}_{b_{i}}\owt[{[0]}] (y - g(\vec{x}\hat{\beta}) -
 \hat{\tilde{\alpha}}_{0}),$$
 and the $\tilde{\alpha}_{0}$ row of $A_{21}$ is 
@@ -1356,7 +1356,7 @@ contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we resolve the
   $p_{b_{i}}$ in RCTs and $\hat{p}_{b_{i}}$ in observational studies.}
 The $\tilde{\alpha}_{0}$
 column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well:
-for blocks $b \subseteq \mathcal{Q}$ and coordinates $t=2,
+for blocks $b \subseteq \mathcal{Q}$ and the $\tau$-coordinates $t=2,
 \ldots, k+1$ of the $k+1$ vector $\acute{\psi}$, \eqref{eq:31} gives
 that
 \begin{align*}
@@ -1380,7 +1380,11 @@ the $\tilde{\alpha}_{0}$ row of $A_{21}$ and the $\tilde{\alpha}_{0}$ column of
 $\tilde{A}_{22}$, respectively. This avoids having to keep track of
 $\owt[{[0]}]$ for observations $i$ for which $z_{i}\neq 0$, and in
 observational studies it avoids the 
-need to estimate $(\pi_{i}: i)$.
+need to estimate $(\pi_{i}: i)$.  Taken as random variables,
+\eqref{eq:11} and \eqref{eq:32} are
+both design-unbiased for their corresponding estimands given by
+the same expressions with $(1-\pi_{i})$ substituted for $(1-z_{i})$; this
+is true in observational studies as well as experiments.
 
 Design-based calculations also call for adjusting objects \texttt{estfun.teeMod(DA)} by subtracting off
 \texttt{estfun\_DB\_blockabsorb(DA)} = $\AbsorbInterceptsEF{}
