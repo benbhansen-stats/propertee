@@ -53,8 +53,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
 #' @keywords internal
 .vcov_CR0 <- function(x, ...) {
-  if (!inherits(x, "teeMod")) {
-    stop("x must be a teeMod model")
+  if (!inherits(x, c("teeMod", "mmm"))) {
+    stop("x must be a teeMod or mmm object")
   }
 
   args <- list(...)
@@ -70,7 +70,19 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
   # NA any invalid estimates due to degrees of freedom checks
-  vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+  if (inherits(x, "teeMod")) {
+    vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+  } else {
+    start_ix <- 0
+    for (mod_ix in seq_along(x)) {
+      mod <- x[[mod_ix]]
+      vmat_ix <- start_ix + seq_along(mod$coefficients)
+      vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
+      start_ix <- start_ix + length(mod$coefficients)
+    }
+    vmat[apply(is.na(vmat), 1, any),] <- NA_real_
+    vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
+  }
 
   attr(vmat, "type") <- "CR0"
   return(vmat)
@@ -147,8 +159,17 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
   } else if (!inherits(model_data, "data.frame")) {
-    stop("`data` must be a dataframe or a quoted object name")
+    stop("`model_data` must be a dataframe or a quoted object name")
   }
+  
+  if (!inherits(model_data, "data.frame")) {
+    stop(paste("Could not find argument passed to `model_data` in the given `envir`"))
+  }
+  
+  # set these attributes so model.matrix() includes rows with NA's, which will match
+  # the length of `cluster` generated below
+  attr(model_data, "terms") <- NULL
+  attr(model_data, "na.action") <- "na.pass"
 
   # For categorical moderators, count the clusters contributing to estimation
   # for each level of the moderator variable; for continuous moderators, just
@@ -156,11 +177,21 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   # moderator variable) must have at least three clusters contributing to
   # estimation for valid SE estimation.
   mod_vars <- model.matrix(as.formula(paste0("~-1+", model@moderator)), model_data)
-  mod_vars <- mod_vars[rownames(mod_vars) %in% rownames(stats::model.frame(model)),,drop=FALSE]
   cluster <- .sanitize_Q_ids(model, cluster_cols)$cluster
   if (ncol(mod_vars) > 1) {
-    mod_counts <- sweep(rowsum(mod_vars, cluster), 1,
-                        rowsum(rep(1, nrow(mod_vars)), cluster), FUN = "/")
+    # Since model_vars and cluster may include rows with NA's that weren't used
+    # to fit the model, we need to create in_model_fit to determine rows that
+    # were. The approach below uses the row.names in the na.action to indicate
+    # which were not
+    # in_model_fit <- as.numeric(
+    #   apply(mapply(function(c) is.na(c),
+    #                eval(attr(terms(as.formula(model$call$formula)), "variables"), env = model_data)),
+    #         1,
+    #         function(r) sum(r) == 0)
+    # )
+    in_model_fit <- rep(1, length(cluster))
+    in_model_fit[model$na.action] <- 0
+    mod_counts <- rowsum(mod_vars * in_model_fit, cluster, na.rm = TRUE)
     valid_mods <- colSums(mod_counts != 0) > 2
   } else {
     valid_mods <- stats::setNames(length(unique(cluster)) > 2, model@moderator)
@@ -528,8 +559,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
   out <- crossprod(damod_mm[msk, x$qr$pivot[1L:x$rank], drop = FALSE] * w[msk],
                    sl@prediction_gradient[msk, , drop = FALSE])
-  # scale by nq
-  nq <- sum(msk)
+  # scale by nq and keep it consistent with other nq calculations with na.action = na.pass
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
 
   return(out / nq)
 }
@@ -543,7 +574,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     return(out)
   }
 
-  nq <- nrow(stats::model.frame(x))
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
   nc_not_q <- sum(!ca@keys$in_Q)
   n <- nq + nc_not_q
 
@@ -557,7 +588,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 .get_tilde_a21 <- function(x) {
   out <- .get_a21(x)
 
-  nq <- nrow(stats::model.frame(x))
+  nq <- nrow(stats::model.frame(x, na.action = na.pass))
   sl <- x$model$`(offset)`
   nc_not_q <- sum(!sl@keys$in_Q)
   n <- nq + nc_not_q

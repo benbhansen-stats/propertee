@@ -256,7 +256,7 @@ test_that("teeMod object has its own evaluation environment", {
   expect_equal(environment(formula(mod1))$specification, environment(formula(mod2))$specification)
 })
 
-test_that("vcov.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
+test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
@@ -266,10 +266,12 @@ test_that("vcov.teeMod handles vcov_tee `type` arguments and non-SL offsets", {
 
   vmat1 <- vcov(ssmod1)
   vmat2 <- vcov(ssmod1, type = "CR0")
+  vmat3 <- vcov(ssmod1, cadjust = FALSE)
 
   expect_error(vcov(ssmod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcov_tee(ssmod1))
+  expect_identical(vmat3, vcov_tee(ssmod1, cadjust = FALSE))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   vmat3 <- vcov(ssmod2)
@@ -448,6 +450,34 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   a21 <- .get_a21(dmod)
   expect_equal(
     estfun(dmod),
+    ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
+  )
+})
+
+test_that("estfun.teeMod with missing values", {
+  set.seed(438)
+  data(simdata)
+  simdata_copy <- simdata
+  simdata_copy$y[1:3] <- NA_real_
+  nc <- 30
+  nq <- nrow(simdata_copy)
+  n <- nc + nq
+  cmod_ssta <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
+  cmod <- lm(y ~ x, cmod_ssta)
+  
+  simdata_copy$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), simdata_copy)
+  dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
+  
+  ef <- estfun(dmod)
+  expect_equal(nrow(ef), nc + nq)
+  expect_true(all.equal(ef[1:3,], matrix(0, nrow = 3, ncol = 2), check.attributes = FALSE))
+  class(dmod$na.action) <- "exclude"
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  a11_inv <- .get_a11_inverse(dmod)
+  a21 <- .get_a21(dmod)
+  expect_equal(
+    ef,
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })

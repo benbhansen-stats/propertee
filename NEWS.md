@@ -1,3 +1,7 @@
+# propertee 0.5.2 (Unreleased)
+## New Features
+* Users fitting multiple `teeMod` objects to test multiple outcome variables or different levels of a factor treatment variable can pass those models to an `mmm` object from the `multcomp` package, then pass the `mmm` object to `multcomp`'s `glht()` function to obtain standard errors estimated using `vcov_tee()`. This requires passing `vcov=vcov_tee` to `glht()`. On a technical note, `propertee` now "suggests" installing `multcomp`. 
+
 # propertee 0.5.1
 ## Bug Fixes
 * Variance estimation routine fixes miscalculations in the case when there is covariance adjustment and rows are omitted from the `lmitt()` fit due to `NA`'s in the covariates or treatment assignment
