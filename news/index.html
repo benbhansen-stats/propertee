@@ -43,6 +43,13 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.2" id="propertee-052-unreleased">propertee 0.5.2 (Unreleased)<a class="anchor" aria-label="anchor" href="#propertee-052-unreleased"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-5-2">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-5-2"></a></h3>
+<ul><li>Users fitting multiple <code>teeMod</code> objects to test multiple outcome variables or different levels of a factor treatment variable can pass those models to an <code>mmm</code> object from the <code>multcomp</code> package, then pass the <code>mmm</code> object to <code>multcomp</code>’s <code>glht()</code> function to obtain standard errors estimated using <code><a href="../reference/var_estimators.html">vcov_tee()</a></code>. This requires passing <code>vcov=vcov_tee</code> to <code>glht()</code>. On a technical note, <code>propertee</code> now “suggests” installing <code>multcomp</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.1" id="propertee-051">propertee 0.5.1<a class="anchor" aria-label="anchor" href="#propertee-051"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-5-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-1"></a></h3>
