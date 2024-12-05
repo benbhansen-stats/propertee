@@ -840,7 +840,8 @@ matrices)\footnote{%
   ${\alpha}_{0}$ column of $A_{22}$ needs to be replaced in order to relabel
 it with ``$\tilde{\alpha}_{0}$.''}.
 It is interpretable as a weighted average of control group
-observations, as described in Section~\ref{sec:interc-relat-aspects} below.
+observations, as described in Section~\ref{sec:interc-relat-aspects}
+below (which also describes $A$ matrix entries corresponding to it).
 
 By simplifying sums of \eqref{eq:upsilondef},  block $b$'s contribution
 $\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i};
@@ -911,14 +912,38 @@ Returning to \eqref{eq:upsilondef}, in the model based formulation $[Z_{i}: i]$ 
 solutions $\hat{\mathbf{p}}$ of
 $0 = \sum_{i}\absorbInterceptsEF(\vec{v}_{i}; \mathbf{p})$ have
 covariance 0.  Writing $\acute{\Psi} =
-[\acute{\psi}(\vec{v}_{i}; \mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau) : i]'$, one
-obtains valid\footnote{%
-The residuals contributing to $\acute{\Psi}$ via \eqref{eq:upsilondef} do not remove stratum
-effects, as conventional covariance estimators for this scenario
-seem to do.  This aspect would inflate these standard errors
-relative to those. Nonetheless, I maintain that
-\texttt{estfun.teeMod()} as described here are sound as a
-basis for variance-covariance estimation.}
+[\acute{\psi}(\vec{v}_{i}; \hat{\mathbf{p}}, \hat{\beta}, \hat{\tilde{\alpha}}_{0}, \hat{\alpha}_{0}, \hat{\tau}) : i]'$, one
+obtains appropriate\footnote{%
+A difference between this and the matrices that \texttt{estfun.lm()}
+would have produced for either the regression with block fixed effects
+or a regression absorbing block means from the dependent as well as
+the independent variables is that according to \eqref{eq:upsilondef},
+the residuals in $\acute{\Psi}$ are not stripped of stratum
+effects.  This is done because in asymptotics with the number of
+blocks growing in tandem with the number of observations,
+\eqref{eq:9}'s stratum
+effects $\alpha_{1}, \ldots, \alpha_{s}$ need not be consistently
+estimated, so that making the variance estimator depend on them would
+appear to compromise consistency of variance estimation.  The
+inclusion of an overall intercept $\alpha_{0}$ in the absorbed regression
+\eqref{eq:upsilondef} mitigates the inflation of our
+residuals relative to those of ``naive'' covariance estimators
+with dependence on $\hat{\alpha}_{1}, \ldots, \hat{\alpha}_{s}$.
+
+It must be acknowledged that $\acute{\Psi}$ as defined here shares
+in the same naivete: it depends on $\hat{\mathbf{p}}$, which can be
+inconsistent for ${\mathbf{p}}$ in increasing-numbers-of-blocks
+regimes just as $\hat{\alpha}_{1}$ may be inconsistent for $\alpha_{1}$. We
+would address this by defining $\acute{\Psi} =
+[\acute{\psi}(\vec{v}_{i}; {\mathbf{p}}, \hat{\beta},
+\hat{\tilde{\alpha}}_{0}, \hat{\alpha}_{0}, \hat{\tau}) : i]'$, using
+the \texttt{StudySpecification} and an assumed treatment allocation
+model to infer rather than estimate $\mathbf{p}$.  For now we are
+holding off on introducing this second difference between our
+estimator and conventional estimates.  Observe that in the special
+case of no within-block variation in cluster size, $\hat{\mathbf{p}} =
+\mathbf{p}$ with probability one, and our use of $\hat{\mathbf{p}}$ is
+not a threat.\label{fn:p-est-vs-inf}}
   sandwich estimates by substitution of $\acute{\Psi}$ for
 $\Psi$ in \eqref{eq:15}.  That is, for a
 \texttt{teeMod} object \texttt{DA} we should have
@@ -934,6 +959,13 @@ $\Psi$ in \eqref{eq:15}.  That is, for a
   \hat{A}_{11}^{-t}\hat{A}_{21}'  & \text{ otherwise}.
 \end{cases}
 \end{equation*}
+For estimators $\hat{A}_{2*}$ of $A_{21}$ and $A_{22}$, we apply the plug-in
+principle to incidental parameters $\mathbf{p}$ as well as to $\beta$,
+$\tau$ and the alphas. This decision to treat $p$s in the same way as
+other parameters (which may be revisited; see note~\ref{fn:p-est-vs-inf}) allows
+us to obtain $\hat{A}_{22}$ through conventional \texttt{bread.lm}
+calculations. 
+
 
 In the design-based formulation, randomness of $Z$ can propagate to
 sampling variability of $\hat{\mathbf{p}}$,  so we must attend to
@@ -987,16 +1019,20 @@ b_{i}(k+1) +1$ and zeros elsewhere, while $A_{\tau,
 random variables $\nabla_{\mathbf{p}}\acute{\psi}(\vec{V}_{i};
 \mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$. For the estimator
 $\hat{A}_{\tau, \mathbf{p}}$, this average of random variables is
-approximated by the average of observables obtained by plugging
-in\footnote{%
-In contrast, should 
+estimated by the plug-in principle, substituting $\hat{\mathbf{p}}$,
+$\hat\beta$, $\hat{\tilde{\alpha}}$, $\hat{\alpha}$ and
+$\hat{\tau}$
+for $\mathbf{p}$, $\beta$, $\tilde{\alpha}$, $\alpha$ and
+$\tau$ as necessary.
+\footnote{%
+Another approach would use $\hat\beta$, $\hat{\tilde{\alpha}}$, $\hat{\alpha}$ and
+$\hat{\tau}$ but not $\hat{\mathbf{p}}$.  In this approach, should 
 ``${p}_{ij}$'' be needed we would infer its value from the
 \texttt{StudySpecification} and the equation $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
 $\hat{p}_{b_{i}}$ as empirically defined via $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
 \hat{\mathbf{p}})=0$.}
-estimates $\hat\beta$, $\hat{\tilde{\alpha}}$, $\hat{\alpha}$ and
-$\hat{\tau}$ as necessary.  The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
+The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
 \mathbf{p}, \beta, \tilde{\alpha}_{0}, \alpha_{0}, \tau)$ is the product of the $k \times k$
 diagonal matrix with entries $y_{i}[j] - g(\vec{x}_{i}\beta) -
 \tau_{j}$, $j=1, \ldots, k$, with a $k \times (ks)$ block matrix
@@ -1345,7 +1381,7 @@ $$\indicator{z_{i}=0} w_{\text{BFE}i} \tilde{y}_{i}= (1-z_{i})\hat{p}_{b_{i}}\ow
 and the $\tilde{\alpha}_{0}$ row of $A_{21}$ is 
 \begin{equation}\label{eq:11}
   -n_{\mathcal{Q}}^{-1}\sum_{i\in \bigcup\mathcal{Q} }
-  (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}] g'(\vec{x}_{i}\hat{\beta})
+  (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}] g'(\vec{x}_{i}{\beta})
   \vec{x}_{i}, 
 \end{equation}
 with $(1-z_{i})$ replaced by $\operatorname{Pr}_{\mathcal{D}}(Z_{i}=0)
@@ -1359,17 +1395,20 @@ in the $\tilde{\alpha}_{0}$ column
 or $-n^{-1}\sum_{i \in \cup \mathcal{Q}}
 (1-\pi_{i}){p}_{b_{{i}}}\owt[{[0]}]$ in the design-based formulation,
 and zeroes in remaining columns (as $\tau$ parameters don't
-contribute to $\acute{\psi}_{i1}$). For $\hat{\tilde{A}}_{22}$ we use
+contribute to $\acute{\psi}_{i1}$). Estimators $\hat{A}_{21}$ and
+$\hat{\tilde{A}}_{22}$ replace $p_{b_{i}}$ and $\beta$ with
+$\hat{p}_{b_{i}}$ and $\hat{\beta}$ in these expressions.%
+\footnote{An alternate approach would be to plug in $\hat\beta$ for
+  $\beta$ but not $\hat{\mathbf{p}}$ for $\mathbf{p}$, instead use
 the \texttt{StudySpecification} to infer the values of 
 $p_{b_{i}}$ solving $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
 \mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
 $\hat{p}_{b_{i}}$ as empirically defined via  $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
-\hat{\mathbf{p}})=0$.  In both observational studies
-as well as RCTs, the expectations in this expression are evaluated by combining
-\texttt{StudySpecification} information with an assumption
-of block random assignment of clusters. (This circumvents the problem
+\hat{\mathbf{p}})=0$.  This would require an assumption
+of block random assignment of clusters, but would circumvents the problem
 of these $\hat{p}_{b}$'s not being consistently estimated under
-asymptotics in which block sizes stay fixed.)
+asymptotics in which blocks increase in number while their sizes stay
+fixed. See also footnote~\ref{fn:p-est-vs-inf}.}
 The $\tilde{\alpha}_{0}$
 column of $\tilde{A}_{22}$ has zeroes off of the diagonal as well:
 for blocks $b \subseteq \mathcal{Q}$ and the $\tau$-coordinates $t=2,
