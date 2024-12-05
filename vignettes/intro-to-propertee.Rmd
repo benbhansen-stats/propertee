@@ -75,8 +75,9 @@ summary(STARdata$readk)
 
 
 We take the random assignment scheme to have been either complete or
-Bernoulli randomization of students, separately by school.
-Accordingly, experimental blocks are given by the `schoolidk` variable.
+Bernoulli randomization of students, separately by school.^[A perhaps better
+assumption would be to block on the years as well as the schools in which
+participants entered this longitudinal study. Unfortunately our data do not carry year of entry.] Accordingly, experimental blocks are given by the `schoolidk` variable.
 
 ```{r}
 length(unique(STARdata$schoolidk))
@@ -116,10 +117,8 @@ spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
 summary(spec)
 ```
 
-Should more than one variable be needed to identify the unit of assignment,
-block, or forcing, they can be included. For example, perhaps `schoolidk` may be
-unique within district, but potentially not unique across districts. Then we'd
-use something like `block(districtid, schoolidk)` in the `_spec` function.
+Should additional variables be needed to identify the unit of assignment,
+block, or forcing, they can be included. Had the variable identifying the years in which participants entered the study been available, for example, we might have identified the experimental blocks as combinations of school and year of study entry, rather than as the school alone.  To do this we would pass `block(entryyear, schoolidk)`, rather than `block(schoolidk)`, in the above.
 
 ### Estimating the treatment effect
 
