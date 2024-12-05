@@ -337,10 +337,10 @@ sample.</p>
 <span><span class="va">ip_wts</span> <span class="op">&lt;-</span> <span class="fu">propertee</span><span class="fu">::</span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span>, data <span class="op">=</span> <span class="va">study1data</span><span class="op">)</span> <span class="op">*</span> <span class="va">study1data</span><span class="op">$</span><span class="va">Total.Tested.2014</span></span>
 <span><span class="va">lm_ca</span> <span class="op">&lt;-</span> <span class="fu">propertee</span><span class="fu">::</span><span class="fu"><a href="../../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">lm_county_camod</span>, newdata <span class="op">=</span> <span class="va">study1data</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span></code></pre></div>
 <p>Next, we estimate the intervention effect by using the
-<code>limitt()</code> function. The only major difference between
-<code>limitt()</code> and the base <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> function in the
+<code><a href="../../reference/lmitt.html">lmitt()</a></code> function. The only major difference between
+<code><a href="../../reference/lmitt.html">lmitt()</a></code> and the base <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> function in the
 requirement to specify a <code>StudySpecification</code> object. In this
-<code>limitt()</code> function, we pass the inverse probability of
+<code><a href="../../reference/lmitt.html">lmitt()</a></code> function, we pass the inverse probability of
 assignment weights to the <code>weights</code> argument and the adjusted
 predictions to the <code>offset</code> argument.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -418,10 +418,10 @@ exceptions.</p>
 </h5>
 <p>The first exception is general to heterogeneous effect estimation
 with the <code>propertee</code> package. When estimating these effects,
-users need to modify the formula passed to <code>limitt()</code>.
-Instead of specifying a constant (i.e. 1) on the right-hand side, users
-should provide a formula that specifies the subgroup variable on the
-right-hand side.</p>
+users need to modify the formula passed to <code><a href="../../reference/lmitt.html">lmitt()</a></code>. Instead
+of specifying a constant (i.e. 1) on the right-hand side, users should
+provide a formula that specifies the subgroup variable on the right-hand
+side.</p>
 <p>The first part of the code prepares the data by filtering out any
 rows with missing values in the response variable or the covariates. We
 also isolate data for the Oakland County.</p>
@@ -509,7 +509,7 @@ done using the <code><a href="../../reference/StudySpecification_objects.html">r
 covariates and enhance the precision of treatment effect estimates.</li>
 <li>Use the <code><a href="../../reference/cov_adj.html">cov_adj()</a></code> function to process the covariate
 adjustment model.</li>
-<li>Fit a model using the <code>limitt()</code> function to estimate
+<li>Fit a model using the <code><a href="../../reference/lmitt.html">lmitt()</a></code> function to estimate
 treatment effect that accounts for the specification information and the
 covariate adjustment by including the <code>weights</code> and
 <code>offset</code> arguments in the function.</li>
