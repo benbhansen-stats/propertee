@@ -458,7 +458,7 @@ test_that("estfun.teeMod with missing values", {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
-  simdata_copy$z[1:3] <- NA_real_
+  simdata_copy$y[1:3] <- NA_real_
   nc <- 30
   nq <- nrow(simdata_copy)
   n <- nc + nq

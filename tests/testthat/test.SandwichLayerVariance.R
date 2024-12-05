@@ -543,7 +543,7 @@ test_that(".get_a22_inverse correct w/ covariance adjustment", {
 test_that(".get_a22_inverse with missing values", {
   set.seed(438)
   data(simdata)
-  simdata$z[1:3] <- NA_real_
+  simdata$y[1:3] <- NA_real_
   nc <- 30
   nq <- nrow(simdata)
   n <- nc + nq
@@ -606,7 +606,7 @@ test_that(".get_tilde_a22_inverse with missing values", {
   set.seed(438)
   data(simdata)
   new_data <- simdata
-  new_data$z[1:3] <- NA_real_
+  new_data$y[1:3] <- NA_real_
   nc <- 30
   nq <- nrow(new_data)
   n <- nc + nq
@@ -1258,7 +1258,7 @@ test_that(".get_tilde_a21 with missing", {
   data(simdata)
   
   new_df <- simdata
-  new_df$z[1:3] <- NA_real_
+  new_df$y[1:3] <- NA_real_
   nc <- 30
   nq <- nrow(new_df)
   n <- nc + nq

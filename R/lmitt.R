@@ -336,7 +336,7 @@ lmitt.formula <- function(obj,
 
   # restore subset
   lm.call$subset <- savedsubset
-  
+
   model <- eval(lm.call, parent.frame())
   
   # set call's na.action to na.pass so expand.model.frame includes NA rows
