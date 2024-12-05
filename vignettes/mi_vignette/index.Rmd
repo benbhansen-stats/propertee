@@ -50,7 +50,7 @@ source("get_and_clean_external_data.R")
 ```
 
 #### Creating the `StudySpecification` Object
-The first step in estimating intervention effects using `propertee` is to create a `StudySpecification` object. This will store the information from `michigan_school_pairs` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study. 
+The first step in estimating intervention effects using `propertee` is to create a `StudySpecification` object. This will store the information from `michigan_school_pairs` in a way that will allow for quick calculation of inverse probability of assignment weights that attend to the pair-matched structure of the study.
 
 In studies where units of observation (eg. individual students) within units of assignment (eg. schools or districts) are used to estimate intervention effects, the data structure should reflect this nesting. For example, if we had student-level scores data as the observed data within schools or districts, it is important to specify how these units of assignment are allocated to different treatment or control conditions. In such studies, the `StudySpecification` object would also facilitate the definition of a vector of assignment indicators at the unit of observation level we could use for estimating the intervention effect.
 
@@ -123,7 +123,7 @@ ip_wts <- propertee::ate(spec, data = study1data) * study1data$Total.Tested.2014
 lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study1data, specification = spec)
 ```
 
-Next, we estimate the intervention effect by using the `limitt()` function. The only major difference between `limitt()` and the base `lm()` function in the requirement to specify a `StudySpecification` object. In this `limitt()` function, we pass the inverse probability of assignment weights to the `weights` argument and the adjusted predictions to the `offset` argument. 
+Next, we estimate the intervention effect by using the `lmitt()` function. The only major difference between `lmitt()` and the base `lm()` function in the requirement to specify a `StudySpecification` object. In this `lmitt()` function, we pass the inverse probability of assignment weights to the `weights` argument and the adjusted predictions to the `offset` argument.
 ```{r}
 main_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~1"))
 lm_ca_effect <- propertee::lmitt(
@@ -144,7 +144,7 @@ To explore different variance estimation techniques, we can specify a different 
 summary(lm_ca_effect, vcov.type = "HC1")
 ```
 
-If parts of the auxiliary sample (here, Oakland County other than the 14 study schools) follow a different pattern of association between covariates and response, the covariance adjustment might wind up doing more harm than good.  To increase robustness to such contamination, we can use robust linear regression for generating predictions. 
+If parts of the auxiliary sample (here, Oakland County other than the 14 study schools) follow a different pattern of association between covariates and response, the covariance adjustment might wind up doing more harm than good.  To increase robustness to such contamination, we can use robust linear regression for generating predictions.
 ```{r}
 rob_ca <- propertee::cov_adj(rob_county_camod, newdata = study1data, specification = spec)
 rob_ca_effect <- propertee::lmitt(
@@ -157,8 +157,8 @@ summary(rob_ca_effect, vcov.type = "HC1")
 #### Estimating Heterogeneous Intervention Effects
 We can estimate average intervention effects conditional on different race/ethinicity groups by using the second cleaned dataset. `propertee` allows us to interpret the heterogenous effect estimates as the average effect of the intervention on the average MME score for students within each race/ethnicity group. The process for estimating these heterogeneous effects follows a similar user experience to the estimation of the marginal effect, but with two notable exceptions.
 
-##### Exception 1: Formula Specification 
-The first exception is general to heterogeneous effect estimation with the `propertee` package. When estimating these effects, users need to modify the formula passed to `limitt()`. Instead of specifying a constant (i.e. 1) on the right-hand side, users should provide a formula that specifies the subgroup variable on the right-hand side. 
+##### Exception 1: Formula Specification
+The first exception is general to heterogeneous effect estimation with the `propertee` package. When estimating these effects, users need to modify the formula passed to `lmitt()`. Instead of specifying a constant (i.e. 1) on the right-hand side, users should provide a formula that specifies the subgroup variable on the right-hand side.
 
 The first part of the code prepares the data by filtering out any rows with missing values in the response variable or the covariates. We also isolate data for the Oakland County.
 ```{r}
@@ -168,14 +168,14 @@ county_ix <- analysis2data$CONAME == coname
 county_mod_camod_dat <- analysis2data[not_missing_resp & not_missing_covs,]
 ```
 
-Next, we update the model formula to include the subgroup variable `DemographicGroup`, which will be used to estimate heterogeneous effects. We then use this updated formula to fit a weighted linear regression model. 
+Next, we update the model formula to include the subgroup variable `DemographicGroup`, which will be used to estimate heterogeneous effects. We then use this updated formula to fit a weighted linear regression model.
 ```{r}
 mod_camod_form <- update(camod_form, . ~ . + factor(DemographicGroup))
 lm_county_mod_camod <- lm(mod_camod_form, county_mod_camod_dat,
                           weights = county_mod_camod_dat$Total.Tested.2014)
 ```
 
-Then, we prepare the study dataset by merging the cleaned dataset with `michigan_school_pairs` to ensure we have school-level data that allows for the estimation of treatment effects based on school and demographic group. 
+Then, we prepare the study dataset by merging the cleaned dataset with `michigan_school_pairs` to ensure we have school-level data that allows for the estimation of treatment effects based on school and demographic group.
 ```{r}
 study2data <- merge(michigan_school_pairs, analysis2data, by = "schoolid", all.x = TRUE)
 study2data <- study2data[study2data$DemographicGroup %in%
@@ -207,4 +207,4 @@ This vignette has demonstrated how to use the `propertee` package to enhance the
 - Create a `StudySpecification` object which encodes the study specification, including the unit of assignment, treatment status of each unit of assignment, and optionally block information. This is done using the `rct_spec()` or optionally `obs_spec()` and `rd_spec()` functions.
 - Fit both least squares and robust regression models to adjust for covariates and enhance the precision of treatment effect estimates.
 - Use the `cov_adj()` function to process the covariate adjustment model.
-- Fit a model using the `limitt()` function to estimate treatment effect that accounts for the specification information and the covariate adjustment by including the `weights` and `offset` arguments in the function. 
+- Fit a model using the `lmitt()` function to estimate treatment effect that accounts for the specification information and the covariate adjustment by including the `weights` and `offset` arguments in the function.
