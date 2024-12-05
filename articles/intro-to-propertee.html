@@ -135,8 +135,12 @@ kindergarten.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">readk</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's </span></span>
 <span><span class="co">#&gt;   315.0   414.0   433.0   436.7   453.0   627.0    5809</span></span></code></pre></div>
-<p>The students were blocked into schools via the <code>schoolidk</code>
-variable:</p>
+<p>We take the random assignment scheme to have been either complete or
+Bernoulli randomization of students, separately by school.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;A perhaps better assumption would be to block on the
+years as well as the schools in which participants entered this
+longitudinal study. Unfortunately our data do not carry year of entry.&lt;/p&gt;"><sup>1</sup></a> Accordingly,
+experimental blocks are given by the <code>schoolidk</code>
+variable.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">schoolidk</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 80</span></span>
@@ -144,13 +148,16 @@ variable:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   1   2   3   4   5   6 </span></span>
 <span><span class="co">#&gt;  74  54 100  60  61  54</span></span></code></pre></div>
-<p>Students were the assigned units, so we need a unique identifier per
-student. If this does not currently exist, it can easily be
-generated:</p>
+<p>We need a unique identifier for the unit by which treatment was
+allocated. STAR treatments were assigned to students, as opposed to
+classrooms or other aggregates of students; accordingly we need a unique
+identifier per student. The <code>studentid</code> variable fills this
+role.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 11598</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1 2 3 4 5 6</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "1122" "1137" "1143" "1160" "1183" "1195"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="a-basic-example">A Basic Example<a class="anchor" aria-label="anchor" href="#a-basic-example"></a>
@@ -196,12 +203,14 @@ forcing information.</li>
 <span><span class="co">#&gt;  Txt Grp Num Units</span></span>
 <span><span class="co">#&gt;    FALSE      4425</span></span>
 <span><span class="co">#&gt;     TRUE      1900</span></span></code></pre></div>
-<p>Should more than one variable be needed to identify the unit of
-assignment, block, or forcing, they can be included. For example,
-perhaps <code>schoolidk</code> may be unique within district, but
-potentially not unique across districts. Then we’d use something like
-<code>block(districtid, schoolidk)</code> in the <code>_spec</code>
-function.</p>
+<p>Should additional variables be needed to identify the unit of
+assignment, block, or forcing, they can be included. Had the variable
+identifying the years in which participants entered the study been
+available, for example, we might have identified the experimental blocks
+as combinations of school and year of study entry, rather than as the
+school alone. To do this we would pass
+<code>block(entryyear, schoolidk)</code>, rather than
+<code>block(schoolidk)</code>, in the above.</p>
 </div>
 <div class="section level3">
 <h3 id="estimating-the-treatment-effect">Estimating the treatment effect<a class="anchor" aria-label="anchor" href="#estimating-the-treatment-effect"></a>
@@ -363,6 +372,7 @@ passed.</p>
 <span><span class="co">#&gt;          5.14933</span></span></code></pre></div>
 </div>
 </div>
+
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>

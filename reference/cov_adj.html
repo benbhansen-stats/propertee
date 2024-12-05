@@ -125,13 +125,12 @@ match the number of rows of the dataframe used.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentID</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">y0hat_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>                     <span class="va">ladderk</span> <span class="op">+</span> <span class="va">experiencek</span> <span class="op">+</span> <span class="va">tethnicityk</span>,</span></span>
 <span class="r-in"><span>                 data <span class="op">=</span> <span class="va">STARdata</span>, subset <span class="op">=</span> <span class="va">stark</span> <span class="op">!=</span><span class="st">"small"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">STARspec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">stark</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">studentID</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">STARspec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">stark</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">studentid</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                     data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ett_wts</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STARspec</span>, data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
 <span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span></span></span>
@@ -149,7 +148,18 @@ match the number of rows of the dataframe used.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               5.554179e+00 </span>
 <span class="r-in"><span><span class="va">ett_read</span> <span class="op">|&gt;</span> <span class="fu"><a href="as_lmitt.html">as.lmitt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .make_uoa_cluster_df(x@StudySpecification, id_col):</span> Could not find studentID column in the specification data</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                            (Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                  0.6603452</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)   0.3846596</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                            assigned(dichotomy = stark == "small" ~ .)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                                                 0.3846596</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)                                  0.9058149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"type")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "CR0"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
 <span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
@@ -163,7 +173,11 @@ match the number of rows of the dataframe used.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (Intercept)        stark. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -1.066237e-13  5.554179e+00 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .make_uoa_cluster_df(x@StudySpecification, id_col):</span> Could not find studentID column in the specification data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             (Intercept)    stark.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   0.6603452 0.3846596</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> stark.        0.3846596 0.9058149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"type")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "CR0"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">ate_read_loc</span> <span class="op">&lt;-</span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">schoolk</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
