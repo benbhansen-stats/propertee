@@ -47,10 +47,16 @@
 
 #' @title STAR data
 #'
-#' @description Tennessee’s Student-Teacher Achievement Ratio (STAR) data set.
-#'   This is a copy of the data \code{AER::STAR}.
+#' @description Data from Tennessee’s Project STAR study.
+#'   This is a copy of \code{AER::STAR}, describing student
+#'   participants in the Project STAR (Student-Teacher Achievement
+#'   Ratio) study conducted in Tennessee, USA in the late 1980s.
+#'   Variables are as described in the \code{AER} package's \code{STAR}
+#'   help page, with the exception that the \code{row.names}
+#'   of that data frame have been moved into a new first column,
+#'   \code{studentid}.
 #'
-#' @format  A \code{data.frame} with 11,598 rows and 47 columns.
+#' @format  A \code{data.frame} with 11,598 rows and 48 columns.
 #' @keywords dataset
 "STARdata"
 

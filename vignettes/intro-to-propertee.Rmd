@@ -72,18 +72,21 @@ The outcome of interest is a reading score at the end of kindergarten.
 summary(STARdata$readk)
 ```
 
-The students were blocked into schools via the `schoolidk` variable:
+
+
+We take the random assignment scheme to have been either complete or
+Bernoulli randomization of students, separately by school.
+Accordingly, experimental blocks are given by the `schoolidk` variable.
 
 ```{r}
 length(unique(STARdata$schoolidk))
 head(table(STARdata$schoolidk))
 ```
 
-Students were the assigned units, so we need a unique identifier per student. If
-this does not currently exist, it can easily be generated:
+We need a unique identifier for the unit by which treatment was allocated.  STAR treatments were assigned to students, as opposed to classrooms or other aggregates of students; accordingly we need a unique identifier per student. The  `studentid` variable fills this role.
 
 ```{r}
-STARdata$studentid <- seq_len(nrow(STARdata))
+length(unique(STARdata$studentid))
 head(STARdata$studentid)
 ```
 
