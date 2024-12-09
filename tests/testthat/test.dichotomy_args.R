@@ -20,8 +20,8 @@ test_that("dichotomy args where specification has no blocks, no time-varying ass
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(lm2$model$`(weights)`, slot)),
-                           deparse(methods::slot(wts, slot)))
+                 identical(deparse1(methods::slot(lm2$model$`(weights)`, slot)),
+                           deparse1(methods::slot(wts, slot)))
                } else {
                  identical(methods::slot(lm2$model$`(weights)`, slot),
                            methods::slot(wts, slot))
@@ -55,8 +55,8 @@ test_that("dichotomy args where specification has no blocks, no time-varying ass
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(lmitt2$model$`(weights)`, slot)),
-                           deparse(methods::slot(wts, slot)))
+                 identical(deparse1(methods::slot(lmitt2$model$`(weights)`, slot)),
+                           deparse1(methods::slot(wts, slot)))
                } else {
                  identical(methods::slot(lmitt2$model$`(weights)`, slot),
                            methods::slot(wts, slot))
@@ -89,8 +89,8 @@ test_that("dichotomy args where specification has blocks, no time-varying assign
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(lm2$model$`(weights)`, slot)),
-                           deparse(methods::slot(wts, slot)))
+                 identical(deparse1(methods::slot(lm2$model$`(weights)`, slot)),
+                           deparse1(methods::slot(wts, slot)))
                } else {
                  identical(methods::slot(lm2$model$`(weights)`, slot),
                            methods::slot(wts, slot))
@@ -126,8 +126,8 @@ test_that("dichotomy args where specification has blocks, no time-varying assign
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(lmitt2$model$`(weights)`, slot)),
-                           deparse(methods::slot(wts, slot)))
+                 identical(deparse1(methods::slot(lmitt2$model$`(weights)`, slot)),
+                           deparse1(methods::slot(wts, slot)))
                } else {
                  identical(methods::slot(lmitt2$model$`(weights)`, slot),
                            methods::slot(wts, slot))

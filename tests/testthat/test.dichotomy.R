@@ -3,7 +3,7 @@ test_that("find and validate dichotomies with no upstream dichotomies and list o
 })
 
 test_that("find and validate dichotomies with no upstream dichotomies and non-null argument", {
-  expect_identical(deparse(.validate_dichotomy(z ~ 1)), deparse(z ~ 1))
+  expect_identical(deparse1(.validate_dichotomy(z ~ 1)), deparse1(z ~ 1))
 })
 
 test_that("find and validate dichotomies with upstream dichotomy in lmitt.formula()", {
@@ -44,8 +44,8 @@ test_that("find and validate dichotomies with no upstream lmitt.formula()", {
                ate(spec, dose <= 250 ~ dose > 250, data = simdata)@.Data)
   expect_equal(mod1$model$`(weights)`@target,
                ate(spec, dose <= 250 ~ dose > 250, data = simdata)@target)
-  expect_equal(deparse(mod1$model$`(weights)`@dichotomy),
-               deparse(ate(spec, dose <= 250 ~ dose > 250, data = simdata)@dichotomy))
+  expect_equal(deparse1(mod1$model$`(weights)`@dichotomy),
+               deparse1(ate(spec, dose <= 250 ~ dose > 250, data = simdata)@dichotomy))
 
 
   mod2 <- lm(y ~ assigned(dichotomy = dose <= 250 ~ dose > 250), data = simdata,
@@ -55,8 +55,8 @@ test_that("find and validate dichotomies with no upstream lmitt.formula()", {
                ate(spec, dose <= 250 ~ dose > 250, data = simdata)@.Data)
   expect_equal(mod2$model$`(weights)`@target,
                ate(spec, dose <= 250 ~ dose > 250, data = simdata)@target)
-  expect_equal(deparse(mod2$model$`(weights)`@dichotomy),
-               deparse(ate(spec, dose <= 250 ~ dose > 250, data = simdata)@dichotomy))
+  expect_equal(deparse1(mod2$model$`(weights)`@dichotomy),
+               deparse1(ate(spec, dose <= 250 ~ dose > 250, data = simdata)@dichotomy))
 
   expect_error(
     mod3 <- lm(y ~ assigned(dichotomy = dose > 50 ~ dose == 50), data = simdata,

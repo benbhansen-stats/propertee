@@ -135,7 +135,7 @@ forcing <- unit_of_assignment
 ##'   "unit_of_assignment"
 ##' @keywords internal
 .update_form_to_unit_of_assignment <- function(form) {
-  form <- deparse(form)
+  form <- deparse1(form)
   form <- gsub("cluster\\(", "unit_of_assignment(", form)
   form <- gsub("uoa\\(", "unit_of_assignment(", form)
   form <- gsub("unitid\\(", "unit_of_assignment(", form)

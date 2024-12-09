@@ -49,7 +49,7 @@ as.lmitt <- function(x, specification = NULL) {
   ### if the user does not include `assigned()` in the `lm`.
   ## # Update formula to use `assigned()` if needed
   ## ff <- stats::formula(x)
-  ## newff <- formula(gsub(var_names(specification, "t"), "assigned()", deparse(ff)))
+  ## newff <- formula(gsub(var_names(specification, "t"), "assigned()", deparse1(ff)))
   ## environment(newff) <- environment(ff)
 
   ## # Ensure updated model will be the same.
