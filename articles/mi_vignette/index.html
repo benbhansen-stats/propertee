@@ -357,8 +357,7 @@ covariance adjustment regression.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">lm_ca_effect</span>, vcov.type <span class="op">=</span> <span class="st">"HC0"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
-<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, </span></span>
-<span><span class="co">##     weights = ip_wts, offset = lm_ca)</span></span>
+<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, weights = ip_wts, offset = lm_ca)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##    Estimate Std. Error t value Pr(&gt;|t|)</span></span>
@@ -373,8 +372,7 @@ function.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">lm_ca_effect</span>, vcov.type <span class="op">=</span> <span class="st">"HC1"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
-<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, </span></span>
-<span><span class="co">##     weights = ip_wts, offset = lm_ca)</span></span>
+<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, weights = ip_wts, offset = lm_ca)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##    Estimate Std. Error t value Pr(&gt;|t|)</span></span>
@@ -394,8 +392,7 @@ can use robust linear regression for generating predictions.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">rob_ca_effect</span>, vcov.type <span class="op">=</span> <span class="st">"HC1"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
-<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, </span></span>
-<span><span class="co">##     weights = ip_wts, offset = rob_ca)</span></span>
+<span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, weights = ip_wts, offset = rob_ca)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##    Estimate Std. Error t value Pr(&gt;|t|)</span></span>
@@ -464,8 +461,7 @@ and fit the model using the <code><a href="../../reference/lmitt.html">lmitt()</
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">lm_ca_mod_effect</span>, vcov.type <span class="op">=</span> <span class="st">"CR1"</span>, cluster <span class="op">=</span> <span class="st">"schoolid"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
-<span><span class="co">## lmitt.formula(mod_effect_fmla, specification = spec, data = study2data, </span></span>
-<span><span class="co">##     weights = ip_wts, offset = lm_mod_ca)</span></span>
+<span><span class="co">## lmitt.formula(mod_effect_fmla, specification = spec, data = study2data, weights = ip_wts, offset = lm_mod_ca)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##                                                Estimate Std. Error t value</span></span>
