@@ -595,11 +595,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     stop("Design-based standard errors can only be computed for RCT specifications")
   }
 
-  if (length(x@moderator) > 0){
-    stop(paste("Design-based standard errors cannot be computed for teeMod",
-               "models with moderators"))
-  }
-
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
@@ -613,12 +608,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (x@absorbed_intercepts) {
     a22inv <- sandwich::bread(x)
     meat <- do.call(sandwich::meatCL, args)
-
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
-    name <- paste0(var_names(x@StudySpecification, "t"), ".")
-    vmat <- as.matrix(vmat[name, name])
   }
   else {
+    if (length(x@moderator) > 0){
+      stop(paste("Design-based standard errors cannot be computed for teeMod",
+                 "models with moderators"))
+    }
+    
     # if model weights does not incorporate IPW, throw a warning
     if (!(inherits(x@lmitt_call$weights, "call") &
           sum(grepl("ate", x@lmitt_call$weights)) > 0)){
@@ -634,11 +631,11 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     else {
       vmat <- .get_DB_wo_covadj_se(x)
     }
+    
+    name <- paste0(var_names(x@StudySpecification, "t"), ".")
+    colnames(vmat) <- name
+    rownames(vmat) <- name
   }
-  name <- paste0(var_names(x@StudySpecification, "t"), ".")
-  colnames(vmat) <- name
-  rownames(vmat) <- name
-
   attr(vmat, "type") <- "DB0"
   return(vmat)
 }
@@ -800,7 +797,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' - block id column name
 #' @keywords internal
 .aggregate_to_cluster <- function(x, ...){
-  ws <- if (is.null(x$weights)) 1 else x$weights
+  ws <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
   data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@StudySpecification, data=data_temp),
@@ -877,8 +874,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     rep(wc * (data[, name_y] - x$offset), p), ncol = p
     ) * X1 # n by p, wic * residual * xi
 
-  wi <- x$weights
-  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
+  wi <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
+  X2 <- wi * residuals(x)  # n by 1, wi[z] * (residual - rhoz) * z
 
   XX <- cbind(X1, X2)
   XX <- stats::aggregate(XX, by = list(cid), FUN = sum)[,-1]
@@ -990,15 +987,12 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 #' @param x a fitted \code{teeMod} model
 .get_phi_tilde <- function(x, ...){
-  ws <- x$weights
-  n <- length(ws) # number of units in Q
   specification_obj <- x@StudySpecification
   df <- x$call$data
 
   # treatment assignments
   name_trt <- var_names(specification_obj, "t")
   assignment <- df[[name_trt]]
-  k <- length(unique(assignment))
   z_ind <- sapply(c(0,1), function(val) as.integer(assignment == val))
 
   # stratum ids
@@ -1010,14 +1004,16 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val))
 
   # nuisance parameters p
+  n <- length(stratum) # number of units in Q
+  ws <- if (is.null(stats::weights(x))) rep(1,n) else stats::weights(x)
   wb <- matrix(replicate(s, ws), ncol = s) * b_ind
-  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
+  p <- t(z_ind) %*% wb / (matrix(1, nrow = 2, ncol = n) %*% wb)
   p1 <- p[2, ]
 
   # calculate phi tilde
   phitilde <- matrix(nrow = n, ncol = s)
   for (j in 1:s){
-    phitilde[,j] <- ws * x$residuals * (z_ind[,2] - p1[j]) * b_ind[,j]
+    phitilde[,j] <- ws * residuals(x) * (z_ind[,2] - p1[j]) * b_ind[,j]
   }
   return(phitilde)
 }
@@ -1027,8 +1023,6 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @param x a fitted \code{teeMod} model
 #' @return An \eqn{s\times k} matrix \eqn{A_{pp}^{-1} A_{\tau p}^T}
 .get_appinv_atp <- function(x, ...){
-  ws <- x$weights
-  n <- length(ws)
   specification_obj <- x@StudySpecification
   df <- x$call$data
 
@@ -1043,11 +1037,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   stratum <- df[[name_blk]]
   s <- length(unique(stratum)) # number of blocks
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val))
-
+  
+  n <- length(stratum) # number of units in Q
+  ws <- if (is.null(stats::weights(x))) rep(1,n) else stats::weights(x)
+  
   app <- list()
   atp <- list()
   for (i in 1:s){
-    atp[[i]] <- ws * (x$residuals) * b_ind[,i]
+    atp[[i]] <- ws * residuals(x) * b_ind[,i]
     app[[i]] <- ws * b_ind[,i]
   }
   
