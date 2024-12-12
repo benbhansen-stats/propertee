@@ -245,17 +245,10 @@ lmitt.formula <- function(obj,
     }
   }
 
-  if (absorb) {
-    ## if (length(var_names(specification, "b")) == 0) {
-    ##   stop("No blocks found in StudySpecification, cannot absorb")
-    ## }
-
-    blocks <- blocks(specification,
-                    eval(lm.call$data, parent.frame()),
-                    all.x = TRUE,
-                    implicit = TRUE)[,1]
-    # To be used below
-  }
+  blocks <- blocks(specification,
+                  eval(lm.call$data, parent.frame()),
+                  all.x = TRUE,
+                  implicit = TRUE)[,1]
 
   # Identify whether RHS is intercept, continuous moderator, or subgroup
   if (rhs != "1") {
@@ -278,15 +271,18 @@ lmitt.formula <- function(obj,
   if (rhstype == "intercept") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
+    ctrl.means.rhs <- 1
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
+    ctrl.means.rhs <- quote(1 + rhs)
   } else {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
                                           "a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
+    ctrl.means.rhs <- quote(0 + rhs)
   }
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
@@ -342,6 +338,31 @@ lmitt.formula <- function(obj,
   
   # set call's na.action to na.pass so expand.model.frame includes NA rows
   model$call$na.action <- "na.pass"
+  
+  # get ctrl means
+  ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(mm))
+  pis <- (
+    rowsum(ctrl.means.wts * mm[,paste0(var_names(specification, "t"), ".")], blocks) /
+    rowsum(ctrl.means.wts, blocks)
+  )[blocks]
+  pis[pis == 1] <- 0
+  ctrl.means.wts <- ctrl.means.wts * pis * (1 - mm[,paste0(var_names(specification, "t"), ".")])
+  
+  ctrl.means.form <- lhs ~ rhs
+  ctrl.means.form[[2L]] <- quote(
+    do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
+                            c(lm.call$formula[[2]], "offset")))
+  )
+  ctrl.means.form[[3L]] <- ctrl.means.rhs
+  ctrl.means.lm <- lm(ctrl.means.form, w = ctrl.means.wts)
+  ctrl.means <- ctrl.means.lm$coefficients
+  model$coefficients <- c(
+    model$coefficients,
+    setNames(c(ctrl.means),
+             paste(rep(colnames(ctrl.means) %||% deparse1(lm.call$formula[[2]]), each = nrow(ctrl.means) %||% 1),
+                   rep(row.names(ctrl.means), ncol(ctrl.means)) %||% names(ctrl.means),
+                   sep = ":"))
+  )
   
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&
