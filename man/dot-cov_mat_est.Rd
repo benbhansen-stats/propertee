@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.cov_mat_est}
 \alias{.cov_mat_est}
-\title{(Internal) Helper function for specification-based meat matrix
+\title{(Internal) Helper function for design-based meat matrix
 calculation}
 \usage{
 .cov_mat_est(XXz, bidz)
@@ -12,7 +12,7 @@ estimated upper and lower bounds of covariance matrix of estimating
 function vectors under either treatment or control
 }
 \description{
-(Internal) Helper function for specification-based meat matrix
+(Internal) Helper function for design-based meat matrix
 calculation
 }
 \details{

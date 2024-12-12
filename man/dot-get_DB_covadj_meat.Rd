@@ -2,7 +2,7 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.get_DB_covadj_meat}
 \alias{.get_DB_covadj_meat}
-\title{(Internal) Meat matrix of specification-based variance}
+\title{(Internal) Meat matrix of design-based variance}
 \usage{
 .get_DB_covadj_meat(x, ...)
 }
@@ -13,11 +13,11 @@
 a list of meat matrix bounds
 }
 \description{
-(Internal) Meat matrix of specification-based variance
+(Internal) Meat matrix of design-based variance
 }
 \details{
 Calculate upper and lower bound estimates of meat matrix for
-specification-based variance estimate for \code{teeMod} models with
+design-based variance estimate for \code{teeMod} models with
 covariance adjustment and without absorbed effects
 }
 \keyword{internal}

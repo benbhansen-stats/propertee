@@ -2,11 +2,11 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.add_vec}
 \alias{.add_vec}
-\title{(Internal) Helper function for specification-based meat matrix calculation}
+\title{(Internal) Helper function for design-based meat matrix calculation}
 \usage{
 .add_vec(a, upper = TRUE)
 }
 \description{
-(Internal) Helper function for specification-based meat matrix calculation
+(Internal) Helper function for design-based meat matrix calculation
 }
 \keyword{internal}

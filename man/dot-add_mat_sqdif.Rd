@@ -2,13 +2,13 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.add_mat_sqdif}
 \alias{.add_mat_sqdif}
-\title{(Internal) Helper function for specification-based meat matrix
+\title{(Internal) Helper function for design-based meat matrix
 calculation}
 \usage{
 .add_mat_sqdif(X, zobs, bid, b, upper = TRUE)
 }
 \description{
-(Internal) Helper function for specification-based meat matrix
+(Internal) Helper function for design-based meat matrix
 calculation
 }
 \keyword{internal}

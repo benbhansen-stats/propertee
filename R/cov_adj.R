@@ -97,7 +97,7 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
 ##' @return formula
 ##' @keywords internal
 .update_ca_model_formula <- function(model, by = NULL, specification = NULL) {
-  form <- deparse(formula(model))
+  form <- deparse1(formula(model))
   if (!is.null(specification)) {
     form <- paste(c(form, paste(var_names(specification, "u"), collapse = " + ")), collapse = " + ")
   }

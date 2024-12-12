@@ -31,8 +31,8 @@ test_that("lmitt and lm return the same in simple cases", {
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(ssmod$model$`(weights)`, slot)),
-                           deparse(methods::slot(ml$model$`(weights)`, slot)))
+                 identical(deparse1(methods::slot(ssmod$model$`(weights)`, slot)),
+                           deparse1(methods::slot(ml$model$`(weights)`, slot)))
                } else {
                  identical(methods::slot(ssmod$model$`(weights)`, slot),
                            methods::slot(ml$model$`(weights)`, slot))
@@ -42,8 +42,8 @@ test_that("lmitt and lm return the same in simple cases", {
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(ssmod$model$`(weights)`, slot)),
-                           deparse(methods::slot(ml2ssmod$model$`(weights)`, slot)))
+                 identical(deparse1(methods::slot(ssmod$model$`(weights)`, slot)),
+                           deparse1(methods::slot(ml2ssmod$model$`(weights)`, slot)))
                } else {
                  identical(methods::slot(ssmod$model$`(weights)`, slot),
                            methods::slot(ml2ssmod$model$`(weights)`, slot))
@@ -58,8 +58,8 @@ test_that("lmitt and lm return the same in simple cases", {
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(ssmod$model$`(weights)`, slot)),
-                           deparse(methods::slot(ml$model$`(weights)`, slot)))
+                 identical(deparse1(methods::slot(ssmod$model$`(weights)`, slot)),
+                           deparse1(methods::slot(ml$model$`(weights)`, slot)))
                } else {
                  identical(methods::slot(ssmod$model$`(weights)`, slot),
                            methods::slot(ml$model$`(weights)`, slot))

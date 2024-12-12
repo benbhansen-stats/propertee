@@ -1,16 +1,17 @@
-#' @importFrom stats summary.lm
+#' @importFrom stats summary.lm residuals
 bread.lm <- function(x, ...) {
   if (!is.null(x$na.action))
-    class(x$na.action) <- "omit"
+    class(x$na.action) <- "exclude"
   sx <- stats::summary.lm(x)
-  return(sx$cov.unscaled * length(sx$residuals))
+  n <- length(residuals(x))
+  return(sx$cov.unscaled * n)
 }
 
 
 #' @importFrom stats residuals weights
 bread.glm <- function(x, ...) {
   if (!is.null(x$na.action))
-    class(x$na.action) <- "omit"
+    class(x$na.action) <- "exclude"
   sx <- summary(x)
   wres <- as.vector(stats::residuals(x, "working")) * stats::weights(x, "working")
   dispersion <- if (substr(x$family$family, 1L, 17L) %in%

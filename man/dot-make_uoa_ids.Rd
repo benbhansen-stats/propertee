@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{a fitted \code{teeMod} object}
 
-\item{vcov_type}{a string indicating model-based or specification-based
+\item{vcov_type}{a string indicating model-based or design-based
 covariance estimation. Currently, "MB", "CR", and "HC" are the only strings
 registered as indicating model-based estimation.}
 

@@ -275,7 +275,7 @@ test_that(paste(".update_ca_model_formula with NULL `by` and NULL `specification
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model)), "y ~ x")
+  expect_equal(deparse1(.update_ca_model_formula(model)), "y ~ x")
 })
 
 test_that(paste(".update_ca_model_formula with named `by`"), {
@@ -283,7 +283,7 @@ test_that(paste(".update_ca_model_formula with named `by`"), {
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, by = c("uoa1" = "uid"))),
+  expect_equal(deparse1(.update_ca_model_formula(model, by = c("uoa1" = "uid"))),
                "y ~ x + uoa1")
 })
 
@@ -292,7 +292,7 @@ test_that(paste(".update_ca_model_formula with unnamed `by`"), {
   df <- data.frame(x = rnorm(10), y = rnorm(10), uid = seq_len(10))
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, by = "uid")),
+  expect_equal(deparse1(.update_ca_model_formula(model, by = "uid")),
                "y ~ x + uid")
 })
 
@@ -303,7 +303,7 @@ test_that(paste(".update_ca_model_formula with NULL `by` and non-NULL `specifica
   spec <- rct_spec(z ~ unitid(uid), specification_df)
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, specification = spec)),
+  expect_equal(deparse1(.update_ca_model_formula(model, specification = spec)),
                "y ~ x + uid")
 })
 
@@ -314,7 +314,7 @@ test_that(paste(".update_ca_model_formula with non-NULL `by` and non-NULL `speci
   spec <- rct_spec(z ~ cluster(clust), specification_df)
 
   model <- lm(y ~ x, df)
-  expect_equal(deparse(.update_ca_model_formula(model, by = "uid", specification = spec)),
+  expect_equal(deparse1(.update_ca_model_formula(model, by = "uid", specification = spec)),
                "y ~ x + clust + uid")
 })
 

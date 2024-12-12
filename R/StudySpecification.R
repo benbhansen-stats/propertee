@@ -96,12 +96,12 @@ setValidity("StudySpecification", function(object) {
 
   ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output later
 
-  if (grepl("unit_of_assignment\\([a-zA-Z]", deparse(form)) |
-        grepl("uoa\\([a-zA-Z]", deparse(form))) {
+  if (grepl("unit_of_assignment\\([a-zA-Z]", deparse1(form)) |
+        grepl("uoa\\([a-zA-Z]", deparse1(form))) {
     autype <- "unit_of_assignment"
-  } else if (grepl("cluster\\([a-zA-Z]", deparse(form))) {
+  } else if (grepl("cluster\\([a-zA-Z]", deparse1(form))) {
     autype <- "cluster"
-  } else if (grepl("unitid\\([a-zA-Z]", deparse(form))) {
+  } else if (grepl("unitid\\([a-zA-Z]", deparse1(form))) {
     autype <- "unitid"
   } else {
     stop("This error should never be hit!")
@@ -143,7 +143,7 @@ setValidity("StudySpecification", function(object) {
   treatment <- m_collapse[, index == "t"]
 
   if (options()$propertee_warn_on_conditional_treatment &
-                grepl("[<>=]", deparse(form[[2]]))) {
+                grepl("[<>=]", deparse1(form[[2]]))) {
     # If the user is using conditionals, we'll be converting logical to numeric
     # later but don't need to the add'l warning message.
     if (!is.logical(treatment)) {

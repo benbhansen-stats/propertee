@@ -143,8 +143,8 @@ lmitt.formula <- function(obj,
 
       # Build new call. All calls must include obj and data
       new_d_call <- paste0(spec_call, "(",
-                           "formula = ", deparse(specification),
-                           ", data = ", deparse(lmitt.call$data), ")")
+                           "formula = ", deparse1(specification),
+                           ", data = ", deparse1(lmitt.call$data), ")")
       # str2lang converts character into call
       specification <- eval(str2lang(new_d_call))
     } else if (is(specification, "WeightedStudySpecification")) {
@@ -168,7 +168,7 @@ lmitt.formula <- function(obj,
 
 
   # Extract formula bits
-  rhs <- trimws(strsplit(deparse(obj[[3]]), "+", fixed = TRUE)[[1]])
+  rhs <- trimws(strsplit(deparse1(obj[[3]]), "+", fixed = TRUE)[[1]])
   rhs <- rhs[rhs != "+"]
   if (length(rhs) > 1) {
     # At max two terms ("sbgrp" and "1")
@@ -260,7 +260,7 @@ lmitt.formula <- function(obj,
   if (rhs != "1") {
     new.form <- reformulate(rhs, intercept = FALSE)
     modfinder.call <- lm.call
-    modfinder.call[[2]] <- str2lang(deparse(new.form))
+    modfinder.call[[2]] <- str2lang(deparse1(new.form))
     modfinder.call[[1]] <- quote(stats::model.matrix)
     names(modfinder.call)[2] <- "object"
     numcol <- ncol(eval(modfinder.call, parent.frame()))
@@ -275,27 +275,27 @@ lmitt.formula <- function(obj,
 
   # Generate formula for the internal `lm`
   if (rhstype == "intercept") {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ")"))
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
   } else if (rhstype == "categorical") {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), "):",
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
   } else {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse(dichotomy), ") + ",
-                                          "a.(dichotomy=", deparse(dichotomy), "):",
+    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
+                                          "a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
   }
   mm.call <- lm.call
-  mm.call[[2]] <- str2lang(paste(deparse(new.form, width.cutoff = 500L), collapse = ""))
+  mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
   # model.matrix.lm supports as `na.action` argument where
   # model.matrix.default doesn't
   mm.call[[1]] <- quote(stats::model.matrix.lm)
   mm.call$na.action <- "na.pass"
   names(mm.call)[2] <- "object"
   mm <- eval(mm.call, parent.frame())
-  colnames(mm) <- gsub(paste0("dichotomy = ", deparse(dichotomy)), "", colnames(mm),
+  colnames(mm) <- gsub(paste0("dichotomy = ", deparse1(dichotomy)), "", colnames(mm),
                        fixed = TRUE)
 
   if (absorb) {
@@ -338,7 +338,10 @@ lmitt.formula <- function(obj,
   lm.call$subset <- savedsubset
 
   model <- eval(lm.call, parent.frame())
-
+  
+  # set call's na.action to na.pass so expand.model.frame includes NA rows
+  model$call$na.action <- "na.pass"
+  
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&
       !is.null(sys.call(-1)) &&
