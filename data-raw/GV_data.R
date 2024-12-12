@@ -29,10 +29,13 @@ GV <- read.csv(file="GreenVavreck_PolAnalysis_2008_PA_Replication.csv", head=TRU
 GV_temp <- GV[GV$matched_pairs %in% c(1, 2, 3), c("xage04", "tout1", "syscode", "treat", "matched_pairs", "syspopall", "ageint", "wt")]
 
 # Randomly sample 10% based on "syscode"
-GV_sample <- GV_temp[GV_temp$syscode %in% sample(unique(GV_temp$syscode), size = length(unique(GV_temp$syscode)) * 0.1), ]
+GV_sample <- GV_temp %>%
+  group_by(syscode) %>%
+  sample_frac(0.1) %>%
+  ungroup()
 
 # Save the final dataset to a CSV file (if needed)
-write.csv(GV_sample, "GV_sampled_data.csv", row.names = FALSE)
+# write.csv(GV_sample, "GV_sampled_data.csv", row.names = FALSE)
 
 # first few rows of the sampled data for review
 head(GV_sample)
