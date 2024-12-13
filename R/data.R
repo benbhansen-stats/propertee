@@ -115,3 +115,14 @@
 #' @format  A \code{data.frame} with 14 rows and 3 columns.
 #' @keywords dataset
 "michigan_school_pairs"
+
+#' @title GV data
+#' 
+#' @description This dataset contains a 10% random sample of voters stratified by 
+#' system cable clusters. The original data is derived from a cluster-randomized 
+#' experiment of Rock the Vote TV advertisements.
+#' @format A \code{data.frame} with 248 rows and 8 columns.
+#' @ references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
+#' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152. 
+#' @source <https://isps.yale.edu/research/data/d005>
+"GV_data"
