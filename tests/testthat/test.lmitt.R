@@ -386,7 +386,37 @@ test_that("control means for categorical moderator", {
 })
 
 test_that("control means for dichotomized treatment", {
+  set.seed(93)
+  strata <- data.frame(b = rep(seq_len(2), each = 10),
+                       trt2dich = letters[rep(rep(seq_len(3), 4)[1:10], 2)],
+                       x = rnorm(20),
+                       dv = rnorm(20),
+                       id = seq_len(20))
+  spec <- rct_spec(trt2dich ~ block(b) + unitid(id), strata)
   
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  expect_warning(cad <- cov_adj(cmod, newdata = strata, spec = spec),
+                 "treatment is an independent variable")
+  
+  suppressMessages(m1 <- lmitt(dv ~ 1, spec, strata, offset = cad,
+                               dichotomy = trt2dich %in% c("a", "b") ~ trt2dich == "c"))
+  expect_equal(length(m1$coef), 4)
+  expect_equal(
+    m1$coef[3:4],
+    c("dv:(Intercept)" = mean(strata$dv[strata$trt2dich == "c"]),
+      "offset:(Intercept)" = mean(cad[strata$trt2dich == "c"]))
+  )
+  
+  m2 <- lmitt(dv ~ 1, spec, strata, offset = cad, absorb = TRUE,
+              dichotomy = trt2dich %in% c("a", "b") ~ trt2dich == "c")
+  pis <- tapply(strata$trt2dich %in% c("a", "b"), strata$b, mean)[strata$b]
+  expect_equal(length(m2$coef), 4)
+  expect_equal(
+    m2$coef[3:4],
+    c("dv:(Intercept)" = sum(pis * strata$dv * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")),
+      "offset:(Intercept)" = sum(pis * cad * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")))
+  )
 })
 
 test_that("lmitt finds StudySpecification wherever it's stored", {
@@ -543,12 +573,12 @@ test_that("#81 continuous moderator", {
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) , data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, specification = spec)
-  expect_length(mod$coeff, 4)
+  expect_length(mod$coeff, 6)
 
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, specification = spec, absorb = TRUE)
-  expect_length(mod$coeff, 4)
+  expect_length(mod$coeff, 6)
 
 })
 
