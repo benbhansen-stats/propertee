@@ -319,7 +319,70 @@ test_that("control means for continuous moderator", {
 })
 
 test_that("control means for categorical moderator", {
+  set.seed(93)
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+                      new_trt = rep(c(1, 0), 4),
+                      x = rnorm(8),
+                      mvar = letters[rep(seq_len(3), 3)[-9]],
+                      dv = rnorm(8),
+                      id = seq_len(8),
+                      pis = c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2)),
+                      cw = rep(c(10, 12), each = 4))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
   
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  cad <- cov_adj(cmod, newdata = pairs, spec = spec)
+  
+  unwtd.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = 1 - new_trt)
+  cw.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = cw * (1 - new_trt))
+  pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pis * (1 - new_trt))
+  cw_pis <- (rowsum(pairs$cw * pairs$new_trt, pairs$b) / rowsum(pairs$cw, pairs$b))[pairs$b]
+  cw_pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pairs$cw * cw_pis * (1 - new_trt))
+  
+  # no weights
+  suppressMessages(m1 <- lmitt(dv ~ mvar, spec, pairs))
+  expect_equal(length(m1$coef), 9)
+  expect_equal(
+    m1$coef[7:9],
+    setNames(unwtd.ctrl.reg$coef[,1], c("dv:mvara", "dv:mvarb", "dv:mvarc"))
+  )
+  
+  # cov adj
+  suppressMessages(m2 <- lmitt(dv ~ mvar, spec, pairs, offset = cad))
+  expect_equal(length(m2$coef), 12)
+  expect_equal(
+    m2$coef[7:12],
+    setNames(c(unwtd.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+  )
+  
+  # case weights
+  suppressMessages(m3 <- lmitt(dv ~ mvar, spec, pairs, weights = pairs$cw, offset = cad))
+  expect_equal(length(m3$coef), 12)
+  expect_equal(
+    m3$coef[7:12],
+    setNames(c(cw.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+  )
+  
+  # absorb = TRUE
+  suppressMessages(m4 <- lmitt(dv ~ mvar, spec, pairs, offset = cad, absorb = TRUE))
+  expect_equal(length(m4$coef), 12)
+  expect_equal(
+    m4$coef[7:12],
+    setNames(c(pis.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+  )
+  
+  # case weights and absorb = TRUE
+  suppressMessages(m5 <- lmitt(dv ~ mvar, spec, pairs, w = pairs$cw, offset = cad, absorb = TRUE))
+  expect_equal(length(m5$coef), 12)
+  expect_equal(
+    m5$coef[7:12],
+    setNames(c(cw_pis.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+  )
 })
 
 test_that("control means for dichotomized treatment", {

@@ -339,12 +339,10 @@ lmitt.formula <- function(obj,
   
   # get ctrl means
   ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(data))
+  a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
   if (absorb) {
-    a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
     pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
     ctrl.means.wts <- ctrl.means.wts * pis
-  } else {
-    a_col <- mm[,paste0(var_names(specification, "t"), ".")]
   }
   ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
 
