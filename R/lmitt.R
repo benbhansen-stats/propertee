@@ -271,18 +271,18 @@ lmitt.formula <- function(obj,
   if (rhstype == "intercept") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
-    ctrl.means.rhs <- 1
+    ctrl.means.form <- stats::reformulate("1", response = "lhs")
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
-    ctrl.means.rhs <- quote(1 + rhs)
+    ctrl.means.form <- stats::reformulate(rhs, response = "lhs", intercept = FALSE)
   } else {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
                                           "a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
-    ctrl.means.rhs <- quote(0 + rhs)
+    ctrl.means.form <- stats::reformulate(rhs, response = "lhs")
   }
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
@@ -323,13 +323,11 @@ lmitt.formula <- function(obj,
                                       collapse = "+"),
                                     collapse = ""))
 
-  # If the moderators already exist in the passed-in data, remove them to avoid
+  # Data for model should be original data, plus updated RHS (mm),
+  # but if the moderators already exist in the passed-in data, remove them to avoid
   # either a) overloading variable names, or b) an error if data is a
   # `grouped_df` (see #137)
-  data <- data[, !(names(data) %in% colnames(mm))]
-
-  # Data for model should be original data, plus updated RHS (mm)
-  lm.call$data <- cbind(data, mm)
+  lm.call$data <- cbind(data[, !(names(data) %in% colnames(mm))], mm)
 
   # restore subset
   lm.call$subset <- savedsubset
@@ -340,7 +338,7 @@ lmitt.formula <- function(obj,
   model$call$na.action <- "na.pass"
   
   # get ctrl means
-  ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(mm))
+  ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(data))
   if (absorb) {
     a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
     pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
@@ -350,13 +348,11 @@ lmitt.formula <- function(obj,
   }
   ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
 
-  ctrl.means.form <- lhs ~ rhs
   ctrl.means.form[[2L]] <- quote(
     do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
                             c(lm.call$formula[[2]], "offset")))
   )
-  ctrl.means.form[[3L]] <- ctrl.means.rhs
-  ctrl.means.lm <- lm(ctrl.means.form, w = ctrl.means.wts)
+  ctrl.means.lm <- lm(ctrl.means.form, data = data, w = ctrl.means.wts)
   ctrl.means <- ctrl.means.lm$coefficients
   model$coefficients <- c(
     model$coefficients,
