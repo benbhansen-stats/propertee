@@ -33,7 +33,7 @@ NULL
 ##'   an error will be produced.)
 ##' @return \code{teeMod} object
 ##' @rdname as_lmitt
-##' @importFrom stats formula
+##' @importFrom stats formula weights
 ##' @export
 as.lmitt <- function(x, specification = NULL) {
   if (!inherits(x, "lm")) {
@@ -186,6 +186,34 @@ as.teeMod <- as.lmitt
       sbst <- eval(lm_model$call$subset, data)
       data <- subset(data, sbst)
     }
+    
+    # get ctrl means
+    blocks <- blocks(specification,
+                     data,
+                     all.x = TRUE,
+                     implicit = TRUE)[,1]
+    ctrl.means.wts <- weights(lm_model) %||% rep(1, nrow(data))
+    a_col <- lm_model$model[, grepl("(assigned|a\\.|z\\.|adopters)\\(", colnames(lm_model$model))]
+    if (absorbed_intercepts) {
+      pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
+      ctrl.means.wts <- ctrl.means.wts * pis
+    }
+    ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
+    
+    ctrl.means.form <- lhs ~ 1
+    ctrl.means.form[[2L]] <- quote(
+      do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], lm_model$model$`(offset)`),
+                              c(stats::formula(lm_model)[[2]], "offset")))
+    )
+    ctrl.means.lm <- lm(ctrl.means.form, w = ctrl.means.wts)
+    ctrl.means <- ctrl.means.lm$coefficients
+    lm_model$coefficients <- c(
+      lm_model$coefficients,
+      setNames(c(ctrl.means),
+               paste(rep(colnames(ctrl.means) %||% deparse1(stats::formula(lm_model)[[2]]), each = nrow(ctrl.means) %||% 1),
+                     rep(row.names(ctrl.means), ncol(ctrl.means)) %||% names(ctrl.means),
+                     sep = ":"))
+    )
   }
   lm_model$call$data <- data
   # set call's na.action to na.pass so expand.model.frame includes NA rows
