@@ -350,7 +350,7 @@ lmitt.formula <- function(obj,
     do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
                             c(lm.call$formula[[2]], "offset")))
   )
-  ctrl.means.lm <- lm(ctrl.means.form, data = data, w = ctrl.means.wts)
+  ctrl.means.lm <- lm(ctrl.means.form, data = data, w = ctrl.means.wts, na.action = na.exclude)
   ctrl.means <- ctrl.means.lm$coefficients
   model$coefficients <- c(
     model$coefficients,
@@ -375,6 +375,7 @@ lmitt.formula <- function(obj,
                            lmitt_fitted = TRUE,
                            moderator = moderator,
                            absorbed_intercepts = absorb,
+                           ctrl_means_model = ctrl.means.lm,
                            lmitt_call = lmitt_call))
 }
 

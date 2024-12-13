@@ -22,8 +22,13 @@ summary.teeMod <- function(object,
   out <- summary(as(object, "lm"))
 
   if (object$rank > 0) {
+    toprint <- !grepl("^offset:", names(object$coef))
+    out$coefficients <- rbind(out$coef, matrix(0, nrow = sum(toprint) - nrow(out$coef), ncol = 4))
+    rownames(out$coefficients) <- names(object$coef)[toprint]
+
+    out$coefficients[, 1L] <- object$coef[toprint]
     covmat <- vcov_tee(object, type = vcov.type, ...)
-    out$coefficients[, 2L] <- sqrt(diag(covmat))
+    out$coefficients[, 2L] <- sqrt(diag(covmat))[toprint]
     out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
     out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
                                           object$df.residual,
@@ -79,11 +84,12 @@ print.summary.teeMod <- function(x,
       coefs[!aliased, ] <- x$coefficients
     }
     if (x$teeMod@lmitt_fitted) {
-      toprint <- grepl(paste0("^\\`?",
-                              var_names(x$teeMod@StudySpecification, "t"), "\\."),
-                       rownames(coefs))
+      toprint <- (
+        grepl(paste0("^\\`?", var_names(x$teeMod@StudySpecification, "t"), "\\."), rownames(coefs)) |
+          grepl(paste0("^", formula(x$teeMod)[[2L]], ":"), rownames(coefs))
+      )
     } else {
-      toprint <- rep(TRUE, nrow(coefs))
+      toprint <- !grepl("^offset:", rownames(coefs))
     }
     stats::printCoefmat(coefs[toprint, , drop = FALSE],
                         digits = digits,
