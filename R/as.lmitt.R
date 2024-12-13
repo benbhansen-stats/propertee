@@ -100,6 +100,7 @@ as.lmitt <- function(x, specification = NULL) {
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
                            moderator = vector("character"),
+                           ctrl_means_model = NULL,
                            lmitt_call = lmitt_call))
 }
 
@@ -112,6 +113,7 @@ as.teeMod <- as.lmitt
                               lmitt_fitted,
                               absorbed_intercepts,
                               moderator,
+                              ctrl_means_model,
                               lmitt_call) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
@@ -205,8 +207,8 @@ as.teeMod <- as.lmitt
       do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], lm_model$model$`(offset)`),
                               c(stats::formula(lm_model)[[2]], "offset")))
     )
-    ctrl.means.lm <- lm(ctrl.means.form, w = ctrl.means.wts)
-    ctrl.means <- ctrl.means.lm$coefficients
+    ctrl_means_model <- lm(ctrl.means.form, w = ctrl.means.wts, na.action = na.exclude)
+    ctrl.means <- ctrl_means_model$coefficients
     lm_model$coefficients <- c(
       lm_model$coefficients,
       setNames(c(ctrl.means),
@@ -230,6 +232,7 @@ as.teeMod <- as.lmitt
              StudySpecification = specification,
              absorbed_intercepts = absorbed_intercepts,
              moderator = moderator,
+             ctrl_means_model = ctrl_means_model,
              lmitt_call = call("quote", lmitt_call),
              lmitt_fitted = lmitt_fitted))
 

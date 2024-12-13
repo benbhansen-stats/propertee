@@ -9,6 +9,7 @@ setClass("teeMod",
                    lmitt_fitted = "logical",
                    absorbed_intercepts = "logical",
                    moderator = "character",
+                   ctrl_means_model = "lm",
                    lmitt_call = "call"))
 
 setValidity("teeMod", function(object) {
@@ -29,8 +30,10 @@ setMethod("show", "teeMod", function(object) {
   # Display only treatment effects
   if (object@lmitt_fitted) {
     # This should match any coefficients starting with the "txt." or "`txt."
-    toprint <- grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."),
-                     names(coeffs))
+    toprint <- (
+      grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."), names(coeffs)) |
+        grepl(paste0("^", formula(object)[[2L]], ":"), names(coeffs))
+    )
     print(coeffs[toprint])
   } else {
     print(coeffs)
@@ -116,14 +119,18 @@ estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
 
+  # get estfun for ctrl mean regression 
+  cm_ef <- estfun(x@ctrl_means_model)
+  cm_ef[is.na(cm_ef)] <- 0
+
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...))
+    return(cbind(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...), cm_ef))
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  estmats <- .align_and_extend_estfuns(x, ...)
+  estmats <- .align_and_extend_estfuns(x, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
 
@@ -133,8 +140,8 @@ estfun.teeMod <- function(x, ...) {
   n <- nrow(estmats[["psi"]])
 
   ## form matrix of estimating equations
-  mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-  mat <- mat - .estfun_DB_blockabsorb(x, ...)
+  mat <- cbind(estmats[["psi"]], estmats[["cm_ef"]]) - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat[,1:ncol(estmats[["psi"]])] <- mat[,1:ncol(estmats[["psi"]])] - .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -169,7 +176,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   estimating equations for the direct adjustment model, and the other being
 ##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
-.align_and_extend_estfuns <- function(x, by = NULL, ...) {
+.align_and_extend_estfuns <- function(x, ctrl_means_ef_mat = NULL, by = NULL, ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
@@ -186,16 +193,24 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
-  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi),
-                        dimnames = list(seq(n), colnames(psi)))
+  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
   aligned_psi[1:nq,] <- psi[Q_order,,drop=FALSE]
 
   C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
   aligned_phi <- matrix(0, nrow = n, ncol = ncol(phi),
                         dimnames = list(seq_len(n), colnames(phi)))
   aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
+  
+  out <- list(psi = aligned_psi, phi = aligned_phi)
+  
+  if (!is.null(ctrl_means_ef_mat)) {
+    aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
+                            dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
+    aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
+    out[["cm_ef"]] <- aligned_cm_ef
+  }
 
-  return(list(psi = aligned_psi, phi = aligned_phi))
+  return(out)
 }
 
 ##' @title (Internal) Extract empirical estimating equations from a
