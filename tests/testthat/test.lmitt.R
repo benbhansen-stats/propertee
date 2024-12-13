@@ -26,7 +26,7 @@ test_that("lmitt and lm return the same in simple cases", {
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
   ml2ssmod <- lmitt(ml)
 
-  expect_true(all.equal(ssmod$coef, ml$coef, check.attributes = FALSE))
+  expect_true(all.equal(ssmod$coef[1:2], ml$coef, check.attributes = FALSE))
   expect_true(all.equal(ssmod$coef, ml2ssmod$coef, check.attributes = FALSE))
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -54,7 +54,7 @@ test_that("lmitt and lm return the same in simple cases", {
   ml <- lm(y ~ z, data = simdata, weights = ett(spec))
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ett(), specification = spec)
 
-  expect_true(all.equal(ssmod$coef, ml$coef, check.attributes = FALSE))
+  expect_true(all.equal(ssmod$coef[1:2], ml$coef, check.attributes = FALSE))
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
@@ -182,6 +182,74 @@ test_that("Minimal support for continuous treatments", {
       obs_spec(dosef ~ cluster(uoa1, uoa2), data = simdata_)
   expect_error(lmitt(y ~ 1, data = simdata, specification = spec3),
                "not supported")
+})
+
+test_that("control means for intercept only", {
+  set.seed(93)
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+                      new_trt = rep(c(1, 0), 4),
+                      x = rnorm(8),
+                      dv = rnorm(8),
+                      id = seq_len(8))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  cad <- cov_adj(cmod, newdata = pairs, spec = spec)
+  
+  # lmitt
+  suppressMessages(m1 <- lmitt(dv ~ 1, spec, pairs))
+  suppressMessages(m2 <- lmitt(lm(dv ~ z.(spec, pairs), pairs), spec))
+  expect_equal(length(m1$coef), 3)
+  expect_equal(m1$coef[3], c("dv:(Intercept)" = mean(pairs$dv[pairs$new_trt == 0])))
+  expect_equal(m2$coef[3], m1$coef[3])
+
+  # cov adj
+  suppressMessages(m3 <- lmitt(dv ~ 1, spec, pairs, offset = cad))
+  suppressMessages(m4 <- lmitt(lm(dv ~ a.(spec, pairs), pairs, offset = cad), spec))
+  expect_equal(length(m3$coef), 4)
+  expect_equal(m3$coef[3:4],
+               c("dv:(Intercept)" = mean(pairs$dv[pairs$new_trt == 0]),
+                 "offset:(Intercept)" = mean(cad[pairs$new_trt == 0])))
+  expect_equal(m3$coef[3:4], m4$coef[3:4])
+  
+  # case weights
+  cw <- rep(c(10, 12), each = 4)
+  suppressMessages(m5 <- lmitt(dv ~ 1, spec, pairs, w = cw, offset = cad))
+  suppressMessages(m6 <- lmitt(lm(dv ~ adopters(spec, pairs), pairs, w = cw, off = cad), spec))
+  expect_equal(m5$coef[3:4],
+               c("dv:(Intercept)" = sum(cw * pairs$dv * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt)),
+                 "offset:(Intercept)" = sum(cw * cad * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt))))
+  expect_equal(m5$coef[3:4], m6$coef[3:4])
+  
+  # absorb = TRUE
+  m7 <- lmitt(dv ~ 1, spec, pairs, offset = cad, absorb = TRUE)
+  pis <- c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2))
+  expect_equal(m7$coef[3:4],
+               c("dv:(Intercept)" = sum(pis * pairs$dv * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt)),
+                 "offset:(Intercept)" = sum(pis * cad * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt))))
+  
+  # missing data--stratum where trt is missing outcome still contributes to ctrl mean estimatino
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3:4, each = 2)),
+                      new_trt = rep(c(1, 0), 5),
+                      x = rnorm(10),
+                      dv = c(rnorm(8), NA_real_, rnorm(1)),
+                      id = seq_len(10))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  m8 <- lmitt(dv ~ 1, spec, pairs, absorb = TRUE)
+  pis <- c(pis, rep(1/2, 2))
+  expect_equal(
+    m8$coef[3],
+    c("dv:(Intercept)" = sum(pis * pairs$dv * (1-pairs$new_trt), na.rm = TRUE) /
+        sum(pis * (1-pairs$new_trt), na.rm = TRUE)))
+})
+
+test_that("control means for continuous moderator", {
+  
+})
+
+test_that("control means for categorical moderator", {
+  
 })
 
 test_that("lmitt finds StudySpecification wherever it's stored", {

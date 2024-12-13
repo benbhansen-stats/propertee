@@ -341,13 +341,15 @@ lmitt.formula <- function(obj,
   
   # get ctrl means
   ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(mm))
-  pis <- (
-    rowsum(ctrl.means.wts * mm[,paste0(var_names(specification, "t"), ".")], blocks) /
-    rowsum(ctrl.means.wts, blocks)
-  )[blocks]
-  pis[pis == 1] <- 0
-  ctrl.means.wts <- ctrl.means.wts * pis * (1 - mm[,paste0(var_names(specification, "t"), ".")])
-  
+  if (absorb) {
+    a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
+    pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
+    ctrl.means.wts <- ctrl.means.wts * pis
+  } else {
+    a_col <- mm[,paste0(var_names(specification, "t"), ".")]
+  }
+  ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
+
   ctrl.means.form <- lhs ~ rhs
   ctrl.means.form[[2L]] <- quote(
     do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
