@@ -6,32 +6,19 @@
 \title{GV data}
 \format{
 A \code{data.frame} with 248 rows and 8 columns.
-\code{GV_data}:
-\itemize{
-\item {xage04} Decimal format of age
-\item {tout1} A binary variable indicating past turnout behavior for each participant
-\item {syscode} A unique identifier of each cable system (or cluster)
-\item {treat} A binary variable denoting treatment assignment for participants
-\item {matched_pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
-\item {syspopall} The total population size of the cable system to which the participant belongs
-\item {ageint} Integer value of age
-\item {wt} The total sample size for the syscode cluster
-}
 }
 \source{
 \url{https://isps.yale.edu/research/data/d005}
-Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 }
 \usage{
 GV_data
 }
 \description{
-This dataset contains a 10\% random sample of individuals from each system cable cluster.
-It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 system cables.
+This dataset contains a 10\% random sample of individuals from each cable system cluster.
+It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems.
 The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 }
-\references{
-Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized
-Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
+\details{
+Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 }
 \keyword{datasets}
