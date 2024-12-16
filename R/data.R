@@ -115,13 +115,12 @@
 
 #' @title GV data
 #' 
-#' @description This dataset contains a 10% random sample of individuals from each system cable cluster. 
-#' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 system cables. 
+#' @description This dataset contains a 10% random sample of individuals from each cable system cluster. 
+#' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems. 
 #' The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 #' @format A \code{data.frame} with 248 rows and 8 columns.
 #' @ references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
 #' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152. 
 #' @source <https://isps.yale.edu/research/data/d005>
-#' Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
-#' @keywords dataset
+#' @details Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 "GV_data"
