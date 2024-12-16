@@ -21,4 +21,4 @@ The original dataset is derived from a cluster-randomized experiment of Rock the
 \details{
 Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 }
-\keyword{datasets}
+\keyword{dataset}
