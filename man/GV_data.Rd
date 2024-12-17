@@ -21,4 +21,8 @@ The original dataset is derived from a cluster-randomized experiment of Rock the
 \details{
 Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 }
+\references{
+Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized
+Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
+}
 \keyword{dataset}
