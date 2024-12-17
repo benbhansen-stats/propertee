@@ -175,29 +175,26 @@ ate <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) 
                                  ncol = length(var_names(specification, "b")),
                                  dimnames = list(rownames = NULL,
                                                  colnames = var_names(specification, "b"))))
+
     blks[!is.na(txt),] <- .merge_preserve_order(
       unique(data[, var_names(specification, "u"), drop=FALSE]),
       cbind(specification@structure[, var_names(specification, "b"), drop=FALSE],
             specification@structure[, var_names(specification, "u"), drop=FALSE]),
       all = FALSE, all.x = TRUE
     )[!is.na(txt), var_names(specification, "b")]
-    block_units <- table(blks[!is.na(txt), ])
-    block_tx_units <- tapply(txt,
-                             blks,
-                             FUN = sum,
-                             na.rm = TRUE)
-    e_z <- block_tx_units / block_units
 
-    to_reset_to_0 <- e_z == 1 | e_z == 0
-    to_reset_to_0 <- to_reset_to_0[as.character(blks[, 1])]
+    # Generate e_z and merge back into blks
+    e_z <- aggregate(txt ~ ., data = blks, FUN=function(x) sum(x)/length(x))
+    blks <- .merge_preserve_order(blks, e_z, all.x = TRUE)
+    # Rename for clarity
+    names(blks)[ncol(blks)] <- "e_z"
 
-    # Expand e_z to unit of assignment level
-    e_z <- as.numeric(e_z[as.character(blks[, 1])])
+    to_reset_to_0 <- blks$e_z == 1 | blks$e_z == 0
 
     if (target == "ate") {
-      weights <- txt / e_z + (1 - txt) / (1 - e_z)
+      weights <- txt / blks$e_z + (1 - txt) / (1 - blks$e_z)
     } else if (target == "ett") {
-      weights <- txt + (1 - txt) * e_z / (1 - e_z)
+      weights <- txt + (1 - txt) * blks$e_z / (1 - blks$e_z)
     }
 
     if (any(to_reset_to_0, na.rm = TRUE)) {

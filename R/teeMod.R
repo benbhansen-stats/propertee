@@ -267,7 +267,6 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     uoa_cols <- var_names(x@StudySpecification, "u")
     if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
       spec_blocks <- blocks(x@StudySpecification)
-      # uoa_block_ids <- apply(spec_blocks, 1, function(...) paste(..., collapse = ","))
       uoa_block_ids <- apply(spec_blocks, 1,
                              function(...) paste(..., collapse = ","))
       small_blocks <- identify_small_blocks(x@StudySpecification)
@@ -279,10 +278,9 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                                  nms = colnames(spec_blocks))
       )
       Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      Q_obs$cluster[Q_obs$small_block &
-                      !is.na(Q_obs[[var_names(x@StudySpecification, "b")]])] <- Q_obs$block_replace_id[
-                        Q_obs$small_block &
-                          !is.na(Q_obs[[var_names(x@StudySpecification, "b")]])]
+      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
+      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
+        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
       Q_obs_ids <- Q_obs$cluster
     }
   }
