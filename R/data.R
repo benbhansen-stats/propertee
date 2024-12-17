@@ -126,6 +126,6 @@
 #' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
 #'
 #' @source <https://isps.yale.edu/research/data/d005>
-#' @keywords dataset
+#' @keywords internal
 "GV_data"
 
