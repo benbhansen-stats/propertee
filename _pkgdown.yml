@@ -83,7 +83,7 @@ reference:
     - vcov_tee
 - title: Data
 - contents:
-    - STARdata
+    - STARplus
     - lsoSynth
     - schooldata
     - simdata

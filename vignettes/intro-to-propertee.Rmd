@@ -51,7 +51,7 @@ class (22 to 25 students per teacher), and regular-with-aide class (22 to 25
 students with a full-time teacher's aide).
 
 ```{r}
-data(STARdata)
+data("STARdata", package="AER")
 table(STARdata$stark)
 ```
 

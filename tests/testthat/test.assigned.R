@@ -63,7 +63,7 @@ test_that("Missing data", {
                nrow(simdata))
 
 
-  data(STARdata)
+  data("STAR", package="AER"); STARdata <- STAR
   STARdata$id <- seq_len(nrow(STARdata))
   STARdata$stark <- as.character(STARdata$stark)
   spec <- rct_spec(stark ~ unitid(id), data = STARdata)

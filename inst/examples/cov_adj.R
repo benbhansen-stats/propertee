@@ -1,4 +1,4 @@
-data(STARdata)
+data("STAR", package="AER"); STARdata <- STAR
 
 y0hat_read <- lm(readk ~ gender + ethnicity + lunchk +
                      ladderk + experiencek + tethnicityk,

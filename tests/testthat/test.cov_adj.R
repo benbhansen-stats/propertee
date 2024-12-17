@@ -3,7 +3,7 @@ on.exit(options(old_opt))
 options(propertee_warn_on_conditional_treatment = FALSE)
 
 data(simdata)
-data(STARdata)
+data("STAR", package="AER"); STARdata <- STAR
 STARdata$id <- seq_len(nrow(STARdata))
 Q_wo_nulls <- simdata
 Q_w_nulls <- STARdata

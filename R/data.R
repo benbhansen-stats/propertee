@@ -45,20 +45,23 @@
 #' @keywords dataset
 "lsoSynth"
 
-#' @title STAR data
+#' @title STAR participants plus nonexperimental controls
 #'
 #' @description Data from Tennessee’s Project STAR study.
-#'   This is a copy of \code{AER::STAR}, describing student
-#'   participants in the Project STAR (Student-Teacher Achievement
-#'   Ratio) study conducted in Tennessee, USA in the late 1980s.
-#'   Variables are as described in the \code{AER} package's \code{STAR}
-#'   help page, with the exception that the \code{row.names}
-#'   of that data frame have been moved into a new first column,
-#'   \code{studentid}.
+#'   This data frame describes student participants in the Project
+#'   STAR (Student-Teacher Achievement Ratio) field experiment
+#'   conducted in Tennessee, USA beginning in the mid-1980s, as well
+#'   as an external control group consisting of the contemporaneous
+#'   cohort of students attending a matched sample of Tennessee
+#'   schools that did not participate in the STAR experiment.
+#'   Variables are as described in Project \code{STAR} data
+#'   documentation (see references TK), with the exception of the
+#'   three \code{*_at_entry} variables.  These variables were
+#'   reconstructed as follows.TK
 #'
-#' @format  A \code{data.frame} with 11,598 rows and 48 columns.
+#' @format  A \code{data.frame} with 13,382 rows and 49 columns.
 #' @keywords dataset
-"STARdata"
+"STARplus"
 
 #' @title Student data
 #'
