@@ -566,5 +566,5 @@ test_that("column name 'cluster' doesn't cause issues", {
   simdata$cluster <- simdata$uoa1
 
   expect_no_error(rct_spec(z ~ cluster(cluster, uoa2), data = simdata))
-
+  expect_true(TRUE) # Avoid an empty test warning
 })

@@ -348,6 +348,7 @@ test_that("non-integer units of assignment", {
 
   expect_no_error(lmitt(y ~ x, data = simdata, specification = spec, absorb = TRUE))
 
+  expect_true(TRUE) # Avoid an empty test warning
 
 })
 
