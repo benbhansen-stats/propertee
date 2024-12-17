@@ -25,4 +25,4 @@ Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized
 Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
 }
-\keyword{dataset}
+\keyword{internal}
