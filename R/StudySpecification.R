@@ -253,6 +253,9 @@ rct_spec <- function(formula,
                        na.fail = TRUE) {
   .check_spec_formula(formula)
   if (!is.null(substitute(subset))) {
+    # Moving this inside .new_StudySpecification causes some scoping issues; it
+    # should probably be inside there, but this works fine and is easier to
+    # handle #209
     subset <- eval(substitute(subset), data, parent.frame())
   }
   return(.new_StudySpecification(form = formula,
@@ -271,6 +274,9 @@ rd_spec <- function(formula,
                       na.fail = TRUE) {
   .check_spec_formula(formula, allow_forcing = TRUE)
   if (!is.null(substitute(subset))) {
+    # Moving this inside .new_StudySpecification causes some scoping issues; it
+    # should probably be inside there, but this works fine and is easier to
+    # handle #209
     subset <- eval(substitute(subset), data, parent.frame())
   }
   return(.new_StudySpecification(form = formula,
@@ -289,6 +295,9 @@ obs_spec <- function(formula,
                        na.fail = TRUE) {
   .check_spec_formula(formula)
   if (!is.null(substitute(subset))) {
+    # Moving this inside .new_StudySpecification causes some scoping issues; it
+    # should probably be inside there, but this works fine and is easier to
+    # handle #209
     subset <- eval(substitute(subset), data, parent.frame())
   }
   return(.new_StudySpecification(form = formula,
