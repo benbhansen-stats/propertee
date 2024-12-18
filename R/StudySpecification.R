@@ -252,7 +252,9 @@ rct_spec <- function(formula,
                        subset = NULL,
                        na.fail = TRUE) {
   .check_spec_formula(formula)
-
+  if (!is.null(substitute(subset))) {
+    subset <- eval(substitute(subset), data, parent.frame())
+  }
   return(.new_StudySpecification(form = formula,
                      data = data,
                      type = "RCT",
@@ -268,7 +270,9 @@ rd_spec <- function(formula,
                       subset = NULL,
                       na.fail = TRUE) {
   .check_spec_formula(formula, allow_forcing = TRUE)
-
+  if (!is.null(substitute(subset))) {
+    subset <- eval(substitute(subset), data, parent.frame())
+  }
   return(.new_StudySpecification(form = formula,
                      data = data,
                      type = "RD",
@@ -284,7 +288,9 @@ obs_spec <- function(formula,
                        subset = NULL,
                        na.fail = TRUE) {
   .check_spec_formula(formula)
-
+  if (!is.null(substitute(subset))) {
+    subset <- eval(substitute(subset), data, parent.frame())
+  }
   return(.new_StudySpecification(form = formula,
                      data = data,
                      type = "Obs",
