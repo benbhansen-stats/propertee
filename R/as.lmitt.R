@@ -49,7 +49,7 @@ as.lmitt <- function(x, specification = NULL) {
   ### if the user does not include `assigned()` in the `lm`.
   ## # Update formula to use `assigned()` if needed
   ## ff <- stats::formula(x)
-  ## newff <- formula(gsub(var_names(specification, "t"), "assigned()", deparse(ff)))
+  ## newff <- formula(gsub(var_names(specification, "t"), "assigned()", deparse1(ff)))
   ## environment(newff) <- environment(ff)
 
   ## # Ensure updated model will be the same.
@@ -188,6 +188,8 @@ as.teeMod <- as.lmitt
     }
   }
   lm_model$call$data <- data
+  # set call's na.action to na.pass so expand.model.frame includes NA rows
+  lm_model$call$na.action <- "na.pass"
   assign("data", data, envir = eval_env)
   assign("specification", specification, envir = eval_env)
   environment(lm_model$terms) <- eval_env

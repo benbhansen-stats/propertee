@@ -50,7 +50,7 @@ print.summary.teeMod <- function(x,
                                            getOption("show.signif.stars"),
                                          ...) {
 
-  cat("\nCall:\n", paste(deparse(x$teeMod@lmitt_call), sep = "\n",
+  cat("\nCall:\n", paste(deparse1(x$teeMod@lmitt_call), sep = "\n",
                          collapse = "\n"), "\n", sep = "")
 
   df <- x$df

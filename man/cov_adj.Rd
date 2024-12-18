@@ -57,13 +57,12 @@ match the number of rows of the dataframe used.
 }
 \examples{
 data(STARdata)
-STARdata$studentID <- rownames(STARdata)
 
 y0hat_read <- lm(readk ~ gender + ethnicity + lunchk +
                      ladderk + experiencek + tethnicityk,
                  data = STARdata, subset = stark !="small")
 
-STARspec <- rct_spec(stark ~ unit_of_assignment(studentID),
+STARspec <- rct_spec(stark ~ unit_of_assignment(studentid),
                      data = STARdata)
 ett_wts    <- ett(STARspec, data = STARdata,
                   dichotomy= stark =="small" ~.)

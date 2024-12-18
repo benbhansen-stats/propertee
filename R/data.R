@@ -47,10 +47,16 @@
 
 #' @title STAR data
 #'
-#' @description Tennessee’s Student-Teacher Achievement Ratio (STAR) data set.
-#'   This is a copy of the data \code{AER::STAR}.
+#' @description Data from Tennessee’s Project STAR study.
+#'   This is a copy of \code{AER::STAR}, describing student
+#'   participants in the Project STAR (Student-Teacher Achievement
+#'   Ratio) study conducted in Tennessee, USA in the late 1980s.
+#'   Variables are as described in the \code{AER} package's \code{STAR}
+#'   help page, with the exception that the \code{row.names}
+#'   of that data frame have been moved into a new first column,
+#'   \code{studentid}.
 #'
-#' @format  A \code{data.frame} with 11,598 rows and 47 columns.
+#' @format  A \code{data.frame} with 11,598 rows and 48 columns.
 #' @keywords dataset
 "STARdata"
 
@@ -106,3 +112,20 @@
 #' @format  A \code{data.frame} with 14 rows and 3 columns.
 #' @keywords dataset
 "michigan_school_pairs"
+
+#' @title GV data
+#' 
+#' @description This dataset contains a 10% random sample of individuals from each cable system cluster. 
+#' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems. 
+#' The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
+#'
+#' @format A \code{data.frame} with 248 rows and 8 columns.
+#' @details Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
+#'
+#' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
+#' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
+#'
+#' @source <https://isps.yale.edu/research/data/d005>
+#' @keywords dataset
+"GV_data"
+

@@ -15,7 +15,7 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wspec))
   expect_true(all(wspec == wspec@.Data))
 
-  expect_identical(deparse(stats::formula()), deparse(wspec@dichotomy))
+  expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
   wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett",
                         dichotomy = NULL)
@@ -30,7 +30,7 @@ test_that("internal weight function", {
   expect_equal(nrow(simdata), length(wspec))
   expect_true(all(wspec == wspec@.Data))
 
-  expect_identical(deparse(stats::formula()), deparse(wspec@dichotomy))
+  expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
   expect_error(propertee:::.weights_calc(spec, data = simdata, by = NULL,
                              target = "foo", dichotomy = NULL),
@@ -60,7 +60,7 @@ test_that("dichotomy issues", {
   expect_equal(nrow(simdata), length(wspec))
   expect_true(all(wspec == wspec@.Data))
 
-  expect_identical(deparse(. ~ dose > 150), deparse(wspec@dichotomy))
+  expect_identical(deparse1(. ~ dose > 150), deparse1(wspec@dichotomy))
 })
 
 test_that("internal and external weight function agreement", {
@@ -73,8 +73,8 @@ test_that("internal and external weight function agreement", {
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(iwspec, slot)),
-                           deparse(methods::slot(ewspec, slot)))
+                 identical(deparse1(methods::slot(iwspec, slot)),
+                           deparse1(methods::slot(ewspec, slot)))
                 } else {
                   identical(methods::slot(iwspec, slot), methods::slot(ewspec, slot))
                 },
@@ -87,8 +87,8 @@ test_that("internal and external weight function agreement", {
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
-                 identical(deparse(methods::slot(iwspec, slot)),
-                           deparse(methods::slot(ewspec, slot)))
+                 identical(deparse1(methods::slot(iwspec, slot)),
+                           deparse1(methods::slot(ewspec, slot)))
                } else {
                  identical(methods::slot(iwspec, slot), methods::slot(ewspec, slot))
                },
@@ -117,7 +117,7 @@ test_that("ate and ett with data argument", {
   expect_equal(nrow(mtcars), length(wspec))
   expect_true(all(wspec == wspec@.Data))
 
-  expect_identical(deparse(stats::formula()), deparse(wspec@dichotomy))
+  expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
   # n_clusters < n
   data(simdata)
@@ -136,7 +136,7 @@ test_that("ate and ett with data argument", {
   expect_equal(nrow(simdata), length(wspec))
   expect_true(all(wspec == wspec@.Data))
 
-  expect_identical(deparse(stats::formula()), deparse(wspec@dichotomy))
+  expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
 })
 

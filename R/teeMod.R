@@ -51,13 +51,10 @@ setMethod("show", "teeMod", function(object) {
 ##' @exportS3Method
 vcov.teeMod <- function(object, ...) {
   cl <- match.call()
+  cl[[1L]] <-  quote(vcov_tee)
+  names(cl)[2L] <- "x"
 
-  cl$x <- cl$object
-  argmatch <- match(c("x", "type", "cluster"), names(cl), nomatch = 0L)
-  new_cl <- cl[c(1L, argmatch)]
-  new_cl[[1L]] <-  quote(vcov_tee)
-
-  vmat <- eval(new_cl, parent.frame())
+  vmat <- eval(cl, parent.frame())
   return(vmat)
 }
 
@@ -116,6 +113,9 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 estfun.teeMod <- function(x, ...) {
   args <- list(...)
   args$x <- x
+  # change model object's na.action to na.exclude so estfun returns NA rows
+  if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
+
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
@@ -128,7 +128,7 @@ estfun.teeMod <- function(x, ...) {
   a21 <- .get_a21(x)
 
   ## get scaling constants
-  nq <- nrow(stats::model.frame(x))
+  nq <- nrow(stats::model.frame(x, na.action = "na.pass")) # this includes NA's as our other routines do
   nc <- nrow(stats::model.frame(sl@fitted_covariance_model))
   n <- nrow(estmats[["psi"]])
 
@@ -213,7 +213,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     stop(paste("Direct adjustment model must have been fitted using a function from the",
                "`propertee`, `stats`, `robustbase`, or `survey` package"))
   }
-  return(getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x))
+  
+  ef <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x)
+  ef[is.na(ef)] <- 0
+  return(ef)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
@@ -238,8 +241,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #'   \code{estfun.teeMod()} for the method for determining uniqueness.
 #' @keywords internal
 .make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
-  if (!inherits(x, "teeMod")) {
-    stop("Must be provided a teeMod object")
+  if (!inherits(x, c("teeMod", "mmm"))) {
+    stop("Must be provided a teeMod or mmm object")
+  } else if (inherits(x, "mmm")) {
+    # just use the first model to generate the ID's; this will be the same for
+    # mmm objects of models with the same Q (and possibly C) samples
+    x <- x[[1L]]
   }
   mc <- match.call()
 
@@ -260,7 +267,6 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     uoa_cols <- var_names(x@StudySpecification, "u")
     if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
       spec_blocks <- blocks(x@StudySpecification)
-      # uoa_block_ids <- apply(spec_blocks, 1, function(...) paste(..., collapse = ","))
       uoa_block_ids <- apply(spec_blocks, 1,
                              function(...) paste(..., collapse = ","))
       small_blocks <- identify_small_blocks(x@StudySpecification)
@@ -272,7 +278,9 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                                  nms = colnames(spec_blocks))
       )
       Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      Q_obs$cluster[Q_obs$small_block] <- Q_obs$block_replace_id[Q_obs$small_block]
+      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
+      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
+        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
       Q_obs_ids <- Q_obs$cluster
     }
   }
@@ -371,7 +379,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
   # get all ID's in Q
   # Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
-  Q_ids <- stats::expand.model.frame(x, by, na.expand = TRUE)[, by, drop = FALSE]
+  Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
   Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
 
   # get all ID's in C and replace NA's with unique ID
@@ -423,8 +431,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   }
 
   obs_uoa_ids <- stats::expand.model.frame(x,
-                                           expand_cols,
-                                           na.expand = TRUE)[, expand_cols, drop = FALSE]
+                                           expand_cols)[, expand_cols, drop = FALSE]
 
   out <- merge(cbind(obs_uoa_ids, .order_id = seq_len(nrow(obs_uoa_ids))),
                uoa_cls_df, by.x = expand_cols, by.y = by.y, all.x = TRUE, sort = FALSE)

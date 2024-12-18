@@ -52,13 +52,13 @@
     dichotomy <- possible_dichotomy
     other_dichotomies <- .find_dichotomies()
     if (!is.null(other_dichotomies$lmitt)) {
-      if (!identical(deparse(other_dichotomies$lmitt), deparse(dichotomy))) {
+      if (!identical(deparse1(other_dichotomies$lmitt), deparse1(dichotomy))) {
         warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to `lmitt()`"))
       }
     }
     if (!is.null(other_dichotomies$weights)) {
-      if (!identical(deparse(other_dichotomies$weights), deparse(dichotomy))) {
+      if (!identical(deparse1(other_dichotomies$weights), deparse1(dichotomy))) {
         warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to weights"))
       }
