@@ -2733,3 +2733,28 @@ test_that("block_center_residuals works for input containing NA block IDs", {
   expect_true(all.equal(r, residuals(propertee:::block_center_residuals(damod_abs))))
 })
 
+test_that("block_center_residuals works for teeMod having NA in fitted values", {
+  data(simdata)
+  simdata[1:3, 'x'] <- NA
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), 
+                           simdata, na.fail = FALSE)
+  cmod <- lm(y ~ x, simdata)
+  teemod <- suppressWarnings(lmitt(
+    y ~ 1, specification = des, data = simdata, absorb = TRUE, offset = cov_adj(cmod)
+    ))
+  r <- residuals(teemod)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)[4:50]
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(teemod))))
+})
+

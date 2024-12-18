@@ -8,7 +8,7 @@
 block_center_residuals <- function(x){
   blks <- stats::expand.model.frame(
     x, var_names(x@StudySpecification, "b")
-    )[,var_names(x@StudySpecification, "b")]
+    )[names(residuals(x)),var_names(x@StudySpecification, "b")]
   n <- length(blks)
   w <- if (is.null(weights(x))) rep(1, n) else weights(x)
   blk_means <- suppressWarnings(rowsum(
