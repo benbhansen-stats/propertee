@@ -63,12 +63,15 @@ test_that("Missing data", {
                nrow(simdata))
 
 
-  data("STAR", package="AER"); STARdata <- STAR
+    if (requireNamespace("AER", quietly = TRUE)) {
+      data("STAR", package="AER")
+      STARdata <- STAR
   STARdata$id <- seq_len(nrow(STARdata))
   STARdata$stark <- as.character(STARdata$stark)
   spec <- rct_spec(stark ~ unitid(id), data = STARdata)
   mod <- lm(readk ~ birth + lunchk + assigned(), data = STARdata,
             weights = ate(spec, dichotomy = stark == "small" ~ .))
+      }
 
 })
 
