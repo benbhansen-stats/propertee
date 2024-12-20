@@ -119,7 +119,16 @@
 #' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems. 
 #' The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 #'
-#' @format A \code{data.frame} with 248 rows and 8 columns.
+#' @format A \code{data.frame} with 248 rows and 7 columns.
+#' \itemize{
+#'   \item {age} Age of participant
+#'   \item {vote_04} Outcome variable indicating whether participant voted 
+#'   \item {tv_company} Cable system that participant was assigned to 
+#'   \item {treatment} Binary variable denoting treatment assignment for participants
+#'   \item {pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
+#'   \item {population_size} Total population size of the cable system to which the participant belongs 
+#'   \item {sample_size} Total sample size for the cable system cluster 
+#' }
 #' @details Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
 #'
 #' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
