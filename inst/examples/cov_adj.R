@@ -7,7 +7,7 @@ y0hat_read <- lm(g1readbsraw ~ gender*dob + race,
 
 STARspec <- rct_spec(cond_at_entry ~ unit_of_assignment(stdntid) +
                          block(grade_at_entry, school_at_entry),
-                     subset=!is.na(STARplus$grade_at_entry),# excludes non-experimentals
+                     subset=!is.na(grade_at_entry),# excludes non-experimentals
                      data = STARplus)
 ett_wts    <- ett(STARspec, data = STARplus,
                   dichotomy= cond_at_entry =="small" ~.)
