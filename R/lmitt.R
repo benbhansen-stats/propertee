@@ -161,7 +161,7 @@ lmitt.formula <- function(obj,
       } else {
         fact_or_ord <- "Factor"
       }
-      stop(paste(fact_or_ord, "treatment variables are not yet supported, use",
+      stop(paste(fact_or_ord, "treatment variables are not supported, use",
                  "`dichotomy=` to define a binary treatment."))
     }
   }
