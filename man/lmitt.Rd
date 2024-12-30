@@ -51,7 +51,7 @@ or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 or \code{ett()} can be used.}
 }
 \value{
-\code{teeMod} model.
+\code{teeMod} object (see Details)
 }
 \description{
 Generates a linear model object to estimate a treatment effect,
@@ -101,6 +101,42 @@ has block information that is not being used to inform weights or a block
 fixed effect adjustment. This is not an error, but it often represents an
 oversight on the part of the analyst. To disable this
 message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
+
+\code{\link[=lmitt]{lmitt()}} returns objects of class \sQuote{\code{teeMod}}, for
+Treatment Effect Estimate Model, extending the lm class to add a
+summary of of the response distribution under control (the
+coefficients of a controls-only regression of the response on an
+intercept and any moderator variable).  \code{teeMod} objects also
+record the underlying \code{StudySpecification} and information
+about any externally fitted models \code{mod} that may have been
+used for covariance adjustment by passing
+\code{offset=cov_adj(mod)}. In the latter case, responses are
+offsetted by predictions from \code{mod} prior to treatment effect
+estimation, but estimates of the response variable distribution
+under control are calculated without reference to \code{mod}.
+
+The response distribution under control is also characterized when
+treatment effects are estimated with block fixed effects, i.e. for
+\code{\link[=lmitt]{lmitt()}} with a \code{formula} first argument with option
+\code{absorb=TRUE}.  Here as otherwise, the supplementary
+coefficients describe a regression of the response on an intercept
+and moderator variables, to which only control observations
+contribute; but in this case the weights are modified for this
+supplementary regression. The treatment effect estimates adjusted
+for block fixed effects can be seen to coincide with estimates
+calculated without block effect but with weights multiplied by an
+additional factor specific to the combination of block and
+treatment condition. For block s containing units with weights
+\eqn{w_i} and binary treatment assignments \eqn{z_i}, define
+\eqn{\hat{\pi}_s} by \eqn{\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i}. If
+\eqn{\hat{\pi}_s} is 0 or 1, the block doesn't contribute to
+effect estimation and the additional weighting factor is 0; if
+\eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
+\eqn{1 - \hat{\pi}_s} for treatment group members and
+\eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
+\link{lmitt(absorb=T)} reflect regressions of control observations
+using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
+appropriate.
 }
 \examples{
 data(simdata)
