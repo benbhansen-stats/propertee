@@ -137,26 +137,28 @@ automatically centered.</p></li>
 </ul><p>Alternatively, <code>obj</code> can be a pre-created <code>lm</code> object. No
 modification is made to the formula of the object. See the help for
 <code><a href="as_lmitt.html">as.lmitt()</a></code> for details of this conversion.</p>
-<p>Note that although the <code>StudySpecification</code> creation functions (e.g.
-<code><a href="StudySpecification_objects.html">rct_spec()</a></code>) take an optional <code>subset=</code> argument used in the creation
-of the <code>StudySpecification</code>, this is <b>not</b> the same as the
-<code>subset=</code> argument passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code>. The <code>subset=</code>
+<p>The <code>lmitt()</code> function's <code>subset=</code> argument governs
+the subsetting of <code>data</code> prior to model fitting, just as with <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>.
+Functions such as <code><a href="StudySpecification_objects.html">rct_spec()</a></code> that create <code>StudySpecification</code>s
+also take an optional <code>subset=</code> argument, but its role differs
+from that of the <code>subset=</code> argument of <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code>. The <code>subset=</code>
 argument when creating a <code>StudySpecification</code> restricts the data used
 to generate the <code>StudySpecification</code>, but has no direct impact on the
 future <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code> calls using that
-<code>StudySpecification</code>. (It can indirectly have an impact by excluding
-particular units of assignment from receiving a treatment assignment and
-thus complete case analysis removes them from the model.)</p>
-<p>On the other hand, the <code>subset=</code> argument in <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code> refers
-only to subsetting the <code>data</code> argument passed into <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code>lmitt()</code>.</p>
+<code>StudySpecification</code>. (It can have an indirect impact by excluding
+particular units from receiving a treatment assignment or weight. When
+treatment assignments or weights are reconstructed from the <code>StudySpecification</code>,
+these units will receive NAs, and will be excluded from the <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>
+or <code>lmitt()</code> fit under typical <code>na.action</code> settings.)</p>
 <p>To avoid variable name collision, the treatment variable defined in the
 <code>specification</code> will have a "<code>.</code>" appended to it. For example, if
 you request a main treatment effect (with a formula of <code>~ 1</code>) with a
-treatment variable named "txt", you can obtain it's estimate from the
+treatment variable named "txt", you can obtain its estimate from the
 returned <code>teeMod</code> object via <code>$coefficients["txt."]</code>.</p>
 <p><code>lmitt()</code> will produce a message if the <code>StudySpecification</code> passed in
-has block information that is not being utilized in the model. Note that
-this is <em>not</em> an error, but could be an oversight. To disable this
+has block information that is not being used to inform weights or a block
+fixed effect adjustment. This is not an error, but it often represents an
+oversight on the part of the analyst. To disable this
 message, run <code>options("propertee_message_on_unused_blocks" = FALSE)</code>.</p>
     </div>
 
