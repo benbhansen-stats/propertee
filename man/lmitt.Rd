@@ -76,29 +76,30 @@ Alternatively, \code{obj} can be a pre-created \code{lm} object. No
 modification is made to the formula of the object. See the help for
 \code{as.lmitt()} for details of this conversion.
 
-Note that although the \code{StudySpecification} creation functions (e.g.
-\code{\link[=rct_spec]{rct_spec()}}) take an optional \code{subset=} argument used in the creation
-of the \code{StudySpecification}, this is \bold{not} the same as the
-\code{subset=} argument passed to \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}}. The \code{subset=}
+The \code{\link[=lmitt]{lmitt()}} function's \code{subset=} argument governs
+the subsetting of \code{data} prior to model fitting, just as with \code{\link[=lm]{lm()}}.
+Functions such as \code{\link[=rct_spec]{rct_spec()}} that create \code{StudySpecification}s
+also take an optional \code{subset=} argument, but its role differs
+from that of the \code{subset=} argument of \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}}. The \code{subset=}
 argument when creating a \code{StudySpecification} restricts the data used
 to generate the \code{StudySpecification}, but has no direct impact on the
 future \code{lm()} or \code{lmitt()} calls using that
-\code{StudySpecification}. (It can indirectly have an impact by excluding
-particular units of assignment from receiving a treatment assignment and
-thus complete case analysis removes them from the model.)
-
-On the other hand, the \code{subset=} argument in \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}} refers
-only to subsetting the \code{data} argument passed into \code{\link[=lm]{lm()}} or \code{\link[=lmitt]{lmitt()}}.
+\code{StudySpecification}. (It can have an indirect impact by excluding
+particular units from receiving a treatment assignment or weight. When
+treatment assignments or weights are reconstructed from the \code{StudySpecification},
+these units will receive NAs, and will be excluded from the \code{lm()}
+or \code{lmitt()} fit under typical \code{na.action} settings.)
 
 To avoid variable name collision, the treatment variable defined in the
 \code{specification} will have a "\code{.}" appended to it. For example, if
 you request a main treatment effect (with a formula of \code{~ 1}) with a
-treatment variable named "txt", you can obtain it's estimate from the
+treatment variable named "txt", you can obtain its estimate from the
 returned \code{teeMod} object via \code{$coefficients["txt."]}.
 
 \code{\link[=lmitt]{lmitt()}} will produce a message if the \code{StudySpecification} passed in
-has block information that is not being utilized in the model. Note that
-this is \emph{not} an error, but could be an oversight. To disable this
+has block information that is not being used to inform weights or a block
+fixed effect adjustment. This is not an error, but it often represents an
+oversight on the part of the analyst. To disable this
 message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 }
 \examples{
