@@ -27,11 +27,13 @@ setValidity("teeMod", function(object) {
 ##' @export
 setMethod("show", "teeMod", function(object) {
   coeffs <- object$coefficients
-  # Display only treatment effects
+  ## Display only treatment effects, intercepts from supplementary
+  ## regression of same y but w/o the covadj offset
   if (object@lmitt_fitted) {
-    # This should match any coefficients starting with the "txt." or "`txt."
     toprint <- (
+  ## This should match any coefficients starting with the "txt." or "`txt."
       grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."), names(coeffs)) |
+  ## This should match the coefficients of the supplementary regression
         grepl(paste0("^", formula(object)[[2L]], ":"), names(coeffs))
     )
     print(coeffs[toprint])
