@@ -225,9 +225,7 @@ In actuality we only need the estimator sequence to be consistent for the determ
   \]
 In these expectations and those that follow, $\vec{x}_{i}$ and $w_{i}$
 are taken as fixed but $Z_{i}$ and/or potential outcomes $(Y_{i}[z]:
-z=0, \ldots, k)$ may be random according as we follow a design- or
-model-based framework; see \S~\ref{sec:des-vs-mod-based}.
-  Write
+z=0, \ldots, k)$ are random: in terms of sigma fields defined in \S~\ref{sec:des-vs-mod-based} below, this section's expectations condition on $\mathcal{X}$ and $\mathcal{Z}$.  These sigma fields are contained within the larger sigma fields of both model- and design-based conditioning.  Write
 \begin{align}
 \nonumber
     A(\alpha, \beta, \tau) &= \left(
@@ -455,8 +453,8 @@ conditional on
 In the design-based perspective, $\mathcal{Q}$ is partitioned into
 blocks $b$, and expected value and covariance are
 conditional on
-\[\mathcal{X} = \sigma(\{(X_{i}, W_{i}, M_{i}, Y_{i}[1], \ldots Y_{i}[k]):
-  i \in c; c\})\]
+\[\mathcal{X} = \sigma(\{(X_{i}, W_{i}, M_{i}): i \in c; c\}),\]
+\[\mathcal{Y} = \sigma(\{(Y_{i}[1], \ldots Y_{i}[k]): i \in c; c\})\]
 and
 \[\mathcal{Z} = \sigma(\{\sum_{c \in b}\, \![Z_{c}=j\!] : j \in \{0, \ldots, k\}; b\} ),\]
 where $z_{c}$ denotes the common treatment assignment of all $i\in
@@ -1029,7 +1027,7 @@ Another approach would use $\hat\beta$, $\hat{\tilde{\alpha}}$, $\hat{\alpha}$ a
 $\hat{\tau}$ but not $\hat{\mathbf{p}}$.  In this approach, should 
 ``${p}_{ij}$'' be needed we would infer its value from the
 \texttt{StudySpecification} and the equation $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
-\mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
+\mathbf{p}) \mid \mathcal{X}, \mathcal{Z}]=0$, rather than substituting
 $\hat{p}_{b_{i}}$ as empirically defined via $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
 \hat{\mathbf{p}})=0$.}
 The sample observation $i$ contribution $\nabla_{\mathbf{p}}\acute{\psi}(\vec{v}_{i};
@@ -1170,7 +1168,7 @@ $(\bigcup b)$:
         \right).\\
 \end{multline*}
 Under the assumption that $\tau$ captures person-level treatment
-effects, $\operatorname{Var}[ \hat{\alpha}(\mathbf{v}_{b}; \theta) \mid \mathcal{X},
+effects, $\operatorname{Var}[ \hat{\alpha}(\mathbf{v}_{b}; \theta) \mid \mathcal{X}, \mathcal{Y}, 
 \mathcal{Z}]=0$. Under this assumption, then, design-based covariances
 of $\breve{\psi}(\vec{v}_{b}; \theta, \mathbf{p})$ are calculated in
 the same way that design-based covariances of
@@ -1384,7 +1382,7 @@ and the $\tilde{\alpha}_{0}$ row of $A_{21}$ is
   (1-z_{i}){p}_{b_{{i}}}\owt[{[0]}] g'(\vec{x}_{i}{\beta})
   \vec{x}_{i}, 
 \end{equation}
-with $(1-z_{i})$ replaced by $\operatorname{Pr}_{\mathcal{D}}(Z_{i}=0)
+with $(1-z_{i})$ replaced by $\operatorname{Pr}(Z_{i}=0 \mid \mathcal{X}, \mathcal{Z})
 = 1-\pi_{i}$ in the design-based formulation. 
 The $\tilde{\alpha}_{0}$ row of $\tilde{A}_{22}$ has
 in the $\tilde{\alpha}_{0}$ column
@@ -1402,7 +1400,7 @@ $\hat{p}_{b_{i}}$ and $\hat{\beta}$ in these expressions.%
   $\beta$ but not $\hat{\mathbf{p}}$ for $\mathbf{p}$, instead use
 the \texttt{StudySpecification} to infer the values of 
 $p_{b_{i}}$ solving $\sum_{i} \EE [\absorbInterceptsEF(\vec{V}_{i};
-\mathbf{p}) \mid \mathcal{D}]=0$, rather than substituting
+\mathbf{p}) \mid \mathcal{X}, \mathcal{Z}]=0$, rather than substituting
 $\hat{p}_{b_{i}}$ as empirically defined via  $\sum_{i} \absorbInterceptsEF(\vec{v}_{i};
 \hat{\mathbf{p}})=0$.  This would require an assumption
 of block random assignment of clusters, but would circumvents the problem
@@ -1448,20 +1446,20 @@ Design-based calculations also call for adjusting objects \texttt{estfun.teeMod(
   its column $s$ (partial w/r/t $p_{s}$, $s \in \mathcal{Q}$)
   \begin{multline}\label{eq:33}
   \left[n^{-1}\sum_{i: b_{i}=s}\owt[{[0]}]
-    (1-\pi_{i})\right](\tilde{\alpha}_{0\mathcal{D}s} -
-  \tilde{\alpha}_{0\mathcal{D}}) =\\ n^{-1}\left\{\left[\sum_{i: b_{i}=s}\owt[{[0]}]
-    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{D}s} - \left[\sum_{i: b_{i}=s}\owt[{[0]}]
-    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{D}}\right\}, 
+    (1-\pi_{i})\right](\tilde{\alpha}_{0\mathcal{Z}s} -
+  \tilde{\alpha}_{0\mathcal{Z}}) =\\ n^{-1}\left\{\left[\sum_{i: b_{i}=s}\owt[{[0]}]
+    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{Z}s} - \left[\sum_{i: b_{i}=s}\owt[{[0]}]
+    (1-\pi_{i})\right]\tilde{\alpha}_{0\mathcal{Z}}\right\}, 
   \end{multline}
-  for $\pi_{i} = \operatorname{Pr}_{\mathcal{D}}(Z_{i}=1)$, where
+  for $\pi_{i} = \operatorname{Pr}(Z_{i}=1 \mid \mathcal{X}, \mathcal{Z})$, where
   $\pi_{i} = p_{b_{i}}$ in an RCT but not necessarily otherwise;
   \begin{equation*}
- \tilde{\alpha}_{0\mathcal{D}r}=
+ \tilde{\alpha}_{0\mathcal{Z}r}=
   \frac{\sum_{b_{i} =r}\owt[{[0]}](1-\pi_{i})[y_{i}[0] -
     g(\vec{x}_{i}\beta)]}{\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})}
   \text{ and }
-  \tilde{\alpha}_{0\mathcal{D}} = \frac{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]
-    \tilde{\alpha}_{0\mathcal{D}r}}{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]};
+  \tilde{\alpha}_{0\mathcal{Z}} = \frac{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]
+    \tilde{\alpha}_{0\mathcal{Z}r}}{\sum_{r}p_{r}\big[\sum_{b_{i}=r}\owt[{[0]}](1-\pi_{i})\big]};
   \end{equation*}
   and to obtain $\hat{A}_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}$ we plug into our
   ${A}_{\tilde{\alpha}_{0}\tau\,\mathbf{p}}$-expression $z_{i}$'s for
@@ -1472,14 +1470,14 @@ Design-based calculations also call for adjusting objects \texttt{estfun.teeMod(
   \frac{\sum_{i: b_{i}=r, z_{i}=0}\owt[][y_{i}[0] -
                                g(\vec{x}_{i}\beta)]}{\sum_{i:b_{i}=r,
                                z_{i}=0}\owt[]} \text{ and}\\
-    \hat{\tilde{\alpha}}_{0\mathcal{D}} =&
+    \hat{\tilde{\alpha}}_{0\mathcal{Z}} =&
   \frac{\sum_{r}p_{r} (\sum_{i: b_{i}=r, z_{i}=0}\owt[]) \hat{\tilde{\alpha}}_{0 r}}{%
 \sum_{r}p_{r} (\sum_{i: b_{i}=r, z_{i}=0}\owt[])}
   \end{align*}
   give unbiased estimation of the first term at right of
   \eqref{eq:33}, with the second term at right of
   \eqref{eq:33} the product of an unbiased term ($\sum_{i: b_{i}=r, z_{i}=0}\owt[]$)
-  and a consistent ratio estimator ($\hat{\tilde{\alpha}}_{0\mathcal{D}}$).
+  and a consistent ratio estimator ($\hat{\tilde{\alpha}}_{0\mathcal{Z}}$).
 \subsubsection{Main effect and continuous moderator}
 Again let $m$ denote a continuous moderator, $\lambda$ its
 coefficient. Recall from Section~\ref{sec:interc-aspects-gen-teeMods} in the no-absorption case, the \texttt{(Intercept)}/$\alpha_{0}$
