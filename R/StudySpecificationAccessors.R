@@ -650,7 +650,7 @@ setMethod("forcings<-", "StudySpecification", function(x, value) {
   }
 
 
-  newdata_data <- stats::model.frame(form_for_newdata, newdata)
+  newdata_data <- stats::model.frame(form_for_newdata, newdata, na.action = na.pass)
 
   merged <- merge(newdata_data, specification_data, by = var_names(specification, "u"),
                   sort = FALSE, ...)

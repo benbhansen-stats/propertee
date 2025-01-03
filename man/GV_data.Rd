@@ -5,7 +5,16 @@
 \alias{GV_data}
 \title{GV data}
 \format{
-A \code{data.frame} with 248 rows and 8 columns.
+A \code{data.frame} with 248 rows and 7 columns.
+\itemize{
+\item {age} Age of participant
+\item {vote_04} Outcome variable indicating whether participant voted
+\item {tv_company} Cable system that participant was assigned to
+\item {treatment} Binary variable denoting treatment assignment for participants
+\item {pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
+\item {population_size} Total population size of the cable system to which the participant belongs
+\item {sample_size} Total sample size for the cable system cluster
+}
 }
 \source{
 \url{https://isps.yale.edu/research/data/d005}

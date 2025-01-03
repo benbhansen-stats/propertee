@@ -568,3 +568,24 @@ test_that("column name 'cluster' doesn't cause issues", {
   expect_no_error(rct_spec(z ~ cluster(cluster, uoa2), data = simdata))
   expect_true(TRUE) # Avoid an empty test warning
 })
+
+test_that("#209 fix subsetting", {
+  data(simdata)
+  spec1 <- rct_spec(z ~ uoa(uoa1,uoa2), subset= simdata$bid != 1, data=simdata)
+  spec2 <- rct_spec(z ~ uoa(uoa1,uoa2), subset= bid != 1, data=simdata)
+  simdatasub <- subset(simdata, bid != 1)
+  spec3 <- rct_spec(z ~ uoa(uoa1,uoa2), data=simdatasub)
+  expect_identical(spec1@structure,
+                   spec2@structure)
+  expect_identical(spec1@structure,
+                   spec3@structure)
+
+  spec1 <- obs_spec(z ~ uoa(uoa1,uoa2), subset= simdata$bid != 1, data=simdata)
+  spec2 <- obs_spec(z ~ uoa(uoa1,uoa2), subset= bid != 1, data=simdata)
+  simdatasub <- subset(simdata, bid != 1)
+  spec3 <- obs_spec(z ~ uoa(uoa1,uoa2), data=simdatasub)
+  expect_identical(spec1@structure,
+                   spec2@structure)
+  expect_identical(spec1@structure,
+                   spec3@structure)
+})
