@@ -49,7 +49,7 @@
 ##'
 ##' [lmitt()] returns objects of class \sQuote{\code{teeMod}}, for
 ##' Treatment Effect Estimate Model, extending the lm class to add a
-##' summary of of the response distribution under control (the
+##' summary of the response distribution under control (the
 ##' coefficients of a controls-only regression of the response on an
 ##' intercept and any moderator variable).  \code{teeMod} objects also
 ##' record the underlying \code{StudySpecification} and information
