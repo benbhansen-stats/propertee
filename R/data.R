@@ -109,7 +109,7 @@
 #' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
 #' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
 #'
-#' @format  A \code{data.frame} with 14 rows and 3 columns.
+#' @format  A \code{data.frame} with 14 rows and 13 columns.
 #' \itemize{
 #'  \item{schoolid} school id 
 #'  \item{blk} block

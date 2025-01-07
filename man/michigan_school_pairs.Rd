@@ -5,7 +5,7 @@
 \alias{michigan_school_pairs}
 \title{Intervention data from a pair-matched study of schools in Michigan}
 \format{
-A \code{data.frame} with 14 rows and 3 columns.
+A \code{data.frame} with 14 rows and 13 columns.
 \itemize{
 \item{schoolid} school id
 \item{blk} block
