@@ -24,7 +24,7 @@ The **propertee** package, Prognostic Regression Offsets with Propagation of
 ERrors (for Treatment Effect Estimation), facilitates direct adjustment for
 experiments and observational studies with specification-informed standard
 errors and flexible options for covariance adjustment. It uses explicit
-specification of study specification to provide probability of assignment
+design of study specification to provide probability of assignment
 weights and standard errors that appropriately reflect the specification. For
 covariance adjustment of its Hajek and (one-way) fixed effects estimates, it
 enables offsetting the outcome against predictions from a dedicated covariance
@@ -33,7 +33,7 @@ the covariance model.
 
 The main workflow consists of two main steps and one optional step:
 
-1. Generate a `StudySpecification` object which encodes the study specification,
+1. Generate a `StudySpecification` object which encodes the design,
    including the unit of assignment, treatment status of each unit of
    assignment, and optionally block information. This is accomplished with the
    `obs_spec()`, `rct_spec()` or `rd_spec()` functions.
