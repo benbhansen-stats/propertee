@@ -22,7 +22,7 @@ library(propertee)
 
 The **propertee** package, Prognostic Regression Offsets with Propagation of
 ERrors (for Treatment Effect Estimation), facilitates direct adjustment for
-experiments and observational studies with specification-informed standard
+experiments and observational studies with design-informed standard
 errors and flexible options for covariance adjustment. It uses explicit
 design of study specification to provide probability of assignment
 weights and standard errors that appropriately reflect the specification. For
@@ -38,7 +38,7 @@ The main workflow consists of two main steps and one optional step:
    assignment, and optionally block information. This is accomplished with the
    `obs_spec()`, `rct_spec()` or `rd_spec()` functions.
 2. Optionally, fit a covariate adjustment model.
-3. Fit a model to estimate a treatment effect, accounting for the specification
+3. Fit a model to estimate a treatment effect, accounting for the design
    information, and optionally the covariate adjustment. This is done via the
    `lmitt()` function.
 
