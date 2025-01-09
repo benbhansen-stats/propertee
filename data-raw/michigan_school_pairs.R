@@ -11,7 +11,7 @@ data_temp <- data.frame(
 source("../propertee/vignettes/mi_vignette/get_and_clean_external_data.R")
 
 merged_data <- merge(analysis1data, data_temp, by = "schoolid")
-michigan_school_pairs <- merged_data[, c("schoolid", "blk", "z", "MALE_G11_PERC", "FEMALE_G11_PERC", "AM_G11_PERC", "ASIAN_G11_PERC", "HISP_G11_PERC", 
-                            "BLACK_G11_PERC", "WHITE_G11_PERC", "PACIFIC_G11_PERC", "TR_G11_PERC","G11")]
+michigan_school_pairs <- merged_data[, c("schoolid", "blk", "z", "male_g11_perc", "female_g11_perc", "am_g11_perc", "asian_g11_perc", "hisp_g11_perc", 
+                            "black_g11_perc", "white_g11_perc", "pacific_g11_perc", "tr_g11_perc","g11")]
 
 usethis::use_data(michigan_school_pairs, overwrite = TRUE)
