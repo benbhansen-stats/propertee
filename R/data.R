@@ -106,8 +106,6 @@
 #'
 #' @description Schools matched into pairs or triplets approximating the subset
 #' of participating schools in Pane et al. (2014) from Michigan
-#' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
-#' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
 #'
 #' @format  A \code{data.frame} with 14 rows and 13 columns.
 #' \itemize{
@@ -125,6 +123,12 @@
 #'  \item{tr_g11_perc} percentage of G11 Two or More Races students 
 #'  \item{g11} Number of G11 students 
 #' }
+#' 
+#' 
+#' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
+#' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+#' 
+#' U.S. Department of Education. Institute of Education Sciences, National Center for Education Statistics
 #' @keywords dataset
 "michigan_school_pairs"
 

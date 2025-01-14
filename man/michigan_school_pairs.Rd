@@ -32,5 +32,7 @@ of participating schools in Pane et al. (2014) from Michigan
 \references{
 Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
 \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+
+U.S. Department of Education. Institute of Education Sciences, National Center for Education Statistics
 }
 \keyword{dataset}
