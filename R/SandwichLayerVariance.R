@@ -717,6 +717,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   a11inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x)
   a22inv <- .get_a22_inverse(x)
+  
+  # C adjusts for linear transformation of the stacked estimating equation
+  # each entry of the estimating equation are transformed to the form: 
+  # a_fixed_quantity (under the design-based perspective) * a_treatment_indicator
   C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
 
   n <- nrow(x$model)
@@ -737,23 +741,29 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 .get_DB_covadj_meat <- function(x, ...) {
   agg <- .aggregate_to_cluster(x)
   data <- agg$data
-  bid <- data[, agg$block]  # block ids
-  zobs <- data[, agg$z] # observed zs
+  bid <- data[, agg$block] # block ids
+  zobs <- data[, agg$z] # treatment assignments
 
+  # number of covariates in the covariance model
   p <- ncol(stats::model.frame(x$model$`(offset)`@fitted_covariance_model))
   XX <- .prepare_spec_matrix(x)
-
+  
+  # estimated covariances of entries of \Phi involving indicators z=0 or z=1
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
   V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
   V01 <- .cov01_est(XX, zobs, bid)
-
+  
+  # indices of V
   idl <- (p+2):(2*p+1)
+  # upper and lower bounds of the 1st meat matrix term
   meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
   meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
-
+  
+  # upper and lower bounds of the 2nd meat matrix term
   meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
   meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
 
+  # upper and lower bounds of the 3rd meat matrix term
   meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
   meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
 
@@ -779,14 +789,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
-
+  # aggregate block ids and outcomes to the cluster level
   agg <- .aggregate_to_cluster(x)
   data <- agg$data
   block <- agg$block
 
   ws <- data$.w
-  yobs <- data$.wy  # observed ys by cluster
-  zobs <- data[, agg$z]  # observed zs by cluster
+  yobs <- data$.wy # observed outcomes by cluster
+  zobs <- data[, agg$z] # observed treatments by cluster
   bid <- data[, block] # block ids of clusters
 
   if (length(unique(bid)) == 1) {
@@ -796,13 +806,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   }
   # number of units by block and treatment, B by K
   small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
-  nb <- rowSums(nbk)
+  nb <- rowSums(nbk) # number of clusters in each block
 
   rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
            sum(ws * yobs * zobs) / sum(ws * zobs))
 
-  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
-  gamsbk <- list()  # s^2_b,j, sample variance
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcome gamma
+  gamsbk <- list()  # s^2_b,j, sample variance of gamma by block and treatment
   for (k in 1:2){
     indk <- zobs == (k-1)
     gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
@@ -812,7 +822,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   gamsbk[is.na(gamsbk)] <- 0
   gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
 
-  nu1 <- rowSums(gamsbk / nbk)
+  nu1 <- rowSums(gamsbk / nbk) # large block variance estimates
+  # small block variance estimates
   nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb -
     (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
   varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
@@ -831,7 +842,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   ws <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@StudySpecification, data=data_temp),
+  data_temp <- cbind(data_temp, .w = ws, 
+                     .w0 = ws / ate(x@StudySpecification, data=data_temp),
                      .wy = ws * data_temp[, name_y])
 
   specification_obj <- x@StudySpecification
@@ -889,14 +901,15 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   specification_obj <- x@StudySpecification
   data <- x$call$data
   name_clu <- var_names(specification_obj, "u")
-  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
   # merged cluster id is stored at column name_clu[1]
+  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
 
   agg <- .aggregate_to_cluster(x)
   bid <- agg$data[, agg$block]  # block ids
 
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
-  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model) # specification matrix
+  # design matrix of the fitted covariance model
+  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model)
   p <- ncol(X1)
 
   wc <- x$model$`(offset)`@fitted_covariance_model$weight
@@ -1026,7 +1039,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   assignment <- df[[name_trt]]
   z_ind <- sapply(c(0,1), function(val) as.integer(assignment == val))
 
-  # stratum ids
+  # block ids
   name_blk <- var_names(specification_obj, "b")
   df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
@@ -1069,7 +1082,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   s <- length(unique(stratum)) # number of blocks
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val))
   
-  n <- length(stratum) # number of units in Q
+  n <- length(stratum) # number of units in the experiment
   ws <- if (is.null(stats::weights(x))) rep(1,n) else stats::weights(x)
   
   app <- list()
