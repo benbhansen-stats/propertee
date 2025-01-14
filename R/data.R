@@ -109,7 +109,22 @@
 #' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
 #' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
 #'
-#' @format  A \code{data.frame} with 14 rows and 3 columns.
+#' @format  A \code{data.frame} with 14 rows and 13 columns.
+#' \itemize{
+#'  \item{schoolid} school id 
+#'  \item{blk} block
+#'  \item{z} treatment variable 
+#'  \item{MALE_G11_PERC} percentage of G11 male students
+#'  \item{FEMALE_G11_PERC} percentage of G11 female students
+#'  \item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
+#'  \item{ASIAN_G11_PERC} percentage of G11 Asian students
+#'  \item{HISP_G11_PERC} percentage of G11 Hispanic students
+#'  \item{BLACK_G11_PERC} percentage of G11 Black students
+#'  \item{WHITE_G11_PERC} percentage of G11 White students 
+#'  \item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
+#'  \item{TR_G11_PERC} percentage of G11 Two or More Races students 
+#'  \item{G11} Number of G11 students 
+#' }
 #' @keywords dataset
 "michigan_school_pairs"
 
