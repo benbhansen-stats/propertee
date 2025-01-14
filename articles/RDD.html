@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Regression Discontinuity StudySpecifications • propertee</title>
+<title>Regression Discontinuity Design • propertee</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Regression Discontinuity StudySpecifications">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Regression Discontinuity Design">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -62,10 +62,10 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Regression Discontinuity StudySpecifications</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Regression Discontinuity Design</h1>
                         <h4 data-toc-skip class="author">Adam Sales</h4>
             
-            <h4 data-toc-skip class="date">2025-01-08</h4>
+            <h4 data-toc-skip class="date">2025-01-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/RDD.Rmd" class="external-link"><code>vignettes/RDD.Rmd</code></a></small>
       <div class="d-none name"><code>RDD.Rmd</code></div>
@@ -131,11 +131,11 @@ natural log of the numbers of students with each unique value of
 <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
 </h2>
 <div class="section level3">
-<h3 id="regression-discontinuity-studyspecifications">Regression Discontinuity StudySpecifications<a class="anchor" aria-label="anchor" href="#regression-discontinuity-studyspecifications"></a>
+<h3 id="regression-discontinuity-design">Regression Discontinuity Design<a class="anchor" aria-label="anchor" href="#regression-discontinuity-design"></a>
 </h3>
-<p>What characterizes discontinuity (RD) specifications, including the
-LSO study, is that treatment is assigned as a function of a numeric
-“running variable”
+<p>What characterizes discontinuity (RD) design, including the LSO
+study, is that treatment is assigned as a function of a numeric “running
+variable”
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>,
 along with a prespecified cutoff value
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>,
@@ -161,7 +161,7 @@ is true and 0 otherwise. In the LSO study,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
 indexes students, centered first-year GPA $R_i $ is the running
 variable, and the treatment under study is AP placement. Then $
-Z_i={R_i&lt;0} $. (In “fuzzy” RD specifications,
+Z_i={R_i&lt;0} $. (In “fuzzy” RD design,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>’s
 value relative to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
@@ -170,12 +170,12 @@ probability of treatment, so subjects with, say,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>&gt;</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">R_i&gt;c</annotation></semantics></math>
 are more likely to be treated than those with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">R_i&lt;c</annotation></semantics></math>;
-in fuzzy RD specifications,
+in fuzzy RD design,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mi>i</mi></msub><mo>=</mo><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><msub><mi>R</mi><mi>i</mi></msub><mo>&gt;</mo><mi>c</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">Z_i=\mathbf{1}\{R_i&gt;c\}</annotation></semantics></math>
 is typically modeled as an instrument for treatment receipt.)</p>
-<p>RD specifications hold a privileged place in causal inference,
-because unlike most other observational study specifications, the
-mechanism for treatment assignment is known. That is,
+<p>RD design hold a privileged place in causal inference, because unlike
+most other observational designs, the mechanism for treatment assignment
+is known. That is,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>
 is the only confounder. On the other hand, since
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
@@ -192,10 +192,10 @@ are impossible. Instead, it is necessary to adjust for
 with modeling–typically regression.</p>
 </div>
 <div class="section level3">
-<h3 id="analyzing-rd-studyspecifications-with-ancova">Analyzing RD StudySpecifications with ANCOVA<a class="anchor" aria-label="anchor" href="#analyzing-rd-studyspecifications-with-ancova"></a>
+<h3 id="analyzing-rd-design-with-ancova">Analyzing RD Design with ANCOVA<a class="anchor" aria-label="anchor" href="#analyzing-rd-design-with-ancova"></a>
 </h3>
-<p>Traditionally, the typical way to analyze data from RD specifications
-is with ANCOVA, by fitting a regression model such as
+<p>Traditionally, the typical way to analyze data from RD design is with
+ANCOVA, by fitting a regression model such as
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>i</mi></msub><mo>=</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><msub><mi>R</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mn>2</mn></msub><msub><mi>Z</mi><mi>i</mi></msub><mo>+</mo><msub><mi>ϵ</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">Y_i=\beta_0+\beta_1R_i+\beta_2Z_i+\epsilon_i</annotation></semantics></math>
 where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>i</mi></msub><annotation encoding="application/x-tex">Y_i</annotation></semantics></math>
@@ -250,13 +250,12 @@ derivative of
 and specification tests.</p>
 </div>
 <div class="section level3">
-<h3 id="the-propertee-approach-to-rd-studyspecifications">The <strong>propertee</strong> Approach to RD
-StudySpecifications<a class="anchor" aria-label="anchor" href="#the-propertee-approach-to-rd-studyspecifications"></a>
+<h3 id="the-propertee-approach-to-rd-design">The <strong>propertee</strong> Approach to RD Design<a class="anchor" aria-label="anchor" href="#the-propertee-approach-to-rd-design"></a>
 </h3>
-<p>The <strong>propertee</strong> approach to RD specifications breaks
-the data analysis into three steps:</p>
+<p>The <strong>propertee</strong> approach to RD design breaks the data
+analysis into three steps:</p>
 <ol style="list-style-type: decimal">
-<li>Conduct specification tests and choose a bandwidth
+<li>Conduct design tests and choose a bandwidth
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">b&gt;0</annotation></semantics></math>,
 along with, possibly, other data exclusions, resulting in an analysis
 sample
@@ -270,8 +269,7 @@ as a function of running variable
 and (optionally) other covariates
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐱</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathbf{x}_i</annotation></semantics></math>.
 Fitting a covariance model to only the control subjects, as in other
-specifications, would entail extrapolation of a model fit to subjects
-with
+design, would entail extrapolation of a model fit to subjects with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_i\in (c-b,c)</annotation></semantics></math>
 to subjects with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_i\in (c,c+b)</annotation></semantics></math>,
@@ -325,21 +323,21 @@ for
 </div>
 </div>
 <div class="section level2">
-<h2 id="analyzing-an-rd-specification-in-propertee">Analyzing an RD specification in <strong>propertee</strong><a class="anchor" aria-label="anchor" href="#analyzing-an-rd-specification-in-propertee"></a>
+<h2 id="analyzing-an-rd-design-in-propertee">Analyzing an RD design in <strong>propertee</strong><a class="anchor" aria-label="anchor" href="#analyzing-an-rd-design-in-propertee"></a>
 </h2>
 <div class="section level3">
 <h3 id="determining-the-window-of-analysis">Determining the window of analysis<a class="anchor" aria-label="anchor" href="#determining-the-window-of-analysis"></a>
 </h3>
 <p>There is an extensive literature on determining the appropriate
-window of analysis for an RD specification. See, for instance, Imbens
-and Kalyanaraman (2012) and Sales and Hansen (2020). This stage of the
+window of analysis for an RD design See, for instance, Imbens and
+Kalyanaraman (2012) and Sales and Hansen (2020). This stage of the
 analysis is beyond the scope of this vignette, and does not require the
 propertee package. For the purpose of this example, we will focus our
 analysis on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒲</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">[</mo><mo>−</mo><mn>0.5</mn><mo>,</mo><mn>0.5</mn><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
-<h3 id="initializing-the-rd-studyspecification-object">Initializing the RD StudySpecification Object<a class="anchor" aria-label="anchor" href="#initializing-the-rd-studyspecification-object"></a>
+<h3 id="initializing-the-rd-design-object">Initializing the RD Design Object<a class="anchor" aria-label="anchor" href="#initializing-the-rd-design-object"></a>
 </h3>
 <p>In general, <strong>propertee</strong> specification objects require
 users to specify a unit of assignment variable, that corresponds to the
@@ -353,8 +351,8 @@ any variable that takes a unique value for each row will do. We will use
 row-names.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lsoSynth</span><span class="op">$</span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">lsoSynth</span><span class="op">)</span></span></code></pre></div>
-<p>Defining an RD specification requires, at minimum, identifying the
-running variable(s)
+<p>Defining an RD design requires, at minimum, identifying the running
+variable(s)
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>,
 as well as how
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>

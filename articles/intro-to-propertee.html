@@ -66,7 +66,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2025-01-08</h4>
+            <h4 data-toc-skip class="date">2025-01-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -80,26 +80,26 @@ Authors</h4>
 <p>The <strong>propertee</strong> package, Prognostic Regression Offsets
 with Propagation of ERrors (for Treatment Effect Estimation),
 facilitates direct adjustment for experiments and observational studies
-with specification-informed standard errors and flexible options for
-covariance adjustment. It uses explicit specification of study
-specification to provide probability of assignment weights and standard
-errors that appropriately reflect the specification. For covariance
-adjustment of its Hajek and (one-way) fixed effects estimates, it
-enables offsetting the outcome against predictions from a dedicated
-covariance model, with standard error calculations propagating error as
-appropriate from the covariance model.</p>
+with design-informed standard errors and flexible options for covariance
+adjustment. It uses explicit design of study specification to provide
+probability of assignment weights and standard errors that appropriately
+reflect the specification. For covariance adjustment of its Hajek and
+(one-way) fixed effects estimates, it enables offsetting the outcome
+against predictions from a dedicated covariance model, with standard
+error calculations propagating error as appropriate from the covariance
+model.</p>
 <p>The main workflow consists of two main steps and one optional
 step:</p>
 <ol style="list-style-type: decimal">
 <li>Generate a <code>StudySpecification</code> object which encodes the
-study specification, including the unit of assignment, treatment status
-of each unit of assignment, and optionally block information. This is
-accomplished with the <code><a href="../reference/StudySpecification_objects.html">obs_spec()</a></code>, <code><a href="../reference/StudySpecification_objects.html">rct_spec()</a></code>
-or <code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code> functions.</li>
+design, including the unit of assignment, treatment status of each unit
+of assignment, and optionally block information. This is accomplished
+with the <code><a href="../reference/StudySpecification_objects.html">obs_spec()</a></code>, <code><a href="../reference/StudySpecification_objects.html">rct_spec()</a></code> or
+<code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code> functions.</li>
 <li>Optionally, fit a covariate adjustment model.</li>
 <li>Fit a model to estimate a treatment effect, accounting for the
-specification information, and optionally the covariate adjustment. This
-is done via the <code><a href="../reference/lmitt.html">lmitt()</a></code> function.</li>
+design information, and optionally the covariate adjustment. This is
+done via the <code><a href="../reference/lmitt.html">lmitt()</a></code> function.</li>
 </ol>
 </div>
 <div class="section level2">
