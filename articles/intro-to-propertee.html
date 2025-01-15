@@ -66,7 +66,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2025-01-14</h4>
+            <h4 data-toc-skip class="date">2025-01-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -79,27 +79,40 @@ Authors</h4>
 </h2>
 <p>The <strong>propertee</strong> package, Prognostic Regression Offsets
 with Propagation of ERrors (for Treatment Effect Estimation),
-facilitates direct adjustment for experiments and observational studies
-with design-informed standard errors and flexible options for covariance
-adjustment. It uses explicit design of study specification to provide
-probability of assignment weights and standard errors that appropriately
-reflect the specification. For covariance adjustment of its Hajek and
-(one-way) fixed effects estimates, it enables offsetting the outcome
-against predictions from a dedicated covariance model, with standard
-error calculations propagating error as appropriate from the covariance
-model.</p>
+facilitates direct adjustment or standardization for experiments and
+observational studies, with the option of using a separately fitted
+prognostic regression model for covariance adjustment. Propertee calls
+for a self-standing specification of a study’s design and treatment
+allocations, using these to create weights needed to align treatment and
+control samples for estimation of treatment effects averaged across a
+common standard population, with standard errors that appropriately
+reflect the study design. For covariance adjustment it enables
+offsetting the outcome against predictions from a dedicated covariance
+model, with standard error calculations propagating error as appropriate
+from the covariance model.</p>
 <p>The main workflow consists of two main steps and one optional
 step:</p>
 <ol style="list-style-type: decimal">
-<li>Generate a <code>StudySpecification</code> object which encodes the
-design, including the unit of assignment, treatment status of each unit
-of assignment, and optionally block information. This is accomplished
-with the <code><a href="../reference/StudySpecification_objects.html">obs_spec()</a></code>, <code><a href="../reference/StudySpecification_objects.html">rct_spec()</a></code> or
-<code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code> functions.</li>
-<li>Optionally, fit a covariate adjustment model.</li>
-<li>Fit a model to estimate a treatment effect, accounting for the
-design information, and optionally the covariate adjustment. This is
-done via the <code><a href="../reference/lmitt.html">lmitt()</a></code> function.</li>
+<li>Encode the study’s design, including the unit of assignment,
+treatment status of each unit of assignment, and block membership
+information as appropriate, in a <code>StudySpecification</code> object.
+This is accomplished with the <code><a href="../reference/StudySpecification_objects.html">obs_spec()</a></code>,
+<code><a href="../reference/StudySpecification_objects.html">rct_spec()</a></code> or <code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code> functions.</li>
+<li>Optionally, fit a covariate adjustment model. This is done with any
+of a number of modeling functions external to <code>propertee</code>,
+for example <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> or <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code> from the
+<code>stats</code> package, or <code>lmrob</code> from the
+<code>robustbase</code> package.</li>
+<li>Use <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> to contrast the separately reweighted
+treatment and control groups, incorporating optional covariance
+adjustments as an <code>offset</code> to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. The
+<code>StudySpecification</code> is unobtrusively retained, as is error
+propagation from the optional covariance adjustment, for use in
+subsequent standard error calculations. This is done using the
+<code><a href="../reference/lmitt.html">lmitt()</a></code> function, which either takes and enriches a fitted
+<code>lm</code> or, in the more fully supported usage, internally calls
+<code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> to itself create a directly adjusted contrast of
+treatment conditions.</li>
 </ol>
 </div>
 <div class="section level2">
