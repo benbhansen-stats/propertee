@@ -897,7 +897,6 @@ $\sum_{i \in (\bigcup b)} \acute{\psi}(\vec{v}_{i};
 $\sum_{i \in (\bigcup b)} \acute{\xi}(\vec{v}_{i};
 \alpha_{y0}, \alpha_{g0}, \mathbf{p}, \beta)$ can be seen to be 
 \begin{multline}
-
   \sum_{i \in (\bigcup b)}\acute{\psi}_{i}=  \big(\sum_{i} \owt[]\big)
         \left(
           \begin{array}{c}
@@ -1024,8 +1023,45 @@ $\Psi$ and $\Xi$ in \eqref{eq:15}.  That is, for a
 For estimators $\hat{A}_{2*}$ of $A_{21}$ and $A_{22}$, we apply the plug-in
 principle to incidental parameters $\mathbf{p}$ as well as to $\beta$,
 $\tau$ and the alphas. This decision to treat $p$s in the same way as
-other parameters (which may be revisited; see note~\ref{fn:p-est-vs-inf}) allows
-us to obtain $\hat{A}_{22}$ through conventional \texttt{bread.lm}
+other parameters might be revisited (see note~\ref{fn:p-est-vs-inf}), particularly in the case of RCTs
+where the values of the $\mathbf{p}$ parameter are known; but it appears to zero
+out only A-matrix entries that should be zeroed out,%
+\footnote{%
+Resolving unknown $p_{jb}$'s with the plug-in principle zeroes out
+off-diagonal entries of the first column of $A_{22}$, but this is as
+it should be. The $[\acute{\psi}, (\alpha_{0}, \tau)]$ block of $A_{22}$ has
+blockwise contributions
+\begin{multline*}
+-  (\sum_{i}\owt[])\EE \begin{pmatrix}
+    1 & \hat{p}_{1b}& \hat{p}_{2b}&\cdots & \hat{p}_{1k}\\
+    (1-p_{1b})\hat{p}_{1b} - p_{1b}(1-\hat{p}_{1b})&
+    (1-p_{1b})\hat{p}_{1b}&
+    -p_{1b}\hat{p}_{2b}& \cdots & -p_{1b}\hat{p}_{kb}\\
+    \vdots & & & & \vdots \\
+    (1-p_{kb})\hat{p}_{kb} - p_{kb}(1-\hat{p}_{kb})&
+    -p_{kb}\hat{p}_{1b}& -p_{kb}\hat{p}_{2b}& \cdots & (1-p_{kb})\hat{p}_{kb} 
+  \end{pmatrix} =\\
+% -  (\sum_{i}\owt[])\EE \begin{pmatrix}
+%     1 & \hat{p}_{1b}& \hat{p}_{2b}&\cdots & \hat{p}_{1k}\\
+%     \hat{p}_{1b} - p_{1b}&
+%     (1-p_{1b})\hat{p}_{1b}&
+%     -p_{1b}\hat{p}_{2b}& \cdots & -p_{1b}\hat{p}_{kb}\\
+%     \vdots & & & & \vdots \\
+%     \hat{p}_{kb} - p_{kb}&
+%     -p_{kb}\hat{p}_{1b}& -p_{kb}\hat{p}_{2b}& \cdots & (1-p_{kb})\hat{p}_{kb} 
+%   \end{pmatrix}=\\
+-  (\sum_{i}\owt[])\begin{pmatrix}
+    1 & {p}_{1b}& {p}_{2b}&\cdots & {p}_{1k}\\
+    0&
+    (1-p_{1b}){p}_{1b}&
+    -p_{1b}{p}_{2b}& \cdots & -p_{1b}{p}_{kb}\\
+    \vdots & & & & \vdots \\
+    0&
+    -p_{kb}{p}_{1b}& -p_{kb}{p}_{2b}& \cdots & (1-p_{kb}){p}_{kb} 
+  \end{pmatrix}.
+\end{multline*}
+}
+and it allows us to obtain $\hat{A}_{22}$ through conventional \texttt{bread.lm}
 calculations. 
 
 In the design-based formulation, randomness of $Z$ can propagate to
