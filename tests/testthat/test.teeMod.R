@@ -987,8 +987,8 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
   aligned1 <- .align_and_extend_estfuns(mod)
   aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
   expect_equal(length(aligned1), 2)
-  expect_equal(length(aligned2), 3)
-  expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$cm_ef, check.attributes = FALSE))
+  expect_equal(length(aligned2), 2)
+  expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4], check.attributes = FALSE))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or teeMod model", {
@@ -1757,12 +1757,12 @@ test_that(".estfun_DB_blockabsorb returns correct value", {
   ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec),
                      absorb = TRUE)
 
-  expect_false(all(.estfun_DB_blockabsorb(ssmod_abs, db = TRUE) == 0))
+  expect_false(all(.estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB") == 0))
 
-  phi <- .get_phi_tilde(ssmod_abs, db = TRUE)
-  aa <- .get_appinv_atp(ssmod_abs, db = TRUE)
+  phi <- .get_phi_tilde(ssmod_abs, vcov_type = "DB")
+  aa <- .get_appinv_atp(ssmod_abs, vcov_type = "DB")
   expect_true(all.equal(
     cbind(0, phi %*% aa),
-    .estfun_DB_blockabsorb(ssmod_abs, db = TRUE)
+    .estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB")
   ))
 })
