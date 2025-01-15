@@ -40,11 +40,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                 " not defined.\n"))
   }
   var_func <- get(paste0(".vcov_", type))
+  vcov_type <- substr(type, 1, 2)
   args <- list(...)
   args$x <- x
+  args$vcov_type <- vcov_type
   if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
   args$cluster_cols <- cluster
-  args$cluster <- .make_uoa_ids(x, vcov_type = substr(type, 1, 2), cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
   est <- do.call(var_func, args)
 
@@ -65,7 +67,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   args$x <- x
   n <- length(args$cluster)
 
-  bread. <- sandwich::bread(x)
+  bread. <- sandwich::bread(x, ...)
   meat. <- do.call(sandwich::meatCL, args)
   vmat <- (1 / n) * bread. %*% meat. %*% t(bread.)
 
@@ -346,8 +348,14 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
-
+  mc <- match.call()
+  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
+  
   teeMod_bread <- utils::getS3method("bread", "lm")(x)
+  if (vcov_type == "DB") {
+    return(teeMod_bread)
+  }
+
   cm_mod <- x@ctrl_means_model
   ctrl_means_bread <- bread(cm_mod)
   if (!inherits(cm_mod, "mlm")) {
@@ -553,7 +561,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @importFrom stats weights formula
 #' @keywords internal
 #' @rdname sandwich_elements_calc
-.get_a21 <- function(x) {
+.get_a21 <- function(x, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
@@ -563,27 +571,31 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     stop(paste("teeMod model must have an offset of class `SandwichLayer`",
                "to propagate covariance adjustment model error"))
   }
-
+  
   # Get contribution to the estimating equation from the direct adjustment model
   damod_mm <- stats::model.matrix(
     formula(x), stats::model.frame(x, na.action = na.pass))
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
-  w <- if (is.null(w <- stats::weights(x))) numeric(length(msk)) + 1 else replace(w, is.na(w), 0) 
+  w <- if (is.null(w <- stats::weights(x))) numeric(length(msk)) + 1 else replace(w, is.na(w), 0)
+  wZ <- damod_mm[, x$qr$pivot[1L:x$rank], drop = FALSE] * w
   
-  # get gradient for ctrl means model
-  cm <- x@ctrl_means_model
-  cm_mm <- stats::model.matrix(formula(cm), stats::model.frame(cm, na.action = na.pass))
-  cm_grad <- matrix(0, nrow = nrow(cm_mm), ncol = ncol(cm_mm),
-                    dimnames = list(NULL, paste(formula(x)[[2]], colnames(cm_mm), sep = ":")))
-  colnames(cm_mm) <- paste("offset", colnames(cm_mm), sep = ":")
-  if (inherits(cm, "mlm")) cm_grad <- cbind(cm_grad, cm_mm)
-  cm_wts <- replace(cm_wts <- stats::weights(cm), is.na(cm_wts), 0)
+  mc <- match.call()
+  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
+  if (vcov_type != "DB") {
+    # get gradient for ctrl means model
+    cm <- x@ctrl_means_model
+    cm_mm <- stats::model.matrix(formula(cm), stats::model.frame(cm, na.action = na.pass))
+    cm_grad <- matrix(0, nrow = nrow(cm_mm), ncol = ncol(cm_mm),
+                      dimnames = list(NULL, paste(formula(x)[[2]], colnames(cm_mm), sep = ":")))
+    colnames(cm_mm) <- paste("offset", colnames(cm_mm), sep = ":")
+    if (inherits(cm, "mlm")) cm_grad <- cbind(cm_grad, cm_mm)
+    cm_wts <- replace(cm_wts <- stats::weights(cm), is.na(cm_wts), 0)
+    wZ <- cbind(wZ, -cm_grad * cm_wts)
+  }
 
-  out <- crossprod(cbind(damod_mm[, x$qr$pivot[1L:x$rank], drop = FALSE] * w,
-                         -cm_grad * cm_wts)[msk,],
-                   sl@prediction_gradient[msk, , drop = FALSE])
+  out <- crossprod(wZ[msk,], sl@prediction_gradient[msk, , drop = FALSE])
   # scale by nq and keep it consistent with other nq calculations with na.action = na.pass
   nq <- nrow(stats::model.frame(x, na.action = na.pass))
 
@@ -662,11 +674,10 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                "matrix computations"))
   }
   args$x <- x
-  args$db <- TRUE
   n <- length(args$cluster)
 
   if (x@absorbed_intercepts) {
-    a22inv <- sandwich::bread(x)
+    a22inv <- sandwich::bread(x, ...)
     meat <- do.call(sandwich::meatCL, args)
 
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
@@ -684,7 +695,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     }
 
     if (!is.null(x$call$offset)){
-      vmat <- .get_DB_covadj_se(x)
+      vmat <- .get_DB_covadj_se(x, ...)
     }
     else {
       vmat <- .get_DB_wo_covadj_se(x)
@@ -718,7 +729,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
                "tee models with treatment in prior covariance adjustment"))
   }
 
-  bread <- .get_DB_covadj_bread(x)
+  bread <- .get_DB_covadj_bread(x, ...)
 
   signs1 <- ifelse(t(t(bread$b1[2,])) %*% bread$b1[2,] > 0, 1, 0)
   signs2 <- ifelse(t(t(bread$b1[2,])) %*% bread$b2[2,] > 0, 1, 0)
@@ -742,8 +753,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 .get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x)
-  a22inv <- .get_a22_inverse(x)
+  a21 <- .get_a21(x, ...)
+  a22inv <- .get_a22_inverse(x, ...)
   C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
 
   n <- nrow(x$model)

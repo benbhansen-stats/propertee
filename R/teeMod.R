@@ -118,21 +118,34 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
+  mc <- match.call()
+  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
 
-  # get estfun for ctrl mean regression 
-  cm_ef <- estfun(x@ctrl_means_model)
-  cm_ef[is.na(cm_ef)] <- 0
+  # MB and DB estfun without covariance adjustment; below, this will be replaced
+  # entirely if there's covariance adjustment
+  mat <- .base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...)
+  
+  if (vcov_type != "DB") {
+    # get estfun for ctrl mean regression 
+    cm_ef <- estfun(x@ctrl_means_model)
+    q <- ncol(cm_ef)
+    cm_ef[is.na(cm_ef)] <- 0
+    mat <- cbind(mat, cm_ef)
+  } else {
+    q <- 0
+    cm_ef <- NULL
+  }
 
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(cbind(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...), cm_ef))
+    return(mat)
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
   estmats <- .align_and_extend_estfuns(x, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x)
+  a21 <- .get_a21(x, ...)
 
   ## get scaling constants
   nq <- nrow(stats::model.frame(x, na.action = "na.pass")) # this includes NA's as our other routines do
@@ -140,8 +153,8 @@ estfun.teeMod <- function(x, ...) {
   n <- nrow(estmats[["psi"]])
 
   ## form matrix of estimating equations
-  mat <- cbind(estmats[["psi"]], estmats[["cm_ef"]]) - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-  mat[,1:ncol(estmats[["psi"]])] <- mat[,1:ncol(estmats[["psi"]])] - .estfun_DB_blockabsorb(x, ...)
+  mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
+  mat[,1:(ncol(estmats[["psi"]]) - q)] <- mat[,1:(ncol(estmats[["psi"]])-q)] - .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -207,7 +220,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
                             dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
     aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
-    out[["cm_ef"]] <- aligned_cm_ef
+    out[["psi"]] <- cbind(out[["psi"]], aligned_cm_ef)
   }
 
   return(out)
@@ -482,6 +495,13 @@ update.teeMod <- function(object, ...) {
 #' @return An \eqn{n\times k} matrix
 #' @keywords internal
 .estfun_DB_blockabsorb <- function (x, by = NULL, ...){
+  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
+  cl <- match.call()
+  vcov_type <- match.arg(cl$vcov_type, c("MB", "HC", "CR", "DB"))
+  if (!(db <- vcov_type == "DB") | !x@absorbed_intercepts) {
+    return(0)
+  }
+  
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
     # if the model involves SandwichLayer covariance adjustment
     temp <- .align_and_extend_estfuns(x, by = by, ...)[["psi"]]
@@ -489,12 +509,6 @@ update.teeMod <- function(object, ...) {
   else
     temp <- .base_S3class_estfun(x)
 
-  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
-  cl <- match.call()
-  db <- eval(cl[["db"]], parent.frame())
-  if (is.null(db) | !x@absorbed_intercepts){
-    return(matrix(0, nrow = nrow(temp), ncol = ncol(temp)))
-  }
   phitilde <- .get_phi_tilde(x)
   appinv_atp <- .get_appinv_atp(x)
 
