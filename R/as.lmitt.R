@@ -213,7 +213,7 @@ as.teeMod <- as.lmitt
     ctrl.means.form <- lhs ~ 1
     ctrl.means.form[[2L]] <- quote(
       do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], os),
-                              c(stats::formula(lm_model)[[2]], "offset")))
+                              c(stats::formula(lm_model)[[2]], "cov_adj")))
     )
     ctrl_means_model <- lm(ctrl.means.form, w = ctrl.means.wts, na.action = na.exclude)
     ctrl.means <- ctrl_means_model$coefficients

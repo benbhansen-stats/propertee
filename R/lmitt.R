@@ -385,7 +385,7 @@ lmitt.formula <- function(obj,
 
   ctrl.means.form[[2L]] <- quote(
     do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
-                            c(lm.call$formula[[2]], "offset")))
+                            c(lm.call$formula[[2]], "cov_adj")))
   )
   ctrl.means.cl <- lm.call[c(1, match(c("formula", "subset"), names(lm.call)))]
   ctrl.means.cl[[2]] <- ctrl.means.form
