@@ -194,28 +194,35 @@ as.teeMod <- as.lmitt
                      data,
                      all.x = TRUE,
                      implicit = TRUE)[,1]
-    ctrl.means.wts <- weights(lm_model) %||% rep(1, nrow(data))
-    a_col <- lm_model$model[, grepl("(assigned|a\\.|z\\.|adopters)\\(", colnames(lm_model$model))]
+    nonnas <- setdiff(seq_along(blocks), stats::na.action(lm_model))
+    a_col <- ctrl.means.wts <- numeric(length(blocks))
+    ctrl.means.wts[nonnas] <- if (is.null(mod.wts <- weights(lm_model))) rep(1, length(nonnas)) else mod.wts
+    a_col[nonnas] <- lm_model$model[, grepl("(assigned|a\\.|z\\.|adopters)\\(",
+                                            colnames(lm_model$model)) &
+                                      !grepl(":", colnames(lm_model$model))]
+    if (!is.null(os <- lm_model$model$`(offset)`)) {
+      os <- replace(numeric(length(blocks)), nonnas, os)
+    }
     if (absorbed_intercepts) {
-      pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
+      pis <- (rowsum(ctrl.means.wts * a_col, blocks[nonnas]) /
+                rowsum(ctrl.means.wts, blocks[nonnas]))[blocks[nonnas]]
       ctrl.means.wts <- ctrl.means.wts * pis
     }
     ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
     
     ctrl.means.form <- lhs ~ 1
     ctrl.means.form[[2L]] <- quote(
-      do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], lm_model$model$`(offset)`),
+      do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], os),
                               c(stats::formula(lm_model)[[2]], "offset")))
     )
     ctrl_means_model <- lm(ctrl.means.form, w = ctrl.means.wts, na.action = na.exclude)
     ctrl.means <- ctrl_means_model$coefficients
-    lm_model$coefficients <- c(
-      lm_model$coefficients,
-      setNames(c(ctrl.means),
-               paste(rep(colnames(ctrl.means) %||% deparse1(stats::formula(lm_model)[[2]]), each = nrow(ctrl.means) %||% 1),
-                     rep(row.names(ctrl.means), ncol(ctrl.means)) %||% names(ctrl.means),
-                     sep = ":"))
-    )
+    ctrl.means.labels <- paste(
+      rep(if (is.null(cnms <- colnames(ctrl.means))) deparse1(stats::formula(lm_model)[[2]]) else cnms,
+          each = if (is.null(nr <- nrow(ctrl.means))) 1 else nr),
+      if (is.null(nc <- ncol(ctrl.means))) names(ctrl.means) else rep(row.names(ctrl.means), nc),
+      sep = ":")
+    lm_model$coefficients <- c(lm_model$coefficients, setNames(c(ctrl.means), ctrl.means.labels))
   }
   lm_model$call$data <- data
   # set call's na.action to na.pass so expand.model.frame includes NA rows

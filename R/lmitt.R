@@ -377,7 +377,8 @@ lmitt.formula <- function(obj,
   ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(data))
   a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
   if (absorb) {
-    pis <- (rowsum(ctrl.means.wts * a_col, blocks) / rowsum(ctrl.means.wts, blocks))[blocks]
+    pis <- (rowsum((ctrl.means.wts * a_col)[!is.na(blocks)], blocks[!is.na(blocks)]) /
+              rowsum(ctrl.means.wts[!is.na(blocks)], blocks[!is.na(blocks)]))[blocks]
     ctrl.means.wts <- ctrl.means.wts * pis
   }
   ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
@@ -386,7 +387,12 @@ lmitt.formula <- function(obj,
     do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
                             c(lm.call$formula[[2]], "offset")))
   )
-  ctrl.means.lm <- lm(ctrl.means.form, data = data, w = ctrl.means.wts, na.action = na.exclude)
+  ctrl.means.cl <- lm.call[c(1, match(c("formula", "subset"), names(lm.call)))]
+  ctrl.means.cl[[2]] <- ctrl.means.form
+  ctrl.means.cl$data <- data
+  ctrl.means.cl$weights <- ctrl.means.wts
+  ctrl.means.cl$na.action <- na.exclude
+  ctrl.means.lm <- eval(ctrl.means.cl)
   ctrl.means <- ctrl.means.lm$coefficients
   model$coefficients <- c(
     model$coefficients,

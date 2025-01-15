@@ -116,8 +116,6 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'  definition of \eqn{n}.
 ##' @exportS3Method
 estfun.teeMod <- function(x, ...) {
-  args <- list(...)
-  args$x <- x
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
 
