@@ -28,7 +28,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
     }
     expect_equal(length(lmittcoef), ncoef)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
-    expect_true(all(round(lmittcoef[!grepl("^(y|offset):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
+    expect_true(all(round(lmittcoef[!grepl("^(y|cov_adj):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
   }
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
@@ -195,7 +195,7 @@ test_that("subset in specification", {
     }
     expect_equal(length(lmittcoef), ncoef)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
-    expect_true(all(round(lmittcoef[!grepl("^(y|offset):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
+    expect_true(all(round(lmittcoef[!grepl("^(y|cov_adj):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
   }
 
 

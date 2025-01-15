@@ -1209,7 +1209,7 @@ test_that(".get_a21 returns correct matrix for lm cmod and lm ssmod", {
   ctrl.means.grad <- cbind(matrix(0, nrow = nrow(Qmat), ncol = 1),
                            model.matrix(m_as.lmitt@ctrl_means_model) *
                              weights(m_as.lmitt@ctrl_means_model))
-  colnames(ctrl.means.grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(ctrl.means.grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   Cmat <- stats::model.matrix(cmod)
   nq <- nrow(stats::model.frame(m_as.lmitt))
 
@@ -1242,7 +1242,7 @@ test_that(".get_a21 returns correct matrix for glm cmod and lm ssmod", {
   ctrl.means.grad <- cbind(matrix(0, nrow = nrow(Qmat), ncol = 1),
                            model.matrix(m_as.lmitt@ctrl_means_model) *
                              weights(m_as.lmitt@ctrl_means_model))
-  colnames(ctrl.means.grad) <- c("bin_y:(Intercept)", "offset:(Intercept)")
+  colnames(ctrl.means.grad) <- c("bin_y:(Intercept)", "cov_adj:(Intercept)")
   Cmat <- cmod$prior.weights * cmod$family$mu.eta(cmod$linear.predictors) * stats::model.matrix(cmod)
   nq <- nrow(stats::model.frame(m_as.lmitt))
 
@@ -1272,7 +1272,7 @@ test_that(".get_a21 with a moderator", {
   ctrl.means.grad <- cbind(matrix(0, nrow = nrow(Qmat), ncol = 2),
                            model.matrix(m_lmitt.form@ctrl_means_model) *
                              weights(m_lmitt.form@ctrl_means_model))
-  colnames(ctrl.means.grad) <- c("y:(Intercept)", "offset:(Intercept)", "y:x", "offset:x")
+  colnames(ctrl.means.grad) <- c("y:(Intercept)", "cov_adj:(Intercept)", "y:x", "cov_adj:x")
   Cmat <- stats::model.matrix(cmod)
   nq <- nrow(stats::model.frame(m_lmitt.form))
 
@@ -1354,7 +1354,7 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
                            model.matrix(m_lmitt.form@ctrl_means_model) *
                              weights(m_lmitt.form@ctrl_means_model)[
                                !is.na(weights(m_lmitt.form@ctrl_means_model))])
-  colnames(ctrl.means.grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(ctrl.means.grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   pg <- stats::model.matrix(formula(cmod), m_data)
   nq <- nrow(m_data)
 
@@ -1382,7 +1382,7 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt has
                            model.matrix(m_lmitt.form@ctrl_means_model) *
                              weights(m_lmitt.form@ctrl_means_model)[
                                !is.na(weights(m_lmitt.form@ctrl_means_model))])
-  colnames(ctrl.means.grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(ctrl.means.grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   pg <- stats::model.matrix(formula(cmod), simdata)[!is.na(simdata$z),]
   nq <- nrow(simdata)
 
@@ -1410,7 +1410,7 @@ test_that(".get_a21 returns only full rank columns for less than full rank model
   keep_ix <- ssmod$qr$pivot[1L:ssmod$rank]
   expect_equal(rownames(a21),
                c(colnames(model.matrix(ssmod))[keep_ix],
-                 paste(rep(c("y", "offset"), each = ncol(ctrl.means.mm)),
+                 paste(rep(c("y", "cov_adj"), each = ncol(ctrl.means.mm)),
                        rep(colnames(ctrl.means.mm), 2), sep = ":")))
 })
 
@@ -1495,7 +1495,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ssmod_as.lmitt@ctrl_means_model) *
                      weights(ssmod_as.lmitt@ctrl_means_model))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nc <- nrow(Xstar)
   nq <- nrow(Z)
   n <- nc + nq
@@ -1591,7 +1591,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ssmod_as.lmitt@ctrl_means_model) *
                      weights(ssmod_as.lmitt@ctrl_means_model))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nc <- nrow(Xstar)
   nq <- nrow(Z)
   n <- nc + nq
@@ -1713,7 +1713,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ssmod_as.lmitt@ctrl_means_model) *
                      weights(ssmod_as.lmitt@ctrl_means_model))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nq <- nrow(Z)
   nc <- nrow(Xstar)
   n <- nc + nq
@@ -1825,7 +1825,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ssmod_as.lmitt@ctrl_means_model) *
                      weights(ssmod_as.lmitt@ctrl_means_model))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nc <- nrow(Xstar)
   nq <- nrow(Z)
   n <- nc + nq
@@ -1921,7 +1921,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ctrl_means_mod) * weights(ctrl_means_mod))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nc <- nrow(Xstar)
   nq <- n <- nrow(Z)
 
@@ -2021,7 +2021,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   X <- stats::model.matrix(as.formula(cmod_form[-2]), df)
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ctrl_means_mod) * weights(ctrl_means_mod))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   nc <- nrow(Xstar)
   nq <- n <- nrow(Z)
 
@@ -2118,7 +2118,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df)
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ctrl_means_mod) * weights(ctrl_means_mod))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   w <- ssmod_as.lmitt$weights
   r <- ssmod_as.lmitt$residuals
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
@@ -2233,7 +2233,7 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df[!is.na(df$z),])
   cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
                    stats::model.matrix(ctrl_means_mod) * weights(ctrl_means_mod))
-  colnames(cm_grad) <- c("y:(Intercept)", "offset:(Intercept)")
+  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   w <- ssmod_as.lmitt$weights
   r <- ssmod_as.lmitt$residuals
   mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))

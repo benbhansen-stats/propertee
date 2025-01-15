@@ -210,7 +210,7 @@ test_that("control means for intercept only", {
   expect_equal(length(m3$coef), 4)
   expect_equal(m3$coef[3:4],
                c("dv:(Intercept)" = mean(pairs$dv[pairs$new_trt == 0]),
-                 "offset:(Intercept)" = mean(cad[pairs$new_trt == 0])))
+                 "cov_adj:(Intercept)" = mean(cad[pairs$new_trt == 0])))
   expect_equal(m3$coef[3:4], m4$coef[3:4])
   
   # case weights
@@ -219,7 +219,7 @@ test_that("control means for intercept only", {
   suppressMessages(m6 <- lmitt(lm(dv ~ adopters(spec, pairs), pairs, w = cw, off = cad), spec))
   expect_equal(m5$coef[3:4],
                c("dv:(Intercept)" = sum(cw * pairs$dv * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt)),
-                 "offset:(Intercept)" = sum(cw * cad * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt))))
+                 "cov_adj:(Intercept)" = sum(cw * cad * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt))))
   expect_equal(m5$coef[3:4], m6$coef[3:4])
   
   # absorb = TRUE
@@ -227,14 +227,14 @@ test_that("control means for intercept only", {
   pis <- c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2))
   expect_equal(m7$coef[3:4],
                c("dv:(Intercept)" = sum(pis * pairs$dv * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt)),
-                 "offset:(Intercept)" = sum(pis * cad * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt))))
+                 "cov_adj:(Intercept)" = sum(pis * cad * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt))))
   
   # case weights and absorb = TRUE
   m8 <- lmitt(dv ~ 1, spec, pairs, w = cw, offset = cad, absorb = TRUE)
   cw_pis <- cw * (rowsum(cw * pairs$new_trt, pairs$b) / rowsum(cw, pairs$b))[pairs$b]
   expect_equal(m8$coef[3:4],
                c("dv:(Intercept)" = sum(cw_pis * pairs$dv * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt)),
-                 "offset:(Intercept)" = sum(cw_pis * cad * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt))))
+                 "cov_adj:(Intercept)" = sum(cw_pis * cad * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt))))
 
   # missing data--stratum where trt is missing outcome still contributes to ctrl mean estimatino
   pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3:4, each = 2)),
@@ -287,7 +287,7 @@ test_that("control means for continuous moderator", {
   expect_equal(
     m2$coef[5:8],
     setNames(c(unwtd.ctrl.reg$coef),
-             c("dv:(Intercept)", "dv:mvar", "offset:(Intercept)", "offset:mvar"))
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
   )
   
   # case weights
@@ -296,7 +296,7 @@ test_that("control means for continuous moderator", {
   expect_equal(
     m3$coef[5:8],
     setNames(c(cw.ctrl.reg$coef),
-             c("dv:(Intercept)", "dv:mvar", "offset:(Intercept)", "offset:mvar"))
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
   )
   
   # absorb = TRUE
@@ -305,7 +305,7 @@ test_that("control means for continuous moderator", {
   expect_equal(
     m4$coef[5:8],
     setNames(c(pis.ctrl.reg$coef),
-             c("dv:(Intercept)", "dv:mvar", "offset:(Intercept)", "offset:mvar"))
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
   )
   
   # case weights and absorb = TRUE
@@ -314,7 +314,7 @@ test_that("control means for continuous moderator", {
   expect_equal(
     m5$coef[5:8],
     setNames(c(cw_pis.ctrl.reg$coef),
-             c("dv:(Intercept)", "dv:mvar", "offset:(Intercept)", "offset:mvar"))
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
   )
 })
 
@@ -354,7 +354,7 @@ test_that("control means for categorical moderator", {
   expect_equal(
     m2$coef[7:12],
     setNames(c(unwtd.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
   )
   
   # case weights
@@ -363,7 +363,7 @@ test_that("control means for categorical moderator", {
   expect_equal(
     m3$coef[7:12],
     setNames(c(cw.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
   )
   
   # absorb = TRUE
@@ -372,7 +372,7 @@ test_that("control means for categorical moderator", {
   expect_equal(
     m4$coef[7:12],
     setNames(c(pis.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
   )
   
   # case weights and absorb = TRUE
@@ -381,7 +381,7 @@ test_that("control means for categorical moderator", {
   expect_equal(
     m5$coef[7:12],
     setNames(c(cw_pis.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "offset:mvara", "offset:mvarb", "offset:mvarc"))
+             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
   )
 })
 
@@ -405,7 +405,7 @@ test_that("control means for dichotomized treatment", {
   expect_equal(
     m1$coef[3:4],
     c("dv:(Intercept)" = mean(strata$dv[strata$trt2dich == "c"]),
-      "offset:(Intercept)" = mean(cad[strata$trt2dich == "c"]))
+      "cov_adj:(Intercept)" = mean(cad[strata$trt2dich == "c"]))
   )
   
   m2 <- lmitt(dv ~ 1, spec, strata, offset = cad, absorb = TRUE,
@@ -415,7 +415,7 @@ test_that("control means for dichotomized treatment", {
   expect_equal(
     m2$coef[3:4],
     c("dv:(Intercept)" = sum(pis * strata$dv * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")),
-      "offset:(Intercept)" = sum(pis * cad * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")))
+      "cov_adj:(Intercept)" = sum(pis * cad * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")))
   )
 })
 
