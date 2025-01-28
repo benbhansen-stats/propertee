@@ -1567,15 +1567,17 @@ test_that("checking proper errors in conversion from lm to teeMod", {
                                      spec,
                                      FALSE,
                                      TRUE,
-                                     "a",
-                                     lm(y ~ assigned(spec), data = simdata),
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls")))
   mod2 <- propertee:::.convert_to_lmitt(lm(y ~ assigned(spec), data = simdata),
                                      ate(spec, data = simdata),
                                      FALSE,
                                      TRUE,
-                                     "a",
-                                     lm(y ~ assigned(spec), data = simdata),
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls")))
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
 
@@ -1583,8 +1585,9 @@ test_that("checking proper errors in conversion from lm to teeMod", {
                                      1,
                                      FALSE,
                                      TRUE,
-                                     "a",
-                                     lm(y ~ assigned(spec), data = simdata),
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls"))), "must be a")
 
 

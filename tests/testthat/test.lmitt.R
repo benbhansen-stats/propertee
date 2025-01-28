@@ -235,7 +235,7 @@ test_that("control means for intercept only", {
                c("dv:(Intercept)" = sum(cw_pis * pairs$dv * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt)),
                  "cov_adj:(Intercept)" = sum(cw_pis * cad * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt))))
 
-  # missing data--stratum where trt is missing outcome still contributes to ctrl mean estimatino
+  # missing data--stratum where trt is missing outcome still contributes to ctrl mean estimation
   pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3:4, each = 2)),
                       new_trt = rep(c(1, 0), 5),
                       x = rnorm(10),
@@ -319,14 +319,22 @@ test_that("control means for continuous moderator", {
 
 test_that("control means for categorical moderator", {
   set.seed(93)
-  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
-                      new_trt = rep(c(1, 0), 4),
-                      x = rnorm(8),
-                      mvar = letters[rep(seq_len(3), 3)[-9]],
-                      dv = rnorm(8),
-                      id = seq_len(8),
-                      pis = c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2)),
-                      cw = rep(c(10, 12), each = 4))
+  # pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+  #                     new_trt = rep(c(1, 0), 4),
+  #                     x = rnorm(8),
+  #                     mvar = letters[rep(seq_len(3), 3)[-9]],
+  #                     dv = rnorm(8),
+  #                     id = seq_len(8),
+  #                     pis = c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2)),
+  #                     cw = rep(c(10, 12), each = 4))
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 7), rep(3, 10)),
+                      new_trt = rep(c(1, 0), 12),
+                      x = rnorm(24),
+                      mvar = c(rep("a", 3), rep("b", 4), rep("a", 7), rep(c("a", "b"), each = 5)),
+                      dv = rnorm(24),
+                      id = seq_len(24),
+                      pis = c(rep(2/3, 3), rep(1/2, 4), rep(3/7, 7), rep(3/5, 5), rep(2/5, 5)),
+                      cw = rep(c(10, 12), each = 12))
   spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
   
   covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
@@ -336,51 +344,52 @@ test_that("control means for categorical moderator", {
   unwtd.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = 1 - new_trt)
   cw.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = cw * (1 - new_trt))
   pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pis * (1 - new_trt))
-  cw_pis <- (rowsum(pairs$cw * pairs$new_trt, pairs$b) / rowsum(pairs$cw, pairs$b))[pairs$b]
+  cw_pis <- (rowsum(pairs$cw * pairs$new_trt, paste(pairs$b, pairs$mvar, sep = "_")) /
+               rowsum(pairs$cw, paste(pairs$b, pairs$mvar, sep = "_")))[paste(pairs$b, pairs$mvar, sep = "_"),]
   cw_pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pairs$cw * cw_pis * (1 - new_trt))
   
   # no weights
   suppressMessages(m1 <- lmitt(dv ~ mvar, spec, pairs))
-  expect_equal(length(m1$coef), 9)
+  expect_equal(length(m1$coef), 6)
   expect_equal(
-    m1$coef[7:9],
-    setNames(unwtd.ctrl.reg$coef[,1], c("dv:mvara", "dv:mvarb", "dv:mvarc"))
+    m1$coef[5:6],
+    setNames(unwtd.ctrl.reg$coef[,1], c("dv:mvara", "dv:mvarb"))
   )
   
   # cov adj
   suppressMessages(m2 <- lmitt(dv ~ mvar, spec, pairs, offset = cad))
-  expect_equal(length(m2$coef), 12)
+  expect_equal(length(m2$coef), 8)
   expect_equal(
-    m2$coef[7:12],
+    m2$coef[5:8],
     setNames(c(unwtd.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
   )
   
   # case weights
   suppressMessages(m3 <- lmitt(dv ~ mvar, spec, pairs, weights = pairs$cw, offset = cad))
-  expect_equal(length(m3$coef), 12)
+  expect_equal(length(m3$coef), 8)
   expect_equal(
-    m3$coef[7:12],
+    m3$coef[5:8],
     setNames(c(cw.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
   )
   
   # absorb = TRUE
   suppressMessages(m4 <- lmitt(dv ~ mvar, spec, pairs, offset = cad, absorb = TRUE))
-  expect_equal(length(m4$coef), 12)
+  expect_equal(length(m4$coef), 8)
   expect_equal(
-    m4$coef[7:12],
+    m4$coef[5:8],
     setNames(c(pis.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
   )
   
   # case weights and absorb = TRUE
   suppressMessages(m5 <- lmitt(dv ~ mvar, spec, pairs, w = pairs$cw, offset = cad, absorb = TRUE))
-  expect_equal(length(m5$coef), 12)
+  expect_equal(length(m5$coef), 8)
   expect_equal(
-    m5$coef[7:12],
+    m5$coef[5:8],
     setNames(c(cw_pis.ctrl.reg$coef),
-             c("dv:mvara", "dv:mvarb", "dv:mvarc", "cov_adj:mvara", "cov_adj:mvarb", "cov_adj:mvarc"))
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
   )
 })
 

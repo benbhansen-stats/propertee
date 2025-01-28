@@ -312,19 +312,23 @@ lmitt.formula <- function(obj,
   if (rhstype == "intercept") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
-    ctrl.means.form <- stats::reformulate("1", response = "lhs")
+    ctrl_means_form <- stats::reformulate("1", response = "lhs")
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
-    ctrl.means.form <- stats::reformulate(rhs, response = "lhs", intercept = FALSE)
+    ctrl_means_form <- stats::reformulate(rhs, response = "lhs", intercept = FALSE)
   } else {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
                                           "a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
-    ctrl.means.form <- stats::reformulate(rhs, response = "lhs")
+    ctrl_means_form <- stats::reformulate(rhs, response = "lhs")
   }
+  ctrl_means_env <- new.env()
+  assign("ctrl_means_data", data, envir = ctrl_means_env)
+  environment(ctrl_means_form) <- ctrl_means_env
+  
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
   # model.matrix.lm supports as `na.action` argument where
@@ -377,36 +381,7 @@ lmitt.formula <- function(obj,
   
   # set call's na.action to na.pass so expand.model.frame includes NA rows
   model$call$na.action <- "na.pass"
-  
-  # get ctrl means
-  ctrl.means.wts <- lm.call$weights %||% rep(1, nrow(data))
-  a_col <- eval(str2lang(paste0("a.(dichotomy=", deparse1(dichotomy), ")")), envir = model)
-  if (absorb) {
-    pis <- (rowsum((ctrl.means.wts * a_col)[!is.na(blocks)], blocks[!is.na(blocks)]) /
-              rowsum(ctrl.means.wts[!is.na(blocks)], blocks[!is.na(blocks)]))[blocks]
-    ctrl.means.wts <- ctrl.means.wts * pis
-  }
-  ctrl.means.wts <- ctrl.means.wts * (1 - a_col)
 
-  ctrl.means.form[[2L]] <- quote(
-    do.call(cbind, setNames(list(data[[lm.call$formula[[2]]]], lm.call$offset),
-                            c(lm.call$formula[[2]], "cov_adj")))
-  )
-  ctrl.means.cl <- lm.call[c(1, match(c("formula", "subset"), names(lm.call)))]
-  ctrl.means.cl[[2]] <- ctrl.means.form
-  ctrl.means.cl$data <- data
-  ctrl.means.cl$weights <- ctrl.means.wts
-  ctrl.means.cl$na.action <- na.exclude
-  ctrl.means.lm <- eval(ctrl.means.cl)
-  ctrl.means <- ctrl.means.lm$coefficients
-  model$coefficients <- c(
-    model$coefficients,
-    setNames(c(ctrl.means),
-             paste(rep(colnames(ctrl.means) %||% deparse1(lm.call$formula[[2]]), each = nrow(ctrl.means) %||% 1),
-                   rep(row.names(ctrl.means), ncol(ctrl.means)) %||% names(ctrl.means),
-                   sep = ":"))
-  )
-  
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&
       !is.null(sys.call(-1)) &&
@@ -422,7 +397,8 @@ lmitt.formula <- function(obj,
                            lmitt_fitted = TRUE,
                            moderator = moderator,
                            absorbed_intercepts = absorb,
-                           ctrl_means_model = ctrl.means.lm,
+                           ctrl_means_form = ctrl_means_form,
+                           dichotomy = dichotomy,
                            lmitt_call = lmitt_call))
 }
 
