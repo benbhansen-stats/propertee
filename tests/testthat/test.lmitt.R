@@ -164,14 +164,13 @@ test_that("Minimal support for continuous treatments", {
 
   data(simdata)
   spec1 <- obs_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, absorb=FALSE)
-  expect_true(any(!model.frame(mod1)[, 2] %in% 0:1))
-  expect_silent(lmitt(y ~ x, data = simdata, specification = spec1))
-  expect_silent(lmitt(y ~ as.character(o), data = simdata, specification = spec1))
-
+  expect_error(mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, absorb=FALSE),
+               "continuous treatment")
+  
   spec2 <- obs_spec(dose ~ cluster(uoa1, uoa2) +block(bid), data = simdata)
-  mod2 <- lmitt(y ~ 1, data = simdata, specification = spec2, absorb=TRUE)
-  expect_true(any(!model.frame(mod2)[, 2] %in% 0:1))
+  expect_error(mod2 <- lmitt(y ~ 1, data = simdata, specification = spec2, absorb=TRUE),
+               "continuous treatment")
+
   ## But we don't also allow factor or ordinal treatments
   simdata_ <-
       transform(simdata, dosef=cut(dose, breaks=c(50, 100, 200, 300),

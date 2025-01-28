@@ -201,6 +201,11 @@ lmitt.formula <- function(obj,
       stop(paste(fact_or_ord, "treatment variables are not supported, use",
                  "`dichotomy=` to define a binary treatment."))
     }
+    
+    # #205 block on continuous treatments
+    if (!has_binary_treatment(specification) & is.null(dichotomy)) {
+      stop("Specify a dichotomy when estimating effects of a continuous treatment variable")
+    }
   }
 
 
