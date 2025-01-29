@@ -368,11 +368,14 @@ lmitt.formula <- function(obj,
                                       collapse = "+"),
                                     collapse = ""))
 
-  # Data for model should be original data, plus updated RHS (mm),
-  # but if the moderators already exist in the passed-in data, remove them to avoid
+  
+  # If the moderators already exist in the passed-in data, remove them to avoid
   # either a) overloading variable names, or b) an error if data is a
   # `grouped_df` (see #137)
-  lm.call$data <- cbind(data[, !(names(data) %in% colnames(mm))], mm)
+  data <- data[, !(names(data) %in% colnames(mm))]
+  
+  # Data for model should be original data, plus updated RHS (mm),
+  lm.call$data <- cbind(data, mm)
 
   # restore subset
   lm.call$subset <- savedsubset
@@ -381,7 +384,7 @@ lmitt.formula <- function(obj,
   
   # set call's na.action to na.pass so expand.model.frame includes NA rows
   model$call$na.action <- "na.pass"
-
+  
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&
       !is.null(sys.call(-1)) &&

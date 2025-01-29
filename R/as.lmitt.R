@@ -200,10 +200,6 @@ as.teeMod <- as.lmitt
     if (!inherits(data, "data.frame")) {
       stop("Could not determine appropriate data")
     }
-    # if (!is.null(lm_model$call$subset)) {
-    #   sbst <- eval(lm_model$call$subset, data)
-    #   data <- subset(data, sbst)
-    # }
   }
   
   ## code block for getting control means and tacking them onto coefficients
