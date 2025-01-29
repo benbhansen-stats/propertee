@@ -207,16 +207,22 @@ as.teeMod <- as.lmitt
   }
   
   ## code block for getting control means and tacking them onto coefficients
-  ctrl_means_data <- mget("ctrl_means_data", envir = environment(ctrl_means_form),
-                          ifnotfound = list(NULL))[[1]] %||% data
+  if (is.null(ctrl_means_data <- mget("ctrl_means_data", envir = environment(ctrl_means_form),
+                                      ifnotfound = list(NULL))[[1]])) {
+    ctrl_means_data <- data
+  }
   blks <- blocks(specification, ctrl_means_data, all.x = TRUE, implicit = TRUE)[,1]
   a_col <- a.(specification = specification, dichotomy = dichotomy, data = data)
-  keep_rows <- which(eval(lm_model$call$subset, ctrl_means_data) %||% rep(TRUE, length(blks)))
+  keep_rows <- which(
+    if (is.null(sbs <- eval(lm_model$call$subset, ctrl_means_data))) {
+      rep(TRUE, length(blks))
+    } else sbs)
   ctrl_means_wts <- numeric(length(a_col))
-  ctrl_means_wts[keep_rows] <- with(mod_copy <- lm_model, {
-    if (!is.null(mod_copy$na.action)) class(mod_copy$na.action) <- "exclude"
-    stats::weights(mod_copy)
-  }) %||% rep(1, length(keep_rows))
+  ctrl_means_wts[keep_rows] <- if (is.null(
+    wts <- with(mod_copy <- lm_model, {
+      if (!is.null(mod_copy$na.action)) class(mod_copy$na.action) <- "exclude"
+      stats::weights(mod_copy)
+    }))) rep(1, length(keep_rows)) else wts
 
   if (absorbed_intercepts) {
     mods <- if (length(moderator)) eval(str2lang(moderator), ctrl_means_data) else moderator
@@ -253,8 +259,9 @@ as.teeMod <- as.lmitt
   ctrl_means_lm <- eval(ctrl_means_cl)
   ctrl_means <- ctrl_means_lm$coefficients
   ctrl_means_labels <- paste(
-    rep(colnames(ctrl_means) %||% deparse1(stats::formula(lm_model)[[2]]), each = nrow(ctrl_means) %||% 1),
-    rep(row.names(ctrl_means), ncol(ctrl_means)) %||% names(ctrl_means),
+    rep(if (is.null(cnms <- colnames(ctrl_means))) deparse1(stats::formula(lm_model)[[2]]) else cnms,
+        each = if (is.null(nr <- nrow(ctrl_means))) 1 else nr),
+    if (is.null(rnms <- rep(row.names(ctrl_means), ncol(ctrl_means)))) names(ctrl_means) else rnms,
     sep = ":")
   lm_model$coefficients <- c(lm_model$coefficients,
                              stats::setNames(c(ctrl_means), ctrl_means_labels))

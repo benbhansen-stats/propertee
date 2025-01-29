@@ -248,7 +248,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   keep_coef <- if (is.null(aliased <- stats::alias(x)$Complete)) {
     colnames(ef)
   } else {
-    colnames(aliased) %||% 1
+    if (is.null(nms <- colnames(aliased))) 1 else nms
   }
   return(ef[, keep_coef,drop=FALSE])
 }
