@@ -11,7 +11,7 @@ specification."><meta property="og:image" content="www.github.com/logo.png"></he
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,7 +121,7 @@ or <code><a href="WeightCreators.html">ett()</a></code> can be used.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>teeMod</code> model.</p>
+    <p><code>teeMod</code> object (see Details)</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -160,6 +160,40 @@ has block information that is not being used to inform weights or a block
 fixed effect adjustment. This is not an error, but it often represents an
 oversight on the part of the analyst. To disable this
 message, run <code>options("propertee_message_on_unused_blocks" = FALSE)</code>.</p>
+<p><code>lmitt()</code> returns objects of class ‘<code>teeMod</code>’, for
+Treatment Effect Estimate Model, extending the lm class to add a
+summary of the response distribution under control (the
+coefficients of a controls-only regression of the response on an
+intercept and any moderator variable).  <code>teeMod</code> objects also
+record the underlying <code>StudySpecification</code> and information
+about any externally fitted models <code>mod</code> that may have been
+used for covariance adjustment by passing
+<code>offset=cov_adj(mod)</code>. In the latter case, responses are
+offsetted by predictions from <code>mod</code> prior to treatment effect
+estimation, but estimates of the response variable distribution
+under control are calculated without reference to <code>mod</code>.</p>
+<p>The response distribution under control is also characterized when
+treatment effects are estimated with block fixed effects, i.e. for
+<code>lmitt()</code> with a <code>formula</code> first argument with option
+<code>absorb=TRUE</code>.  Here as otherwise, the supplementary
+coefficients describe a regression of the response on an intercept
+and moderator variables, to which only control observations
+contribute; but in this case the weights are modified for this
+supplementary regression. The treatment effect estimates adjusted
+for block fixed effects can be seen to coincide with estimates
+calculated without block effect but with weights multiplied by an
+additional factor specific to the combination of block and
+treatment condition. For block s containing units with weights
+\(w_i\) and binary treatment assignments \(z_i\), define
+\(\hat{\pi}_s\) by \(\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i\). If
+\(\hat{\pi}_s\) is 0 or 1, the block doesn't contribute to
+effect estimation and the additional weighting factor is 0; if
+\(0 &lt; \hat{\pi}_s &lt; 1\), the additional weighting factor is
+\(1 - \hat{\pi}_s\) for treatment group members and
+\(\hat{\pi}_s\) for controls. The supplementary coeficients for
+lmitt(absorb=T) reflect regressions of control observations
+using weights multiplied by \(\hat{\pi}_s\) or 0, as
+appropriate.</p>
     </div>
 
     <div class="section level2">

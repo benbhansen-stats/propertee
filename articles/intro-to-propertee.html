@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.5.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -272,8 +272,9 @@ run:</p>
 <span><span class="co">#&gt; lmitt(readk ~ 1, data = STARdata, specification = spec)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Treatment Effects :</span></span>
-<span><span class="co">#&gt;                  Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE   5.4632     0.9207   5.934 3.13e-09 ***</span></span>
+<span><span class="co">#&gt;                   Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
+<span><span class="co">#&gt; starkbinary.TRUE    5.4632     0.9207   5.934 3.13e-09 ***</span></span>
+<span><span class="co">#&gt; readk:(Intercept) 435.0842     0.4906 886.923  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
@@ -291,12 +292,18 @@ ethnicity:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Treatment Effects :</span></span>
 <span><span class="co">#&gt;                                    Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicitycauc        4.717      1.147   4.112 3.97e-05 ***</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityafam        6.607      1.468   4.500 6.93e-06 ***</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityasian      -9.939     21.021  -0.473   0.6363    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityhispanic   35.667     18.634   1.914   0.0557 .  </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityamindian   19.000         NA      NA       NA    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityother      13.333     26.856   0.496   0.6196    </span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicitycauc       4.7167     1.1470   4.112 3.97e-05 ***</span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicityafam       6.6068     1.4682   4.500 6.93e-06 ***</span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicityasian     -9.9394    21.0205  -0.473   0.6363    </span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicityhispanic  35.6667    18.6337   1.914   0.0557 .  </span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicityamindian  19.0000         NA      NA       NA    </span></span>
+<span><span class="co">#&gt; starkbinary.TRUE_ethnicityother     13.3333    26.8558   0.496   0.6196    </span></span>
+<span><span class="co">#&gt; readk:ethnicitycauc                438.9750     0.6078 722.243  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; readk:ethnicityafam                426.9947     0.7853 543.726  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; readk:ethnicityasian               449.2727    12.6836  35.421  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; readk:ethnicityhispanic            427.0000     0.0000     Inf  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; readk:ethnicityamindian            395.0000         NA      NA       NA    </span></span>
+<span><span class="co">#&gt; readk:ethnicityother               426.0000    13.8885  30.673  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
@@ -312,11 +319,11 @@ estimation. <strong>propertee</strong> supports average treatment effect
 <code><a href="../reference/lmitt.html">lmitt()</a></code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE </span></span>
-<span><span class="co">#&gt;         6.116683</span></span>
+<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
+<span><span class="co">#&gt;          6.116683        435.027841</span></span>
 <span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ett"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE </span></span>
-<span><span class="co">#&gt;         5.650771</span></span></code></pre></div>
+<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
+<span><span class="co">#&gt;          5.650771        434.896670</span></span></code></pre></div>
 <p>Internally, these call the <code><a href="../reference/WeightCreators.html">ate()</a></code> or <code><a href="../reference/WeightCreators.html">ett()</a></code>
 functions which can be used directly.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -346,8 +353,8 @@ output can be passed as an <code>offset=</code>.</p>
 <span>      weights <span class="op">=</span> <span class="st">"ate"</span>, offset <span class="op">=</span> <span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">camod</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in validityMethod(object): Some covariance adjustments are NA; be</span></span>
 <span><span class="co">#&gt; careful of dropping these observations when fitting the ITT effect model</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE </span></span>
-<span><span class="co">#&gt;         6.050889</span></span></code></pre></div>
+<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
+<span><span class="co">#&gt;          6.050889        435.005010</span></span></code></pre></div>
 <p>Similarly to the weight functions, <code><a href="../reference/cov_adj.html">cov_adj()</a></code> attempts to
 locate the correct arguments (in this case, mainly the
 <code>data=</code> argument) to use in the model command; while
@@ -381,8 +388,8 @@ to avoid estimating, the <code>absorb=TRUE</code> argument can be
 passed.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, absorb <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE </span></span>
-<span><span class="co">#&gt;          5.14933</span></span></code></pre></div>
+<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
+<span><span class="co">#&gt;          5.866895        434.952140</span></span></code></pre></div>
 </div>
 </div>
 
