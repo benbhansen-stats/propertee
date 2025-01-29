@@ -1351,10 +1351,15 @@ test_that(paste(".get_a21 returns correct matrix when data input for lmitt",
   )
 
   ssmod_mm <- suppressWarnings(stats::model.matrix(m_as.lmitt))
+  ctrl_means_mm <- (
+    model.matrix(m_lmitt.form@ctrl_means_model) *
+      weights(m_lmitt.form@ctrl_means_model)[!is.na(weights(m_lmitt.form@ctrl_means_model))]
+  )
   ctrl.means.grad <- cbind(matrix(0, nrow = nrow(ssmod_mm), ncol = 1),
-                           model.matrix(m_lmitt.form@ctrl_means_model) *
-                             weights(m_lmitt.form@ctrl_means_model)[
-                               !is.na(weights(m_lmitt.form@ctrl_means_model))])
+                           ctrl_means_mm[
+                                 row.names(ctrl_means_mm) %in% setdiff(
+                                   row.names(ctrl_means_mm), stats::na.action(m_lmitt.form))
+                               ])
   colnames(ctrl.means.grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
   pg <- stats::model.matrix(formula(cmod), m_data)
   nq <- nrow(m_data)
@@ -2389,7 +2394,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
 
   # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
   # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
-  na_dim <- c(1, 3, 5)
+  na_dim <- c(1, 3, 5, 8, 10)
   expect_true(all(
     abs(diag(sandwich::sandwich(mod, meat. = sandwich::meatCL,
                                 cluster = .make_uoa_ids(mod, "CR")))[na_dim])
@@ -2413,7 +2418,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                  "will be returned as NA: modr1",
                  fixed = TRUE)
 
-  na_dim <- c(1, 3)
+  na_dim <- c(1, 3, 5)
   expect_true(all(
     abs(
       diag(sandwich::sandwich(ssmod, meat. = sandwich::meatCL,

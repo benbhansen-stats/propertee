@@ -1559,7 +1559,7 @@ test_that("checking proper errors in conversion from lm to teeMod", {
   spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
 
   expect_error(as.lmitt(lm(y ~ x, data = simdata), specification = spec),
-               "aliases are not found")
+               "aliases must be")
 
 
   # Take in either StudySpecification or WeightedStudySpecification

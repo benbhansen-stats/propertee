@@ -113,7 +113,7 @@ test_that("lmitt.form vs as.lmitt", {
     specification = spec)
   suppressWarnings(co <- capture.output(summary(mod), "NaNs"))
   expect_equal(sum(grepl("as.factor(o)", co, fixed = TRUE)),
-               length(mod$coefficients))
+               8)
 
 })
 
@@ -125,11 +125,12 @@ test_that("issues with coefficients", {
   co <- capture.output(s)
   expect_true(any(grepl("Treatment Effects", co)))
 
-  expect_false(any(grepl("calculated via type", co)))
+  expect_true(any(grepl("calculated via type", co)))
 
   sslm <- new("teeMod",
               lm(y ~ 0, data = simdata, weights = ate(spec)),
               StudySpecification = spec,
+              ctrl_means_model = lm(1~0),
               lmitt_fitted = TRUE)
 
   expect_true(any(grepl("No Coefficients", capture.output(summary(sslm)))))

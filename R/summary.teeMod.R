@@ -19,16 +19,19 @@
 summary.teeMod <- function(object,
                                    vcov.type = "CR0",
                                    ...) {
+  orig.coefficients <- object$coefficients
+  object$coefficients <- replace(orig.coefficients, is.na(orig.coefficients), 0)
   out <- summary(as(object, "lm"))
 
   if (object$rank > 0) {
-    toprint <- !grepl("^offset:", names(object$coef))
-    out$coefficients <- rbind(out$coef, matrix(0, nrow = sum(toprint) - nrow(out$coef), ncol = 4))
-    rownames(out$coefficients) <- names(object$coef)[toprint]
+    toprint <- !grepl("^offset:", names(orig.coefficients))
+    out$coefficients <- rbind(out$coef, matrix(NA, nrow = sum(toprint) - nrow(out$coef), ncol = 4))
+    rownames(out$coefficients) <- names(orig.coefficients)[toprint]
 
-    out$coefficients[, 1L] <- object$coef[toprint]
+    out$coefficients[, 1L] <- orig.coefficients[toprint]
     covmat <- vcov_tee(object, type = vcov.type, ...)
-    out$coefficients[, 2L] <- sqrt(diag(covmat))[toprint]
+    out$coefficients[!is.na(orig.coefficients), 2L] <- sqrt(diag(covmat))[
+      names(orig.coefficients)[toprint & !is.na(orig.coefficients)]]
     out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
     out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
                                           object$df.residual,

@@ -67,13 +67,27 @@ as.lmitt <- function(x, specification = NULL) {
   tt <- terms(stats::formula(x),
               specials = c("assigned", "a.", "z.", "adopters"))
 
-  if (all(vapply(attr(tt, "specials"), is.null, logical(1)))) {
-    stop(paste("`assigned()` or its aliases are not found in the model formula.",
-               "`assigned()` needs to be found in place of the treatment",
-               "variable name. The `lmitt()` function may be used to",
+  if (all(missing_alias <- vapply(attr(tt, "specials"), is.null, logical(1))) |
+      sum(!missing_alias) > 1) {
+    stop(paste("Exactly one of `assigned()` or its aliases must be in the model formula",
+               "in place of the treatmentvariable name. The `lmitt()` function may be used to",
                "avoid explicitly indicating `assigned()`."))
   }
 
+  ## find the dichotomy to pass on
+  a.call <- str2lang(
+    attr(tt, "term.labels")[
+      sapply(attr(tt, "term.labels"), function(v) grepl(names(which(!missing_alias)), v))
+    ]
+  )
+  dichotomy <- a.call$dichotomy
+  if (is.null(dichotomy) & length(a.call) == 4) dichotomy <- a.call[[4L]]
+  if (is.null(dichotomy) &
+      inherits(x$model$`(weights)`, "WeightedStudySpecification")) {
+    dichotomy <- x$model$`(weights)`@dichotomy
+  }
+  if (inherits(dichotomy, "formula") & length(dichotomy) == 0) dichotomy <- NULL
+  
   #### Obtain the proper call.
   # The first conditional is the user calls `lmitt()` and passes an `lm` object.
   # The second conditional if the user calls `lmitt.lm()` directly
@@ -101,7 +115,7 @@ as.lmitt <- function(x, specification = NULL) {
                            absorbed_intercepts = FALSE,
                            moderator = vector("character"),
                            ctrl_means_form = lhs ~ 1,
-                           dichotomy = NULL,
+                           dichotomy = dichotomy,
                            lmitt_call = lmitt_call))
 }
 

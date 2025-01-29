@@ -235,6 +235,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 .base_S3class_estfun <- function(x) {
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
   ## to extract ITT model's estimating equations
+  x$coefficients <- replace(x$coefficients, is.na(x$coefficients), 0)
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
@@ -244,7 +245,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   
   ef <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x)
   ef[is.na(ef)] <- 0
-  return(ef)
+  keep_coef <- if (is.null(aliased <- stats::alias(x)$Complete)) {
+    colnames(ef)
+  } else {
+    colnames(aliased) %||% 1
+  }
+  return(ef[, keep_coef,drop=FALSE])
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
