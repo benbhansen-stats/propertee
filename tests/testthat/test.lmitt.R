@@ -166,7 +166,6 @@ test_that("Minimal support for continuous treatments", {
   spec1 <- obs_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
   expect_error(mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, absorb=FALSE),
                "continuous treatment")
-  
   spec2 <- obs_spec(dose ~ cluster(uoa1, uoa2) +block(bid), data = simdata)
   expect_error(mod2 <- lmitt(y ~ 1, data = simdata, specification = spec2, absorb=TRUE),
                "continuous treatment")

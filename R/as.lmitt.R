@@ -210,7 +210,7 @@ as.teeMod <- as.lmitt
   ctrl_means_data <- mget("ctrl_means_data", envir = environment(ctrl_means_form),
                           ifnotfound = list(NULL))[[1]] %||% data
   blks <- blocks(specification, ctrl_means_data, all.x = TRUE, implicit = TRUE)[,1]
-  a_col <- a.(sp = specification, dichotomy = dichotomy, data = data)
+  a_col <- a.(specification = specification, dichotomy = dichotomy, data = data)
   keep_rows <- which(eval(lm_model$call$subset, ctrl_means_data) %||% rep(TRUE, length(blks)))
   ctrl_means_wts <- numeric(length(a_col))
   ctrl_means_wts[keep_rows] <- with(mod_copy <- lm_model, {
