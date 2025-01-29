@@ -1,3 +1,7 @@
+# propertee 0.6.1 (Unreleased)
+## New Features
+* In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control distribution (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
+
 # propertee 0.5.2
 ## New Features
 * Users fitting multiple `teeMod` objects to test multiple outcome variables or different levels of a factor treatment variable can pass those models to an `mmm` object from the `multcomp` package, then pass the `mmm` object to `multcomp`'s `glht()` function to obtain standard errors estimated using `vcov_tee()`. This requires passing `vcov=vcov_tee` to `glht()`. On a technical note, `propertee` now "suggests" installing `multcomp`.

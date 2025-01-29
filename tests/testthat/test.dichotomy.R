@@ -6,14 +6,21 @@ test_that("find and validate dichotomies with no upstream dichotomies and non-nu
   expect_identical(deparse1(.validate_dichotomy(z ~ 1)), deparse1(z ~ 1))
 })
 
+test_that("find and validate dichotomies doesn't get valid option", {
+  expect_error(.validate_dichotomy(character()), "formulas provided")
+})
+
 test_that("find and validate dichotomies with upstream dichotomy in lmitt.formula()", {
   data(simdata)
   spec <- rct_spec(dose ~ cluster(uoa1, uoa2), simdata)
   expect_warning(
     expect_warning(
-      mod1 <- lmitt(y ~ 1, specification = spec, data = simdata, dichotomy = dose > 50 ~ dose == 50,
-                    weights = ate(spec, dichotomy = dose <= 250 ~ dose > 250)),
-      "passed to `.weights_calc()"
+      expect_warning(
+        mod1 <- lmitt(y ~ 1, specification = spec, data = simdata, dichotomy = dose > 50 ~ dose == 50,
+                      weights = ate(spec, dichotomy = dose <= 250 ~ dose > 250)),
+        "passed to `.weights_calc()"
+      ),
+      "passed to `a.()"
     ),
     "passed to `a.()"
   )

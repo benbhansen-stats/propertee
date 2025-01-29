@@ -47,6 +47,42 @@
 ##' oversight on the part of the analyst. To disable this
 ##' message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
+##' [lmitt()] returns objects of class \sQuote{\code{teeMod}}, for
+##' Treatment Effect Estimate Model, extending the lm class to add a
+##' summary of the response distribution under control (the
+##' coefficients of a controls-only regression of the response on an
+##' intercept and any moderator variable).  \code{teeMod} objects also
+##' record the underlying \code{StudySpecification} and information
+##' about any externally fitted models \code{mod} that may have been
+##' used for covariance adjustment by passing
+##' \code{offset=cov_adj(mod)}. In the latter case, responses are
+##' offsetted by predictions from \code{mod} prior to treatment effect
+##' estimation, but estimates of the response variable distribution
+##' under control are calculated without reference to \code{mod}.
+##'
+##' The response distribution under control is also characterized when
+##' treatment effects are estimated with block fixed effects, i.e. for
+##' [lmitt()] with a \code{formula} first argument with option
+##' \code{absorb=TRUE}.  Here as otherwise, the supplementary
+##' coefficients describe a regression of the response on an intercept
+##' and moderator variables, to which only control observations
+##' contribute; but in this case the weights are modified for this
+##' supplementary regression. The treatment effect estimates adjusted
+##' for block fixed effects can be seen to coincide with estimates
+##' calculated without block effect but with weights multiplied by an
+##' additional factor specific to the combination of block and
+##' treatment condition. For block s containing units with weights
+##' \eqn{w_i} and binary treatment assignments \eqn{z_i}, define
+##' \eqn{\hat{\pi}_s} by \eqn{\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i}. If
+##' \eqn{\hat{\pi}_s} is 0 or 1, the block doesn't contribute to
+##' effect estimation and the additional weighting factor is 0; if
+##' \eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
+##' \eqn{1 - \hat{\pi}_s} for treatment group members and
+##' \eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
+##' [lmitt(absorb=T)][lmitt()] reflect regressions of control observations
+##' using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
+##' appropriate.
+##' 
 ##' @param obj A \code{formula} or a \code{lm} object. See Details.
 ##' @param specification The \code{StudySpecification} to be used.
 ##'   Alternatively, a formula creating a specification (of the type of that
@@ -69,7 +105,7 @@
 ##'   variable in \code{specification}. See the Details section of the
 ##'   \code{ett()} or \code{att()} help pages for information on specifying this
 ##'   formula.
-##' @return \code{teeMod} model.
+##' @return \code{teeMod} object (see Details)
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt
@@ -165,6 +201,11 @@ lmitt.formula <- function(obj,
       stop(paste(fact_or_ord, "treatment variables are not supported, use",
                  "`dichotomy=` to define a binary treatment."))
     }
+    
+    # #205 block on continuous treatments
+    if (!has_binary_treatment(specification) & is.null(dichotomy)) {
+      stop("Specify a dichotomy when estimating effects of a continuous treatment variable")
+    }
   }
 
 
@@ -245,17 +286,10 @@ lmitt.formula <- function(obj,
     }
   }
 
-  if (absorb) {
-    ## if (length(var_names(specification, "b")) == 0) {
-    ##   stop("No blocks found in StudySpecification, cannot absorb")
-    ## }
-
-    blocks <- blocks(specification,
-                    eval(lm.call$data, parent.frame()),
-                    all.x = TRUE,
-                    implicit = TRUE)[,1]
-    # To be used below
-  }
+  blocks <- blocks(specification,
+                  eval(lm.call$data, parent.frame()),
+                  all.x = TRUE,
+                  implicit = TRUE)[,1]
 
   # Identify whether RHS is intercept, continuous moderator, or subgroup
   if (rhs != "1") {
@@ -278,16 +312,23 @@ lmitt.formula <- function(obj,
   if (rhstype == "intercept") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
+    ctrl_means_form <- stats::reformulate("1", response = "lhs")
   } else if (rhstype == "categorical") {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
+    ctrl_means_form <- stats::reformulate(rhs, response = "lhs", intercept = FALSE)
   } else {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
                                           "a.(dichotomy=", deparse1(dichotomy), "):",
                                           rhs, "+", rhs))
     moderator <- rhs
+    ctrl_means_form <- stats::reformulate(rhs, response = "lhs")
   }
+  ctrl_means_env <- new.env()
+  assign("ctrl_means_data", data, envir = ctrl_means_env)
+  environment(ctrl_means_form) <- ctrl_means_env
+  
   mm.call <- lm.call
   mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
   # model.matrix.lm supports as `na.action` argument where
@@ -327,12 +368,13 @@ lmitt.formula <- function(obj,
                                       collapse = "+"),
                                     collapse = ""))
 
+  
   # If the moderators already exist in the passed-in data, remove them to avoid
   # either a) overloading variable names, or b) an error if data is a
   # `grouped_df` (see #137)
   data <- data[, !(names(data) %in% colnames(mm))]
-
-  # Data for model should be original data, plus updated RHS (mm)
+  
+  # Data for model should be original data, plus updated RHS (mm),
   lm.call$data <- cbind(data, mm)
 
   # restore subset
@@ -358,6 +400,8 @@ lmitt.formula <- function(obj,
                            lmitt_fitted = TRUE,
                            moderator = moderator,
                            absorbed_intercepts = absorb,
+                           ctrl_means_form = ctrl_means_form,
+                           dichotomy = dichotomy,
                            lmitt_call = lmitt_call))
 }
 

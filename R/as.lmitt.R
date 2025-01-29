@@ -33,7 +33,7 @@ NULL
 ##'   an error will be produced.)
 ##' @return \code{teeMod} object
 ##' @rdname as_lmitt
-##' @importFrom stats formula
+##' @importFrom stats formula weights
 ##' @export
 as.lmitt <- function(x, specification = NULL) {
   if (!inherits(x, "lm")) {
@@ -67,13 +67,27 @@ as.lmitt <- function(x, specification = NULL) {
   tt <- terms(stats::formula(x),
               specials = c("assigned", "a.", "z.", "adopters"))
 
-  if (all(vapply(attr(tt, "specials"), is.null, logical(1)))) {
-    stop(paste("`assigned()` or its aliases are not found in the model formula.",
-               "`assigned()` needs to be found in place of the treatment",
-               "variable name. The `lmitt()` function may be used to",
+  if (all(missing_alias <- vapply(attr(tt, "specials"), is.null, logical(1))) |
+      sum(!missing_alias) > 1) {
+    stop(paste("Exactly one of `assigned()` or its aliases must be in the model formula",
+               "in place of the treatmentvariable name. The `lmitt()` function may be used to",
                "avoid explicitly indicating `assigned()`."))
   }
 
+  ## find the dichotomy to pass on
+  a.call <- str2lang(
+    attr(tt, "term.labels")[
+      sapply(attr(tt, "term.labels"), function(v) grepl(names(which(!missing_alias)), v))
+    ]
+  )
+  dichotomy <- a.call$dichotomy
+  if (is.null(dichotomy) & length(a.call) == 4) dichotomy <- a.call[[4L]]
+  if (is.null(dichotomy) &
+      inherits(x$model$`(weights)`, "WeightedStudySpecification")) {
+    dichotomy <- x$model$`(weights)`@dichotomy
+  }
+  if (inherits(dichotomy, "formula") & length(dichotomy) == 0) dichotomy <- NULL
+  
   #### Obtain the proper call.
   # The first conditional is the user calls `lmitt()` and passes an `lm` object.
   # The second conditional if the user calls `lmitt.lm()` directly
@@ -100,6 +114,8 @@ as.lmitt <- function(x, specification = NULL) {
                            lmitt_fitted = FALSE,
                            absorbed_intercepts = FALSE,
                            moderator = vector("character"),
+                           ctrl_means_form = lhs ~ 1,
+                           dichotomy = dichotomy,
                            lmitt_call = lmitt_call))
 }
 
@@ -112,6 +128,8 @@ as.teeMod <- as.lmitt
                               lmitt_fitted,
                               absorbed_intercepts,
                               moderator,
+                              ctrl_means_form,
+                              dichotomy,
                               lmitt_call) {
   if (!inherits(lm_model, "lm")) {
     stop("input must be lm object")
@@ -182,11 +200,68 @@ as.teeMod <- as.lmitt
     if (!inherits(data, "data.frame")) {
       stop("Could not determine appropriate data")
     }
-    if (!is.null(lm_model$call$subset)) {
-      sbst <- eval(lm_model$call$subset, data)
-      data <- subset(data, sbst)
-    }
   }
+  
+  ## code block for getting control means and tacking them onto coefficients
+  if (is.null(ctrl_means_data <- mget("ctrl_means_data", envir = environment(ctrl_means_form),
+                                      ifnotfound = list(NULL))[[1]])) {
+    ctrl_means_data <- data
+  }
+  blks <- blocks(specification, ctrl_means_data, all.x = TRUE, implicit = TRUE)[,1]
+  a_col <- a.(specification = specification, dichotomy = dichotomy, data = data)
+  keep_rows <- which(
+    if (is.null(sbs <- eval(lm_model$call$subset, ctrl_means_data))) {
+      rep(TRUE, length(blks))
+    } else sbs)
+  ctrl_means_wts <- numeric(length(a_col))
+  ctrl_means_wts[keep_rows] <- if (is.null(
+    wts <- with(mod_copy <- lm_model, {
+      if (!is.null(mod_copy$na.action)) class(mod_copy$na.action) <- "exclude"
+      stats::weights(mod_copy)
+    }))) rep(1, length(keep_rows)) else wts
+
+  if (absorbed_intercepts) {
+    mods <- if (length(moderator)) eval(str2lang(moderator), ctrl_means_data) else moderator
+    ix <- if (inherits(mods, c("factor", "character"))) {
+      paste(mods, blks, sep = "_")
+    } else {
+      blks
+    }
+    pis <- rowsum(ctrl_means_wts * a_col, ix) / rowsum(ctrl_means_wts, ix)
+    ctrl_means_wts <- ctrl_means_wts * pis[ix,]
+    ctrl_means_wts[is.na(blks) | is.na(mods)] <- 0
+  }
+  ctrl_means_wts <- ctrl_means_wts * (1 - a_col)
+  
+  if (!is.null(os <- lm_model$model$`(offset)`)) {
+    model_keep_rows <- setdiff(keep_rows, stats::na.action(lm_model))
+    os <- replace(numeric(length(a_col)), model_keep_rows, os)
+  }
+  
+  ctrl_means_env <- new.env()
+  assign("data", ctrl_means_data, envir = ctrl_means_env)
+  environment(ctrl_means_form) <- ctrl_means_env
+  ctrl_means_form[[2L]] <- quote(
+    do.call(cbind,
+            stats::setNames(list(data[[stats::formula(lm_model)[[2]]]], os),
+                            c(stats::formula(lm_model)[[2]], "cov_adj")))
+  )
+  ctrl_means_cl <- lm_model$call[c(1, match(c("formula", "subset"), names(lm_model$call), 0))]
+  ctrl_means_cl[[2]] <- ctrl_means_form
+  ctrl_means_cl$data <- ctrl_means_data
+  ctrl_means_cl$weights <- ctrl_means_wts
+  ctrl_means_cl$na.action <- stats::na.exclude
+
+  ctrl_means_lm <- eval(ctrl_means_cl)
+  ctrl_means <- ctrl_means_lm$coefficients
+  ctrl_means_labels <- paste(
+    rep(if (is.null(cnms <- colnames(ctrl_means))) deparse1(stats::formula(lm_model)[[2]]) else cnms,
+        each = if (is.null(nr <- nrow(ctrl_means))) 1 else nr),
+    if (is.null(rnms <- rep(row.names(ctrl_means), ncol(ctrl_means)))) names(ctrl_means) else rnms,
+    sep = ":")
+  lm_model$coefficients <- c(lm_model$coefficients,
+                             stats::setNames(c(ctrl_means), ctrl_means_labels))
+
   lm_model$call$data <- data
   # set call's na.action to na.pass so expand.model.frame includes NA rows
   lm_model$call$na.action <- "na.pass"
@@ -202,6 +277,7 @@ as.teeMod <- as.lmitt
              StudySpecification = specification,
              absorbed_intercepts = absorbed_intercepts,
              moderator = moderator,
+             ctrl_means_model = ctrl_means_lm,
              lmitt_call = call("quote", lmitt_call),
              lmitt_fitted = lmitt_fitted))
 
