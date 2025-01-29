@@ -113,7 +113,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   vmat <- do.call(.vcov_CR0, args)
   n <- length(args$cluster)
   g <- length(unique(args$cluster))
-  k <- ncol(estfun(x))
+  ef <- estfun(x)
+  k <- ncol(ef) - sum(grepl("^(y|cov_adj):", colnames(ef)))
 
   vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
 
