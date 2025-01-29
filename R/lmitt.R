@@ -79,7 +79,7 @@
 ##' \eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
 ##' \eqn{1 - \hat{\pi}_s} for treatment group members and
 ##' \eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
-##' [lmitt(absorb=T)] reflect regressions of control observations
+##' [lmitt(absorb=T)][lmitt()] reflect regressions of control observations
 ##' using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
 ##' appropriate.
 ##' 

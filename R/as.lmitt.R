@@ -240,14 +240,15 @@ as.teeMod <- as.lmitt
   assign("data", ctrl_means_data, envir = ctrl_means_env)
   environment(ctrl_means_form) <- ctrl_means_env
   ctrl_means_form[[2L]] <- quote(
-    do.call(cbind, setNames(list(data[[stats::formula(lm_model)[[2]]]], os),
+    do.call(cbind,
+            stats::setNames(list(data[[stats::formula(lm_model)[[2]]]], os),
                             c(stats::formula(lm_model)[[2]], "cov_adj")))
   )
   ctrl_means_cl <- lm_model$call[c(1, match(c("formula", "subset"), names(lm_model$call), 0))]
   ctrl_means_cl[[2]] <- ctrl_means_form
   ctrl_means_cl$data <- ctrl_means_data
   ctrl_means_cl$weights <- ctrl_means_wts
-  ctrl_means_cl$na.action <- na.exclude
+  ctrl_means_cl$na.action <- stats::na.exclude
 
   ctrl_means_lm <- eval(ctrl_means_cl)
   ctrl_means <- ctrl_means_lm$coefficients
@@ -255,7 +256,8 @@ as.teeMod <- as.lmitt
     rep(colnames(ctrl_means) %||% deparse1(stats::formula(lm_model)[[2]]), each = nrow(ctrl_means) %||% 1),
     rep(row.names(ctrl_means), ncol(ctrl_means)) %||% names(ctrl_means),
     sep = ":")
-  lm_model$coefficients <- c(lm_model$coefficients, setNames(c(ctrl_means), ctrl_means_labels))
+  lm_model$coefficients <- c(lm_model$coefficients,
+                             stats::setNames(c(ctrl_means), ctrl_means_labels))
 
   lm_model$call$data <- data
   # set call's na.action to na.pass so expand.model.frame includes NA rows
