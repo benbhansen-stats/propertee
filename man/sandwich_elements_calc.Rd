@@ -13,7 +13,7 @@ returned by \code{vcov_tee()}}
 
 .get_a11_inverse(x)
 
-.get_a21(x)
+.get_a21(x, ...)
 
 .get_tilde_a22_inverse(x, ...)
 
