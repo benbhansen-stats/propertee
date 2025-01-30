@@ -5,7 +5,7 @@
 \title{(Internal) Align the dimensions and rows of direct adjustment and
 covariance adjustment model estimating equations matrices}
 \usage{
-.align_and_extend_estfuns(x, by = NULL, ...)
+.align_and_extend_estfuns(x, ctrl_means_ef_mat = NULL, by = NULL, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}

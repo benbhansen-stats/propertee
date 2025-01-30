@@ -112,7 +112,22 @@
 #' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
 #' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
 #'
-#' @format  A \code{data.frame} with 14 rows and 3 columns.
+#' @format  A \code{data.frame} with 14 rows and 13 columns.
+#' \itemize{
+#'  \item{schoolid} school id 
+#'  \item{blk} block
+#'  \item{z} treatment variable 
+#'  \item{MALE_G11_PERC} percentage of G11 male students
+#'  \item{FEMALE_G11_PERC} percentage of G11 female students
+#'  \item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
+#'  \item{ASIAN_G11_PERC} percentage of G11 Asian students
+#'  \item{HISP_G11_PERC} percentage of G11 Hispanic students
+#'  \item{BLACK_G11_PERC} percentage of G11 Black students
+#'  \item{WHITE_G11_PERC} percentage of G11 White students 
+#'  \item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
+#'  \item{TR_G11_PERC} percentage of G11 Two or More Races students 
+#'  \item{G11} Number of G11 students 
+#' }
 #' @keywords dataset
 "michigan_school_pairs"
 
@@ -122,8 +137,17 @@
 #' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems. 
 #' The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 #'
-#' @format A \code{data.frame} with 248 rows and 8 columns.
-#' @details Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
+#' @format A \code{data.frame} with 248 rows and 7 columns.
+#' \itemize{
+#'   \item {age} Age of participant
+#'   \item {vote_04} Outcome variable indicating whether participant voted 
+#'   \item {tv_company} Cable system serving participant's residential area
+#'   \item {treatment} Binary variable denoting treatment assignment
+#'   \item {pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
+#'   \item {population_size} Total population size of residential area served by cable system
+#'   \item {sample_size} Number of individuals sampled from the cable system cluster
+#' }
+#' @details The fuller Green-Vavreck dataset that this derives from bears a Creative Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution for Social and Policy Studies (ID: D005).
 #'
 #' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
 #' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.

@@ -7,6 +7,7 @@ test_that(paste("teeMod object created correctly with weights and no",
   sslm <- new("teeMod",
               lm(y ~ assigned(), data = simdata, weights = ate(spec)),
               StudySpecification = spec,
+              ctrl_means_model = lm(y ~ 1, simdata),
               lmitt_fitted = TRUE)
 
   expect_s4_class(sslm, "teeMod")
@@ -25,6 +26,7 @@ test_that(paste("teeMod object created correctly with weights and ",
               lm(y ~ assigned(), data = simdata, weights = ate(spec),
                  offset = cov_adj(cmod)),
               StudySpecification = spec,
+              ctrl_means_model = lm(y ~ 1, simdata),
               lmitt_fitted = FALSE)
 
   expect_s4_class(sslm, "teeMod")
@@ -49,6 +51,7 @@ test_that("teeMod print/show", {
               lm(y ~ assigned(), data = simdata, weights = ate(spec),
                  offset = cov_adj(cmod)),
               StudySpecification = spec,
+              ctrl_means_model = lm(y ~ 1, simdata),
               lmitt_fitted = FALSE)
 
   aslm <- as(sslm, "lm")
@@ -67,6 +70,7 @@ test_that("teeMod print/show", {
               lm(y ~ z., data = simdata, weights = ate(spec),
                  offset = cov_adj(cmod)),
               StudySpecification = spec,
+              ctrl_means_model = lm(y ~ 1, simdata),
               lmitt_fitted = TRUE)
 
   aslm <- as(sslm, "lm")
@@ -77,6 +81,10 @@ test_that("teeMod print/show", {
   # Expect "assigned()"
   expect_output(print(sslm), "z\\.")
   expect_output(show(sslm), "z\\.")
+  
+  # Expect new ctrl grp means
+  suppressMessages(m1 <- lmitt(y ~ 1, spec, simdata, offset = cov_adj(cmod)))
+  expect_output(show(m1), "y:\\(Intercept\\)")
 })
 
 test_that("lm to teeMod succeeds with weights and no SandwichLayer", {
@@ -145,10 +153,10 @@ test_that("vcov, confint, etc", {
   sslm <- as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec)))
 
   expect_true(is.matrix(vcov(sslm)))
-  expect_equal(dim(vcov(sslm)), c(2, 2))
+  expect_equal(dim(vcov(sslm)), c(3, 3))
 
   expect_true(is.matrix(confint(sslm)))
-  expect_equal(dim(confint(sslm)), c(2, 2))
+  expect_equal(dim(confint(sslm)), c(3, 2))
 
 
 })
@@ -292,25 +300,25 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   expect_error(confint(ssmod1, type = "not_a_type"), "not defined")
 
   # default CI
-  vcov_tee_ci.95 <- ssmod1$coefficients + sqrt(diag(vcov_tee(ssmod1))) %o%
+  vcov_tee_ci.95 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
     qt(c(0.025, 0.975), ssmod1$df.residual)
-  dimnames(vcov_tee_ci.95) <- list(names(ssmod1$coefficients), c("2.5 %", "97.5 %"))
+  dimnames(vcov_tee_ci.95) <- list(names(ssmod1$coefficients[1:4]), c("2.5 %", "97.5 %"))
   ci1 <- confint(ssmod1, type = "CR0")
   ci2 <- confint(ssmod1)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcov_tee_ci.95)
 
   # HC1 CI
-  vcov_tee_HC1_ci.95 <- ssmod1$coefficients + sqrt(diag(vcov_tee(ssmod1, type = "HC1"))) %o%
+  vcov_tee_HC1_ci.95 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1, type = "HC1"))) %o%
     qt(c(0.025, 0.975), ssmod1$df.residual)
-  dimnames(vcov_tee_HC1_ci.95) <- list(names(ssmod1$coefficients), c("2.5 %", "97.5 %"))
+  dimnames(vcov_tee_HC1_ci.95) <- list(names(ssmod1$coefficients)[1:4], c("2.5 %", "97.5 %"))
   ci_HC1 <- confint(ssmod1, type = "HC1")
   expect_equal(ci_HC1, vcov_tee_HC1_ci.95)
 
   # CI with different level
-  vcov_tee_ci.9 <- ssmod1$coefficients + sqrt(diag(vcov_tee(ssmod1))) %o%
+  vcov_tee_ci.9 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
     qt(c(0.05, 0.95), ssmod1$df.residual)
-  dimnames(vcov_tee_ci.9) <- list(names(ssmod1$coefficients), c("5 %", "95 %"))
+  dimnames(vcov_tee_ci.9) <- list(names(ssmod1$coefficients)[1:4], c("5 %", "95 %"))
   ci1 <- confint(ssmod1, level = 0.9)
   expect_equal(ci1, vcov_tee_ci.9)
 
@@ -320,7 +328,7 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
                   paste(..., collapse = "_")
                 })
 
-  vcovlm_z.95 <- ssmod2$coefficients +
+  vcovlm_z.95 <- ssmod2$coefficients[1:3] +
     sqrt(diag(sandwich::sandwich(ssmod2, meat. = sandwich::meatCL,
                             cluster = uoas))) %o%
     qt(c(0.025, 0.975), ssmod2$df.residual)
@@ -400,8 +408,8 @@ test_that(paste("estfun.teeMod returns original psi if no offset or no",
   nolmittmod2 <- lm(y ~ z, data = simdata, offset = ca)
   mod2 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = stats::predict(cmod))
 
-  ef_expected1 <- estfun(nolmittmod1)
-  ef_expected2 <- estfun(nolmittmod2)
+  ef_expected1 <- cbind(estfun(nolmittmod1), estfun(mod1@ctrl_means_model))
+  ef_expected2 <- cbind(estfun(nolmittmod2), estfun(mod2@ctrl_means_model))
 
   expect_true(all.equal(estfun(mod1), ef_expected1, check.attributes = FALSE))
   expect_true(all.equal(estfun(mod2), ef_expected2, check.attributes = FALSE))
@@ -423,9 +431,9 @@ test_that("estfun.teeMod gets scaling constants right with no overlap", {
 
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
   a11_inv <- .get_a11_inverse(dmod)
-  a21 <- .get_a21(dmod)
+  a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod),
+    estfun(dmod)[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -447,9 +455,9 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
 
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
   a11_inv <- .get_a11_inverse(dmod)
-  a21 <- .get_a21(dmod)
+  a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod),
+    estfun(dmod)[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -469,13 +477,13 @@ test_that("estfun.teeMod with missing values", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
   
-  ef <- estfun(dmod)
+  ef <- estfun(dmod)[,1:2]
   expect_equal(nrow(ef), nc + nq)
   expect_true(all.equal(ef[1:3,], matrix(0, nrow = 3, ncol = 2), check.attributes = FALSE))
   class(dmod$na.action) <- "exclude"
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
   a11_inv <- .get_a11_inverse(dmod)
-  a21 <- .get_a21(dmod)
+  a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
     ef,
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
@@ -495,7 +503,7 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata_copy), 2))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata_copy), 4))
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
@@ -510,8 +518,8 @@ test_that(paste("estfun.teeMod returns correct dimensions when only",
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
-  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 2))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
+  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 4))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions and alignment",
@@ -528,7 +536,7 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 2))
+  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
   expect_equal(estfun(mod1), estfun(mod2))
 })
 
@@ -546,7 +554,7 @@ test_that(paste("estfun.teeMod returns correct dimensions for partial",
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
   expect_equal(dim(estfun(mod)),
-               c(nrow(simdata) + nrow(cmod_ssta[is.na(cmod_ssta$uoa1),]), 2))
+               c(nrow(simdata) + nrow(cmod_ssta[is.na(cmod_ssta$uoa1),]), 4))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions for no",
@@ -561,7 +569,17 @@ test_that(paste("estfun.teeMod returns correct dimensions for no",
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_ssta), 2))
+  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_ssta), 4))
+})
+
+test_that("estfun zeros out NA's from ctrl means regression", {
+  moddata <- data.frame(a = c(rep(c(0, 1), each = 5), NA_real_), y = rnorm(11), id = seq_len(11))
+  spec <- rct_spec(a ~ unitid(id), data = moddata)
+  mod <- lmitt(y ~ 1, data = moddata, spec = spec)
+  ef <- estfun(mod)
+  expect_true(all(!is.na(ef)))
+  expect_true(!all(ef == 0))
+  expect_equal(ef[11,3], 0)
 })
 
 if (requireNamespace("robustbase", quietly = TRUE)) {
@@ -572,7 +590,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     dmod <- lmitt(lm(y ~ z.(spec), simdata, offset = cov_adj(cmod)), specification = spec)
 
     out <- estfun(dmod)
-    expect_equal(dim(out), c(50, 2))
+    expect_equal(dim(out), c(50, 4))
   })
 }
 
@@ -586,14 +604,17 @@ test_that(paste("bread.teeMod returns bread.lm for teeMod objects",
   m1 <- lmitt(y ~ 1, data = simdata, specification = spec)
   m2 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = ca)
 
-  expected_out1 <- nrow(simdata) * chol2inv(m1$qr$qr)
-  coef_names <- names(m1$coefficients)
-  dimnames(expected_out1) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(m1), expected_out1)
+  expected_out1 <- matrix(0, nrow = 3, ncol = 3)
+  expected_out1[1:2, 1:2] <- nrow(simdata) * chol2inv(m1$qr$qr)
+  expected_out1[3, 3] <- nrow(simdata) / sum(weights(m1@ctrl_means_model))
+  dimnames(expected_out1) <- list(names(m1$coefficients), names(m1$coefficients))
+  expect_equal(bread(m1), expected_out1)
 
-  expected_out2 <- nrow(simdata) * chol2inv(m2$qr$qr)
-  dimnames(expected_out2) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(m2), expected_out2)
+  expected_out2 <- matrix(0, nrow = 4, ncol = 4)
+  expected_out2[1:2, 1:2] <- nrow(simdata) * chol2inv(m2$qr$qr)
+  expected_out2[3:4, 3:4] <- diag(2) * nrow(simdata) / sum(weights(m2@ctrl_means_model))
+  dimnames(expected_out2) <- list(names(m2$coefficients), names(m2$coefficients))
+  expect_equal(bread(m2), expected_out2)
 })
 
 test_that(paste("bread.teeMod returns expected output for full overlap",
@@ -606,10 +627,11 @@ test_that(paste("bread.teeMod returns expected output for full overlap",
   m <- lmitt(y ~ 1, data = simdata, specification = spec, weights = ate(spec),
              offset = cov_adj(cmod))
 
-  expected_out <- nrow(simdata) * chol2inv(m$qr$qr)
-  coef_names <- names(m$coefficients)
-  dimnames(expected_out) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(m), expected_out)
+  expected_out <- matrix(0, nrow = 4, ncol = 4)
+  expected_out[1:2, 1:2] <- nrow(simdata) * chol2inv(m$qr$qr)
+  expected_out[3:4, 3:4] <- diag(2) * nrow(simdata) / sum(weights(m@ctrl_means_model))
+  dimnames(expected_out) <- list(names(m$coefficients), names(m$coefficients))
+  expect_equal(bread(m), expected_out)
 })
 
 test_that(paste("bread.teeMod returns expected output for partial overlap",
@@ -627,10 +649,11 @@ test_that(paste("bread.teeMod returns expected output for partial overlap",
   spec <- rct_spec(z ~ unitid(id), simdata)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata, offset = cov_adj(cmod))
 
-  expected_out <- n * chol2inv(dmod$qr$qr)
-  coef_names <- names(dmod$coefficients)
-  dimnames(expected_out) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(dmod), expected_out)
+  expected_out <- matrix(0, nrow = 4, ncol = 4)
+  expected_out[1:2, 1:2] <- n * chol2inv(dmod$qr$qr)
+  expected_out[3:4, 3:4] <- diag(2) * n / sum(weights(dmod@ctrl_means_model))
+  dimnames(expected_out) <- list(names(dmod$coefficients), names(dmod$coefficients))
+  expect_equal(bread(dmod), expected_out)
 })
 
 test_that(paste("bread.teeMod returns expected output for no overlap",
@@ -647,10 +670,11 @@ test_that(paste("bread.teeMod returns expected output for no overlap",
   spec <- rct_spec(z ~ unitid(id), simdata)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata, offset = cov_adj(cmod))
 
-  expected_out <- n * chol2inv(dmod$qr$qr)
-  coef_names <- names(dmod$coefficients)
-  dimnames(expected_out) <- list(coef_names, coef_names)
-  expect_equal(sandwich::bread(dmod), expected_out)
+  expected_out <- matrix(0, nrow = 4, ncol = 4)
+  expected_out[1:2, 1:2] <- n * chol2inv(dmod$qr$qr)
+  expected_out[3:4, 3:4] <- diag(2) * n / sum(weights(dmod@ctrl_means_model))
+  dimnames(expected_out) <- list(names(dmod$coefficients), names(dmod$coefficients))
+  expect_equal(bread(dmod), expected_out)
 })
 
 test_that("bread.teeMod handles model with less than full rank", {
@@ -662,13 +686,18 @@ test_that("bread.teeMod handles model with less than full rank", {
 
   ### lmitt.formula
   ssmod <- lmitt(y ~ o_fac, data = copy_simdata, specification = spec, offset = cov_adj(cmod))
-  keep_ix <- ssmod$qr$pivot[1L:ssmod$rank]
-  expect_true(
-    all.equal(
-      bread(ssmod),
-      nrow(simdata) * solve(crossprod(model.matrix(ssmod))[keep_ix,keep_ix])
-    )
-  )
+  p <- ssmod$rank
+  keep_ix <- ssmod$qr$pivot[1L:p]
+  cm_mm <- model.matrix(ssmod@ctrl_means_model)
+  q <- ncol(cm_mm)
+  
+  expected_out <- matrix(0, nrow = p + 2 * q, ncol = p + 2 * q)
+  expected_out[1:p, 1:p] <- nrow(simdata) * solve(crossprod(model.matrix(ssmod))[keep_ix,keep_ix])
+  expected_out[(p+1):(p+q), (p+1):(p+q)] <- nrow(simdata) * chol2inv(
+    ssmod@ctrl_means_model$qr$qr)
+  expected_out[(p+q+1):(p+2*q), (p+q+1):(p+2*q)] <- nrow(simdata) * chol2inv(
+    ssmod@ctrl_means_model$qr$qr)
+  expect_true(all.equal(bread(ssmod), expected_out, check.attributes = FALSE))
 })
 
 test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
@@ -944,6 +973,22 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   expect_true(all(ef1$psi[31L:50L,] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+})
+
+test_that(".align_and_extend_estfuns with ctrl means estfun", {
+  moddata <- data.frame(a = c(rep(c(0, 1), each = 5), NA_real_), x = rnorm(11),
+                        y = rnorm(11), id = seq_len(11))
+  cmod <- lm(y ~ x, moddata)
+  spec <- rct_spec(a ~ unitid(id), data = moddata)
+  mod <- lmitt(y ~ 1, data = moddata, spec = spec, offset = cov_adj(cmod))
+  class(mod$na.action) <- "exclude"
+  cm_ef <- estfun(mod@ctrl_means_model)
+  cm_ef[is.na(cm_ef)] <- 0
+  aligned1 <- .align_and_extend_estfuns(mod)
+  aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
+  expect_equal(length(aligned1), 2)
+  expect_equal(length(aligned2), 2)
+  expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4], check.attributes = FALSE))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or teeMod model", {
@@ -1514,7 +1559,7 @@ test_that("checking proper errors in conversion from lm to teeMod", {
   spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
 
   expect_error(as.lmitt(lm(y ~ x, data = simdata), specification = spec),
-               "aliases are not found")
+               "aliases must be")
 
 
   # Take in either StudySpecification or WeightedStudySpecification
@@ -1522,13 +1567,17 @@ test_that("checking proper errors in conversion from lm to teeMod", {
                                      spec,
                                      FALSE,
                                      TRUE,
-                                     "a",
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls")))
   mod2 <- propertee:::.convert_to_lmitt(lm(y ~ assigned(spec), data = simdata),
                                      ate(spec, data = simdata),
                                      FALSE,
                                      TRUE,
-                                     "a",
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls")))
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
 
@@ -1536,7 +1585,9 @@ test_that("checking proper errors in conversion from lm to teeMod", {
                                      1,
                                      FALSE,
                                      TRUE,
-                                     "a",
+                                     "x",
+                                     lhs ~ 1,
+                                     NULL,
                                      call("quote", call("ls"))), "must be a")
 
 
@@ -1617,18 +1668,21 @@ test_that("printed effects aren't confused by bad naming", {
   co <- capture.output(show(mod))
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
-  expect_true(all(vapply(cos, length, numeric(1)) == 4))
-  expect_true(all(!isTRUE(grepl("^abz", cos[[1]]))))
-  expect_true(all(grepl("^z", cos[[1]])))
+  expect_true(
+    all(sapply(levels(simdata$abz.c),
+               function(lvl) {
+                 any(sapply(cos, function(buf) any(grepl(paste0("z._abz.c", lvl), buf)))) &
+                   any(sapply(cos, function(buf) any(grepl(paste0("y:abz.c", lvl), buf))))
+               })))
 
   # to force ` in variable names via as.factor
   mod <- lmitt(y ~ as.factor(abz.c), data = simdata, specification = spec)
   co <- capture.output(show(mod))
   cos <- strsplit(trimws(co[c(1, 3)]), "[[:space:]]+")
   cos <- Reduce("c", cos)
-  expect_length(cos, 4)
+  expect_length(cos, 6)
   expect_true(all(!isTRUE(grepl("^as\\.factor", cos))))
-  expect_true(all(grepl("^`z", cos)))
+  expect_true(all(grepl("^(`z|y)", cos)))
 })
 
 
@@ -1671,10 +1725,10 @@ test_that("#81 continuous moderator shows appropriate coefficients", {
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) , data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, specification = spec)
-  expect_length(mod$coeff, 4)
+  expect_length(mod$coeff, 6)
   coefnames <- strsplit(capture.output(show(mod))[1], " +")[[1]]
   coefnames <- coefnames[nchar(coefnames) > 0]
-  expect_true(all(grepl("z.", coefnames, fixed = TRUE)))
+  expect_true(all(grepl("(z\\.|y:)", coefnames)))
 })
 
 test_that("Invalid input to .convert_to_lmitt", {
@@ -1706,12 +1760,12 @@ test_that(".estfun_DB_blockabsorb returns correct value", {
   ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec),
                      absorb = TRUE)
 
-  expect_false(all(.estfun_DB_blockabsorb(ssmod_abs, db = TRUE) == 0))
+  expect_false(all(.estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB") == 0))
 
-  phi <- .get_phi_tilde(ssmod_abs, db = TRUE)
-  aa <- .get_appinv_atp(ssmod_abs, db = TRUE)
+  phi <- .get_phi_tilde(ssmod_abs, vcov_type = "DB")
+  aa <- .get_appinv_atp(ssmod_abs, vcov_type = "DB")
   expect_true(all.equal(
     cbind(0, phi %*% aa),
-    .estfun_DB_blockabsorb(ssmod_abs, db = TRUE)
+    .estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB")
   ))
 })

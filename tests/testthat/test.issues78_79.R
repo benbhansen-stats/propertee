@@ -65,7 +65,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     # check vcov matrix for lmitt.formula
     mods <- multcomp::mmm(a1, a2)
     n <- nrow(fct_df)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -75,7 +75,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     
     # check vcov matrix for lmitt.lm
     mods <- multcomp::mmm(a1lm, a2lm)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -113,7 +113,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     # check vcov matrix for lmitt.formula
     mods <- multcomp::mmm(a1, a2)
     n <- nrow(fct_df)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -123,7 +123,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     
     # check vcov matrix for lmitt.lm
     mods <- multcomp::mmm(a1lm, a2lm)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -163,7 +163,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     # check vcov matrix for lmitt.formula
     mods <- multcomp::mmm(a1, a2)
     n <- nrow(fct_df) + nrow(ca_df)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -173,7 +173,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     
     # check vcov matrix for lmitt.lm
     mods <- multcomp::mmm(a1lm, a2lm)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -208,7 +208,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     # check vcov matrix for lmitt.formula
     mods <- multcomp::mmm(a1, a2)
     n <- nrow(Q_df) + nrow(ca_df)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -218,7 +218,7 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     
     # check vcov matrix for lmitt.lm
     mods <- multcomp::mmm(a1lm, a2lm)
-    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1), nrow = 1)), vcov = vcov_tee)
+    tsts <- multcomp::glht(mods, multcomp::mlf(matrix(c(0, 1, 0, 0), nrow = 1)), vcov = vcov_tee)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
@@ -248,9 +248,9 @@ if (requireNamespace("multcomp", quietly = TRUE)) {
     # check vcov matrix for lmitt.formula
     mods <- multcomp::mmm(a1, a2)
     n <- nrow(Q_df) + nrow(ca_df)
-    tsts <- multcomp::glht(mods, matrix(c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0, 1, 0), nrow = 2, byrow = TRUE),
-                 vcov = vcov_tee, cadjust = FALSE)
+    tsts <- multcomp::glht(
+      mods, rbind(c(rep(0, 3), 1, rep(0, 16)), c(rep(0, 14), 1, rep(0, 5))),
+      vcov = vcov_tee, cadjust = FALSE)
     vmat <- summary(tsts)$vcov
     expect_true(all.equal(
       vmat,
