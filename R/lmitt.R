@@ -71,17 +71,25 @@
 ##' for block fixed effects can be seen to coincide with estimates
 ##' calculated without block effect but with weights multiplied by an
 ##' additional factor specific to the combination of block and
-##' treatment condition. For block s containing units with weights
+##' treatment condition. For block \eqn{s} containing units with weights
 ##' \eqn{w_i} and binary treatment assignments \eqn{z_i}, define
 ##' \eqn{\hat{\pi}_s} by \eqn{\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i}. If
 ##' \eqn{\hat{\pi}_s} is 0 or 1, the block doesn't contribute to
 ##' effect estimation and the additional weighting factor is 0; if
 ##' \eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
 ##' \eqn{1 - \hat{\pi}_s} for treatment group members and
-##' \eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
-##' [lmitt(absorb=T)][lmitt()] reflect regressions of control observations
-##' using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
-##' appropriate.
+##' \eqn{\hat{\pi}_s} for controls. When estimating a main effect only
+##' or a main effect with continuous moderator, supplementary
+##' coefficients under option \code{absorb=TRUE} reflect regressions
+##' with additional weighting factor equal to 0 or \eqn{\hat{\pi}_s},
+##' respectively, for treatment or control group members of block
+##' \eqn{s}. With a categorical moderator and \code{absorb=TRUE},
+##' this additional weighting factor determining supplementary coefficients
+##' is calculated separately for each level \eqn{\ell} of the moderator
+##' variable, with the sums defining \eqn{\hat{\pi}_{s\ell}} restricted
+##' not only to block \eqn{s} but also to observations with moderator
+##' equal to \eqn{\ell}. 
+##' 
 ##' 
 ##' @param obj A \code{formula} or a \code{lm} object. See Details.
 ##' @param specification The \code{StudySpecification} to be used.
