@@ -464,6 +464,11 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     expand_cols <- by.y <- uoa_cols
   }
 
+  if (x@StudySpecification@unit_of_assignment_type == "none") {
+    moddata <- x$call$data
+    moddata$..uoa.. <- rownames(moddata)
+    x$call$data <- moddata
+  }
   obs_uoa_ids <- stats::expand.model.frame(x,
                                            expand_cols)[, expand_cols, drop = FALSE]
 

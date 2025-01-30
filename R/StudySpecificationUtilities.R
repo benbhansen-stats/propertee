@@ -206,15 +206,21 @@ identify_small_blocks <- function(spec) {
     specdata_cl$x <- spec_cl$data
     specdata_cl[[3]] <- subset_cl
   }
+
   for (f in seq_len(sys.nframe())) {
     q_df <- tryCatch({
       eval(specdata_cl, envir = parent.frame(f))
     }, error = function(e) return(NULL))
     if (!is.null(q_df) & inherits(q_df, "data.frame")) break
+
   }
 
   if (is.null(q_df)) {
     stop("Could not find specification data in the call stack")
+  }
+
+  if (spec@unit_of_assignment_type == "none") {
+    q_df[["..uoa.."]] <- rownames(q_df)
   }
 
   if (!is.null(cluster) & !all(cluster %in% colnames(q_df))) {
@@ -226,7 +232,8 @@ identify_small_blocks <- function(spec) {
     spec@unit_of_assignment_type,
     "unitid" = unitids,
     "unit_of_assignment" = units_of_assignment,
-    "cluster" = clusters
+    "cluster" = clusters,
+    "none" = ..uoa..
   )
   uoas <- grab_uoas_fn(spec)
 

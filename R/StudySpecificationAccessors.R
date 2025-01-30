@@ -399,6 +399,21 @@ setMethod("unitids<-", "StudySpecification", function(x, value) {
   return(x)
 })
 
+############### ..uoa..
+# This is when a spec is specified without uoa/cluster/unitid, e.g. z ~ 1. See
+# #193 for details
+
+##' @title Return ..uoa.. column
+##' @param spec A studyspecification
+##' @return The ..uoa.. column
+##' @keywords internal
+..uoa.. <- function(spec) {
+  if (spec@unit_of_assignment_type != "none") {
+    stop("Internal error: ..uoa..() only valid for `unit_of_assignment_type` == 'none'")
+  }
+  return(spec@structure["..uoa.."])
+}
+
 ############### Blocks
 
 ##' @export
