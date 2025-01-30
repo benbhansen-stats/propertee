@@ -57,7 +57,7 @@ forcing <- unit_of_assignment
 
 #
 ##' Checks performed:
-##' * Ensure presence of exactly one of \code{unit_of_assignment()},
+##' * Ensure presence of no more than one of \code{unit_of_assignment()},
 ##'   \code{cluster()} or \code{unitid()}.
 ##' * Disallow multiple \code{block()} or multiple \code{forcing()} terms.
 ##' * Disallow \code{forcing()} unless in RDD.
@@ -88,12 +88,7 @@ forcing <- unit_of_assignment
   len_clu <- length(spec_clu)
   len_uni <- length(spec_uni)
 
-  if (is.null(spec_uas) &
-      is.null(spec_uoa) &
-      is.null(spec_clu) &
-      is.null(spec_uni)) {
-    stop("Must specify a unit_of_assignment, cluster or unitid variable.")
-  } else if (len_uas + len_uoa + len_clu + len_uni > 1) {
+  if (len_uas + len_uoa + len_clu + len_uni > 1) {
     # there's 2+ entered; need to figure out what combination
 
     if ((len_uas >= 1) + (len_uoa >= 1) + (len_clu >= 1) + (len_uni >= 1) > 1) {

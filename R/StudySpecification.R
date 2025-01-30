@@ -51,7 +51,7 @@ setValidity("StudySpecification", function(object) {
     return("RD specifications must include at least one forcing variables")
   }
   if (!object@unit_of_assignment_type %in%
-        c("cluster", "unitid", "unit_of_assignment")) {
+        c("cluster", "unitid", "unit_of_assignment", "none")) {
     return(paste('valid `unit_of_assignment_type`s are "unit_of_assignment",',
                  '"cluster" or "unitid"'))
   }
@@ -94,7 +94,8 @@ setValidity("StudySpecification", function(object) {
   ## #174 convert all data.frames
   data <- .as_data_frame(data)
 
-  ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output later
+  ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output
+  ### later
 
   if (grepl("unit_of_assignment\\([a-zA-Z]", deparse1(form)) |
         grepl("uoa\\([a-zA-Z]", deparse1(form))) {
@@ -104,7 +105,9 @@ setValidity("StudySpecification", function(object) {
   } else if (grepl("unitid\\([a-zA-Z]", deparse1(form))) {
     autype <- "unitid"
   } else {
-    stop("This error should never be hit!")
+    autype <- "none"
+    data[["..uoa.."]] <- rownames(data)
+    form <- update(form, . ~ . + unit_of_assignment(..uoa..))
   }
 
   # Ensure whichever unit of assignment function is used, `unit_of_assignment`
