@@ -1,10 +1,10 @@
 test_that("Support lack of UOA", {
   data(simdata)
-  sd_idd <- simdata
-  sd_idd$id <- rownames(sd_idd)
+  sd_ided <- simdata
+  sd_ided$id <- rownames(sd_ided)
 
-  spec1 <- rct_spec(z ~ uoa(id), data = sd_idd)
-  spec2 <- rct_spec(z ~ 1, data = sd_idd)
+  spec1 <- rct_spec(z ~ uoa(id), data = sd_ided)
+  spec2 <- rct_spec(z ~ 1, data = sd_ided)
   expect_true(all.equal(spec1@structure,
                         spec2@structure,
                         check.attributes = FALSE))
@@ -13,12 +13,25 @@ test_that("Support lack of UOA", {
   expect_equal(spec1@unit_of_assignment_type, "unit_of_assignment")
   expect_equal(spec2@unit_of_assignment_type, "none")
 
-  mod1 <- lmitt(y ~ 1, spec = spec1, data = sd_idd)
-  mod2 <- lmitt(y ~ 1, spec = spec2, data = sd_idd)
-  expect_identical(coefficients(mod1),
-                   coefficients(mod2))
+  mod1 <- lmitt(y ~ 1, spec = spec1, data = sd_ided)
+  mod2 <- lmitt(y ~ 1, spec = spec2, data = sd_ided)
+  expect_true(isTRUE(all.equal(coefficients(mod1),
+                               coefficients(mod2))))
 
   smod1 <- summary(mod1)
   smod2 <- summary(mod2)
-  expect_identical(coefficients(smod2), coefficients(smod1))
+  expect_true(isTRUE(all.equal(coefficients(smod1),
+                               coefficients(smod2))))
+
+  ## Shuffle
+  sd_ided_shuffled <- sd_ided[sample(1:50), ]
+  spec3 <- rct_spec(z ~ 1, data = sd_ided_shuffled)
+  mod3 <- lmitt(y ~ 1, spec = spec3, data = sd_ided_shuffled)
+  expect_true(isTRUE(all.equal(coefficients(mod1),
+                               coefficients(mod3))))
+  smod3 <- summary(mod3)
+  expect_true(isTRUE(all.equal(coefficients(smod1),
+                               coefficients(smod3))))
+
+
 })
