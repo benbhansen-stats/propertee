@@ -192,10 +192,10 @@ effect estimation and the additional weighting factor is 0; if
 \(1 - \hat{\pi}_s\) for treatment group members and
 \(\hat{\pi}_s\) for controls. When estimating a main effect only
 or a main effect with continuous moderator, supplementary
-coefficients for lmitt(absorb=T) reflect regressions
+coefficients under option <code>absorb=TRUE</code> reflect regressions
 with additional weighting factor equal to 0 or \(\hat{\pi}_s\),
 respectively, for treatment or control group members of block
-\(s\). With a categorical moderator and option <code>absorb=TRUE</code>,
+\(s\). With a categorical moderator and <code>absorb=TRUE</code>,
 this additional weighting factor determining supplementary coefficients
 is calculated separately for each level \(\ell\) of the moderator
 variable, with the sums defining \(\hat{\pi}_{s\ell}\) restricted
