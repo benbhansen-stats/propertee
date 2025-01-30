@@ -183,17 +183,24 @@ supplementary regression. The treatment effect estimates adjusted
 for block fixed effects can be seen to coincide with estimates
 calculated without block effect but with weights multiplied by an
 additional factor specific to the combination of block and
-treatment condition. For block s containing units with weights
+treatment condition. For block \(s\) containing units with weights
 \(w_i\) and binary treatment assignments \(z_i\), define
 \(\hat{\pi}_s\) by \(\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i\). If
 \(\hat{\pi}_s\) is 0 or 1, the block doesn't contribute to
 effect estimation and the additional weighting factor is 0; if
 \(0 &lt; \hat{\pi}_s &lt; 1\), the additional weighting factor is
 \(1 - \hat{\pi}_s\) for treatment group members and
-\(\hat{\pi}_s\) for controls. The supplementary coeficients for
-lmitt(absorb=T) reflect regressions of control observations
-using weights multiplied by \(\hat{\pi}_s\) or 0, as
-appropriate.</p>
+\(\hat{\pi}_s\) for controls. When estimating a main effect only
+or a main effect with continuous moderator, supplementary
+coefficients for lmitt(absorb=T) reflect regressions
+with additional weighting factor equal to 0 or \(\hat{\pi}_s\),
+respectively, for treatment or control group members of block
+\(s\). With a categorical moderator and option <code>absorb=TRUE</code>,
+this additional weighting factor determining supplementary coefficients
+is calculated separately for each level \(\ell\) of the moderator
+variable, with the sums defining \(\hat{\pi}_{s\ell}\) restricted
+not only to block \(s\) but also to observations with moderator
+equal to \(\ell\).</p>
     </div>
 
     <div class="section level2">
