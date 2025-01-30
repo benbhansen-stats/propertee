@@ -1,4 +1,4 @@
-testthat("Support lack of UOA", {
+test_that("Support lack of UOA", {
   data(simdata)
   simdata$id <- rownames(simdata)
 
