@@ -1,6 +1,6 @@
 # propertee 0.6.1 (Unreleased)
 ## New Features
-* In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control distribution (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
+* In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
 
 # propertee 0.5.2
 ## New Features
