@@ -143,6 +143,11 @@
 
     # Try to get the data from the appropriate frame
     passed_data <- tryCatch(get("data", sys.frame(mf_pos)))
+
+    ### #193 - There's no harm adding this every time, as if it's not needed,
+    ### it'll be dropped in the model.frame call below
+    passed_data$..uoa.. <- rownames(passed_data)
+
     if (is.null(passed_data)) {
       # If we can't get the data directly, try getting it via name
       passed_data <- tryCatch(eval(sys.call(mf_pos)$data,

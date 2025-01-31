@@ -64,6 +64,10 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
     newdata <- .as_data_frame(newdata)
   }
 
+  if (specification@unit_of_assignment_type == "none") {
+    newdata$..uoa.. <- rownames(newdata)
+  }
+
   if (!is.null(specification)) {
     trt_name <- var_names(specification,'t')
     if (trt_name %in% names(newdata))
