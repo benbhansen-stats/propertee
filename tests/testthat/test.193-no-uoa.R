@@ -59,4 +59,28 @@ test_that("covadj", {
                                coefficients(smod2))))
 
 
+
+  data(STARdata)
+  st <- STARdata
+  st$stuid <- rownames(st)
+  spec1 <- obs_spec(stark ~ unit_of_assignment(stuid) + block(schoolk),
+                   data = st, na.fail = FALSE)
+  ca <- lm(readk ~ birth + gender, data = st, subset = (stark != "regular"))
+  ## warnings here appear due to NA's in STARdata
+  suppressWarnings(mod1 <- lmitt(readk ~ 1, spec1, data = st, absorb = TRUE,
+                                 dichotomy = stark == "regular" ~ .,
+                                 offset = cov_adj(ca)))
+
+  spec2 <- obs_spec(stark ~ block(schoolk), data = st, na.fail = FALSE)
+  suppressWarnings(mod2 <- lmitt(readk ~ 1, spec2, absorb = TRUE, data = st,
+                                 dichotomy = stark=="regular" ~ .,
+                                 offset = cov_adj(ca)))
+
+
+  expect_true(isTRUE(all.equal(coefficients(mod1),
+                               coefficients(mod2))))
+  smod1 <- summary(mod1)
+  smod2 <- summary(mod2)
+  expect_true(isTRUE(all.equal(coefficients(smod1),
+                               coefficients(smod2))))
 })
