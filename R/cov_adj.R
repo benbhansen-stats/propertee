@@ -64,9 +64,6 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
     newdata <- .as_data_frame(newdata)
   }
 
-  if (specification@unit_of_assignment_type == "none") {
-    newdata$..uoa.. <- rownames(newdata)
-  }
 
   if (!is.null(specification)) {
     trt_name <- var_names(specification,'t')
@@ -80,6 +77,10 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
       } else {
         warning("If treatment is an independent variable of the covariance model, predictions may (incorrectly) include treatment contributions. For now, setting these contributions to 0 is implemented only for logical or numeric treatments, but this treatment is a factor.")
       }
+    if (specification@unit_of_assignment_type == "none") {
+      newdata$..uoa.. <- rownames(newdata)
+    }
+
   }
 
   psl <- .make_PreSandwichLayer(model, newdata)
