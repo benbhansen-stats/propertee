@@ -135,10 +135,10 @@ effect estimation and the additional weighting factor is 0; if
 \eqn{1 - \hat{\pi}_s} for treatment group members and
 \eqn{\hat{\pi}_s} for controls. When estimating a main effect only
 or a main effect with continuous moderator, supplementary
-coefficients for \link[=lmitt]{lmitt(absorb=T)} reflect regressions
+coefficients under option \code{absorb=TRUE} reflect regressions
 with additional weighting factor equal to 0 or \eqn{\hat{\pi}_s},
 respectively, for treatment or control group members of block
-\eqn{s}. With a categorical moderator and option \code{absorb=TRUE},
+\eqn{s}. With a categorical moderator and \code{absorb=TRUE},
 this additional weighting factor determining supplementary coefficients
 is calculated separately for each level \eqn{\ell} of the moderator
 variable, with the sums defining \eqn{\hat{\pi}_{s\ell}} restricted
