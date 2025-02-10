@@ -5,7 +5,16 @@
 \alias{GV_data}
 \title{GV data}
 \format{
-A \code{data.frame} with 248 rows and 8 columns.
+A \code{data.frame} with 248 rows and 7 columns.
+\itemize{
+\item {age} Age of participant
+\item {vote_04} Outcome variable indicating whether participant voted
+\item {tv_company} Cable system serving participant's residential area
+\item {treatment} Binary variable denoting treatment assignment
+\item {pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
+\item {population_size} Total population size of residential area served by cable system
+\item {sample_size} Number of individuals sampled from the cable system cluster
+}
 }
 \source{
 \url{https://isps.yale.edu/research/data/d005}
@@ -19,7 +28,7 @@ It specifically includes matched pairs 1–3, which correspond to 7 out of the 8
 The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 }
 \details{
-Note: This dataset bears a Creative Commons BY-NC-ND license (v3.0).
+The fuller Green-Vavreck dataset that this derives from bears a Creative Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution for Social and Policy Studies (ID: D005).
 }
 \references{
 Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized

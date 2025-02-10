@@ -204,7 +204,7 @@ The second exception arises when units of assignment (in this case, schools) con
 #### Conclusion
 This vignette has demonstrated how to use the `propertee` package to enhance the evaluation of treatment effects by incorporating covariance adjustment models. The following key concepts and commands were covered:
 
-- Create a `StudySpecification` object which encodes the study specification, including the unit of assignment, treatment status of each unit of assignment, and optionally block information. This is done using the `rct_spec()` or optionally `obs_spec()` and `rd_spec()` functions.
+- Create a `StudySpecification` object which encodes the design, including the unit of assignment, treatment status of each unit of assignment, and optionally block information. This is done using the `rct_spec()` or optionally `obs_spec()` and `rd_spec()` functions.
 - Fit both least squares and robust regression models to adjust for covariates and enhance the precision of treatment effect estimates.
 - Use the `cov_adj()` function to process the covariate adjustment model.
 - Fit a model using the `lmitt()` function to estimate treatment effect that accounts for the specification information and the covariate adjustment by including the `weights` and `offset` arguments in the function.
