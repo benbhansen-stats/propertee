@@ -20,27 +20,40 @@ library(propertee)
 
 ## Main Features
 
-The **propertee** package, Prognostic Regression Offsets with Propagation of
-ERrors (for Treatment Effect Estimation), facilitates direct adjustment for
-experiments and observational studies with specification-informed standard
-errors and flexible options for covariance adjustment. It uses explicit
-specification of study specification to provide probability of assignment
-weights and standard errors that appropriately reflect the specification. For
-covariance adjustment of its Hajek and (one-way) fixed effects estimates, it
-enables offsetting the outcome against predictions from a dedicated covariance
-model, with standard error calculations propagating error as appropriate from
-the covariance model.
+The **propertee** package, Prognostic Regression Offsets with
+Propagation of ERrors (for Treatment Effect Estimation), facilitates
+direct adjustment or standardization for experiments and observational
+studies, with the option of using a separately fitted prognostic
+regression model for covariance adjustment. Propertee calls for a
+self-standing specification of a study's design and treatment
+allocations, using these to create weights needed to align treatment
+and control samples for estimation of treatment effects averaged
+across a common standard population, with standard errors that
+appropriately reflect the study design. For covariance adjustment it
+enables offsetting the outcome against predictions from a dedicated
+covariance model, with standard error calculations propagating error
+as appropriate from the covariance model.
 
 The main workflow consists of two main steps and one optional step:
 
-1. Generate a `StudySpecification` object which encodes the study specification,
-   including the unit of assignment, treatment status of each unit of
-   assignment, and optionally block information. This is accomplished with the
-   `obs_spec()`, `rct_spec()` or `rd_spec()` functions.
-2. Optionally, fit a covariate adjustment model.
-3. Fit a model to estimate a treatment effect, accounting for the specification
-   information, and optionally the covariate adjustment. This is done via the
-   `lmitt()` function.
+1. Encode the study's design, including the unit of assignment,
+   treatment status of each unit of assignment, and block membership
+   information as appropriate, in a `StudySpecification` object. This
+   is accomplished with the `obs_spec()`, `rct_spec()` or `rd_spec()`
+   functions.
+2. Optionally, fit a covariate adjustment model.  This is done with
+   any of a number of modeling functions external to `propertee`, for
+   example `lm()` or `glm()` from the `stats` package, or `lmrob` from
+   the `robustbase` package.
+3. Use `lm()` to contrast the separately reweighted treatment and
+   control groups, incorporating optional covariance adjustments as an
+   `offset` to `lm()`. The `StudySpecification` is unobtrusively
+   retained, as is error propagation from the optional covariance
+   adjustment, for use in subsequent standard error calculations.
+   This is done using the `lmitt()` function, which either takes and
+   enriches a fitted `lm` or, in the more fully supported usage,
+   internally calls `lm()` to itself create a directly adjusted
+   contrast of treatment conditions.
 
 ## Example Data
 

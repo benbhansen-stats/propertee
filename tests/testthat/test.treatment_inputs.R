@@ -11,7 +11,8 @@ test_that("Treatment inputs", {
   spec <- rct_spec(o ~ cluster(uoa1, uoa2), data = simdata)
   expect_true(is.numeric(treatment(spec)[, 1]))
   expect_false(has_binary_treatment(spec))
-  expect_silent(mod <- lmitt(y ~ 1, data = simdata, specification = spec))
+  expect_error(mod <- lmitt(y ~ 1, data = simdata, specification = spec),
+               "continuous treatment")
 
   # factor 0/1
   simdata$foo <- as.factor(simdata$z)

@@ -26,7 +26,7 @@ test_that("lmitt and lm return the same in simple cases", {
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
   ml2ssmod <- lmitt(ml)
 
-  expect_true(all.equal(ssmod$coef, ml$coef, check.attributes = FALSE))
+  expect_true(all.equal(ssmod$coef[1:2], ml$coef, check.attributes = FALSE))
   expect_true(all.equal(ssmod$coef, ml2ssmod$coef, check.attributes = FALSE))
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -54,7 +54,7 @@ test_that("lmitt and lm return the same in simple cases", {
   ml <- lm(y ~ z, data = simdata, weights = ett(spec))
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ett(), specification = spec)
 
-  expect_true(all.equal(ssmod$coef, ml$coef, check.attributes = FALSE))
+  expect_true(all.equal(ssmod$coef[1:2], ml$coef, check.attributes = FALSE))
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
                function(slot) if (slot == "dichotomy") {
@@ -160,13 +160,270 @@ test_that("Dichotomy from weights", {
   )
 })
 
-test_that("Allow non-binary treatment", {
+test_that("Minimal support for continuous treatments", {
 
   data(simdata)
-  spec <- obs_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec)
-  expect_true(any(!model.frame(mod1)[, 2] %in% 0:1))
+  spec1 <- obs_spec(dose ~ cluster(uoa1, uoa2), data = simdata)
+  expect_error(mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, absorb=FALSE),
+               "continuous treatment")
+  spec2 <- obs_spec(dose ~ cluster(uoa1, uoa2) +block(bid), data = simdata)
+  expect_error(mod2 <- lmitt(y ~ 1, data = simdata, specification = spec2, absorb=TRUE),
+               "continuous treatment")
 
+  ## But we don't also allow factor or ordinal treatments
+  simdata_ <-
+      transform(simdata, dosef=cut(dose, breaks=c(50, 100, 200, 300),
+                          labels=c("lo", "med", "hi"),
+                          include.lowest=TRUE)
+                )
+  spec3 <-
+      obs_spec(dosef ~ cluster(uoa1, uoa2), data = simdata_)
+  expect_error(lmitt(y ~ 1, data = simdata, specification = spec3),
+               "not supported")
+})
+
+test_that("control means for intercept only", {
+  set.seed(93)
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+                      new_trt = rep(c(1, 0), 4),
+                      x = rnorm(8),
+                      dv = rnorm(8),
+                      id = seq_len(8))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  cad <- cov_adj(cmod, newdata = pairs, spec = spec)
+  
+  # lmitt
+  suppressMessages(m1 <- lmitt(dv ~ 1, spec, pairs))
+  suppressMessages(m2 <- lmitt(lm(dv ~ z.(spec, pairs), pairs), spec))
+  expect_equal(length(m1$coef), 3)
+  expect_equal(m1$coef[3], c("dv:(Intercept)" = mean(pairs$dv[pairs$new_trt == 0])))
+  expect_equal(m2$coef[3], m1$coef[3])
+
+  # cov adj
+  suppressMessages(m3 <- lmitt(dv ~ 1, spec, pairs, offset = cad))
+  suppressMessages(m4 <- lmitt(lm(dv ~ a.(spec, pairs), pairs, offset = cad), spec))
+  expect_equal(length(m3$coef), 4)
+  expect_equal(m3$coef[3:4],
+               c("dv:(Intercept)" = mean(pairs$dv[pairs$new_trt == 0]),
+                 "cov_adj:(Intercept)" = mean(cad[pairs$new_trt == 0])))
+  expect_equal(m3$coef[3:4], m4$coef[3:4])
+  
+  # case weights
+  cw <- rep(c(10, 12), each = 4) 
+  suppressMessages(m5 <- lmitt(dv ~ 1, spec, pairs, w = cw, offset = cad))
+  suppressMessages(m6 <- lmitt(lm(dv ~ adopters(spec, pairs), pairs, w = cw, off = cad), spec))
+  expect_equal(m5$coef[3:4],
+               c("dv:(Intercept)" = sum(cw * pairs$dv * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt)),
+                 "cov_adj:(Intercept)" = sum(cw * cad * (1-pairs$new_trt)) / sum(cw * (1-pairs$new_trt))))
+  expect_equal(m5$coef[3:4], m6$coef[3:4])
+  
+  # absorb = TRUE
+  m7 <- lmitt(dv ~ 1, spec, pairs, offset = cad, absorb = TRUE)
+  pis <- c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2))
+  expect_equal(m7$coef[3:4],
+               c("dv:(Intercept)" = sum(pis * pairs$dv * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt)),
+                 "cov_adj:(Intercept)" = sum(pis * cad * (1-pairs$new_trt)) / sum(pis * (1-pairs$new_trt))))
+  
+  # case weights and absorb = TRUE
+  m8 <- lmitt(dv ~ 1, spec, pairs, w = cw, offset = cad, absorb = TRUE)
+  cw_pis <- cw * (rowsum(cw * pairs$new_trt, pairs$b) / rowsum(cw, pairs$b))[pairs$b]
+  expect_equal(m8$coef[3:4],
+               c("dv:(Intercept)" = sum(cw_pis * pairs$dv * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt)),
+                 "cov_adj:(Intercept)" = sum(cw_pis * cad * (1-pairs$new_trt)) / sum(cw_pis * (1-pairs$new_trt))))
+
+  # missing data--stratum where trt is missing outcome still contributes to ctrl mean estimation
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3:4, each = 2)),
+                      new_trt = rep(c(1, 0), 5),
+                      x = rnorm(10),
+                      dv = c(rnorm(8), NA_real_, rnorm(1)),
+                      id = seq_len(10))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  m9 <- lmitt(dv ~ 1, spec, pairs, absorb = TRUE)
+  pis <- c(pis, rep(1/2, 2))
+  expect_equal(
+    m9$coef[3],
+    c("dv:(Intercept)" = sum(pis * pairs$dv * (1-pairs$new_trt), na.rm = TRUE) /
+        sum(pis * (1-pairs$new_trt), na.rm = TRUE)))
+})
+
+test_that("control means for continuous moderator", {
+  set.seed(93)
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+                      new_trt = rep(c(1, 0), 4),
+                      x = rnorm(8),
+                      mvar = sample(3, 8, replace = TRUE),
+                      dv = rnorm(8),
+                      id = seq_len(8),
+                      pis = c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2)),
+                      cw = rep(c(10, 12), each = 4))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  cad <- cov_adj(cmod, newdata = pairs, spec = spec)
+  
+  unwtd.ctrl.reg <- lm(cbind(dv, cad) ~ mvar, pairs, w = 1 - new_trt)
+  cw.ctrl.reg <- lm(cbind(dv, cad) ~ mvar, pairs, w = cw * (1 - new_trt))
+  pis.ctrl.reg <- lm(cbind(dv, cad) ~ mvar, pairs, w = pis * (1 - new_trt))
+  cw_pis <- (rowsum(pairs$cw * pairs$new_trt, pairs$b) / rowsum(pairs$cw, pairs$b))[pairs$b]
+  cw_pis.ctrl.reg <- lm(cbind(dv, cad) ~ mvar, pairs, w = pairs$cw * cw_pis * (1 - new_trt))
+  
+  # no weights
+  suppressMessages(m1 <- lmitt(dv ~ mvar, spec, pairs))
+  expect_equal(length(m1$coef), 6)
+  expect_equal(
+    m1$coef[5:6],
+    setNames(unwtd.ctrl.reg$coef[,1], c("dv:(Intercept)", "dv:mvar"))
+  )
+  
+  # cov adj
+  suppressMessages(m2 <- lmitt(dv ~ mvar, spec, pairs, offset = cad))
+  expect_equal(length(m2$coef), 8)
+  expect_equal(
+    m2$coef[5:8],
+    setNames(c(unwtd.ctrl.reg$coef),
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
+  )
+  
+  # case weights
+  suppressMessages(m3 <- lmitt(dv ~ mvar, spec, pairs, weights = pairs$cw, offset = cad))
+  expect_equal(length(m3$coef), 8)
+  expect_equal(
+    m3$coef[5:8],
+    setNames(c(cw.ctrl.reg$coef),
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
+  )
+  
+  # absorb = TRUE
+  m4 <- lmitt(dv ~ mvar, spec, pairs, offset = cad, absorb = TRUE)
+  expect_equal(length(m4$coef), 8)
+  expect_equal(
+    m4$coef[5:8],
+    setNames(c(pis.ctrl.reg$coef),
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
+  )
+  
+  # case weights and absorb = TRUE
+  m5 <- lmitt(dv ~ mvar, spec, pairs, weights = pairs$cw, offset = cad, absorb = TRUE)
+  expect_equal(length(m5$coef), 8)
+  expect_equal(
+    m5$coef[5:8],
+    setNames(c(cw_pis.ctrl.reg$coef),
+             c("dv:(Intercept)", "dv:mvar", "cov_adj:(Intercept)", "cov_adj:mvar"))
+  )
+})
+
+test_that("control means for categorical moderator", {
+  set.seed(93)
+  # pairs <- data.frame(b = c(rep(seq_len(2), each = 3), rep(3, 2)),
+  #                     new_trt = rep(c(1, 0), 4),
+  #                     x = rnorm(8),
+  #                     mvar = letters[rep(seq_len(3), 3)[-9]],
+  #                     dv = rnorm(8),
+  #                     id = seq_len(8),
+  #                     pis = c(rep(2/3, 3), rep(1/3, 3), rep(1/2, 2)),
+  #                     cw = rep(c(10, 12), each = 4))
+  pairs <- data.frame(b = c(rep(seq_len(2), each = 7), rep(3, 10)),
+                      new_trt = rep(c(1, 0), 12),
+                      x = rnorm(24),
+                      mvar = c(rep("a", 3), rep("b", 4), rep("a", 7), rep(c("a", "b"), each = 5)),
+                      dv = rnorm(24),
+                      id = seq_len(24),
+                      pis = c(rep(2/3, 3), rep(1/2, 4), rep(3/7, 7), rep(3/5, 5), rep(2/5, 5)),
+                      cw = rep(c(10, 12), each = 12))
+  spec <- rct_spec(new_trt ~ block(b) + unitid(id), pairs)
+  
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  cad <- cov_adj(cmod, newdata = pairs, spec = spec)
+  
+  unwtd.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = 1 - new_trt)
+  cw.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = cw * (1 - new_trt))
+  pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pis * (1 - new_trt))
+  cw_pis <- (rowsum(pairs$cw * pairs$new_trt, paste(pairs$b, pairs$mvar, sep = "_")) /
+               rowsum(pairs$cw, paste(pairs$b, pairs$mvar, sep = "_")))[paste(pairs$b, pairs$mvar, sep = "_"),]
+  cw_pis.ctrl.reg <- lm(cbind(dv, cad) ~ 0+mvar, pairs, w = pairs$cw * cw_pis * (1 - new_trt))
+  
+  # no weights
+  suppressMessages(m1 <- lmitt(dv ~ mvar, spec, pairs))
+  expect_equal(length(m1$coef), 6)
+  expect_equal(
+    m1$coef[5:6],
+    setNames(unwtd.ctrl.reg$coef[,1], c("dv:mvara", "dv:mvarb"))
+  )
+  
+  # cov adj
+  suppressMessages(m2 <- lmitt(dv ~ mvar, spec, pairs, offset = cad))
+  expect_equal(length(m2$coef), 8)
+  expect_equal(
+    m2$coef[5:8],
+    setNames(c(unwtd.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
+  )
+  
+  # case weights
+  suppressMessages(m3 <- lmitt(dv ~ mvar, spec, pairs, weights = pairs$cw, offset = cad))
+  expect_equal(length(m3$coef), 8)
+  expect_equal(
+    m3$coef[5:8],
+    setNames(c(cw.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
+  )
+  
+  # absorb = TRUE
+  suppressMessages(m4 <- lmitt(dv ~ mvar, spec, pairs, offset = cad, absorb = TRUE))
+  expect_equal(length(m4$coef), 8)
+  expect_equal(
+    m4$coef[5:8],
+    setNames(c(pis.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
+  )
+  
+  # case weights and absorb = TRUE
+  suppressMessages(m5 <- lmitt(dv ~ mvar, spec, pairs, w = pairs$cw, offset = cad, absorb = TRUE))
+  expect_equal(length(m5$coef), 8)
+  expect_equal(
+    m5$coef[5:8],
+    setNames(c(cw_pis.ctrl.reg$coef),
+             c("dv:mvara", "dv:mvarb", "cov_adj:mvara", "cov_adj:mvarb"))
+  )
+})
+
+test_that("control means for dichotomized treatment", {
+  set.seed(93)
+  strata <- data.frame(b = rep(seq_len(2), each = 10),
+                       trt2dich = letters[rep(rep(seq_len(3), 4)[1:10], 2)],
+                       x = rnorm(20),
+                       dv = rnorm(20),
+                       id = seq_len(20))
+  spec <- rct_spec(trt2dich ~ block(b) + unitid(id), strata)
+  
+  covadj_data <- data.frame(dv = rnorm(30), x = rnorm(30), id = NA, b = NA)
+  cmod <- lm(dv ~ x, covadj_data)
+  expect_warning(cad <- cov_adj(cmod, newdata = strata, spec = spec),
+                 "treatment is an independent variable")
+  
+  suppressMessages(m1 <- lmitt(dv ~ 1, spec, strata, offset = cad,
+                               dichotomy = trt2dich %in% c("a", "b") ~ trt2dich == "c"))
+  expect_equal(length(m1$coef), 4)
+  expect_equal(
+    m1$coef[3:4],
+    c("dv:(Intercept)" = mean(strata$dv[strata$trt2dich == "c"]),
+      "cov_adj:(Intercept)" = mean(cad[strata$trt2dich == "c"]))
+  )
+  
+  m2 <- lmitt(dv ~ 1, spec, strata, offset = cad, absorb = TRUE,
+              dichotomy = trt2dich %in% c("a", "b") ~ trt2dich == "c")
+  pis <- tapply(strata$trt2dich %in% c("a", "b"), strata$b, mean)[strata$b]
+  expect_equal(length(m2$coef), 4)
+  expect_equal(
+    m2$coef[3:4],
+    c("dv:(Intercept)" = sum(pis * strata$dv * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")),
+      "cov_adj:(Intercept)" = sum(pis * cad * (strata$trt2dich == "c")) / sum(pis * (strata$trt2dich == "c")))
+  )
 })
 
 test_that("lmitt finds StudySpecification wherever it's stored", {
@@ -323,12 +580,12 @@ test_that("#81 continuous moderator", {
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) , data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, specification = spec)
-  expect_length(mod$coeff, 4)
+  expect_length(mod$coeff, 6)
 
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   mod <- lmitt(y ~ x, data = simdata, specification = spec, absorb = TRUE)
-  expect_length(mod$coeff, 4)
+  expect_length(mod$coeff, 6)
 
 })
 

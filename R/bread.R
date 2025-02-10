@@ -20,3 +20,19 @@ bread.glm <- function(x, ...) {
   else sum(wres^2)/sum(weights(x, "working"))
   return(sx$cov.unscaled * length(sx$deviance.resid) * dispersion)
 }
+
+#' @importFrom stats summary.lm residuals
+bread.mlm <- function(x, ...) {
+  if (!is.null(x$na.action))
+    class(x$na.action) <- "exclude"
+  cf <- x$coef
+  rval <- summary.lm(x)
+  n <- nrow(residuals(x))
+  
+  rval <- kronecker(
+    structure(diag(ncol(cf)), .Dimnames = rep.int(list(colnames(cf)),  2L)),
+    structure(rval$cov.unscaled, .Dimnames = rep.int(list(rownames(cf)), 2L)) * n,
+    make.dimnames = TRUE)
+
+  return(rval)
+}

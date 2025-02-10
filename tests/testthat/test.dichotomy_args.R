@@ -35,7 +35,8 @@ test_that("dichotomy args where specification has no blocks, no time-varying ass
 
   lmitt1 <- lmitt(y ~ 1, specification = spec1, simdata, dichotomy = dose>250~dose<=250)
   expect_equal(lmitt1$model$dose., as.numeric(simdata$dose>250))
-  expect_true(all.equal(lmitt1$coefficients, lm1$coefficients, check.attributes = FALSE))
+  expect_true(all.equal(lmitt1$coefficients[!grepl("^y:", names(lmitt1$coefficients))],
+                        lm1$coefficients, check.attributes = FALSE))
 
   lmitt2 <- lmitt(y ~ 1, specification = spec1, simdata,
                   weights = ate(spec1, dichotomy = dose >250~dose<=250))
@@ -49,7 +50,8 @@ test_that("dichotomy args where specification has no blocks, no time-varying ass
   expect_equal(lmitt2$coefficients, lmitt3$coefficients)
   expect_equal(lmitt2$coefficients, lmitt4$coefficients)
   expect_equal(lmitt2$coefficients, lmitt5$coefficients)
-  expect_true(all.equal(lmitt2$coefficients, lm2$coefficients, check.attributes = FALSE))
+  expect_true(all.equal(lmitt2$coefficients[!grepl("^y:", names(lmitt2$coefficients))],
+                        lm2$coefficients, check.attributes = FALSE))
   expect_equal(lmitt2$model[[2]], lmitt1$model[[2]])
   expect_equal(lmitt3$model[[2]], lm1$model[[2]])
   expect_true(
