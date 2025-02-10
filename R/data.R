@@ -106,25 +106,29 @@
 #'
 #' @description Schools matched into pairs or triplets approximating the subset
 #' of participating schools in Pane et al. (2014) from Michigan
-#' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
-#' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
 #'
 #' @format  A \code{data.frame} with 14 rows and 13 columns.
 #' \itemize{
 #'  \item{schoolid} school id 
 #'  \item{blk} block
 #'  \item{z} treatment variable 
-#'  \item{MALE_G11_PERC} percentage of G11 male students
-#'  \item{FEMALE_G11_PERC} percentage of G11 female students
-#'  \item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
-#'  \item{ASIAN_G11_PERC} percentage of G11 Asian students
-#'  \item{HISP_G11_PERC} percentage of G11 Hispanic students
-#'  \item{BLACK_G11_PERC} percentage of G11 Black students
-#'  \item{WHITE_G11_PERC} percentage of G11 White students 
-#'  \item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
-#'  \item{TR_G11_PERC} percentage of G11 Two or More Races students 
-#'  \item{G11} Number of G11 students 
+#'  \item{male_g11_perc} percentage of G11 male students
+#'  \item{female_g11_perc} percentage of G11 female students
+#'  \item{am_g11_perc} percentage of G11 American Indian/Alaska Native students
+#'  \item{asian_g11_perc} percentage of G11 Asian students
+#'  \item{hisp_g11_perc} percentage of G11 Hispanic students
+#'  \item{black_g11_perc} percentage of G11 Black students
+#'  \item{white_g11_perc} percentage of G11 White students 
+#'  \item{pacific_g11_perc} percentage of G11 Hawaiian Native/Pacific Islander students
+#'  \item{tr_g11_perc} percentage of G11 Two or More Races students 
+#'  \item{g11} Number of G11 students 
 #' }
+#' 
+#' 
+#' @references Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
+#' \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+#' 
+#' U.S. Department of Education. Institute of Education Sciences, National Center for Education Statistics
 #' @keywords dataset
 "michigan_school_pairs"
 
