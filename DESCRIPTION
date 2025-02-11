@@ -42,7 +42,8 @@ Config/testthat/edition: 3
 Imports:
     stats,
     methods,
-    sandwich
+    sandwich,
+    MASS
 Enhances:
     robustbase
 Depends:
