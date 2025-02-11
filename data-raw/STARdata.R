@@ -3,9 +3,9 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(dplyr)
 ### ToDo: precede below w/
 ### download.file(<urls>, c("./STAR_Students.RData", "Comparison_Students.RData"))
-load("STAR_Students.RData")  
+load("data-raw/STAR_Students.RData")
 experimentsample  <- x
-load("Comparison_Students.RData")
+load("data-raw/Comparison_Students.RData")
 extrasample  <- x
 rm(x)
 
