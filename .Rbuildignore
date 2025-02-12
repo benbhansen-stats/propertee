@@ -24,3 +24,6 @@ developer_docs
 pkgdown
 vignettes/geex_vs_propertee.Rmd
 ^\.github$
+.RData
+.Rapp.history
+.Rhistory
