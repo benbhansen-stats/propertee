@@ -24,7 +24,7 @@ GV_data
 }
 \description{
 This dataset is a toy example derived from a cluster-randomized
-field experiment that evaluates the effect of Rock the Vote TV advertisements
+field experiment that evaluates the effect of \dQuote{Rock the Vote} TV advertisements
 on voter turnout rate. The original study included 23,869 first-time voters
 across 85 cable television markets in 12 states. These markets were grouped
 into matched sets based on their past voter turnout rates and then randomly
