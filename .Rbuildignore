@@ -27,3 +27,6 @@ vignettes/geex_vs_propertee.Rmd
 .RData
 .Rapp.history
 .Rhistory
+tests/testthat/test.assinged.notforCRAN.R
+tests/testthat/test.cov_adj.notforCRAN.R
+tests/testthat/test.WeightedStudySpecification.notforCRAN.R
