@@ -64,16 +64,16 @@ class (22 to 25 students per teacher), and regular-with-aide class (22 to 25
 students with a full-time teacher's aide).
 
 ```{r}
-data(STARdata)
-table(STARdata$stark)
+data("STARplus")
+table(STARplus$cond_at_entry)
 ```
 
 For simplicity for this first example, we will examine a single binary
 treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
 
 ```{r}
-STARdata$starkbinary <- STARdata$stark == "small"
-table(STARdata$starkbinary)
+STARplus$cond_small <- STARplus$cond_at_entry == "small"
+table(STARplus$cond_small)
 ```
 
 After this basic example, we will see how **propertee** makes it easy to handle
@@ -82,26 +82,24 @@ non-binary treatment variables by introducing `dichotomy`s.
 The outcome of interest is a reading score at the end of kindergarten.
 
 ```{r}
-summary(STARdata$readk)
+summary(STARplus$g1readbsraw)
 ```
 
 
 
-We take the random assignment scheme to have been either complete or
-Bernoulli randomization of students, separately by school.^[A perhaps better
-assumption would be to block on the years as well as the schools in which
-participants entered this longitudinal study. Unfortunately our data do not carry year of entry.] Accordingly, experimental blocks are given by the `schoolidk` variable.
+We first take the random assignment scheme to have been either complete or
+Bernoulli randomization of students, separately by school. (Later we'll change this to the more realistic assumption of complete or Bernoulli randomization, separately by school *and* year of entry into the study.) Accordingly, experimental blocks are given by the `school_at_entry` variable.
 
 ```{r}
-length(unique(STARdata$schoolidk))
-head(table(STARdata$schoolidk))
+length(unique(STARplus$school_at_entry))
+head(table(STARplus$school_at_entry))
 ```
 
-We need a unique identifier for the unit by which treatment was allocated.  STAR treatments were assigned to students, as opposed to classrooms or other aggregates of students; accordingly we need a unique identifier per student. The  `studentid` variable fills this role.
+We need a unique identifier for the unit by which treatment was allocated.  STAR treatments were assigned to students, as opposed to classrooms or other aggregates of students; accordingly we need a unique identifier per student. The  `stdntid` variable fills this role.
 
 ```{r}
-length(unique(STARdata$studentid))
-head(STARdata$studentid)
+length(unique(STARplus$stdntid))
+head(STARplus$stdntid)
 ```
 
 ## A Basic Example
@@ -125,13 +123,13 @@ formula consists of the following potential pieces of information:
 To define a `StudySpecification` in our example:
 
 ```{r}
-spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) + block(schoolidk),
-                  data = STARdata, na.fail = FALSE)
+spec <- obs_spec(cond_small ~ unit_of_assignment(stdntid) + block(school_at_entry),
+                  data = STARplus, na.fail = FALSE)
 summary(spec)
 ```
 
 Should additional variables be needed to identify the unit of assignment,
-block, or forcing, they can be included. Had the variable identifying the years in which participants entered the study been available, for example, we might have identified the experimental blocks as combinations of school and year of study entry, rather than as the school alone.  To do this we would pass `block(entryyear, schoolidk)`, rather than `block(schoolidk)`, in the above.
+block, or forcing, they can be included. Had the variable identifying the years in which participants entered the study been available, for example, we might have identified the experimental blocks as combinations of school and year of study entry, rather than as the school alone.  To do this we would pass `block(year_at_entry, school_at_entry)`, rather than `block(school_at_entry)`, in the above.
 
 ### Estimating the treatment effect
 
@@ -174,14 +172,14 @@ treatment-`x` interaction effect is estimated.
 Therefore, to estimate the treatment effect in our example, we can run:
 
 ```{r}
-te <- lmitt(readk ~ 1, data = STARdata, specification = spec)
+te <- lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec)
 summary(te)
 ```
 
 The data includes ethnicity; we can estimate subgroup effects by ethnicity:
 
 ```{r}
-te_s <- lmitt(readk ~ ethnicity, data = STARdata, specification = spec)
+te_s <- lmitt(g1readbsraw ~ race, data = STARplus, specification = spec)
 summary(te_s)
 ```
 
@@ -195,15 +193,15 @@ To include one of the weights, simply include the `weights = "ate"` or
 `weights = "ett"` argument to `lmitt()`:
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, specification = spec, weights = "ate")
-lmitt(readk ~ 1, data = STARdata, specification = spec, weights = "ett")
+lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, weights = "ate")
+lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, weights = "ett")
 ```
 
 Internally, these call the `ate()` or `ett()` functions which can be used
 directly.
 
 ```{r}
-head(ate(spec, data = STARdata))
+head(ate(spec, data = STARplus))
 ```
 
 When included inside `lmitt()`, you do not need to specify any additional
@@ -219,14 +217,14 @@ covariate model should be fit. Any model which supports a `predict()` function
 should work.
 
 ```{r}
-camod <- lm(readk ~ gender + birth + lunchk, data = STARdata)
+camod <- lm(g1readbsraw ~ gender * dob + race, data = STARplus)
 ```
 
 The `cov_adj()` function can be used to process the covariance adjustment model
 and produce the required values; and its output can be passed as an `offset=`.
 
 ```{r}
-lmitt(readk ~ 1, data = STARdata, specification = spec,
+lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec,
       weights = "ate", offset = cov_adj(camod))
 ```
 
@@ -237,14 +235,14 @@ covariance model, its safer to use the `newdata=` argument if calling
 `cov_adj()` outside of the model.
 
 ```{r}
-head(cov_adj(camod, newdata = STARdata))
+head(cov_adj(camod, newdata = STARplus))
 ```
 
 Also, similarly to weights, `cov_adj()` can be used in normal modeling commands
 as well.
 
 ```{r}
-lm(readk ~ starkbinary, data = STARdata, weights = ate(spec),
+lm(g1readbsraw ~ cond_small, data = STARplus, weights = ate(spec),
    offset = cov_adj(camod))
 ```
 
@@ -253,6 +251,7 @@ lm(readk ~ starkbinary, data = STARdata, weights = ate(spec),
 If fixed effects for blocks are desired, which can be absorbed away to avoid
 estimating, the `absorb=TRUE` argument can be passed.
 
-```{r}
-lmitt(readk ~ 1, data = STARdata, specification = spec, absorb = TRUE)
+<!-- currently not working due to #210, thus turned off-->
+```{r, eval=FALSE}
+lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, absorb = TRUE)
 ```

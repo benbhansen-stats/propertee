@@ -509,7 +509,9 @@ test_that("#130 zero weights with non-varying treatment in a block", {
 
 
   #### Data with an NA block doesn't break
-  data(STARdata)
+  if (requireNamespace("AER", quietly = TRUE)) {
+      data(STARdata)
+      STARdata <- STAR
   STARdata$starkbinary <- STARdata$stark == "small"
   STARdata$studentid <- seq_len(nrow(STARdata))
   spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) +
@@ -562,7 +564,8 @@ test_that("#130 zero weights with non-varying treatment in a block", {
                specification = spec, weights = "ett")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
   expect_true(sum(wts == 0) > 0)
-
+  }
+  
 })
 
 test_that("#131 numeric blocks don't cause NA weights", {

@@ -2479,7 +2479,8 @@ test_that("#119 flagging vcov_tee entries as NA", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ o, data = simdata, specification = spec)
   expect_warning(vc <- vcov(ssmod), "will be returned as NA: o")
-  na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
+  na_dim <- which(grepl("(Intercept)", colnames(vc)) |
+                    grepl("z._o", colnames(vc)))
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
