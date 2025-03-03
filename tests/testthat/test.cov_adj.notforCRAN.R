@@ -4,7 +4,7 @@ options(propertee_warn_on_conditional_treatment = FALSE)
 
 data(simdata)
   if (requireNamespace("AER", quietly = TRUE)) {
-      data("STAR", package="AER")
+      data(STARdata)
       STARdata <- STAR
       STARdata$id <- seq_len(nrow(STARdata))
       Q_w_nulls <- STARdata
