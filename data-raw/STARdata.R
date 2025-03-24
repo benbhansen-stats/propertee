@@ -1,8 +1,8 @@
 ##+ setup, warning=FALSE, message=FALSE
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(dplyr)
-### ToDo: precede below w/
-### download.file(<urls>, c("./STAR_Students.RData", "Comparison_Students.RData"))
+### Optional: To run the following lines, please navigate to https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/10766
+### and download STAR_Students.RData and Comparison_Students.RData in the data-raw directory
 load("data-raw/STAR_Students.RData")  
 experimentsample  <- x
 load("data-raw/Comparison_Students.RData")

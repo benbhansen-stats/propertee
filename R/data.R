@@ -60,7 +60,7 @@
 #'   as follows: \code{grade_at_entry} indicates the grade of student's 
 #'   first participation, while \code{school_at_entry} and 
 #'   \code{cond_at_entry} reflect the school ID and classroom type corresponding 
-#'   to the student's grade at entry to the study
+#'   to the student's grade at entry to the study.
 #'
 #' @format  A \code{data.frame} with 13,382 rows and 49 columns.
 #' \itemize{
