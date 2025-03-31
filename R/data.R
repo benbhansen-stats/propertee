@@ -56,34 +56,36 @@
 #'   schools that did not participate in the STAR experiment.
 #'   Variables are as described in Project \code{STAR} data
 #'   documentation (see references), with the exception of the
-#'   three \code{*_at_entry} variables. These variables were reconstructed 
-#'   as follows: \code{grade_at_entry} indicates the grade of student's 
-#'   first participation, while \code{school_at_entry} and 
-#'   \code{cond_at_entry} reflect the school ID and classroom type corresponding 
+#'   three \code{*_at_entry} variables. These variables were reconstructed
+#'   as follows: \code{grade_at_entry} indicates the grade of student's
+#'   first participation, while \code{school_at_entry} and
+#'   \code{cond_at_entry} reflect the school ID and classroom type corresponding
 #'   to the student's grade at entry to the study.
 #'
-#' @format  A \code{data.frame} with 13,382 rows and 49 columns.
+#' @format  A \code{data.frame} with 13,382 rows and 50 columns.
 #' \itemize{
 #'    \item {stdnid} Student ID
 #'    \item {gender} Student gender
 #'    \item {race} Student race
 #'    \item {birthmonth} Student month of birth
-#'    \item {birthday} Student day of birth  
-#'    \item {birthyear} Student year of birth 
-#'    \item {g1schid} Grade 1 School ID 
+#'    \item {birthday} Student day of birth
+#'    \item {birthyear} Student year of birth
+#'    \item {read_at_entry_p1} Reading raw score in Basic Skills First(BSF) tests
+#'          corresponding to student's grade at entry into the study
+#'    \item {g1schid} Grade 1 School ID
 #'    \item {g1tchid} Grade 1 Teacher ID
 #'    \item {g1classsize} Class size of Grade 1
-#'    \item {g1treadss} Grade 1 total reading scale score in the 
+#'    \item {g1treadss} Grade 1 total reading scale score in the
 #'          Scholastic Assessment Test (SAT)
 #'    \item {g1tmathss} Grade 1 total math scale score in SAT
 #'    \item {g1tlistss} Grade 1 total listening scale score in SAT
 #'    \item {g1wordskillss} Grade 1 word study skills scale score in SAT
 #'    \item {g1readbsraw} Grade 1 reading raw score in Basic Skills First (BSF) tests
-#'    \item {g1mathbsraw} Grade 1 math raw score in BSF 
-#'    \item {g1readbsobjpct} Grade 1 reading percent objectives mastered in BSF tests  
+#'    \item {g1mathbsraw} Grade 1 math raw score in BSF
+#'    \item {g1readbsobjpct} Grade 1 reading percent objectives mastered in BSF tests
 #'    \item {g1mathbsobjpct} Grade 1 math percent objectives mastered in BSF tests
-#'    \item {g2schid} Grade 2 School ID 
-#'    \item {g2tchid} Grade 2 Teacher ID 
+#'    \item {g2schid} Grade 2 School ID
+#'    \item {g2tchid} Grade 2 Teacher ID
 #'    \item {g2classsize} Class size of Grade 2
 #'    \item {g2treadss} Grade 2 total reading scale score in SAT
 #'    \item {g2tmathss} Grade 2 total math scale score in SAT
@@ -93,7 +95,7 @@
 #'    \item {g2mathbsraw} Grade 2 math raw score in BSF test
 #'    \item {g2readbsobjpct} Grade 2 reading percent objectives mastered in BSF tests
 #'    \item {g3schid} Grade 3 School ID
-#'    \item {g3tchid} Grade 3 Teacher ID 
+#'    \item {g3tchid} Grade 3 Teacher ID
 #'    \item {g3classsize} Class size of Grade 3
 #'    \item {g3treadss} Grade 3 total reading scale score in SAT
 #'    \item {g3tmathss} Grade 3 total math scale score in SAT
@@ -111,19 +113,19 @@
 #'    \item {g3readbsobjpct} Grade 3 reading percent objectives mastered in BSF tests
 #'    \item {g3mathbsobjpct} Grade 3 math percent objectives mastered in BSF tests
 #'    \item {dob} Date of birth
-#'    \item {grade_at_entry} Grade at which each student first entered the study 
-#'    \item {school_at_entry} School ID corresponding to the student's grade 
+#'    \item {grade_at_entry} Grade at which each student first entered the study
+#'    \item {school_at_entry} School ID corresponding to the student's grade
 #'          at entry into the study
 #'    \item {cond_at_entry} Classroom type corresponding to the student's grade
 #'          at entry into the study
 #' }
 #' @details Note: This dataset bears a Creative Commons Zero license (v1.0).
-#' 
-#' @references C.M. Achilles; Helen Pate Bain; Fred Bellott; Jayne Boyd-Zaharias; 
-#' Jeremy Finn; John Folger; John Johnston; Elizabeth Word, 2008, 
-#' "Tennessee's Student Teacher Achievement Ratio (STAR) project", 
+#'
+#' @references C.M. Achilles; Helen Pate Bain; Fred Bellott; Jayne Boyd-Zaharias;
+#' Jeremy Finn; John Folger; John Johnston; Elizabeth Word, 2008,
+#' "Tennessee's Student Teacher Achievement Ratio (STAR) project",
 #' Harvard Dataverse, V1, https://doi.org/10.7910/DVN/SIWH9F UNF:3:Ji2Q+9HCCZAbw3csOdMNdA
-#' 
+#'
 #' @source <https://doi.org/10.7910/DVN/SIWH9F>
 #' @keywords dataset
 "STARplus"
@@ -179,33 +181,33 @@
 #'
 #' @format  A \code{data.frame} with 14 rows and 13 columns.
 #' \itemize{
-#'  \item{schoolid} school id 
+#'  \item{schoolid} school id
 #'  \item{blk} block
-#'  \item{z} treatment variable 
+#'  \item{z} treatment variable
 #'  \item{MALE_G11_PERC} percentage of G11 male students
 #'  \item{FEMALE_G11_PERC} percentage of G11 female students
 #'  \item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
 #'  \item{ASIAN_G11_PERC} percentage of G11 Asian students
 #'  \item{HISP_G11_PERC} percentage of G11 Hispanic students
 #'  \item{BLACK_G11_PERC} percentage of G11 Black students
-#'  \item{WHITE_G11_PERC} percentage of G11 White students 
+#'  \item{WHITE_G11_PERC} percentage of G11 White students
 #'  \item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
-#'  \item{TR_G11_PERC} percentage of G11 Two or More Races students 
-#'  \item{G11} Number of G11 students 
+#'  \item{TR_G11_PERC} percentage of G11 Two or More Races students
+#'  \item{G11} Number of G11 students
 #' }
 #' @keywords dataset
 "michigan_school_pairs"
 
 #' @title GV data
-#' 
-#' @description This dataset contains a 10% random sample of individuals from each cable system cluster. 
-#' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems. 
+#'
+#' @description This dataset contains a 10% random sample of individuals from each cable system cluster.
+#' It specifically includes matched pairs 1–3, which correspond to 7 out of the 85 cable systems.
 #' The original dataset is derived from a cluster-randomized experiment of Rock the Vote TV advertisements.
 #'
 #' @format A \code{data.frame} with 248 rows and 7 columns.
 #' \itemize{
 #'   \item {age} Age of participant
-#'   \item {vote_04} Outcome variable indicating whether participant voted 
+#'   \item {vote_04} Outcome variable indicating whether participant voted
 #'   \item {tv_company} Cable system serving participant's residential area
 #'   \item {treatment} Binary variable denoting treatment assignment
 #'   \item {pairs} A numeric indicator for the strata or matched pair group to which a cable system belongs (1-3)
@@ -214,7 +216,7 @@
 #' }
 #' @details The fuller Green-Vavreck dataset that this derives from bears a Creative Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution for Social and Policy Studies (ID: D005).
 #'
-#' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized 
+#' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized
 #' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.
 #'
 #' @source <https://isps.yale.edu/research/data/d005>

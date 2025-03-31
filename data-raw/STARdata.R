@@ -3,7 +3,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(dplyr)
 ### Optional: To run the following lines, please navigate to https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/10766
 ### and download STAR_Students.RData and Comparison_Students.RData in the data-raw directory
-load("data-raw/STAR_Students.RData")  
+load("data-raw/STAR_Students.RData")
 experimentsample  <- x
 load("data-raw/Comparison_Students.RData")
 extrasample  <- x
@@ -33,7 +33,7 @@ levels(extrasample$race)  <- list("white"="WHITE",
 extrasample[is.na(extrasample$race), "race"] <- "mssng"
 
 ##' touching up levels of classroom type variables...
-##+ 
+##+
 ctvars <- paste0("g", c("k", 1:3), "classtype")
 experimentsample[ctvars] |>
     sapply({\(x) all.equal(levels(x),
@@ -81,7 +81,7 @@ extrasample$dob <-
 ##' Identifying grade and school in which each experimental participant
 ##' entered the study (removing the 1
 ##' student having NA class type in each of grades K-3)...
-##+ 
+##+
 experimentsample$grade_at_entry  <-
     cbind(!is.na(subset(experimentsample, select=c(gkclasstype:g3classtype))), 1) |>
     max.col(ties.method="first")
@@ -116,4 +116,13 @@ with(experimentsample, table(cond_at_entry, grade_at_entry))
 common_cols  <- intersect(colnames(experimentsample), colnames(extrasample))
 STARplus <- rbind(experimentsample[common_cols],
                   extrasample[common_cols])
+
+##' Create a new variable read_at_entry_p1 and move column to front
+##+
+STARplus$read_at_entry_p1 <- with(STARplus, ifelse(grade_at_entry == 1, g1readbsraw,
+                                            ifelse(grade_at_entry == 2, g2readbsraw,
+                                            ifelse(grade_at_entry == 3, g3readbsraw, NA))))
+STARplus <- STARplus %>%
+  relocate(read_at_entry_p1, .after = 6)
+
 usethis::use_data(STARplus, overwrite = TRUE)

@@ -5,7 +5,7 @@
 \alias{STARplus}
 \title{STAR participants plus nonexperimental controls}
 \format{
-A \code{data.frame} with 13,382 rows and 49 columns.
+A \code{data.frame} with 13,382 rows and 50 columns.
 \itemize{
 \item {stdnid} Student ID
 \item {gender} Student gender
@@ -13,6 +13,8 @@ A \code{data.frame} with 13,382 rows and 49 columns.
 \item {birthmonth} Student month of birth
 \item {birthday} Student day of birth
 \item {birthyear} Student year of birth
+\item {read_at_entry_p1} Reading raw score in Basic Skills First(BSF) tests
+corresponding to student's grade at entry into the study
 \item {g1schid} Grade 1 School ID
 \item {g1tchid} Grade 1 Teacher ID
 \item {g1classsize} Class size of Grade 1
@@ -81,7 +83,7 @@ three \code{*_at_entry} variables. These variables were reconstructed
 as follows: \code{grade_at_entry} indicates the grade of student's
 first participation, while \code{school_at_entry} and
 \code{cond_at_entry} reflect the school ID and classroom type corresponding
-to the student's grade at entry to the study
+to the student's grade at entry to the study.
 }
 \details{
 Note: This dataset bears a Creative Commons Zero license (v1.0).
