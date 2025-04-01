@@ -119,10 +119,16 @@ STARplus <- rbind(experimentsample[common_cols],
 
 ##' Create a new variable read_at_entry_p1 and move column to front
 ##+
-STARplus$read_at_entry_p1 <- with(STARplus, ifelse(grade_at_entry == 1, g1readbsraw,
-                                            ifelse(grade_at_entry == 2, g2readbsraw,
-                                            ifelse(grade_at_entry == 3, g3readbsraw, NA))))
+STARplus$read_at_entry <- with(STARplus, ifelse(grade_at_entry == 1, g1treadss,
+                                         ifelse(grade_at_entry == 2, g2treadss,
+                                         ifelse(grade_at_entry == 3, g3treadss, NA))))
 STARplus <- STARplus %>%
-  relocate(read_at_entry_p1, .after = 6)
+  relocate(read_at_entry, .after = 6)
+
+STARplus$math_at_entry <- with(STARplus, ifelse(grade_at_entry == 1, g1tmathss,
+                                         ifelse(grade_at_entry == 2, g2tmathss,
+                                         ifelse(grade_at_entry == 3, g3tmathss, NA))))
+STARplus <- STARplus %>%
+  relocate(math_at_entry, .after = 7)
 
 usethis::use_data(STARplus, overwrite = TRUE)

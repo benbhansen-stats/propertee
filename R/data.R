@@ -62,7 +62,7 @@
 #'   \code{cond_at_entry} reflect the school ID and classroom type corresponding
 #'   to the student's grade at entry to the study.
 #'
-#' @format  A \code{data.frame} with 13,382 rows and 50 columns.
+#' @format  A \code{data.frame} with 13,382 rows and 51 columns.
 #' \itemize{
 #'    \item {stdnid} Student ID
 #'    \item {gender} Student gender
@@ -70,8 +70,10 @@
 #'    \item {birthmonth} Student month of birth
 #'    \item {birthday} Student day of birth
 #'    \item {birthyear} Student year of birth
-#'    \item {read_at_entry_p1} Reading raw score in Basic Skills First(BSF) tests
-#'          corresponding to student's grade at entry into the study
+#'    \item {read_at_entry} Reading scale score in the Scholastic Assessment
+#'          Test (SAT) corresponding to student's grade at entry into the study
+#'    \item {math_at_entry} Math scale score in the Scholastic Assessment
+#'          Test (SAT) corresponding to student's grade at entry into the study
 #'    \item {g1schid} Grade 1 School ID
 #'    \item {g1tchid} Grade 1 Teacher ID
 #'    \item {g1classsize} Class size of Grade 1
@@ -199,14 +201,14 @@
 "michigan_school_pairs"
 
 #' @title Cluster-randomized experiment data on voter turnout in cable system markets
-#' 
-#' @description This dataset is a toy example derived from a cluster-randomized 
-#' field experiment that evaluates the effect of \dQuote{Rock the Vote} TV advertisements 
-#' on voter turnout rate. The original study included 23,869 first-time voters 
-#' across 85 cable television markets in 12 states. These markets were grouped 
-#' into matched sets based on their past voter turnout rates and then randomly 
-#' assigned to either a treatment or control condition. This toy dataset is 
-#' constructed by randomly sampling 10% of individuals from selected cable 
+#'
+#' @description This dataset is a toy example derived from a cluster-randomized
+#' field experiment that evaluates the effect of \dQuote{Rock the Vote} TV advertisements
+#' on voter turnout rate. The original study included 23,869 first-time voters
+#' across 85 cable television markets in 12 states. These markets were grouped
+#' into matched sets based on their past voter turnout rates and then randomly
+#' assigned to either a treatment or control condition. This toy dataset is
+#' constructed by randomly sampling 10% of individuals from selected cable
 #' television markets in the original dataset.
 #'
 #' @format A \code{data.frame} with 248 rows and 7 columns.
@@ -219,20 +221,20 @@
 #'   \item {population_size} Total population size of residential area served by cable system
 #'   \item {sample_size} Number of individuals sampled from the cable system cluster
 #' }
-#' 
-#' @details The original dataset was drawn from a randomized controlled trial in 
-#' which 85 cable system areas were first grouped into 40 matched sets based on 
-#' historical voter turnout. Within each matched set, one cable system area was 
-#' randomly assigned to the treatment condition, while the others served 
-#' as controls. 
-#' 
-#' This toy dataset includes a subset of the original replication data, 
-#' specifically individuals from matched sets 1–3, which encompass 7 of the 85 
-#' cable system areas. Within these selected clusters, a 10% random sample of 
+#'
+#' @details The original dataset was drawn from a randomized controlled trial in
+#' which 85 cable system areas were first grouped into 40 matched sets based on
+#' historical voter turnout. Within each matched set, one cable system area was
+#' randomly assigned to the treatment condition, while the others served
+#' as controls.
+#'
+#' This toy dataset includes a subset of the original replication data,
+#' specifically individuals from matched sets 1–3, which encompass 7 of the 85
+#' cable system areas. Within these selected clusters, a 10% random sample of
 #' individuals was taken.
-#' 
-#' The fuller Green-Vavreck dataset that this derives from bears a Creative 
-#' Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution 
+#'
+#' The fuller Green-Vavreck dataset that this derives from bears a Creative
+#' Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution
 #' for Social and Policy Studies (ID: D005).
 #'
 #' @source <https://isps.yale.edu/research/data/d005>
