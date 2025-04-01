@@ -70,9 +70,9 @@
 #'    \item {birthmonth} Student month of birth
 #'    \item {birthday} Student day of birth
 #'    \item {birthyear} Student year of birth
-#'    \item {read_at_entry} Reading scale score in the Scholastic Assessment
+#'    \item {read_post_yr1} Reading scale score in the Scholastic Assessment
 #'          Test (SAT) corresponding to student's grade at entry into the study
-#'    \item {math_at_entry} Math scale score in the Scholastic Assessment
+#'    \item {math_post_yr1} Math scale score in the Scholastic Assessment
 #'          Test (SAT) corresponding to student's grade at entry into the study
 #'    \item {g1schid} Grade 1 School ID
 #'    \item {g1tchid} Grade 1 Teacher ID
