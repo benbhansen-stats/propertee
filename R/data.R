@@ -60,7 +60,9 @@
 #'   as follows: \code{grade_at_entry} indicates the grade of student's
 #'   first participation, while \code{school_at_entry} and
 #'   \code{cond_at_entry} reflect the school ID and classroom type corresponding
-#'   to the student's grade at entry to the study.
+#'   to the student's grade at entry to the study. Additionally, \code{read_yr1}
+#'   and \code{math_yr1} were added to capture the SAT scores specifically in the
+#'   year participants entered the study.
 #'
 #' @format  A \code{data.frame} with 13,382 rows and 51 columns.
 #' \itemize{
@@ -70,9 +72,9 @@
 #'    \item {birthmonth} Student month of birth
 #'    \item {birthday} Student day of birth
 #'    \item {birthyear} Student year of birth
-#'    \item {read_post_yr1} Reading scale score in the Scholastic Assessment
+#'    \item {read_yr1} Reading scale score in the Scholastic Assessment
 #'          Test (SAT) corresponding to student's grade at entry into the study
-#'    \item {math_post_yr1} Math scale score in the Scholastic Assessment
+#'    \item {math_yr1} Math scale score in the Scholastic Assessment
 #'          Test (SAT) corresponding to student's grade at entry into the study
 #'    \item {g1schid} Grade 1 School ID
 #'    \item {g1tchid} Grade 1 Teacher ID
