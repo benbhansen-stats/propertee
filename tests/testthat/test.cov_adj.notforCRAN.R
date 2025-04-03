@@ -3,10 +3,13 @@ on.exit(options(old_opt))
 options(propertee_warn_on_conditional_treatment = FALSE)
 
 data(simdata)
-data(STARdata)
-STARdata$id <- seq_len(nrow(STARdata))
+  if (requireNamespace("AER", quietly = TRUE)) {
+      data(STARdata)
+      STARdata <- STAR
+      STARdata$id <- seq_len(nrow(STARdata))
+      Q_w_nulls <- STARdata
+      }
 Q_wo_nulls <- simdata
-Q_w_nulls <- STARdata
 Q_partial_overlap <- simdata[simdata$bid == 3,]
 
 # test whether the values are the same as calling predict on the direct adjustment
@@ -19,6 +22,7 @@ test_ca <- function(ca, cov_mod,  Q_) {
   return(NULL)
 }
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call specifying newdata and specification, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -29,6 +33,7 @@ test_that("cov_adj outside of lm call specifying newdata and specification, data
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "SandwichLayer"))
 })
+}
 
 test_that("cov_adj outside of lm call specifying newdata and specification, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -46,12 +51,14 @@ test_that("cov_adj outside of lm call specifying newdata and specification, data
   expect_true(inherits(ca, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call specifying newdata but no specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   ca <- cov_adj(cmod, newdata = Q_w_nulls)
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
+  }
 
 test_that("cov_adj outside of lm call specifying newdata but no specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
@@ -67,6 +74,7 @@ test_that("cov_adj outside of lm call specifying newdata but no specification, d
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call not specifying newdata or specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   w <- capture_warnings(cov_adj(cmod))
@@ -76,7 +84,7 @@ test_that("cov_adj outside of lm call not specifying newdata or specification, d
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
-
+}
 test_that("cov_adj outside of lm call not specifying newdata or specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   w <- capture_warnings(cov_adj(cmod))
@@ -97,6 +105,7 @@ test_that("cov_adj outside of lm call not specifying newdata or specification, d
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset with weights, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -113,6 +122,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
           stats::model.frame(as.formula(form), data = Q_w_nulls))
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -130,6 +140,7 @@ test_that("cov_adj as offset with weights, data has partial overlap", {
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -144,6 +155,7 @@ test_that("cov_adj as offset specified w/ newdata and specification, no weights,
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -163,6 +175,7 @@ test_that("cov_adj as offset specified w/ newdata and specification, no weights,
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   m <- lm(readk ~ stark == "small", data = Q_w_nulls, offset = cov_adj(cmod))
@@ -171,6 +184,7 @@ test_that("cov_adj as offset specified w/ no newdata nor specification, no weigh
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
   expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
