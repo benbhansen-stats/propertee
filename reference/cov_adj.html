@@ -124,97 +124,104 @@ match the number of rows of the dataframe used.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"STARplus"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">y0hat_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">ethnicity</span> <span class="op">+</span> <span class="va">lunchk</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>                     <span class="va">ladderk</span> <span class="op">+</span> <span class="va">experiencek</span> <span class="op">+</span> <span class="va">tethnicityk</span>,</span></span>
-<span class="r-in"><span>                 data <span class="op">=</span> <span class="va">STARdata</span>, subset <span class="op">=</span> <span class="va">stark</span> <span class="op">!=</span><span class="st">"small"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">##' A prognostic model fitted to experimental + non-experimental controls</span></span></span>
+<span class="r-in"><span><span class="va">y0hat_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">read_yr1</span> <span class="op">~</span> <span class="va">gender</span><span class="op">*</span><span class="va">dob</span> <span class="op">+</span> <span class="va">race</span>,</span></span>
+<span class="r-in"><span>                 data <span class="op">=</span> <span class="va">STARplus</span>,</span></span>
+<span class="r-in"><span>                 subset <span class="op">=</span> <span class="va">cond_at_entry</span><span class="op">!=</span><span class="st">"small"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">STARspec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">stark</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">studentid</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                     data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ett_wts</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STARspec</span>, data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">STARspec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">rct_spec</a></span><span class="op">(</span><span class="va">cond_at_entry</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">stdntid</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>                         <span class="fu"><a href="StudySpecificationSpecials.html">block</a></span><span class="op">(</span><span class="va">grade_at_entry</span>, <span class="va">school_at_entry</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                     subset<span class="op">=</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">grade_at_entry</span><span class="op">)</span>,<span class="co"># excludes non-experimentals</span></span></span>
+<span class="r-in"><span>                     data <span class="op">=</span> <span class="va">STARplus</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ett_wts</span>    <span class="op">&lt;-</span> <span class="fu"><a href="WeightCreators.html">ett</a></span><span class="op">(</span><span class="va">STARspec</span>, data <span class="op">=</span> <span class="va">STARplus</span>,</span></span>
+<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">cond_at_entry</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ett_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fu"><a href="AssignedAliases.html">assigned</a></span><span class="op">(</span>dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">ett_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">read_yr1</span> <span class="op">~</span> <span class="fu"><a href="AssignedAliases.html">assigned</a></span><span class="op">(</span>dichotomy<span class="op">=</span> <span class="va">cond_at_entry</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>               <span class="co">### expect warning about NAs generated here:</span></span></span>
-<span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>               data <span class="op">=</span> <span class="va">STARdata</span>,</span></span>
+<span class="r-in"><span>               offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               data <span class="op">=</span> <span class="va">STARplus</span>,</span></span>
 <span class="r-in"><span>               weights <span class="op">=</span> <span class="va">ett_wts</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ett_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                (Intercept) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                              -1.150011e-13 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                               5.554179e+00 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                        (Intercept) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          11.716479 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = cond_at_entry == "small" ~ .) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           2.740331 </span>
 <span class="r-in"><span><span class="va">ett_read</span> <span class="op">|&gt;</span> <span class="fu"><a href="as_lmitt.html">as.lmitt</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            (Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                  0.6603452</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)   0.3846596</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)                           -0.3981718</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                         -1.0585170</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            assigned(dichotomy = stark == "small" ~ .)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                                                 0.3846596</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)                                  0.9058149</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)                                                          -0.2340270</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                                        -0.6186866</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            readk:(Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                       -0.3981718</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)        -0.2340270</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)                                  0.2751301</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                0.6733019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                            cov_adj:(Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                         -1.0585170</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = stark == "small" ~ .)          -0.6186866</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)                                    0.6733019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                  1.7318189</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                    (Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                           5.129557</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = cond_at_entry == "small" ~ .)    1.141797</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)                                 -1.167347</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                  -6.296904</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                    assigned(dichotomy = cond_at_entry == "small" ~ .)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                                                                  1.141797</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = cond_at_entry == "small" ~ .)                                           6.180492</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)                                                                        -1.901156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                                                         -3.042953</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                    read_yr1:(Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                                   -1.167347</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = cond_at_entry == "small" ~ .)            -1.901156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)                                           2.046614</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                            3.213961</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                    cov_adj:(Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                                                  -6.296904</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned(dichotomy = cond_at_entry == "small" ~ .)           -3.042953</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)                                          3.213961</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)                                           9.510865</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"type")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "CR0"</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
-<span class="r-in"><span>                  offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">ate_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">read_yr1</span> <span class="op">~</span> <span class="fl">1</span>, <span class="va">STARspec</span>, <span class="va">STARplus</span>,</span></span>
+<span class="r-in"><span>                  dichotomy<span class="op">=</span> <span class="va">cond_at_entry</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
+<span class="r-in"><span>                  offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                  weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu">show</span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            stark. readk:(Intercept) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          5.554179        436.069901 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       cond_at_entry. read_yr1:(Intercept) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             5.815509           548.669478 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         (Intercept)              stark.   readk:(Intercept) cov_adj:(Intercept) </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       -1.066237e-13        5.554179e+00        4.360699e+02        4.360699e+02 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          (Intercept)       cond_at_entry. read_yr1:(Intercept) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             2.539062             5.815509           548.669478 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  cov_adj:(Intercept) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           546.130416 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">ate_read</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     (Intercept)     stark. readk:(Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)           0.6603452  0.3846596        -0.3981718</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> stark.                0.3846596  0.9058149        -0.2340270</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)    -0.3981718 -0.2340270         0.2751301</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)  -1.0585170 -0.6186866         0.6733019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     cov_adj:(Intercept)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                  -1.0585170</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> stark.                       -0.6186866</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> readk:(Intercept)             0.6733019</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)           1.7318189</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      (Intercept) cond_at_entry. read_yr1:(Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)             4.111796       1.928425            -1.888967</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cond_at_entry.          1.928425      10.313178            -1.163048</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)   -1.888967      -1.163048             1.208415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)    -6.000763      -3.091473             3.097382</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      cov_adj:(Intercept)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                    -6.000763</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cond_at_entry.                 -3.091473</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> read_yr1:(Intercept)            3.097382</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cov_adj:(Intercept)             9.098144</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"type")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "CR0"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">ate_read_loc</span> <span class="op">&lt;-</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">schoolk</span>, <span class="va">STARspec</span>, <span class="va">STARdata</span>,</span></span>
-<span class="r-in"><span>          dichotomy<span class="op">=</span> <span class="va">stark</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
-<span class="r-in"><span>          offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">read_yr1</span> <span class="op">~</span> <span class="va">race</span>, <span class="va">STARspec</span>, <span class="va">STARplus</span>,</span></span>
+<span class="r-in"><span>          dichotomy<span class="op">=</span> <span class="va">cond_at_entry</span> <span class="op">==</span><span class="st">"small"</span> <span class="op">~</span><span class="va">.</span>,</span></span>
+<span class="r-in"><span>          offset <span class="op">=</span> <span class="fu">cov_adj</span><span class="op">(</span><span class="va">y0hat_read</span>, newdata <span class="op">=</span> <span class="va">STARplus</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>          weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some covariance adjustments are NA; be careful of dropping these observations when fitting the ITT effect model</span>
 <span class="r-in"><span><span class="fu">show</span><span class="op">(</span><span class="va">ate_read_loc</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> `stark._schoolkinner-city`     stark._schoolksuburban </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   5.403909                   5.888685 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        stark._schoolkrural        stark._schoolkurban </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   5.980288                   2.155538 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    readk:schoolkinner-city      readk:schoolksuburban </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 427.234783                 442.112188 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         readk:schoolkrural         readk:schoolkurban </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 436.985667                 439.615635 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cond_at_entry._racewhite cond_at_entry._raceblack cond_at_entry._raceasian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 2.498286                10.192583                 9.587866 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cond_at_entry._racehispa cond_at_entry._racenatam cond_at_entry._raceother </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                24.973857               -13.308205               -58.945590 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cond_at_entry._racemssng       read_yr1:racewhite       read_yr1:raceblack </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                23.726705               559.648184               534.368939 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       read_yr1:raceasian       read_yr1:racehispa       read_yr1:racenatam </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               546.942099               523.741414               511.580037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       read_yr1:raceother       read_yr1:racemssng </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               566.392747               561.330830 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

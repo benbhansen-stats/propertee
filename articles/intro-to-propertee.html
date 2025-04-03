@@ -66,7 +66,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2025-02-24</h4>
+            <h4 data-toc-skip class="date">2025-04-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -125,52 +125,52 @@ randomly assigned to three possible classroom conditions: small (13 to
 and regular-with-aide class (22 to 25 students with a full-time
 teacher’s aide).</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">stark</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"STARplus"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_at_entry</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;      regular        small regular+aide </span></span>
-<span><span class="co">#&gt;         2194         1900         2231</span></span></code></pre></div>
+<span><span class="co">#&gt;         regular    regular+aide           small nonexperimental </span></span>
+<span><span class="co">#&gt;            4328            4249            3024            1781</span></span></code></pre></div>
 <p>For simplicity for this first example, we will examine a single
 binary treatment - “small” classrooms versus “regular” and
 “regular+aide” classrooms.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">STARdata</span><span class="op">$</span><span class="va">starkbinary</span> <span class="op">&lt;-</span> <span class="va">STARdata</span><span class="op">$</span><span class="va">stark</span> <span class="op">==</span> <span class="st">"small"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">starkbinary</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_small</span> <span class="op">&lt;-</span> <span class="va">STARplus</span><span class="op">$</span><span class="va">cond_at_entry</span> <span class="op">==</span> <span class="st">"small"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_small</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; FALSE  TRUE </span></span>
-<span><span class="co">#&gt;  4425  1900</span></span></code></pre></div>
+<span><span class="co">#&gt; 10358  3024</span></span></code></pre></div>
 <p>After this basic example, we will see how <strong>propertee</strong>
 makes it easy to handle non-binary treatment variables by introducing
 <code>dichotomy</code>s.</p>
 <p>The outcome of interest is a reading score at the end of
 kindergarten.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">readk</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">g1readbsraw</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's </span></span>
-<span><span class="co">#&gt;   315.0   414.0   433.0   436.7   453.0   627.0    5809</span></span></code></pre></div>
-<p>We take the random assignment scheme to have been either complete or
-Bernoulli randomization of students, separately by school.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;A perhaps better assumption would be to block on the
-years as well as the schools in which participants entered this
-longitudinal study. Unfortunately our data do not carry year of entry.&lt;/p&gt;"><sup>1</sup></a> Accordingly,
-experimental blocks are given by the <code>schoolidk</code>
-variable.</p>
+<span><span class="co">#&gt;    2.00   23.00   28.00   26.51   31.00   32.00    5562</span></span></code></pre></div>
+<p>We first take the random assignment scheme to have been either
+complete or Bernoulli randomization of students, separately by school.
+(Later we’ll change this to the more realistic assumption of complete or
+Bernoulli randomization, separately by school <em>and</em> year of entry
+into the study.) Accordingly, experimental blocks are given by the
+<code>school_at_entry</code> variable.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">schoolidk</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 80</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">schoolidk</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">school_at_entry</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 81</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">school_at_entry</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   1   2   3   4   5   6 </span></span>
-<span><span class="co">#&gt;  74  54 100  60  61  54</span></span></code></pre></div>
+<span><span class="co">#&gt; 112038 123056 128068 128076 128079 130085 </span></span>
+<span><span class="co">#&gt;    129     85     54     96    135    135</span></span></code></pre></div>
 <p>We need a unique identifier for the unit by which treatment was
 allocated. STAR treatments were assigned to students, as opposed to
 classrooms or other aggregates of students; accordingly we need a unique
-identifier per student. The <code>studentid</code> variable fills this
+identifier per student. The <code>stdntid</code> variable fills this
 role.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 11598</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">STARdata</span><span class="op">$</span><span class="va">studentid</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "1122" "1137" "1143" "1160" "1183" "1195"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">stdntid</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 13382</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">stdntid</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 10000 10001 10002 10003 10004 10005</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="a-basic-example">A Basic Example<a class="anchor" aria-label="anchor" href="#a-basic-example"></a>
@@ -201,29 +201,29 @@ forcing information.</li>
 </ol>
 <p>To define a <code>StudySpecification</code> in our example:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/StudySpecification_objects.html">obs_spec</a></span><span class="op">(</span><span class="va">starkbinary</span> <span class="op">~</span> <span class="fu"><a href="../reference/StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">studentid</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/StudySpecificationSpecials.html">block</a></span><span class="op">(</span><span class="va">schoolidk</span><span class="op">)</span>,</span>
-<span>                  data <span class="op">=</span> <span class="va">STARdata</span>, na.fail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/StudySpecification_objects.html">obs_spec</a></span><span class="op">(</span><span class="va">cond_small</span> <span class="op">~</span> <span class="fu"><a href="../reference/StudySpecificationSpecials.html">unit_of_assignment</a></span><span class="op">(</span><span class="va">stdntid</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="../reference/StudySpecificationSpecials.html">block</a></span><span class="op">(</span><span class="va">school_at_entry</span><span class="op">)</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">STARplus</span>, na.fail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">spec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Observational Study</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Structure          Variables  </span></span>
-<span><span class="co">#&gt;  ---------          ---------  </span></span>
-<span><span class="co">#&gt;  Treatment          starkbinary</span></span>
-<span><span class="co">#&gt;  Unit of Assignment studentid  </span></span>
-<span><span class="co">#&gt;  Block              schoolidk  </span></span>
+<span><span class="co">#&gt;  Structure          Variables      </span></span>
+<span><span class="co">#&gt;  ---------          ---------      </span></span>
+<span><span class="co">#&gt;  Treatment          cond_small     </span></span>
+<span><span class="co">#&gt;  Unit of Assignment stdntid        </span></span>
+<span><span class="co">#&gt;  Block              school_at_entry</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of units per Treatment group: </span></span>
 <span><span class="co">#&gt;  Txt Grp Num Units</span></span>
-<span><span class="co">#&gt;    FALSE      4425</span></span>
-<span><span class="co">#&gt;     TRUE      1900</span></span></code></pre></div>
+<span><span class="co">#&gt;    FALSE      8577</span></span>
+<span><span class="co">#&gt;     TRUE      3024</span></span></code></pre></div>
 <p>Should additional variables be needed to identify the unit of
 assignment, block, or forcing, they can be included. Had the variable
 identifying the years in which participants entered the study been
 available, for example, we might have identified the experimental blocks
 as combinations of school and year of study entry, rather than as the
 school alone. To do this we would pass
-<code>block(entryyear, schoolidk)</code>, rather than
-<code>block(schoolidk)</code>, in the above.</p>
+<code>block(year_at_entry, school_at_entry)</code>, rather than
+<code>block(school_at_entry)</code>, in the above.</p>
 </div>
 <div class="section level3">
 <h3 id="estimating-the-treatment-effect">Estimating the treatment effect<a class="anchor" aria-label="anchor" href="#estimating-the-treatment-effect"></a>
@@ -264,46 +264,48 @@ treatment-<code>x</code> interaction effect is estimated.</p>
 <p>Therefore, to estimate the treatment effect in our example, we can
 run:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">te</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">te</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">te</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; lmitt(readk ~ 1, data = STARdata, specification = spec)</span></span>
+<span><span class="co">#&gt; lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Treatment Effects :</span></span>
-<span><span class="co">#&gt;                   Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE    5.4632     0.9207   5.934 3.13e-09 ***</span></span>
-<span><span class="co">#&gt; readk:(Intercept) 435.0842     0.4906 886.923  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt;                         Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
+<span><span class="co">#&gt; cond_small.TRUE          1.33499    0.14171    9.42   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:(Intercept) 26.18597    0.07763  337.31   &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
 <p>The data includes ethnicity; we can estimate subgroup effects by
 ethnicity:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">te_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">ethnicity</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">te_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="va">race</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">te_s</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: The following subgroups do not have sufficient degrees of freedom for</span></span>
-<span><span class="co">#&gt; standard error estimates and will be returned as NA: ethnicityamindian</span></span>
+<span><span class="co">#&gt; standard error estimates and will be returned as NA: racemssng</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; lmitt(readk ~ ethnicity, data = STARdata, specification = spec)</span></span>
+<span><span class="co">#&gt; lmitt(g1readbsraw ~ race, data = STARplus, specification = spec)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;  Treatment Effects :</span></span>
-<span><span class="co">#&gt;                                    Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicitycauc       4.7167     1.1470   4.112 3.97e-05 ***</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityafam       6.6068     1.4682   4.500 6.93e-06 ***</span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityasian     -9.9394    21.0205  -0.473   0.6363    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityhispanic  35.6667    18.6337   1.914   0.0557 .  </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityamindian  19.0000         NA      NA       NA    </span></span>
-<span><span class="co">#&gt; starkbinary.TRUE_ethnicityother     13.3333    26.8558   0.496   0.6196    </span></span>
-<span><span class="co">#&gt; readk:ethnicitycauc                438.9750     0.6078 722.243  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; readk:ethnicityafam                426.9947     0.7853 543.726  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; readk:ethnicityasian               449.2727    12.6836  35.421  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; readk:ethnicityhispanic            427.0000     0.0000     Inf  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; readk:ethnicityamindian            395.0000         NA      NA       NA    </span></span>
-<span><span class="co">#&gt; readk:ethnicityother               426.0000    13.8885  30.673  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; Treatment Effects: (1 not defined because of singularities)</span></span>
+<span><span class="co">#&gt;                           Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racewhite  0.89355    0.16324   5.474 4.57e-08 ***</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceblack  2.19436    0.27178   8.074 8.04e-16 ***</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceasian -0.66667    2.25173  -0.296   0.7672    </span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racehispa -1.00000    3.39947  -0.294   0.7686    </span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racenatam  4.83333    2.68148   1.802   0.0715 .  </span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceother  4.04167    2.31757   1.744   0.0812 .  </span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racemssng       NA         NA      NA       NA    </span></span>
+<span><span class="co">#&gt; g1readbsraw:racewhite     26.92862    0.08796 306.138  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceblack     24.67925    0.14710 167.768  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceasian     28.00000    1.12036  24.992  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:racehispa     28.33333    1.53966  18.402  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:racenatam     23.16667    2.07394  11.170  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceother     26.62500    2.04594  13.014  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:racemssng           NA         NA      NA       NA    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
@@ -318,17 +320,17 @@ estimation. <strong>propertee</strong> supports average treatment effect
 <code>weights = "ate"</code> or <code>weights = "ett"</code> argument to
 <code><a href="../reference/lmitt.html">lmitt()</a></code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
-<span><span class="co">#&gt;          6.116683        435.027841</span></span>
-<span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ett"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
-<span><span class="co">#&gt;          5.650771        434.896670</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ate"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         cond_small.TRUE g1readbsraw:(Intercept) </span></span>
+<span><span class="co">#&gt;                 1.32679                26.21144</span></span>
+<span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>, weights <span class="op">=</span> <span class="st">"ett"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         cond_small.TRUE g1readbsraw:(Intercept) </span></span>
+<span><span class="co">#&gt;                1.238171               26.282783</span></span></code></pre></div>
 <p>Internally, these call the <code><a href="../reference/WeightCreators.html">ate()</a></code> or <code><a href="../reference/WeightCreators.html">ett()</a></code>
 functions which can be used directly.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span>, data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.000000 3.965517 4.705882 0.000000 1.445946 0.000000</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span>, data <span class="op">=</span> <span class="va">STARplus</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 1.448276 1.237013 1.433071 1.413793 1.675676 1.361345</span></span></code></pre></div>
 <p>When included inside <code><a href="../reference/lmitt.html">lmitt()</a></code>, you do not need to specify
 any additional arguments to <code><a href="../reference/WeightCreators.html">ate()</a></code> or <code><a href="../reference/WeightCreators.html">ett()</a></code>,
 enabling easy functions of weights. For example if you had some other
@@ -344,17 +346,17 @@ fail. To adjust for covariates, a separate covariate model should be
 fit. Any model which supports a <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> function should
 work.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">camod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">birth</span> <span class="op">+</span> <span class="va">lunchk</span>, data <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">camod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">*</span> <span class="va">dob</span> <span class="op">+</span> <span class="va">race</span>, data <span class="op">=</span> <span class="va">STARplus</span><span class="op">)</span></span></code></pre></div>
 <p>The <code><a href="../reference/cov_adj.html">cov_adj()</a></code> function can be used to process the
 covariance adjustment model and produce the required values; and its
 output can be passed as an <code>offset=</code>.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>,</span>
 <span>      weights <span class="op">=</span> <span class="st">"ate"</span>, offset <span class="op">=</span> <span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">camod</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in validityMethod(object): Some covariance adjustments are NA; be</span></span>
 <span><span class="co">#&gt; careful of dropping these observations when fitting the ITT effect model</span></span>
-<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
-<span><span class="co">#&gt;          6.050889        435.005010</span></span></code></pre></div>
+<span><span class="co">#&gt;         cond_small.TRUE g1readbsraw:(Intercept) </span></span>
+<span><span class="co">#&gt;                1.236551               26.213185</span></span></code></pre></div>
 <p>Similarly to the weight functions, <code><a href="../reference/cov_adj.html">cov_adj()</a></code> attempts to
 locate the correct arguments (in this case, mainly the
 <code>data=</code> argument) to use in the model command; while
@@ -362,23 +364,23 @@ locate the correct arguments (in this case, mainly the
 covariance model, its safer to use the <code>newdata=</code> argument if
 calling <code><a href="../reference/cov_adj.html">cov_adj()</a></code> outside of the model.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">camod</span>, newdata <span class="op">=</span> <span class="va">STARdata</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1]       NA 448.8500 450.2802       NA 425.4395       NA</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">camod</span>, newdata <span class="op">=</span> <span class="va">STARplus</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 25.37817 26.79551 25.07906 27.14804 25.68052 24.56142</span></span></code></pre></div>
 <p>Also, similarly to weights, <code><a href="../reference/cov_adj.html">cov_adj()</a></code> can be used in
 normal modeling commands as well.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="va">starkbinary</span>, data <span class="op">=</span> <span class="va">STARdata</span>, weights <span class="op">=</span> <span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="va">cond_small</span>, data <span class="op">=</span> <span class="va">STARplus</span>, weights <span class="op">=</span> <span class="fu"><a href="../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span><span class="op">)</span>,</span>
 <span>   offset <span class="op">=</span> <span class="fu"><a href="../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">camod</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in validityMethod(object): Some covariance adjustments are NA; be</span></span>
 <span><span class="co">#&gt; careful of dropping these observations when fitting the ITT effect model</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
-<span><span class="co">#&gt; lm(formula = readk ~ starkbinary, data = STARdata, weights = ate(spec), </span></span>
+<span><span class="co">#&gt; lm(formula = g1readbsraw ~ cond_small, data = STARplus, weights = ate(spec), </span></span>
 <span><span class="co">#&gt;     offset = cov_adj(camod))</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
-<span><span class="co">#&gt;     (Intercept)  starkbinaryTRUE  </span></span>
-<span><span class="co">#&gt;          -1.684            6.051</span></span></code></pre></div>
+<span><span class="co">#&gt;    (Intercept)  cond_smallTRUE  </span></span>
+<span><span class="co">#&gt;        -0.3789          1.2366</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="absorbing-blocks">Absorbing Blocks<a class="anchor" aria-label="anchor" href="#absorbing-blocks"></a>
@@ -386,13 +388,11 @@ normal modeling commands as well.</p>
 <p>If fixed effects for blocks are desired, which can be absorbed away
 to avoid estimating, the <code>absorb=TRUE</code> argument can be
 passed.</p>
+<!-- currently not working due to #210, thus turned off-->
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">readk</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARdata</span>, specification <span class="op">=</span> <span class="va">spec</span>, absorb <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  starkbinary.TRUE readk:(Intercept) </span></span>
-<span><span class="co">#&gt;          5.866895        434.952140</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1readbsraw</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>, absorb <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
-
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
