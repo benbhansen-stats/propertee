@@ -13,16 +13,15 @@ A \code{data.frame} with 13,382 rows and 51 columns.
 \item {birthmonth} Student month of birth
 \item {birthday} Student day of birth
 \item {birthyear} Student year of birth
-\item {read_yr1} Reading scale score in the Scholastic Assessment
-Test (SAT) corresponding to student's grade at entry into the study
-\item {math_yr1} Math scale score in the Scholastic Assessment
-Test (SAT) corresponding to student's grade at entry into the study
+\item {read_yr1} SAT reading scaled score from grade at which
+student entered the study
+\item {math_yr1} SAT math scaled score from grade at which
+student entered the study
 \item {g1schid} Grade 1 School ID
 \item {g1tchid} Grade 1 Teacher ID
 \item {g1classsize} Class size of Grade 1
-\item {g1treadss} Grade 1 total reading scale score in the
-Scholastic Assessment Test (SAT)
-\item {g1tmathss} Grade 1 total math scale score in SAT
+\item {g1treadss} Grade 1 SAT meading scaled score
+\item {g1tmathss} Grade 1 SAT math scaled score
 \item {g1tlistss} Grade 1 total listening scale score in SAT
 \item {g1wordskillss} Grade 1 word study skills scale score in SAT
 \item {g1readbsraw} Grade 1 reading raw score in Basic Skills First (BSF) tests
@@ -80,14 +79,15 @@ as an external control group consisting of the contemporaneous
 cohort of students attending a matched sample of Tennessee
 schools that did not participate in the STAR experiment.
 Variables are as described in Project \code{STAR} data
-documentation (see references), with the exception of the
-three \code{*_at_entry} variables. These variables were reconstructed
+documentation (see references), with five exceptions.
+Three \code{*_at_entry} variables were constructed
 as follows: \code{grade_at_entry} indicates the grade of student's
 first participation, while \code{school_at_entry} and
 \code{cond_at_entry} reflect the school ID and classroom type corresponding
 to the student's grade at entry to the study. Additionally, \code{read_yr1}
-and \code{math_yr1} were added to capture the SAT scores specifically in the
-year participants entered the study.
+and \code{math_yr1} capture a student's scaled scores on the Scholastic
+Assessment Test (SAT) administered to them during their \code{grade_of_entry},
+i.e. their earliest available post-treatment SAT measurements.
 }
 \details{
 Note: This dataset bears a Creative Commons Zero license (v1.0).
