@@ -48,7 +48,11 @@
     if (is.null(dichotomy)) {
       dichotomy <- possible_dichotomy$weights
     }
-  } else if (inherits(possible_dichotomy, "formula")) {
+  } else if (inherits(possible_dichotomy, "call")) {
+    possible_dichotomy <- as.formula(possible_dichotomy)
+  }
+  
+  if (inherits(possible_dichotomy, "formula")) {
     dichotomy <- possible_dichotomy
     other_dichotomies <- .find_dichotomies()
     if (!is.null(other_dichotomies$lmitt)) {
@@ -63,6 +67,8 @@
                       "is not the same as the `dichotomy` passed to weights"))
       }
     }
+  } else if (!exists("dichotomy")) {
+    stop("No formulas provided to .validate_dichotomy")
   }
 
   return(invisible(dichotomy))

@@ -19,11 +19,16 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   cmod <- lm(y ~ x, data = simdata)
 
 
-  test_coeffs <- function(lmcoef, lmittcoef, subgroup) {
-    length <- ifelse(subgroup, 8, 2)
-    expect_equal(length(lmittcoef), length)
+  test_coeffs <- function(lmcoef, lmittcoef, n_sg_levels, cov_adj) {
+    ncoef <- if (cov_adj) 4 else 3
+    if (n_sg_levels > 0 & !cov_adj) {
+      ncoef <- ncoef + 3 * (n_sg_levels - 1)
+    } else if (n_sg_levels > 0 & cov_adj) {
+      ncoef <- ncoef + 4 * (n_sg_levels - 1)
+    }
+    expect_equal(length(lmittcoef), ncoef)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
-    expect_true(all(round(lmittcoef, 4) %in% round(lmcoef, 4)))
+    expect_true(all(round(lmittcoef[!grepl("^(y|cov_adj):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
   }
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
@@ -32,7 +37,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata)
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -40,7 +45,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata, weights = ate(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -48,7 +53,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata)
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -56,7 +61,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, weights = ett(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -64,7 +69,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata)
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -74,7 +79,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                weights = ett(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -82,7 +87,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o  + as.factor(bid), data = simdata)
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -92,7 +97,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                weights = ate(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -100,7 +105,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -110,7 +115,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                weights = ate(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec,
                      offset = cov_adj(cmod), weights = ate())
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -119,7 +124,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -129,7 +134,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                offset = cov_adj(cmod), weights = ett(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, offset = cov_adj(cmod),
                      weights = ett())
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -139,7 +144,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -149,7 +154,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                offset = cov_adj(cmod), weights = ett(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod), weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -159,7 +164,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -169,7 +174,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
                offset = cov_adj(cmod), weights = ate(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod), weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
 
 })
@@ -181,11 +186,16 @@ test_that("subset in specification", {
                     subset = !(simdata$uoa1 == 5 & simdata$uoa2 == 2))
   cmod <- lm(y ~ x, data = simdata)
 
-  test_coeffs <- function(lmcoef, lmittcoef, subgroup) {
-    length <- ifelse(subgroup, 8, 2)
-    expect_equal(length(lmittcoef), length)
+  test_coeffs <- function(lmcoef, lmittcoef, n_sg_levels, cov_adj) {
+    ncoef <- if (cov_adj) 4 else 3
+    if (n_sg_levels > 0 & !cov_adj) {
+      ncoef <- ncoef + 3 * (n_sg_levels - 1)
+    } else if (n_sg_levels > 0 & cov_adj) {
+      ncoef <- ncoef + 4 * (n_sg_levels - 1)
+    }
+    expect_equal(length(lmittcoef), ncoef)
     lmittcoef <- lmittcoef[!grepl("(Intercept)", names(lmittcoef))]
-    expect_true(all(round(lmittcoef, 4) %in% round(lmcoef, 4)))
+    expect_true(all(round(lmittcoef[!grepl("^(y|cov_adj):", names(lmittcoef))], 4) %in% round(lmcoef, 4)))
   }
 
 
@@ -196,7 +206,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata)
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -204,7 +214,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata, weights = ate(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -212,7 +222,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata)
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -220,7 +230,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, weights = ett(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -228,7 +238,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata)
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -238,7 +248,7 @@ test_that("subset in specification", {
                weights = ett(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -246,7 +256,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o  + as.factor(bid), data = simdata)
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE)
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -256,7 +266,7 @@ test_that("subset in specification", {
                weights = ate(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), FALSE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -264,7 +274,7 @@ test_that("subset in specification", {
 
   mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -274,7 +284,7 @@ test_that("subset in specification", {
                weights = ate(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec,
                      offset = cov_adj(cmod), weights = ate())
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -283,7 +293,7 @@ test_that("subset in specification", {
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -293,7 +303,7 @@ test_that("subset in specification", {
                offset = cov_adj(cmod), weights = ett(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, offset = cov_adj(cmod),
                      weights = ett())
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -303,7 +313,7 @@ test_that("subset in specification", {
                offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -313,7 +323,7 @@ test_that("subset in specification", {
                offset = cov_adj(cmod), weights = ett(spec))
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod), weights = "ett")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, FALSE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -323,7 +333,7 @@ test_that("subset in specification", {
                offset = cov_adj(cmod))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
@@ -333,7 +343,7 @@ test_that("subset in specification", {
                offset = cov_adj(cmod), weights = ate(spec))
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod), weights = "ate")
-  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, TRUE)
+  test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 })
 
 options(save_options)

@@ -1,3 +1,4 @@
+# pads numerical values with leading zeros for fixed character length
 zero_lpad <- function(vec, char_len) {
   vapply(
     vec,
@@ -8,11 +9,14 @@ zero_lpad <- function(vec, char_len) {
 
 CCD_ID_COLS <- c("STID", "LEANM", "SEASCH", "SCHNAM", "CONUM", "CONAME")
 CCD_CAT_COLS <- c("TITLEISTAT", "MAGNET", "CHARTR", "TYPE")
+# school grade from kindergarten to G12
 CCD_ENROLLMENT_COLS <- c("KG", paste0("G", zero_lpad(seq(1, 12), 2)))
 RACEETH_COLS <- c("AM", "ASIAN", "HISP", "BLACK", "WHITE", "PACIFIC", "TR")
 RACEGENDER_PREFIXES <- c("AM", "AS", "HI", "BL", "WH", "HP", "TR")
+# Total Free and Reduced-Price Lunch Eligible Student
 FRL_COL <- "TOTFRL"
 
+# recode variable into 0 or 1
 recode_binary_variable <- function(col) {
   if (inherits(col, "character")) {
     nonmissing_levels <- unique(col[!(col %in% c("N", "M"))])
@@ -33,6 +37,10 @@ recode_binary_variable <- function(col) {
   return(col)
 }
 
+# sum of column values / number of columns 
+# if number of columns or MEMBER equal 0, return 0 
+# if any column has -1 (missing data), output -1
+# if any column has -2 or MEMBER column contains -2 or -1, output -2 
 make_demo_perc <- function(df, cols, total_col) {
   out <- rowSums(df[, cols, drop=FALSE]) / df[[total_col]]
   out[df[[total_col]] == 0 | df$MEMBER == 0] <- 0
@@ -45,8 +53,10 @@ make_demo_perc <- function(df, cols, total_col) {
 
 clean_ccd <- function(ccd) {
   rownames(ccd) <- NULL
+  # keep Michigan schools only 
   ccd <- ccd[ccd$LSTATE == "MI",]
   
+  # calculate percentage of gender
   gender_percs <- mapply(
     make_demo_perc,
     lapply(c("ALM", "ALF"), function(pf) paste0(RACEGENDER_PREFIXES, pf)),
@@ -56,6 +66,7 @@ clean_ccd <- function(ccd) {
   )
   colnames(gender_percs) <- paste(c("MALE", "FEMALE"), "PERC", sep = "_")
   
+  # calculate percentage of G11 gender
   gender_g11_percs <- mapply(
     make_demo_perc,
     lapply(paste0(11, c("M", "F")),
@@ -66,6 +77,7 @@ clean_ccd <- function(ccd) {
   )
   colnames(gender_g11_percs) <- paste(c("MALE", "FEMALE"), "G11_PERC", sep = "_")
   
+  # calculate percentage of ethinicity 
   raceeth_percs <- mapply(
     make_demo_perc,
     RACEETH_COLS,
@@ -75,6 +87,7 @@ clean_ccd <- function(ccd) {
   )
   colnames(raceeth_percs) <- paste(RACEETH_COLS, "PERC", sep = "_")
   
+  # calculate percentage of G11 ethinicity
   raceeth_g11_percs <- mapply(
     make_demo_perc,
     lapply(RACEGENDER_PREFIXES,
@@ -89,6 +102,10 @@ clean_ccd <- function(ccd) {
   
   cleaned_cat_cols <- sapply(ccd[, CCD_CAT_COLS], recode_binary_variable)
   
+  # create a new column called merge_id by concatenating STID and SEASCH
+  # extract columns listed in CCD_ID_COLS as a data frame 
+  # calculate total enrollment for each row by summing up the values in CCD_ENROLLMENT_COLS
+  # adds the rest of the columns we processed earlier 
   cbind(merge_id = paste0(ccd$STID, ccd$SEASCH),
         ccd[, CCD_ID_COLS, drop=FALSE],
         sapply(ccd[, CCD_ENROLLMENT_COLS, drop=FALSE], as.numeric),

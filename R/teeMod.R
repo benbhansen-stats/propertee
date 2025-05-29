@@ -9,6 +9,7 @@ setClass("teeMod",
                    lmitt_fitted = "logical",
                    absorbed_intercepts = "logical",
                    moderator = "character",
+                   ctrl_means_model = "lm",
                    lmitt_call = "call"))
 
 setValidity("teeMod", function(object) {
@@ -26,11 +27,15 @@ setValidity("teeMod", function(object) {
 ##' @export
 setMethod("show", "teeMod", function(object) {
   coeffs <- object$coefficients
-  # Display only treatment effects
+  ## Display only treatment effects, intercepts from supplementary
+  ## regression of same y but w/o the covadj offset
   if (object@lmitt_fitted) {
-    # This should match any coefficients starting with the "txt." or "`txt."
-    toprint <- grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."),
-                     names(coeffs))
+    toprint <- (
+  ## This should match any coefficients starting with the "txt." or "`txt."
+      grepl(paste0("^\\`?", var_names(object@StudySpecification, "t"), "\\."), names(coeffs)) |
+  ## This should match the coefficients of the supplementary regression
+        grepl(paste0("^", formula(object)[[2L]], ":"), names(coeffs))
+    )
     print(coeffs[toprint])
   } else {
     print(coeffs)
@@ -111,21 +116,36 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'  definition of \eqn{n}.
 ##' @exportS3Method
 estfun.teeMod <- function(x, ...) {
-  args <- list(...)
-  args$x <- x
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
+  mc <- match.call()
+  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
+
+  # MB and DB estfun without covariance adjustment; below, this will be replaced
+  # entirely if there's covariance adjustment
+  mat <- .base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...)
+  
+  if (vcov_type != "DB") {
+    # get estfun for ctrl mean regression 
+    cm_ef <- estfun(x@ctrl_means_model)
+    q <- ncol(cm_ef)
+    cm_ef[is.na(cm_ef)] <- 0
+    mat <- cbind(mat, cm_ef)
+  } else {
+    q <- 0
+    cm_ef <- NULL
+  }
 
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(.base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...))
+    return(mat)
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  estmats <- .align_and_extend_estfuns(x, ...)
+  estmats <- .align_and_extend_estfuns(x, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x)
+  a21 <- .get_a21(x, ...)
 
   ## get scaling constants
   nq <- nrow(stats::model.frame(x, na.action = "na.pass")) # this includes NA's as our other routines do
@@ -134,7 +154,7 @@ estfun.teeMod <- function(x, ...) {
 
   ## form matrix of estimating equations
   mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-  mat <- mat - .estfun_DB_blockabsorb(x, ...)
+  mat[,1:(ncol(estmats[["psi"]]) - q)] <- mat[,1:(ncol(estmats[["psi"]])-q)] - .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -169,7 +189,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   estimating equations for the direct adjustment model, and the other being
 ##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
-.align_and_extend_estfuns <- function(x, by = NULL, ...) {
+.align_and_extend_estfuns <- function(x, ctrl_means_ef_mat = NULL, by = NULL, ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
@@ -186,16 +206,24 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
-  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi),
-                        dimnames = list(seq(n), colnames(psi)))
+  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
   aligned_psi[1:nq,] <- psi[Q_order,,drop=FALSE]
 
   C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
   aligned_phi <- matrix(0, nrow = n, ncol = ncol(phi),
                         dimnames = list(seq_len(n), colnames(phi)))
   aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
+  
+  out <- list(psi = aligned_psi, phi = aligned_phi)
+  
+  if (!is.null(ctrl_means_ef_mat)) {
+    aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
+                            dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
+    aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
+    out[["psi"]] <- cbind(out[["psi"]], aligned_cm_ef)
+  }
 
-  return(list(psi = aligned_psi, phi = aligned_phi))
+  return(out)
 }
 
 ##' @title (Internal) Extract empirical estimating equations from a
@@ -207,6 +235,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 .base_S3class_estfun <- function(x) {
   ## this vector indicates the hierarchy of `sandwich::estfun` methods to use
   ## to extract ITT model's estimating equations
+  x$coefficients <- replace(x$coefficients, is.na(x$coefficients), 0)
   valid_classes <- c("glm", "lmrob", "svyglm", "lm")
   base_class <- match(x@.S3Class, valid_classes)
   if (all(is.na(base_class))) {
@@ -216,7 +245,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   
   ef <- getS3method("estfun", valid_classes[min(base_class, na.rm = TRUE)])(x)
   ef[is.na(ef)] <- 0
-  return(ef)
+  keep_coef <- if (is.null(aliased <- stats::alias(x)$Complete)) {
+    colnames(ef)
+  } else {
+    if (is.null(nms <- colnames(aliased))) 1 else nms
+  }
+  return(ef[, keep_coef,drop=FALSE])
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
@@ -467,6 +501,13 @@ update.teeMod <- function(object, ...) {
 #' @return An \eqn{n\times k} matrix
 #' @keywords internal
 .estfun_DB_blockabsorb <- function (x, by = NULL, ...){
+  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
+  cl <- match.call()
+  vcov_type <- match.arg(cl$vcov_type, c("MB", "HC", "CR", "DB"))
+  if (!(db <- vcov_type == "DB") | !x@absorbed_intercepts) {
+    return(0)
+  }
+  
   if (inherits(x$model$`(offset)`, "SandwichLayer")){
     # if the model involves SandwichLayer covariance adjustment
     temp <- .align_and_extend_estfuns(x, by = by, ...)[["psi"]]
@@ -474,12 +515,6 @@ update.teeMod <- function(object, ...) {
   else
     temp <- .base_S3class_estfun(x)
 
-  # return 0 if not asking for a design-based SE or DA does not absorb intercepts
-  cl <- match.call()
-  db <- eval(cl[["db"]], parent.frame())
-  if (is.null(db) | !x@absorbed_intercepts){
-    return(matrix(0, nrow = nrow(temp), ncol = ncol(temp)))
-  }
   phitilde <- .get_phi_tilde(x)
   appinv_atp <- .get_appinv_atp(x)
 
