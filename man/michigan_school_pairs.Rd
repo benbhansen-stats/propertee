@@ -29,6 +29,11 @@ michigan_school_pairs
 Schools matched into pairs or triplets approximating the subset
 of participating schools in Pane et al. (2014) from Michigan
 }
+\details{
+This dataset contains demographic variables for students in Grade 11.
+These demographic variables are sourced from the Common Core of Data (CCD)
+(U.S. Department of Education).
+}
 \references{
 Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
 \emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
