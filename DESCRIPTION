@@ -47,7 +47,7 @@ Imports:
 Enhances:
     robustbase
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 VignetteBuilder: knitr
 URL: https://github.com/benbhansen-stats/propertee
 BugReports: https://github.com/benbhansen-stats/propertee/issues
@@ -85,4 +85,6 @@ Collate:
     'summary.StudySpecification.R'
     'summary.teeMod.R'
     'update_by.R'
-    'weights.R'
+    'validWeights.R'
+    'weights_internal.R'
+    'weights_exported.R'
