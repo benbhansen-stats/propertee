@@ -2,7 +2,7 @@ test_that("internal weight function", {
   data(simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                         dichotomy = NULL)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -17,7 +17,7 @@ test_that("internal weight function", {
 
   expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", weightAlias = "ett",
                         dichotomy = NULL)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -44,10 +44,10 @@ test_that("dichotomy issues", {
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_error(propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                             target = "ate", dichotomy = NULL),
+                             target = "ate", weightAlias = "ate", dichotomy = NULL),
                "Must provide a dichotomy")
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                         dichotomy = . ~ dose > 150)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -68,7 +68,7 @@ test_that("internal and external weight function agreement", {
   spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   iwspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                         target = "ate", dichotomy = NULL)
+                         target = "ate", weightAlias = "ate", dichotomy = NULL)
   ewspec <- ate(spec, data = simdata)
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -82,7 +82,7 @@ test_that("internal and external weight function agreement", {
   )
 
   iwspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                         target = "ett", dichotomy = NULL)
+                         target = "ett", weightAlias = "ett", dichotomy = NULL)
   ewspec <- ett(spec, data = simdata)
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -594,7 +594,7 @@ test_that(paste("weights with attention to blocks when `data` has different orde
                         specification_dat[specification_dat$blk == "A",],
                         specification_dat[specification_dat$blk == "C",])
 
-  wts <- .weights_calc(spec, target = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
+  wts <- .weights_calc(spec, target = "ate", weightAlias = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
   expected_triplet_wts <- c(rep(3/2, 2), 3)
   expected_pair_wts <- rep(2, 2)
   expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
@@ -605,7 +605,7 @@ test_that("#180 non-exhaustive dichotomies", {
   # no missing block ID's
   data(simdata)
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
-  wspec  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                          dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec) == nrow(simdata))
@@ -619,17 +619,17 @@ test_that("#180 non-exhaustive dichotomies", {
   )
 
   # Ben's tests
-  wspec2  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", dichotomy = dose >200 ~ dose <200)
+  wspec2  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate", dichotomy = dose >200 ~ dose <200)
   expect_true(all(wspec2[simdata$dose==200]==0))
   expect_true(all(wspec2[simdata$dose!=200]!=0))
 
-  wspec3  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", dichotomy = dose >200 ~ dose <100)
+  wspec3  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", weightAlias = "ett", dichotomy = dose >200 ~ dose <100)
   expect_true(all(wspec3[simdata$bid==3]==0))
 
   # missing block ID's
   simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, "bid"] <- NA_integer_
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
-  wspec4  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec4  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                           dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec4) == nrow(simdata))
@@ -646,7 +646,7 @@ test_that("#180 non-exhaustive dichotomies", {
   data(simdata)
   simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, paste0("uoa", c(1, 2))] <- NA_integer_
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
-  wspec5  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec5  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                           dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec5) == nrow(simdata))

@@ -502,7 +502,7 @@ test_that("weights argument can be string", {
   # Passing a different string warns users, but allows `lm()` to error
   # in case user is trying to pass something to someplace else
   expect_error(expect_warning(lmitt(y ~ 1, specification = spec, data =simdata,
-                                    weights = "abc"), "other than \"ate\""))
+                                    weights = "abc"), "other than"))
 
 })
 

@@ -161,15 +161,17 @@ lmitt.formula <- function(obj,
   dichotomy <- lmitt.call$dichotomy
   wt <- lmitt.call$weights
   if (is(wt, "character")) {
-    if ((wt_call <- tolower(wt)) %in% c("ate", "ett")) {
+    if (.isValidWeightAlias(wt_call <- tolower(wt))) {
       lm.call$weights <- lmitt.call$weights <- call(wt_call, dichotomy = dichotomy)
     } else {
-      warning(paste("Character other than \"ate\" or \"ett\" passed to",
-                    "`weights=` argument.\nIf you are trying to pass a",
-                    "character to the internal `lm` you can disregard this",
-                    "warning.\nIf you are attemping to use `propertee`\'s",
-                    "weight generation, only \"ate\" and \"ett\" are",
-                    "accepted."))
+      warning(paste0("Character other than [",
+                    .listValidWeightAliases(),
+                    "] passed to `weights=` argument.\nIf you are trying ",
+                    "to pass a character to the internal `lm` you can ",
+                    "disregard this warning.\nIf you are attempting to ",
+                    "use `propertee`\'s weight generation, only [",
+                    .listValidWeightAliases(),
+                    "] are accepted."))
     }
   } else if (is.call(wt) & is.null(dichotomy)) dichotomy <- wt$dichotomy
 
