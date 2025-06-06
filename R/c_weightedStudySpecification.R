@@ -60,7 +60,7 @@ setMethod("c", signature(x = "WeightedStudySpecification"),
     targets <- c(x@target, lapply(dots, methods::slot, "target"))
     if (length(unique(targets)) > 1) {
       stop(paste("WeightedStudySpecifications can only be concatenated with",
-                 "the same target (ate or ett)"))
+                 "the same target"))
     }
 
     specifications <- c(x@StudySpecification, lapply(dots, methods::slot, "StudySpecification"))
