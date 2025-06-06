@@ -1,6 +1,8 @@
 # propertee 0.6.1 (Unreleased)
 ## New Features
 * In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
+* Bump minimum R version to 4.1.0 to allow internal usage of pipes and anonymous
+  functions.
 
 # propertee 0.5.2
 ## New Features
