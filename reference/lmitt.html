@@ -155,11 +155,14 @@ or <code>lmitt()</code> fit under typical <code>na.action</code> settings.)</p>
 you request a main treatment effect (with a formula of <code>~ 1</code>) with a
 treatment variable named "txt", you can obtain its estimate from the
 returned <code>teeMod</code> object via <code>$coefficients["txt."]</code>.</p>
-<p><code>lmitt()</code> will produce a message if the <code>StudySpecification</code> passed in
-has block information that is not being used to inform weights or a block
-fixed effect adjustment. This is not an error, but it often represents an
-oversight on the part of the analyst. To disable this
-message, run <code>options("propertee_message_on_unused_blocks" = FALSE)</code>.</p>
+<p><code>lmitt()</code> will produce a message if the <code>StudySpecification</code>
+designates treatment assignment by block but the blocking
+structure appears not to be reflected in the <code>weights</code>, nor
+in a block fixed effect adjustment (via <code>absorb=TRUE</code>). While
+not an error, this is at odds with intended uses of
+<code>propertee</code>, so <code>lmitt()</code> flags it as a potential
+oversight on the part of the analyst. To disable this message, run
+<code>options("propertee_message_on_unused_blocks" = FALSE)</code>.</p>
 <p><code>lmitt()</code> returns objects of class ‘<code>teeMod</code>’, for
 Treatment Effect Estimate Model, extending the lm class to add a
 summary of the response distribution under control (the
