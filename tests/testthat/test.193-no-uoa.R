@@ -60,22 +60,21 @@ test_that("covadj", {
 
 
 
-  data(STARdata)
-  st <- STARdata
-  st$stuid <- rownames(st)
-  spec1 <- obs_spec(stark ~ unit_of_assignment(stuid) + block(schoolk),
+  data(STARplus)
+  st <- STARplus
+  st$cond_small <- st$cond_at_entry == "small"
+  spec1 <- obs_spec(cond_small ~ unit_of_assignment(stdntid) +
+                      block(school_at_entry),
                    data = st, na.fail = FALSE)
-  ca <- lm(readk ~ birth + gender, data = st, subset = (stark != "regular"))
-  ## warnings here appear due to NA's in STARdata
-  suppressWarnings(mod1 <- lmitt(readk ~ 1, spec1, data = st, absorb = TRUE,
-                                 dichotomy = stark == "regular" ~ .,
+  ca <- lm(read_yr1 ~ dob + gender, data = st, subset = (cond_small))
+  ## warnings here appear due to NA's in STARplus
+  suppressWarnings(mod1 <- lmitt(read_yr1 ~ 1, spec1, data = st, absorb = TRUE,
                                  offset = cov_adj(ca)))
 
-  spec2 <- obs_spec(stark ~ block(schoolk), data = st, na.fail = FALSE)
-  suppressWarnings(mod2 <- lmitt(readk ~ 1, spec2, absorb = TRUE, data = st,
-                                 dichotomy = stark=="regular" ~ .,
+  spec2 <- obs_spec(cond_small ~ block(school_at_entry),
+                   data = st, na.fail = FALSE)
+  suppressWarnings(mod2 <- lmitt(read_yr1 ~ 1, spec2, absorb = TRUE, data = st,
                                  offset = cov_adj(ca)))
-
 
   expect_true(isTRUE(all.equal(coefficients(mod1),
                                coefficients(mod2))))
