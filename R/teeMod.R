@@ -413,8 +413,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
   # get all ID's in Q
   # Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
-  Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
-  Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
+  if (x@StudySpecification@unit_of_assignment_type == "none") {
+    Q_ids <- rownames(model.frame(x, na.action = NULL))
+  } else {
+    Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
+    Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
+  }
 
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
@@ -464,6 +468,11 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     expand_cols <- by.y <- uoa_cols
   }
 
+  if (x@StudySpecification@unit_of_assignment_type == "none") {
+    moddata <- x$call$data
+    moddata$..uoa.. <- rownames(moddata)
+    x$call$data <- moddata
+  }
   obs_uoa_ids <- stats::expand.model.frame(x,
                                            expand_cols)[, expand_cols, drop = FALSE]
 

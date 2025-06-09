@@ -313,16 +313,20 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
   }
 
-  keys <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
-    error = function(e) {
-      covmoddata <- eval(data_call,
-                         envir = environment(formula(x@fitted_covariance_model)))
-      stop(paste("Columns",
-                 paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
-                 "are missing from the covariance adjustment model dataset"),
+  if (specification@unit_of_assignment_type == "none") {
+    keys <- data.frame(..uoa.. = rownames(x@fitted_covariance_model$model))
+  } else {
+    keys <- tryCatch(
+      stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
+      error = function(e) {
+        covmoddata <- eval(data_call,
+                           envir = environment(formula(x@fitted_covariance_model)))
+        stop(paste("Columns",
+                   paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
+                   "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
-    })
+      })
+  }
 
   keys$in_Q <- apply(
     mapply(

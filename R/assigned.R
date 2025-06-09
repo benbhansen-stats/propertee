@@ -71,6 +71,11 @@ assigned <- function(specification = NULL, data = NULL, dichotomy = NULL) {
     }
   }
 
+  if (specification@unit_of_assignment_type == "none") {
+    data[["..uoa.."]] <- rownames(data)
+  }
+
+
   tt <- treatment(specification, binary = FALSE)
   tt <- .expand_txt(tt, data, specification)
   if (is.null(dichotomy)) {
