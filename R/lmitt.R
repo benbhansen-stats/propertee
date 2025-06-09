@@ -41,11 +41,14 @@
 ##' treatment variable named "txt", you can obtain its estimate from the
 ##' returned \code{teeMod} object via \code{$coefficients["txt."]}.
 ##'
-##' [lmitt()] will produce a message if the \code{StudySpecification} passed in
-##' has block information that is not being used to inform weights or a block
-##' fixed effect adjustment. This is not an error, but it often represents an
-##' oversight on the part of the analyst. To disable this
-##' message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
+##' [lmitt()] will produce a message if the \code{StudySpecification}
+##' designates treatment assignment by block but the blocking
+##' structure appears not to be reflected in the \code{weights}, nor
+##' in a block fixed effect adjustment (via \code{absorb=TRUE}). While
+##' not an error, this is at odds with intended uses of
+##' \code{propertee}, so \code{lmitt()} flags it as a potential
+##' oversight on the part of the analyst. To disable this message, run
+##' \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
 ##' [lmitt()] returns objects of class \sQuote{\code{teeMod}}, for
 ##' Treatment Effect Estimate Model, extending the lm class to add a
