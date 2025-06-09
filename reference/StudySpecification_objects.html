@@ -127,6 +127,11 @@ treatment is not <code>logical</code> or <code>numeric</code> with only values 0
 treatment and control groups. See <code><a href="WeightCreators.html">ett()</a></code> for more details on specifying a
 <code>dichotomy</code>.</p>
 <p>There are a few aliases for each version.</p>
+<p>If the formula excludes a <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code>, data merges are
+performed on row order. The user is responsible for ensuring that row
+order is correct in all data. It is safer to include a
+<code>unit_of_assignment</code>, which can just be <code>1:n</code>. To disable this
+warning, run <code>options("propertee_warn_on_no_unit_of_assignment" = FALSE)</code>.</p>
     </div>
 
     <div class="section level2">
