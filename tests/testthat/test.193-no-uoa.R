@@ -1,3 +1,7 @@
+old_opt <- options()
+on.exit(options(old_opt))
+options(propertee_warn_on_no_unit_of_assignment = FALSE)
+
 test_that("Support lack of UOA", {
   data(simdata)
   # I was having weird issues with testthat when I worked with simdata directly;
@@ -82,4 +86,13 @@ test_that("covadj", {
   smod2 <- summary(mod2)
   expect_true(isTRUE(all.equal(coefficients(smod1),
                                coefficients(smod2))))
+})
+
+
+options(old_opt)
+
+test_that("warning message", {
+  data(simdata)
+  sd <- simdata
+  expect_warning(rct_spec(z ~ 1, data = sd))
 })

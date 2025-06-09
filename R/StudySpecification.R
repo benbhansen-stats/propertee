@@ -106,6 +106,14 @@ setValidity("StudySpecification", function(object) {
     autype <- "unitid"
   } else {
     autype <- "none"
+    if (options()$propertee_warn_on_no_unit_of_assignment) {
+      warning(paste("The StudySpecification was created without an explicit",
+                    "unit of assignment/unit ID. Merges going forward will",
+                    "be done by row. It is up to the user to ensure that",
+                    "row order is not modified.\nTo prevent this warning,",
+                    "provide an explicit unit of assignment/unit ID."))
+    }
+
     data[["..uoa.."]] <- rownames(data)
     form <- update(form, . ~ . + unit_of_assignment(..uoa..))
   }
@@ -225,6 +233,13 @@ setValidity("StudySpecification", function(object) {
 ##'   \code{dichotomy}.
 ##'
 ##'   There are a few aliases for each version.
+##'
+##'   If the formula excludes a \code{unit_of_assignment()}, data merges are
+##'   performed on row order. The user is responsible for ensuring that row
+##'   order is correct in all data. It is safer to include a
+##'   \code{unit_of_assignment}, which can just be \code{1:n}. To disable this
+##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
+##'
 ##'
 ##' @param formula a \code{formula} defining the \code{StudySpecification}
 ##'   components. See `Details` for specification.
