@@ -77,6 +77,12 @@ treatment and control groups. See \code{\link[=ett]{ett()}} for more details on 
 \code{dichotomy}.
 
 There are a few aliases for each version.
+
+If the formula excludes a \code{unit_of_assignment()}, data merges are
+performed on row order. The user is responsible for ensuring that row
+order is correct in all data. It is safer to include a
+\code{unit_of_assignment}, which can just be \code{1:n}. To disable this
+warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
 }
 \examples{
 data(simdata)
