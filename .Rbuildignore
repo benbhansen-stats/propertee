@@ -30,3 +30,4 @@ vignettes/geex_vs_propertee.Rmd
 tests/testthat/test.assigned.notforCRAN.R
 tests/testthat/test.cov_adj.notforCRAN.R
 tests/testthat/test.WeightedStudySpecification.notforCRAN.R
+internal_files
