@@ -35,7 +35,7 @@ After loading the installed packages and reading in the downloaded data files, w
 
 The school characteristics data spans the universe of public schools in the United States, so to clean it for this vignette, we first limit it to schools relevant to the study. The MME is taken almost exclusively by 11th graders and, as the name suggests, only taken by students in Michigan, so we first subset the data to schools in Michigan serving 11th graders. Then, we perform feature generation, creating derived covariates such as demographic breakdowns by gender, race/ethnicity, and free- or reduced-price lunch eligibility at the school level and in the 11th grade specifically. (The provided cleaning script performs these steps also.)
 
-```{r load_and_clean, message=FALSE}
+```{r load_and_clean, message=FALSE, warning=FALSE}
 if (!require("robustbase")) library(robustbase)
 if (!require("readxl")) library(readxl)
 if (!require("httr")) library(httr)

@@ -10,32 +10,64 @@ A \code{data.frame} with 14 rows and 13 columns.
 \item{schoolid} school id
 \item{blk} block
 \item{z} treatment variable
-\item{MALE_G11_PERC} percentage of G11 male students
-\item{FEMALE_G11_PERC} percentage of G11 female students
-\item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
-\item{ASIAN_G11_PERC} percentage of G11 Asian students
-\item{HISP_G11_PERC} percentage of G11 Hispanic students
-\item{BLACK_G11_PERC} percentage of G11 Black students
-\item{WHITE_G11_PERC} percentage of G11 White students
-\item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
-\item{TR_G11_PERC} percentage of G11 Two or More Races students
-\item{G11} Number of G11 students
+\item{male_g11_perc} percentage of G11 male students
+\item{female_g11_perc} percentage of G11 female students
+\item{am_g11_perc} percentage of G11 American Indian/Alaska Native students
+\item{asian_g11_perc} percentage of G11 Asian students
+\item{hisp_g11_perc} percentage of G11 Hispanic students
+\item{black_g11_perc} percentage of G11 Black students
+\item{white_g11_perc} percentage of G11 White students
+\item{pacific_g11_perc} percentage of G11 Hawaiian Native/Pacific Islander students
+\item{tr_g11_perc} percentage of G11 Two or More Races students
+\item{g11} Number of G11 students
 }
 }
 \usage{
 michigan_school_pairs
 }
 \description{
-Schools matched into pairs or triplets approximating the subset
-of participating schools in Pane et al. (2014) from Michigan
+Michigan schools similar to Pane et al. (2014) Michigan high schools, similarly arranged into fine strata
 }
 \details{
-This dataset contains demographic variables for students in Grade 11.
-These demographic variables are sourced from the Common Core of Data (CCD)
-(U.S. Department of Education).
+This dataset summarizes 2014 demographics of grade 11 students
+at 14 high schools from a large county in southeast Michigan, U.S.
+These schools were selected for this demonstration based on their
+similarity to the 14 high schools from and adjacent Michigan
+county that participated in the Pane et al study.  As a result,
+they serve as an example of what one might expect to find as the
+state-specific school-level subsample in a multi-state
+paired cluster randomized trial featuring random assignment at
+the school level.
+
+This substitute sample was selected by optimal matching of
+experimental schools to adjacent county schools, with substitute
+schools grouped into the same pairs or triples (\sQuote{fine
+strata}) as were their experimental counterparts.  The original
+pairs and triples had been selected to reduce variation in baseline
+variables predictive of outcomes, and the blocking structure the
+substitute sample inherits may be expected to do this as well.  The
+treatment/control distinction is also inherited from the
+experimental sample, but there is of course no treatment effect
+within the substitute sample.
+
+The selection of substitute schools was based on both demographic
+and student achievement variables, but the present data frame
+includes only the demographic variables (as sourced from the
+Common Core of Data [CCD; U.S. Department of Education]).  School
+average outcomes in student test scores are available from
+Michigan's Center for Education Performance Information.  See the
+vignette \sQuote{Real-data demonstration with a finely stratified
+cluster RCT and a broader administrative database}, available on
+the package website.
 }
 \references{
-Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
-\emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+Pane, John F., et al.
+"Effectiveness of cognitive tutor algebra I at scale."
+\emph{Educational Evaluation and Policy Analysis} 36.2 (2014):
+127-144.
+
+U.S. Department of Education. Public Elementary/Secondary School
+Universe Survey Data, v.2a. Institute of Education Sciences,
+National Center for Education Statistics.
 }
 \keyword{dataset}
