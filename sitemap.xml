@@ -13,9 +13,11 @@
 <url><loc>www.github.com/news/index.html</loc></url>
 <url><loc>www.github.com/reference/AssignedAliases.html</loc></url>
 <url><loc>www.github.com/reference/GV_data.html</loc></url>
+<url><loc>www.github.com/reference/PreSandwichLayer-class.html</loc></url>
 <url><loc>www.github.com/reference/PreSandwichLayer.show.html</loc></url>
 <url><loc>www.github.com/reference/PreSandwichLayer.subset.html</loc></url>
 <url><loc>www.github.com/reference/STARplus.html</loc></url>
+<url><loc>www.github.com/reference/SandwichLayer-class.html</loc></url>
 <url><loc>www.github.com/reference/StudySpecificationSpecials.html</loc></url>
 <url><loc>www.github.com/reference/StudySpecification_extractreplace.html</loc></url>
 <url><loc>www.github.com/reference/StudySpecification_objects.html</loc></url>
@@ -23,6 +25,7 @@
 <url><loc>www.github.com/reference/StudySpecification_summary.html</loc></url>
 <url><loc>www.github.com/reference/StudySpecification_var_names.html</loc></url>
 <url><loc>www.github.com/reference/WeightCreators.html</loc></url>
+<url><loc>www.github.com/reference/WeightedStudySpecification-class.html</loc></url>
 <url><loc>www.github.com/reference/WeightedStudySpecification.subset.html</loc></url>
 <url><loc>www.github.com/reference/WeightedStudySpecificationOps.html</loc></url>
 <url><loc>www.github.com/reference/areg.center.html</loc></url>
