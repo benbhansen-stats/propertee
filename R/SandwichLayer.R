@@ -1,6 +1,10 @@
 #' @include StudySpecification.R StudySpecificationAccessors.R
 NULL
 
+#' (Internal) model predictions with some model artifacts, as S4 object
+#' @slot .Data numeric vector of predictions
+#' @slot fitted_covariance_model model standing behind the predictions
+#' @slot prediction_gradient matrix, predictions gradient w/r/t model params
 setClass("PreSandwichLayer",
          contains = "numeric",
          slots = c(fitted_covariance_model = "ANY",
@@ -37,6 +41,11 @@ setValidity("PreSandwichLayer", function(object) {
   TRUE
 })
 
+#' (Internal) model predictions with more model artifacts, as S4 object
+#'
+#' Contains PreSandwichLayer class.  Only additional slots listed here.
+#' @slot keys a data.frame
+#' @slot StudySpecification a StudySpecification
 setClass("SandwichLayer",
          contains = "PreSandwichLayer",
          slots = c(keys = "data.frame",
