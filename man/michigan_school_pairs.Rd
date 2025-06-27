@@ -10,36 +10,37 @@ A \code{data.frame} with 14 rows and 13 columns.
 \item{schoolid} school id
 \item{blk} block
 \item{z} treatment variable
-\item{male_g11_perc} percentage of G11 male students
-\item{female_g11_perc} percentage of G11 female students
-\item{am_g11_perc} percentage of G11 American Indian/Alaska Native students
-\item{asian_g11_perc} percentage of G11 Asian students
-\item{hisp_g11_perc} percentage of G11 Hispanic students
-\item{black_g11_perc} percentage of G11 Black students
-\item{white_g11_perc} percentage of G11 White students
-\item{pacific_g11_perc} percentage of G11 Hawaiian Native/Pacific Islander students
-\item{tr_g11_perc} percentage of G11 Two or More Races students
-\item{g11} Number of G11 students
+\item{MALE_G11_PERC} percentage of G11 male students
+\item{FEMALE_G11_PERC} percentage of G11 female students
+\item{AM_G11_PERC} percentage of G11 American Indian/Alaska Native students
+\item{ASIAN_G11_PERC} percentage of G11 Asian students
+\item{HISP_G11_PERC} percentage of G11 Hispanic students
+\item{BLACK_G11_PERC} percentage of G11 Black students
+\item{WHITE_G11_PERC} percentage of G11 White students
+\item{PACIFIC_G11_PERC} percentage of G11 Hawaiian Native/Pacific Islander students
+\item{TR_G11_PERC} percentage of G11 Two or More Races students
+\item{G11} Number of G11 students
 }
 }
 \usage{
 michigan_school_pairs
 }
 \description{
-Michigan schools similar to Pane et al. (2014) Michigan high schools, similarly arranged into fine strata
+Michigan high schools, with a plausible cluster RCT
 }
 \details{
-This dataset summarizes 2014 demographics of grade 11 students
-at 14 high schools from a large county in southeast Michigan, U.S.
+Grade 11 demographics for all Michigan high schools in 2013,
+with mock block and treatment assignments for 14 high schools within
+a large county in the metro Detroit area.
 These schools were selected for this demonstration based on their
-similarity to the 14 high schools from and adjacent Michigan
-county that participated in the Pane et al study.  As a result,
+similarity to the 14 high schools from an adjacent Michigan
+county that participated in the Pane et al (2013) study.  As a result,
 they serve as an example of what one might expect to find as the
 state-specific school-level subsample in a multi-state
 paired cluster randomized trial featuring random assignment at
 the school level.
 
-This substitute sample was selected by optimal matching of
+The mock experimental schools were selected by optimal matching of
 experimental schools to adjacent county schools, with substitute
 schools grouped into the same pairs or triples (\sQuote{fine
 strata}) as were their experimental counterparts.  The original
@@ -48,17 +49,25 @@ variables predictive of outcomes, and the blocking structure the
 substitute sample inherits may be expected to do this as well.  The
 treatment/control distinction is also inherited from the
 experimental sample, but there is of course no treatment effect
-within the substitute sample.
+within the mock experiment.
 
-The selection of substitute schools was based on both demographic
+The selection of mock experimental schools was based on both demographic
 and student achievement variables, but the present data frame
 includes only the demographic variables (as sourced from the
 Common Core of Data [CCD; U.S. Department of Education]).  School
-average outcomes in student test scores are available from
+average outcomes in student test scores are available separately, from
 Michigan's Center for Education Performance Information.  See the
 vignette \sQuote{Real-data demonstration with a finely stratified
 cluster RCT and a broader administrative database}, available on
 the package website.
+}
+\examples{
+data(michigan_school_pairs)
+mi_spec <- rct_spec(z ~ uoa(schoolid)+block(blk),
+data=michigan_school_pairs)
+mi_spec
+table(is.na(michigan_school_pairs$blk))
+specification_table(mi_spec, "block", "treatment")
 }
 \references{
 Pane, John F., et al.

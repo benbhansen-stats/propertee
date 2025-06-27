@@ -10,10 +10,18 @@ data_temp <- data.frame(
 
 source("../vignettes/mi_vignette/get_and_clean_external_data.R")
 
-merged_data <- merge(analysis1data, data_temp, by = "schoolid")
+stopifnot(all(data_temp$schoolid %in% analysis1data$schoolid))
+
+merged_data <- merge(analysis1data, data_temp,
+                     by = "schoolid", all=TRUE)
 michigan_school_pairs <- merged_data[, c("schoolid", "blk", "z", "MALE_G11_PERC", "FEMALE_G11_PERC", "AM_G11_PERC", "ASIAN_G11_PERC", "HISP_G11_PERC", 
                             "BLACK_G11_PERC", "WHITE_G11_PERC", "PACIFIC_G11_PERC", "TR_G11_PERC","G11")]
-colnames(michigan_school_pairs)  <-
-    tolower(colnames(michigan_school_pairs))
 
+###' Postponed until there's time to update the mi_vignette as well
+###colnames(michigan_school_pairs)  <-
+###    tolower(colnames(michigan_school_pairs))
+
+michigan_school_pairs  <-
+    michigan_school_pairs[order(michigan_school_pairs$blk),]
+rownames(michigan_school_pairs)  <- seq_len(nrow(michigan_school_pairs))
 usethis::use_data(michigan_school_pairs, overwrite = TRUE)
