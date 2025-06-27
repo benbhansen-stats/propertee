@@ -13,6 +13,7 @@ NULL
 #'  `@target` is used for calculation purpose; defining what weight to calculate
 #'   `@weightAlias` is only to store the alias used in creation of the 
 #'     weights in case we want to report it later.
+#' @keywords internal
 setClass("WeightedStudySpecification",
          contains = "numeric",
          slots = c(StudySpecification = "StudySpecification",
