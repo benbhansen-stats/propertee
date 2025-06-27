@@ -2,12 +2,12 @@
 % Please edit documentation in R/WeightedStudySpecification.R
 \name{subset,WeightedStudySpecification-method}
 \alias{subset,WeightedStudySpecification-method}
-\alias{[,WeightedStudySpecification,ANY,ANY,ANY-method}
+\alias{[,WeightedStudySpecification-method}
 \title{\code{WeightedStudySpecification} subsetting}
 \usage{
 \S4method{subset}{WeightedStudySpecification}(x, subset)
 
-\S4method{[}{WeightedStudySpecification,ANY,ANY,ANY}(x, i)
+\S4method{[}{WeightedStudySpecification}(x, i)
 }
 \arguments{
 \item{x}{\code{WeightedStudySpecification} object}
