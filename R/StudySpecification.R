@@ -132,11 +132,13 @@ setValidity("StudySpecification", function(object) {
 
   # #94 handling NA's in non-treatment columns
   completecases <- stats::complete.cases(m[, index != "t"])
+  na_tx  <- is.na(m[, index == "t", drop=TRUE])
   if (!all(completecases)) {
-    if (na.fail) {
-      stop(paste("Missing values cannot be found in the variables creating",
-                 "the `StudySpecification` (except treatment). Remove them manually,",
-                 "or pass `na.fail = FALSE` to remove them automatically."))
+    if ( na.fail & !all(completecases | na_tx) ) {
+      stop(paste("Missing values cannot be found in unit of assignment,",
+                 "block or cluster variables (unless treatment is also NA).",
+                 "Use option `na.fail = FALSE` for automatic removal of",
+                 "incomplete cases."))
     } else {
       m <- m[completecases, ]
     }
