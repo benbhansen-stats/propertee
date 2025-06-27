@@ -17,3 +17,4 @@
 \item{\code{prediction_gradient}}{matrix, predictions gradient w/r/t model params}
 }}
 
+\keyword{internal}

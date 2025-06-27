@@ -26,3 +26,4 @@ weights in case we want to report it later.
 \item{\code{dichotomy}}{formula describing a treatment/comparison dichotomy}
 }}
 
+\keyword{internal}

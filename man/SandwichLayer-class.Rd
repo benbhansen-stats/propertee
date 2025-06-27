@@ -15,3 +15,4 @@ Contains PreSandwichLayer class.  Only additional slots listed here.
 \item{\code{StudySpecification}}{a StudySpecification}
 }}
 
+\keyword{internal}
