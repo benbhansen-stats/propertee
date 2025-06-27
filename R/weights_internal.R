@@ -104,11 +104,13 @@ NULL
 
   }
 
-    if (target == "ate") {
-      weights <- txt / e_z + (1 - txt) / (1 - e_z)
-    } else if (target == "ett") {
-      weights <- txt + (1 - txt) * e_z / (1 - e_z)
-    }
+  weights  <-
+      switch(target,
+             ate = txt / e_z + (1 - txt) / (1 - e_z),
+             ett = txt + (1 - txt) * e_z / (1 - e_z),
+             etc= (1-txt) + txt * (1-e_z)/e_z,
+             ato= txt*(1-e_z) + (1-txt)*e_z
+             )
 
     to_reset_to_0 <- e_z == 1 | e_z == 0
     if (any(to_reset_to_0, na.rm = TRUE)) {
