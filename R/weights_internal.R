@@ -74,13 +74,7 @@ NULL
     # If no block is specified, then e_z is the proportion of units of
     # assignment who receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
-
-    if (target == "ate") {
-      weights <- txt / e_z + (1 - txt) / (1 - e_z)
-    } else if (target == "ett") {
-      weights <- txt + (1 - txt) * e_z / (1 - e_z)
-    }
-  } else {
+    } else {
     # If a block is specified, then e_z varies by block and is the proportion
     # of units of assignments within the block that receive the treatment.
 
@@ -101,24 +95,27 @@ NULL
     )[!is.na(txt), var_names(specification, "b")]
 
     # Generate e_z and merge back into blks
-    e_z <- aggregate(txt ~ ., data = blks, FUN=function(x) sum(x)/length(x))
-    blks <- .merge_preserve_order(blks, e_z, all.x = TRUE)
+    e_z_ <- aggregate(txt ~ ., data = blks, FUN=function(x) sum(x)/length(x))
+    blks <- .merge_preserve_order(blks, e_z_, all.x = TRUE)
     # Rename for clarity
     names(blks)[ncol(blks)] <- "e_z"
 
-    to_reset_to_0 <- blks$e_z == 1 | blks$e_z == 0
+    e_z  <- blks[["e_z"]]
 
-    if (target == "ate") {
-      weights <- txt / blks$e_z + (1 - txt) / (1 - blks$e_z)
-    } else if (target == "ett") {
-      weights <- txt + (1 - txt) * blks$e_z / (1 - blks$e_z)
-    }
+  }
 
+  weights  <-
+      switch(target,
+             ate = txt / e_z + (1 - txt) / (1 - e_z),
+             ett = txt + (1 - txt) * e_z / (1 - e_z),
+             etc= (1-txt) + txt * (1-e_z)/e_z,
+             ato= txt*(1-e_z) + (1-txt)*e_z
+             )
+
+    to_reset_to_0 <- e_z == 1 | e_z == 0
     if (any(to_reset_to_0, na.rm = TRUE)) {
       weights[to_reset_to_0] <- 0
     }
-
-  }
 
   return(.join_spec_weights(weights,
                             specification,
