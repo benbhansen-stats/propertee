@@ -417,6 +417,36 @@ test_that("ato weights for block with P(Z = 1) = 1/3:  2/3 or 1/3", {
 })
 
 
+test_that("uoa's w/ NA treatment don't figure in treatment propensities",{
+
+  testdata  <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
+  testdata[c(1,6),"z"]   <- NA
+  spec  <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  wts_e <- ett(spec, data = testdata)
+  expect_equal(wts_e@.Data, rep(c(0, rep(1,4)),2))
+  wts_a <- ate(spec, data = testdata)
+  expect_equal(wts_a@.Data, rep(c(0, rep(2,4)),2))
+  testdata_  <- testdata
+  testdata_[6,"z"]   <- 0
+  spec_  <- rct_spec(z ~ unit_of_assignment(cid), data = testdata_)
+  wts_e <- ett(spec_, data = testdata_)
+  expect_equal(wts_e@.Data, c(0, rep(1,4), rep(4/5, 5)))
+  wts_a  <- ate(spec_, data = testdata_)
+  expect_equal(wts_a@.Data, c(0, rep(9/4,4), rep(9/5, 5)))
+})
+
+test_that("blocks w/ all-NA treatment receive 0 weight",{
+    testdata  <- data.frame(cid = 1:10, bid= rep(c("a", "b"), 5),
+                            z = c(rep(1, 5), rep(0, 5)))
+    testdata[testdata$bid=="b", "z"]  <- NA
+    spec  <- rct_spec(z ~ uoa(cid) + block(bid), data=testdata)
+    wts_e  <- ett(spec, data=testdata)
+    expect_equal(wts_e@.Data[seq(2,10,by=2)], rep(0,5))
+    wts_a  <- ate(spec, data=testdata)
+    expect_equal(wts_a@.Data[seq(2,10,by=2)], rep(0,5))
+})
+
+
 test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
 
   testdata <- data.frame(bid = c(rep(1, 10), rep(2, 30)),
