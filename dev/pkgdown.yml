@@ -1,16 +1,13 @@
-pandoc: '3.2'
-pkgdown: 2.0.9
+pandoc: 3.1.11
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
-  design_based_SEs: design_based_SEs.html
-  geex_vs_propertee: not-for-cran/geex_vs_propertee.html
+  geex_vs_propertee: geex_vs_propertee.html
+  mi_vignette/index: mi_vignette/index.html
   intro-to-propertee: intro-to-propertee.html
-  LinearModelVarianceEstimation: LinearModelVarianceEstimation.html
   non-binary-treatment: non-binary-treatment.html
   RDD: RDD.html
-  sandwich_infrastructure: sandwich_infrastructure.html
-last_built: 2024-05-16T15:05Z
+last_built: 2025-06-30T15:04Z
 urls:
   reference: www.github.com/reference
   article: www.github.com/articles
-
