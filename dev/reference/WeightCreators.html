@@ -112,8 +112,10 @@ those functions. If used on their own, <code>specification</code> and
 <code>data</code> must be provided.</p><ul><li><p><code>ate</code> - Average treatment effect. Aliases: <code>ate()</code>.</p></li>
 <li><p><code>ett</code> - Effect of treatment on the treated. Aliases: <code>ett()</code>,
 <code>att()</code>.</p></li>
-<li><p><code>etc</code> - Effect of treatment on controls. Aliases: <code>etc()</code>, <code>atc()</code>.</p></li>
-<li><p><code>ato</code> - Overlap-weighted average effect. Aliases: <code>ato()</code>, <code>olw</code>, <code>owt</code>, <code>pwt</code>.</p></li>
+<li><p><code>etc</code> - Effect of treatment on controls. Aliases: <code>etc()</code>,
+<code>atc()</code>.</p></li>
+<li><p><code>ato</code> - Overlap-weighted average effect. Aliases: <code>ato()</code>,
+<code>olw</code>, <code>owt</code>, <code>pwt</code>.</p></li>
 </ul><p>In a <code>StudySpecification</code> with <code>block</code>s, the weights are
 generated as a function of the ratio of the number of treated units in a
 block versus the total number of units in a block.</p>
@@ -128,12 +130,12 @@ levels associated with "treatment") and the right hand side (identifying
 treatment levels associated with "control"). For example, if your
 treatment variable was called <code>dose</code> and doses above 250 are
 considered treatment, you might write:</p>
-<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ dose &lt;= 250</code></p>
+<p><code>ate(..., dichotomy = dose &gt; 250 ~ dose &lt;= 250</code></p>
 <p>The period (<code>.</code>) can be used to assign all other units of assignment.
 For example, we could have written the same treatment regime as either</p>
-<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ .</code></p>
+<p><code>etc(..., dichotomy = dose &gt; 250 ~ .</code></p>
 <p>or</p>
-<p><code>dichotomy(spec) &lt;- . ~ dose &lt;= 250</code></p>
+<p><code>olw(..., dichotomy = . ~ dose &lt;= 250</code></p>
 <p>The <code>dichotomy</code> formula supports Relational Operators (see
 <a href="https://rdrr.io/r/base/Comparison.html" class="external-link">Comparison</a>), Logical Operators (see <a href="https://rdrr.io/r/base/Logic.html" class="external-link">Logic</a>), and <code>%in%</code> (see
 <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code>).</p>
