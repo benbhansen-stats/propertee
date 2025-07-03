@@ -23,6 +23,19 @@ test_that("vcov_tee correctly dispatches", {
   vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
+  
+  cmod <- lm(y ~ x, simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, 
+                 absorb = TRUE, offset = cov_adj(cmod))
+  vmat4 <- suppressMessages(vcov_tee(ssmod, type = "DB0"))
+  expect_true(is.matrix(vmat4))
+  expect_identical(attr(vmat4, "type"), "DB0")
+  
+  vmat5 <- suppressMessages(vcov_tee(ssmod, type = "DB0", const_effect = TRUE))
+  expect_true(is.matrix(vmat5))
+  expect_identical(attr(vmat5, "type"), "DB0")
+  expect_false(identical(vmat4, vmat5))
 })
 
 test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
@@ -2809,6 +2822,14 @@ test_that("specification-based SE for tee models with absorption does not crash"
                           offset = cov_adj(cmod), absorb = TRUE)
   expect_silent(vcov_tee(teemod_abs, type = "DB0"))
   expect_silent(vcov_tee(teemod_abs_off, type = "DB0"))
+  
+  ssmod_sub_abs <- lmitt(y ~ dose, specification = des, data = simdata, absorb = TRUE)
+  ssmod_sub_abs_off <- lmitt(y ~ dose, specification = des, data = simdata,
+                             offset = cov_adj(cmod), absorb = TRUE)
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0", const_effect = TRUE))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0", const_effect = TRUE))
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
