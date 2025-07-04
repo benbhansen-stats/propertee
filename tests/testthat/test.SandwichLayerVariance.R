@@ -23,6 +23,19 @@ test_that("vcov_tee correctly dispatches", {
   vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
+  
+  cmod <- lm(y ~ x, simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, 
+                 absorb = TRUE, offset = cov_adj(cmod))
+  vmat4 <- suppressMessages(vcov_tee(ssmod, type = "DB0", const_effect = FALSE))
+  expect_true(is.matrix(vmat4))
+  expect_identical(attr(vmat4, "type"), "DB0")
+  
+  vmat5 <- suppressMessages(vcov_tee(ssmod, type = "DB0", const_effect = TRUE))
+  expect_true(is.matrix(vmat5))
+  expect_identical(attr(vmat5, "type"), "DB0")
+  expect_false(identical(vmat4, vmat5))
 })
 
 test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
@@ -2650,7 +2663,7 @@ test_that("vcov_tee errors when asking for specification-based SE for a model
   ssmod_sub <- lmitt(y ~ dose, specification = spec, data = simdata, weights = ate(spec))
   expect_error(
     vcov_tee(ssmod_sub, type = "DB0"),
-    "cannot be computed for teeMod models with moderators"
+    "are not supported for teeMod models with moderators"
   )
 })
 
@@ -2809,6 +2822,14 @@ test_that("specification-based SE for tee models with absorption does not crash"
                           offset = cov_adj(cmod), absorb = TRUE)
   expect_silent(vcov_tee(teemod_abs, type = "DB0"))
   expect_silent(vcov_tee(teemod_abs_off, type = "DB0"))
+  
+  ssmod_sub_abs <- lmitt(y ~ dose, specification = spec, data = simdata, absorb = TRUE)
+  ssmod_sub_abs_off <- lmitt(y ~ dose, specification = spec, data = simdata,
+                             offset = cov_adj(cmod), absorb = TRUE)
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0", const_effect = TRUE))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0", const_effect = TRUE))
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
@@ -2825,14 +2846,14 @@ test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
   B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
   goal <- matrix(0, nrow = 3, ncol = 1)
   for (blk in 1:3){
-    goal[blk] <- sum(ssmod_abs$weights * ssmod_abs$residuals * B[,blk]) /
+    goal[blk] <- sum(weights(ssmod_abs) * residuals(ssmod_abs) * B[,blk]) /
       sum(ssmod_abs$weights * B[,blk])
   }
   expect_true(all.equal(goal, .get_appinv_atp(ssmod_abs, db = TRUE)))
 
   for (blk in 1:3){
-    goal[blk] <- sum(ssmod_abs_off$weights * ssmod_abs_off$residuals * B[,blk]) /
-      sum(ssmod_abs_off$weights * B[,blk])
+    goal[blk] <- sum(weights(ssmod_abs_off) * residuals(ssmod_abs_off) * B[,blk]) /
+      sum(weights(ssmod_abs_off)* B[,blk])
   }
   expect_true(all.equal(goal, propertee:::.get_appinv_atp(ssmod_abs_off, db = TRUE)))
 })
@@ -2849,7 +2870,7 @@ test_that(".get_phi_tilde returns correct grave{phi}
   B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
   Z <- cbind(as.integer(simdata$z == 0), as.integer(simdata$z == 1))
 
-  ws <- ssmod_abs$weights
+  ws <- stats::weights(ssmod_abs)
   p <- matrix(0, nrow = 2, ncol = 3)
   for (k in 1:2)
     for (j in 1:3){
@@ -2857,7 +2878,88 @@ test_that(".get_phi_tilde returns correct grave{phi}
     }
   goal <- matrix(0, nrow = 50, ncol = 3)
   for (s in 1:3){
-    goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
+    goal[,s] <- ws * residuals(ssmod_abs) * (Z[,2] - p[2,s]) * B[,s]
+  }
+  expect_true(all.equal(goal, propertee:::.get_phi_tilde(ssmod_abs, db = TRUE)))
+  
+  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata,
+                     absorb = TRUE)
+  p <- matrix(0, nrow = 2, ncol = 3)
+  for (k in 1:2)
+    for (j in 1:3){
+      p[k, j] <- sum(Z[,k] * B[,j]) / sum(B[,j])
+    }
+  goal <- matrix(0, nrow = 50, ncol = 3)
+  for (s in 1:3){
+    goal[,s] <- residuals(ssmod_abs) * (Z[,2] - p[2,s]) * B[,s]
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(ssmod_abs, db = TRUE)))
 })
+
+test_that("block_center_residuals correctly subtracts off block center residuals", {
+  data(simdata)
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  damod_abs <- lmitt(y ~ 1, specification = des, data = simdata, absorb = TRUE)
+  r <- residuals(damod_abs)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(damod_abs))))
+})
+
+test_that("block_center_residuals works for input containing NA block IDs", {
+  data(simdata)
+  simdata[1:3, 'bid'] <- NA
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), 
+                           simdata, na.fail = FALSE)
+  damod_abs <- lmitt(y ~ 1, specification = des, data = simdata, absorb = TRUE)
+  r <- residuals(damod_abs)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(damod_abs))))
+})
+
+test_that("block_center_residuals works for teeMod having NA in fitted values", {
+  data(simdata)
+  simdata[1:3, 'x'] <- NA
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), 
+                           simdata, na.fail = FALSE)
+  cmod <- lm(y ~ x, simdata)
+  teemod <- suppressWarnings(lmitt(
+    y ~ 1, specification = des, data = simdata, absorb = TRUE, offset = cov_adj(cmod)
+    ))
+  r <- residuals(teemod)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)[4:50]
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(teemod))))
+})
+

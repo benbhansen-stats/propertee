@@ -55,6 +55,7 @@ Collate:
     'StudySpecification.R'
     'StudySpecificationAccessors.R'
     'SandwichLayer.R'
+    'block_center_residuals.R'
     'SandwichLayerVariance.R'
     'StudySpecificationConverters.R'
     'StudySpecificationStructure.R'
