@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,19 @@
 <span></span>
 <span><span class="fu">att</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">ate</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">ate</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">etc</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">atc</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ato</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">olw</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">owt</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">pwt</span><span class="op">(</span>specification <span class="op">=</span> <span class="cn">NULL</span>, dichotomy <span class="op">=</span> <span class="cn">NULL</span>, by <span class="op">=</span> <span class="cn">NULL</span>, data <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -100,6 +112,10 @@ those functions. If used on their own, <code>specification</code> and
 <code>data</code> must be provided.</p><ul><li><p><code>ate</code> - Average treatment effect. Aliases: <code>ate()</code>.</p></li>
 <li><p><code>ett</code> - Effect of treatment on the treated. Aliases: <code>ett()</code>,
 <code>att()</code>.</p></li>
+<li><p><code>etc</code> - Effect of treatment on controls. Aliases: <code>etc()</code>,
+<code>atc()</code>.</p></li>
+<li><p><code>ato</code> - Overlap-weighted average effect. Aliases: <code>ato()</code>,
+<code>olw</code>, <code>owt</code>, <code>pwt</code>.</p></li>
 </ul><p>In a <code>StudySpecification</code> with <code>block</code>s, the weights are
 generated as a function of the ratio of the number of treated units in a
 block versus the total number of units in a block.</p>
@@ -114,12 +130,12 @@ levels associated with "treatment") and the right hand side (identifying
 treatment levels associated with "control"). For example, if your
 treatment variable was called <code>dose</code> and doses above 250 are
 considered treatment, you might write:</p>
-<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ dose &lt;= 250</code></p>
+<p><code>ate(..., dichotomy = dose &gt; 250 ~ dose &lt;= 250</code></p>
 <p>The period (<code>.</code>) can be used to assign all other units of assignment.
 For example, we could have written the same treatment regime as either</p>
-<p><code>dichotomy(spec) &lt;- dose &gt; 250 ~ .</code></p>
+<p><code>etc(..., dichotomy = dose &gt; 250 ~ .</code></p>
 <p>or</p>
-<p><code>dichotomy(spec) &lt;- . ~ dose &lt;= 250</code></p>
+<p><code>olw(..., dichotomy = . ~ dose &lt;= 250</code></p>
 <p>The <code>dichotomy</code> formula supports Relational Operators (see
 <a href="https://rdrr.io/r/base/Comparison.html" class="external-link">Comparison</a>), Logical Operators (see <a href="https://rdrr.io/r/base/Logic.html" class="external-link">Logic</a>), and <code>%in%</code> (see
 <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code>).</p>
@@ -129,7 +145,15 @@ treatment, for example, <code>dose &gt; 300 ~ dose &lt; 200</code> does not assi
 equivalent to manually generating a binary variable with <code>NA</code>
 whenever <code>dose</code> is between 200 and 300. Standard errors will reflect
 the sizes of the comparison groups specified by the <code>dichotomy</code>.</p>
-<p>Code for the computation of the weights was contributed by Tim Lycurgus.</p>
+<p>Tim Lycurgus contributed code for the computation of weights. The
+‘overlap weight’ concept is due to Li, Morgan and Zaslavsky
+(2018), although the current implementation differs from that
+discussed in their paper in that it avoids estimated propensity scores.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Li, Fan, Kari Lock Morgan, and Alan M. Zaslavsky.
+"Balancing covariates via propensity score weighting." Journal of the American Statistical Association 113, no. 521 (2018): 390-400.</p>
     </div>
 
     <div class="section level2">
