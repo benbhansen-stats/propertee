@@ -108,3 +108,21 @@ test_that("no warning when dichotomy is passed as a stored object", {
   expect_silent(om5 <- lm(y ~ assigned(specification, individdata, dich), individdata, weights = wts))
   expect_equal(unname(om1$coef[1:2]), unname(om5$coef))
 })
+
+test_that("proceed with NULL dichotomy when passed as a named object", {
+  fit_lmitt <- function(data, spec, dich) {
+    m1 <- lmitt(y~1, spec, data, dichotomy = dich)
+    m1
+  }
+  
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)), y = rnorm(10))
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  
+  expect_silent(om1 <- lmitt(y~1, spec, testdata))
+  expect_silent(om2 <- lmitt(y~1, spec, testdata, dichotomy = NULL))
+  expect_silent(om3 <- fit_lmitt(testdata, spec2, z == 1 ~ z == 0))
+  expect_silent(om4 <- fit_lmitt(testdata, spec, NULL))
+  expect_equal(om1$coefficients, om2$coefficients)
+  expect_equal(om1$coefficients, om3$coefficients)
+  expect_equal(om1$coefficients, om4$coefficients)
+})

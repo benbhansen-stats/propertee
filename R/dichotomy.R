@@ -48,19 +48,39 @@
     # in that case, there's no need to compare it to other dichotomy arguments up
     # the stack, so we return a dichotomy if it exists in the list and NULL otherwise
     dichotomy <- possible_dichotomy$lmitt
+    if (inherits(dichotomy, "name")) {
+      # if the dichotomy passed to weights or lmitt was a stored object, find and
+      # evaluate it
+      for (s in seq_len(sys.nframe())) {
+        eval_d <- tryCatch(eval.parent(dichotomy, s), error = function(e) NULL)
+        if (!is.null(eval_d)) break
+      }
+      dichotomy <- eval_d
+    }
     if (is.null(dichotomy)) {
       dichotomy <- possible_dichotomy$weights
     }
+    if (inherits(dichotomy, "name")) {
+      # if the dichotomy passed to weights or lmitt was a stored object, find and
+      # evaluate it
+      for (s in seq_len(sys.nframe())) {
+        eval_d <- tryCatch(eval.parent(dichotomy, s), error = function(e) NULL)
+        if (!is.null(eval_d)) break
+      }
+      dichotomy <- eval_d
+    }
+    if (!is.null(dichotomy)) dichotomy <- as.formula(dichotomy)
   } else if (inherits(possible_dichotomy, "call")) {
     possible_dichotomy <- as.formula(possible_dichotomy)
   } else if (inherits(possible_dichotomy, "name")) {
     # if the dichotomy passed to weights or lmitt was a stored object, find and
     # evaluate it
     for (s in seq_len(sys.nframe())) {
-      eval_pd <- tryCatch(as.formula(eval.parent(possible_dichotomy, s)), error = function(e) NULL)
+      eval_pd <- tryCatch(eval.parent(possible_dichotomy, s), error = function(e) NULL)
       if (!is.null(eval_pd)) break
     }
     possible_dichotomy <- eval_pd
+    if (!is.null(possible_dichotomy)) possible_dichotomy <- as.formula(possible_dichotomy)
   }
 
   if (inherits(possible_dichotomy, "formula")) {
@@ -68,7 +88,7 @@
     # find any other dichotomies up the call stack to compare dichotomy against
     other_dichotomies <- .find_dichotomies()
     if (!is.null(other_dichotomies$lmitt)) {
-      if (is.name(other_dichotomies$lmitt)) {
+      if (inherits(other_dichotomies$lmitt, "name")) {
         for (s in seq_len(sys.nframe())) {
           ok <- tryCatch(eval.parent(other_dichotomies$lmitt, s),
                          error = function(e) NULL)
@@ -84,7 +104,7 @@
       }
     }
     if (!is.null(other_dichotomies$weights)) {
-      if (is.name(other_dichotomies$weights)) {
+      if (inherits(other_dichotomies$weights, "name")) {
         for (s in seq_len(sys.nframe())) {
           ok <- tryCatch(eval.parent(other_dichotomies$weights, s),
                          error = function(e) NULL)
