@@ -1,4 +1,4 @@
-# propertee 0.6.1
+# propertee 0.6.0
 ## New Features
 * In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
 * Introduces `etc()` (effect of the treatment on controls) and `ato()` (overlap-weighted effect) weighting functions. `atc` is an alias for `etc()`, while `olw`, `owt`, and `pwt` are aliases for `ato()`.
