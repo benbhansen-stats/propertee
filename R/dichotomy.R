@@ -11,7 +11,7 @@
                        lapply(sys.calls(), "[[", 1),
                        perl = TRUE)
   # if this is called within `.weights_calc()` don't look for dichotomies in the
-  # weights arguments (it already would have been available)
+  # weights arguments (no need to compare the dichotomy to itself)
   weights.calls <- if (any(grepl("weights_calc", lapply(sys.calls(), "[[", 1),
                                  fixed = TRUE))) FALSE else {
     lapply(sys.calls(), "[[", "weights")
@@ -44,25 +44,57 @@
 #' @keywords internal
 .validate_dichotomy <- function(possible_dichotomy) {
   if (inherits(possible_dichotomy, "list")) {
+    # possible_dichotomy is a list if it's passed the output of .find_dichotomies().
+    # in that case, there's no need to compare it to other dichotomy arguments up
+    # the stack, so we return a dichotomy if it exists in the list and NULL otherwise
     dichotomy <- possible_dichotomy$lmitt
     if (is.null(dichotomy)) {
       dichotomy <- possible_dichotomy$weights
     }
   } else if (inherits(possible_dichotomy, "call")) {
     possible_dichotomy <- as.formula(possible_dichotomy)
+  } else if (inherits(possible_dichotomy, "name")) {
+    # if the dichotomy passed to weights or lmitt was a stored object, find and
+    # evaluate it
+    for (s in seq_len(sys.nframe())) {
+      eval_pd <- tryCatch(as.formula(eval.parent(possible_dichotomy, s)), error = function(e) NULL)
+      if (!is.null(eval_pd)) break
+    }
+    possible_dichotomy <- eval_pd
   }
-  
+
   if (inherits(possible_dichotomy, "formula")) {
     dichotomy <- possible_dichotomy
+    # find any other dichotomies up the call stack to compare dichotomy against
     other_dichotomies <- .find_dichotomies()
     if (!is.null(other_dichotomies$lmitt)) {
-      if (!identical(deparse1(other_dichotomies$lmitt), deparse1(dichotomy))) {
+      if (is.name(other_dichotomies$lmitt)) {
+        for (s in seq_len(sys.nframe())) {
+          ok <- tryCatch(eval.parent(other_dichotomies$lmitt, s),
+                         error = function(e) NULL)
+          if (!is.null(ok)) break
+        }
+        if (is.null(ok)) stop(paste("Could not find", deparse1(other_dichotomies$lmitt), "in call stack"))
+        other_dichotomies$lmitt <- ok
+      }
+      if (!identical(deparse1(other_dichotomies$lmitt),
+                     do.call("deparse1", list(eval(dichotomy))))) {
         warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to `lmitt()`"))
       }
     }
     if (!is.null(other_dichotomies$weights)) {
-      if (!identical(deparse1(other_dichotomies$weights), deparse1(dichotomy))) {
+      if (is.name(other_dichotomies$weights)) {
+        for (s in seq_len(sys.nframe())) {
+          ok <- tryCatch(eval.parent(other_dichotomies$weights, s),
+                         error = function(e) NULL)
+          if (!is.null(ok)) break
+        }
+        if (is.null(ok)) stop(paste("Could not find", deparse1(other_dichotomies$weights), "in call stack"))
+        other_dichotomies$weights <- ok
+      }
+      if (!identical(deparse1(other_dichotomies$weights),
+                     do.call("deparse1", list(eval(dichotomy))))) {
         warning(paste("`dichotomy` passed to", paste0("`", sys.call(-1L)[[1L]], "()`"),
                       "is not the same as the `dichotomy` passed to weights"))
       }

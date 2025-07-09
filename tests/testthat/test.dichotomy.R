@@ -71,3 +71,40 @@ test_that("find and validate dichotomies with no upstream lmitt.formula()", {
     "Must provide a dichotomy"
   )
 })
+
+test_that("no warning when dichotomy is passed as a stored object", {
+  set.seed(33)
+  uoadata <- data.frame(cid = seq_len(8),
+                        bid = c(rep(seq_len(2), 2), rep(1, 2), rep(2, 2)),
+                        dose = c(rep(0, 4), rep(1, 2), rep(2, 2)))
+  individdata <- data.frame(cid = rep(seq_len(8), each = 10), y = rnorm(80))
+  specification <- rct_spec(dose ~ uoa(cid) + block(bid), data = uoadata)
+  
+  # store the dichotomy in an object and create weights ahead of time with stored dichotomy
+  dich <- dose == 1 ~ dose == 0
+  wts <- ett(specification, data = individdata, dichotomy = dich)
+  
+  # first, check when dichotomy is passed directly and through the weights
+  expect_silent(om1 <- lmitt(y~1, specification, individdata, weights = wts, dichotomy = dich))
+  
+  # then check when only passed through the weights
+  expect_silent(om2 <- lmitt(y~1, specification, individdata,
+                             weights = ett(specification, data = individdata, dichotomy = dich)))
+  
+  # also, check when the dichotomy or an object storing a dichotomy is passed to a function
+  fit_lmitt <- function(data, spec, d) {
+    wts <- ett(spec, data = data, dichotomy = d)
+    m1 <- lmitt(y~1, spec, data, weights = wts, dichotomy = d)
+    m1
+  }
+  expect_silent(om3 <- fit_lmitt(individdata, specification, dose == 1 ~ dose == 0))
+  expect_silent(om4 <- fit_lmitt(individdata, specification, dich))
+  
+  expect_equal(om1$coef, om2$coef)
+  expect_equal(om1$coef, om3$coef)
+  expect_equal(om1$coef, om4$coef)
+  
+  # and finally, non-lmitt calls
+  expect_silent(om5 <- lm(y ~ assigned(specification, individdata, dich), individdata, weights = wts))
+  expect_equal(unname(om1$coef[1:2]), unname(om5$coef))
+})
