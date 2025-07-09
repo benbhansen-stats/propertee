@@ -1,8 +1,12 @@
-# propertee 0.6.1 (Unreleased)
+# propertee 0.6.1
 ## New Features
 * In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
+* Introduces `etc()` (effect of the treatment on controls) and `ato()` (overlap-weighted effect) weighting functions. `atc` is an alias for `etc()`, while `olw`, `owt`, and `pwt` are aliases for `ato()`.
 * Bump minimum R version to 4.1.0 to allow internal usage of pipes and anonymous
   functions.
+
+## Bug Fixes
+* When `ate()`-type functions are called with `data` arguments that do not include rows associated with all units of assignment specified in the `StudySpecification` object, the resulting weights reflect assignment probabilities across all units of assignment in the `StudySpecification`, not only those represented in `data`.
 
 # propertee 0.5.2
 ## New Features
