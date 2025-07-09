@@ -120,7 +120,7 @@ test_that("proceed with NULL dichotomy when passed as a named object", {
   
   expect_silent(om1 <- lmitt(y~1, spec, testdata))
   expect_silent(om2 <- lmitt(y~1, spec, testdata, dichotomy = NULL))
-  expect_silent(om3 <- fit_lmitt(testdata, spec2, z == 1 ~ z == 0))
+  expect_silent(om3 <- fit_lmitt(testdata, spec, z == 1 ~ z == 0))
   expect_silent(om4 <- fit_lmitt(testdata, spec, NULL))
   expect_equal(om1$coefficients, om2$coefficients)
   expect_equal(om1$coefficients, om3$coefficients)
