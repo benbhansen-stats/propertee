@@ -43,11 +43,16 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061-unreleased">propertee 0.6.1 (Unreleased)<a class="anchor" aria-label="anchor" href="#propertee-061-unreleased"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061">propertee 0.6.1<a class="anchor" aria-label="anchor" href="#propertee-061"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-6-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-1"></a></h3>
 <ul><li>In their <code>coefficients</code> element, <code>teeMod</code> objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the <code><a href="../reference/lmitt.html">lmitt()</a></code> man page for further details.</li>
+<li>Introduces <code><a href="../reference/WeightCreators.html">etc()</a></code> (effect of the treatment on controls) and <code><a href="../reference/WeightCreators.html">ato()</a></code> (overlap-weighted effect) weighting functions. <code>atc</code> is an alias for <code><a href="../reference/WeightCreators.html">etc()</a></code>, while <code>olw</code>, <code>owt</code>, and <code>pwt</code> are aliases for <code><a href="../reference/WeightCreators.html">ato()</a></code>.</li>
 <li>Bump minimum R version to 4.1.0 to allow internal usage of pipes and anonymous functions.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-6-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-1"></a></h3>
+<ul><li>When <code><a href="../reference/WeightCreators.html">ate()</a></code>-type functions are called with <code>data</code> arguments that do not include rows associated with all units of assignment specified in the <code>StudySpecification</code> object, the resulting weights reflect assignment probabilities across all units of assignment in the <code>StudySpecification</code>, not only those represented in <code>data</code>.</li>
 </ul></div>
 </div>
     <div class="section level2">
