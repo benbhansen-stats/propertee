@@ -91,6 +91,11 @@ setValidity("StudySpecification", function(object) {
     data <- subset(data, subset = subset)
   }
 
+  ## keep formula's environment
+  env <- environment(terms(form, data = data))
+  environment(form) <- env
+  call$formula <- form
+
   ## #174 convert all data.frames
   data <- .as_data_frame(data)
 
