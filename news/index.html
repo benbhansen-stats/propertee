@@ -46,7 +46,9 @@
 <h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061">propertee 0.6.1<a class="anchor" aria-label="anchor" href="#propertee-061"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-6-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-1"></a></h3>
-<ul><li>An internal routine in <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> no longer fails when the environment in which <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> is called differs from the environment in which the <code>StudySpecification</code> associated with the <code>teeMod</code> is created</li>
+<ul><li>
+<code><a href="../reference/StudySpecificationSpecials.html">unit_of_assignment()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">unitid()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">cluster()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">uoa()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">block()</a></code>, and <code><a href="../reference/StudySpecificationSpecials.html">forcing()</a></code> no longer fail automatically when passed a non-numeric or non-character variable. Now, they will first attempt to convert the variable to a character variable.</li>
+<li>An internal routine in <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> no longer fails when the environment in which <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> is called differs from the environment in which the <code>StudySpecification</code> associated with the <code>teeMod</code> is created.</li>
 </ul></div>
 </div>
     <div class="section level2">
