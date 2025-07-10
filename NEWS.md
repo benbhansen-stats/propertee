@@ -1,6 +1,7 @@
 # propertee 0.6.1
 ## Bug Fixes
-* An internal routine in `vcov_tee()` no longer fails when the environment in which `vcov_tee()` is called differs from the environment in which the `StudySpecification` associated with the `teeMod` is created
+* `unit_of_assignment()`, `unitid()`, `cluster()`, `uoa()`, `block()`, and `forcing()` no longer fail automatically when passed a non-numeric or non-character variable. Now, they will first attempt to convert the variable to a character variable. 
+* An internal routine in `vcov_tee()` no longer fails when the environment in which `vcov_tee()` is called differs from the environment in which the `StudySpecification` associated with the `teeMod` is created.
 
 # propertee 0.6.0
 ## New Features
