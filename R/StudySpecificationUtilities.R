@@ -32,7 +32,11 @@ NULL
 ##' @rdname StudySpecificationSpecials
 unit_of_assignment <- function(...) {
   allf <- list(...)
-  return(do.call(cbind, allf))
+  results <- lapply(allf, function(x) {
+    if (!is.numeric(x)) return(as.character(x))
+    return(x)
+  })
+  return(do.call(cbind, results))
 }
 
 ##' @rdname StudySpecificationSpecials

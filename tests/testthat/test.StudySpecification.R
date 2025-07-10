@@ -601,12 +601,30 @@ test_that("#209 fix subsetting", {
                    spec3@structure)
 })
 
+test_that("#222 factor UOA", {
+
+  example <- data.frame(schf = as.factor(letters),
+                        schn = 1:26,
+                        trt = rep(c(0,1),each = 13),
+                        Y = rnorm(26))
+  sp1 <- rct_spec(trt ~ unitid(schf), data = example)
+  sp2 <- rct_spec(trt ~ unitid(schn), data = example)
+  mod1 <- lmitt(Y ~ 1,
+                specification = sp1,
+                data = example,weights = "ate")
+  mod2 <- lmitt(Y ~ 1,
+                specification = sp2,
+                data = example,weights = "ate")
+  expect_identical(vcov(mod1), vcov(mod2))
+
+})
+
 test_that("get StudySpecification data from call's formula environment", {
   make_spec <- function(udata, zcol, ucol) {
     spec_form <- reformulate(paste0("unitid(", ucol, ")"), response = zcol)
     rct_specification(spec_form, udata)
   }
-
+  
   udata <- data.frame(uid = seq_len(3), z = c(0, 1, 0))
   m1 <- make_spec(udata, "z", "uid")
   expect_identical(udata, get("udata", environment(m1@call$formula)))

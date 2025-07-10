@@ -247,6 +247,9 @@ setValidity("StudySpecification", function(object) {
 ##'   \code{unit_of_assignment}, which can just be \code{1:n}. To disable this
 ##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
 ##'
+##'   The units of assignment, blocks, and forcing variables must be
+##'   \code{numeric} or \code{character}. If they are otherwise, an attempt is
+##'   made to cast them into \code{character}.
 ##'
 ##' @param formula a \code{formula} defining the \code{StudySpecification}
 ##'   components. See `Details` for specification.
