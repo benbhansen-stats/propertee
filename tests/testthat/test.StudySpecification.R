@@ -599,3 +599,22 @@ test_that("#209 fix subsetting", {
   expect_identical(spec1@structure,
                    spec3@structure)
 })
+
+
+test_that("#222 factor UOA", {
+
+  example <- data.frame(schf = as.factor(letters),
+                        schn = 1:26,
+                        trt = rep(c(0,1),each = 13),
+                        Y = rnorm(26))
+  sp1 <- rct_spec(trt ~ unitid(schf), data = example)
+  sp2 <- rct_spec(trt ~ unitid(schn), data = example)
+  mod1 <- lmitt(Y ~ 1,
+                specification = sp1,
+                data = example,weights = "ate")
+  mod2 <- lmitt(Y ~ 1,
+                specification = sp2,
+                data = example,weights = "ate")
+  expect_identical(vcov(mod1), vcov(mod2))
+
+})
