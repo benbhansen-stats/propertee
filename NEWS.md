@@ -1,3 +1,7 @@
+# propertee 0.6.1
+## Bug Fixes
+* An internal routine in `vcov_tee()` no longer fails when the environment in which `vcov_tee()` is called differs from the environment in which the `StudySpecification` associated with the `teeMod` is created
+
 # propertee 0.6.0
 ## New Features
 * In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
