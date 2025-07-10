@@ -199,22 +199,7 @@ identify_small_blocks <- function(spec) {
 .make_uoa_cluster_df <- function(spec, cluster = NULL) {
   if (!inherits(spec, "StudySpecification")) stop("Must be provided a valid `StudySpecification` object")
   uoa_cols <- var_names(spec, "u")
-  # q_df <- NULL
-  # spec_cl <- spec@call
-  # if (is.null(subset_cl <- spec_cl$subset)) specdata_cl <- spec_cl$data else {
-  #   specdata_cl <- quote(subset(x = df, subset_arg))
-  #   specdata_cl$x <- spec_cl$data
-  #   specdata_cl[[3]] <- subset_cl
-  # }
-  # 
-  # for (f in seq_len(sys.nframe())) {
-  #   q_df <- tryCatch({
-  #     eval(specdata_cl, envir = parent.frame(f))
-  #   }, error = function(e) return(NULL))
-  #   if (!is.null(q_df) & inherits(q_df, "data.frame")) break
-  # 
-  # }
-  q_df <- get(spec@call$data, envir = environment(spec@call$formula))
+  q_df <- eval(spec@call$data, envir = environment(spec@call$formula))
   if (!is.null(spec@call$subset)) q_df <- subset(q_df, eval(spec@call$subset, envir = q_df))
 
   if (is.null(q_df)) {

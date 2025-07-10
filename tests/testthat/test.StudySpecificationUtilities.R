@@ -121,6 +121,12 @@ test_that(".make_uoa_cluster_df", {
   expect_equal(colnames(uc_df), c("uid1", "cluster"))
   expect_true(all.equal(uc_df$cluster, letters[1:4],
                         check.attributes = FALSE))
+  
+  # test when there's a subset
+  subset_spec <- rct_spec(a ~ unitid(uid1, uid2), spec_data, subset = bid == "A")
+  expect_equal(.make_uoa_cluster_df(subset_spec, c("uid1", "uid2")),
+               data.frame(uid1 = letters[1:2], uid2 = letters[1:2],
+                          cluster = paste(letters[1:2], letters[1:2], sep = "_")))
 
   # test cluster arg specification when level is coarser than assignment level
   expect_equal(dim(uc_df <- .make_uoa_cluster_df(cluster_spec, "bid")),
