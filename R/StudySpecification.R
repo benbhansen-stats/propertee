@@ -71,7 +71,7 @@ setValidity("StudySpecification", function(object) {
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
 ##' @return A new StudySpecification object
-##' @importFrom stats formula complete.cases
+##' @importFrom stats formula complete.cases terms
 ##' @keywords internal
 .new_StudySpecification <- function(form,
                        data,
