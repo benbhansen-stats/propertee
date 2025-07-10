@@ -71,7 +71,7 @@ setValidity("StudySpecification", function(object) {
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
 ##' @return A new StudySpecification object
-##' @importFrom stats formula complete.cases
+##' @importFrom stats formula complete.cases terms
 ##' @keywords internal
 .new_StudySpecification <- function(form,
                        data,
@@ -90,6 +90,11 @@ setValidity("StudySpecification", function(object) {
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
+
+  ## keep formula's environment
+  env <- environment(terms(form, data = data))
+  environment(form) <- env
+  call$formula <- form
 
   ## #174 convert all data.frames
   data <- .as_data_frame(data)
