@@ -61,8 +61,6 @@
       dichotomy <- possible_dichotomy$weights
     }
     if (inherits(dichotomy, "name")) {
-      # if the dichotomy passed to weights or lmitt was a stored object, find and
-      # evaluate it
       for (s in seq_len(sys.nframe())) {
         eval_d <- tryCatch(eval.parent(dichotomy, s), error = function(e) NULL)
         if (!is.null(eval_d)) break
@@ -75,8 +73,14 @@
   } else if (inherits(possible_dichotomy, "name")) {
     # if the dichotomy passed to weights or lmitt was a stored object, find and
     # evaluate it
-    for (s in seq_len(sys.nframe())) {
-      eval_pd <- tryCatch(eval.parent(possible_dichotomy, s), error = function(e) NULL)
+    for (s in seq_len(nf <- sys.nframe())) {
+      eval_pd <- tryCatch(
+        eval.parent(possible_dichotomy, s),
+        error = function(e) if (s == nf) {
+          stop(paste("Could not find", deparse1(possible_dichotomy), "in call stack"),
+               call. = FALSE)
+        } else return(NULL)
+      )
       if (!is.null(eval_pd)) break
     }
     possible_dichotomy <- eval_pd

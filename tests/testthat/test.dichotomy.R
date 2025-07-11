@@ -126,3 +126,10 @@ test_that("proceed with NULL dichotomy when passed as a named object", {
   expect_equal(om1$coefficients, om3$coefficients)
   expect_equal(om1$coefficients, om4$coefficients)
 })
+
+test_that("fail when dichotomy is a named but non-existent object", {
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)), y = rnorm(10))
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  expect_error(ett(spec, data = testdata, dichotomy = quote(d)),
+               "Could not find d in call stack")
+})
