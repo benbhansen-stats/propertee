@@ -275,7 +275,7 @@ compute_loo_psi_estfun <- function(x, cluster, ...) {
   
   ## get cluster ID's
   in_Q <- which(sl@keys$in_Q)
-  if (cluster == "..uoa..") {
+  if (cluster[1] == "..uoa..") {
     C_cls <- rownames(stats::model.frame(cmod, na.action = na.pass))
   } else {
     C_cls <- Reduce(
@@ -327,7 +327,7 @@ compute_loo_psi_estfun <- function(x, cluster, ...) {
   }
   mm <- stats::model.matrix(tt, mf, contrasts.arg = cmod$contrasts)
 
-  if (cluster == "..uoa..") {
+  if (cluster[1] == "..uoa..") {
     Q_cls <- rownames(stats::model.frame(x, na.action = na.pass))
   } else {
     Q_cls <- Reduce(
