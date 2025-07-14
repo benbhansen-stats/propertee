@@ -711,7 +711,8 @@ test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
   expect_error(.align_and_extend_estfuns(mod2), "must be a fitted")
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overlap"), {
+test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overlap",
+                "(uses jackknifed first-stage coefficients)"), {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
@@ -725,8 +726,28 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod1, by = "obs_id"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  C_cls <- paste(simdata_copy$uoa1, simdata_copy$uoa2, sep = "_")
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata_copy$y - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
@@ -750,14 +771,16 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
+test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
+                "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   simdata$obs_id <- seq_len(nrow(simdata))
   simdata_shuffle_ix <- sample(rownames(simdata))
   shuffled_simdata <- simdata[simdata_shuffle_ix,]
-  Q_data <- simdata[1L:20L,]
+  Q_ix <- 1L:20L
+  Q_data <- simdata[Q_ix,]
   Q_shuffle_ix <- sample(rownames(Q_data))
   shuffled_Q_data <- Q_data[Q_shuffle_ix,]
   cmod1 <- lm(y ~ x, simdata)
@@ -767,17 +790,37 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
   mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1, by = "obs_id"))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls[Q_ix])
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  nonzero_ix <- as.numeric(sort(as.character(seq(20L))))
-  zero_ix <- seq(21L, 50L)
+  nonzero_ix <- as.numeric(sort(as.character(Q_ix)))
+  zero_ix <- setdiff(seq_len(50), Q_ix)
   expect_true(all.equal(ef1$phi, cmod_ef[c(nonzero_ix, zero_ix),], check.attributes = FALSE))
-  expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
+  expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[zero_ix] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
@@ -791,7 +834,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
   simdata_shuffle_ix <- sample(rownames(simdata_copy))
   shuffled_simdata <- simdata_copy[simdata_shuffle_ix,]
-  C_data <- simdata_copy[1:20,]
+  C_ix <- seq_len(34L)
+  C_data <- simdata_copy[C_ix,]
   C_shuffle_ix <- sample(rownames(C_data))
   shuffled_C_data <- C_data[C_shuffle_ix,]
   cmod1 <- lm(y ~ x, C_data)
@@ -801,28 +845,53 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec1, offset = cov_adj(cmod1, by = "obs_id"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  Q_cls <- paste(simdata_copy$uoa1, simdata_copy$uoa2, sep = "_")
+  C_cls <- Q_cls[C_ix]
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- replace(mod1$offset,
+                       C_ix,
+                       rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
-  nonzero_ix <- 31L:50L
-  zero_ix <- 1L:30L
-  expect_true(all(ef1$phi[1L:30L] == 0))
+  zero_ix <- seq(nrow(simdata_copy)-length(C_ix))
+  nonzero_ix <- setdiff(seq_len(nrow(simdata_copy)), zero_ix)
+  expect_true(all(ef1$phi[zero_ix] == 0))
   expect_true(all.equal(
-    ef1$phi[31L:50L,],
-    cmod_ef[sort(as.character(seq(20L))),],
+    ef1$phi[nonzero_ix,],
+    cmod_ef[sort(as.character(C_ix)),],
     check.attributes = FALSE))
   expect_true(all.equal(
     ef1$psi,
-    mod_lm_ef[c(21L:50L, sort(as.character(seq(20L)))),], check.attributes = FALSE))
+    mod_lm_ef[c(setdiff(seq_len(nrow(simdata_copy)), C_ix), sort(as.character(C_ix))),],
+    check.attributes = FALSE))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap"), {
+test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap",
+                "(doesn't use jackknifed first-stage coefficient estimates)"), {
   set.seed(438)
   data(simdata)
 
@@ -855,7 +924,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `by`)",
+                "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
@@ -867,8 +937,28 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, offset = cov_adj(cmod1))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -882,12 +972,14 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
+                "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
-  Q_data <- simdata[1:20,]
+  Q_ix <- seq_len(20L)
+  Q_data <- simdata[Q_ix,]
   shuffled_Q_data <- Q_data[sample(rownames(Q_data)),]
   cmod1 <- lm(y ~ x, simdata)
   cmod2 <- lm(y ~ x, shuffled_simdata)
@@ -896,8 +988,28 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), 
   mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls[Q_ix])
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -906,19 +1018,20 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all.equal(ef1$phi, cmod_ef, check.attributes = FALSE))
-  expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[1L:20L,], check.attributes = FALSE))
-  expect_true(all(ef1$psi[21L:50L] == 0))
+  expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[Q_ix,], check.attributes = FALSE))
+  expect_true(all(ef1$psi[setdiff(seq_len(nrow(simdata)), Q_ix)] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't",
-                "possible and C is a subset of Q"), {
+                "possible and C is a subset of Q (uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
-  C_data <- simdata[1:20,]
+  C_ix <- seq_len(34L)
+  C_data <- simdata[C_ix,]
   shuffled_C_data <- C_data[sample(rownames(C_data)),]
   cmod1 <- lm(y ~ x, C_data)
   cmod2 <- lm(y ~ x, shuffled_C_data)
@@ -927,23 +1040,53 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, offset = cov_adj(cmod1))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
+  Q_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  C_cls <- Q_cls[C_ix]
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- replace(mod1$offset,
+                       C_ix,
+                       rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
+  zero_ix <- seq(nrow(simdata)-length(C_ix))
+  nonzero_ix <- setdiff(seq_len(nrow(simdata)), zero_ix)
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
-  expect_true(all(ef1$phi[1L:30L] == 0))
-  expect_true(all.equal(ef1$psi, mod_lm_ef[c(21L:50L, 1L:20L),], check.attributes = FALSE))
+  expect_true(all.equal(ef1$phi[nonzero_ix,],
+                        cmod_ef[C_ix,],
+                        check.attributes = FALSE))
+  expect_true(all(ef1$phi[zero_ix] == 0))
+  expect_true(all.equal(ef1$psi,
+                        mod_lm_ef[c(setdiff(seq_len(nrow(simdata)), C_ix), C_ix),],
+                        check.attributes = FALSE))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no `by`)",
+                "(doesn't use jackknifing)"), {
   set.seed(438)
   data(simdata)
 

@@ -193,17 +193,29 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
+  mc <- match.call()
+  uoa_cols <- var_names(x@StudySpecification, "u")
+  cluster_cols <- if (is.null(mc$cluster_cols)) uoa_cols else mc$cluster_cols
 
-  # get the original estimating equations
+  ## get the original estimating equations
   psi <- .base_S3class_estfun(x)
-  phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
+  sl <- x$model$`(offset)`
+  phi <- estfun(sl@fitted_covariance_model)
 
-  # the ordering output by `.order_samples()` is explained in that function's
-  # documentation
+  ## the ordering output by `.order_samples()` is explained in that function's
+  ## documentation
   id_order <- .order_samples(x, by = by, verbose = FALSE)
   n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
   nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
+  
+  ## use jackknife first-stage coefficient estimates if treated units were in first-stage fit
+  Q_in_C_trts <- stats::model.frame(x, na.action = na.pass)[[
+    deparse1(eval(x$call$formula, envir = environment(formula(x)))[[3L]])]][
+    as.numeric(names(id_order$Q_in_C))]
+  if (any(Q_in_C_trts > 0)) { # this should work for absorb=TRUE and absorb=FALSE
+    psi <- compute_loo_psi_estfun(x, cluster_cols, ...) 
+  }
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
   aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
@@ -251,6 +263,98 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     if (is.null(nms <- colnames(aliased))) 1 else nms
   }
   return(ef[, keep_coef,drop=FALSE])
+}
+
+#' Jackknife estfun
+#' @importFrom stats model.frame
+#' @keywords internal
+compute_loo_psi_estfun <- function(x, cluster, ...) {
+  ## what's in the call
+  sl <- x$model$`(offset)`
+  cmod <- sl@fitted_covariance_model
+  
+  ## get cluster ID's
+  in_Q <- which(sl@keys$in_Q)
+  if (cluster == "..uoa..") {
+    C_cls <- rownames(stats::model.frame(cmod, na.action = na.pass))
+  } else {
+    C_cls <- Reduce(
+      function(l, r) paste(l, r, sep = "_"),
+      as.list(stats::expand.model.frame(cmod, cluster)[, cluster, drop=FALSE])
+    )
+  }
+  jk_units <- unique(C_cls[in_Q])
+
+  ## get LOO coefficients for each overlapping unit in Q and C
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        cf <- eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+        matrix(cf, ncol = 1, dimnames = list(names(cf), NULL))
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  loo_cmod[is.na(loo_cmod)] <- 0 # replace NA coefficients due to singularity with 0's
+  
+  ## make preds for units in Q using LOO estimates of covariance adjustment model
+  ## (make sure to set treatment indicator to 0 if it was included in the model)
+  tt <- stats::delete.response(stats::terms(cmod))
+  Q_data <- get("data", envir = environment(formula(x)))
+  mf <- call("model.frame",
+             tt,
+             Q_data,
+             subset = eval(x@lmitt_call$subset, envir = Q_data),
+             na.action = na.pass,
+             xlev = cmod$xlevels)
+  mf <- eval(mf)
+  trt_name <- var_names(x@StudySpecification, "t")
+  if (trt_name %in% colnames(mf)) {
+    trts <- treatment(x@StudySpecification)[, 1]
+    if (is.numeric(trts)) {
+      mf[[trt_name]] <- min(abs(trts))
+    } else if (is.logical(trts)) {
+      mf[[trt_name]] <- FALSE
+    } else if (is.factor(trts)) {
+      mf[[trt_name]] <- levels(trts)[1]
+    }
+  }
+  mm <- stats::model.matrix(tt, mf, contrasts.arg = cmod$contrasts)
+
+  if (cluster == "..uoa..") {
+    Q_cls <- rownames(stats::model.frame(x, na.action = na.pass))
+  } else {
+    Q_cls <- Reduce(
+      function(l, r) paste(l, r, sep = "_"),
+      as.list(stats::expand.model.frame(x, cluster)[, cluster, drop=FALSE])
+    )
+  }
+  Q_cls_in_C <- Q_cls %in% colnames(loo_cmod)
+  loo_preds <- rowSums(mm[Q_cls_in_C,,drop=FALSE] *
+                         t(loo_cmod[, as.character(Q_cls[Q_cls_in_C])]))
+  if (!is.null(cmod$family)) loo_preds <- cmod$family$linkinv(loo_preds)
+
+  ## slot them in to existing predictions
+  all_preds <- sl@.Data
+  all_preds[Q_cls_in_C] <- loo_preds
+  
+  ## make estfun matrix
+  A <- stats::model.matrix(x)
+  A <- stats::naresid(x$na.action, A)
+  y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
+  if (is.null(wts <- weights(x))) wts <- rep(1, nrow(A))
+  
+  ef <- sweep(A,
+              1,
+              wts * (y - stats::fitted.values(x) - all_preds),
+              FUN = "*")
+  return(ef)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
