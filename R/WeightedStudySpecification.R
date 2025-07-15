@@ -2,15 +2,24 @@
 NULL
 # The above ensures that `StudySpecification` is defined prior to `WeightedStudySpecification`
 
+#' (Internal) Modeling weights with an accompanying StudySpecification
+#'
+#' @slot .Data numeric vector of modeling weights
+#' @slot StudySpecification a StudySpecification
+#' @slot target character string, e.g. "ate"
+#' @slot weightAlias alias for target appearing in an originating call
+#' @slot dichotomy formula describing a treatment/comparison dichotomy
+#' @details
+#'  `@target` is used for calculation purpose; defining what weight to calculate
+#'   `@weightAlias` is only to store the alias used in creation of the 
+#'     weights in case we want to report it later.
+#' @keywords internal
 setClass("WeightedStudySpecification",
          contains = "numeric",
          slots = c(StudySpecification = "StudySpecification",
                    target = "character",
                    weightAlias = "character",
                    dichotomy = "formula"))
-# @target is used for calculation purpose; defining what weight to calculate
-# @weightAlias is only to store the alias used in creation of the weights in
-#     case we want to report it later.
 
 setValidity("WeightedStudySpecification", function(object) {
   if (!.isValidWeightTarget(object@target)) {

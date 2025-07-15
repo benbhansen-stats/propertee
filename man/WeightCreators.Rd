@@ -4,6 +4,12 @@
 \alias{ett}
 \alias{att}
 \alias{ate}
+\alias{etc}
+\alias{atc}
+\alias{ato}
+\alias{olw}
+\alias{owt}
+\alias{pwt}
 \title{Generate Direct Adjusted Weights for Treatment Effect Estimation}
 \usage{
 ett(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
@@ -11,6 +17,18 @@ ett(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
 att(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
 
 ate(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+etc(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+atc(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+ato(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+olw(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+owt(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
+
+pwt(specification = NULL, dichotomy = NULL, by = NULL, data = NULL)
 }
 \arguments{
 \item{specification}{optional; a \code{StudySpecification} object created by
@@ -48,6 +66,8 @@ those functions. If used on their own, \code{specification} and
 \item \code{ate} - Average treatment effect. Aliases: \code{ate()}.
 \item \code{ett} - Effect of treatment on the treated. Aliases: \code{ett()},
 \code{att()}.
+\item \code{etc} - Effect of treatment on controls. Aliases: \code{etc()}, \code{atc()}.
+\item \code{ato} - Overlap-weighted average effect. Aliases: \code{ato()}, \code{olw}, \code{owt}, \code{pwt}.
 }
 
 In a \code{StudySpecification} with \code{block}s, the weights are
@@ -90,10 +110,17 @@ equivalent to manually generating a binary variable with \code{NA}
 whenever \code{dose} is between 200 and 300. Standard errors will reflect
 the sizes of the comparison groups specified by the \code{dichotomy}.
 
-Code for the computation of the weights was contributed by Tim Lycurgus.
+Tim Lycurgus contributed code for the computation of weights. The
+\sQuote{overlap weight} concept is due to Li, Morgan and Zaslavsky
+(2018), although the current implementation differs from that
+discussed in their paper in that it avoids estimated propensity scores.
 }
 \examples{
 data(simdata)
 spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
 summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()))
+}
+\references{
+Li, Fan, Kari Lock Morgan, and Alan M. Zaslavsky.
+"Balancing covariates via propensity score weighting." Journal of the American Statistical Association 113, no. 521 (2018): 390-400.
 }

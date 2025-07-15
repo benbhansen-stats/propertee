@@ -26,16 +26,57 @@ A \code{data.frame} with 14 rows and 13 columns.
 michigan_school_pairs
 }
 \description{
-Schools matched into pairs or triplets approximating the subset
-of participating schools in Pane et al. (2014) from Michigan
+Michigan high schools, with a plausible cluster RCT
 }
 \details{
-This dataset contains demographic variables for students in Grade 11.
-These demographic variables are sourced from the Common Core of Data (CCD)
-(U.S. Department of Education).
+Grade 11 demographics for all Michigan high schools in 2013,
+with mock block and treatment assignments for 14 high schools within
+a large county in the metro Detroit area.
+These schools were selected for this demonstration based on their
+similarity to the 14 high schools from an adjacent Michigan
+county that participated in the Pane et al (2013) study.  As a result,
+they serve as an example of what one might expect to find as the
+state-specific school-level subsample in a multi-state
+paired cluster randomized trial featuring random assignment at
+the school level.
+
+The mock experimental schools were selected by optimal matching of
+experimental schools to adjacent county schools, with substitute
+schools grouped into the same pairs or triples (\sQuote{fine
+strata}) as were their experimental counterparts.  The original
+pairs and triples had been selected to reduce variation in baseline
+variables predictive of outcomes, and the blocking structure the
+substitute sample inherits may be expected to do this as well.  The
+treatment/control distinction is also inherited from the
+experimental sample, but there is of course no treatment effect
+within the mock experiment.
+
+The selection of mock experimental schools was based on both demographic
+and student achievement variables, but the present data frame
+includes only the demographic variables (as sourced from the
+Common Core of Data [CCD; U.S. Department of Education]).  School
+average outcomes in student test scores are available separately, from
+Michigan's Center for Education Performance Information.  See the
+vignette \sQuote{Real-data demonstration with a finely stratified
+cluster RCT and a broader administrative database}, available on
+the package website.
+}
+\examples{
+data(michigan_school_pairs)
+mi_spec <- rct_spec(z ~ uoa(schoolid)+block(blk),
+data=michigan_school_pairs)
+mi_spec
+table(is.na(michigan_school_pairs$blk))
+specification_table(mi_spec, "block", "treatment")
 }
 \references{
-Pane, John F., et al. "Effectiveness of cognitive tutor algebra I at scale."
-\emph{Educational Evaluation and Policy Analysis} 36.2 (2014): 127-144.
+Pane, John F., et al.
+"Effectiveness of cognitive tutor algebra I at scale."
+\emph{Educational Evaluation and Policy Analysis} 36.2 (2014):
+127-144.
+
+U.S. Department of Education. Public Elementary/Secondary School
+Universe Survey Data, v.2a. Institute of Education Sciences,
+National Center for Education Statistics.
 }
 \keyword{dataset}

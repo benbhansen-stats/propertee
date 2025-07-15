@@ -1,3 +1,8 @@
+# Where to pull the data from
+extdataURLs  <-
+    list(CCD="https://nces.ed.gov/ccd/data/zip/sc132a_txt.zip",
+         MME="https://www.michigan.gov/cepi/-/media/Project/Websites/cepi/MiSchoolData/historical/Historical_Assessments/2011-2014MME.zip")
+
 # pads numerical values with leading zeros for fixed character length
 zero_lpad <- function(vec, char_len) {
   vapply(

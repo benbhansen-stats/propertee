@@ -1,6 +1,11 @@
 #' @include StudySpecification.R StudySpecificationAccessors.R
 NULL
 
+#' (Internal) model predictions with some model artifacts, as S4 object
+#' @slot .Data numeric vector of predictions
+#' @slot fitted_covariance_model model standing behind the predictions
+#' @slot prediction_gradient matrix, predictions gradient w/r/t model params
+#' @keywords internal
 setClass("PreSandwichLayer",
          contains = "numeric",
          slots = c(fitted_covariance_model = "ANY",
@@ -37,6 +42,12 @@ setValidity("PreSandwichLayer", function(object) {
   TRUE
 })
 
+#' (Internal) model predictions with more model artifacts, as S4 object
+#'
+#' Contains PreSandwichLayer class.  Only additional slots listed here.
+#' @slot keys a data.frame
+#' @slot StudySpecification a StudySpecification
+#' @keywords internal
 setClass("SandwichLayer",
          contains = "PreSandwichLayer",
          slots = c(keys = "data.frame",
@@ -313,16 +324,20 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
   }
 
-  keys <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
-    error = function(e) {
-      covmoddata <- eval(data_call,
-                         envir = environment(formula(x@fitted_covariance_model)))
-      stop(paste("Columns",
-                 paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
-                 "are missing from the covariance adjustment model dataset"),
+  if (specification@unit_of_assignment_type == "none") {
+    keys <- data.frame(..uoa.. = rownames(x@fitted_covariance_model$model))
+  } else {
+    keys <- tryCatch(
+      stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
+      error = function(e) {
+        covmoddata <- eval(data_call,
+                           envir = environment(formula(x@fitted_covariance_model)))
+        stop(paste("Columns",
+                   paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
+                   "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
-    })
+      })
+  }
 
   keys$in_Q <- apply(
     mapply(

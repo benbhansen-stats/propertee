@@ -9,4 +9,5 @@ NULL
 .onLoad <- function(lib, pkg) {
   options("propertee_warn_on_conditional_treatment" = TRUE)
   options("propertee_message_on_unused_blocks" = TRUE)
+  options("propertee_warn_on_no_unit_of_assignment" = TRUE)
 }

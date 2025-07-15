@@ -11,9 +11,6 @@ test_that("StudySpecification formula checking", {
   expect_error(.check_spec_formula(~ cluster(x)),
                "treatment")
 
-  expect_error(.check_spec_formula(y ~ x),
-               "cluster")
-
   expect_error(.check_spec_formula(y ~ cluster(x) + unitid(z)),
                "Only one of")
 

@@ -17,6 +17,8 @@ NULL
 ##'   - \code{ate} - Average treatment effect. Aliases: \code{ate()}.
 ##'   - \code{ett} - Effect of treatment on the treated. Aliases: \code{ett()},
 ##'                        \code{att()}.
+##'   - \code{etc} - Effect of treatment on controls. Aliases: \code{etc()}, \code{atc()}.
+##'   - \code{ato} - Overlap-weighted average effect. Aliases: \code{ato()}, \code{olw}, \code{owt}, \code{pwt}.
 ##'
 ##'   In a \code{StudySpecification} with \code{block}s, the weights are
 ##'   generated as a function of the ratio of the number of treated units in a
@@ -58,7 +60,10 @@ NULL
 ##'   whenever \code{dose} is between 200 and 300. Standard errors will reflect
 ##'   the sizes of the comparison groups specified by the \code{dichotomy}.
 ##'
-##'   Code for the computation of the weights was contributed by Tim Lycurgus.
+##'   Tim Lycurgus contributed code for the computation of weights. The
+##'   \sQuote{overlap weight} concept is due to Li, Morgan and Zaslavsky
+##'   (2018), although the current implementation differs from that
+##'   discussed in their paper in that it avoids estimated propensity scores.
 ##'
 ##' @param specification optional; a \code{StudySpecification} object created by
 ##'   one of \code{rct_spec()}, \code{rd_spec()}, or \code{obs_spec()}.
@@ -79,6 +84,8 @@ NULL
 ##'   numeric weights
 ##' @export
 ##' @rdname WeightCreators
+##' @references Li, Fan, Kari Lock Morgan, and Alan M. Zaslavsky.
+##' "Balancing covariates via propensity score weighting." Journal of the American Statistical Association 113, no. 521 (2018): 390-400.
 ##' @examples
 ##' data(simdata)
 ##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
@@ -109,6 +116,73 @@ ate <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) 
   return(.weights_calc(specification = specification,
                        target = "ate",
                        weightAlias = "ate",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+##' @rdname WeightCreators
+##' @export
+etc <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "etc",
+                       weightAlias = "etc",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+##' @rdname WeightCreators
+##' @export
+atc <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "etc",
+                       weightAlias = "atc",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+
+##' @rdname WeightCreators
+##' @export
+ato <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "ato",
+                       weightAlias = "ato",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+##' @rdname WeightCreators
+##' @export
+olw <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "ato",
+                       weightAlias = "olw",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+##' @rdname WeightCreators
+##' @export
+owt <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "ato",
+                       weightAlias = "owt",
+                       dichotomy = dichotomy,
+                       by = by,
+                       data = data))
+}
+
+##' @rdname WeightCreators
+##' @export
+pwt <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
+  return(.weights_calc(specification = specification,
+                       target = "ato",
+                       weightAlias = "pwt",
                        dichotomy = dichotomy,
                        by = by,
                        data = data))

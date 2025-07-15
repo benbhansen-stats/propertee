@@ -1,5 +1,7 @@
 *.html
+*.md
 *.R
+figure
 # BH local setup:
 specification_based_SEs*.tex
 auto
@@ -10,3 +12,4 @@ auto
 *.log
 *.rel
 *.synctex.gz
+*.pdf

@@ -25,8 +25,9 @@
 ##' @keywords internal
 ##' @rdname validWeights
 .validWeights <- list(
-  targets = c("ate", "ett"),
-  aliases = c("ate", "ett", "att")
+  targets = c("ate", "ett", "etc", "ato"),
+  aliases = c("ate", "ett", "att", "etc", "atc", "ato", "olw",
+              "owt", "pwt")
 )
 
 ##' @keywords internal

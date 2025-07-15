@@ -544,7 +544,7 @@ test_that("NA's in data to create StudySpecification", {
   expect_error(obs_spec(z ~ unitid(uoa1, uoa2) + block(bid), data = sd2),
                "Missing values cannot be found")
 
-  # Shouldn't affect treatment
+  # treatment NAs allowed & passed forward
   sd2 <- simdata
   sd2$z[1:10] <- NA
   expect_silent(spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2,
@@ -559,6 +559,16 @@ test_that("NA's in data to create StudySpecification", {
   spec <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd2, na.fail = FALSE)
   expect_equal(nrow(spec@structure), 9)
 
+  # Cases with NAs in treatment and additional structure
+  # variable(s) silently omitted
+  sd3  <- sd2
+  sd3$z[1:4]  <- NA
+  expect_silent(spec_  <- obs_spec(z ~ unitid(uoa1, uoa2), data = sd3,
+                                   na.fail = TRUE))
+  expect_equal(nrow(spec_@structure), 9)
+
+  spec@call <- spec_@call <- call("c")
+  expect_identical(spec, spec_)
 })
 
 test_that("column name 'cluster' doesn't cause issues", {

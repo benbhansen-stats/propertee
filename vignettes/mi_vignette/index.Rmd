@@ -2,7 +2,7 @@
 title: "OLS effect and error estimation with an auxiliary sample and a separate, not-necessarily-linear covariance model"
 subtitle: "Real-data demonstration with a finely stratified cluster RCT and a broader administrative database"
 author: "Josh Wasserman, Ben B. Hansen"
-date: "2024-08-01"
+date: "2025-06-27"
 output: html_document
 ---
 
@@ -35,7 +35,7 @@ After loading the installed packages and reading in the downloaded data files, w
 
 The school characteristics data spans the universe of public schools in the United States, so to clean it for this vignette, we first limit it to schools relevant to the study. The MME is taken almost exclusively by 11th graders and, as the name suggests, only taken by students in Michigan, so we first subset the data to schools in Michigan serving 11th graders. Then, we perform feature generation, creating derived covariates such as demographic breakdowns by gender, race/ethnicity, and free- or reduced-price lunch eligibility at the school level and in the 11th grade specifically. (The provided cleaning script performs these steps also.)
 
-```{r load_and_clean, message=FALSE}
+```{r load_and_clean, message=FALSE, warning=FALSE}
 if (!require("robustbase")) library(robustbase)
 if (!require("readxl")) library(readxl)
 if (!require("httr")) library(httr)
@@ -46,6 +46,8 @@ CCD="https://nces.ed.gov/ccd/data/zip/sc132a_txt.zip",
 MME="https://www.michigan.gov/cepi/-/media/Project/Websites/cepi/MiSchoolData/historical/Historical_Assessments/2011-2014MME.zip"
 )
 data(michigan_school_pairs)
+michigan_school_pairs <-
+     subset(michigan_school_pairs, !is.na(blk), c(schoolid,blk,z))
 source("get_and_clean_external_data.R")
 ```
 
@@ -118,7 +120,8 @@ rob_county_camod <- robustbase::lmrob(
 #### Estimating Marginal Intervention Effects
 With the `StudySpecification` object created and the covariance adjustment model fit, we're prepared to evaluate the intervention. `propertee` supports the calculations of inverse probability of assignment weights, which can be used to estimate either the average intervention effect (ATE) or the average effect for the treated (ETT). These weights can be combined with additional unit weights to reflect varying sizes of units in the sample. In this analysis and the one that follows, we estimate the student-level ATE by calculating inverse probability of assignment weights for each school using the `ate()` function, then multiplying those weights by the number of students at the corresponding school who took the test. We incorporate the prognostic model using the `cov_adj()` function, which generates model predictions for each school and identifies overlap between the prognostic sample and the study sample.
 ```{r}
-study1data <- merge(michigan_school_pairs, analysis1data, by = "schoolid", all.x = TRUE)
+study1data <-
+     merge(michigan_school_pairs, analysis1data, by = "schoolid", all.x = TRUE)
 ip_wts <- propertee::ate(spec, data = study1data) * study1data$Total.Tested.2014
 lm_ca <- propertee::cov_adj(lm_county_camod, newdata = study1data, specification = spec)
 ```
