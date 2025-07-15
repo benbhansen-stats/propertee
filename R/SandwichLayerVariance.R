@@ -35,36 +35,42 @@ NULL
 #' @export
 #' @rdname var_estimators
 vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
-  if (!exists(paste0(".vcov_", type))) {
-    stop(paste0("covariance function .vcov_", type,
+  vcov_type <- substr(type, 1, 2)
+  if ((vcov_type == "DB" & !exists(paste0(".vcov_", type))) |
+      (vcov_type != "DB" & !exists(paste0(".vcov_", vcov_type)))) {
+    stop(paste0("covariance function .vcov_", ifelse(vcov_type == "DB", type, vcov_type),
                 " not defined.\n"))
   }
-  var_func <- get(paste0(".vcov_", type))
-  vcov_type <- substr(type, 1, 2)
-  args <- list(...)
-  args$x <- x
-  args$vcov_type <- vcov_type
-  if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
-  args$cluster_cols <- cluster
-  args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  var_func <- get(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
+  
+  vcov_cl <- match.call()
+  vcov_cl[[1L]] <- str2lang(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
+  if (vcov_type == "DB") {
+    vcov_cl <- vcov_cl[-match("type", names(vcov_cl))]
+    vcov_cl$vcov_type <- vcov_type
+  } else {
+    if (is.null(vcov_cl$type)) vcov_cl$type <- type
+  }
+  if (is.null(vcov_cl$by)) vcov_cl$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  vcov_cl$cluster_cols <- cluster
+  vcov_cl$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
-  est <- do.call(var_func, args)
+  est <- eval(vcov_cl, envir = parent.frame(1L))
 
   return(est)
 }
 
 #' @keywords internal
-.vcov_CR0 <- function(x, ...) {
+.vcov_CR <- function(x, ...) {
   if (!inherits(x, c("teeMod", "mmm"))) {
     stop("x must be a teeMod or mmm object")
   }
 
   args <- list(...)
-  if ("type" %in% names(args)) {
-    stop(paste("Cannot override the `type` argument for meat",
-               "matrix computations"))
-  }
   args$x <- x
+  if (is.null(args$type_psi)) args$type_psi <- args$type
+  if (is.null(args$type_phi)) args$type_phi <- args$type
+  args$type <- "HC0"
   n <- length(args$cluster)
 
   bread. <- sandwich::bread(x, ...)
@@ -86,21 +92,22 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
   }
 
-  attr(vmat, "type") <- "CR0"
+  attr(vmat, "type") <- args$type_psi
+  if (inherits(x$model$`(offset)`, "SandwichLayer")) {
+    attr(vmat, "cov_adj_correction") <- args$type_phi
+  }
   return(vmat)
 }
 
 #' @keywords internal
-.vcov_HC0 <- function(x, ...) {
-  out <- .vcov_CR0(x, ...)
-  attr(out, "type") <- "HC0"
+.vcov_HC <- function(x, ...) {
+  out <- .vcov_CR(x, ...)
   return(out)
 }
 
 #' @keywords internal
-.vcov_MB0 <- function(x, ...) {
-  out <- .vcov_CR0(x, ...)
-  attr(out, "type") <- "MB0"
+.vcov_MB <- function(x, ...) {
+  out <- .vcov_CR(x, ...)
   return(out)
 }
 

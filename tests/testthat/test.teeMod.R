@@ -330,7 +330,7 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
 
   vcovlm_z.95 <- ssmod2$coefficients[1:3] +
     sqrt(diag(sandwich::sandwich(ssmod2, meat. = sandwich::meatCL,
-                            cluster = uoas))) %o%
+                            cluster = uoas, type_phi = "HC0", type_psi = "HC0"))) %o%
     qt(c(0.025, 0.975), ssmod2$df.residual)
   ci1 <- confint(ssmod2)
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
@@ -429,11 +429,11 @@ test_that("estfun.teeMod gets scaling constants right with no overlap", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
 
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod)[,1:2],
+    estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -453,11 +453,11 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
 
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod)[,1:2],
+    estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -477,11 +477,11 @@ test_that("estfun.teeMod with missing values", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
   
-  ef <- estfun(dmod)[,1:2]
+  ef <- estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2]
   expect_equal(nrow(ef), nc + nq)
   expect_true(all.equal(ef[1:3,], matrix(0, nrow = 3, ncol = 2), check.attributes = FALSE))
   class(dmod$na.action) <- "exclude"
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
@@ -503,8 +503,10 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata_copy), 4))
-  expect_equal(estfun(mod1), estfun(mod2))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata_copy), 4))
+  expect_equal(estfun(mod1, type_psi = "HC0", type_phi = "HC0"),
+               estfun(mod2, type_psi = "HC0", type_phi = "HC0"))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions when only",
@@ -518,8 +520,10 @@ test_that(paste("estfun.teeMod returns correct dimensions when only",
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
-  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 4))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
+  expect_equal(dim(estfun(mod2, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions and alignment",
@@ -536,8 +540,10 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
-  expect_equal(estfun(mod1), estfun(mod2))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
+  expect_equal(estfun(mod1, type_psi = "HC0", type_phi = "HC0"),
+               estfun(mod2, type_psi = "HC0", type_phi = "HC0"))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions for partial",
@@ -553,7 +559,7 @@ test_that(paste("estfun.teeMod returns correct dimensions for partial",
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)),
+  expect_equal(dim(estfun(mod, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata) + nrow(cmod_ssta[is.na(cmod_ssta$uoa1),]), 4))
 })
 
@@ -569,14 +575,15 @@ test_that(paste("estfun.teeMod returns correct dimensions for no",
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_ssta), 4))
+  expect_equal(dim(estfun(mod, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata) + nrow(cmod_ssta), 4))
 })
 
 test_that("estfun zeros out NA's from ctrl means regression", {
   moddata <- data.frame(a = c(rep(c(0, 1), each = 5), NA_real_), y = rnorm(11), id = seq_len(11))
   spec <- rct_spec(a ~ unitid(id), data = moddata)
   mod <- lmitt(y ~ 1, data = moddata, spec = spec)
-  ef <- estfun(mod)
+  ef <- estfun(mod, type_psi = "HC0", type_phi = "HC0")
   expect_true(all(!is.na(ef)))
   expect_true(!all(ef == 0))
   expect_equal(ef[11,3], 0)
@@ -589,7 +596,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
     dmod <- lmitt(lm(y ~ z.(spec), simdata, offset = cov_adj(cmod)), specification = spec)
 
-    out <- estfun(dmod)
+    out <- estfun(dmod, type_psi = "HC0", type_phi = "HC0")
     expect_equal(dim(out), c(50, 4))
   })
 }
@@ -748,8 +755,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata_copy$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
 
   # tests to run (for each .align_and_extend_estfuns() test):
   # 1) do we get a matrix of estimating equations of dimension n?
@@ -812,8 +819,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
@@ -870,8 +877,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
 
   expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
@@ -911,8 +918,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
@@ -959,8 +966,8 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1010,8 +1017,8 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1065,8 +1072,8 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1103,8 +1110,8 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1127,8 +1134,8 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
   class(mod$na.action) <- "exclude"
   cm_ef <- estfun(mod@ctrl_means_model)
   cm_ef[is.na(cm_ef)] <- 0
-  aligned1 <- .align_and_extend_estfuns(mod)
-  aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
+  aligned1 <- .align_and_extend_estfuns(mod, type_psi = "HC0", type_phi = "HC0")
+  aligned2 <- .align_and_extend_estfuns(mod, cm_ef, type_psi = "HC0", type_phi = "HC0")
   expect_equal(length(aligned1), 2)
   expect_equal(length(aligned2), 2)
   expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4], check.attributes = FALSE))

@@ -37,6 +37,7 @@ summary.teeMod <- function(object,
                                           object$df.residual,
                                           lower.tail = FALSE)
     out$vcov.type <- attr(covmat, "type")
+    out$vcov.cov_adj_bias_correction <- attr(covmat, "cov_adj_correction")
   }
   class(out) <- "summary.teeMod"
   out$teeMod <- object
@@ -103,6 +104,10 @@ print.summary.teeMod <- function(x,
   if (sum(toprint) > 0 & any(!is.na(coefs[toprint, 1]))) {
     # Only print if we estimate at least one treatment effect
     cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+    if (!is.null(bc <- x$vcov.cov_adj_bias_correction)) {
+      cat(paste0("Residuals from covariance adjustment model adjusted by an \"",
+                 bc, "\" bias correction\n\n"))
+    }
   } else {
     cat("\n")
   }

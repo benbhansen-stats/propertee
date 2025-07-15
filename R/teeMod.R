@@ -120,6 +120,7 @@ estfun.teeMod <- function(x, ...) {
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
   mc <- match.call()
   vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
+  if (is.null(type_psi <- mc$type_psi)) type_psi <- "HC0"
 
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
@@ -139,7 +140,9 @@ estfun.teeMod <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(mat)
+    resids <- stats::residuals(x, type = "working")
+    return(mat / replace(resids, is.na(resids), 1) *
+             replace(bias_correct(resids, x, "psi", type_psi, ...), is.na(resids), 0))
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -171,6 +174,73 @@ estfun.teeMod <- function(x, ...) {
 ##' @exportS3Method
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
+##' @title Apply bias correction to estfun matrix
+##' @keywords internal
+bias_correct <- function(resids, x, ef, type, ...) {
+  ef <- match.arg(ef, c("psi", "phi"))
+  mc <- match.call()
+  if (is.null(cluster_cols <- mc$cluster_cols)) cluster_cols <- var_names(x@StudySpecification, "u")
+  
+  if (ef == "psi") {
+    mod <- x 
+    efm <- .base_S3class_estfun(mod)
+  } else {
+    mod <- x$model$`(offset)`@fitted_covariance_model
+    efm <- estfun(mod)
+  }
+  
+  if (cluster_cols[1] == "..uoa..") {
+    cls <- rownames(stats::model.frame(mod, na.action = na.pass))
+  } else {
+    cls <- Reduce(
+      function(l, r) paste(l, r, sep = "_"),
+      as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols, drop=FALSE])
+    )
+  }
+
+  g <- length(unique(cls))
+  n <- nrow(efm)
+  k <- ncol(efm)
+
+  if (type %in% paste0(c("MB", "HC", "CR"), 1)) {
+    # (HC/CR)1 correction based on n and k from original (not propertee) estfun matrix
+    cr <- sqrt(g / (g-1) * (n-1) / (n-k)) * resids
+  } else if (type %in% paste0(c("MB", "HC", "CR"), 2)) {
+    # (HC/CR)2 correction
+    if (g == n) {
+      pii <- stats::hatvalues(mod)
+      cr <- 1 / sqrt(1 - pii) * resids
+    } else {
+      wres <- stats::residuals(mod, type = "working")
+      XW <- sweep(efm, 1, wres, FUN = "/")
+      XW[is.na(XW)] <- 0
+      if (inherits(mod, "lmrob")) XW[, 2:ncol(XW), drop=FALSE]
+      X <- model.matrix(stats::delete.response(stats::terms(mod)),
+                        stats::model.frame(mod, na.action = na.pass))
+      XTWX_inv <- solve(crossprod(XW, X))
+      cr <- Reduce(
+        c,
+        mapply(
+          function(cl, resids, X, XW) {
+            cl_ix <- which(cls == cl)
+            I_P_ss <- diag(length(cl_ix)) - tcrossprod(
+              tcrossprod(X[cl_ix,,drop=FALSE], XTWX_inv), XW[cl_ix,,drop=FALSE])
+            schur <- eigen(I_P_ss)
+            inv_symm_sqrt <- schur$vectors %*% (solve(schur$vectors) / sqrt(schur$values))
+            drop(inv_symm_sqrt %*% resids[cl_ix])
+          },
+          unique(cls),
+          SIMPLIFY = FALSE,
+          MoreArgs = list(X = X, XW = XW, resids = resids)
+        )
+      )
+    }
+  } else {
+    cr <- resids
+  }
+  
+  return(cr)
+}
 ##' @title (Internal) Align the dimensions and rows of direct adjustment and
 ##'   covariance adjustment model estimating equations matrices
 ##' @details \code{.align_and_extend_estfuns()} first extracts the matrices of
@@ -194,28 +264,39 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
   mc <- match.call()
+  if (is.null(type_psi <- mc$type_psi)) type_psi <- "HC0"
+  if (is.null(type_phi <- mc$type_phi)) type_phi <- "HC0"
+  
   uoa_cols <- var_names(x@StudySpecification, "u")
   cluster_cols <- if (is.null(mc$cluster_cols)) uoa_cols else mc$cluster_cols
-
-  ## get the original estimating equations
-  psi <- .base_S3class_estfun(x)
   sl <- x$model$`(offset)`
-  phi <- estfun(sl@fitted_covariance_model)
-
-  ## the ordering output by `.order_samples()` is explained in that function's
-  ## documentation
+  cmod <- sl@fitted_covariance_model
+  
+  # the ordering output by `.order_samples()` is explained in that function's
+  # documentation
   id_order <- .order_samples(x, by = by, verbose = FALSE)
   n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
   nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
   
-  ## use jackknife first-stage coefficient estimates if treated units were in first-stage fit
+  ## get the unaligned + unextended estimating equations
+  phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this gives desired type = "response"
+  phi <- estfun(cmod) / replace(phi_r, is.na(phi_r), 1) *
+    replace(bias_correct(phi_r, x, "phi", type_phi, ...), is.na(phi_r), 0)
+
+  # use jackknife first-stage coefficient estimates if treated units were in first-stage fit
   Q_in_C_trts <- stats::model.frame(x, na.action = na.pass)[[
     deparse1(eval(x$call$formula, envir = environment(formula(x)))[[3L]])]][
-    as.numeric(names(id_order$Q_in_C))]
+      as.numeric(names(id_order$Q_in_C))]
+  psi_r <- stats::residuals(x, type = "working")
   if (any(Q_in_C_trts > 0)) { # this should work for absorb=TRUE and absorb=FALSE
-    psi <- compute_loo_psi_estfun(x, cluster_cols, ...) 
+    new_psi_r <- compute_loo_psi_estfun(x, cluster_cols, ...)
+  } else {
+    new_psi_r <- psi_r
   }
+
+  psi <- .base_S3class_estfun(x) / replace(psi_r, is.na(psi_r), 1) *
+    replace(bias_correct(new_psi_r, x, "psi", type_psi, ...), is.na(new_psi_r), 0)
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
   aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
@@ -344,10 +425,14 @@ compute_loo_psi_estfun <- function(x, cluster, ...) {
   all_preds <- sl@.Data
   all_preds[Q_cls_in_C] <- loo_preds
   
+  ## make residuals
+  y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
+  return(y - stats::fitted.values(x) - all_preds)
+  
   ## make estfun matrix
   A <- stats::model.matrix(x)
   A <- stats::naresid(x$na.action, A)
-  y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
+  
   if (is.null(wts <- weights(x))) wts <- rep(1, nrow(A))
   
   ef <- sweep(A,

@@ -14,15 +14,19 @@ test_that("vcov_tee correctly dispatches", {
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)))
 
   vmat1 <- suppressMessages(vcov_tee(ssmod, type = "CR0"))
-  expect_equal(vmat1, suppressMessages(.vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"))))
+  expect_equal(vmat1,
+               suppressMessages(.vcov_CR(ssmod, cluster = .make_uoa_ids(ssmod, "CR"),
+                                         type = "CR0", cov_adj_correction = "CR0")))
 
   vmat2 <- suppressMessages(vcov_tee(ssmod, type = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
+  expect_true(attr(vmat1, "cov_adj_correction") != attr(vmat2, "cov_adj_correction"))
 
   vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
+  expect_true(attr(vmat1, "cov_adj_correction") != attr(vmat3, "cov_adj_correction"))
 })
 
 test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
@@ -57,7 +61,7 @@ test_that("variance helper functions fail without a teeMod model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(propertee:::.vcov_CR0(cmod), "must be a teeMod")
+  expect_error(propertee:::.vcov_CR(cmod), "must be a teeMod")
   expect_error(propertee:::.get_b12(cmod), "must be a teeMod")
   expect_error(propertee:::.get_a22_inverse(cmod), "must be a teeMod")
   expect_error(propertee:::.get_b22(cmod), "must be a teeMod")
@@ -687,9 +691,9 @@ test_that(".get_b22 returns correct value for lm object w offset", {
 
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  expect_equal(propertee:::.get_b22(m, type = "HC0"),
+  expect_equal(propertee:::.get_b22(m, type = "HC0", type_psi = "HC0", type_phi = "HC0"),
                vmat * nuoas / (nuoas - 1L))
-  expect_equal(propertee:::.get_b22(m, type = "HC1"),
+  expect_equal(propertee:::.get_b22(m, type = "HC1", type_psi = "HC1", type_phi = "HC0"),
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
@@ -1420,28 +1424,18 @@ test_that(".get_a21 returns only full rank columns for less than full rank model
                        rep(colnames(ctrl.means.mm), 2), sep = ":")))
 })
 
-test_that(".vcov_CR0 with covariance adjustment and no moderator returns (p+2)x(p+2) matrix", {
+test_that(".vcov_CR with covariance adjustment and no moderator returns (p+2)x(p+2) matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(spec), offset = cov_adj(cmod)))
 
-  vmat <- propertee:::.vcov_CR0(m)
+  vmat <- propertee:::.vcov_CR(m)
   expect_equal(dim(vmat), c(4, 4))
 })
 
-test_that(".vcov_CR0 doesn't accept `type` argument", {
-  data(simdata)
-
-  cmod <- lm(y ~ x, simdata)
-  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(spec), offset = cov_adj(cmod)))
-
-  expect_error(.vcov_CR0(m, type = "CR0"), "Cannot override the `type`")
-})
-
-test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", {
+test_that(".vcov_CR returns teeMod model sandwich if it has no SandwichLayer", {
   data(simdata)
 
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), data = simdata)
@@ -1455,7 +1449,7 @@ test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", 
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "balanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1538,7 +1532,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
@@ -1548,7 +1542,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
@@ -1556,7 +1550,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1633,7 +1627,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
@@ -1643,7 +1637,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
@@ -1651,7 +1645,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "balanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1759,13 +1753,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_equal((bread. %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
@@ -1776,7 +1770,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1871,13 +1865,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -1888,7 +1882,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
   set.seed(50)
@@ -1959,13 +1953,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = df$uid, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = df$uid, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = df$uid, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = df$uid, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -1973,7 +1967,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
   set.seed(50)
@@ -2063,13 +2057,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -2080,7 +2074,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
+test_that(paste("HC0 .vcov_CR binomial glm cmod",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
@@ -2161,83 +2155,18 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat, sandwich::sandwich(ssmod_as.lmitt, adjust = FALSE),
                         check.attributes = FALSE))
-})
-
-test_that("HC1/CR1/MB1", {
-  set.seed(8431432)
-  # no clustering
-  n <- 50
-  Sigma <- diag(runif(n, 0.01, 2))
-  x1 <- rnorm(n)
-  z <- rep(c(0, 1), each = n / 2)
-  y <- drop(-0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n))
-  dat <- data.frame(x1=x1, z=z, y=y, c=sample(seq_len(n)))
-
-  spec <- rct_spec(z ~ unitid(c), dat)
-  cmod <- lm(y ~ x1, dat)
-  ssmod <- lmitt(y ~ 1, data = dat, specification = spec,
-                weights = ate(spec), offset = cov_adj(cmod))
-
-  # CR1
-  expect_true(
-    all.equal(cr1_vmat <- vcov_tee(ssmod, type = "CR1"),
-              50 / 48 * .vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"), cadjust=FALSE),
-              check.attributes = FALSE)
-  )
-  expect_equal(attr(cr1_vmat, "type"), "CR1")
-  expect_true(any(grepl("CR1", capture.output(summary(ssmod, vcov.type = "CR1")))))
-
-  # HC1
-  expect_true(all.equal(hc1_vmat <- vcov_tee(ssmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
-  expect_equal(attr(hc1_vmat, "type"), "HC1")
-  expect_true(any(grepl("HC1", capture.output(summary(ssmod, vcov.type = "HC1")))))
-
-  # MB1
-  expect_true(all.equal(mb1_vmat <- vcov_tee(ssmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
-  expect_equal(attr(mb1_vmat, "type"), "MB1")
-  expect_true(any(grepl("MB1", capture.output(summary(ssmod, vcov.type = "MB1")))))
-
-  # clustering
-  n <- 50
-  g <- 5
-  icc <- 0.1
-  Sigma <- matrix(0, nrow = n, ncol = n)
-  for (i in seq_len(g)) {
-    Sigma[((i - 1) * n / g + 1):(i * (n / g)), ((i - 1) * n / g + 1):(i * (n / g))] <- (
-      (1-icc) * diag(1, nrow=n/g, ncol=n/g) + icc
-    )
-  }
-  x1 <- rnorm(n)
-  z <- rep(c(0, 1), c((g-2) * n/g, (g-3) * n/g))
-  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
-  dat <- data.frame(x1=x1, z=z, y=y, c=rep(seq_len(g), each = n/g))
-
-  spec <- rct_spec(z ~ unitid(c), dat)
-  cmod <- lm(y ~ x1, dat)
-  ssmod <- lmitt(y ~ 1, data = dat, specification = spec,
-                weights = ate(spec), offset = cov_adj(cmod))
-
-  # CR1
-  expect_true(
-    all.equal(cr1_vmat <- vcov_tee(ssmod, type = "CR1"),
-              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"),
-                                                      cadjust=FALSE),
-              check.attributes = FALSE)
-  )
-  expect_equal(attr(cr1_vmat, "type"), "CR1")
-  expect_true(any(grepl("CR1", capture.output(summary(ssmod, vcov.type = "CR1")))))
 })
 
 test_that("type attribute", {
@@ -2417,9 +2346,9 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   spec <- rct_spec(a ~ unitid(uoa_id) + block(bid), specdata)
   suppressMessages(mod <- lmitt(y ~ 1, specification = spec, data = specdata))
   vc_w_small_block_clusters <- vcov_tee(mod)
-  vc_w_no_small_block_clusters <- .vcov_CR0(mod,
-                                            cluster = .make_uoa_ids(mod, "DB"),
-                                            by = "uoa_id")
+  vc_w_no_small_block_clusters <- .vcov_CR(mod,
+                                           cluster = .make_uoa_ids(mod, "DB"),
+                                           by = "uoa_id")
   expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
 })
 
