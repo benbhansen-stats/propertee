@@ -710,6 +710,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   return(vmat)
 }
 
+### (If/when DB variance estimators other than DB0 are
+###  added, consider replacing this with a stop that
+###  invites the user to specify DB0 instead. -BH)
+#' @rdname var_estimators
+#' @keywords internal
+.vcov_DB <- .vcov_DB0
+
 #' @title (Internal) Design-based variance for models with
 #'   covariance adjustment
 #' @param x a fitted \code{teeMod} model
@@ -721,12 +728,13 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
-    stop("x should not have absorbed intercepts")
+      stop(paste("Design-based standard errors are not supported for\n",
+                 "tee models with absorbed intercepts"))
   }
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
   if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
-    stop(paste("Design-based standard errors are not supported for",
+    stop(paste("Design-based standard errors are not supported for\n",
                "tee models with treatment in prior covariance adjustment"))
   }
 
