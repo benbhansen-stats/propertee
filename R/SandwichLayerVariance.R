@@ -6,51 +6,115 @@ NULL
 #' @description Compute robust sandwich variance estimates with optional
 #'   covariance adjustment
 #'
-#' @details Supported \code{type} include:
+#' @details Variance estimates will be clustered on the basis of the columns
+#'  provided to \code{cluster}. As a result, providing \code{"HCx"} or \code{"CRx"}
+#'  to \code{type} will produce the same variance estimate given that \code{cluster}
+#'  remains the same.
+#'  
+#' For ITT effect estimates without covariance adjustment, \code{type}
+#'  corresponds to the variance estimate desired. Supported options include:
 #'
-#' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC0 standard errors
-#' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based standard errors
-#' with HC1 corrections based on the direct adjustment estimate i.e.,
-#' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
-#' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
-#' in the direct adjustment sample.
+#' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC/CR0 standard errors
+#' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based HC/CR1 standard errors
+#' (for \code{"MB1"} and \code{"HC1"}, this is \eqn{n/(n - 2)}, and for \code{"CR1"},
+#' this is \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of
+#' clusters in the direct adjustment sample)
+#' - \code{"MB2"}, \code{"HC2"}, and \code{"CR2"} for model-based HC/CR2 standard errors
 #' - \code{"DB0"} for design-based HC0 variance estimates
+#' 
+#' For ITT effect estimates with covariance adjustment, \code{type} indicates
+#'  the bias correction to the residuals of \code{x}. The residuals of the
+#'  covariance adjustment model are corrected separately based on the
+#'  \code{cov_adj_rcorrect} argument, which takes the same options as
+#'  \code{type}, sans \code{"DB0"}. When the covariance adjustment model includes
+#'  rows in the treatment condition for fitting, the residuals of \code{x} receive
+#'  further correction by having the values of \code{offset} replaced by predictions
+#'  that use coefficient estimates that leave out rows in the same cluster (as
+#'  defined by the \code{cluster} argument).
 #'
-#' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
-#' \code{type = "XXX"} will now use your method. Your method should return a
-#' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
+#' With prior covariance adjustment, the columns provided to \code{cluster} must
+#'  appear in both the covariance adjustment and direct adjustment samples, even
+#'  if the clustering structure does not exist, per se, in the covariance adjustment
+#'  sample. For example, in a finely stratified study, one might be interested in
+#'  clustering standard errors at the block level, but the covariance adjustment
+#'  sample may include auxiliary units that did not participate in the trial or
+#'  were left out of a matching procedure. In this case, the column in the
+#'  covariance adjustment sample should have the blocks for rows overlapping with
+#'  the direct adjustment sample and NA's everywhere else. \code{vcov_tee()} will
+#'  treat each unit with an NA as its own cluster.
 #'
 #' @param x a fitted \code{teeMod} model
-#' @param type a string indicating the desired variance estimator. See Details
-#'   for supported variance estimators
+#' @param type a string indicating the desired bias correction for the residuals
+#'   of \code{x}. Default is \code{"CR0"} if the column provided to \code{cluster}
+#'   indicates clustering and \code{"HC0"} otherwise. See Details for supported types
 #' @param cluster a string or character vector of column names indicating
-#'   columns to cluster standard errors by. With prior covariance adjustment,
-#'   columns must appear in both the covariance adjustment and direct adjustment
-#'   samples. Default is NULL, which uses unit of assignment columns in the
-#'   \code{StudySpecification} slot of the \code{teeMod} model.
+#'   columns to cluster standard errors by. Default uses unit of assignment columns
+#'   in the \code{StudySpecification} stored in \code{x}. See Details for important
+#'   information in the case with covariance adjustment.
 #' @param ... arguments to be passed to the internal variance estimation
-#'   function.
-#' @return A \eqn{2\times 2} matrix corresponding to an intercept and the
-#'   treatment variable in the direct adjustment model
+#'   function, such as \code{cov_adj_rcorrect}, which specifies the bias
+#'   correction to the residuals of the covariance adjustment model, if applicable.
+#'   See Details
+#' @return A variance-covariance matrix with row and column entries for the estimated
+#'   coefficients in \code{x}, the marginal mean outcome in the control condition,
+#'   the marginal mean \code{offset} in the control condition (if an \code{offset})
+#'   is provided, and if a moderator variable is specified in the formula for \code{x},
+#'   the mean interaction in the control condition of the outcome and \code{offset}
+#'   with the moderator variable
 #' @export
 #' @rdname var_estimators
-vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
+vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
+  if (is.null(type)) {
+    if (inherits(x, "mmm")) {
+      if (nrow(x[[1]]$model) == nrow(x[[1]]@StudySpecification@structure)) {
+        type <- "HC2"
+      } else {
+        type <- "CR2"
+      }
+    } else {
+      if (nrow(x$model) == nrow(x@StudySpecification@structure)) {
+        type <- "HC2"
+      } else {
+        type <- "CR2"
+      }
+    }
+  }
+
   vcov_type <- substr(type, 1, 2)
-  if ((vcov_type == "DB" & !exists(paste0(".vcov_", type))) |
-      (vcov_type != "DB" & !exists(paste0(".vcov_", vcov_type)))) {
-    stop(paste0("covariance function .vcov_", ifelse(vcov_type == "DB", type, vcov_type),
-                " not defined.\n"))
+  if (type != "DB0" & !(vcov_type %in% c("HC", "CR", "MB"))) {
+    stop("covariance function not defined.\n")
   }
   var_func <- get(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
   
   vcov_cl <- match.call()
   vcov_cl[[1L]] <- str2lang(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
+  
   if (vcov_type == "DB") {
+    # this line is so as not to touch .vcov_DB0, but small changes could be made
+    # to that function to accommodate a `type` arg without changing variance estimates
     vcov_cl <- vcov_cl[-match("type", names(vcov_cl))]
     vcov_cl$vcov_type <- vcov_type
   } else {
-    if (is.null(vcov_cl$type)) vcov_cl$type <- type
+    vcov_cl$type <- type
   }
+  
+  if (inherits(x, "mmm")) {
+    if (inherits(x[[1]]$model$`(offset)`, "SandwichLayer") & is.null(vcov_cl$cov_adj_rcorrect)) {
+      if (vcov_type %in% c("HC", "CR", "MB") &
+          inherits(x[[1]]$model$`(offset)`@fitted_covariance_model, "lm")) {
+        vcov_cl$cov_adj_rcorrect <- "HC1"
+      } else vcov_cl$cov_adj_rcorrect <- "HC0"
+    }
+  } else {
+    if (inherits(x$model$`(offset)`, "SandwichLayer") & is.null(vcov_cl$cov_adj_rcorrect)) {
+      if (vcov_type %in% c("HC", "CR", "MB") &
+          inherits(x$model$`(offset)`@fitted_covariance_model, "lm")) {
+        vcov_cl$cov_adj_rcorrect <- "HC1"
+      } else vcov_cl$cov_adj_rcorrect <- "HC0"
+    }
+  }
+
+
   if (is.null(vcov_cl$by)) vcov_cl$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
   vcov_cl$cluster_cols <- cluster
   vcov_cl$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
@@ -68,9 +132,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 
   args <- list(...)
   args$x <- x
-  if (is.null(args$type_psi)) args$type_psi <- args$type
-  if (is.null(args$type_phi)) args$type_phi <- args$type
-  args$type <- "HC0"
+  args$itt_rcorrect <- args$type
+  args$type <- "HC0" # this ensures sandwich::meatCL returns meat w/o correcting after we've corrected
   n <- length(args$cluster)
 
   bread. <- sandwich::bread(x, ...)
@@ -92,10 +155,8 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
   }
 
-  attr(vmat, "type") <- args$type_psi
-  if (inherits(x$model$`(offset)`, "SandwichLayer")) {
-    attr(vmat, "cov_adj_correction") <- args$type_phi
-  }
+  attr(vmat, "type") <- match.call()$type
+  attr(vmat, "cov_adj_rcorrect") <- args$cov_adj_rcorrect
   return(vmat)
 }
 

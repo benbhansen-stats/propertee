@@ -23,7 +23,7 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
                     offset = cov_adj(cmod)))
 
   s <- summary(ssmod)
-  vc <- vcov_tee(ssmod)
+  vc <- vcov_tee(ssmod, type = "CR0")
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))
@@ -39,7 +39,7 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
                     offset = cov_adj(cmod)))
 
   s <- summary(ssmod)
-  vc <- vcov_tee(ssmod)
+  vc <- vcov_tee(ssmod, type = "CR0")
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))

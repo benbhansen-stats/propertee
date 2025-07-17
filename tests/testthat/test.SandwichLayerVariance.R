@@ -7,27 +7,56 @@ test_that("vcov_tee errors when provided an invalid type", {
   expect_error(vcov_tee(ssmod, "not_a_type"))
 })
 
-test_that("vcov_tee correctly dispatches", {
+test_that("vcov_tee correctly sets and passes on args", {
+  set.seed(993)
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)))
 
-  vmat1 <- suppressMessages(vcov_tee(ssmod, type = "CR0"))
+  vmat1 <- suppressMessages(vcov_tee(ssmod, type = "CR0", cov_adj_rcorrect = "CR0"))
   expect_equal(vmat1,
                suppressMessages(.vcov_CR(ssmod, cluster = .make_uoa_ids(ssmod, "CR"),
-                                         type = "CR0", cov_adj_correction = "CR0")))
+                                         type = "CR0", cov_adj_rcorrect = "CR0")))
 
-  vmat2 <- suppressMessages(vcov_tee(ssmod, type = "MB0"))
+  vmat2 <- suppressMessages(vcov_tee(ssmod, type = "MB0", cov_adj_rcorrect = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
-  expect_true(attr(vmat1, "cov_adj_correction") != attr(vmat2, "cov_adj_correction"))
+  expect_true(attr(vmat1, "cov_adj_rcorrect") != attr(vmat2, "cov_adj_rcorrect"))
 
-  vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0"))
+  vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0", cov_adj_rcorrect = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
-  expect_true(attr(vmat1, "cov_adj_correction") != attr(vmat3, "cov_adj_correction"))
+  expect_true(attr(vmat1, "cov_adj_rcorrect") != attr(vmat3, "cov_adj_rcorrect"))
+  
+  vmat4 <- vcov_tee(ssmod, type = "HC1", cov_adj_rcorrect = "HC1")
+  expect_equal(attr(vmat4, "type"), "HC1")
+  expect_equal(attr(vmat4, "cov_adj_rcorrect"), "HC1")
+  
+  vmat5 <- vcov_tee(ssmod)
+  expect_equal(attr(vmat5, "type"), "CR2")
+  expect_equal(attr(vmat5, "cov_adj_rcorrect"), "HC1")
+  
+  first_obs_ix <- c(1, 1 + cumsum(c(t(table(simdata$uoa1, simdata$uoa2)))))
+  uniqdata <- simdata[first_obs_ix[1:(length(first_obs_ix)-1)],,drop=FALSE]
+  imod <- lmitt(y ~ 1, spec, uniqdata)
+  vmat6 <- vcov_tee(imod)
+  expect_equal(attr(vmat6, "type"), "HC2")
+  expect_true(is.null(attr(vmat6, "cov_adj_rcorrect")))
 })
+
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  test_that("vcov_tee sets correct bias correction for lmrob cov adj model", {
+    set.seed(993)
+    data(simdata)
+    cmod <- robustbase::lmrob(y ~ z + x, simdata)
+    spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+    ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)))
+    
+    vmat5 <- vcov_tee(ssmod)
+    expect_equal(attr(vmat5, "cov_adj_rcorrect"), "HC0")
+  })
+}
 
 test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have no NA's"), {
@@ -1449,6 +1478,56 @@ test_that(".vcov_CR returns teeMod model sandwich if it has no SandwichLayer", {
                         check.attributes = FALSE))
 })
 
+test_that("test the output of vcov_tee is correct with bias corrections", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x + z, simdata)
+  spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
+  xm <- lmitt(y ~ 1, spec, simdata, offset = cov_adj(cmod))
+  
+  cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(cls)
+  X <- stats::model.matrix(cmod)
+  X[,"z"] <- 0
+  Z <- stats::model.matrix(xm)
+  ZTZ_inv <- chol2inv(xm$qr$qr)
+  new_r <- Reduce(
+    c,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        loo_cmod <- eval(cmod_cl, envir = environment(formula(cmod)))
+        cl_ix <- cls == loo_unit
+        I_P_cc <- diag(nrow = sum(cl_ix)) - Z[cl_ix,,drop=FALSE] %*% ZTZ_inv %*% t(Z[cl_ix,,drop=FALSE])
+        schur <- eigen(I_P_cc)
+        schur$vector %*% diag(1/sqrt(schur$values), nrow = sum(cl_ix)) %*% solve(schur$vector) %*% (
+            (simdata$y - xm$fitted.values - xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
+          )
+        # (simdata$y - xm$fitted.values - xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod, cls = cls)
+    )
+  )
+  ef_psi <- estfun(as(xm, "lm")) / xm$residuals * new_r
+  
+  g <- length(jk_units)
+  n <- nrow(simdata)
+  k <- 3 + 2 # 3 in cmod and 2 in xm
+  ef_phi <- estfun(cmod) * sqrt(g/(g-1) * (n-1)/(n-k))
+  
+  ef_ctrl_means_model <- estfun(xm@ctrl_means_model)
+  br <- .get_tilde_a22_inverse(xm)
+  vc <- br %*% (
+    crossprod(rowsum(cbind(ef_psi, ef_ctrl_means_model) -
+                       ef_phi %*% t(.get_a11_inverse(xm)) %*% t(.get_a21(xm)),
+                     cls)) / n^2
+  ) %*% t(br)
+  expect_true(all.equal(vc, vcov_tee(xm, cadjust = FALSE), check.attributes = FALSE))
+})
+
 test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "balanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
@@ -2173,10 +2252,10 @@ test_that("type attribute", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ 1, data = simdata, weights = "ate", specification = spec)
-  expect_identical(attr(vcov(ssmod), "type"), "CR0")
-  expect_identical(attr(vcov(ssmod, type = "CR0"), "type"), "CR0")
-  expect_identical(attr(vcov(ssmod, type = "MB0"), "type"), "MB0")
-  expect_identical(attr(vcov(ssmod, type = "HC0"), "type"), "HC0")
+  expect_identical(attr(vcov(ssmod), "type"), "CR2")
+  expect_identical(attr(vcov(ssmod, type = "CR2"), "type"), "CR2")
+  expect_identical(attr(vcov(ssmod, type = "MB2"), "type"), "MB2")
+  expect_identical(attr(vcov(ssmod, type = "HC2"), "type"), "HC2")
 })
 
 test_that("#119 flagging vcov_tee entries as NA", {

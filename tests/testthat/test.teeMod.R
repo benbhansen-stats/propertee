@@ -273,16 +273,16 @@ test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   ssmod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   vmat1 <- vcov(ssmod1)
-  vmat2 <- vcov(ssmod1, type = "CR0")
+  vmat2 <- vcov(ssmod1, type = "CR2")
   vmat3 <- vcov(ssmod1, cadjust = FALSE)
 
   expect_error(vcov(ssmod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
   expect_identical(vmat1, vcov_tee(ssmod1))
-  expect_identical(vmat3, vcov_tee(ssmod1, cadjust = FALSE))
+  expect_identical(vmat3, vcov_tee(ssmod1, type = "CR2", cadjust = FALSE))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
-  vmat3 <- vcov(ssmod2)
+  vmat3 <- vcov(ssmod2, type = "CR0", cov_adj_rcorrect = "HC0")
   expect_true(all.equal(
     vmat3,
     sandwich::sandwich(ssmod2, meat. = sandwich::meatCL, cluster = uoas),
@@ -303,7 +303,7 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   vcov_tee_ci.95 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
     qt(c(0.025, 0.975), ssmod1$df.residual)
   dimnames(vcov_tee_ci.95) <- list(names(ssmod1$coefficients[1:4]), c("2.5 %", "97.5 %"))
-  ci1 <- confint(ssmod1, type = "CR0")
+  ci1 <- confint(ssmod1, type = "CR2")
   ci2 <- confint(ssmod1)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcov_tee_ci.95)
@@ -316,10 +316,11 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   expect_equal(ci_HC1, vcov_tee_HC1_ci.95)
 
   # CI with different level
-  vcov_tee_ci.9 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
+  vcov_tee_ci.9 <- ssmod1$coefficients[1:4] + sqrt(diag(
+    vcov_tee(ssmod1, type = "CR0", cov_adj_rcorrect = "HC0"))) %o%
     qt(c(0.05, 0.95), ssmod1$df.residual)
   dimnames(vcov_tee_ci.9) <- list(names(ssmod1$coefficients)[1:4], c("5 %", "95 %"))
-  ci1 <- confint(ssmod1, level = 0.9)
+  ci1 <- confint(ssmod1, level = 0.9, type = "CR0", cov_adj_rcorrect = "HC0")
   expect_equal(ci1, vcov_tee_ci.9)
 
   # CI with lmitt.lm
@@ -330,9 +331,9 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
 
   vcovlm_z.95 <- ssmod2$coefficients[1:3] +
     sqrt(diag(sandwich::sandwich(ssmod2, meat. = sandwich::meatCL,
-                            cluster = uoas, type_phi = "HC0", type_psi = "HC0"))) %o%
+                            cluster = uoas, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0"))) %o%
     qt(c(0.025, 0.975), ssmod2$df.residual)
-  ci1 <- confint(ssmod2)
+  ci1 <- confint(ssmod2, type = "HC0", cov_adj_rcorrect = "HC0")
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
 })
 
@@ -707,6 +708,334 @@ test_that("bread.teeMod handles model with less than full rank", {
   expect_true(all.equal(bread(ssmod), expected_out, check.attributes = FALSE))
 })
 
+test_that("rcorrect fail", {
+  r <- rep(c(-1, 1), 20)
+  expect_error(
+    rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+             type = "not a bias correction"),
+    "not available"
+  )
+  
+  expect_error(
+    rcorrect(r, x = list(c(1, 2)), model = "cov_adj",  type = "HC2", cluster_cols = "uoa1"),
+    "must have a SandwichLayer"
+  )
+})
+
+test_that("rcorrect HC/CR/MB/DB0", {
+  r <- rep(c(-1, 1), 20)
+  expect_equal(
+    cr <- rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                   type = "HC0"),
+    r
+  )
+  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "CR0"))
+  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "MB0"))
+  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "DB0"))
+})
+
+test_that("rcorrect (HC/CR/MB)1", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10),
+                      bid = rep(letters[1:2], 5),
+                      x1 = rnorm(10),
+                      x2 = factor(rep(seq_len(3), 4)[1:10]),
+                      a = rep(c(0, 1), each = 5),
+                      y = rnorm(10))
+  idata <- data.frame(cid = rep(udata$cid, each = 10),
+                      bid = rep(rep(letters[1:2], each = 10), 5),
+                      x1 = rnorm(100),
+                      x2 = factor(rep(seq_len(3), 34)[1:100]),
+                      y = rnorm(100))
+  
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, idata)
+  xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  g <- nrow(udata)
+  n <- nrow(idata)
+  k <- 6
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC1"),
+    r * sqrt((n-1) / (n-k) * g / (g-1))
+  )
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR1"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB1"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "HC1"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "CR1"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "MB1"))
+  
+  # non-default clustering
+  cluster <- "bid"
+  cls <- .make_uoa_ids(xm, "MB", cluster)
+  g <- 2
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC1", cluster_cols = cluster, cluster = cls),
+    r * sqrt((n-1) / (n-k) * g / (g-1))
+  )
+  expect_equal(
+    cr,
+    rcorrect(r, x = xm, model = "itt", type = "CR1", cluster_cols = cluster, cluster = cls)
+  )
+  expect_equal(
+    cr,
+    rcorrect(r, x = xm, model = "itt", type = "MB1", cluster_cols = cluster, cluster = cls)
+  )
+  expect_equal(
+    cr,
+    rcorrect(r, x = xm, model = "cov_adj", type = "MB1", cluster_cols = cluster, cluster = cls)
+  )
+})
+
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  test_that("rcorrect (HC/CR/MB)1 with lmrob cov_adj", {
+    set.seed(749)
+    udata <- data.frame(cid = seq_len(10),
+                        bid = rep(letters[1:2], 5),
+                        x1 = rnorm(10),
+                        x2 = factor(rep(seq_len(3), 4)[1:10]),
+                        a = rep(c(0, 1), each = 5),
+                        y = rnorm(10))
+    idata <- data.frame(cid = rep(udata$cid, each = 10),
+                        bid = rep(rep(letters[1:2], each = 10), 5),
+                        x1 = rnorm(100),
+                        x2 = factor(rep(seq_len(3), 34)[1:100]),
+                        y = rnorm(100))
+    
+    speci <- rct_spec(a ~ unitid(cid), udata)
+    cmod <- robustbase::lmrob(y ~ x1 + x2, idata)
+    xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+    
+    r <- xm$residuals
+    g <- nrow(udata)
+    n <- nrow(idata)
+    k <- 7
+    expect_equal(
+      cr <- rcorrect(r, x = xm, model = "itt", type = "HC1"),
+      r * sqrt((n-1) / (n-k) * g / (g-1))
+    )
+  })
+}
+
+test_that("rcorrect (HC/CR/MB)2, no clustering", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10),
+                      x1 = rnorm(10),
+                      x2 = factor(rep(seq_len(3), 4)[1:10]),
+                      a = rep(c(0, 1), each = 5),
+                      y = rnorm(10))
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, udata)
+  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  
+  r <- cmod$residuals
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(cmod))
+  )
+  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "CR2"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "MB2"))
+  
+  # subset
+  xm <- lmitt(y ~ 1, speci, udata, subset = cid > 3, offset = cov_adj(cmod))
+  r <- stats::residuals(xm, "working")
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  
+  # NA's
+  udata$y[9:10] <- NA_real_
+  cmod <- lm(y ~ x1 + x2, udata)
+  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  class(xm$na.action) <- "exclude"
+  r <- stats::residuals(xm, "working")
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+})
+
+test_that("rcorrect (HC/CR/MB)2, clustering", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10), a = rep(c(0, 1), each = 5))
+  idata <- data.frame(cid = c(rep(udata$cid, each = 10), rep(NA_real_, 50)),
+                      x1 = rnorm(150),
+                      x2 = factor(rep(seq_len(3), 50)),
+                      y = rnorm(150))
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, idata)
+  da_data <- idata[!is.na(idata$cid),,drop=FALSE]
+  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci), offset = cov_adj(cmod))
+
+  r <- xm$residuals
+  pm <- chol2inv(xm$qr$qr)
+  X <- stats::model.matrix(xm)
+  cids <- unique(udata$cid)
+  
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r, cls = da_data$cid, w = xm$weights)
+    )
+  )
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  expect_equal(rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  
+  # subset
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  expect_equal(rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  
+  # cov adj
+  r <- cmod$residuals
+  pm <- chol2inv(cmod$qr$qr)
+  X <- stats::model.matrix(cmod)
+  cmod_cls <- c(idata$cid[1:sum(!is.na(idata$cid))],
+                sum(!is.na(idata$cid)) + seq_len(sum(is.na(idata$cid))))
+  cids <- unique(cmod_cls)
+  
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r, cls = cmod_cls, w = rep(1, nrow(idata)))
+    )
+  )
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    expected
+  )
+  expect_equal(rcorrect(r, x = xm, model = "cov_adj", type = "CR2"), cr)
+  expect_equal(rcorrect(r, x = xm, model = "cov_adj", type = "MB2"), cr)
+  
+  # NA's
+  idata$y[1:3] <- NA_real_
+  cmod <- lm(y ~ x1 + x2, idata)
+  da_data <- idata[!is.na(idata$cid),,drop=FALSE]
+  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci), offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  pm <- chol2inv(xm$qr$qr)
+  X <- stats::model.matrix(xm)
+  cids <- unique(udata$cid)
+  
+  expected <- c(
+    rep(NA, 3),
+    Reduce(
+      c,
+      mapply(
+        function(c, r, cls, w) {
+          ix <- cls == c
+          Xc <- X[ix,,drop=FALSE]
+          Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+          schur <- eigen(diag(nrow = sum(ix)) - Pc)
+          schur$vector %*% diag(1/sqrt(schur$values),
+                                nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+        },
+        cids,
+        SIMPLIFY = FALSE,
+        MoreArgs = list(r = r, cls = da_data$cid[4:nrow(da_data)], w = xm$weights)
+      )
+    )
+  )
+
+  class(xm$na.action) <- "exclude"
+  expect_equal(
+    cr <- rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  
+  # NA's + subset (check the model.frame calls are correct)
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  class(xm$na.action) <- "exclude"
+  expect_equal(
+    cr <- rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  
+  # glm
+  idata <- data.frame(cid = c(rep(udata$cid, each = 10), rep(NA_real_, 50)),
+                      x1 = rnorm(150),
+                      x2 = factor(rep(seq_len(3), 50)),
+                      y = round(runif(150)))
+  cmod <- glm(y ~ x1 + x2, idata, family = binomial())
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  r <- stats::residuals(cmod, type = "working")
+  pm <- chol2inv(cmod$qr$qr)
+  X <- stats::model.matrix(cmod)
+  cids <- unique(cmod_cls)
+
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r, cls = cmod_cls, w = weights(cmod, type = "working"))
+    )
+  )
+  
+  expect_equal(
+    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    expected
+  )
+})
+
 test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
                 "with a SandwichLayer offset"), {
   data(simdata)
@@ -754,9 +1083,9 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   X <- model.matrix(cmod1)
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata_copy$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata_copy$y - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
+  ef2 <- .align_and_extend_estfuns(mod2, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
 
   # tests to run (for each .align_and_extend_estfuns() test):
   # 1) do we get a matrix of estimating equations of dimension n?
@@ -818,9 +1147,9 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
@@ -830,7 +1159,6 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[zero_ix] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
@@ -876,9 +1204,9 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
                        C_ix,
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
@@ -918,8 +1246,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
@@ -965,9 +1293,9 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   X <- model.matrix(cmod1)
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1016,9 +1344,9 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y[Q_ix] - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1028,7 +1356,6 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[Q_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[setdiff(seq_len(nrow(simdata)), Q_ix)] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
 test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't",
@@ -1071,9 +1398,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                        C_ix,
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values)
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1110,8 +1437,8 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1, type_psi = "HC0", type_phi = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, type_psi = "HC0", type_phi = "HC0")
+  ef1 <- .align_and_extend_estfuns(mod1)
+  ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1125,6 +1452,23 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
+test_that(".align_and_extend_estfuns doesn't jackknife with only control units in cmod", {
+  set.seed(438)
+  data(simdata)
+
+  cmod <- lm(y ~ x, simdata, subset = z == 0)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
+  mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
+  
+  unordered_psi <- estfun(as(mod, "lm"))
+  ids <- Reduce(function(l, r) paste(l, r, sep = "_"), as.list(simdata[,c("uoa1", "uoa2")]))
+  ords <- split(sort(ids, index.return = TRUE)$ix, simdata$z)
+  ord <- c(ords$`1`, ords$`0`)
+  expect_true(all.equal(rowsum(.align_and_extend_estfuns(mod)$psi, ids), 
+                        rowsum(unordered_psi[ord,], ids),
+                        check.attributes = FALSE))
+})
+
 test_that(".align_and_extend_estfuns with ctrl means estfun", {
   moddata <- data.frame(a = c(rep(c(0, 1), each = 5), NA_real_), x = rnorm(11),
                         y = rnorm(11), id = seq_len(11))
@@ -1134,11 +1478,30 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
   class(mod$na.action) <- "exclude"
   cm_ef <- estfun(mod@ctrl_means_model)
   cm_ef[is.na(cm_ef)] <- 0
-  aligned1 <- .align_and_extend_estfuns(mod, type_psi = "HC0", type_phi = "HC0")
-  aligned2 <- .align_and_extend_estfuns(mod, cm_ef, type_psi = "HC0", type_phi = "HC0")
+  aligned1 <- .align_and_extend_estfuns(mod)
+  aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
   expect_equal(length(aligned1), 2)
   expect_equal(length(aligned2), 2)
   expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4], check.attributes = FALSE))
+})
+
+test_that(".align_and_extend_estfuns converts NA's to 0's", {
+  set.seed(249)
+  dat <- data.frame(y = c(rep(NA_real_, 3), rnorm(27)),
+                    a = rep(c(0, 1), each = 15),
+                    x = rnorm(30))
+  suppressWarnings(spec <- rct_spec(a ~ 1, dat))
+  cmod <- lm(y ~ x, dat)
+  xm <- lmitt(y ~ 1, spec, dat, offset = cov_adj(cmod))
+  
+  class(xm$na.action) <- "exclude"
+  aligned <- .align_and_extend_estfuns(xm)
+  expect_equal(dim(aligned$psi), c(30, 2))
+  expect_equal(dim(aligned$phi), c(30, 2))
+  expect_equal(aligned$psi[1:3,], matrix(0, nrow = 3, ncol = 2,
+                                         dimnames = list(seq_len(3), c("(Intercept)", "a."))))
+  expect_equal(aligned$phi[1:3,], matrix(0, nrow = 3, ncol = 2,
+                                         dimnames = list(seq_len(3), c("(Intercept)", "x"))))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or teeMod model", {

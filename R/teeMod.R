@@ -118,9 +118,16 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
-  mc <- match.call()
-  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
-  if (is.null(type_psi <- mc$type_psi)) type_psi <- "HC0"
+  dots <- list(...)
+  # this sets the default to model-based
+  vcov_type <- match.arg(dots$vcov_type, c("MB", "HC", "CR", "DB"))
+  # sandwich::sandwich calls `NROW(estfun(x))` to get the scaling factor, so to
+  # allow users to use sandwich::sandwich, we need to accommodate that kind of
+  # call to `estfun` where itt_rcorrect isn't provided. we'll set a default
+  # option here (the correction doesn't change the dimension of the output) but
+  # make sure the user-facing variance estimation function `vcov_tee()` passes
+  # on an `itt_rcorrect` argument that correctly reflects the args provided there
+  if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
 
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
@@ -142,7 +149,9 @@ estfun.teeMod <- function(x, ...) {
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
     resids <- stats::residuals(x, type = "working")
     return(mat / replace(resids, is.na(resids), 1) *
-             replace(bias_correct(resids, x, "psi", type_psi, ...), is.na(resids), 0))
+             replace(do.call(rcorrect,
+                             c(list(resids = resids, x = x, model = "itt", type = itt_rcorrect),
+                               dots)), is.na(resids), 0))
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -174,69 +183,111 @@ estfun.teeMod <- function(x, ...) {
 ##' @exportS3Method
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
-##' @title Apply bias correction to estfun matrix
+##' @title Bias correct residuals contributing to standard errors of a \code{teeMod}
+##' @param resids numeric vector of residuals to correct
+##' @param x teeMod object. If \code{ef="cov_adj"}, \code{x} must have a
+##' \code{SandwichLayer} object as an \code{offset}
+##' @param model string indicating which model the residuals are from. \code{"itt"}
+##' indicates correction to the residuals of \code{x}, and \code{"cov_adj"}
+##' indicates correction to the residuals of the covariance adjustment model.
+##' This informs whether corrections should use information from \code{x} or the
+##' \code{fitted_covariance_model} slot of the \code{SandwichLayer} object in the
+##' \code{offset} for corrections
+##' @param type string indicating the desired bias correction. Can be one of
+##' \code{"(HC/CR/MB)0"}, \code{"(HC/CR/MB)1"}, or \code{"(HC/CR/MB)2"}
+##' @param ... additional arguments passed from up the call stack; in particular,
+##' the \code{cluster_cols} argument, which informs whether to cluster and provide
+##' CR2 corrections instead of HC2 corrections, as well as the correction for the
+##' number of clusters in the CR1 correction
 ##' @keywords internal
-bias_correct <- function(resids, x, ef, type, ...) {
-  ef <- match.arg(ef, c("psi", "phi"))
-  mc <- match.call()
-  if (is.null(cluster_cols <- mc$cluster_cols)) cluster_cols <- var_names(x@StudySpecification, "u")
-  
-  if (ef == "psi") {
-    mod <- x 
-    efm <- .base_S3class_estfun(mod)
-  } else {
-    mod <- x$model$`(offset)`@fitted_covariance_model
-    efm <- estfun(mod)
-  }
-  
-  if (cluster_cols[1] == "..uoa..") {
-    cls <- rownames(stats::model.frame(mod, na.action = na.pass))
-  } else {
-    cls <- Reduce(
-      function(l, r) paste(l, r, sep = "_"),
-      as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols, drop=FALSE])
-    )
-  }
-
-  g <- length(unique(cls))
-  n <- nrow(efm)
-  k <- ncol(efm)
-
-  if (type %in% paste0(c("MB", "HC", "CR"), 1)) {
-    # (HC/CR)1 correction based on n and k from original (not propertee) estfun matrix
-    cr <- sqrt(g / (g-1) * (n-1) / (n-k)) * resids
-  } else if (type %in% paste0(c("MB", "HC", "CR"), 2)) {
-    # (HC/CR)2 correction
-    if (g == n) {
-      pii <- stats::hatvalues(mod)
-      cr <- 1 / sqrt(1 - pii) * resids
+rcorrect <- function(resids, x, model, type, ...) {
+  if (type %in% paste0(c("HC", "CR", "MB", "DB"), "0")) {
+    cr <- resids
+  } else if (type %in% c(paste0(rep(c("MB", "HC", "CR"), 2), rep(c(1, 2), each = 3)))) {
+    dots <- list(...)
+    if (is.null(cluster_cols <- dots$cluster_cols)) cluster_cols <- var_names(x@StudySpecification, "u")
+    sl <- x$model$`(offset)`
+    cmod <- if (!is.null(sl) & inherits(sl, "SandwichLayer")) sl@fitted_covariance_model else NULL 
+    
+    if (substr(type, 3, 3) == 1) {
+      # HC/CR1 correction is based on n and k from propertee's estfun matrix
+      # for both sets of residuals
+      cls <- if ("cluster" %in% names(dots)) dots$cluster else {
+        if (is.null(by <- dots$by) & !is.null(cmod)) {
+          by <- setdiff(colnames(sl@keys),
+                        c(var_names(x@StudySpecification, "u"), "in_Q"))
+          if (length(by) == 0) by <- NULL
+        }
+        if (is.null(by)) by <- cluster_cols
+        do.call(".make_uoa_ids",
+                list(x = x, vcov_type = substr(type, 1, 2), cluster = cluster_cols, by = by))
+      }
+      g <- length(unique(cls))
+      n <- length(cls)
+      k <- x$rank + if (!is.null(cmod) & inherits(cmod, "lmrob")) {
+        sum(!is.na(cmod$coefficients)) + 1
+      } else if (!is.null(cmod)) sum(!is.na(cmod$coefficients)) else 0
+      cr <- sqrt(g / (g-1) * (n-1) / (n-k)) * resids
     } else {
-      wres <- stats::residuals(mod, type = "working")
-      XW <- sweep(efm, 1, wres, FUN = "/")
-      XW[is.na(XW)] <- 0
-      if (inherits(mod, "lmrob")) XW[, 2:ncol(XW), drop=FALSE]
-      X <- model.matrix(stats::delete.response(stats::terms(mod)),
-                        stats::model.frame(mod, na.action = na.pass))
-      XTWX_inv <- solve(crossprod(XW, X))
-      cr <- Reduce(
-        c,
-        mapply(
-          function(cl, resids, X, XW) {
-            cl_ix <- which(cls == cl)
-            I_P_ss <- diag(length(cl_ix)) - tcrossprod(
-              tcrossprod(X[cl_ix,,drop=FALSE], XTWX_inv), XW[cl_ix,,drop=FALSE])
-            schur <- eigen(I_P_ss)
-            inv_symm_sqrt <- schur$vectors %*% (solve(schur$vectors) / sqrt(schur$values))
-            drop(inv_symm_sqrt %*% resids[cl_ix])
-          },
-          unique(cls),
-          SIMPLIFY = FALSE,
-          MoreArgs = list(X = X, XW = XW, resids = resids)
-        )
+      # (HC/CR)2 correction; derived separately for the two regressions
+      model <- match.arg(model, c("itt", "cov_adj"))
+      if (model == "itt") {
+        mod <- x 
+        efm <- .base_S3class_estfun(mod)
+        mf_data <- get("data", environment(formula(mod)))
+      } else {
+        if (is.null(cmod)) {
+          stop("x must have a SandwichLayer object as an offset")
+        }
+        mod <- sl@fitted_covariance_model
+        efm <- estfun(mod)
+        mf_data <- eval(mod$call$data, environment(formula(mod)))
+      }
+      cls <- Reduce(
+        function(l, r) paste(l, r, sep = "_"),
+        as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols, drop=FALSE])
       )
+      if (any(nas <- is.na(cls))) cls[nas] <- replicate(
+        sum(nas), paste(sample(letters, 8, replace = TRUE), collapse = ""), simplify = TRUE
+      )
+      
+      g <- length(unique(cls))
+      n <- nrow(efm)
+      k <- ncol(efm)
+      
+      if (g == n) {
+        pii <- stats::hatvalues(mod)
+        cr <- 1 / sqrt(1 - pii) * resids
+      } else {
+        wres <- stats::residuals(mod, type = "working")
+        XW <- sweep(efm, 1, wres, FUN = "/")
+        XW[is.na(XW)] <- 0
+        X <- stats::model.matrix(
+          stats::delete.response(stats::terms(mod)),
+          do.call("model.frame",
+                  list(mod, mf_data, subset = eval(mod$call$subset, mf_data),
+                       na.action = na.pass)),
+          contrasts.arg = mod$contrasts,
+          xlev = mod$xlevels
+        )[,colnames(XW),drop=FALSE]
+        XTWX_inv <- solve(crossprod(XW, X))
+        cr <- numeric(length(cls))
+        for (cl in unique(cls)) {
+          cl_ix <- which(cls == cl)
+          crc <- rep(NA_real_, length(cl_ix))
+          nas <- stats::na.action(mod)
+          ok <- setdiff(cl_ix, nas)
+          I_P_cc <- diag(length(ok)) - tcrossprod(
+            tcrossprod(X[ok,,drop=FALSE], XTWX_inv), XW[ok,,drop=FALSE])
+          schur <- eigen(I_P_cc)
+          inv_symm_sqrt <- schur$vectors %*% (solve(schur$vectors) / sqrt(schur$values))
+          crc[!(cl_ix %in% nas)] <- drop(inv_symm_sqrt %*% resids[ok])
+          cr[cl_ix] <- crc
+        }
+      }
     }
   } else {
-    cr <- resids
+    stop(paste0("'", type, "' bias correction not available"))
   }
   
   return(cr)
@@ -263,12 +314,15 @@ bias_correct <- function(resids, x, ef, type, ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
-  mc <- match.call()
-  if (is.null(type_psi <- mc$type_psi)) type_psi <- "HC0"
-  if (is.null(type_phi <- mc$type_phi)) type_phi <- "HC0"
+  dots <- list(...)
+  dots$type <- NULL
+  ## same in-line comment in `estfun.teeMod()` about setting itt_rcorrect applies
+  ## to both args here
+  if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
+  if (is.null(cov_adj_rcorrect <- dots$cov_adj_rcorrect)) cov_adj_rcorrect <- "HC0"
   
   uoa_cols <- var_names(x@StudySpecification, "u")
-  cluster_cols <- if (is.null(mc$cluster_cols)) uoa_cols else mc$cluster_cols
+  cluster_cols <- if (is.null(dots$cluster_cols)) uoa_cols else dots$cluster_cols
   sl <- x$model$`(offset)`
   cmod <- sl@fitted_covariance_model
   
@@ -282,7 +336,9 @@ bias_correct <- function(resids, x, ef, type, ...) {
   ## get the unaligned + unextended estimating equations
   phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this gives desired type = "response"
   phi <- estfun(cmod) / replace(phi_r, is.na(phi_r), 1) *
-    replace(bias_correct(phi_r, x, "phi", type_phi, ...), is.na(phi_r), 0)
+    replace(do.call(rcorrect,
+                    c(list(resids = phi_r, x = x, model = "cov_adj", type = cov_adj_rcorrect, by = by),
+                      dots)), is.na(phi_r), 0)
 
   # use jackknife first-stage coefficient estimates if treated units were in first-stage fit
   Q_in_C_trts <- stats::model.frame(x, na.action = na.pass)[[
@@ -290,13 +346,15 @@ bias_correct <- function(resids, x, ef, type, ...) {
       as.numeric(names(id_order$Q_in_C))]
   psi_r <- stats::residuals(x, type = "working")
   if (any(Q_in_C_trts > 0)) { # this should work for absorb=TRUE and absorb=FALSE
-    new_psi_r <- compute_loo_psi_estfun(x, cluster_cols, ...)
+    new_psi_r <- compute_loo_resids(x, cluster_cols, ...)
   } else {
     new_psi_r <- psi_r
   }
 
   psi <- .base_S3class_estfun(x) / replace(psi_r, is.na(psi_r), 1) *
-    replace(bias_correct(new_psi_r, x, "psi", type_psi, ...), is.na(new_psi_r), 0)
+    replace(do.call(rcorrect,
+                    c(list(resids = new_psi_r, x = x, model = "itt", type = itt_rcorrect, by = by),
+                      dots)), is.na(new_psi_r), 0)
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
   aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
@@ -308,7 +366,7 @@ bias_correct <- function(resids, x, ef, type, ...) {
   aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
   
   out <- list(psi = aligned_psi, phi = aligned_phi)
-  
+
   if (!is.null(ctrl_means_ef_mat)) {
     aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
                             dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
@@ -349,7 +407,7 @@ bias_correct <- function(resids, x, ef, type, ...) {
 #' Jackknife estfun
 #' @importFrom stats model.frame
 #' @keywords internal
-compute_loo_psi_estfun <- function(x, cluster, ...) {
+compute_loo_resids <- function(x, cluster, ...) {
   ## what's in the call
   sl <- x$model$`(offset)`
   cmod <- sl@fitted_covariance_model
@@ -425,21 +483,10 @@ compute_loo_psi_estfun <- function(x, cluster, ...) {
   all_preds <- sl@.Data
   all_preds[Q_cls_in_C] <- loo_preds
   
-  ## make residuals
+  ## make residuals (need to subtract original offset because it's included in fitted values)
   y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
-  return(y - stats::fitted.values(x) - all_preds)
-  
-  ## make estfun matrix
-  A <- stats::model.matrix(x)
-  A <- stats::naresid(x$na.action, A)
-  
-  if (is.null(wts <- weights(x))) wts <- rep(1, nrow(A))
-  
-  ef <- sweep(A,
-              1,
-              wts * (y - stats::fitted.values(x) - all_preds),
-              FUN = "*")
-  return(ef)
+  os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
+  return(y - stats::fitted(x) - os - all_preds)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
