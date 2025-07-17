@@ -792,7 +792,7 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
   zobs <- data[, agg$z] # treatment assignments
 
   # number of covariates in the covariance model
-  p <- ncol(stats::model.frame(x$model$`(offset)`@fitted_covariance_model))
+  p <- ncol(stats::model.matrix(x$model$`(offset)`@fitted_covariance_model))
   XX <- .prepare_spec_matrix(x)
   
   # estimated covariances of entries of \Phi involving indicators z=0 or z=1
