@@ -7,9 +7,23 @@ NULL
 #'   covariance adjustment
 #'
 #' @details Variance estimates will be clustered on the basis of the columns
-#'  provided to \code{cluster}. As a result, providing \code{"HCx"} or \code{"CRx"}
-#'  to \code{type} will produce the same variance estimate given that \code{cluster}
-#'  remains the same.
+#'  provided to \code{cluster} (or obtained by the default behavior). As a result,
+#'  providing \code{"HCx"} or \code{"CRx"} to \code{type} will produce the same
+#'  variance estimate given that \code{cluster} remains the same.
+#'
+#' With prior covariance adjustment, unless the \code{data} argument of the covariance
+#'  model fit is the same as the \code{data} argument for fitting \code{x} and the
+#'  \code{StudySpecification} of \code{x} has been created with a formula of the
+#'  form `trt_col ~ 1`, the column(s) provided to \code{cluster} must appear in the
+#'  dataframes in both \code{data} arguments, even if the clustering structure does
+#'  not exist, per se, in the covariance adjustment sample. For instance, in a
+#'  finely stratified randomized trial, one might desire standard errors clustered
+#'  at the block level, but the covariance adjustment model may include auxiliary
+#'  units that did not participate in the trial. In this case, in the \code{data}
+#'  argument of the fitted covariance model, the column(s) passed to \code{cluster}
+#'  should have the block ID's for rows overlapping with the \code{data} argument
+#'  used for fitting \code{x}, and NA's for any auxiliary units. \code{vcov_tee()}
+#'  will treat each row with an NA as its own cluster.
 #'  
 #' For ITT effect estimates without covariance adjustment, \code{type}
 #'  corresponds to the variance estimate desired. Supported options include:
@@ -18,47 +32,38 @@ NULL
 #' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based HC/CR1 standard errors
 #' (for \code{"MB1"} and \code{"HC1"}, this is \eqn{n/(n - 2)}, and for \code{"CR1"},
 #' this is \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of
-#' clusters in the direct adjustment sample)
+#' clusters in the sample used for fitting \code{x})
 #' - \code{"MB2"}, \code{"HC2"}, and \code{"CR2"} for model-based HC/CR2 standard errors
 #' - \code{"DB0"} for design-based HC0 variance estimates
 #' 
-#' For ITT effect estimates with covariance adjustment, \code{type} indicates
-#'  the bias correction to the residuals of \code{x}. The residuals of the
-#'  covariance adjustment model are corrected separately based on the
-#'  \code{cov_adj_rcorrect} argument, which takes the same options as
-#'  \code{type}, sans \code{"DB0"}. When the covariance adjustment model includes
-#'  rows in the treatment condition for fitting, the residuals of \code{x} receive
-#'  further correction by having the values of \code{offset} replaced by predictions
-#'  that use coefficient estimates that leave out rows in the same cluster (as
-#'  defined by the \code{cluster} argument).
-#'
-#' With prior covariance adjustment, the columns provided to \code{cluster} must
-#'  appear in both the covariance adjustment and direct adjustment samples, even
-#'  if the clustering structure does not exist, per se, in the covariance adjustment
-#'  sample. For example, in a finely stratified study, one might be interested in
-#'  clustering standard errors at the block level, but the covariance adjustment
-#'  sample may include auxiliary units that did not participate in the trial or
-#'  were left out of a matching procedure. In this case, the column in the
-#'  covariance adjustment sample should have the blocks for rows overlapping with
-#'  the direct adjustment sample and NA's everywhere else. \code{vcov_tee()} will
-#'  treat each unit with an NA as its own cluster.
+#' The \code{type} argument does not correspond to existing variance estimators in
+#'   the literature in the case of prior covariance adjustment. It specifies the
+#'   bias correction to the residuals of \code{x}, but the residuals of the covariance
+#'  model are corrected separately based on the \code{cov_adj_rcorrect} argument.
+#'  The \code{cov_adj_rcorrect} argument takes the same options as \code{type}
+#'  except \code{"DB0"}. When the covariance model includes rows in the treatment
+#'  condition for fitting, the residuals of \code{x} are further corrected by
+#'  having the values of \code{offset} replaced by predictions that use coefficient
+#'  estimates that leave out rows in the same cluster (as defined by the
+#'  \code{cluster} argument).
 #'
 #' @param x a fitted \code{teeMod} model
 #' @param type a string indicating the desired bias correction for the residuals
 #'   of \code{x}. Default is \code{"CR0"} if the column provided to \code{cluster}
 #'   indicates clustering and \code{"HC0"} otherwise. See Details for supported types
-#' @param cluster a string or character vector of column names indicating
-#'   columns to cluster standard errors by. Default uses unit of assignment columns
-#'   in the \code{StudySpecification} stored in \code{x}. See Details for important
-#'   information in the case with covariance adjustment.
+#' @param cluster a vector indicating the columns that define clusters. The default
+#'   is the unit of assignment columns in the \code{StudySpecification} stored
+#'   in \code{x}. These columns should appear in the dataframe used for fitting
+#'   \code{x} as well as the dataframe passed to the covariance model fit in the case of
+#'   prior covariance adjustment. See Details
 #' @param ... arguments to be passed to the internal variance estimation
 #'   function, such as \code{cov_adj_rcorrect}, which specifies the bias
-#'   correction to the residuals of the covariance adjustment model, if applicable.
+#'   correction to the residuals of the covariance model, if applicable.
 #'   See Details
 #' @return A variance-covariance matrix with row and column entries for the estimated
 #'   coefficients in \code{x}, the marginal mean outcome in the control condition,
-#'   the marginal mean \code{offset} in the control condition (if an \code{offset})
-#'   is provided, and if a moderator variable is specified in the formula for \code{x},
+#'   the marginal mean \code{offset} in the control condition (if an \code{offset}
+#'   is provided), and if a moderator variable is specified in the formula for \code{x},
 #'   the mean interaction in the control condition of the outcome and \code{offset}
 #'   with the moderator variable
 #' @export
@@ -86,40 +91,37 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   }
   var_func <- get(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
   
-  vcov_cl <- match.call()
-  vcov_cl[[1L]] <- str2lang(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
+  args <- list(...)
+  args$x <- x
   
   if (vcov_type == "DB") {
-    # this line is so as not to touch .vcov_DB0, but small changes could be made
-    # to that function to accommodate a `type` arg without changing variance estimates
-    vcov_cl <- vcov_cl[-match("type", names(vcov_cl))]
-    vcov_cl$vcov_type <- vcov_type
+    args$vcov_type <- vcov_type
   } else {
-    vcov_cl$type <- type
+    args$type <- type
   }
   
   if (inherits(x, "mmm")) {
-    if (inherits(x[[1]]$model$`(offset)`, "SandwichLayer") & is.null(vcov_cl$cov_adj_rcorrect)) {
+    if (inherits(x[[1]]$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
       if (vcov_type %in% c("HC", "CR", "MB") &
           inherits(x[[1]]$model$`(offset)`@fitted_covariance_model, "lm")) {
-        vcov_cl$cov_adj_rcorrect <- "HC1"
-      } else vcov_cl$cov_adj_rcorrect <- "HC0"
+        args$cov_adj_rcorrect <- "HC1"
+      } else args$cov_adj_rcorrect <- "HC0"
     }
   } else {
-    if (inherits(x$model$`(offset)`, "SandwichLayer") & is.null(vcov_cl$cov_adj_rcorrect)) {
+    if (inherits(x$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
       if (vcov_type %in% c("HC", "CR", "MB") &
           inherits(x$model$`(offset)`@fitted_covariance_model, "lm")) {
-        vcov_cl$cov_adj_rcorrect <- "HC1"
-      } else vcov_cl$cov_adj_rcorrect <- "HC0"
+        args$cov_adj_rcorrect <- "HC1"
+      } else args$cov_adj_rcorrect <- "HC0"
     }
   }
 
 
-  if (is.null(vcov_cl$by)) vcov_cl$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
-  vcov_cl$cluster_cols <- cluster
-  vcov_cl$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
+  args$cluster_cols <- cluster
+  args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
 
-  est <- eval(vcov_cl, envir = parent.frame(1L))
+  est <- do.call(var_func, args)
 
   return(est)
 }
@@ -169,38 +171,6 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @keywords internal
 .vcov_MB <- function(x, ...) {
   out <- .vcov_CR(x, ...)
-  return(out)
-}
-
-#' @keywords internal
-.vcov_CR1 <- function(x, ...) {
-  args <- list(...)
-  args$x <- x
-  args$cadjust <- FALSE
-
-  vmat <- do.call(.vcov_CR0, args)
-  n <- length(args$cluster)
-  g <- length(unique(args$cluster))
-  ef <- estfun(x)
-  k <- ncol(ef) - sum(grepl("^(y|cov_adj):", colnames(ef)))
-
-  vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
-
-  attr(vmat, "type") <- "CR1"
-  return(vmat)
-}
-
-#' @keywords internal
-.vcov_HC1 <- function(x, ...) {
-  out <- .vcov_CR1(x, ...)
-  attr(out, "type") <- "HC1"
-  return(out)
-}
-
-#' @keywords internal
-.vcov_MB1 <- function(x, ...) {
-  out <- .vcov_CR1(x, ...)
-  attr(out, "type") <- "MB1"
   return(out)
 }
 

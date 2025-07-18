@@ -107,13 +107,20 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   cannot be uniquely specified, contributions are aligned up to the unit of
 ##'   assignment level. If standard errors are clustered no finer than that,
 ##'   they will provide the same result as if each unit of observation's
-##'   contributions were aligned exactly.
+##'   contributions were aligned exactly.\cr\cr This method incorporates bias
+##'   corrections made to the residuals of \code{x} and, if applicable, the
+##'   covariance model stored in its \code{offset}. When its crossproduct is taken
+##'   (perhaps after suitable summing across rows within clusters), it provides
+##'   a heteroskedasticity- (or cluster-) robust estimate of the meat matrix of
+##'   the variance-covariance of the parameter estimates in \code{x}.
 ##'
 ##' @param x a fitted \code{teeMod} model
 ##' @param ... arguments passed to methods
-##' @return An \eqn{n\times 2} matrix of empirical
-##'  estimating equations for the direct adjustment model fit. See Details for
-##'  definition of \eqn{n}.
+##' @return An \eqn{n\times k} matrix of empirical estimating equations for \code{x}.
+##'   \code{k} includes the model intercept, main effects of treatment and
+##'   moderator variables, any moderator effects, and marginal and conditional
+##'   means of the outcome (and \code{offset}, if provided) in the control condition.
+##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
 estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
@@ -147,9 +154,11 @@ estfun.teeMod <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
+    # after setting the na.action to "exclude", `residuals` returns NA's, so
+    # we make sure the entries in the estfun are set to 0 rather than NA
     resids <- stats::residuals(x, type = "working")
     return(mat / replace(resids, is.na(resids), 1) *
-             replace(do.call(rcorrect,
+             replace(do.call(.rcorrect,
                              c(list(resids = resids, x = x, model = "itt", type = itt_rcorrect),
                                dots)), is.na(resids), 0))
   }
@@ -185,8 +194,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
 ##' @title Bias correct residuals contributing to standard errors of a \code{teeMod}
 ##' @param resids numeric vector of residuals to correct
-##' @param x teeMod object. If \code{ef="cov_adj"}, \code{x} must have a
-##' \code{SandwichLayer} object as an \code{offset}
+##' @param x teeMod object
 ##' @param model string indicating which model the residuals are from. \code{"itt"}
 ##' indicates correction to the residuals of \code{x}, and \code{"cov_adj"}
 ##' indicates correction to the residuals of the covariance adjustment model.
@@ -198,9 +206,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##' @param ... additional arguments passed from up the call stack; in particular,
 ##' the \code{cluster_cols} argument, which informs whether to cluster and provide
 ##' CR2 corrections instead of HC2 corrections, as well as the correction for the
-##' number of clusters in the CR1 correction
+##' number of clusters in the CR1 correction. This may also include a \code{by}
+##' argument.
 ##' @keywords internal
-rcorrect <- function(resids, x, model, type, ...) {
+.rcorrect <- function(resids, x, model, type, ...) {
   if (type %in% paste0(c("HC", "CR", "MB", "DB"), "0")) {
     cr <- resids
   } else if (type %in% c(paste0(rep(c("MB", "HC", "CR"), 2), rep(c(1, 2), each = 3)))) {
@@ -269,7 +278,7 @@ rcorrect <- function(resids, x, model, type, ...) {
                        na.action = na.pass)),
           contrasts.arg = mod$contrasts,
           xlev = mod$xlevels
-        )[,colnames(XW),drop=FALSE]
+        )[,colnames(XW),drop=FALSE] # estfun drops NA coeffs for XW, so we have to align with that
         XTWX_inv <- solve(crossprod(XW, X))
         cr <- numeric(length(cls))
         for (cl in unique(cls)) {
@@ -302,9 +311,16 @@ rcorrect <- function(resids, x, model, type, ...) {
 ##'   units of observation (or if unit of observation-level ordering is
 ##'   impossible, units of assignment) are aligned.
 ##' @param x a fitted \code{teeMod} model
-##' @param by character vector; indicates unit of assignment columns to generate
-##'   ID's from; default is NULL, which uses the unit of assignment columns
-##'   specified in the \code{teeMod} object's \code{StudySpecification} slot
+##' @param ctrl_means_ef_mat optional, a matrix of estimating equations corresponding
+##'   to the estimates of the marginal (and possibly conditional) means of the outcome
+##'   and \code{offset} in the control condition. These are aligned and extended
+##'   in the same way as the matrix of estimating equations for \code{x} and
+##'   \code{cbind}ed to them
+##' @param by optional, a character vector indicating columns that uniquely identify
+##'   rows in the dataframe used for fitting \code{x} and the dataframe passed to the
+##'   \code{data} argument of the covariance adjustment model fit. The default is
+##'   \code{NULL}, in which case the unit of assignment columns specified in the
+##'   \code{StudySpecification} slot of \code{x} are used.
 ##' @param ... arguments passed to methods
 ##' @return A list of two matrices, one being the aligned contributions to the
 ##'   estimating equations for the direct adjustment model, and the other being
@@ -336,7 +352,7 @@ rcorrect <- function(resids, x, model, type, ...) {
   ## get the unaligned + unextended estimating equations
   phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this gives desired type = "response"
   phi <- estfun(cmod) / replace(phi_r, is.na(phi_r), 1) *
-    replace(do.call(rcorrect,
+    replace(do.call(.rcorrect,
                     c(list(resids = phi_r, x = x, model = "cov_adj", type = cov_adj_rcorrect, by = by),
                       dots)), is.na(phi_r), 0)
 
@@ -346,13 +362,13 @@ rcorrect <- function(resids, x, model, type, ...) {
       as.numeric(names(id_order$Q_in_C))]
   psi_r <- stats::residuals(x, type = "working")
   if (any(Q_in_C_trts > 0)) { # this should work for absorb=TRUE and absorb=FALSE
-    new_psi_r <- compute_loo_resids(x, cluster_cols, ...)
+    new_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
   } else {
     new_psi_r <- psi_r
   }
 
   psi <- .base_S3class_estfun(x) / replace(psi_r, is.na(psi_r), 1) *
-    replace(do.call(rcorrect,
+    replace(do.call(.rcorrect,
                     c(list(resids = new_psi_r, x = x, model = "itt", type = itt_rcorrect, by = by),
                       dots)), is.na(new_psi_r), 0)
 
@@ -404,10 +420,19 @@ rcorrect <- function(resids, x, model, type, ...) {
   return(ef[, keep_coef,drop=FALSE])
 }
 
-#' Jackknife estfun
+#' @title Compute residuals for a \code{teeMod} object with leave-one-out estimates
+#' of the \code{offset}
+#' @details
+#' The residual for any observation also used for fitting the \code{fitted_covariance_model}
+#'   stored in the \code{offset} of \code{x} is replaced by an estimated residual
+#'   that uses a cluster leave-one-out estimate of the \code{fitted_covariance_model}
+#'   for generating a value of the \code{offset}.
+#' @param x a \code{teeMod} object
+#' @param cluster vector of column names that identify clusters
+#' 
 #' @importFrom stats model.frame
 #' @keywords internal
-compute_loo_resids <- function(x, cluster, ...) {
+.compute_loo_resids <- function(x, cluster, ...) {
   ## what's in the call
   sl <- x$model$`(offset)`
   cmod <- sl@fitted_covariance_model

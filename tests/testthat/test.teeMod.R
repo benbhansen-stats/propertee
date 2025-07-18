@@ -711,13 +711,13 @@ test_that("bread.teeMod handles model with less than full rank", {
 test_that("rcorrect fail", {
   r <- rep(c(-1, 1), 20)
   expect_error(
-    rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+    .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
              type = "not a bias correction"),
     "not available"
   )
   
   expect_error(
-    rcorrect(r, x = list(c(1, 2)), model = "cov_adj",  type = "HC2", cluster_cols = "uoa1"),
+    .rcorrect(r, x = list(c(1, 2)), model = "cov_adj",  type = "HC2", cluster_cols = "uoa1"),
     "must have a SandwichLayer"
   )
 })
@@ -725,15 +725,15 @@ test_that("rcorrect fail", {
 test_that("rcorrect HC/CR/MB/DB0", {
   r <- rep(c(-1, 1), 20)
   expect_equal(
-    cr <- rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+    cr <- .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
                    type = "HC0"),
     r
   )
-  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
                             type = "CR0"))
-  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
                             type = "MB0"))
-  expect_equal(cr, rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
                             type = "DB0"))
 })
 
@@ -760,34 +760,34 @@ test_that("rcorrect (HC/CR/MB)1", {
   n <- nrow(idata)
   k <- 6
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC1"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1"),
     r * sqrt((n-1) / (n-k) * g / (g-1))
   )
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR1"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB1"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "HC1"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "CR1"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "MB1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "HC1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "CR1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "MB1"))
   
   # non-default clustering
   cluster <- "bid"
   cls <- .make_uoa_ids(xm, "MB", cluster)
   g <- 2
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC1", cluster_cols = cluster, cluster = cls),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1", cluster_cols = cluster, cluster = cls),
     r * sqrt((n-1) / (n-k) * g / (g-1))
   )
   expect_equal(
     cr,
-    rcorrect(r, x = xm, model = "itt", type = "CR1", cluster_cols = cluster, cluster = cls)
+    .rcorrect(r, x = xm, model = "itt", type = "CR1", cluster_cols = cluster, cluster = cls)
   )
   expect_equal(
     cr,
-    rcorrect(r, x = xm, model = "itt", type = "MB1", cluster_cols = cluster, cluster = cls)
+    .rcorrect(r, x = xm, model = "itt", type = "MB1", cluster_cols = cluster, cluster = cls)
   )
   expect_equal(
     cr,
-    rcorrect(r, x = xm, model = "cov_adj", type = "MB1", cluster_cols = cluster, cluster = cls)
+    .rcorrect(r, x = xm, model = "cov_adj", type = "MB1", cluster_cols = cluster, cluster = cls)
   )
 })
 
@@ -815,7 +815,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     n <- nrow(idata)
     k <- 7
     expect_equal(
-      cr <- rcorrect(r, x = xm, model = "itt", type = "HC1"),
+      cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1"),
       r * sqrt((n-1) / (n-k) * g / (g-1))
     )
   })
@@ -834,29 +834,29 @@ test_that("rcorrect (HC/CR/MB)2, no clustering", {
   
   r <- xm$residuals
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
     r / sqrt(1-stats::hatvalues(xm))
   )
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
   
   r <- cmod$residuals
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
     r / sqrt(1-stats::hatvalues(cmod))
   )
-  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "CR2"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "cov_adj", type = "MB2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "MB2"))
   
   # subset
   xm <- lmitt(y ~ 1, speci, udata, subset = cid > 3, offset = cov_adj(cmod))
   r <- stats::residuals(xm, "working")
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
     r / sqrt(1-stats::hatvalues(xm))
   )
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
   
   # NA's
   udata$y[9:10] <- NA_real_
@@ -865,11 +865,11 @@ test_that("rcorrect (HC/CR/MB)2, no clustering", {
   class(xm$na.action) <- "exclude"
   r <- stats::residuals(xm, "working")
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
     r / sqrt(1-stats::hatvalues(xm))
   )
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "CR2"))
-  expect_equal(cr, rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
 })
 
 test_that("rcorrect (HC/CR/MB)2, clustering", {
@@ -906,21 +906,21 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
     )
   )
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
     expected
   )
-  expect_equal(rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
-  expect_equal(rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
   
   # subset
   xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
   
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
     expected
   )
-  expect_equal(rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
-  expect_equal(rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
   
   # cov adj
   r <- cmod$residuals
@@ -947,11 +947,11 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
     )
   )
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
     expected
   )
-  expect_equal(rcorrect(r, x = xm, model = "cov_adj", type = "CR2"), cr)
-  expect_equal(rcorrect(r, x = xm, model = "cov_adj", type = "MB2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "cov_adj", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "cov_adj", type = "MB2"), cr)
   
   # NA's
   idata$y[1:3] <- NA_real_
@@ -986,7 +986,7 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
 
   class(xm$na.action) <- "exclude"
   expect_equal(
-    cr <- rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
     expected
   )
   
@@ -996,7 +996,7 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   r <- xm$residuals
   class(xm$na.action) <- "exclude"
   expect_equal(
-    cr <- rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
+    cr <- .rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt", type = "HC2"),
     expected
   )
   
@@ -1031,7 +1031,7 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   )
   
   expect_equal(
-    cr <- rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
     expected
   )
 })

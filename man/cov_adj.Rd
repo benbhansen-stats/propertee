@@ -76,7 +76,7 @@ ett_read <- lm(read_yr1 ~ assigned(dichotomy= cond_at_entry =="small" ~.),
                data = STARplus,
                weights = ett_wts)
 coef(ett_read)
-ett_read |> as.lmitt() |> vcov()
+ett_read |> as.lmitt() |> vcov(type = "HC0", cov_adj_rcorrect = "HC0")
 
 ate_read <- lmitt(read_yr1 ~ 1, STARspec, STARplus,
                   dichotomy= cond_at_entry =="small" ~.,
@@ -84,7 +84,7 @@ ate_read <- lmitt(read_yr1 ~ 1, STARspec, STARplus,
                   weights = "ate")
 show(ate_read)
 coef(ate_read)
-vcov(ate_read)
+vcov(ate_read, type = "HC0", cov_adj_rcorrect = "HC0")
 
 ate_read_loc <-
     lmitt(read_yr1 ~ race, STARspec, STARplus,
