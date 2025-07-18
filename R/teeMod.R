@@ -252,14 +252,43 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
         efm <- estfun(mod)
         mf_data <- eval(mod$call$data, environment(formula(mod)))
       }
-      cls <- Reduce(
-        function(l, r) paste(l, r, sep = "_"),
-        as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols, drop=FALSE])
-      )
+      if (cluster_cols[1] == "..uoa..") {
+        cls <- row.names(stats::model.frame(mod, na.action = na.pass))
+      } else {
+        cls <- Reduce(
+          function(l, r) paste(l, r, sep = "_"),
+          as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols, drop=FALSE])
+        )
+      }
       if (any(nas <- is.na(cls))) cls[nas] <- replicate(
         sum(nas), paste(sample(letters, 8, replace = TRUE), collapse = ""), simplify = TRUE
       )
       
+      if (inherits(mod, "teeMod")) {
+        uoa_cols <- var_names(mod@StudySpecification, "u")
+        if (has_blocks(mod@StudySpecification) &
+            length(setdiff(cluster_cols, uoa_cols)) == 0 &
+            length(setdiff(uoa_cols, cluster_cols)) == 0) {
+          Q_obs <- .sanitize_Q_ids(mod, id_col = cluster_cols)
+          Q_obs_ids <- Q_obs$cluster
+          spec_blocks <- blocks(mod@StudySpecification)
+          uoa_block_ids <- apply(spec_blocks, 1, function(...) paste(..., collapse = ","))
+          small_blocks <- identify_small_blocks(mod@StudySpecification)
+          structure_w_small_blocks <- cbind(
+            mod@StudySpecification@structure,
+            small_block = small_blocks[uoa_block_ids],
+            block_replace_id = apply(spec_blocks, 1,
+                                     function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
+                                     nms = colnames(spec_blocks))
+          )
+          Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
+          na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
+          Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
+            Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
+          cls <- Q_obs$cluster
+        }
+      }
+
       g <- length(unique(cls))
       n <- nrow(efm)
       k <- ncol(efm)
@@ -572,7 +601,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                                  function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
                                  nms = colnames(spec_blocks))
       )
-      Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
+      Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
       na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
       Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
         Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]

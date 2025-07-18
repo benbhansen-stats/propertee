@@ -1034,6 +1034,34 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
     cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
     expected
   )
+  
+  # ..uoa..
+  sdat <- data.frame(b = rep(replicate(50, paste(sample(letters, 3, TRUE), collapse = "")), 2),
+                     a = rep(c(0, 1), each = 50),
+                     y = 2 * rep(c(0, 1), each = 50) + 0.35 * rnorm(100))
+  suppressWarnings(spec <- rct_spec(a ~ block(b), sdat))
+  xm <- lmitt(y ~ 1, spec, sdat, weights = "ate")
+  
+  r <- xm$residuals
+  pm <- chol2inv(xm$qr$qr)
+  X <- stats::model.matrix(xm)
+  cls <- sdat$b
+  cids <- unique(cls)
+  expected <- numeric(nrow(sdat))
+  for (c in cls) {
+    ix <- cls == c
+    Xc <- X[ix,,drop=FALSE]
+    Pc <- Xc %*% pm %*% t(Xc) %*% diag(xm$weights[ix], nrow = sum(ix))
+    schur <- eigen(diag(nrow = sum(ix)) - Pc)
+    crc <- schur$vector %*% diag(1/sqrt(schur$values),
+                          nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+    expected[ix] <- crc
+  }
+  
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    expected
+  )
 })
 
 test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
