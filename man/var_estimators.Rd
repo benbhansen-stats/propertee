@@ -51,12 +51,11 @@ To create your own \code{type}, simply define a function \code{.vcov_XXX}.
 \code{type = "XXX"} will now use your method. Your method should return a
 matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
 
-The design-based variance estimates can be calculated for
-\code{teeMod} models satisfying the following requirements:
+Design-based variance estimation is implemented for
+\code{teeMod} models satisfying requirements including:
 \itemize{
 \item The model uses \code{rct_spec} as \code{StudySpecification}
 \item The model only estimates a main treatment effect
-\item Inverse probability weighting is incorporated
 }
 }
 \keyword{internal}
