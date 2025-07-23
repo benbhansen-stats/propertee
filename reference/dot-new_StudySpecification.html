@@ -58,7 +58,8 @@ from <code><a href="StudySpecification_objects.html">rct_spec()</a></code>, <cod
 <span>  <span class="va">type</span>,</span>
 <span>  subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  call <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  na.fail <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  na.fail <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  called_from_lmitt <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +91,11 @@ from <code><a href="StudySpecification_objects.html">rct_spec()</a></code>, <cod
 <dt id="arg-na-fail">na.fail<a class="anchor" aria-label="anchor" href="#arg-na-fail"></a></dt>
 <dd><p>Should it error on NA's (<code>TRUE</code>) or remove them
 (<code>FALSE</code>)?</p></dd>
+
+
+<dt id="arg-called-from-lmitt">called_from_lmitt<a class="anchor" aria-label="anchor" href="#arg-called-from-lmitt"></a></dt>
+<dd><p>Logical; was this called inside <code><a href="lmitt.html">lmitt()</a></code>, or
+was it called from <code>*_spec()</code> (default).</p></dd>
 
 </dl></div>
     <div class="section level2">
