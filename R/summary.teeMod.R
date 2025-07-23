@@ -34,7 +34,7 @@ summary.teeMod <- function(object,
     dof <- vapply(seq_len(object$rank),
                   .get_dof,
                   numeric(1L),
-                  x = object, vcov_type = vcov.type, cluster = dots$cluster,
+                  x = object, vcov_type = vcov.type,
                   cls = .make_uoa_ids(object, substr(vcov.type, 1, 2), dots$cluster), ...)
     out$coefficients[!is.na(orig.coefficients), 2L] <- sqrt(diag(covmat))[
       names(orig.coefficients)[toprint & !is.na(orig.coefficients)]]
