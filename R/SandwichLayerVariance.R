@@ -174,6 +174,223 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   return(out)
 }
 
+#' @title Get the degrees of freedom of a sandwich variance estimate associated with a teeMod fit
+#' @keywords internal
+.get_dof <- function(x, vcov_type, ell, cluster = NULL, cls = NULL, ...) {
+  if (!inherits(x, "teeMod")) stop("x must be a teeMod object")
+  if (is.null(cluster)) cluster <- var_names(x@StudySpecification, "u")
+  if (is.null(cls)) cls <- .make_uoa_ids(x, substr(vcov_type, 1, 2), cluster)
+  
+  if (!(vcov_type %in% paste0(c("MB", "HC", "CR"), 2))) {
+    # if no HC2 correction, use dof = G - 1 (see pg. 331 of Cameron and Miller,
+    # 2015). this is correct for both absorb=FALSE and absorb=TRUE
+    dof <- length(unique(cls)) - 1
+  } else {
+    # use dof from Imbens and Kolesar (2016) for HC2 corrections
+    k <- ncol(x$qr$qr)
+    if (length(ell) == 1) {
+      ell <- replace(numeric(k), ell, 1)
+    } else if (length(ell) != k) {
+      stop("ell must have the same length as the rank of the fitted model")
+    } else if (length(setdiff(unique(ell), c(0, 1))) != 0) {
+      stop("ell must have only zeros or ones")
+    }
+    dof <- .compute_IK_dof(x, ell, cluster, length(unique(x$model[,1])) == 2)
+  }
+  
+  return(dof)
+}
+
+#' @title Compute the degrees of freedom of a sandwich standard error with HC2 correction
+#' @keywords internal
+#' @references Guido W. Imbens and Michael Koles\`ar. "Robust Standard Errors in
+#' Small Samples: Some Practical Advice". In: *The Review of Economics and
+#' Statistics* 98.4 (Oct. 2016), pp. 701-712.
+.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE) {
+  if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
+  cls <- .sanitize_Q_ids(tm, cluster)$cluster
+  trts <- if (is.null(tm@lmitt_call$dichotomy) &
+              (is.null(wc <- eval(tm@lmitt_call$weights, envir = environment(formula(tm)))) |
+               !inherits(wc, "WeightedStudySpecification"))) {
+    treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+  } else {
+    if (length(dich <- wc@dichotomy) == 0) {
+      treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+    } else {
+      eval(dich, envir = get("data", environment(formula(tm))))
+    }
+  }
+  
+  ## estimate rho
+  r <- stats::residuals(tm, type = "response")
+  if (length(cls) == length(unique(cls)) | bin_y) {
+    # for nonclustered data rho = 0. for binary data, use a working model of independence
+    # so that rho = 0
+    rho <- 0
+  } else {
+    # don't need to subtract off squared residuals because combn only returns combos
+    # of distinct indices
+    rho <- sum(
+      tapply(r, cls, function(rs) {
+        combs <- combn(length(rs), 2)
+        sum(rs[combs[1,]] * rs[combs[2,]])
+      })
+    ) / (sum(tapply(rep(1, length(cls)), cls, sum)^2) - length(cls))
+    rho <- max(rho, 0) # Imbens and Koles\'ar don't allow negative rho in their code
+  }
+  
+  ## estimate sigma
+  # working correlation matrix is heteroskedastic for binary data
+  sig2 <- if (bin_y) tm$fitted.values * (1-tm$fitted.values) else mean(r^2)
+  
+  # function for getting the inverse symmetric square root 
+  iss <- function(s, cls, wts, trts = NULL) {
+    if (length(cls) == length(unique(cls)) | bin_y) {
+      # no clustering or independent working correlation matrix
+      return(matrix(1 / sqrt(1 - stats::hatvalues(tm)[cls == s]), 1, 1))
+    } else {
+      return(cluster_iss(tm, cluster_unit = s, cluster_ids = cls, assigned_trt = trts))
+    }
+  }
+  
+  # this is Imbens and Koles\'ar code with: 1) our fast CR2 correction implemented,
+  # 2) calls to the collapse package replaced with calls to rowsum(), and 3)
+  # removing the intercept column when there's absorption because the corrections
+  # for those cases in cluster_iss() are based on having no intercept column
+  piv <- if (tm@absorbed_intercepts & !bin_y &
+             length(cls) != length(unique(cls))) seq(2,tm$rank) else seq_len(tm$rank)
+  Q <- qr.Q(tm$qr)[, piv,drop=FALSE]
+  R <- qr.R(tm$qr)[piv, piv,drop=FALSE]
+  if (length(cls) == length(unique(cls)) | bin_y) {
+    AQ <- Q / sqrt(1-stats::hatvalues(tm))
+  } else {
+    AQ <- Reduce(
+      rbind,
+      lapply(
+        unique(cls),
+        function(s, cls, wts, trts = NULL) {
+          Qs <- Q[cls == s,,drop=FALSE]
+          iss(s, cls, wts, trts) %*% Qs
+        },
+        cls, wts, trts
+      )
+    )
+  }
+  a <- drop(AQ %*% backsolve(R, ell, transpose = TRUE))
+  a[is.nan(a)] <- 0 # this results in returning 1 degree of freedom (IK code returns slightly > 1)
+  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # deviate from IK code to accommodate heteroskedasticity
+  B <- rowsum(a * sqrt(sig2) * Q, cls)
+  D <- rowsum(a, cls)[,1]
+  Fm <- rowsum(Q, cls)
+  GG <- (diag(as, nrow = length(as)) - tcrossprod(B)) + rho * 
+    tcrossprod(diag(D, length(D)) - tcrossprod(B, Fm))
+  sum(diag(GG))^2/sum(GG^2)
+}
+
+#' @title Use a rank-1 update to cheaply compute inverse symmetric square roots of
+#' projection matrices
+#' @keywords internal
+cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, ...) {
+  if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
+  dots <- list(...)
+  if (is.null(cluster_ids)) {
+    if (is.null(dots$cluster)) cluster <- var_names(tm@StudySpecification, "u")
+    cluster_ids <- .sanitize_Q_ids(tm, cluster)$cluster
+  }
+  ix <- cluster_ids == cluster_unit
+  
+  if (is.null(wts <- stats::weights(tm))) wts <- rep(1, length(cluster_ids))
+  wg <- wts[ix]
+  
+  if (is.null(trts <- dots$assigned_trt)) {
+    trts <- if (is.null(tm@lmitt_call$dichotomy) &
+                (is.null(wc <- eval(tm@lmitt_call$weights, envir = environment(formula(tm)))) |
+                 !inherits(wc, "WeightedStudySpecification"))) {
+      treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+    } else {
+      if (length(dich <- wc@dichotomy) == 0) {
+        treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+      } else {
+        eval(dich, envir = get("data", environment(formula(tm))))
+      }
+    }
+  }
+  trtg <- unique(trts[ix])
+
+  A <- stats::model.matrix(tm)[,tm$qr$pivot[seq_len(tm$rank)]]
+  Ag <- A[ix,,drop=FALSE]
+  inv <- chol2inv(tm$qr$qr[,seq_len(tm$rank)])
+  
+  cg <- NULL
+  Mgg <- NULL
+  # first, check for a moderator variable
+  if (length(tm@moderator) > 0) {
+    xvar <- get("data", environment(formula(tm)))[[tm@moderator]]
+    # make sure the moderator variable is invariant within the cluster
+    if (length(x <- unique(xvar[ix])) == 1) {
+      if (tm@absorbed_intercepts) {
+        # set the Intercept column to 0. the matrices we return in this case are
+        # identical to an lm fit without an intercept but with block absorption
+        # (and the coefficient estimates are the same as well)
+        Ag[,1] <- 0
+        # with an invariant moderator variable, the 1st row of the cluster model
+        # matrix is the same as the rest
+        cg <- sum(wg) *
+          sum(Ag[1,2:ncol(inv)] *
+                sweep(inv[2:nrow(inv), 2:ncol(inv)], 2, Ag[1,2:ncol(Ag),drop=FALSE], FUN = "*"))
+        Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+      } else {
+        if (inherits(xvar, c("factor", "character"))) {
+          # control clusters and treated clusters have different values of cg
+          if (trtg == 0) {
+            xcols <- which(colnames(Ag) %in% paste0(tm@moderator, x))
+          } else {
+            xcols <- which(colnames(Ag) %in% paste0(
+              c(paste0(var_names(tm@StudySpecification, "t"), "._"), ""),
+              tm@moderator, x)
+            )
+          }
+          cg <- sum(inv[c(1, xcols), c(1, xcols)]) * sum(wg)
+          Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+        } else {
+          if (trtg == 0) {
+            cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) * sum(wg)
+            Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
+          } else {
+            ul <- sum(inv[1:2, 1:2])
+            br <- sum(inv[3:4, 3:4])
+            cg <- (ul + br * Ag[1,3]^2 + (sum(inv) - ul - br) * Ag[1,3]) * sum(wg)
+            Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
+          }
+        }
+      }
+    }
+  } else {
+    if (tm@absorbed_intercepts) {
+      cg <- sum(wg * Ag[,2]^2)
+      # the 1st row of the cluster model matrix is the same as the rest
+      cg <- Ag[1,2]^2 / sum(wts * A[,2]^2) * sum(wg)
+      Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+    } else {
+      # control clusters and treated clusters have different values of cg
+      if (trtg == 0) {
+        cg <- sum(wg) / sum(wts[Ag[,2] == 0])
+        Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+      } else {
+        cg <- sum(wg) / sum(wts[Ag[,2] == 1])
+        Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+      }
+    }
+  }
+  if (is.null(cg) | is.null(Mgg)) {
+    Pgg <- Ag %*% inv %*% t(Ag * wg)
+    eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+    return(eg$vec %*% diag(1/sqrt(eg$val)) %*% solve(eg$vec))
+  } else {
+    return(diag(nrow = sum(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
+  }
+}
+
 #' @title (Internal) Replace standard errors for moderator effect estimates with
 #'   insufficient degrees of freedom with \code{NA}
 #' @param vmat output of \code{.vcov_XXX()} called with input to \code{model}

@@ -24,12 +24,13 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
 
   s <- summary(ssmod)
   vc <- vcov_tee(ssmod, type = "CR0")
+  dof <- length(unique(paste(simdata$uoa1, simdata$uoa2, sep = "_")))-1
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 4L],
                2 * pt(abs(ssmod$coefficients[ix] / sqrt(diag(vc)[ix])),
-                      ssmod$df.residual,
+                      dof,
                       lower.tail = FALSE))
 
   cmod <- lm(y ~ x, simdata, subset = z == 0)
@@ -45,7 +46,7 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 4L],
                2 * pt(abs(ssmod$coefficients[ix] / sqrt(diag(vc)[ix])),
-                      ssmod$df.residual,
+                      dof,
                       lower.tail = FALSE))
 })
 

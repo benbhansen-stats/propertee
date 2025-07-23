@@ -101,6 +101,218 @@ test_that("variance helper functions fail without a teeMod model", {
 
 })
 
+test_that(".get_dof", {
+  data(simdata)
+  expect_error(.get_dof(lm(y~x, simdata), "CR2", 0), "teeMod object")
+  
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+  tm <- lmitt(y ~ 1, spec, simdata)
+  
+  # non-CR2 dof
+  expect_equal(.get_dof(tm, "CR0", 1), nrow(spec@structure)-1)
+  expect_equal(.get_dof(tm, "DB0", 1, "bid"), 2)
+  
+  # CR2 dof
+  expect_error(.get_dof(tm, "CR2", seq_len(7)), "same length")
+  expect_error(.get_dof(tm, "CR2", seq_len(2)), "zeros or ones")
+  expect_true(inherits(dof <- .get_dof(tm, "CR2", 2), "numeric"))
+  expect_equal(length(dof), 1)
+})
+
+test_that(".compute_IK_dof no clustering", {
+  data(simdata)
+
+  ## no clustering, continuous y, no rank-deficiency
+  simdata$id <- seq_len(nrow(simdata))
+  idspec <- rct_spec(z ~ unitid(id), simdata)
+  tm <- lmitt(y ~ 1, idspec, simdata)
+  ell <- c(0, 1)
+  dof <- .compute_IK_dof(tm, ell)
+  
+  Q <- qr.Q(tm$qr)
+  R <- qr.R(tm$qr)
+  I_P <- diag(nrow = nrow(simdata)) - tcrossprod(Q)
+  G <- I_P * drop((Q / sqrt(1-stats::hatvalues(tm))) %*% t(solve(R)) %*% ell)
+  GoG <- crossprod(G, diag(mean(stats::residuals(tm)^2), nrow = nrow(Q))) %*% G
+  expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
+  expect_equal(dof, expected_dof)
+  
+  ## rank-deficiency
+  uspec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
+  simdata$o <- factor(simdata$o)
+  tm <- lmitt(y ~ o, uspec, simdata)
+  
+  ell.no_df <- c(0, 0, 0, 0, 1, 0, 0)
+  ell.valid_df <- c(0, 0, 0, 0, 0, 1, 0)
+  expect_warning(no_dof <- .compute_IK_dof(tm, ell.no_df), "NaNs")
+  expect_equal(no_dof, 0)
+  expect_warning(valid_dof <- .compute_IK_dof(tm, ell.valid_df), "NaNs")
+  expect_equal(valid_dof, 2) # this is what IK code returns
+  
+  ## no clustering, binary y, no rank-deficiency
+  simdata$y <- round(runif(nrow(simdata)))
+  tm <- lmitt(y ~ 1, idspec, simdata)
+  dof <- .compute_IK_dof(tm, ell, bin_y = TRUE)
+  
+  GoG <- crossprod(G, diag(stats::fitted(tm) * (1 - stats::fitted(tm)), nrow = nrow(Q))) %*% G
+  expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
+  expect_equal(dof, expected_dof)
+})
+
+test_that("cluster_iss, no absorption", {
+  set.seed(33)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9), rep(5, 12), rep(seq(6, 8), each = 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7+7), rep(0, 7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19), rep(0, 7+7)),
+                    y = rnorm(4 + 5 + 6 + 9+19+7+7))
+
+  ## no moderator
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # control unit
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors)
+  )
+  # treated unit
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  all.equal(
+    cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors)
+  )
+  
+  ## cluster-invariant binary moderator variable
+  tm <- lmitt(y ~ x, spec, ad2, weights = "ate")
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # treated unit w/ x = 1
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 6), # test NULL cluster_ids and NULL cluster and NULL trts 
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # treated unit w/ x = 0
+  ix <- ad2$cid == 2
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 2, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # control unit w/ x = 1
+  ix <- ad2$cid == 4
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 4, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # control unit w/ x = 0
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1), # test NULL cluster_ids and NULL cluster and NULL trts 
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant continuous moderator variable
+  ad2$x <- runif(length(unique(ad2$cid)))[ad2$cid]
+  tm <- lmitt(y ~ x, spec, ad2, weights = "ate")
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # control unit 
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # treated unit
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss, absorption", {
+  # don't need to distinguish between treated and control units in these tests,
+  # but we do have to remove the intercept column from model matrices since
+  # the corrections in cluster_iss() for the absorption cases assume it's been
+  # removed
+  set.seed(499)
+  adb <- data.frame(cid = c(rep(1, 6), rep(2, 5), rep(3, 4), rep(4, 5),
+                            rep(5, 6), rep(6, 5), rep(7, 4), rep(8, 5)),
+                    b = rep(c(1, 2), each = 20),
+                    a = c(rep(0, 11), rep(1, 20), rep(0, 9)),
+                    y = rnorm(40))
+  adb$x <- runif(8)[adb$cid]
+  specification <- rct_spec(a ~ cluster(cid) + block(b), adb)
+  
+  ## no moderator
+  tm <- lmitt(y ~ 1, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- 2
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  ix <- adb$cid == 1
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant continuous moderator
+  tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- seq(2, tm$rank)
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant factor moderator
+  adb$x <- factor(round(adb$x))
+  tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- seq(2, tm$rank)
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
 test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with teeMod model",
                 "without SandwichLayer offset"), {
   data(simdata)
