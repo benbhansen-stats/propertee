@@ -70,6 +70,8 @@ setValidity("StudySpecification", function(object) {
 ##' @param call The call generating the \code{StudySpecification}.
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
+##' @param called_from_lmitt Logical; was this called inside \code{lmitt()}, or
+##'   was it called from \code{*_spec()} (default).
 ##' @return A new StudySpecification object
 ##' @importFrom stats formula complete.cases terms
 ##' @keywords internal
@@ -78,7 +80,8 @@ setValidity("StudySpecification", function(object) {
                        type,
                        subset = NULL,
                        call = NULL,
-                       na.fail = TRUE) {
+                       na.fail = TRUE,
+                       called_from_lmitt = FALSE) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -91,13 +94,18 @@ setValidity("StudySpecification", function(object) {
     data <- subset(data, subset = subset)
   }
 
+  ## #174 convert all data.frames
+  datadf <- .as_data_frame(data)
+  # Moved this prior to `environment` call to hopefully detect more
+  # bad input.
+
   ## keep formula's environment
   env <- environment(terms(form, data = data))
   environment(form) <- env
   call$formula <- form
 
-  ## #174 convert all data.frames
-  data <- .as_data_frame(data)
+  data <- datadf
+
 
   ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output
   ### later
@@ -111,7 +119,8 @@ setValidity("StudySpecification", function(object) {
     autype <- "unitid"
   } else {
     autype <- "none"
-    if (options()$propertee_warn_on_no_unit_of_assignment) {
+    if (options()$propertee_warn_on_no_unit_of_assignment &
+                  !called_from_lmitt) {
       warning(paste("The StudySpecification was created without an explicit",
                     "unit of assignment/unit ID. Merges going forward will",
                     "be done by row. It is up to the user to ensure that",

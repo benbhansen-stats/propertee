@@ -187,16 +187,25 @@ lmitt.formula <- function(obj,
       if (!is.null(attr(terms(specification, specials = "forcing"),
                         "specials")$forcing)) {
         spec_call <- "rd_spec"
+        type <- "RD"
       } else {
         spec_call <- "obs_spec"
+        type <- "Obs"
       }
 
       # Build new call. All calls must include obj and data
-      new_d_call <- paste0(spec_call, "(",
-                           "formula = ", deparse1(specification),
-                           ", data = ", deparse1(lmitt.call$data), ")")
+      new_spec_call <- paste0(spec_call, "(",
+                              "formula = ", deparse1(specification),
+                              ", data = ", deparse1(lmitt.call$data), ")")
+      new_internal_call <- paste0(".new_StudySpecification(",
+                                  "form = ", deparse1(specification),
+                                  ", data = ", deparse1(lmitt.call$data),
+                                  ", type = ", deparse1(type),
+                                  ", call = str2lang(\"", new_spec_call, "\")",
+                                  ", called_from_lmitt = TRUE",
+                                  ")")
       # str2lang converts character into call
-      specification <- eval(str2lang(new_d_call))
+      specification <- eval(str2lang(new_internal_call))
     } else if (is(specification, "WeightedStudySpecification")) {
       specification <- specification@StudySpecification
     } else if (!is(specification, "StudySpecification")) {
