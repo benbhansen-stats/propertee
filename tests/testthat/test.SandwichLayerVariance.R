@@ -122,7 +122,7 @@ test_that(".get_dof", {
 test_that(".compute_IK_dof no clustering", {
   data(simdata)
 
-  ## no clustering, continuous y, no rank-deficiency
+  ## no clustering, continuous y, sufficient dof
   simdata$id <- seq_len(nrow(simdata))
   idspec <- rct_spec(z ~ unitid(id), simdata)
   tm <- lmitt(y ~ 1, idspec, simdata)
@@ -137,19 +137,7 @@ test_that(".compute_IK_dof no clustering", {
   expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
   expect_equal(dof, expected_dof)
   
-  ## rank-deficiency
-  uspec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  simdata$o <- factor(simdata$o)
-  tm <- lmitt(y ~ o, uspec, simdata)
-  
-  ell.no_df <- c(0, 0, 0, 0, 1, 0, 0)
-  ell.valid_df <- c(0, 0, 0, 0, 0, 1, 0)
-  expect_warning(no_dof <- .compute_IK_dof(tm, ell.no_df), "NaNs")
-  expect_equal(no_dof, 0)
-  expect_warning(valid_dof <- .compute_IK_dof(tm, ell.valid_df), "NaNs")
-  expect_equal(valid_dof, 2) # this is what IK code returns
-  
-  ## no clustering, binary y, no rank-deficiency
+  ## no clustering, binary y, sufficient dof
   simdata$y <- round(runif(nrow(simdata)))
   tm <- lmitt(y ~ 1, idspec, simdata)
   dof <- .compute_IK_dof(tm, ell, bin_y = TRUE)
@@ -157,6 +145,22 @@ test_that(".compute_IK_dof no clustering", {
   GoG <- crossprod(G, diag(stats::fitted(tm) * (1 - stats::fitted(tm)), nrow = nrow(Q))) %*% G
   expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
   expect_equal(dof, expected_dof)
+  
+  ## not enough dof
+  set.seed(103)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9), rep(5, 12), rep(6, 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
+                    y = rnorm(4 + 5 + 6 + 9+19))
+  spec <- rct_spec(a ~ unitid(cid), ad2, subset = cid %in% c(1, 2, 4, 5))
+  tm <- lmitt(y ~ x, spec, ad2, subset = cid %in% c(1, 2, 4, 5))
+
+  bad.ell1 <- c(0, 0, 1, 0)
+  bad.ell2 <- c(0, 0, 0, 1)
+  suppressWarnings(no_dof <- .compute_IK_dof(tm, bad.ell1))
+  expect_equal(no_dof, 1) # this is what IK code returns
+  suppressWarnings(valid_dof <- .compute_IK_dof(tm, bad.ell2))
+  expect_equal(valid_dof, 1) # this is what IK code returns
 })
 
 test_that("cluster_iss, no absorption", {

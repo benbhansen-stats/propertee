@@ -202,6 +202,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 }
 
 #' @title Compute the degrees of freedom of a sandwich standard error with HC2 correction
+#' @importFrom utils combn
 #' @keywords internal
 #' @references Guido W. Imbens and Michael Koles\`ar. "Robust Standard Errors in
 #' Small Samples: Some Practical Advice". In: *The Review of Economics and
@@ -209,15 +210,17 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 .compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE) {
   if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
   cls <- .sanitize_Q_ids(tm, cluster)$cluster
+  lmitt_data <- get("data", environment(formula(tm)))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
   trts <- if (is.null(tm@lmitt_call$dichotomy) &
               (is.null(wc <- eval(tm@lmitt_call$weights, envir = environment(formula(tm)))) |
                !inherits(wc, "WeightedStudySpecification"))) {
-    treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+    treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
   } else {
     if (length(dich <- wc@dichotomy) == 0) {
-      treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+      treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
     } else {
-      eval(dich, envir = get("data", environment(formula(tm))))
+      eval(dich, envir = lmitt_data)
     }
   }
   
@@ -244,7 +247,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   sig2 <- if (bin_y) tm$fitted.values * (1-tm$fitted.values) else mean(r^2)
   
   # function for getting the inverse symmetric square root 
-  iss <- function(s, cls, wts, trts = NULL) {
+  iss <- function(s, cls, trts = NULL) {
     if (length(cls) == length(unique(cls)) | bin_y) {
       # no clustering or independent working correlation matrix
       return(matrix(1 / sqrt(1 - stats::hatvalues(tm)[cls == s]), 1, 1))
@@ -268,11 +271,11 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
       rbind,
       lapply(
         unique(cls),
-        function(s, cls, wts, trts = NULL) {
+        function(s, cls, trts = NULL) {
           Qs <- Q[cls == s,,drop=FALSE]
-          iss(s, cls, wts, trts) %*% Qs
+          iss(s, cls, trts) %*% Qs
         },
-        cls, wts, trts
+        cls, trts
       )
     )
   }
@@ -302,16 +305,18 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   if (is.null(wts <- stats::weights(tm))) wts <- rep(1, length(cluster_ids))
   wg <- wts[ix]
   
+  lmitt_data <- get("data", environment(formula(tm)))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
   if (is.null(trts <- dots$assigned_trt)) {
     trts <- if (is.null(tm@lmitt_call$dichotomy) &
                 (is.null(wc <- eval(tm@lmitt_call$weights, envir = environment(formula(tm)))) |
                  !inherits(wc, "WeightedStudySpecification"))) {
-      treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+      treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
     } else {
       if (length(dich <- wc@dichotomy) == 0) {
-        treatment(tm@StudySpecification, newdata = get("data", environment(formula(tm))))[,1]
+        treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
       } else {
-        eval(dich, envir = get("data", environment(formula(tm))))
+        eval(dich, envir = lmitt_data)
       }
     }
   }
@@ -325,7 +330,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   Mgg <- NULL
   # first, check for a moderator variable
   if (length(tm@moderator) > 0) {
-    xvar <- get("data", environment(formula(tm)))[[tm@moderator]]
+    xvar <- lmitt_data[[tm@moderator]]
     # make sure the moderator variable is invariant within the cluster
     if (length(x <- unique(xvar[ix])) == 1) {
       if (tm@absorbed_intercepts) {
@@ -382,6 +387,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
       }
     }
   }
+
   if (is.null(cg) | is.null(Mgg)) {
     Pgg <- Ag %*% inv %*% t(Ag * wg)
     eg <- eigen(diag(nrow = sum(ix)) - Pgg)
