@@ -107,15 +107,17 @@ further analysis.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The formula must include exactly one <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code> to
+    <p>The formula should include exactly one <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code> to
 identify the units of assignment (one or more variables). (<code>uoa</code>,
 <code>cluster</code>, or <code>unitid</code> are synonyms for
 <code>unit_of_assignment</code>; the choice of which has no impact on the
-analysis.) If defining an <code>rd_spec</code>, the formula must also include a
-<code><a href="StudySpecificationSpecials.html">forcing()</a></code> entry. The formula may optionally include a <code><a href="StudySpecificationSpecials.html">block()</a></code> as well.
-Each of these can take in multiple variables, e.g. to pass both a
-household ID and individual ID as unit of assignment, use <code>uoa(hhid,
-  iid)</code> and not <code>uoa(hhid) + uoa(iid)</code>.</p>
+analysis. See below for a limited exception in which the
+<code>unit_of_assignment</code> specification may be omitted.) If defining an
+<code>rd_spec</code>, the formula must also include a <code><a href="StudySpecificationSpecials.html">forcing()</a></code> entry. The
+formula may optionally include a <code><a href="StudySpecificationSpecials.html">block()</a></code> as well. Each of these can take
+in multiple variables, e.g. to pass both a household ID and individual ID
+as unit of assignment, use <code>uoa(hhid, iid)</code> and not <code>uoa(hhid) +
+  uoa(iid)</code>.</p>
 <p>The treatment variable passed into the left-hand side of <code>formula</code>
 can either be <code>logical</code>, <code>numeric</code>, or <code>character</code>. If it
 is anything else, it attempts conversion to one of those types (for
@@ -128,10 +130,15 @@ treatment and control groups. See <code><a href="WeightCreators.html">ett()</a><
 <code>dichotomy</code>.</p>
 <p>There are a few aliases for each version.</p>
 <p>If the formula excludes a <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code>, data merges are
-performed on row order. The user is responsible for ensuring that row
-order is correct in all data. It is safer to include a
-<code>unit_of_assignment</code>, which can just be <code>1:n</code>. To disable this
-warning, run <code>options("propertee_warn_on_no_unit_of_assignment" = FALSE)</code>.</p>
+performed on row order. Such formulas can also be passed as the
+specification argument to lmitt(), and that is their primary intended use
+case. It is recommended that each formula argument passed to
+*_specification() include a <code><a href="StudySpecificationSpecials.html">unit_of_assignment()</a></code>, <code><a href="StudySpecificationSpecials.html">uoa()</a></code> or
+<code><a href="StudySpecificationSpecials.html">cluster()</a></code> term identifying the key variable(s) with which
+<code>StudySpecification</code> data is to be merged with analysis data.
+Exceptions to this rule will be met with a warning. To disable the
+warning, run <code>options("propertee_warn_on_no_unit_of_assignment" =
+  FALSE)</code>.</p>
 <p>The units of assignment, blocks, and forcing variables must be
 <code>numeric</code> or <code>character</code>. If they are otherwise, an attempt is
 made to cast them into <code>character</code>.</p>
