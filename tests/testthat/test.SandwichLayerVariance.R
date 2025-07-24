@@ -1718,7 +1718,7 @@ test_that("test the output of vcov_tee is correct with bias corrections", {
         I_P_cc <- diag(nrow = sum(cl_ix)) - Z[cl_ix,,drop=FALSE] %*% ZTZ_inv %*% t(Z[cl_ix,,drop=FALSE])
         schur <- eigen(I_P_cc)
         schur$vector %*% diag(1/sqrt(schur$values), nrow = sum(cl_ix)) %*% solve(schur$vector) %*% (
-            (simdata$y - xm$fitted.values - xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
+            (simdata$y - xm$fitted.values + xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
           )
         # (simdata$y - xm$fitted.values - xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
       },
@@ -2229,6 +2229,8 @@ test_that(paste("HC0 .vcov_CR lm w/o clustering",
                  diag(2) * n / sum(weights(ctrl_means_mod))))
 
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
+  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "uid")
+  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
@@ -2331,6 +2333,8 @@ test_that(paste("HC0 .vcov_CR lm w/ clustering",
 
   ids <- df$cid
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
+  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "cid")
+  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
@@ -2431,6 +2435,8 @@ test_that(paste("HC0 .vcov_CR binomial glm cmod",
                  diag(2) * n / sum(weights(ctrl_means_mod))))
 
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
+  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "uid")
+  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)

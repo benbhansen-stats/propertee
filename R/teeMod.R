@@ -385,12 +385,9 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
                     c(list(resids = phi_r, x = x, model = "cov_adj", type = cov_adj_rcorrect, by = by),
                       dots)), is.na(phi_r), 0)
 
-  # use jackknife first-stage coefficient estimates if treated units were in first-stage fit
-  Q_in_C_trts <- stats::model.frame(x, na.action = na.pass)[[
-    deparse1(eval(x$call$formula, envir = environment(formula(x)))[[3L]])]][
-      as.numeric(names(id_order$Q_in_C))]
+  # use jackknife first-stage coefficient estimates if Q and C overlap
   psi_r <- stats::residuals(x, type = "working")
-  if (any(Q_in_C_trts > 0)) { # this should work for absorb=TRUE and absorb=FALSE
+  if (sum(sl@keys$in_Q) > 0) {
     new_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
   } else {
     new_psi_r <- psi_r
@@ -540,7 +537,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   ## make residuals (need to subtract original offset because it's included in fitted values)
   y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
   os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
-  return(y - stats::fitted(x) - os - all_preds)
+  return(y - stats::fitted(x) + os - all_preds)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}

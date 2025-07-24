@@ -1111,7 +1111,7 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   X <- model.matrix(cmod1)
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata_copy$y - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata_copy$y - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
   ef2 <- .align_and_extend_estfuns(mod2, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
 
@@ -1175,7 +1175,7 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y[Q_ix] - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
@@ -1232,7 +1232,7 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
                        C_ix,
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
 
@@ -1321,7 +1321,7 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   X <- model.matrix(cmod1)
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -1372,7 +1372,7 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y[Q_ix] - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -1426,7 +1426,7 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                        C_ix,
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
-    simdata$y - loo_preds - mod1$fitted.values - mod1$offset)
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
   ef1 <- .align_and_extend_estfuns(mod1)
   ef2 <- .align_and_extend_estfuns(mod2)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
@@ -1478,23 +1478,6 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   expect_true(all(ef1$psi[31L:50L,] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
-})
-
-test_that(".align_and_extend_estfuns doesn't jackknife with only control units in cmod", {
-  set.seed(438)
-  data(simdata)
-
-  cmod <- lm(y ~ x, simdata, subset = z == 0)
-  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
-  
-  unordered_psi <- estfun(as(mod, "lm"))
-  ids <- Reduce(function(l, r) paste(l, r, sep = "_"), as.list(simdata[,c("uoa1", "uoa2")]))
-  ords <- split(sort(ids, index.return = TRUE)$ix, simdata$z)
-  ord <- c(ords$`1`, ords$`0`)
-  expect_true(all.equal(rowsum(.align_and_extend_estfuns(mod)$psi, ids), 
-                        rowsum(unordered_psi[ord,], ids),
-                        check.attributes = FALSE))
 })
 
 test_that(".align_and_extend_estfuns with ctrl means estfun", {
