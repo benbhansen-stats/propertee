@@ -2485,7 +2485,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   mod <- lmitt(y ~ as.factor(o), data = simdata, specification = spec)
-  expect_warning(vc <- vcov_tee(mod),
+  expect_warning(vc <- vcov_tee(mod, type = "CR0"),
                  "will be returned as NA: as.factor(o)1, as.factor(o)3",
                  fixed = TRUE)
 
@@ -2511,7 +2511,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       ass_id = rep(seq(5), each = 4))
   dspec <- rct_spec(z ~ unitid(ass_id), ddata)
   ssmod <- lmitt(y ~ modr, specification = dspec, data = ddata)
-  expect_warning(vc <- vcov_tee(ssmod),
+  expect_warning(vc <- vcov_tee(ssmod, type = "CR0"),
                  "will be returned as NA: modr1",
                  fixed = TRUE)
 
@@ -2534,7 +2534,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       ass_id = rep(seq(10), each = 2))
   dspec <- rct_spec(z ~ unitid(ass_id), ddata)
   ssmod <- lmitt(y ~ modr, specification = dspec, data = ddata)
-  vc <- vcov_tee(ssmod)
+  vc <- vcov_tee(ssmod, type = "CR0")
   expect_true(all(
     abs(diag(sandwich::sandwich(ssmod, meat. = sandwich::meatCL,
                                 cluster = .make_uoa_ids(ssmod, "CR")))[na_dim])
@@ -2567,7 +2567,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
   #
   # ### valid continuous moderator variable
   ssmod <- lmitt(y ~ o, data = simdata, specification = spec)
-  vc <- vcov(ssmod)
+  vc <- vcov(ssmod, type = "CR0")
   expect_true(all(!is.na(vc)))
   #
   # ### invalid continuous moderator variable
@@ -2575,7 +2575,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       (simdata$uoa1 == 2 & simdata$uoa2 == 1),]
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ o, data = simdata, specification = spec)
-  expect_warning(vc <- vcov(ssmod), "will be returned as NA: o")
+  expect_warning(vc <- vcov(ssmod, type = "CR0"), "will be returned as NA: o")
   na_dim <- which(grepl("(Intercept)", colnames(vc)) |
                     grepl("z._o", colnames(vc)))
   expect_true(all(is.na(vc[na_dim, ])))

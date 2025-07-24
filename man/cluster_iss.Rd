@@ -5,7 +5,18 @@
 \title{Use a rank-1 update to cheaply compute inverse symmetric square roots of
 projection matrices}
 \usage{
-cluster_iss(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, ...)
+cluster_iss(
+  tm,
+  cluster_unit,
+  cluster_ids = NULL,
+  cluster_var = NULL,
+  exclude = na.action(tm),
+  ...
+)
+}
+\arguments{
+\item{exclude}{index of units to exclude from computing the correction; for
+example, if they're NA's}
 }
 \description{
 Use a rank-1 update to cheaply compute inverse symmetric square roots of

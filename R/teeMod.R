@@ -297,6 +297,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
         pii <- stats::hatvalues(mod)
         cr <- 1 / sqrt(1 - pii) * resids
       } else {
+        if (inherits(mod, c("glmrob", "lmrob"))) stop("CR2 correction not implemented for robust fits")
         wres <- stats::residuals(mod, type = "working")
         XW <- sweep(efm, 1, wres, FUN = "/")
         XW[is.na(XW)] <- 0
@@ -315,11 +316,15 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
           crc <- rep(NA_real_, length(cl_ix))
           nas <- stats::na.action(mod)
           ok <- setdiff(cl_ix, nas)
-          I_P_cc <- diag(length(ok)) - tcrossprod(
-            tcrossprod(X[ok,,drop=FALSE], XTWX_inv), XW[ok,,drop=FALSE])
-          schur <- eigen(I_P_cc)
-          inv_symm_sqrt <- schur$vectors %*% (solve(schur$vectors) / sqrt(schur$values))
-          crc[!(cl_ix %in% nas)] <- drop(inv_symm_sqrt %*% resids[ok])
+          if (inherits(mod, "teeMod")) {
+            iss <- cluster_iss(mod, cluster_unit = cl, cluster_ids = cls)
+          } else {
+            I_P_cc <- diag(length(ok)) - tcrossprod(
+              tcrossprod(X[ok,,drop=FALSE], XTWX_inv), XW[ok,,drop=FALSE])
+            schur <- eigen(I_P_cc)
+            iss <- schur$vectors %*% (solve(schur$vectors) / sqrt(schur$values))
+          }
+          crc[!(cl_ix %in% nas)] <- drop(iss %*% resids[ok])
           cr[cl_ix] <- crc
         }
       }
