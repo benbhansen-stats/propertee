@@ -55,15 +55,17 @@ Generate a randomized control treatment StudySpecification
 a regression discontinuity StudySpecification (\code{\link[=rd_spec]{rd_spec()}}).
 }
 \details{
-The formula must include exactly one \code{\link[=unit_of_assignment]{unit_of_assignment()}} to
+The formula should include exactly one \code{\link[=unit_of_assignment]{unit_of_assignment()}} to
 identify the units of assignment (one or more variables). (\code{uoa},
 \code{cluster}, or \code{unitid} are synonyms for
 \code{unit_of_assignment}; the choice of which has no impact on the
-analysis.) If defining an \code{rd_spec}, the formula must also include a
-\code{\link[=forcing]{forcing()}} entry. The formula may optionally include a \code{\link[=block]{block()}} as well.
-Each of these can take in multiple variables, e.g. to pass both a
-household ID and individual ID as unit of assignment, use \code{uoa(hhid,
-  iid)} and not \code{uoa(hhid) + uoa(iid)}.
+analysis. See below for a limited exception in which the
+\code{unit_of_assignment} specification may be omitted.) If defining an
+\code{rd_spec}, the formula must also include a \code{\link[=forcing]{forcing()}} entry. The
+formula may optionally include a \code{\link[=block]{block()}} as well. Each of these can take
+in multiple variables, e.g. to pass both a household ID and individual ID
+as unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
+  uoa(iid)}.
 
 The treatment variable passed into the left-hand side of \code{formula}
 can either be \code{logical}, \code{numeric}, or \code{character}. If it
@@ -79,10 +81,15 @@ treatment and control groups. See \code{\link[=ett]{ett()}} for more details on 
 There are a few aliases for each version.
 
 If the formula excludes a \code{unit_of_assignment()}, data merges are
-performed on row order. The user is responsible for ensuring that row
-order is correct in all data. It is safer to include a
-\code{unit_of_assignment}, which can just be \code{1:n}. To disable this
-warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
+performed on row order. Such formulas can also be passed as the
+specification argument to lmitt(), and that is their primary intended use
+case. It is recommended that each formula argument passed to
+*_specification() include a \code{unit_of_assignment()}, \code{uoa()} or
+\code{cluster()} term identifying the key variable(s) with which
+\code{StudySpecification} data is to be merged with analysis data.
+Exceptions to this rule will be met with a warning. To disable the
+warning, run \code{options("propertee_warn_on_no_unit_of_assignment" =
+  FALSE)}.
 
 The units of assignment, blocks, and forcing variables must be
 \code{numeric} or \code{character}. If they are otherwise, an attempt is
