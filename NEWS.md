@@ -1,3 +1,7 @@
+# propertee 0.6.2 (unreleased)
+## Bug Fixes
+* Fix minor bugs with the `dichotomy` argument of `lmitt()`
+
 # propertee 0.6.1
 ## Bug Fixes
 * `unit_of_assignment()`, `unitid()`, `cluster()`, `uoa()`, `block()`, and `forcing()` no longer fail automatically when passed a non-numeric or non-character variable. Now, they will first attempt to convert the variable to a character variable. 
