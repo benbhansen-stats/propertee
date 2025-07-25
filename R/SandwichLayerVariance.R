@@ -186,7 +186,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     # 2015). this is correct for both absorb=FALSE and absorb=TRUE
     dof <- length(unique(cls)) - 1
   } else {
-    # use dof from Imbens and Kolesar (2016) for HC2 corrections
+    # use dof from IK for HC2 corrections
     k <- ncol(x$qr$qr)
     if (length(ell) == 1) {
       ell <- replace(numeric(k), ell, 1)
@@ -205,7 +205,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @importFrom utils combn
 #' @importFrom stats na.action
 #' @keywords internal
-#' @references Guido W. Imbens and Michael Koles\`ar. "Robust Standard Errors in
+#' @references Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
 #' Small Samples: Some Practical Advice". In: *The Review of Economics and
 #' Statistics* 98.4 (Oct. 2016), pp. 701-712.
 .compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE, exclude = na.action(tm)) {
@@ -252,7 +252,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
         sum(rs[combs[1,]] * rs[combs[2,]])
       })
     ) / (sum(tapply(rep(1, length(cls)), cls, sum)^2) - length(cls))
-    rho <- max(rho, 0) # Imbens and Koles\'ar don't allow negative rho in their code
+    rho <- max(rho, 0) # IK code doesn't allow negative rho
   }
   
   ## estimate sigma
@@ -269,7 +269,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     }
   }
   
-  # this is Imbens and Koles\'ar code with: 1) our fast CR2 correction implemented,
+  # this is IK code with: 1) our fast CR2 correction implemented,
   # 2) calls to the collapse package replaced with calls to rowsum(), and 3)
   # removing the intercept column when there's absorption because the corrections
   # for those cases in cluster_iss() are based on having no intercept column

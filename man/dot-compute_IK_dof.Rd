@@ -16,7 +16,7 @@
 Compute the degrees of freedom of a sandwich standard error with HC2 correction
 }
 \references{
-Guido W. Imbens and Michael Koles\`ar. "Robust Standard Errors in
+Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
 Small Samples: Some Practical Advice". In: \emph{The Review of Economics and
 Statistics} 98.4 (Oct. 2016), pp. 701-712.
 }
