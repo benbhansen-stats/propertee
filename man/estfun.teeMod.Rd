@@ -12,9 +12,11 @@
 \item{...}{arguments passed to methods}
 }
 \value{
-An \eqn{n\times 2} matrix of empirical
-estimating equations for the direct adjustment model fit. See Details for
-definition of \eqn{n}.
+An \eqn{n\times k} matrix of empirical estimating equations for \code{x}.
+\code{k} includes the model intercept, main effects of treatment and
+moderator variables, any moderator effects, and marginal and conditional
+means of the outcome (and \code{offset}, if provided) in the control condition.
+See Details for definition of \eqn{n}.
 }
 \description{
 An S3method for \code{sandwich::estfun} for producing a matrix
@@ -42,5 +44,10 @@ equations. If no \code{by} argument is provided and units of observation
 cannot be uniquely specified, contributions are aligned up to the unit of
 assignment level. If standard errors are clustered no finer than that,
 they will provide the same result as if each unit of observation's
-contributions were aligned exactly.
+contributions were aligned exactly.\cr\cr This method incorporates bias
+corrections made to the residuals of \code{x} and, if applicable, the
+covariance model stored in its \code{offset}. When its crossproduct is taken
+(perhaps after suitable summing across rows within clusters), it provides
+a heteroskedasticity- (or cluster-) robust estimate of the meat matrix of
+the variance-covariance of the parameter estimates in \code{x}.
 }

@@ -6,44 +6,117 @@ NULL
 #' @description Compute robust sandwich variance estimates with optional
 #'   covariance adjustment
 #'
-#' @details Supported \code{type} include:
+#' @details Variance estimates will be clustered on the basis of the columns
+#'  provided to \code{cluster} (or obtained by the default behavior). As a result,
+#'  providing \code{"HCx"} or \code{"CRx"} to \code{type} will produce the same
+#'  variance estimate given that \code{cluster} remains the same.
 #'
-#' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC0 standard errors
-#' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based standard errors
-#' with HC1 corrections based on the direct adjustment estimate i.e.,
-#' \eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
-#' \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
-#' in the direct adjustment sample.
+#' With prior covariance adjustment, unless the \code{data} argument of the covariance
+#'  model fit is the same as the \code{data} argument for fitting \code{x} and the
+#'  \code{StudySpecification} of \code{x} has been created with a formula of the
+#'  form `trt_col ~ 1`, the column(s) provided to \code{cluster} must appear in the
+#'  dataframes in both \code{data} arguments, even if the clustering structure does
+#'  not exist, per se, in the covariance adjustment sample. For instance, in a
+#'  finely stratified randomized trial, one might desire standard errors clustered
+#'  at the block level, but the covariance adjustment model may include auxiliary
+#'  units that did not participate in the trial. In this case, in the \code{data}
+#'  argument of the fitted covariance model, the column(s) passed to \code{cluster}
+#'  should have the block ID's for rows overlapping with the \code{data} argument
+#'  used for fitting \code{x}, and NA's for any auxiliary units. \code{vcov_tee()}
+#'  will treat each row with an NA as its own cluster.
+#'  
+#' For ITT effect estimates without covariance adjustment, \code{type}
+#'  corresponds to the variance estimate desired. Supported options include:
+#'
+#' - \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC/CR0 standard errors
+#' - \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based HC/CR1 standard errors
+#' (for \code{"MB1"} and \code{"HC1"}, this is \eqn{n/(n - 2)}, and for \code{"CR1"},
+#' this is \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of
+#' clusters in the sample used for fitting \code{x})
+#' - \code{"MB2"}, \code{"HC2"}, and \code{"CR2"} for model-based HC/CR2 standard errors
 #' - \code{"DB0"} for design-based HC0 variance estimates
-#'
-#' To create your own \code{type}, simply define a function \code{.vcov_XXX}.
-#' \code{type = "XXX"} will now use your method. Your method should return a
-#' matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
+#' 
+#' The \code{type} argument does not correspond to existing variance estimators in
+#'   the literature in the case of prior covariance adjustment. It specifies the
+#'   bias correction to the residuals of \code{x}, but the residuals of the covariance
+#'  model are corrected separately based on the \code{cov_adj_rcorrect} argument.
+#'  The \code{cov_adj_rcorrect} argument takes the same options as \code{type}
+#'  except \code{"DB0"}. When the covariance model includes rows in the treatment
+#'  condition for fitting, the residuals of \code{x} are further corrected by
+#'  having the values of \code{offset} replaced by predictions that use coefficient
+#'  estimates that leave out rows in the same cluster (as defined by the
+#'  \code{cluster} argument).
 #'
 #' @param x a fitted \code{teeMod} model
-#' @param type a string indicating the desired variance estimator. See Details
-#'   for supported variance estimators
-#' @param cluster a string or character vector of column names indicating
-#'   columns to cluster standard errors by. With prior covariance adjustment,
-#'   columns must appear in both the covariance adjustment and direct adjustment
-#'   samples. Default is NULL, which uses unit of assignment columns in the
-#'   \code{StudySpecification} slot of the \code{teeMod} model.
+#' @param type a string indicating the desired bias correction for the residuals
+#'   of \code{x}. Default is \code{"CR0"} if the column provided to \code{cluster}
+#'   indicates clustering and \code{"HC0"} otherwise. See Details for supported types
+#' @param cluster a vector indicating the columns that define clusters. The default
+#'   is the unit of assignment columns in the \code{StudySpecification} stored
+#'   in \code{x}. These columns should appear in the dataframe used for fitting
+#'   \code{x} as well as the dataframe passed to the covariance model fit in the case of
+#'   prior covariance adjustment. See Details
 #' @param ... arguments to be passed to the internal variance estimation
-#'   function.
-#' @return A \eqn{2\times 2} matrix corresponding to an intercept and the
-#'   treatment variable in the direct adjustment model
+#'   function, such as \code{cov_adj_rcorrect}, which specifies the bias
+#'   correction to the residuals of the covariance model, if applicable.
+#'   See Details
+#' @return A variance-covariance matrix with row and column entries for the estimated
+#'   coefficients in \code{x}, the marginal mean outcome in the control condition,
+#'   the marginal mean \code{offset} in the control condition (if an \code{offset}
+#'   is provided), and if a moderator variable is specified in the formula for \code{x},
+#'   the mean interaction in the control condition of the outcome and \code{offset}
+#'   with the moderator variable
 #' @export
 #' @rdname var_estimators
-vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
-  if (!exists(paste0(".vcov_", type))) {
-    stop(paste0("covariance function .vcov_", type,
-                " not defined.\n"))
+vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
+  if (is.null(type)) {
+    if (inherits(x, "mmm")) {
+      if (nrow(x[[1]]$model) == nrow(x[[1]]@StudySpecification@structure)) {
+        type <- "HC2"
+      } else {
+        type <- "CR2"
+      }
+    } else {
+      if (nrow(x$model) == nrow(x@StudySpecification@structure)) {
+        type <- "HC2"
+      } else {
+        type <- "CR2"
+      }
+    }
   }
-  var_func <- get(paste0(".vcov_", type))
+
   vcov_type <- substr(type, 1, 2)
+  if (type != "DB0" & !(vcov_type %in% c("HC", "CR", "MB"))) {
+    stop("covariance function not defined.\n")
+  }
+  var_func <- get(paste0(".vcov_", ifelse(vcov_type == "DB", type, vcov_type)))
+  
   args <- list(...)
   args$x <- x
-  args$vcov_type <- vcov_type
+  
+  if (vcov_type == "DB") {
+    args$vcov_type <- vcov_type
+  } else {
+    args$type <- type
+  }
+  
+  if (inherits(x, "mmm")) {
+    if (inherits(x[[1]]$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
+      if (vcov_type %in% c("HC", "CR", "MB") &
+          inherits(x[[1]]$model$`(offset)`@fitted_covariance_model, "lm")) {
+        args$cov_adj_rcorrect <- "HC1"
+      } else args$cov_adj_rcorrect <- "HC0"
+    }
+  } else {
+    if (inherits(x$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
+      if (vcov_type %in% c("HC", "CR", "MB") &
+          inherits(x$model$`(offset)`@fitted_covariance_model, "lm")) {
+        args$cov_adj_rcorrect <- "HC1"
+      } else args$cov_adj_rcorrect <- "HC0"
+    }
+  }
+
+
   if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
   args$cluster_cols <- cluster
   args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
@@ -54,17 +127,15 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
 }
 
 #' @keywords internal
-.vcov_CR0 <- function(x, ...) {
+.vcov_CR <- function(x, ...) {
   if (!inherits(x, c("teeMod", "mmm"))) {
     stop("x must be a teeMod or mmm object")
   }
 
   args <- list(...)
-  if ("type" %in% names(args)) {
-    stop(paste("Cannot override the `type` argument for meat",
-               "matrix computations"))
-  }
   args$x <- x
+  args$itt_rcorrect <- args$type
+  args$type <- "HC0" # this ensures sandwich::meatCL returns meat w/o correcting after we've corrected
   n <- length(args$cluster)
 
   bread. <- sandwich::bread(x, ...)
@@ -86,54 +157,280 @@ vcov_tee <- function(x, type = "CR0", cluster = NULL, ...) {
     vmat[,apply(is.na(vmat), 2, any)] <- NA_real_
   }
 
-  attr(vmat, "type") <- "CR0"
+  attr(vmat, "type") <- match.call()$type
+  attr(vmat, "cov_adj_rcorrect") <- args$cov_adj_rcorrect
   return(vmat)
 }
 
 #' @keywords internal
-.vcov_HC0 <- function(x, ...) {
-  out <- .vcov_CR0(x, ...)
-  attr(out, "type") <- "HC0"
+.vcov_HC <- function(x, ...) {
+  out <- .vcov_CR(x, ...)
   return(out)
 }
 
 #' @keywords internal
-.vcov_MB0 <- function(x, ...) {
-  out <- .vcov_CR0(x, ...)
-  attr(out, "type") <- "MB0"
+.vcov_MB <- function(x, ...) {
+  out <- .vcov_CR(x, ...)
   return(out)
 }
 
+#' @title Get the degrees of freedom of a sandwich variance estimate associated with a teeMod fit
 #' @keywords internal
-.vcov_CR1 <- function(x, ...) {
-  args <- list(...)
-  args$x <- x
-  args$cadjust <- FALSE
-
-  vmat <- do.call(.vcov_CR0, args)
-  n <- length(args$cluster)
-  g <- length(unique(args$cluster))
-  ef <- estfun(x)
-  k <- ncol(ef) - sum(grepl("^(y|cov_adj):", colnames(ef)))
-
-  vmat <- g / (g-1) * (n-1) / (n - k) * vmat # Hansen (2022) provides this generalization
-
-  attr(vmat, "type") <- "CR1"
-  return(vmat)
+.get_dof <- function(x, vcov_type, ell, cluster = NULL, cls = NULL, ...) {
+  if (!inherits(x, "teeMod")) stop("x must be a teeMod object")
+  if (is.null(cluster)) cluster <- var_names(x@StudySpecification, "u")
+  if (is.null(cls)) cls <- .make_uoa_ids(x, substr(vcov_type, 1, 2), cluster)
+  
+  if (!(vcov_type %in% paste0(c("MB", "HC", "CR"), 2))) {
+    # if no HC2 correction, use dof = G - 1 (see pg. 331 of Cameron and Miller,
+    # 2015). this is correct for both absorb=FALSE and absorb=TRUE
+    dof <- length(unique(cls)) - 1
+  } else {
+    # use dof from IK for HC2 corrections
+    k <- ncol(x$qr$qr)
+    if (length(ell) == 1) {
+      ell <- replace(numeric(k), ell, 1)
+    } else if (length(ell) != k) {
+      stop("ell must have the same length as the rank of the fitted model")
+    } else if (length(setdiff(unique(ell), c(0, 1))) != 0) {
+      stop("ell must have only zeros or ones")
+    }
+    dof <- .compute_IK_dof(x, ell, cluster, length(unique(x$model[,1])) == 2)
+  }
+  
+  return(dof)
 }
 
+#' @title Compute the degrees of freedom of a sandwich standard error with HC2 correction
+#' @importFrom utils combn
+#' @importFrom stats na.action
 #' @keywords internal
-.vcov_HC1 <- function(x, ...) {
-  out <- .vcov_CR1(x, ...)
-  attr(out, "type") <- "HC1"
-  return(out)
+#' @references Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
+#' Small Samples: Some Practical Advice". In: *The Review of Economics and
+#' Statistics* 98.4 (Oct. 2016), pp. 701-712.
+.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE, exclude = na.action(tm)) {
+  if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
+  cls <- .sanitize_Q_ids(tm, cluster)$cluster
+  cls <- cls[setdiff(seq_along(cls), exclude)]
+  lmitt_data <- get("data", environment(formula(tm)))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  wc <- tm@lmitt_call$weights
+  if (inherits(wc, "call")) {
+    if (exists(deparse1(wc[[1L]]))) {
+      if (length(wc) == 1) {
+        wc$specification <- get("specification", environment(formula(tm)))
+      } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+        wc$specification <- get("specification", environment(formula(tm)))
+      }
+      if (is.null(wc$data)) wc$data <- lmitt_data
+    }
+  }
+  trts <- if (is.null(tm@lmitt_call$dichotomy) &
+              (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
+               !inherits(wc, "WeightedStudySpecification"))) {
+    treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
+  } else {
+    if (length(dich <- wc@dichotomy) == 0) {
+      treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
+    } else {
+      eval(dich, envir = lmitt_data)
+    }
+  }
+  
+  ## estimate rho
+  r <- stats::residuals(tm, type = "response")
+  if (length(cls) == length(unique(cls)) | bin_y) {
+    # for nonclustered data rho = 0. for binary data, use a working model of independence
+    # so that rho = 0
+    rho <- 0
+  } else {
+    # don't need to subtract off squared residuals because combn only returns combos
+    # of distinct indices
+    rho <- sum(
+      tapply(r, cls, function(rs) {
+        combs <- combn(length(rs), 2)
+        sum(rs[combs[1,]] * rs[combs[2,]])
+      })
+    ) / (sum(tapply(rep(1, length(cls)), cls, sum)^2) - length(cls))
+    rho <- max(rho, 0) # IK code doesn't allow negative rho
+  }
+  
+  ## estimate sigma
+  # working correlation matrix is heteroskedastic for binary data
+  sig2 <- if (bin_y) tm$fitted.values * (1-tm$fitted.values) else mean(r^2)
+  
+  # function for getting the inverse symmetric square root 
+  iss <- function(s, cls, trts = NULL) {
+    if (length(cls) == length(unique(cls)) | bin_y) {
+      # no clustering or independent working correlation matrix
+      return(matrix(1 / sqrt(1 - stats::hatvalues(tm)[cls == s]), 1, 1))
+    } else {
+      return(cluster_iss(tm, cluster_unit = s, cluster_ids = cls, assigned_trt = trts))
+    }
+  }
+  
+  # this is IK code with: 1) our fast CR2 correction implemented,
+  # 2) calls to the collapse package replaced with calls to rowsum(), and 3)
+  # removing the intercept column when there's absorption because the corrections
+  # for those cases in cluster_iss() are based on having no intercept column
+  piv <- if (tm@absorbed_intercepts & !bin_y &
+             length(cls) != length(unique(cls))) seq(2,tm$rank) else seq_len(tm$rank)
+  Q <- qr.Q(tm$qr)[, piv,drop=FALSE]
+  R <- qr.R(tm$qr)[piv, piv,drop=FALSE]
+  if (length(cls) == length(unique(cls)) | bin_y) {
+    AQ <- Q / sqrt(1-stats::hatvalues(tm))
+  } else {
+    AQ <- Reduce(
+      rbind,
+      lapply(
+        unique(cls),
+        function(s, cls, trts = NULL) {
+          Qs <- Q[cls == s,,drop=FALSE]
+          iss(s, cls, trts) %*% Qs
+        },
+        cls, trts
+      )
+    )
+  }
+  a <- drop(AQ %*% backsolve(R, ell, transpose = TRUE))
+  a[is.nan(a)] <- 0 # this results in returning 1 degree of freedom (IK code returns slightly > 1)
+  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # deviate from IK code to accommodate heteroskedasticity
+  B <- rowsum(a * sqrt(sig2) * Q, cls)
+  D <- rowsum(a, cls)[,1]
+  Fm <- rowsum(Q, cls)
+  GG <- (diag(as, nrow = length(as)) - tcrossprod(B)) + rho * 
+    tcrossprod(diag(D, length(D)) - tcrossprod(B, Fm))
+  sum(diag(GG))^2/sum(GG^2)
 }
 
+#' @title Use a rank-1 update to cheaply compute inverse symmetric square roots of
+#' projection matrices
+#' @param exclude index of units to exclude from computing the correction; for
+#' example, if they're NA's
+#' @importFrom stats model.frame na.action
 #' @keywords internal
-.vcov_MB1 <- function(x, ...) {
-  out <- .vcov_CR1(x, ...)
-  attr(out, "type") <- "MB1"
-  return(out)
+cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, exclude = na.action(tm), ...) {
+  if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
+  dots <- list(...)
+  if (is.null(cluster_ids)) {
+    if (is.null(dots$cluster)) cluster <- var_names(tm@StudySpecification, "u")
+    cluster_ids <- .sanitize_Q_ids(tm, cluster)$cluster
+  }
+  ix <- setdiff(which(cluster_ids == cluster_unit), exclude)
+  
+  lmitt_data <- get("data", environment(formula(tm)))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  if (is.null(trts <- dots$assigned_trt)) {
+    wc <- tm@lmitt_call$weights
+    if (inherits(wc, "call")) {
+      if (exists(deparse1(wc[[1L]]))) {
+        if (length(wc) == 1) {
+          wc$specification <- get("specification", environment(formula(tm)))
+        } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+          wc$specification <- get("specification", environment(formula(tm)))
+        }
+        if (is.null(wc$data)) wc$data <- lmitt_data
+      }
+    }
+    trts <- if (is.null(tm@lmitt_call$dichotomy) &
+                (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
+                 !inherits(wc, "WeightedStudySpecification"))) {
+      treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
+    } else {
+      if (length(dich <- wc@dichotomy) == 0) {
+        treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
+      } else {
+        eval(dich, envir = lmitt_data)
+      }
+    }
+  }
+
+  trtg <- unique(trts[ix])
+  tt <- stats::delete.response(stats::terms(tm))
+  mf <- call("model.frame",
+             tt,
+             lmitt_data,
+             subset = sbst,
+             na.action = na.pass,
+             xlev = tm$xlevels)
+  mf <- eval(mf)
+  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,tm$qr$pivot[seq_len(tm$rank)],drop=FALSE]
+  Ag <- A[ix,,drop=FALSE]
+  inv <- chol2inv(tm$qr$qr[,seq_len(tm$rank)])
+  if (is.null(wts <- stats::weights(tm))) wts <- rep(1, nrow(A))
+  wg <- wts[ix]
+
+  cg <- NULL
+  Mgg <- NULL
+  if (length(trtg) == 1) {
+    # first, check for a moderator variable
+    if (length(tm@moderator) > 0) {
+      xvar <- lmitt_data[[tm@moderator]]
+      # make sure the moderator variable is invariant within the cluster
+      if (length(x <- unique(xvar[ix])) == 1) {
+        if (tm@absorbed_intercepts) {
+          # set the Intercept column to 0. the matrices we return in this case are
+          # identical to an lm fit without an intercept but with block absorption
+          # (and the coefficient estimates are the same as well)
+          Ag[,1] <- 0
+          # with an invariant moderator variable, the 1st row of the cluster model
+          # matrix is the same as the rest
+          cg <- sum(wg) *
+            sum(Ag[1,2:ncol(inv)] *
+                  sweep(inv[2:nrow(inv), 2:ncol(inv)], 2, Ag[1,2:ncol(Ag),drop=FALSE], FUN = "*"))
+          Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+        } else {
+          if (inherits(xvar, c("factor", "character"))) {
+            # control clusters and treated clusters have different values of cg
+            if (trtg == 0) {
+              xcols <- which(colnames(Ag) %in% paste0(tm@moderator, x))
+            } else {
+              xcols <- which(colnames(Ag) %in% paste0(
+                c(paste0(var_names(tm@StudySpecification, "t"), "._"), ""),
+                tm@moderator, x)
+              )
+            }
+            cg <- sum(inv[c(1, xcols), c(1, xcols)]) * sum(wg)
+            Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+          } else {
+            if (trtg == 0) {
+              cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) * sum(wg)
+              Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
+            } else {
+              ul <- sum(inv[1:2, 1:2])
+              br <- sum(inv[3:4, 3:4])
+              cg <- (ul + br * Ag[1,3]^2 + (sum(inv) - ul - br) * Ag[1,3]) * sum(wg)
+              Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
+            }
+          }
+        }
+      }
+    } else {
+      if (tm@absorbed_intercepts) {
+        cg <- sum(wg * Ag[,2]^2)
+        # the 1st row of the cluster model matrix is the same as the rest
+        cg <- Ag[1,2]^2 / sum(wts * A[,2]^2) * sum(wg)
+        Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+      } else {
+        # control clusters and treated clusters have different values of cg
+        if (trtg == 0) {
+          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 0), exclude)])
+          Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+        } else {
+          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 1), exclude)])
+          Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+        }
+      }
+    }
+  }
+
+  if (is.null(cg) | is.null(Mgg)) {
+    Pgg <- Ag %*% inv %*% t(Ag * wg)
+    eg <- eigen(diag(nrow = length(ix)) - Pgg)
+    return(eg$vec %*% diag(1/sqrt(eg$val)) %*% solve(eg$vec))
+  } else {
+    return(diag(nrow = length(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
+  }
 }
 
 #' @title (Internal) Replace standard errors for moderator effect estimates with

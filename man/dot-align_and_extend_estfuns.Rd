@@ -10,9 +10,17 @@ covariance adjustment model estimating equations matrices}
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
 
-\item{by}{character vector; indicates unit of assignment columns to generate
-ID's from; default is NULL, which uses the unit of assignment columns
-specified in the \code{teeMod} object's \code{StudySpecification} slot}
+\item{ctrl_means_ef_mat}{optional, a matrix of estimating equations corresponding
+to the estimates of the marginal (and possibly conditional) means of the outcome
+and \code{offset} in the control condition. These are aligned and extended
+in the same way as the matrix of estimating equations for \code{x} and
+\code{cbind}ed to them}
+
+\item{by}{optional, a character vector indicating columns that uniquely identify
+rows in the dataframe used for fitting \code{x} and the dataframe passed to the
+\code{data} argument of the covariance adjustment model fit. The default is
+\code{NULL}, in which case the unit of assignment columns specified in the
+\code{StudySpecification} slot of \code{x} are used.}
 
 \item{...}{arguments passed to methods}
 }

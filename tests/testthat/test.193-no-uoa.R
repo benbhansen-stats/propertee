@@ -82,8 +82,8 @@ test_that("covadj", {
 
   expect_true(isTRUE(all.equal(coefficients(mod1),
                                coefficients(mod2))))
-  smod1 <- summary(mod1)
-  smod2 <- summary(mod2)
+  smod1 <- summary(mod1, vcov.type = "CR0")
+  smod2 <- summary(mod2, vcov.type = "CR0")
   expect_true(isTRUE(all.equal(coefficients(smod1),
                                coefficients(smod2))))
 })
