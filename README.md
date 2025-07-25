@@ -9,25 +9,24 @@
 and optional prior covariance adjustment.
 
 Random trials often utilize units of assignment and blocking in assigning
-treatment status as a way to simplify implementation. This specification information
-must be utilized in future analyses. Using **propertee**, a user can generate a
-StudySpecification object which will keep track of the specification structure.
+treatment status as a way to simplify implementation. Standard errors and other inferential calculations should respect such aspects of the study's design. Using **propertee**, a user can generate a
+"StudySpecification" object which will keep track of the design specification.
 
     spec <- rct_spec(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
 
-(Also supported are observational studies (`obs_spec`) and regression
-discontinuity specifications (`rdd_spec` which requires a `forcing()` variable as
+(Also supported are observational studies (`obs_spec()`) and regression
+discontinuity specifications (`rdd_spec()` which requires a `forcing()` variable as
 well.)
 
-In order to pass the specification information into the model using the `weights=`
+In order to pass the design specification into the model using the `weights=`
 argument, functions `ett()` and `ate()` will be used to convert the StudySpecification into
 a numeric vector with the StudySpecification object as an attribute.
 
     lm(y ~ txt, data = studentdata, weights = ate(spec))
 
-Note that the StudySpecification is created with teacher level data (`teacherdata`), but the
+Note that this StudySpecification is created with teacher level data (`teacherdata`), but the
 analysis is carried out at the student level (`studentdata`); the `ate()` (and
-its alternative `ett()`) will expand the weights appropriately.
+its alternatives `att()`, `atc()` and `ato()`) will expand the weights appropriately.
 
 Optionally, we can also include a covariance adjustment model through the
 `cov_adj()` function.
@@ -36,6 +35,16 @@ Optionally, we can also include a covariance adjustment model through the
     lm(y ~ txt, studentdata, weights = ett(spec),
        offset = cov_adj(covadjmod, data = studentdata)
     )
+
+The effect estimation model is expected to be an lm object, but the covariance model can be of type `glm` or `lmrob`, among others: with a binary outcome, for example, it might be a logistic regression.
+
+Having fit covariance and effect estimation models separately, you may need standard errors that propagate variation from the former to the latter.  propertee's "lmitt" objects are lm's enhanced with information from the StudySpecification and covariance adjustment model that standard error calculations may need. Fitted lm's of the accommodated type may be coerced to lmitt using `as.lmitt()`; or you can skip this step by using `propertee::lmitt()` to fit the lm in the first place:
+
+    lmitt(y ~ 1, studentdata, specificaton = spec, weights = "ett",
+          offset = cov_adj(covadjmod, data = studentdata)
+	  )
+
+For more, see the package's vignettes.
 
 ## Contributing
 
