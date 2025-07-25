@@ -1,4 +1,4 @@
-#' @include StudySpecification.R SandwichLayer.R
+#' @include StudySpecification.R SandwichLayer.R block_center_residuals.R
 NULL
 
 #' @title Variance/Covariance for \code{teeMod} objects
@@ -953,7 +953,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 
   if (inherits(os <- x$model$`(offset)`, "SandwichLayer"))
     if (!all(os@keys$in_Q)){
-      stop(paste("Design-based standard errors cannot be computed for teeMod",
+      stop(paste("Design-based standard errors are not supported for teeMod",
                  "models with external sample for covariance adjustment"))
     }
 
@@ -961,28 +961,28 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     stop("Design-based standard errors can only be computed for RCT specifications")
   }
 
-  if (length(x@moderator) > 0){
-    stop(paste("Design-based standard errors cannot be computed for teeMod",
-               "models with moderators"))
-  }
-
   args <- list(...)
   if ("type" %in% names(args)) {
     stop(paste("Cannot override the `type` argument for meat",
                "matrix computations"))
   }
-  args$x <- x
+  
+  args$x <- if (isTRUE(args$const_effect)) block_center_residuals(x) else x
+  args$db <- TRUE
+  
   n <- length(args$cluster)
 
   if (x@absorbed_intercepts) {
     a22inv <- sandwich::bread(x, ...)
     meat <- do.call(sandwich::meatCL, args)
-
     vmat <- (1 / n) * a22inv %*% meat %*% a22inv
-    name <- paste0(var_names(x@StudySpecification, "t"), ".")
-    vmat <- as.matrix(vmat[name, name])
   }
   else {
+    if (length(x@moderator) > 0){
+      stop(paste("Design-based standard errors are not supported for teeMod",
+                 "models with moderators"))
+    }
+    
     # if model weights does not incorporate IPW, throw a warning
     if (!(inherits(x@lmitt_call$weights, "call") &
           sum(grepl("ate", x@lmitt_call$weights)) > 0)){
@@ -998,14 +998,21 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     else {
       vmat <- .get_DB_wo_covadj_se(x)
     }
+    
+    name <- paste0(var_names(x@StudySpecification, "t"), ".")
+    colnames(vmat) <- name
+    rownames(vmat) <- name
   }
-  name <- paste0(var_names(x@StudySpecification, "t"), ".")
-  colnames(vmat) <- name
-  rownames(vmat) <- name
-
   attr(vmat, "type") <- "DB0"
   return(vmat)
 }
+
+### (If/when DB variance estimators other than DB0 are
+###  added, consider replacing this with a stop that
+###  invites the user to specify DB0 instead. -BH)
+#' @rdname var_estimators
+#' @keywords internal
+.vcov_DB <- .vcov_DB0
 
 #' @title (Internal) Design-based variance for models with
 #'   covariance adjustment
@@ -1018,12 +1025,13 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
-    stop("x should not have absorbed intercepts")
+      stop(paste("Design-based standard errors are not supported for\n",
+                 "tee models with absorbed intercepts"))
   }
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
   if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
-    stop(paste("Design-based standard errors cannot be calculated for",
+    stop(paste("Design-based standard errors are not supported for\n",
                "tee models with treatment in prior covariance adjustment"))
   }
 
@@ -1051,8 +1059,12 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' @keywords internal
 .get_DB_covadj_bread <- function(x, ...) {
   a11inv <- .get_a11_inverse(x)
-  a21 <- .get_a21(x, ...)
-  a22inv <- .get_a22_inverse(x, ...)
+  a21 <- .get_a21(x, vcov_type="DB")
+  a22inv <- .get_a22_inverse(x, vcov_type="DB")
+  
+  # C adjusts for linear transformation of the stacked estimating equation
+  # each entry of the estimating equation are transformed to the form: 
+  # a_fixed_quantity (under the design-based perspective) * a_treatment_indicator
   C <- matrix(c(1,1,0,1), nrow = 2, byrow = TRUE)
 
   n <- nrow(x$model)
@@ -1073,23 +1085,29 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 .get_DB_covadj_meat <- function(x, ...) {
   agg <- .aggregate_to_cluster(x)
   data <- agg$data
-  bid <- data[, agg$block]  # block ids
-  zobs <- data[, agg$z] # observed zs
+  bid <- data[, agg$block] # block ids
+  zobs <- data[, agg$z] # treatment assignments
 
-  p <- ncol(stats::model.frame(x$model$`(offset)`@fitted_covariance_model))
+  # number of covariates in the covariance model
+  p <- ncol(stats::model.matrix(x$model$`(offset)`@fitted_covariance_model))
   XX <- .prepare_spec_matrix(x)
-
+  
+  # estimated covariances of entries of \Phi involving indicators z=0 or z=1
   V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
   V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
   V01 <- .cov01_est(XX, zobs, bid)
-
+  
+  # indices of V
   idl <- (p+2):(2*p+1)
+  # upper and lower bounds of the 1st meat matrix term
   meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
   meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
-
+  
+  # upper and lower bounds of the 2nd meat matrix term
   meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
   meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
 
+  # upper and lower bounds of the 3rd meat matrix term
   meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
   meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
 
@@ -1115,14 +1133,14 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
-
+  # aggregate block ids and outcomes to the cluster level
   agg <- .aggregate_to_cluster(x)
   data <- agg$data
   block <- agg$block
 
   ws <- data$.w
-  yobs <- data$.wy  # observed ys by cluster
-  zobs <- data[, agg$z]  # observed zs by cluster
+  yobs <- data$.wy # observed outcomes by cluster
+  zobs <- data[, agg$z] # observed treatments by cluster
   bid <- data[, block] # block ids of clusters
 
   if (length(unique(bid)) == 1) {
@@ -1132,13 +1150,13 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   }
   # number of units by block and treatment, B by K
   small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
-  nb <- rowSums(nbk)
+  nb <- rowSums(nbk) # number of clusters in each block
 
   rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
            sum(ws * yobs * zobs) / sum(ws * zobs))
 
-  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcomes
-  gamsbk <- list()  # s^2_b,j, sample variance
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcome gamma
+  gamsbk <- list()  # s^2_b,j, sample variance of gamma by block and treatment
   for (k in 1:2){
     indk <- zobs == (k-1)
     gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
@@ -1148,7 +1166,8 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   gamsbk[is.na(gamsbk)] <- 0
   gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
 
-  nu1 <- rowSums(gamsbk / nbk)
+  nu1 <- rowSums(gamsbk / nbk) # large block variance estimates
+  # small block variance estimates
   nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb -
     (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
   varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
@@ -1164,10 +1183,11 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' - block id column name
 #' @keywords internal
 .aggregate_to_cluster <- function(x, ...){
-  ws <- if (is.null(x$weights)) 1 else x$weights
+  ws <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, .w0 = ws / ate(x@StudySpecification, data=data_temp),
+  data_temp <- cbind(data_temp, .w = ws, 
+                     .w0 = ws / ate(x@StudySpecification, data=data_temp),
                      .wy = ws * data_temp[, name_y])
 
   specification_obj <- x@StudySpecification
@@ -1225,14 +1245,15 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   specification_obj <- x@StudySpecification
   data <- x$call$data
   name_clu <- var_names(specification_obj, "u")
-  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
   # merged cluster id is stored at column name_clu[1]
+  cid <- .merge_block_id_cols(data, name_clu)[, name_clu[1]]
 
   agg <- .aggregate_to_cluster(x)
   bid <- agg$data[, agg$block]  # block ids
 
   name_y <- as.character(x$terms[[2]]) # name of the outcome column
-  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model) # specification matrix
+  # design matrix of the fitted covariance model
+  X1 <- model.matrix(x$model$`(offset)`@fitted_covariance_model)
   p <- ncol(X1)
 
   wc <- x$model$`(offset)`@fitted_covariance_model$weight
@@ -1241,8 +1262,8 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     rep(wc * (data[, name_y] - x$offset), p), ncol = p
     ) * X1 # n by p, wic * residual * xi
 
-  wi <- x$weights
-  X2 <- wi * x$residuals  # n by 1, wi[z] * (residual - rhoz) * z
+  wi <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
+  X2 <- wi * residuals(x)  # n by 1, wi[z] * (residual - rhoz) * z
 
   XX <- cbind(X1, X2)
   XX <- stats::aggregate(XX, by = list(cid), FUN = sum)[,-1]
@@ -1354,18 +1375,15 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' @keywords internal
 #' @param x a fitted \code{teeMod} model
 .get_phi_tilde <- function(x, ...){
-  ws <- x$weights
-  n <- length(ws) # number of units in Q
   specification_obj <- x@StudySpecification
   df <- x$call$data
 
   # treatment assignments
   name_trt <- var_names(specification_obj, "t")
   assignment <- df[[name_trt]]
-  k <- length(unique(assignment))
   z_ind <- sapply(c(0,1), function(val) as.integer(assignment == val))
 
-  # stratum ids
+  # block ids
   name_blk <- var_names(specification_obj, "b")
   df <- .merge_block_id_cols(df, name_blk)
   name_blk <- name_blk[1]
@@ -1374,14 +1392,16 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val))
 
   # nuisance parameters p
+  n <- length(stratum) # number of units in Q
+  ws <- if (is.null(stats::weights(x))) rep(1,n) else stats::weights(x)
   wb <- matrix(replicate(s, ws), ncol = s) * b_ind
-  p <- t(z_ind) %*% wb / (matrix(1, nrow = k, ncol = n) %*% wb)
+  p <- t(z_ind) %*% wb / (matrix(1, nrow = 2, ncol = n) %*% wb) # 2 is the no. of treatments
   p1 <- p[2, ]
 
   # calculate phi tilde
   phitilde <- matrix(nrow = n, ncol = s)
   for (j in 1:s){
-    phitilde[,j] <- ws * (z_ind[,2] - p1[j]) * b_ind[,j]
+    phitilde[,j] <- ws * residuals(x) * (z_ind[,2] - p1[j]) * b_ind[,j]
   }
   return(phitilde)
 }
@@ -1391,9 +1411,6 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' @param x a fitted \code{teeMod} model
 #' @return An \eqn{s\times k} matrix \eqn{A_{pp}^{-1} A_{\tau p}^T}
 .get_appinv_atp <- function(x, ...){
-  ws <- x$weights
-  # estimated treatment effect tau1 <- x$coefficients
-  n <- length(ws) # number of units in Q(?)
   specification_obj <- x@StudySpecification
   df <- x$call$data
 
@@ -1408,19 +1425,19 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   stratum <- df[[name_blk]]
   s <- length(unique(stratum)) # number of blocks
   b_ind <- sapply(unique(stratum), function(val) as.integer(stratum == val))
-
+  
+  n <- length(stratum) # number of units in the experiment
+  ws <- if (is.null(stats::weights(x))) rep(1,n) else stats::weights(x)
+  
   app <- list()
   atp <- list()
   for (i in 1:s){
-    atp[[i]] <- ws * (x$residuals) * b_ind[,i]
-    # atp[[i]] <- .get_upsilon(x) / term2 * b_ind[,i]
+    atp[[i]] <- ws * residuals(x) * b_ind[,i]
     app[[i]] <- ws * b_ind[,i]
   }
-  # w_ipv <- ate(x@StudySpecification, data = x$call$data) inverse probability weights
-
+  
   mat <- matrix(0, nrow = (k-1)*s, ncol = k-1)
   for (i in 1:s){
-    # mat[i,1] <- sum(app[[i]] * w_ipv) / sum(w_ipv)
     mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
   }
   return(mat)

@@ -111,11 +111,12 @@
 ##' @param weights Which weights should be generated? Options are \code{"ate"}
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
-##' @param ... Additional arguments passed to [lm()]. One such argument is
-##'   \code{dichotomy}, which can be used to dichotomize a non-binary treatment
+##' @param ... Additional arguments passed to [lm()] and other functions.
+##'   An example of the latter is \code{dichotomy=}, a formula passed to
+##'   [assigned()] and, as appropriate, [ate()], [att()], [atc()] or
+##'   [ato()]. It is used to dichotomize a non-binary treatment
 ##'   variable in \code{specification}. See the Details section of the
-##'   \code{ett()} or \code{att()} help pages for information on specifying this
-##'   formula.
+##'   \code{ate()} help page for examples.
 ##' @return \code{teeMod} object (see Details)
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
@@ -187,16 +188,25 @@ lmitt.formula <- function(obj,
       if (!is.null(attr(terms(specification, specials = "forcing"),
                         "specials")$forcing)) {
         spec_call <- "rd_spec"
+        type <- "RD"
       } else {
         spec_call <- "obs_spec"
+        type <- "Obs"
       }
 
       # Build new call. All calls must include obj and data
-      new_d_call <- paste0(spec_call, "(",
-                           "formula = ", deparse1(specification),
-                           ", data = ", deparse1(lmitt.call$data), ")")
+      new_spec_call <- paste0(spec_call, "(",
+                              "formula = ", deparse1(specification),
+                              ", data = ", deparse1(lmitt.call$data), ")")
+      new_internal_call <- paste0(".new_StudySpecification(",
+                                  "form = ", deparse1(specification),
+                                  ", data = ", deparse1(lmitt.call$data),
+                                  ", type = ", deparse1(type),
+                                  ", call = str2lang(\"", new_spec_call, "\")",
+                                  ", called_from_lmitt = TRUE",
+                                  ")")
       # str2lang converts character into call
-      specification <- eval(str2lang(new_d_call))
+      specification <- eval(str2lang(new_internal_call))
     } else if (is(specification, "WeightedStudySpecification")) {
       specification <- specification@StudySpecification
     } else if (!is(specification, "StudySpecification")) {

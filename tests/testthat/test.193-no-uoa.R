@@ -93,6 +93,10 @@ options(old_opt)
 
 test_that("warning message", {
   data(simdata)
-  sd <- simdata
-  expect_warning(rct_spec(z ~ 1, data = sd))
+  # Running each a few times to ensure options are reset appropriately
+  expect_warning(rct_spec(z ~ 1, data = simdata))
+  expect_no_warning(lmitt(y ~ 1, spec = z ~ 1, data = simdata))
+  expect_warning(rct_spec(z ~ 1, data = simdata))
+  expect_no_warning(lmitt(y ~ 1, spec = z ~ 1, data = simdata))
+  expect_warning(rct_spec(z ~ 1, data = simdata))
 })

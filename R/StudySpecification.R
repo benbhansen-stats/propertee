@@ -70,6 +70,8 @@ setValidity("StudySpecification", function(object) {
 ##' @param call The call generating the \code{StudySpecification}.
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
+##' @param called_from_lmitt Logical; was this called inside \code{lmitt()}, or
+##'   was it called from \code{*_spec()} (default).
 ##' @return A new StudySpecification object
 ##' @importFrom stats formula complete.cases terms
 ##' @keywords internal
@@ -78,7 +80,8 @@ setValidity("StudySpecification", function(object) {
                        type,
                        subset = NULL,
                        call = NULL,
-                       na.fail = TRUE) {
+                       na.fail = TRUE,
+                       called_from_lmitt = FALSE) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -91,13 +94,18 @@ setValidity("StudySpecification", function(object) {
     data <- subset(data, subset = subset)
   }
 
+  ## #174 convert all data.frames
+  datadf <- .as_data_frame(data)
+  # Moved this prior to `environment` call to hopefully detect more
+  # bad input.
+
   ## keep formula's environment
   env <- environment(terms(form, data = data))
   environment(form) <- env
   call$formula <- form
 
-  ## #174 convert all data.frames
-  data <- .as_data_frame(data)
+  data <- datadf
+
 
   ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output
   ### later
@@ -111,7 +119,8 @@ setValidity("StudySpecification", function(object) {
     autype <- "unitid"
   } else {
     autype <- "none"
-    if (options()$propertee_warn_on_no_unit_of_assignment) {
+    if (options()$propertee_warn_on_no_unit_of_assignment &
+                  !called_from_lmitt) {
       warning(paste("The StudySpecification was created without an explicit",
                     "unit of assignment/unit ID. Merges going forward will",
                     "be done by row. It is up to the user to ensure that",
@@ -218,15 +227,17 @@ setValidity("StudySpecification", function(object) {
 ##'   ([rct_spec()]), or an observational StudySpecification ([obs_spec()]), or
 ##'   a regression discontinuity StudySpecification ([rd_spec()]).
 ##'
-##' @details The formula must include exactly one [unit_of_assignment()] to
+##' @details The formula should include exactly one [unit_of_assignment()] to
 ##'   identify the units of assignment (one or more variables). (\code{uoa},
 ##'   \code{cluster}, or \code{unitid} are synonyms for
 ##'   \code{unit_of_assignment}; the choice of which has no impact on the
-##'   analysis.) If defining an \code{rd_spec}, the formula must also include a
-##'   [forcing()] entry. The formula may optionally include a [block()] as well.
-##'   Each of these can take in multiple variables, e.g. to pass both a
-##'   household ID and individual ID as unit of assignment, use \code{uoa(hhid,
-##'   iid)} and not \code{uoa(hhid) + uoa(iid)}.
+##'   analysis. See below for a limited exception in which the
+##'   \code{unit_of_assignment} specification may be omitted.) If defining an
+##'   \code{rd_spec}, the formula must also include a [forcing()] entry. The
+##'   formula may optionally include a [block()] as well. Each of these can take
+##'   in multiple variables, e.g. to pass both a household ID and individual ID
+##'   as unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
+##'   uoa(iid)}.
 ##'
 ##'   The treatment variable passed into the left-hand side of \code{formula}
 ##'   can either be \code{logical}, \code{numeric}, or \code{character}. If it
@@ -242,10 +253,15 @@ setValidity("StudySpecification", function(object) {
 ##'   There are a few aliases for each version.
 ##'
 ##'   If the formula excludes a \code{unit_of_assignment()}, data merges are
-##'   performed on row order. The user is responsible for ensuring that row
-##'   order is correct in all data. It is safer to include a
-##'   \code{unit_of_assignment}, which can just be \code{1:n}. To disable this
-##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
+##'   performed on row order. Such formulas can also be passed as the
+##'   specification argument to lmitt(), and that is their primary intended use
+##'   case. It is recommended that each formula argument passed to
+##'   *_specification() include a \code{unit_of_assignment()}, \code{uoa()} or
+##'   \code{cluster()} term identifying the key variable(s) with which
+##'   \code{StudySpecification} data is to be merged with analysis data.
+##'   Exceptions to this rule will be met with a warning. To disable the
+##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" =
+##'   FALSE)}.
 ##'
 ##'   The units of assignment, blocks, and forcing variables must be
 ##'   \code{numeric} or \code{character}. If they are otherwise, an attempt is

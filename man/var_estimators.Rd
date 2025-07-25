@@ -3,11 +3,14 @@
 \name{vcov_tee}
 \alias{vcov_tee}
 \alias{.vcov_DB0}
+\alias{.vcov_DB}
 \title{Variance/Covariance for \code{teeMod} objects}
 \usage{
 vcov_tee(x, type = NULL, cluster = NULL, ...)
 
 .vcov_DB0(x, ...)
+
+.vcov_DB(x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
