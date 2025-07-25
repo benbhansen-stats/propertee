@@ -130,7 +130,7 @@
 #' "Tennessee's Student Teacher Achievement Ratio (STAR) project",
 #' Harvard Dataverse, V1, https://doi.org/10.7910/DVN/SIWH9F UNF:3:Ji2Q+9HCCZAbw3csOdMNdA
 #'
-#' @source <https://doi.org/10.7910/DVN/SIWH9F>
+#' @source \doi{doi:10.7910/DVN/SIWH9F}
 #' @keywords dataset
 "STARplus"
 

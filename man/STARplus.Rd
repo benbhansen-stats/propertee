@@ -65,7 +65,7 @@ at entry into the study
 }
 }
 \source{
-\url{https://doi.org/10.7910/DVN/SIWH9F}
+\doi{doi:10.7910/DVN/SIWH9F}
 }
 \usage{
 STARplus
