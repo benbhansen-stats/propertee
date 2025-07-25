@@ -4,7 +4,13 @@
 \alias{.compute_IK_dof}
 \title{Compute the degrees of freedom of a sandwich standard error with HC2 correction}
 \usage{
-.compute_IK_dof(tm, ell, cluster = NULL, bin_y = FALSE)
+.compute_IK_dof(
+  tm,
+  ell,
+  cluster = NULL,
+  bin_y = FALSE,
+  exclude = na.action(tm)
+)
 }
 \description{
 Compute the degrees of freedom of a sandwich standard error with HC2 correction

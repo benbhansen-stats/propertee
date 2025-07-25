@@ -17,7 +17,7 @@
 ##' @method summary teeMod
 ##' @rdname teeMod_summary
 summary.teeMod <- function(object,
-                                   vcov.type = "CR0",
+                                   vcov.type = "CR2",
                                    ...) {
   orig.coefficients <- object$coefficients
   object$coefficients <- replace(orig.coefficients, is.na(orig.coefficients), 0)

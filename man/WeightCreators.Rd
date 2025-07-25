@@ -120,7 +120,7 @@ discussed in their paper in that it avoids estimated propensity scores.
 \examples{
 data(simdata)
 spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()))
+summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()), vcov.type = "CR0")
 }
 \references{
 Li, Fan, Kari Lock Morgan, and Alan M. Zaslavsky.

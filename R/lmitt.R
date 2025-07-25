@@ -322,7 +322,7 @@ lmitt.formula <- function(obj,
   }
 
   # Generate formula for the internal `lm`
-  if (rhstype == "intercept") {
+  if (rhstype == "intercept" | rhs == var_names(specification, "t")) {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
     ctrl_means_form <- stats::reformulate("1", response = "lhs")

@@ -203,17 +203,30 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 
 #' @title Compute the degrees of freedom of a sandwich standard error with HC2 correction
 #' @importFrom utils combn
+#' @importFrom stats na.action
 #' @keywords internal
 #' @references Guido W. Imbens and Michael Koles\`ar. "Robust Standard Errors in
 #' Small Samples: Some Practical Advice". In: *The Review of Economics and
 #' Statistics* 98.4 (Oct. 2016), pp. 701-712.
-.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE) {
+.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE, exclude = na.action(tm)) {
   if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
   cls <- .sanitize_Q_ids(tm, cluster)$cluster
+  cls <- cls[setdiff(seq_along(cls), exclude)]
   lmitt_data <- get("data", environment(formula(tm)))
   if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  wc <- tm@lmitt_call$weights
+  if (inherits(wc, "call")) {
+    if (exists(deparse1(wc[[1L]]))) {
+      if (length(wc) == 1) {
+        wc$specification <- get("specification", environment(formula(tm)))
+      } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+        wc$specification <- get("specification", environment(formula(tm)))
+      }
+      if (is.null(wc$data)) wc$data <- lmitt_data
+    }
+  }
   trts <- if (is.null(tm@lmitt_call$dichotomy) &
-              (is.null(wc <- eval(tm@lmitt_call$weights, envir = environment(formula(tm)))) |
+              (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
                !inherits(wc, "WeightedStudySpecification"))) {
     treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
   } else {
@@ -294,7 +307,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' projection matrices
 #' @param exclude index of units to exclude from computing the correction; for
 #' example, if they're NA's
-#' @importFrom stats model.frame
+#' @importFrom stats model.frame na.action
 #' @keywords internal
 cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, exclude = na.action(tm), ...) {
   if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
@@ -309,13 +322,15 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
   if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
   if (is.null(trts <- dots$assigned_trt)) {
     wc <- tm@lmitt_call$weights
-    if (inherits(wc, "call") & exists(deparse1(wc[[1L]]))) {
-      if (length(wc) == 1) {
-        wc$specification <- get("specification", environment(formula(tm)))
-      } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
-        wc$specification <- get("specification", environment(formula(tm)))
+    if (inherits(wc, "call")) {
+      if (exists(deparse1(wc[[1L]]))) {
+        if (length(wc) == 1) {
+          wc$specification <- get("specification", environment(formula(tm)))
+        } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+          wc$specification <- get("specification", environment(formula(tm)))
+        }
+        if (is.null(wc$data)) wc$data <- lmitt_data
       }
-      if (is.null(wc$data)) wc$data <- lmitt_data
     }
     trts <- if (is.null(tm@lmitt_call$dichotomy) &
                 (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
@@ -339,7 +354,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
              na.action = na.pass,
              xlev = tm$xlevels)
   mf <- eval(mf)
-  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,tm$qr$pivot[seq_len(tm$rank)]]
+  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,tm$qr$pivot[seq_len(tm$rank)],drop=FALSE]
   Ag <- A[ix,,drop=FALSE]
   inv <- chol2inv(tm$qr$qr[,seq_len(tm$rank)])
   if (is.null(wts <- stats::weights(tm))) wts <- rep(1, nrow(A))
