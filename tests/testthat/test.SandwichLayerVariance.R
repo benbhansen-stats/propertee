@@ -52,6 +52,7 @@ test_that("vcov_tee correctly sets and passes on args", {
   
   first_obs_ix <- c(1, 1 + cumsum(c(t(table(simdata$uoa1, simdata$uoa2)))))
   uniqdata <- simdata[first_obs_ix[1:(length(first_obs_ix)-1)],,drop=FALSE]
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   imod <- lmitt(y ~ 1, spec, uniqdata)
   vmat8 <- vcov_tee(imod)
   expect_equal(attr(vmat8, "type"), "HC2")
