@@ -32,11 +32,12 @@ created. An RCT specification must be created manually using \code{\link[=rct_sp
 
 \item{data}{A \code{data.frame} such as would be passed into \code{\link[=lm]{lm()}}.}
 
-\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}}. One such argument is
-\code{dichotomy}, which can be used to dichotomize a non-binary treatment
+\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}} and other functions.
+An example of the latter is \code{dichotomy=}, a formula passed to
+\code{\link[=assigned]{assigned()}} and, as appropriate, \code{\link[=ate]{ate()}}, \code{\link[=att]{att()}}, \code{\link[=atc]{atc()}} or
+\code{\link[=ato]{ato()}}. It is used to dichotomize a non-binary treatment
 variable in \code{specification}. See the Details section of the
-\code{ett()} or \code{att()} help pages for information on specifying this
-formula.}
+\code{ate()} help page for examples.}
 
 \item{absorb}{If \code{TRUE}, fixed effects are included for blocks
 identified in the \code{StudySpecification}. Excluded in \code{FALSE}.

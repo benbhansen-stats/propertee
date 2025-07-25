@@ -111,11 +111,12 @@
 ##' @param weights Which weights should be generated? Options are \code{"ate"}
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
-##' @param ... Additional arguments passed to [lm()]. One such argument is
-##'   \code{dichotomy}, which can be used to dichotomize a non-binary treatment
+##' @param ... Additional arguments passed to [lm()] and other functions.
+##'   An example of the latter is \code{dichotomy=}, a formula passed to
+##'   [assigned()] and, as appropriate, [ate()], [att()], [atc()] or
+##'   [ato()]. It is used to dichotomize a non-binary treatment
 ##'   variable in \code{specification}. See the Details section of the
-##'   \code{ett()} or \code{att()} help pages for information on specifying this
-##'   formula.
+##'   \code{ate()} help page for examples.
 ##' @return \code{teeMod} object (see Details)
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
