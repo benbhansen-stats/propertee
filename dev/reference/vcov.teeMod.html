@@ -9,7 +9,7 @@ errors for teeMod models using vcov_tee()."><meta property="og:image" content="w
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,8 +70,12 @@ errors for <code>teeMod</code> models using <code><a href="var_estimators.html">
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A \(2\times 2\) matrix corresponding to an intercept and the
-treatment variable in the direct adjustment model</p>
+    <p>A variance-covariance matrix with row and column entries for the estimated
+coefficients in <code>x</code>, the marginal mean outcome in the control condition,
+the marginal mean <code>offset</code> in the control condition (if an <code>offset</code>
+is provided), and if a moderator variable is specified in the formula for <code>x</code>,
+the mean interaction in the control condition of the outcome and <code>offset</code>
+with the moderator variable</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

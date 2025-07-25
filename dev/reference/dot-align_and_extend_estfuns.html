@@ -9,7 +9,7 @@ covariance adjustment model estimating equations matrices"><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,10 +63,20 @@ covariance adjustment model estimating equations matrices</p>
 <dd><p>a fitted <code>teeMod</code> model</p></dd>
 
 
+<dt id="arg-ctrl-means-ef-mat">ctrl_means_ef_mat<a class="anchor" aria-label="anchor" href="#arg-ctrl-means-ef-mat"></a></dt>
+<dd><p>optional, a matrix of estimating equations corresponding
+to the estimates of the marginal (and possibly conditional) means of the outcome
+and <code>offset</code> in the control condition. These are aligned and extended
+in the same way as the matrix of estimating equations for <code>x</code> and
+<code>cbind</code>ed to them</p></dd>
+
+
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
-<dd><p>character vector; indicates unit of assignment columns to generate
-ID's from; default is NULL, which uses the unit of assignment columns
-specified in the <code>teeMod</code> object's <code>StudySpecification</code> slot</p></dd>
+<dd><p>optional, a character vector indicating columns that uniquely identify
+rows in the dataframe used for fitting <code>x</code> and the dataframe passed to the
+<code>data</code> argument of the covariance adjustment model fit. The default is
+<code>NULL</code>, in which case the unit of assignment columns specified in the
+<code>StudySpecification</code> slot of <code>x</code> are used.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

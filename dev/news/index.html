@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,15 +43,41 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="propertee-070-unreleased">propertee 0.7.0 (unreleased)<a class="anchor" aria-label="anchor" href="#propertee-070-unreleased"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-7-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h3>
+<ul><li>HC2 and CR2 standard errors are now available for <code>teeMod</code> objects. CR2 corrections use a new, fast computation that obviates the need for obtaining the spectral decomposition of orthocomplements of cluster-specific projection matrices.</li>
+<li>Default standard errors for <code>teeMod</code> objects now incorporate methodological developments from a forthcoming paper from Wasserman and Hansen:
+<ol style="list-style-type: decimal"><li>When computing the meat of the sandwich standard errors, the bias correction to the residuals from estimating intent-to-treat effects is allowed to differ from the bias correction to residuals from a covariance adjustment model fit. The <code>type</code> argument of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> determines the correction for the former, while the <code>cov_adj_rcorrect</code> argument determines the latter. The findings from the simulation study in the paper inform the default arguments of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> (and thus, <code><a href="../reference/teeMod_summary.html">summary.teeMod()</a></code>): an HC2/CR2 correction for the residuals of the intent-to-treat effect estimates, and an HC1/CR1 correction or the residuals from the covariance adjustment model fit.</li>
+<li>When units used for estimating intent-to-treat effects also contribute to fitting the covariance adjustment model, the residuals from effect estimation associated with individuals in the overlapping units are replaced with residuals that use a leave-one-out estimate of the covariance adjustment model parameters.</li>
+</ol></li>
+<li>Degrees of freedom provided in <code><a href="../reference/teeMod_summary.html">summary.teeMod()</a></code> now reflect clustering: for CR0 and CR1 standard errors, the associated degrees of freedom are one less than the number of clusters used for estimation; for CR2 standard errors, degrees of freedom are computed using the approach of Imbens and Kolesár (2016) (see documentation of <code><a href="../reference/dot-compute_IK_dof.html">.compute_IK_dof()</a></code> for citation) and leverage the fast computational routine mentioned above</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-0"></a></h3>
+<ul><li>Fix minor bugs with the <code>dichotomy</code> argument of <code><a href="../reference/lmitt.html">lmitt()</a></code>
+</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061">propertee 0.6.1<a class="anchor" aria-label="anchor" href="#propertee-061"></a></h2>
 <div class="section level3">
-<h3 id="new-features-0-6-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-1"></a></h3>
+<h3 id="bug-fixes-0-6-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-1"></a></h3>
+<ul><li>
+<code><a href="../reference/StudySpecificationSpecials.html">unit_of_assignment()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">unitid()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">cluster()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">uoa()</a></code>, <code><a href="../reference/StudySpecificationSpecials.html">block()</a></code>, and <code><a href="../reference/StudySpecificationSpecials.html">forcing()</a></code> no longer fail automatically when passed a non-numeric or non-character variable. Now, they will first attempt to convert the variable to a character variable.</li>
+<li>An internal routine in <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> no longer fails when the environment in which <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> is called differs from the environment in which the <code>StudySpecification</code> associated with the <code>teeMod</code> is created.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="propertee-060">propertee 0.6.0<a class="anchor" aria-label="anchor" href="#propertee-060"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-6-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h3>
 <ul><li>In their <code>coefficients</code> element, <code>teeMod</code> objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the <code><a href="../reference/lmitt.html">lmitt()</a></code> man page for further details.</li>
 <li>Introduces <code><a href="../reference/WeightCreators.html">etc()</a></code> (effect of the treatment on controls) and <code><a href="../reference/WeightCreators.html">ato()</a></code> (overlap-weighted effect) weighting functions. <code>atc</code> is an alias for <code><a href="../reference/WeightCreators.html">etc()</a></code>, while <code>olw</code>, <code>owt</code>, and <code>pwt</code> are aliases for <code><a href="../reference/WeightCreators.html">ato()</a></code>.</li>
 <li>Bump minimum R version to 4.1.0 to allow internal usage of pipes and anonymous functions.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-0-6-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-1"></a></h3>
+<h3 id="bug-fixes-0-6-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-0"></a></h3>
 <ul><li>When <code><a href="../reference/WeightCreators.html">ate()</a></code>-type functions are called with <code>data</code> arguments that do not include rows associated with all units of assignment specified in the <code>StudySpecification</code> object, the resulting weights reflect assignment probabilities across all units of assignment in the <code>StudySpecification</code>, not only those represented in <code>data</code>.</li>
 </ul></div>
 </div>

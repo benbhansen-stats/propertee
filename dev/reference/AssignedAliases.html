@@ -9,7 +9,7 @@ the treatment variable specified in the StudySpecification."><meta property="og:
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,16 +126,16 @@ goal, the <code><a href="StudySpecification_extractreplace.html">treatment()</a>
 <span class="r-in"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="StudySpecification_objects.html">obs_spec</a></span><span class="op">(</span><span class="va">z</span> <span class="op">~</span> <span class="fu"><a href="StudySpecificationSpecials.html">uoa</a></span><span class="op">(</span><span class="va">uoa1</span>, <span class="va">uoa2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fu">assigned</span><span class="op">(</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">simdata</span>, weights <span class="op">=</span> <span class="fu"><a href="WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">lmittmod</span> <span class="op">&lt;-</span> <span class="fu"><a href="lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">lmittmod</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">lmittmod</span>, vcov.type <span class="op">=</span> <span class="st">"CR0"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lmitt(mod)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Coefficients :</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error t value Pr(&gt;|t|)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)    -0.0090     0.1734  -0.052    0.959</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assigned()      0.1205     0.2301   0.524    0.603</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> y:(Intercept)  -0.0090     0.1734  -0.052    0.959</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)    -0.0090     0.1734  -0.052    0.960</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> assigned()      0.1205     0.2301   0.524    0.613</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y:(Intercept)  -0.0090     0.1734  -0.052    0.960</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Std. Error calculated via type "CR0"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>

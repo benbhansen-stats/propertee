@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -361,7 +361,7 @@ covariance adjustment regression.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##                                       Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">## z.                                      0.4732     1.0903   0.434    0.672    </span></span>
+<span><span class="co">## z.                                      0.4732     1.1505   0.411    0.681    </span></span>
 <span><span class="co">## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   &lt;2e-16 ***</span></span>
 <span><span class="co">## ---</span></span>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
@@ -379,8 +379,8 @@ function.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##                                       Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">## z.                                      0.4732     1.0921   0.433    0.672    </span></span>
-<span><span class="co">## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9399 283.308   &lt;2e-16 ***</span></span>
+<span><span class="co">## z.                                      0.4732     1.1759   0.402    0.688    </span></span>
+<span><span class="co">## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   &lt;2e-16 ***</span></span>
 <span><span class="co">## ---</span></span>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">## Std. Error calculated via type "HC1"</span></span></code></pre>
@@ -396,14 +396,22 @@ can use robust linear regression for generating predictions.</p>
 <span>  offset <span class="op">=</span> <span class="va">rob_ca</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">rob_ca_effect</span>, vcov.type <span class="op">=</span> <span class="st">"HC1"</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Warning in lmrob.S(x, y, control = control): S refinements did not converge (to</span></span>
+<span><span class="co">## refine.tol=1e-07) in 200 (= k.max) steps</span></span></code></pre>
+<pre><code><span><span class="co">## Warning in lmrob.fit(x, y, control, init = init): initial estim. 'init' not</span></span>
+<span><span class="co">## converged -- will be return()ed basically unchanged</span></span></code></pre>
+<pre><code><span><span class="co">## Warning in lmrob.S(x, y, control = control): S refinements did not converge (to</span></span>
+<span><span class="co">## refine.tol=1e-07) in 200 (= k.max) steps</span></span></code></pre>
+<pre><code><span><span class="co">## Warning in lmrob.fit(x, y, control, init = init): initial estim. 'init' not</span></span>
+<span><span class="co">## converged -- will be return()ed basically unchanged</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Call:</span></span>
 <span><span class="co">## lmitt.formula(main_effect_fmla, specification = spec, data = study1data, weights = ip_wts, offset = rob_ca)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  Treatment Effects :</span></span>
 <span><span class="co">##                                       Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">## z.                                      0.4446     1.1064   0.402    0.695    </span></span>
-<span><span class="co">## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9399 283.308   &lt;2e-16 ***</span></span>
+<span><span class="co">## z.                                      0.4446     1.2275   0.362    0.717    </span></span>
+<span><span class="co">## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   &lt;2e-16 ***</span></span>
 <span><span class="co">## ---</span></span>
 <span><span class="co">## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">## Std. Error calculated via type "HC1"</span></span></code></pre>
@@ -431,7 +439,7 @@ side.</p>
 <p>The first part of the code prepares the data by filtering out any
 rows with missing values in the response variable or the covariates. We
 also isolate data for the Oakland County.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">not_missing_resp</span> <span class="op">&lt;-</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">analysis2data</span><span class="op">[[</span><span class="va">RESPONSE_COL</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="va">not_missing_covs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">analysis2data</span><span class="op">[</span>, <span class="va">MODELING_COLS</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span></span>
 <span><span class="va">county_ix</span> <span class="op">&lt;-</span> <span class="va">analysis2data</span><span class="op">$</span><span class="va">CONAME</span> <span class="op">==</span> <span class="va">coname</span></span>
@@ -440,7 +448,7 @@ also isolate data for the Oakland County.</p>
 <code>DemographicGroup</code>, which will be used to estimate
 heterogeneous effects. We then use this updated formula to fit a
 weighted linear regression model.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod_camod_form</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">camod_form</span>, <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">DemographicGroup</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">lm_county_mod_camod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">mod_camod_form</span>, <span class="va">county_mod_camod_dat</span>,</span>
 <span>                          weights <span class="op">=</span> <span class="va">county_mod_camod_dat</span><span class="op">$</span><span class="va">Total.Tested.2014</span><span class="op">)</span></span></code></pre></div>
@@ -448,7 +456,7 @@ weighted linear regression model.</p>
 with <code>michigan_school_pairs</code> to ensure we have school-level
 data that allows for the estimation of treatment effects based on school
 and demographic group.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study2data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">michigan_school_pairs</span>, <span class="va">analysis2data</span>, by <span class="op">=</span> <span class="st">"schoolid"</span>, all.x <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">study2data</span> <span class="op">&lt;-</span> <span class="va">study2data</span><span class="op">[</span><span class="va">study2data</span><span class="op">$</span><span class="va">DemographicGroup</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span></span>
 <span>                           <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"White"</span>, <span class="st">"Black or African American"</span><span class="op">)</span>,<span class="op">]</span></span></code></pre></div>
@@ -456,13 +464,13 @@ and demographic group.</p>
 <code><a href="../../reference/WeightCreators.html">ate()</a></code> function, which estimates the average effect
 treatment. Then, we adjust for covariates using
 <code><a href="../../reference/cov_adj.html">cov_adj()</a></code>.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ip_wts</span> <span class="op">&lt;-</span> <span class="fu">propertee</span><span class="fu">::</span><span class="fu"><a href="../../reference/WeightCreators.html">ate</a></span><span class="op">(</span><span class="va">spec</span>, data <span class="op">=</span> <span class="va">study2data</span><span class="op">)</span> <span class="op">*</span> <span class="va">study2data</span><span class="op">$</span><span class="va">Total.Tested.2014</span></span>
 <span><span class="va">lm_mod_ca</span> <span class="op">&lt;-</span> <span class="fu">propertee</span><span class="fu">::</span><span class="fu"><a href="../../reference/cov_adj.html">cov_adj</a></span><span class="op">(</span><span class="va">lm_county_mod_camod</span>, newdata <span class="op">=</span> <span class="va">study2data</span>,</span>
 <span>                                specification <span class="op">=</span> <span class="va">spec</span>, by <span class="op">=</span> <span class="st">"uniqueid"</span><span class="op">)</span></span></code></pre></div>
 <p>Finally, we specify a formula for estimating heterogeneous effects
 and fit the model using the <code><a href="../../reference/lmitt.html">lmitt()</a></code> function.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod_effect_fmla</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/formula.html" class="external-link">as.formula</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">RESPONSE_COL</span>, <span class="st">"~ DemographicGroup"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">lm_ca_mod_effect</span> <span class="op">&lt;-</span> <span class="fu">propertee</span><span class="fu">::</span><span class="fu"><a href="../../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">mod_effect_fmla</span>, specification <span class="op">=</span> <span class="va">spec</span>,</span>
 <span>                                     data <span class="op">=</span> <span class="va">study2data</span>, weights <span class="op">=</span> <span class="va">ip_wts</span>,</span>
@@ -479,18 +487,18 @@ and fit the model using the <code><a href="../../reference/lmitt.html">lmitt()</
 <span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American 1090.477</span></span>
 <span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                     1115.743</span></span>
 <span><span class="co">##                                                                    Std. Error</span></span>
-<span><span class="co">## `z._DemographicGroupBlack or African American`                          1.962</span></span>
-<span><span class="co">## z._DemographicGroupWhite                                                1.271</span></span>
-<span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American      2.353</span></span>
-<span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                          2.724</span></span>
+<span><span class="co">## `z._DemographicGroupBlack or African American`                          2.077</span></span>
+<span><span class="co">## z._DemographicGroupWhite                                                1.419</span></span>
+<span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American      2.347</span></span>
+<span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                          2.716</span></span>
 <span><span class="co">##                                                                    t value</span></span>
-<span><span class="co">## `z._DemographicGroupBlack or African American`                       0.166</span></span>
-<span><span class="co">## z._DemographicGroupWhite                                             1.052</span></span>
-<span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American 463.387</span></span>
-<span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                     409.654</span></span>
+<span><span class="co">## `z._DemographicGroupBlack or African American`                       0.157</span></span>
+<span><span class="co">## z._DemographicGroupWhite                                             0.942</span></span>
+<span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American 464.646</span></span>
+<span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                     410.767</span></span>
 <span><span class="co">##                                                                    Pr(&gt;|t|)    </span></span>
-<span><span class="co">## `z._DemographicGroupBlack or African American`                        0.869    </span></span>
-<span><span class="co">## z._DemographicGroupWhite                                              0.303    </span></span>
+<span><span class="co">## `z._DemographicGroupBlack or African American`                        0.875    </span></span>
+<span><span class="co">## z._DemographicGroupWhite                                              0.347    </span></span>
 <span><span class="co">## Average.Scale.Score.2014:DemographicGroupBlack or African American   &lt;2e-16 ***</span></span>
 <span><span class="co">## Average.Scale.Score.2014:DemographicGroupWhite                       &lt;2e-16 ***</span></span>
 <span><span class="co">## ---</span></span>

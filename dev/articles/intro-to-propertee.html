@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2025-07-09</h4>
+            <h4 data-toc-skip class="date">2025-07-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -274,11 +274,11 @@ run:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;  Treatment Effects :</span></span>
 <span><span class="co">#&gt;                         Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; cond_small.TRUE          1.33499    0.14171    9.42   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:(Intercept) 26.18597    0.07763  337.31   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; cond_small.TRUE          1.33499    0.14175   9.418   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; g1readbsraw:(Intercept) 26.18597    0.07764 337.278   &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
+<span><span class="co">#&gt; Std. Error calculated via type "CR2"</span></span></code></pre></div>
 <p>The data includes ethnicity; we can estimate subgroup effects by
 ethnicity:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -292,24 +292,22 @@ ethnicity:</p>
 <span><span class="co">#&gt; lmitt(g1readbsraw ~ race, data = STARplus, specification = spec)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Treatment Effects: (1 not defined because of singularities)</span></span>
-<span><span class="co">#&gt;                           Estimate Std. Error t value Pr(&gt;|t|)    </span></span>
-<span><span class="co">#&gt; cond_small.TRUE_racewhite  0.89355    0.16324   5.474 4.57e-08 ***</span></span>
-<span><span class="co">#&gt; cond_small.TRUE_raceblack  2.19436    0.27178   8.074 8.04e-16 ***</span></span>
-<span><span class="co">#&gt; cond_small.TRUE_raceasian -0.66667    2.25173  -0.296   0.7672    </span></span>
-<span><span class="co">#&gt; cond_small.TRUE_racehispa -1.00000    3.39947  -0.294   0.7686    </span></span>
-<span><span class="co">#&gt; cond_small.TRUE_racenatam  4.83333    2.68148   1.802   0.0715 .  </span></span>
-<span><span class="co">#&gt; cond_small.TRUE_raceother  4.04167    2.31757   1.744   0.0812 .  </span></span>
-<span><span class="co">#&gt; cond_small.TRUE_racemssng       NA         NA      NA       NA    </span></span>
-<span><span class="co">#&gt; g1readbsraw:racewhite     26.92862    0.08796 306.138  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:raceblack     24.67925    0.14710 167.768  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:raceasian     28.00000    1.12036  24.992  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:racehispa     28.33333    1.53966  18.402  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:racenatam     23.16667    2.07394  11.170  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:raceother     26.62500    2.04594  13.014  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; g1readbsraw:racemssng           NA         NA      NA       NA    </span></span>
-<span><span class="co">#&gt; ---</span></span>
-<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
-<span><span class="co">#&gt; Std. Error calculated via type "CR0"</span></span></code></pre></div>
+<span><span class="co">#&gt;                           Estimate Std. Error t value Pr(&gt;|t|)</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racewhite   0.8935        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceblack   2.1944        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceasian  -0.6667        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racehispa  -1.0000        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racenatam   4.8333        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_raceother   4.0417        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; cond_small.TRUE_racemssng       NA         NA      NA       NA</span></span>
+<span><span class="co">#&gt; g1readbsraw:racewhite      26.9286        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceblack      24.6792        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceasian      28.0000        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:racehispa      28.3333        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:racenatam      23.1667        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:raceother      26.6250        NaN     NaN      NaN</span></span>
+<span><span class="co">#&gt; g1readbsraw:racemssng           NA         NA      NA       NA</span></span>
+<span><span class="co">#&gt; Std. Error calculated via type "CR2"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="including-specification-weights">Including specification weights<a class="anchor" aria-label="anchor" href="#including-specification-weights"></a>

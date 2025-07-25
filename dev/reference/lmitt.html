@@ -11,7 +11,7 @@ specification."><meta property="og:image" content="www.github.com/logo.png"><met
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,11 +94,12 @@ created. An RCT specification must be created manually using <code><a href="Stud
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>. One such argument is
-<code>dichotomy</code>, which can be used to dichotomize a non-binary treatment
+<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> and other functions.
+An example of the latter is <code>dichotomy=</code>, a formula passed to
+<code><a href="AssignedAliases.html">assigned()</a></code> and, as appropriate, <code><a href="WeightCreators.html">ate()</a></code>, <code><a href="WeightCreators.html">att()</a></code>, <code><a href="WeightCreators.html">atc()</a></code> or
+<code><a href="WeightCreators.html">ato()</a></code>. It is used to dichotomize a non-binary treatment
 variable in <code>specification</code>. See the Details section of the
-<code><a href="WeightCreators.html">ett()</a></code> or <code><a href="WeightCreators.html">att()</a></code> help pages for information on specifying this
-formula.</p></dd>
+<code><a href="WeightCreators.html">ate()</a></code> help page for examples.</p></dd>
 
 
 <dt id="arg-absorb">absorb<a class="anchor" aria-label="anchor" href="#arg-absorb"></a></dt>

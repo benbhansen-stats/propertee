@@ -30,8 +30,10 @@
 <url><loc>www.github.com/dev/reference/areg.center.html</loc></url>
 <url><loc>www.github.com/dev/reference/as.SandwichLayer.html</loc></url>
 <url><loc>www.github.com/dev/reference/as_lmitt.html</loc></url>
+<url><loc>www.github.com/dev/reference/block_center_residuals.html</loc></url>
 <url><loc>www.github.com/dev/reference/bread.teeMod.html</loc></url>
 <url><loc>www.github.com/dev/reference/c-WeightedStudySpecification-method.html</loc></url>
+<url><loc>www.github.com/dev/reference/cluster_iss.html</loc></url>
 <url><loc>www.github.com/dev/reference/confint.teeMod.html</loc></url>
 <url><loc>www.github.com/dev/reference/cov_adj.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-.uoa...html</loc></url>
@@ -47,6 +49,8 @@
 <url><loc>www.github.com/dev/reference/dot-check_by.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-check_df_moderator_estimates.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-check_spec_formula.html</loc></url>
+<url><loc>www.github.com/dev/reference/dot-compute_IK_dof.html</loc></url>
+<url><loc>www.github.com/dev/reference/dot-compute_loo_resids.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-confint_lm.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-convert_to_data.frame.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-cov01_est.html</loc></url>
@@ -63,6 +67,7 @@
 <url><loc>www.github.com/dev/reference/dot-get_appinv_atp.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-get_col_from_new_data.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-get_data_from_model.html</loc></url>
+<url><loc>www.github.com/dev/reference/dot-get_dof.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-get_phi_tilde.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-get_spec.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-join_spec_weights.html</loc></url>
@@ -74,6 +79,7 @@
 <url><loc>www.github.com/dev/reference/dot-new_StudySpecification.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-order_samples.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-prepare_spec_matrix.html</loc></url>
+<url><loc>www.github.com/dev/reference/dot-rcorrect.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-remove_forcing.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-rename_model_frame_columns.html</loc></url>
 <url><loc>www.github.com/dev/reference/dot-sanitize_C_ids.html</loc></url>

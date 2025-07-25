@@ -9,7 +9,7 @@ covariance adjustment"><meta property="og:image" content="www.github.com/logo.pn
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,9 +52,11 @@ covariance adjustment</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">vcov_tee</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"CR0"</span>, cluster <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">vcov_tee</span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="cn">NULL</span>, cluster <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">.vcov_DB0</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">.vcov_DB0</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">.vcov_DB</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,40 +68,72 @@ covariance adjustment</p>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>a string indicating the desired variance estimator. See Details
-for supported variance estimators</p></dd>
+<dd><p>a string indicating the desired bias correction for the residuals
+of <code>x</code>. Default is <code>"CR0"</code> if the column provided to <code>cluster</code>
+indicates clustering and <code>"HC0"</code> otherwise. See Details for supported types</p></dd>
 
 
 <dt id="arg-cluster">cluster<a class="anchor" aria-label="anchor" href="#arg-cluster"></a></dt>
-<dd><p>a string or character vector of column names indicating
-columns to cluster standard errors by. With prior covariance adjustment,
-columns must appear in both the covariance adjustment and direct adjustment
-samples. Default is NULL, which uses unit of assignment columns in the
-<code>StudySpecification</code> slot of the <code>teeMod</code> model.</p></dd>
+<dd><p>a vector indicating the columns that define clusters. The default
+is the unit of assignment columns in the <code>StudySpecification</code> stored
+in <code>x</code>. These columns should appear in the dataframe used for fitting
+<code>x</code> as well as the dataframe passed to the covariance model fit in the case of
+prior covariance adjustment. See Details</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>arguments to be passed to the internal variance estimation
-function.</p></dd>
+function, such as <code>cov_adj_rcorrect</code>, which specifies the bias
+correction to the residuals of the covariance model, if applicable.
+See Details</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A \(2\times 2\) matrix corresponding to an intercept and the
-treatment variable in the direct adjustment model</p>
+    <p>A variance-covariance matrix with row and column entries for the estimated
+coefficients in <code>x</code>, the marginal mean outcome in the control condition,
+the marginal mean <code>offset</code> in the control condition (if an <code>offset</code>
+is provided), and if a moderator variable is specified in the formula for <code>x</code>,
+the mean interaction in the control condition of the outcome and <code>offset</code>
+with the moderator variable</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Supported <code>type</code> include:</p><ul><li><p><code>"MB0"</code>, <code>"HC0"</code>, and <code>"CR0"</code> for model-based HC0 standard errors</p></li>
-<li><p><code>"MB1"</code>, <code>"HC1"</code>, and <code>"CR1"</code> for model-based standard errors
-with HC1 corrections based on the direct adjustment estimate i.e.,
-\(n/(n - 2)\) for <code>"MB1"</code> and <code>"HC1"</code>, and for <code>"CR1"</code>,
-\(g\cdot(n-1)/((g-1)\cdot(n-2))\), where \(g\) is the number of clusters
-in the direct adjustment sample.</p></li>
+    <p>Variance estimates will be clustered on the basis of the columns
+provided to <code>cluster</code> (or obtained by the default behavior). As a result,
+providing <code>"HCx"</code> or <code>"CRx"</code> to <code>type</code> will produce the same
+variance estimate given that <code>cluster</code> remains the same.</p>
+<p>With prior covariance adjustment, unless the <code>data</code> argument of the covariance
+model fit is the same as the <code>data</code> argument for fitting <code>x</code> and the
+<code>StudySpecification</code> of <code>x</code> has been created with a formula of the
+form <code>trt_col ~ 1</code>, the column(s) provided to <code>cluster</code> must appear in the
+dataframes in both <code>data</code> arguments, even if the clustering structure does
+not exist, per se, in the covariance adjustment sample. For instance, in a
+finely stratified randomized trial, one might desire standard errors clustered
+at the block level, but the covariance adjustment model may include auxiliary
+units that did not participate in the trial. In this case, in the <code>data</code>
+argument of the fitted covariance model, the column(s) passed to <code>cluster</code>
+should have the block ID's for rows overlapping with the <code>data</code> argument
+used for fitting <code>x</code>, and NA's for any auxiliary units. <code>vcov_tee()</code>
+will treat each row with an NA as its own cluster.</p>
+<p>For ITT effect estimates without covariance adjustment, <code>type</code>
+corresponds to the variance estimate desired. Supported options include:</p><ul><li><p><code>"MB0"</code>, <code>"HC0"</code>, and <code>"CR0"</code> for model-based HC/CR0 standard errors</p></li>
+<li><p><code>"MB1"</code>, <code>"HC1"</code>, and <code>"CR1"</code> for model-based HC/CR1 standard errors
+(for <code>"MB1"</code> and <code>"HC1"</code>, this is \(n/(n - 2)\), and for <code>"CR1"</code>,
+this is \(g\cdot(n-1)/((g-1)\cdot(n-2))\), where \(g\) is the number of
+clusters in the sample used for fitting <code>x</code>)</p></li>
+<li><p><code>"MB2"</code>, <code>"HC2"</code>, and <code>"CR2"</code> for model-based HC/CR2 standard errors</p></li>
 <li><p><code>"DB0"</code> for design-based HC0 variance estimates</p></li>
-</ul><p>To create your own <code>type</code>, simply define a function <code>.vcov_XXX</code>.
-<code>type = "XXX"</code> will now use your method. Your method should return a
-matrix of appropriate dimension, with <code>attribute</code> <code>type = "XXX"</code>.</p>
+</ul><p>The <code>type</code> argument does not correspond to existing variance estimators in
+the literature in the case of prior covariance adjustment. It specifies the
+bias correction to the residuals of <code>x</code>, but the residuals of the covariance
+model are corrected separately based on the <code>cov_adj_rcorrect</code> argument.
+The <code>cov_adj_rcorrect</code> argument takes the same options as <code>type</code>
+except <code>"DB0"</code>. When the covariance model includes rows in the treatment
+condition for fitting, the residuals of <code>x</code> are further corrected by
+having the values of <code>offset</code> replaced by predictions that use coefficient
+estimates that leave out rows in the same cluster (as defined by the
+<code>cluster</code> argument).</p>
 <p>The design-based variance estimates can be calculated for
 <code>teeMod</code> models satisfying the following requirements:</p><ul><li><p>The model uses <code>rct_spec</code> as <code>StudySpecification</code></p></li>
 <li><p>The model only estimates a main treatment effect</p></li>

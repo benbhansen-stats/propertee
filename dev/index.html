@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,29 +69,35 @@
 <!-- badges: start -->
 
 <p><strong>propertee</strong> enables flexible direct adjustment with specification-informed standard errors and optional prior covariance adjustment.</p>
-<p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. This specification information must be utilized in future analyses. Using <strong>propertee</strong>, a user can generate a StudySpecification object which will keep track of the specification structure.</p>
+<p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. Standard errors and other inferential calculations should respect such aspects of the study’s design. Using <strong>propertee</strong>, a user can generate a “StudySpecification” object which will keep track of the design specification.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>spec <span class="ot">&lt;-</span> <span class="fu">rct_spec</span>(txt <span class="sc">~</span> <span class="fu">unit_of_assignment</span>(teacher) <span class="sc">+</span> <span class="fu">block</span>(school), <span class="at">data =</span> teacherdata)</span></code></pre></div>
-<p>(Also supported are observational studies (<code>obs_spec</code>) and regression discontinuity specifications (<code>rdd_spec</code> which requires a <code><a href="reference/StudySpecificationSpecials.html">forcing()</a></code> variable as well.)</p>
-<p>In order to pass the specification information into the model using the <code>weights=</code> argument, functions <code><a href="reference/WeightCreators.html">ett()</a></code> and <code><a href="reference/WeightCreators.html">ate()</a></code> will be used to convert the StudySpecification into a numeric vector with the StudySpecification object as an attribute.</p>
+<p>(Also supported are observational studies (<code><a href="reference/StudySpecification_objects.html">obs_spec()</a></code>) and regression discontinuity specifications (<code>rdd_spec()</code> which requires a <code><a href="reference/StudySpecificationSpecials.html">forcing()</a></code> variable as well.)</p>
+<p>In order to pass the design specification into the model using the <code>weights=</code> argument, functions <code><a href="reference/WeightCreators.html">ett()</a></code> and <code><a href="reference/WeightCreators.html">ate()</a></code> will be used to convert the StudySpecification into a numeric vector with the StudySpecification object as an attribute.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">lm</span>(y <span class="sc">~</span> txt, <span class="at">data =</span> studentdata, <span class="at">weights =</span> <span class="fu">ate</span>(spec))</span></code></pre></div>
-<p>Note that the StudySpecification is created with teacher level data (<code>teacherdata</code>), but the analysis is carried out at the student level (<code>studentdata</code>); the <code><a href="reference/WeightCreators.html">ate()</a></code> (and its alternative <code><a href="reference/WeightCreators.html">ett()</a></code>) will expand the weights appropriately.</p>
+<p>Note that this StudySpecification is created with teacher level data (<code>teacherdata</code>), but the analysis is carried out at the student level (<code>studentdata</code>); the <code><a href="reference/WeightCreators.html">ate()</a></code> (and its alternatives <code><a href="reference/WeightCreators.html">att()</a></code>, <code><a href="reference/WeightCreators.html">atc()</a></code> and <code><a href="reference/WeightCreators.html">ato()</a></code>) will expand the weights appropriately.</p>
 <p>Optionally, we can also include a covariance adjustment model through the <code><a href="reference/cov_adj.html">cov_adj()</a></code> function.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>covadjmod <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> ..., <span class="at">data =</span> studentdata, <span class="at">subset =</span> <span class="sc">!</span>txt)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">lm</span>(y <span class="sc">~</span> txt, studentdata, <span class="at">weights =</span> <span class="fu">ett</span>(spec),</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>   <span class="at">offset =</span> <span class="fu">cov_adj</span>(covadjmod, <span class="at">data =</span> studentdata)</span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>)</span></code></pre></div>
+<p>The effect estimation model is expected to be an lm object, but the covariance model can be of type <code>glm</code> or <code>lmrob</code>, among others: with a binary outcome, for example, it might be a logistic regression.</p>
+<p>Having fit covariance and effect estimation models separately, you may need standard errors that propagate variation from the former to the latter. propertee’s “lmitt” objects are lm’s enhanced with information from the StudySpecification and covariance adjustment model that standard error calculations may need. Fitted lm’s of the accommodated type may be coerced to lmitt using <code><a href="reference/as_lmitt.html">as.lmitt()</a></code>; or you can skip this step by using <code><a href="reference/lmitt.html">propertee::lmitt()</a></code> to fit the lm in the first place:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">lmitt</span>(y <span class="sc">~</span> <span class="dv">1</span>, studentdata, <span class="at">specificaton =</span> spec, <span class="at">weights =</span> <span class="st">"ett"</span>,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>      <span class="at">offset =</span> <span class="fu">cov_adj</span>(covadjmod, <span class="at">data =</span> studentdata)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  )</span></code></pre></div>
+<p>For more, see the package’s vignettes.</p>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
 <p>You may use RStudio to develop for <strong>propertee</strong>, by opening the <code>propertee.Rproj</code> file. We suggest you ensure all required dependencies are installed by running</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_deps</span>(<span class="at">dependencies =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>We prefer changes that include unit tests demonstrating the problem or showing how the new feature should be added. The test suite uses the <a href="https://github.com/hadley/test_that" class="external-link">testthat</a> package to write and run tests. (Please ensure you have the latest version of testthat (or at least v0.11.0), as older versions stored the tests in a different directory, and may not test properly.) See the <code>tests/testthat</code> directory for examples. You can run the test suite via Build -&gt; Test Package.</p>
 <p>New features should include inline <a href="http://roxygen.org/" class="external-link">Roxygen</a> documentation. You can generate all <code>.Rd</code> documents from the <code>Roxygen</code> code using Build -&gt; Document, or using Make as describe below.</p>
 <p>Finally, you can use Build -&gt; Build and Reload or Build -&gt; Clean and Rebuild to load an updated version of <strong>propertee</strong> in your current RStudio session. Alternatively, to install the developed version permanently, use Build -&gt; Build Binary Version, followed by</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"../propertee_VERSION.tgz"</span>, <span class="at">repo=</span><span class="cn">NULL</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"../propertee_VERSION.tgz"</span>, <span class="at">repo=</span><span class="cn">NULL</span>)</span></code></pre></div>
 <p>You can revert back to the current CRAN version by</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">remove.packages</span>(<span class="st">"propertee"</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"propertee"</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">remove.packages</span>(<span class="st">"propertee"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"propertee"</span>)</span></code></pre></div>
 <p>If you prefer not to use RStudio, you can develop using Make.</p>
 <ul>
 <li>
@@ -120,10 +126,10 @@
 </ul>
 <p>In <strong>RStudio</strong>, there are options to enable automatically removing white space as the end of lines and trailing whitespaces in the Settings, Code -&gt; Saving.</p>
 <p>In <strong>emacs</strong>, you can remove white spaces at ends of lines with <code>M-x delete-trailing-whitespace</code>. To do this automatically whenever you save, add the following to your init file:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>(add<span class="sc">-</span>hook <span class="st">'before-save-hook (lambda ()</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="st">                             (delete-trailing-whitespace)))</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>(add<span class="sc">-</span>hook <span class="st">'before-save-hook (lambda ()</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="st">                             (delete-trailing-whitespace)))</span></span></code></pre></div>
 <p>To remove trailing lines when saving, you can also add this:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>(setq delete<span class="sc">-</span>trailing<span class="sc">-</span>lines t)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>(setq delete<span class="sc">-</span>trailing<span class="sc">-</span>lines t)</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="referring-to-functions">Referring to functions<a class="anchor" aria-label="anchor" href="#referring-to-functions"></a>
