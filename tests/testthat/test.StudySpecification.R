@@ -161,7 +161,8 @@ test_that("StudySpecification creation", {
   mtcars <- mtcars[-c(5, 11), ]
 
   spec_rct <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
-                      type = "RCT", call = fc)
+                      type = "RCT",
+                      call = quote(rct_spec(formula = vs ~ cluster(qsec), data = mtcars)))
 
   expect_s4_class(spec_rct, "StudySpecification")
   expect_s3_class(spec_rct@structure, "data.frame")
@@ -184,9 +185,10 @@ test_that("StudySpecification creation", {
 
   # subset
 
-  spec_obs <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
-                                      type = "Obs", subset = mtcars$mpg > 17,
-                                      call = fc)
+  spec_obs <- .new_StudySpecification(
+    vs ~ cluster(qsec), data = mtcars, type = "Obs", subset = mtcars$mpg > 17,
+    call = quote(obs_spec(formula = vs ~ cluster(qsec), data = mtcars, subset = mtcars$mpg > 17))
+  )
 
   expect_equal(dim(spec_obs@structure), c(sum(mtcars$mpg >  17), 2))
   expect_length(spec_obs@column_index, 2)
@@ -201,9 +203,11 @@ test_that("StudySpecification creation", {
   expect_equal(spec_obs@type, "Obs")
 
   ### Complex specification
-  spec_rd <- .new_StudySpecification(vs ~ block(disp, gear) + forcing(wt, cyl) +
-                       cluster(mpg, qsec),
-                  data = mtcars, type = "RD", call = fc)
+  spec_rd <- .new_StudySpecification(
+    vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec),
+    data = mtcars, type = "RD",
+    call = quote(rd_spec(formula = vs ~ block(disp, gear) + forcing(wt, cyl) + cluster(mpg, qsec), data = mtcars))
+  )
 
   mtcars_subset <- subset(mtcars, select = c("vs", "disp", "gear",
                                              "wt", "cyl", "mpg", "qsec"))
@@ -230,18 +234,15 @@ test_that("StudySpecification creation", {
 
   ### Specific specifications
   rct_spec <- rct_spec(vs ~ cluster(qsec), data = mtcars)
-  rct_spec@call <- fc
   identical_specs(spec_rct, rct_spec)
 
   obs_spec <- obs_spec(vs ~ cluster(qsec), data = mtcars,
                         subset = mtcars$mpg > 17)
-  obs_spec@call <- fc
   identical_specs(spec_obs, obs_spec)
 
   rd_spec <- rd_spec(vs ~ block(disp, gear) + forcing(wt, cyl) +
                         cluster(mpg, qsec),
                       data = mtcars)
-  rd_spec@call <- fc
   identical_specs(spec_rd, rd_spec)
 
 
@@ -598,4 +599,35 @@ test_that("#209 fix subsetting", {
                    spec2@structure)
   expect_identical(spec1@structure,
                    spec3@structure)
+})
+
+test_that("#222 factor UOA", {
+
+  example <- data.frame(schf = as.factor(letters),
+                        schn = 1:26,
+                        trt = rep(c(0,1),each = 13),
+                        Y = rnorm(26))
+  sp1 <- rct_spec(trt ~ unitid(schf), data = example)
+  sp2 <- rct_spec(trt ~ unitid(schn), data = example)
+  mod1 <- lmitt(Y ~ 1,
+                specification = sp1,
+                data = example,weights = "ate")
+  mod2 <- lmitt(Y ~ 1,
+                specification = sp2,
+                data = example,weights = "ate")
+  expect_identical(vcov(mod1), vcov(mod2))
+
+})
+
+test_that("get StudySpecification data from call's formula environment", {
+  make_spec <- function(udata, zcol, ucol) {
+    spec_form <- reformulate(paste0("unitid(", ucol, ")"), response = zcol)
+    rct_specification(spec_form, udata)
+  }
+  
+  udata <- data.frame(uid = seq_len(3), z = c(0, 1, 0))
+  m1 <- make_spec(udata, "z", "uid")
+  expect_identical(udata, get("udata", environment(m1@call$formula)))
+  expect_silent(.make_uoa_cluster_df(m1, "uid"))
+  
 })

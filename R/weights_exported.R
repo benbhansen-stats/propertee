@@ -17,8 +17,10 @@ NULL
 ##'   - \code{ate} - Average treatment effect. Aliases: \code{ate()}.
 ##'   - \code{ett} - Effect of treatment on the treated. Aliases: \code{ett()},
 ##'                        \code{att()}.
-##'   - \code{etc} - Effect of treatment on controls. Aliases: \code{etc()}, \code{atc()}.
-##'   - \code{ato} - Overlap-weighted average effect. Aliases: \code{ato()}, \code{olw}, \code{owt}, \code{pwt}.
+##'   - \code{etc} - Effect of treatment on controls. Aliases: \code{etc()},
+##'                        \code{atc()}.
+##'   - \code{ato} - Overlap-weighted average effect. Aliases: \code{ato()},
+##'                        \code{olw}, \code{owt}, \code{pwt}.
 ##'
 ##'   In a \code{StudySpecification} with \code{block}s, the weights are
 ##'   generated as a function of the ratio of the number of treated units in a
@@ -38,16 +40,16 @@ NULL
 ##'   treatment variable was called \code{dose} and doses above 250 are
 ##'   considered treatment, you might write:
 ##'
-##'   \code{dichotomy(spec) <- dose > 250 ~ dose <= 250}
+##'   \code{ate(..., dichotomy = dose > 250 ~ dose <= 250}
 ##'
 ##'   The period (\code{.}) can be used to assign all other units of assignment.
 ##'   For example, we could have written the same treatment regime as either
 ##'
-##'   \code{dichotomy(spec) <- dose > 250 ~ .}
+##'   \code{etc(..., dichotomy = dose > 250 ~ .}
 ##'
 ##'   or
 ##'
-##'   \code{dichotomy(spec) <- . ~ dose <= 250}
+##'   \code{olw(..., dichotomy = . ~ dose <= 250}
 ##'
 ##'   The \code{dichotomy} formula supports Relational Operators (see
 ##'   [Comparison]), Logical Operators (see [Logic]), and \code{%in%} (see

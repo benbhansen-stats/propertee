@@ -755,3 +755,24 @@ test_that("#180 non-exhaustive dichotomies", {
     nrow(simdata[simdata$dose != 200 & !is.na(simdata$uoa1),])
   )
 })
+
+test_that("assignment weights persist when data argument excludes some units", {
+  set.seed(43)
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
+  
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  wts <- ett(spec, data = testdata[-(1:2),])
+  expect_equal(wts@.Data, rep(1, 8))
+  
+  # test with a dichotomy and blocks
+  uoadata <- data.frame(cid = seq_len(6),
+                        dose = c(0, 1, 1, 0, 2, 2),
+                        bid = rep(c(1, 2), each = 3))
+  spec <- rct_spec(dose ~ unitid(cid) + block(bid), data = uoadata)
+  individdata <- data.frame(cid = rep(uoadata$cid, each = 10), y = rnorm(60))
+  wts <- ett(spec,
+             data = individdata[individdata$cid %in% c(1, 3, 4, 6),,drop=FALSE],
+             dichotomy = dose == 1 ~ dose == 0)
+  expected_wts <- c(rep(2, 10), rep(1, 10), rep(0, 20))
+  expect_equal(wts@.Data, expected_wts)
+})

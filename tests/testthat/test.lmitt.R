@@ -93,7 +93,9 @@ test_that("StudySpecification argument", {
   mod3 <- lmitt(y ~ 1, data = simdata, specification = z ~ cluster(uoa1, uoa2))
   expect_true(mod3@StudySpecification@type == "Obs")
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
-  expect_identical(mod1@StudySpecification, mod3@StudySpecification)
+  expect_identical(mod1@StudySpecification@structure, mod3@StudySpecification@structure)
+  expect_identical(mod1@StudySpecification@unit_of_assignment_type, mod3@StudySpecification@unit_of_assignment_type)
+  expect_identical(deparse1(mod1@StudySpecification@call), deparse1(mod3@StudySpecification@call))
 
   spec2 <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), data = simdata)
 
@@ -103,7 +105,9 @@ test_that("StudySpecification argument", {
                 specification = z ~ cluster(uoa1, uoa2) + forcing(force))
   expect_true(mod3@StudySpecification@type == "RD")
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
-  expect_identical(mod1@StudySpecification, mod3@StudySpecification)
+  expect_identical(mod1@StudySpecification@structure, mod3@StudySpecification@structure)
+  expect_identical(mod1@StudySpecification@unit_of_assignment_type, mod3@StudySpecification@unit_of_assignment_type)
+  expect_identical(deparse1(mod1@StudySpecification@call), deparse1(mod3@StudySpecification@call))
 
   spec3 <- obs_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
@@ -116,7 +120,9 @@ test_that("StudySpecification argument", {
                 subset = simdata$dose < 300)
   expect_true(mod3@StudySpecification@type == "Obs")
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
-  expect_identical(mod1@StudySpecification, mod3@StudySpecification)
+  expect_identical(mod1@StudySpecification@structure, mod3@StudySpecification@structure)
+  expect_identical(mod1@StudySpecification@unit_of_assignment_type, mod3@StudySpecification@unit_of_assignment_type)
+  expect_identical(deparse1(mod1@StudySpecification@call), deparse1(mod3@StudySpecification@call))
 
   expect_error(lmitt(y ~ 1, data = simdata, specification = 4),
                "formula specifying such a specification")
@@ -131,7 +137,9 @@ test_that("Dichotomy argument", {
   mod2 <- lmitt(y ~ 1, data = simdata,
                 specification = dose ~ cluster(uoa1, uoa2),
                 dichotomy = dose > 200 ~ .)
-  expect_identical(mod1@StudySpecification, mod2@StudySpecification)
+  expect_identical(mod1@StudySpecification@structure, mod2@StudySpecification@structure)
+  expect_identical(mod1@StudySpecification@unit_of_assignment_type, mod2@StudySpecification@unit_of_assignment_type)
+  expect_identical(deparse1(mod1@StudySpecification@call), deparse1(mod2@StudySpecification@call))
   expect_true(all.equal(mod1$coefficients, mod2$coefficients,
                         check.attributes =  FALSE))
 

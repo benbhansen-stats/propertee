@@ -71,7 +71,7 @@ setValidity("StudySpecification", function(object) {
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
 ##' @return A new StudySpecification object
-##' @importFrom stats formula complete.cases
+##' @importFrom stats formula complete.cases terms
 ##' @keywords internal
 .new_StudySpecification <- function(form,
                        data,
@@ -90,6 +90,11 @@ setValidity("StudySpecification", function(object) {
   if (!is.null(subset)) {
     data <- subset(data, subset = subset)
   }
+
+  ## keep formula's environment
+  env <- environment(terms(form, data = data))
+  environment(form) <- env
+  call$formula <- form
 
   ## #174 convert all data.frames
   data <- .as_data_frame(data)
@@ -242,6 +247,9 @@ setValidity("StudySpecification", function(object) {
 ##'   \code{unit_of_assignment}, which can just be \code{1:n}. To disable this
 ##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" = FALSE)}.
 ##'
+##'   The units of assignment, blocks, and forcing variables must be
+##'   \code{numeric} or \code{character}. If they are otherwise, an attempt is
+##'   made to cast them into \code{character}.
 ##'
 ##' @param formula a \code{formula} defining the \code{StudySpecification}
 ##'   components. See `Details` for specification.

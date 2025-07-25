@@ -32,11 +32,11 @@ NULL
   if (!(.isValidWeightTarget(target))) {
     stop("Invalid weight target")
   }
-
+  
   if (is.null(specification)) {
     specification <- .get_spec()
   }
-
+  
   # get `dichotomy` argument and validate against any up the call stack
   if (is.null(dichotomy)) {
     possible_dichotomies <- .find_dichotomies()
@@ -44,79 +44,64 @@ NULL
   } else {
     dichotomy <- .validate_dichotomy(dichotomy)
   }
-
+  
   if (is.null(data)) {
     # Only thing we need from the data is unit of assignment info to enable
     # later merge
     form <- as.formula(paste("~", paste(var_names(specification, "u"),
                                         collapse = "+")))
-
+    
     data <- .get_data_from_model("weights", form, by)
   } else {
     # #174 handle tibbles
     data <- .as_data_frame(data)
   }
-
+  
   if (!is.null(by)) {
     # .update_by handles checking input
     specification <- .update_by(specification, data, by)
   }
-
-  # getting the unique rows of `data` will ensure we calculate weights at the
-  # level of assignment
-  txt <- .bin_txt(specification,
-                  unique(data[, var_names(specification, "u"), drop = FALSE]),
-                  dichotomy)
-
+  
+  # get the units of assignment from the StudySpecification to calculate weights
+  txt <- .bin_txt(specification, dichotomy = dichotomy)
+  
   #### generate weights
-
-  if (length(var_names(specification, "b")) == 0) {
+  
+  if (!has_blocks(specification)) {
     # If no block is specified, then e_z is the proportion of units of
     # assignment who receive the treatment.
     e_z <- mean(txt, na.rm = TRUE)
-    } else {
+  } else {
     # If a block is specified, then e_z varies by block and is the proportion
     # of units of assignments within the block that receive the treatment.
-
-    # Identify number of units per block, and number of treated units per block
-    # NOTE 5/21/24: since .bin_txt() returns NA elements, need to replace
-    # `blocks(specification)` with a matrix that has NA elements at the same indices
-    # (and is aligned to the order of the ID's in `data`)
-    blks <- as.data.frame(matrix(nrow = length(txt),
-                                 ncol = length(var_names(specification, "b")),
-                                 dimnames = list(rownames = NULL,
-                                                 colnames = var_names(specification, "b"))))
-
-    blks[!is.na(txt),] <- .merge_preserve_order(
-      unique(data[, var_names(specification, "u"), drop=FALSE]),
-      cbind(specification@structure[, var_names(specification, "b"), drop=FALSE],
-            specification@structure[, var_names(specification, "u"), drop=FALSE]),
-      all = FALSE, all.x = TRUE
-    )[!is.na(txt), var_names(specification, "b")]
-
+    blks <- specification@structure[, c(var_names(specification, "u"),
+                                        var_names(specification, "b"))]
+    
     # Generate e_z and merge back into blks
-    e_z_ <- aggregate(txt ~ ., data = blks, FUN=function(x) sum(x)/length(x))
+    e_z_ <- aggregate(txt ~ .,
+                      data = blks[,var_names(specification, "b"), drop=FALSE],
+                      FUN=function(x) sum(x)/length(x))
     blks <- .merge_preserve_order(blks, e_z_, all.x = TRUE)
     # Rename for clarity
     names(blks)[ncol(blks)] <- "e_z"
 
-    e_z  <- blks[["e_z"]]
-
+    e_z <- blks[["e_z"]]
+    
   }
-
+  
   weights  <-
-      switch(target,
-             ate = txt / e_z + (1 - txt) / (1 - e_z),
-             ett = txt + (1 - txt) * e_z / (1 - e_z),
-             etc= (1-txt) + txt * (1-e_z)/e_z,
-             ato= txt*(1-e_z) + (1-txt)*e_z
-             )
-
-    to_reset_to_0 <- e_z == 1 | e_z == 0
-    if (any(to_reset_to_0, na.rm = TRUE)) {
-      weights[to_reset_to_0] <- 0
-    }
-
+    switch(target,
+           ate = txt / e_z + (1 - txt) / (1 - e_z),
+           ett = txt + (1 - txt) * e_z / (1 - e_z),
+           etc= (1-txt) + txt * (1-e_z)/e_z,
+           ato= txt*(1-e_z) + (1-txt)*e_z
+    )
+  
+  to_reset_to_0 <- e_z == 1 | e_z == 0
+  if (any(to_reset_to_0, na.rm = TRUE)) {
+    weights[to_reset_to_0] <- 0
+  }
+  
   return(.join_spec_weights(weights,
                             specification,
                             target = target,
@@ -148,23 +133,20 @@ NULL
                                data,
                                dichotomy) {
   uoanames <- var_names(specification, "u")
-
+  
   # Merge uoa data with weights at uoa level
-  # NOTE 5/21/24: changed this from taking `specification@structure` because the order
-  # of the weights now reflects the ordering of the data rather than `specification@structure`
-  # due to changes in .bin_txt()
-  uoadata <- unique(data[, var_names(specification, "u"), drop = FALSE])
+  uoadata <- specification@structure[, var_names(specification, "u"), drop = FALSE]
   uoadata$specification_weights <- weights
-
+  
   # Merge with data to expand weights to unit of analysis level
   weights <- .merge_preserve_order(data, uoadata,
                                    by = uoanames,
                                    all.x = TRUE)$specification_weights
-
+  
   # Replace NA weights with 0 so they don't contribute to the model, but aren't
   # droppde
   weights[is.na(weights)] <- 0
-
+  
   return(new("WeightedStudySpecification",
              weights,
              StudySpecification = specification,
