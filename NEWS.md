@@ -1,3 +1,7 @@
+# propertee 0.6.2 (unreleased)
+## Bug Fixes
+* Fix minor bugs with the `dichotomy` argument of `lmitt()`
+
 # propertee 0.6.1
 ## New Features
 * In their `coefficients` element, `teeMod` objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the `lmitt()` man page for further details.
