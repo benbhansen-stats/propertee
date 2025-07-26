@@ -77,7 +77,15 @@ extrasample$cond_at_entry <-
     rep("nonexperimental", nrow(extrasample)) |>
     ordered(levels=newlevs)
 
-
+##' The gk* variables are available only for experimentals, but
+##' we'll NA version of some them for the extrasample
+##+
+Filter( \(nm) substr(nm,1,2)=="gk", colnames(experimentsample))
+Filter( \(nm) substr(nm,1,2)=="gk", colnames(extrasample))
+extrasample$"gktreadss" <- extrasample$"gktmathss" <-
+    extrasample$"gktlistss" <- extrasample$"gkwordskillss" <-
+        rep(NA_real_, nrow(extrasample))
+            
 ##' creating date of birth variables...
 ##+
 experimentsample$dob <-
@@ -138,15 +146,19 @@ STARplus <- rbind(experimentsample[common_cols],
 
 ##' Create a new variable read_at_entry_p1 and move column to front
 ##+
-STARplus$read_yr1 <- with(STARplus, ifelse(grade_at_entry == 1, g1treadss,
-                                         ifelse(grade_at_entry == 2, g2treadss,
-                                         ifelse(grade_at_entry == 3, g3treadss, NA))))
+STARplus$read_yr1 <- with(STARplus, ifelse(grade_at_entry == "k", gktreadss,
+                                    ifelse(grade_at_entry == "1", g1treadss,
+                                    ifelse(grade_at_entry == "2", g2treadss,
+                                    ifelse(grade_at_entry == "3", g3treadss, NA))))
+                          )
 STARplus <- STARplus %>%
   relocate(read_yr1, .after = 6)
 
-STARplus$math_yr1 <- with(STARplus, ifelse(grade_at_entry == 1, g1tmathss,
-                                         ifelse(grade_at_entry == 2, g2tmathss,
-                                         ifelse(grade_at_entry == 3, g3tmathss, NA))))
+STARplus$math_yr1 <- with(STARplus, ifelse(grade_at_entry == "k", gktmathss,
+                                    ifelse(grade_at_entry == "1", g1tmathss,
+                                    ifelse(grade_at_entry == "2", g2tmathss,
+                                    ifelse(grade_at_entry == "3", g3tmathss, NA))))
+                          )
 STARplus <- STARplus %>%
   relocate(math_yr1, .after = 7)
 
