@@ -9,11 +9,23 @@ load("data-raw/Comparison_Students.RData")
 extrasample  <- x
 rm(x)
 
+##' Both data sets appear to have been generated from files with
+##' trailing line misrepresented as an observation with all NAs. 
+all(is.na(experimentsample[nrow(experimentsample), ]))
+all(is.na(extrasample[nrow(extrasample), ]))
+
+##' Fixing...
+experimentsample  <- experimentsample[-nrow(experimentsample), ]
+extrasample <- extrasample[-nrow(extrasample), ]
 
 ##' Ensure commensurability of variables across the two
 ##' data frames
 ##+
-all.equal(levels(experimentsample$gender), levels(extrasample$gender))
+levels(experimentsample$gender)  <- levels(extrasample$gender)  <-
+    list("male"="MALE", "female"="FEMALE", "mssng"=NA)
+experimentsample[is.na(experimentsample$gender), "gender"]  <- "mssng"
+extrasample[is.na(extrasample$gender), "gender"]  <- "mssng"
+
 experimentsample$birthmonth  <- as.integer(experimentsample$birthmonth)
 levels(experimentsample$race)  <- list("white"="WHITE",
                                    "black"="BLACK",
@@ -77,6 +89,13 @@ extrasample$dob <-
          paste(birthyear, birthmonth, birthday, sep="-")
          ) |> as.Date()
 
+dob_NA_fill_value  <- median(experimentsample$dob, na.rm=TRUE)
+experimentsample$dobNA  <- is.na(experimentsample$dob)
+experimentsample[experimentsample$dobNA, "dob"]  <-
+    dob_NA_fill_value
+extrasample$dobNA  <- is.na(extrasample$dob)
+extrasample[extrasample$dobNA, "dob"] <-
+    dob_NA_fill_value
 
 ##' Identifying grade and school in which each experimental participant
 ##' entered the study (removing the 1
