@@ -933,11 +933,10 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 
 #' @title (Internal) Design-based variance estimates with HC0 adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details The design-based variance estimates can be calculated for
-#' \code{teeMod} models satisfying the following requirements:
+#' @details Design-based variance estimation is implemented for
+#' \code{teeMod} models satisfying requirements including:
 #' - The model uses \code{rct_spec} as \code{StudySpecification}
 #' - The model only estimates a main treatment effect
-#' - Inverse probability weighting is incorporated
 #'
 #' @keywords internal
 #' @rdname var_estimators
@@ -958,7 +957,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     }
 
   if (x@StudySpecification@type != "RCT"){
-    stop("Design-based standard errors can only be computed for RCT specifications")
+    stop("Design-based standard errors implemented only for RCT specifications")
   }
 
   args <- list(...)
@@ -1025,8 +1024,8 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
-      stop(paste("Design-based standard errors are not supported for\n",
-                 "tee models with absorbed intercepts"))
+      stop(paste("Design-based standard errors are not supported for tee models\n",
+                 "with both covariance adjustment and absorbed intercepts"))
   }
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
