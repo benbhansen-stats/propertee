@@ -16,8 +16,7 @@ vcov_tee(x, type = NULL, cluster = NULL, ...)
 \item{x}{a fitted \code{teeMod} model}
 
 \item{type}{a string indicating the desired bias correction for the residuals
-of \code{x}. Default is \code{"CR0"} if the column provided to \code{cluster}
-indicates clustering and \code{"HC0"} otherwise. See Details for supported types}
+of \code{x}. Default makes no bias correction. See Details for supported types}
 
 \item{cluster}{a vector indicating the columns that define clusters. The default
 is the unit of assignment columns in the \code{StudySpecification} stored

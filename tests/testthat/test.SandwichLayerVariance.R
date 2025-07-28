@@ -47,15 +47,15 @@ test_that("vcov_tee correctly sets and passes on args", {
   expect_equal(attr(vmat6, "cov_adj_rcorrect"), "HC1")
   
   vmat7 <- vcov_tee(ssmod)
-  expect_equal(attr(vmat7, "type"), "CR2")
-  expect_equal(attr(vmat7, "cov_adj_rcorrect"), "HC1")
+  expect_equal(attr(vmat7, "type"), "HC0")
+  expect_equal(attr(vmat7, "cov_adj_rcorrect"), "HC0")
   
   first_obs_ix <- c(1, 1 + cumsum(c(t(table(simdata$uoa1, simdata$uoa2)))))
   uniqdata <- simdata[first_obs_ix[1:(length(first_obs_ix)-1)],,drop=FALSE]
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   imod <- lmitt(y ~ 1, spec, uniqdata)
   vmat8 <- vcov_tee(imod)
-  expect_equal(attr(vmat8, "type"), "HC2")
+  expect_equal(attr(vmat8, "type"), "HC0")
   expect_true(is.null(attr(vmat8, "cov_adj_rcorrect")))
 })
 
@@ -1729,12 +1729,7 @@ test_that("test the output of vcov_tee is correct with bias corrections", {
         cmod_cl$subset <- eval(cls != loo_unit)
         loo_cmod <- eval(cmod_cl, envir = environment(formula(cmod)))
         cl_ix <- cls == loo_unit
-        I_P_cc <- diag(nrow = sum(cl_ix)) - Z[cl_ix,,drop=FALSE] %*% ZTZ_inv %*% t(Z[cl_ix,,drop=FALSE])
-        schur <- eigen(I_P_cc)
-        schur$vector %*% diag(1/sqrt(schur$values), nrow = sum(cl_ix)) %*% solve(schur$vector) %*% (
-            (simdata$y - xm$fitted.values + xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
-          )
-        # (simdata$y - xm$fitted.values - xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
+        (simdata$y - xm$fitted.values + xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
       },
       jk_units,
       SIMPLIFY = FALSE,
@@ -1743,10 +1738,8 @@ test_that("test the output of vcov_tee is correct with bias corrections", {
   )
   ef_psi <- estfun(as(xm, "lm")) / xm$residuals * new_r
   
-  g <- length(jk_units)
   n <- nrow(simdata)
-  k <- 3 + 2 # 3 in cmod and 2 in xm
-  ef_phi <- estfun(cmod) * sqrt(g/(g-1) * (n-1)/(n-k))
+  ef_phi <- estfun(cmod)
   
   ef_ctrl_means_model <- estfun(xm@ctrl_means_model)
   br <- .get_tilde_a22_inverse(xm)
@@ -2488,7 +2481,7 @@ test_that("type attribute", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ 1, data = simdata, weights = "ate", specification = spec)
-  expect_identical(attr(vcov(ssmod), "type"), "CR2")
+  expect_identical(attr(vcov(ssmod), "type"), "HC0")
   expect_identical(attr(vcov(ssmod, type = "CR2"), "type"), "CR2")
   expect_identical(attr(vcov(ssmod, type = "MB2"), "type"), "MB2")
   expect_identical(attr(vcov(ssmod, type = "HC2"), "type"), "HC2")

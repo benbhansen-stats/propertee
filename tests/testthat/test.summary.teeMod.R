@@ -67,12 +67,12 @@ test_that("vcov.type argument", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec)))
-  expect_equal(summary(ssmod)$vcov.type, "CR2")
+  expect_equal(summary(ssmod)$vcov.type, "HC0")
   expect_equal(summary(ssmod, vcov.type = "CR0")$vcov.type, "CR0")
   expect_equal(summary(ssmod, vcov.type = "MB0")$vcov.type, "MB0")
   expect_equal(summary(ssmod, vcov.type = "HC0")$vcov.type, "HC0")
 
-  expect_equal(sum(grepl("CR2", capture.output(summary(ssmod)))), 1)
+  expect_equal(sum(grepl("HC0", capture.output(summary(ssmod)))), 1)
   expect_equal(sum(grepl("CR0",
                          capture.output(summary(ssmod, vcov.type = "CR0")))),
                1)
@@ -153,11 +153,7 @@ test_that("print.summary isn't confused by bad naming", {
   spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
 
   mod <- lmitt(y ~ abz.c, data = simdata, specification = spec)
-  suppressWarnings(
-    expect_warning(
-      expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom"),
-      "NaNs")
-  )
+  expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
   expect_true(!any(grepl("^abz\\.", co)))

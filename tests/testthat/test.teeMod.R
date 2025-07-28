@@ -273,13 +273,11 @@ test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   ssmod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   vmat1 <- vcov(ssmod1)
-  vmat2 <- vcov(ssmod1, type = "CR2")
+  vmat2 <- vcov(ssmod1, type = "HC0")
   vmat3 <- vcov(ssmod1, cadjust = FALSE)
 
   expect_error(vcov(ssmod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
-  expect_identical(vmat1, vcov_tee(ssmod1))
-  expect_identical(vmat3, vcov_tee(ssmod1, type = "CR2", cadjust = FALSE))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
   vmat3 <- vcov(ssmod2, type = "CR0", cov_adj_rcorrect = "HC0")
@@ -303,7 +301,7 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   vcov_tee_ci.95 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
     qt(c(0.025, 0.975), ssmod1$df.residual)
   dimnames(vcov_tee_ci.95) <- list(names(ssmod1$coefficients[1:4]), c("2.5 %", "97.5 %"))
-  ci1 <- confint(ssmod1, type = "CR2")
+  ci1 <- confint(ssmod1, type = "HC0")
   ci2 <- confint(ssmod1)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcov_tee_ci.95)

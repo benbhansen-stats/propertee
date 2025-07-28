@@ -49,8 +49,7 @@ NULL
 #'
 #' @param x a fitted \code{teeMod} model
 #' @param type a string indicating the desired bias correction for the residuals
-#'   of \code{x}. Default is \code{"CR0"} if the column provided to \code{cluster}
-#'   indicates clustering and \code{"HC0"} otherwise. See Details for supported types
+#'   of \code{x}. Default makes no bias correction. See Details for supported types
 #' @param cluster a vector indicating the columns that define clusters. The default
 #'   is the unit of assignment columns in the \code{StudySpecification} stored
 #'   in \code{x}. These columns should appear in the dataframe used for fitting
@@ -69,21 +68,7 @@ NULL
 #' @export
 #' @rdname var_estimators
 vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
-  if (is.null(type)) {
-    if (inherits(x, "mmm")) {
-      if (nrow(x[[1]]$model) == nrow(x[[1]]@StudySpecification@structure)) {
-        type <- "HC2"
-      } else {
-        type <- "CR2"
-      }
-    } else {
-      if (nrow(x$model) == nrow(x@StudySpecification@structure)) {
-        type <- "HC2"
-      } else {
-        type <- "CR2"
-      }
-    }
-  }
+  if (is.null(type)) type <- "HC0"
 
   vcov_type <- substr(type, 1, 2)
   if (type != "DB0" & !(vcov_type %in% c("HC", "CR", "MB"))) {
@@ -100,22 +85,8 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     args$type <- type
   }
   
-  if (inherits(x, "mmm")) {
-    if (inherits(x[[1]]$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
-      if (vcov_type %in% c("HC", "CR", "MB") &
-          inherits(x[[1]]$model$`(offset)`@fitted_covariance_model, "lm")) {
-        args$cov_adj_rcorrect <- "HC1"
-      } else args$cov_adj_rcorrect <- "HC0"
-    }
-  } else {
-    if (inherits(x$model$`(offset)`, "SandwichLayer") & is.null(args$cov_adj_rcorrect)) {
-      if (vcov_type %in% c("HC", "CR", "MB") &
-          inherits(x$model$`(offset)`@fitted_covariance_model, "lm")) {
-        args$cov_adj_rcorrect <- "HC1"
-      } else args$cov_adj_rcorrect <- "HC0"
-    }
-  }
-
+  if (is.null(args$cov_adj_rcorrect) & inherits(x, "teeMod") &
+      inherits(x$model$`(offset)`, "SandwichLayer")) args$cov_adj_rcorrect <- "HC0"
 
   if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
   args$cluster_cols <- cluster
