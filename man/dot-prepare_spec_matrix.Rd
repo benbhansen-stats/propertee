@@ -11,7 +11,7 @@ calculation}
 \item{x}{a fitted \code{teeMod} model}
 }
 \value{
-a \eqn{m \items (p+2)} matrix of cluster sums of design-based
+a \eqn{m \times (p+2)} matrix of cluster sums of design-based
 estimating equations scaled by \eqn{\sqrt{m_{b0}m_{b1}}/m_{b}}. Here
 \eqn{m} is the number of clusters, \eqn{p} is the number of covariates used
 in the prior covariance adjustment (excluding intercept)

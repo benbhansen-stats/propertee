@@ -82,7 +82,7 @@ non-binary treatment variables by introducing `dichotomy`s.
 The outcome of interest is a reading score at the end of kindergarten.
 
 ```{r}
-summary(STARplus$g1readbsraw)
+summary(STARplus$g1treadss)
 ```
 
 
@@ -172,14 +172,14 @@ treatment-`x` interaction effect is estimated.
 Therefore, to estimate the treatment effect in our example, we can run:
 
 ```{r}
-te <- lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec)
+te <- lmitt(g1treadss ~ 1, data = STARplus, specification = spec)
 summary(te)
 ```
 
 The data includes ethnicity; we can estimate subgroup effects by ethnicity:
 
 ```{r}
-te_s <- lmitt(g1readbsraw ~ race, data = STARplus, specification = spec)
+te_s <- lmitt(g1treadss ~ race, data = STARplus, specification = spec)
 summary(te_s)
 ```
 
@@ -193,8 +193,8 @@ To include one of the weights, simply include the `weights = "ate"` or
 `weights = "ett"` argument to `lmitt()`:
 
 ```{r}
-lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, weights = "ate")
-lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, weights = "ett")
+lmitt(g1treadss ~ 1, data = STARplus, specification = spec, weights = "ate")
+lmitt(g1treadss ~ 1, data = STARplus, specification = spec, weights = "ett")
 ```
 
 Internally, these call the `ate()` or `ett()` functions which can be used
@@ -217,14 +217,14 @@ covariate model should be fit. Any model which supports a `predict()` function
 should work.
 
 ```{r}
-camod <- lm(g1readbsraw ~ gender * dob + race, data = STARplus)
+camod <- lm(g1treadss ~ gender * dob + race, data = STARplus)
 ```
 
 The `cov_adj()` function can be used to process the covariance adjustment model
 and produce the required values; and its output can be passed as an `offset=`.
 
 ```{r}
-lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec,
+lmitt(g1treadss ~ 1, data = STARplus, specification = spec,
       weights = "ate", offset = cov_adj(camod))
 ```
 
@@ -242,7 +242,7 @@ Also, similarly to weights, `cov_adj()` can be used in normal modeling commands
 as well.
 
 ```{r}
-lm(g1readbsraw ~ cond_small, data = STARplus, weights = ate(spec),
+lm(g1treadss ~ cond_small, data = STARplus, weights = ate(spec),
    offset = cov_adj(camod))
 ```
 
@@ -253,5 +253,5 @@ estimating, the `absorb=TRUE` argument can be passed.
 
 <!-- currently not working due to #210, thus turned off-->
 ```{r, eval=FALSE}
-lmitt(g1readbsraw ~ 1, data = STARplus, specification = spec, absorb = TRUE)
+lmitt(g1treadss ~ 1, data = STARplus, specification = spec, absorb = TRUE)
 ```

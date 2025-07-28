@@ -59,7 +59,7 @@ match the number of rows of the dataframe used.
 data("STARplus")
 
 ##' A prognostic model fitted to experimental + non-experimental controls
-y0hat_read <- lm(read_yr1 ~ gender*dob + race,
+y0hat_read <- lm(read_yr1 ~ gender*dob +dobNA + race,
                  data = STARplus,
                  subset = cond_at_entry!="small")
 
@@ -71,20 +71,18 @@ ett_wts    <- ett(STARspec, data = STARplus,
                   dichotomy= cond_at_entry =="small" ~.)
 
 ett_read <- lm(read_yr1 ~ assigned(dichotomy= cond_at_entry =="small" ~.),
-               ### expect warning about NAs generated here:
                offset = cov_adj(y0hat_read),
                data = STARplus,
                weights = ett_wts)
 coef(ett_read)
-ett_read |> as.lmitt() |> vcov(type = "HC0", cov_adj_rcorrect = "HC0")
+ett_read |> as.lmitt() # brings in control-group means of outcome, predictions
 
 ate_read <- lmitt(read_yr1 ~ 1, STARspec, STARplus,
                   dichotomy= cond_at_entry =="small" ~.,
                   offset = cov_adj(y0hat_read),
                   weights = "ate")
 show(ate_read)
-coef(ate_read)
-vcov(ate_read, type = "HC0", cov_adj_rcorrect = "HC0")
+vcov(ate_read, type = "HC0", cov_adj_rcorrect = "HC0") |> unname()
 
 ate_read_loc <-
     lmitt(read_yr1 ~ race, STARspec, STARplus,

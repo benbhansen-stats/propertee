@@ -9,11 +9,23 @@ load("data-raw/Comparison_Students.RData")
 extrasample  <- x
 rm(x)
 
+##' Both data sets appear to have been generated from files with
+##' trailing line misrepresented as an observation with all NAs. 
+all(is.na(experimentsample[nrow(experimentsample), ]))
+all(is.na(extrasample[nrow(extrasample), ]))
+
+##' Fixing...
+experimentsample  <- experimentsample[-nrow(experimentsample), ]
+extrasample <- extrasample[-nrow(extrasample), ]
 
 ##' Ensure commensurability of variables across the two
 ##' data frames
 ##+
-all.equal(levels(experimentsample$gender), levels(extrasample$gender))
+levels(experimentsample$gender)  <- levels(extrasample$gender)  <-
+    list("male"="MALE", "female"="FEMALE", "mssng"=NA)
+experimentsample[is.na(experimentsample$gender), "gender"]  <- "mssng"
+extrasample[is.na(extrasample$gender), "gender"]  <- "mssng"
+
 experimentsample$birthmonth  <- as.integer(experimentsample$birthmonth)
 levels(experimentsample$race)  <- list("white"="WHITE",
                                    "black"="BLACK",
@@ -65,7 +77,15 @@ extrasample$cond_at_entry <-
     rep("nonexperimental", nrow(extrasample)) |>
     ordered(levels=newlevs)
 
-
+##' The gk* variables are available only for experimentals, but
+##' we'll NA version of some them for the extrasample
+##+
+Filter( \(nm) substr(nm,1,2)=="gk", colnames(experimentsample))
+Filter( \(nm) substr(nm,1,2)=="gk", colnames(extrasample))
+extrasample$"gktreadss" <- extrasample$"gktmathss" <-
+    extrasample$"gktlistss" <- extrasample$"gkwordskillss" <-
+        rep(NA_real_, nrow(extrasample))
+            
 ##' creating date of birth variables...
 ##+
 experimentsample$dob <-
@@ -77,6 +97,13 @@ extrasample$dob <-
          paste(birthyear, birthmonth, birthday, sep="-")
          ) |> as.Date()
 
+dob_NA_fill_value  <- median(experimentsample$dob, na.rm=TRUE)
+experimentsample$dobNA  <- is.na(experimentsample$dob)
+experimentsample[experimentsample$dobNA, "dob"]  <-
+    dob_NA_fill_value
+extrasample$dobNA  <- is.na(extrasample$dob)
+extrasample[extrasample$dobNA, "dob"] <-
+    dob_NA_fill_value
 
 ##' Identifying grade and school in which each experimental participant
 ##' entered the study (removing the 1
@@ -119,15 +146,19 @@ STARplus <- rbind(experimentsample[common_cols],
 
 ##' Create a new variable read_at_entry_p1 and move column to front
 ##+
-STARplus$read_yr1 <- with(STARplus, ifelse(grade_at_entry == 1, g1treadss,
-                                         ifelse(grade_at_entry == 2, g2treadss,
-                                         ifelse(grade_at_entry == 3, g3treadss, NA))))
+STARplus$read_yr1 <- with(STARplus, ifelse(grade_at_entry == "k", gktreadss,
+                                    ifelse(grade_at_entry == "1", g1treadss,
+                                    ifelse(grade_at_entry == "2", g2treadss,
+                                    ifelse(grade_at_entry == "3", g3treadss, NA))))
+                          )
 STARplus <- STARplus %>%
   relocate(read_yr1, .after = 6)
 
-STARplus$math_yr1 <- with(STARplus, ifelse(grade_at_entry == 1, g1tmathss,
-                                         ifelse(grade_at_entry == 2, g2tmathss,
-                                         ifelse(grade_at_entry == 3, g3tmathss, NA))))
+STARplus$math_yr1 <- with(STARplus, ifelse(grade_at_entry == "k", gktmathss,
+                                    ifelse(grade_at_entry == "1", g1tmathss,
+                                    ifelse(grade_at_entry == "2", g2tmathss,
+                                    ifelse(grade_at_entry == "3", g3tmathss, NA))))
+                          )
 STARplus <- STARplus %>%
   relocate(math_yr1, .after = 7)
 

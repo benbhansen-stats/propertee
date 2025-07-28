@@ -5,7 +5,7 @@
 \alias{STARplus}
 \title{STAR participants plus nonexperimental controls}
 \format{
-A \code{data.frame} with 13,382 rows and 51 columns.
+A \code{data.frame} with 13,382 rows and 56 columns.
 \itemize{
 \item {stdnid} Student ID
 \item {gender} Student gender
@@ -17,10 +17,14 @@ A \code{data.frame} with 13,382 rows and 51 columns.
 student entered the study
 \item {math_yr1} SAT math scaled score from grade at which
 student entered the study
+\item {gktreadss} Kindergarten reading scaled score (RCT participants only)
+\item {gktmathss} Kindergarten math scaled score (RCT participants only)
+\item {gktlistss} Kindergarten listening scaled score (RCT participants only)
+\item {gkwordskillss} Kindergarten word study skills scaled score (RCT participants only)
 \item {g1schid} Grade 1 School ID
 \item {g1tchid} Grade 1 Teacher ID
 \item {g1classsize} Class size of Grade 1
-\item {g1treadss} Grade 1 SAT meading scaled score
+\item {g1treadss} Grade 1 SAT reading scaled score
 \item {g1tmathss} Grade 1 SAT math scaled score
 \item {g1tlistss} Grade 1 total listening scale score in SAT
 \item {g1wordskillss} Grade 1 word study skills scale score in SAT
@@ -56,7 +60,8 @@ student entered the study
 \item {g3mathbsraw} Grade 3 math raw score in BSF tests
 \item {g3readbsobjpct} Grade 3 reading percent objectives mastered in BSF tests
 \item {g3mathbsobjpct} Grade 3 math percent objectives mastered in BSF tests
-\item {dob} Date of birth
+\item {dob} Date of birth (with NAs imputed RCT participant median)
+\item {dobNA} Dat of birth not recorded
 \item {grade_at_entry} Grade at which each student first entered the study
 \item {school_at_entry} School ID corresponding to the student's grade
 at entry into the study
@@ -65,7 +70,7 @@ at entry into the study
 }
 }
 \source{
-\url{https://doi.org/10.7910/DVN/SIWH9F}
+\doi{doi:10.7910/DVN/SIWH9F}
 }
 \usage{
 STARplus
