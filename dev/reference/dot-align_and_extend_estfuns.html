@@ -80,7 +80,10 @@ rows in the dataframe used for fitting <code>x</code> and the dataframe passed t
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>arguments passed to methods</p></dd>
+<dd><p>mostly arguments passed to methods, but the special case is the argument
+<code>loco_residuals</code>, which indicates the offsets in the residuals of <code>x</code>
+should be replaced by versions that use leave-one-cluster-out estimates of
+the covariance model</p></dd>
 
 </dl></div>
     <div class="section level2">
