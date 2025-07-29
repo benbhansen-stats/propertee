@@ -1110,8 +1110,10 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata_copy$y - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
-  ef2 <- .align_and_extend_estfuns(mod2, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0")
+  ef1 <- .align_and_extend_estfuns(mod1, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0",
+                                   loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0",
+                                   loco_residuals = TRUE)
 
   # tests to run (for each .align_and_extend_estfuns() test):
   # 1) do we get a matrix of estimating equations of dimension n?
@@ -1129,8 +1131,9 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
     ef1$psi,
     mod_lm_ef[sort(as.character(seq(nrow(simdata_copy)))),],
     check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
@@ -1174,8 +1177,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
@@ -1184,7 +1187,7 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   expect_true(all.equal(ef1$phi, cmod_ef[c(nonzero_ix, zero_ix),], check.attributes = FALSE))
   expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[zero_ix] == 0))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
@@ -1231,8 +1234,8 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
@@ -1247,8 +1250,9 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
     ef1$psi,
     mod_lm_ef[c(setdiff(seq_len(nrow(simdata_copy)), C_ix), sort(as.character(C_ix))),],
     check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap",
@@ -1320,8 +1324,8 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1329,8 +1333,9 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all.equal(ef1$phi, cmod_ef[sort(seq(50L)),], check.attributes = FALSE))
   expect_true(all.equal(ef1$psi, mod_lm_ef[sort(seq(50L)),], check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
@@ -1371,8 +1376,8 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1381,7 +1386,7 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   expect_true(all.equal(ef1$phi, cmod_ef, check.attributes = FALSE))
   expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[Q_ix,], check.attributes = FALSE))
   expect_true(all(ef1$psi[setdiff(seq_len(nrow(simdata)), Q_ix)] == 0))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't",
@@ -1425,8 +1430,8 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
                        rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
   mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
     simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
@@ -1441,8 +1446,9 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't
   expect_true(all.equal(ef1$psi,
                         mod_lm_ef[c(setdiff(seq_len(nrow(simdata)), C_ix), C_ix),],
                         check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE), vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no `by`)",

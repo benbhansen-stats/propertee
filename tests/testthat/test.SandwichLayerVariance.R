@@ -1748,7 +1748,8 @@ test_that("test the output of vcov_tee is correct with bias corrections", {
                        ef_phi %*% t(.get_a11_inverse(xm)) %*% t(.get_a21(xm)),
                      cls)) / n^2
   ) %*% t(br)
-  expect_true(all.equal(vc, vcov_tee(xm, cadjust = FALSE), check.attributes = FALSE))
+  expect_true(all.equal(vc, vcov_tee(xm, cadjust = FALSE, loco_residuals = TRUE),
+                        check.attributes = FALSE))
 })
 
 test_that(paste("HC0 .vcov_CR lm w/o clustering",
@@ -2236,8 +2237,6 @@ test_that(paste("HC0 .vcov_CR lm w/o clustering",
                  diag(2) * n / sum(weights(ctrl_means_mod))))
 
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
-  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "uid")
-  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
@@ -2351,32 +2350,35 @@ test_that(paste("HC0 .vcov_CR lm w/ clustering",
                          weights(ctrl_means_mod) * model.matrix(ctrl_means_mod), # only 1 col in model matrix
                          FUN = "*")
   colnames(ef_ctrl_means) <- colnames(cm_grad)
-  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(ssmod_as.lmitt), ids, colSums))) / n,
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(ssmod_as.lmitt, loco_residuals = TRUE),
+                                                   ids, colSums))) / n,
                crossprod(Reduce(
                  rbind,
                  by(cbind(ef_ssmod, ef_ctrl_means) - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meatCL
-  expect_equal(meat., sandwich::meatCL(ssmod_as.lmitt, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(ssmod_as.lmitt, cluster = ids, cadjust = FALSE,
+                                       loco_residuals = TRUE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE, loco_residuals = TRUE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE, loco_residuals = TRUE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat,
                         sandwich::sandwich(ssmod_as.lmitt,
                                            meat. = sandwich::meatCL,
-                                           cluster = ids, cadjust = FALSE),
+                                           cluster = ids, cadjust = FALSE,
+                                           loco_residuals = TRUE),
                         check.attributes = FALSE))
 })
 
@@ -2442,8 +2444,6 @@ test_that(paste("HC0 .vcov_CR binomial glm cmod",
                  diag(2) * n / sum(weights(ctrl_means_mod))))
 
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
-  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "uid")
-  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)

@@ -9,7 +9,9 @@
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
 
-\item{...}{arguments passed to methods}
+\item{...}{arguments passed to methods, most importantly those that define
+the bias corrections for the residuals of \code{x} and, if applicable, a
+\code{fitted_covariance_model} stored in its offset}
 }
 \value{
 An \eqn{n\times k} matrix of empirical estimating equations for \code{x}.

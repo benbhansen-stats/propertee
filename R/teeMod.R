@@ -115,7 +115,9 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   the variance-covariance of the parameter estimates in \code{x}.
 ##'
 ##' @param x a fitted \code{teeMod} model
-##' @param ... arguments passed to methods
+##' @param ... arguments passed to methods, most importantly those that define
+##'   the bias corrections for the residuals of \code{x} and, if applicable, a
+##'   \code{fitted_covariance_model} stored in its offset
 ##' @return An \eqn{n\times k} matrix of empirical estimating equations for \code{x}.
 ##'   \code{k} includes the model intercept, main effects of treatment and
 ##'   moderator variables, any moderator effects, and marginal and conditional
@@ -355,7 +357,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   \code{data} argument of the covariance adjustment model fit. The default is
 ##'   \code{NULL}, in which case the unit of assignment columns specified in the
 ##'   \code{StudySpecification} slot of \code{x} are used.
-##' @param ... arguments passed to methods
+##' @param ... mostly arguments passed to methods, but the special case is the argument
+##'   \code{loco_residuals}, which indicates the offsets in the residuals of \code{x}
+##'   should be replaced by versions that use leave-one-cluster-out estimates of
+##'   the covariance model
 ##' @return A list of two matrices, one being the aligned contributions to the
 ##'   estimating equations for the direct adjustment model, and the other being
 ##'   the aligned contributions to the covariance adjustment model.
@@ -392,7 +397,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
   # use jackknife first-stage coefficient estimates if Q and C overlap
   psi_r <- stats::residuals(x, type = "working")
-  if (sum(sl@keys$in_Q) > 0) {
+  if (!is.null(dots$loco_residuals) & sum(sl@keys$in_Q) > 0) {
     new_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
   } else {
     new_psi_r <- psi_r

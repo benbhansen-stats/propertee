@@ -56,8 +56,11 @@ NULL
 #'   \code{x} as well as the dataframe passed to the covariance model fit in the case of
 #'   prior covariance adjustment. See Details
 #' @param ... arguments to be passed to the internal variance estimation
-#'   function, such as \code{cov_adj_rcorrect}, which specifies the bias
-#'   correction to the residuals of the covariance model, if applicable.
+#'   function, such as \code{cov_adj_rcorrect} and \code{loco_residuals}. If
+#'   \code{x} has a \code{SandwichLayer} object in its offset, The former
+#'   specifies the bias correction to the residuals of the covariance model, and
+#'   the latter indicates whether the offset should be replaced with predictions
+#'   from leave-one-cluster-out fits of the covariance adjustment model.
 #'   See Details
 #' @return A variance-covariance matrix with row and column entries for the estimated
 #'   coefficients in \code{x}, the marginal mean outcome in the control condition,

@@ -22,7 +22,10 @@ rows in the dataframe used for fitting \code{x} and the dataframe passed to the
 \code{NULL}, in which case the unit of assignment columns specified in the
 \code{StudySpecification} slot of \code{x} are used.}
 
-\item{...}{arguments passed to methods}
+\item{...}{mostly arguments passed to methods, but the special case is the argument
+\code{loco_residuals}, which indicates the offsets in the residuals of \code{x}
+should be replaced by versions that use leave-one-cluster-out estimates of
+the covariance model}
 }
 \value{
 A list of two matrices, one being the aligned contributions to the
