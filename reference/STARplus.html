@@ -39,7 +39,7 @@ i.e. their earliest available post-treatment SAT measurements."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,7 +102,7 @@ i.e. their earliest available post-treatment SAT measurements.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>A <code>data.frame</code> with 13,382 rows and 51 columns.</p><ul><li><p>stdnid Student ID</p></li>
+    <p>A <code>data.frame</code> with 13,382 rows and 56 columns.</p><ul><li><p>stdnid Student ID</p></li>
 <li><p>gender Student gender</p></li>
 <li><p>race Student race</p></li>
 <li><p>birthmonth Student month of birth</p></li>
@@ -112,10 +112,14 @@ i.e. their earliest available post-treatment SAT measurements.</p>
 student entered the study</p></li>
 <li><p>math_yr1 SAT math scaled score from grade at which
 student entered the study</p></li>
+<li><p>gktreadss Kindergarten reading scaled score (RCT participants only)</p></li>
+<li><p>gktmathss Kindergarten math scaled score (RCT participants only)</p></li>
+<li><p>gktlistss Kindergarten listening scaled score (RCT participants only)</p></li>
+<li><p>gkwordskillss Kindergarten word study skills scaled score (RCT participants only)</p></li>
 <li><p>g1schid Grade 1 School ID</p></li>
 <li><p>g1tchid Grade 1 Teacher ID</p></li>
 <li><p>g1classsize Class size of Grade 1</p></li>
-<li><p>g1treadss Grade 1 SAT meading scaled score</p></li>
+<li><p>g1treadss Grade 1 SAT reading scaled score</p></li>
 <li><p>g1tmathss Grade 1 SAT math scaled score</p></li>
 <li><p>g1tlistss Grade 1 total listening scale score in SAT</p></li>
 <li><p>g1wordskillss Grade 1 word study skills scale score in SAT</p></li>
@@ -151,7 +155,8 @@ student entered the study</p></li>
 <li><p>g3mathbsraw Grade 3 math raw score in BSF tests</p></li>
 <li><p>g3readbsobjpct Grade 3 reading percent objectives mastered in BSF tests</p></li>
 <li><p>g3mathbsobjpct Grade 3 math percent objectives mastered in BSF tests</p></li>
-<li><p>dob Date of birth</p></li>
+<li><p>dob Date of birth (with NAs imputed RCT participant median)</p></li>
+<li><p>dobNA Dat of birth not recorded</p></li>
 <li><p>grade_at_entry Grade at which each student first entered the study</p></li>
 <li><p>school_at_entry School ID corresponding to the student's grade
 at entry into the study</p></li>
@@ -160,7 +165,7 @@ at entry into the study</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
-    <p><a href="https://doi.org/10.7910/DVN/SIWH9F" class="external-link">https://doi.org/10.7910/DVN/SIWH9F</a></p>
+    <p><a href="https://doi.org/10.7910/DVN/SIWH9F" class="external-link">doi:10.7910/DVN/SIWH9F</a></p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

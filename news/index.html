@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,15 +43,32 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.6.2" id="propertee-062-unreleased">propertee 0.6.2 (unreleased)<a class="anchor" aria-label="anchor" href="#propertee-062-unreleased"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="propertee-100">
+<strong>propertee</strong> 1.0.0<a class="anchor" aria-label="anchor" href="#propertee-100"></a></h2>
+<ul><li>First CRAN submission</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="propertee-070">
+<strong>propertee</strong> 0.7.0<a class="anchor" aria-label="anchor" href="#propertee-070"></a></h2>
 <div class="section level3">
-<h3 id="bug-fixes-0-6-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-2"></a></h3>
+<h3 id="new-features-0-7-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h3>
+<ul><li>HC2 and CR2 standard errors are now available for <code>teeMod</code> objects. CR2 corrections use a new, fast computation that obviates the need for obtaining the spectral decomposition of orthocomplements of cluster-specific projection matrices.</li>
+<li>Standard errors for <code>teeMod</code> objects now optionally include methodological developments from a forthcoming paper from Wasserman and Hansen:
+<ol style="list-style-type: decimal"><li>When computing the meat of the sandwich standard errors, the bias correction to the residuals from estimating intent-to-treat effects is allowed to differ from the bias correction to residuals from a covariance adjustment model fit. The <code>type</code> argument of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> determines the correction for the former, while the <code>cov_adj_rcorrect</code> argument determines the latter. The findings from the simulation study in the paper inform the default arguments of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> (and thus, <code><a href="../reference/teeMod_summary.html">summary.teeMod()</a></code>): an HC2/CR2 correction for the residuals of the intent-to-treat effect estimates, and an HC1/CR1 correction or the residuals from the covariance adjustment model fit.</li>
+<li>When units used for estimating intent-to-treat effects also contribute to fitting the covariance adjustment model, the boolean <code>loco_residuals</code> argument of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> indicates the residuals from effect estimation associated with individuals in the overlapping units should be replaced with residuals that use a leave-one-out estimate of the covariance adjustment model parameters.</li>
+</ol></li>
+<li>Degrees of freedom provided in <code><a href="../reference/teeMod_summary.html">summary.teeMod()</a></code> now reflect clustering: for CR0 and CR1 standard errors, the associated degrees of freedom are one less than the number of clusters used for estimation; for CR2 standard errors, degrees of freedom are computed using the approach of Imbens and Kolesár (2016) (see documentation of <code><a href="../reference/dot-compute_IK_dof.html">.compute_IK_dof()</a></code> for citation) and leverage the fast computational routine mentioned above</li>
+<li>Units of assignment in <code>StudySpecification</code> are now optional, though recommended.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-0"></a></h3>
 <ul><li>Fix minor bugs with the <code>dichotomy</code> argument of <code><a href="../reference/lmitt.html">lmitt()</a></code>
 </li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061">propertee 0.6.1<a class="anchor" aria-label="anchor" href="#propertee-061"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.6.1" id="propertee-061">
+<strong>propertee</strong> 0.6.1<a class="anchor" aria-label="anchor" href="#propertee-061"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-6-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-1"></a></h3>
 <ul><li>
@@ -60,7 +77,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.6.0" id="propertee-060">propertee 0.6.0<a class="anchor" aria-label="anchor" href="#propertee-060"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.6.0" id="propertee-060">
+<strong>propertee</strong> 0.6.0<a class="anchor" aria-label="anchor" href="#propertee-060"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-6-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-6-0"></a></h3>
 <ul><li>In their <code>coefficients</code> element, <code>teeMod</code> objects now report estimates of mean quantities in the control condition (response and, if applicable, predictions of response). See the <code><a href="../reference/lmitt.html">lmitt()</a></code> man page for further details.</li>
@@ -73,10 +91,11 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.5.2" id="propertee-052">propertee 0.5.2<a class="anchor" aria-label="anchor" href="#propertee-052"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.5.2" id="propertee-052">
+<strong>propertee</strong> 0.5.2<a class="anchor" aria-label="anchor" href="#propertee-052"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-5-2">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-5-2"></a></h3>
-<ul><li>Users fitting multiple <code>teeMod</code> objects to test multiple outcome variables or different levels of a factor treatment variable can pass those models to an <code>mmm</code> object from the <code>multcomp</code> package, then pass the <code>mmm</code> object to <code>multcomp</code>’s <code>glht()</code> function to obtain standard errors estimated using <code><a href="../reference/var_estimators.html">vcov_tee()</a></code>. This requires passing <code>vcov=vcov_tee</code> to <code>glht()</code>. On a technical note, <code>propertee</code> now “suggests” installing <code>multcomp</code>.</li>
+<ul><li>Users fitting multiple <code>teeMod</code> objects to test multiple outcome variables or different levels of a factor treatment variable can pass those models to an <code>mmm</code> object from the <code>multcomp</code> package, then pass the <code>mmm</code> object to <code>multcomp</code>’s <code>glht()</code> function to obtain standard errors estimated using <code><a href="../reference/var_estimators.html">vcov_tee()</a></code>. This requires passing <code>vcov=vcov_tee</code> to <code>glht()</code>. On a technical note, <code>**propertee**</code> now “suggests” installing <code>multcomp</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-5-2">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-2"></a></h3>
@@ -84,14 +103,16 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.5.1" id="propertee-051">propertee 0.5.1<a class="anchor" aria-label="anchor" href="#propertee-051"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.5.1" id="propertee-051">
+<strong>propertee</strong> 0.5.1<a class="anchor" aria-label="anchor" href="#propertee-051"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-5-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-1"></a></h3>
 <ul><li>Variance estimation routine fixes miscalculations in the case when there is covariance adjustment and rows are omitted from the <code><a href="../reference/lmitt.html">lmitt()</a></code> fit due to <code>NA</code>’s in the covariates or treatment assignment</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.5.0" id="propertee-050">propertee 0.5.0<a class="anchor" aria-label="anchor" href="#propertee-050"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.5.0" id="propertee-050">
+<strong>propertee</strong> 0.5.0<a class="anchor" aria-label="anchor" href="#propertee-050"></a></h2>
 <div class="section level3">
 <h3 id="major-changes-0-5-0">Major Changes<a class="anchor" aria-label="anchor" href="#major-changes-0-5-0"></a></h3>
 <ul><li>All references to “design” have been changed to “specification”.
@@ -104,7 +125,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.4.1" id="propertee-041">propertee 0.4.1<a class="anchor" aria-label="anchor" href="#propertee-041"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.4.1" id="propertee-041">
+<strong>propertee</strong> 0.4.1<a class="anchor" aria-label="anchor" href="#propertee-041"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-4-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-4-1"></a></h3>
 <ul><li>Passing <code>absorb = TRUE</code> to <code>lmitt</code> without specifying a block proceeds as if the entire sample is a single block.</li>
@@ -115,7 +137,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.4.0" id="propertee-040">propertee 0.4.0<a class="anchor" aria-label="anchor" href="#propertee-040"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.4.0" id="propertee-040">
+<strong>propertee</strong> 0.4.0<a class="anchor" aria-label="anchor" href="#propertee-040"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-4-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-4-0"></a></h3>
 <ul><li>
@@ -127,7 +150,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.10" id="propertee-0310">propertee 0.3.10<a class="anchor" aria-label="anchor" href="#propertee-0310"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.10" id="propertee-0310">
+<strong>propertee</strong> 0.3.10<a class="anchor" aria-label="anchor" href="#propertee-0310"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-10">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-10"></a></h3>
 <ul><li>Linking unit of assignments to clusters for variance estimation no longer errors when <code>Design</code> objects are created with a <code>tibble</code>
@@ -138,21 +162,24 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.9" id="propertee-039">propertee 0.3.9<a class="anchor" aria-label="anchor" href="#propertee-039"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.9" id="propertee-039">
+<strong>propertee</strong> 0.3.9<a class="anchor" aria-label="anchor" href="#propertee-039"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-9">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-9"></a></h3>
 <ul><li>Scaling constants have been updated in <code><a href="../reference/estfun.teeMod.html">estfun.teeMod()</a></code> to account for a previously missing factor of sqrt(n / n_C) applied to contributions to the covariance adjustment model estimating equations</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.8" id="propertee-038">propertee 0.3.8<a class="anchor" aria-label="anchor" href="#propertee-038"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.8" id="propertee-038">
+<strong>propertee</strong> 0.3.8<a class="anchor" aria-label="anchor" href="#propertee-038"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-3-8">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-8"></a></h3>
 <ul><li>When model-based standard errors clustered at the level of assignment are called for in a blocked design, <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> clusters units of assignment in small blocks, blocks with only one treated or control unit, together.</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.7" id="propertee-037">propertee 0.3.7<a class="anchor" aria-label="anchor" href="#propertee-037"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.7" id="propertee-037">
+<strong>propertee</strong> 0.3.7<a class="anchor" aria-label="anchor" href="#propertee-037"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-3-7">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-7"></a></h3>
 <ul><li>
@@ -160,14 +187,16 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.6" id="propertee-036">propertee 0.3.6<a class="anchor" aria-label="anchor" href="#propertee-036"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.6" id="propertee-036">
+<strong>propertee</strong> 0.3.6<a class="anchor" aria-label="anchor" href="#propertee-036"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-3-6">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-6"></a></h3>
 <ul><li>Previous procedure for aligning contributions to estimating equations from first-stage and second-stage models failed when column(s) used for alignment had NA’s. Outputs of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> were liable to change from call to call as a result. This has been fixed.</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.5" id="propertee-035">propertee 0.3.5<a class="anchor" aria-label="anchor" href="#propertee-035"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.5" id="propertee-035">
+<strong>propertee</strong> 0.3.5<a class="anchor" aria-label="anchor" href="#propertee-035"></a></h2>
 <div class="section level3">
 <h3 id="improvements-0-3-5">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-3-5"></a></h3>
 <ul><li>Diagonal elements of <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> matrices lacking sufficient degrees of freedom for estimation are returned as NA’s rather than numeric zeros. This is a deviation from the <code>sandwich</code> package that aims to provide clarity to results that may otherwise appear as negative diagonal elements of the vcov matrix</li>
@@ -180,7 +209,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.4" id="propertee-034">propertee 0.3.4<a class="anchor" aria-label="anchor" href="#propertee-034"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.4" id="propertee-034">
+<strong>propertee</strong> 0.3.4<a class="anchor" aria-label="anchor" href="#propertee-034"></a></h2>
 <div class="section level3">
 <h3 id="improvements-0-3-4">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-3-4"></a></h3>
 <ul><li>Computational performance for <code>estfun.teeMod</code> has been improved</li>
@@ -193,7 +223,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.3" id="propertee-033">propertee 0.3.3<a class="anchor" aria-label="anchor" href="#propertee-033"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.3" id="propertee-033">
+<strong>propertee</strong> 0.3.3<a class="anchor" aria-label="anchor" href="#propertee-033"></a></h2>
 <div class="section level3">
 <h3 id="added-features-0-3-3">Added Features<a class="anchor" aria-label="anchor" href="#added-features-0-3-3"></a></h3>
 <ul><li>
@@ -203,7 +234,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.2" id="propertee-032">propertee 0.3.2<a class="anchor" aria-label="anchor" href="#propertee-032"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.2" id="propertee-032">
+<strong>propertee</strong> 0.3.2<a class="anchor" aria-label="anchor" href="#propertee-032"></a></h2>
 <div class="section level3">
 <h3 id="added-features-0-3-2">Added Features<a class="anchor" aria-label="anchor" href="#added-features-0-3-2"></a></h3>
 <ul><li>Effect estimation for continuous moderator variables is now supported</li>
@@ -222,7 +254,8 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.3.1" id="propertee-031">propertee 0.3.1<a class="anchor" aria-label="anchor" href="#propertee-031"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.3.1" id="propertee-031">
+<strong>propertee</strong> 0.3.1<a class="anchor" aria-label="anchor" href="#propertee-031"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-3-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-1"></a></h3>
 <ul><li>We now order <code>teeMod</code> objects’ matrix of estimating equations based on user-specified ID columns or unit of assignment ID’s.</li>
@@ -242,21 +275,24 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.2.1" id="propertee-021">propertee 0.2.1<a class="anchor" aria-label="anchor" href="#propertee-021"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.1" id="propertee-021">
+<strong>propertee</strong> 0.2.1<a class="anchor" aria-label="anchor" href="#propertee-021"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-1"></a></h3>
 <ul><li>Stratum fixed effects and subgroup moderating effects can now be accounted for via the <code>absorb</code> argument. Previous versions did not properly support this functionality. Valid standard errors under absorption, however, have not been confirmed.</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.1" id="propertee-011">propertee 0.1.1<a class="anchor" aria-label="anchor" href="#propertee-011"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.1" id="propertee-011">
+<strong>propertee</strong> 0.1.1<a class="anchor" aria-label="anchor" href="#propertee-011"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-1-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-1-1"></a></h3>
 <ul><li>We have reformulated the estimating equations used to derive standard errors. In estimation settings we accommodate, testing has not revealed any differences in standard error estimates between the previous and current estimating equations, but we do not assure this is the case for all possible situations.</li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.0.1" id="propertee-001">propertee 0.0.1<a class="anchor" aria-label="anchor" href="#propertee-001"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.0.1" id="propertee-001">
+<strong>propertee</strong> 0.0.1<a class="anchor" aria-label="anchor" href="#propertee-001"></a></h2>
 <ul><li>Compatible with R 4.2.3</li>
 <li>Introduces functionality for direct adjusted and design-informed standard errors accommodating covariance adjustment in the model-based setting</li>
 <li>Cluster-robust standard errors can only be estimated using the HC0 estimator</li>

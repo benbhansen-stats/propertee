@@ -9,7 +9,7 @@ of contributions to the direct adjustment estimating equations."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,14 +65,18 @@ of contributions to the direct adjustment estimating equations.</p>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>arguments passed to methods</p></dd>
+<dd><p>arguments passed to methods, most importantly those that define
+the bias corrections for the residuals of <code>x</code> and, if applicable, a
+<code>fitted_covariance_model</code> stored in its offset</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An \(n\times 2\) matrix of empirical
-estimating equations for the direct adjustment model fit. See Details for
-definition of \(n\).</p>
+    <p>An \(n\times k\) matrix of empirical estimating equations for <code>x</code>.
+<code>k</code> includes the model intercept, main effects of treatment and
+moderator variables, any moderator effects, and marginal and conditional
+means of the outcome (and <code>offset</code>, if provided) in the control condition.
+See Details for definition of \(n\).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -97,7 +101,12 @@ equations. If no <code>by</code> argument is provided and units of observation
 cannot be uniquely specified, contributions are aligned up to the unit of
 assignment level. If standard errors are clustered no finer than that,
 they will provide the same result as if each unit of observation's
-contributions were aligned exactly.</p>
+contributions were aligned exactly.<br><br> This method incorporates bias
+corrections made to the residuals of <code>x</code> and, if applicable, the
+covariance model stored in its <code>offset</code>. When its crossproduct is taken
+(perhaps after suitable summing across rows within clusters), it provides
+a heteroskedasticity- (or cluster-) robust estimate of the meat matrix of
+the variance-covariance of the parameter estimates in <code>x</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

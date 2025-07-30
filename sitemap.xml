@@ -34,6 +34,7 @@
 <url><loc>www.github.com/reference/block_center_residuals.html</loc></url>
 <url><loc>www.github.com/reference/bread.teeMod.html</loc></url>
 <url><loc>www.github.com/reference/c-WeightedStudySpecification-method.html</loc></url>
+<url><loc>www.github.com/reference/cluster_iss.html</loc></url>
 <url><loc>www.github.com/reference/confint.teeMod.html</loc></url>
 <url><loc>www.github.com/reference/cov_adj.html</loc></url>
 <url><loc>www.github.com/reference/dot-.uoa...html</loc></url>
@@ -49,6 +50,8 @@
 <url><loc>www.github.com/reference/dot-check_by.html</loc></url>
 <url><loc>www.github.com/reference/dot-check_df_moderator_estimates.html</loc></url>
 <url><loc>www.github.com/reference/dot-check_spec_formula.html</loc></url>
+<url><loc>www.github.com/reference/dot-compute_IK_dof.html</loc></url>
+<url><loc>www.github.com/reference/dot-compute_loo_resids.html</loc></url>
 <url><loc>www.github.com/reference/dot-confint_lm.html</loc></url>
 <url><loc>www.github.com/reference/dot-convert_to_data.frame.html</loc></url>
 <url><loc>www.github.com/reference/dot-cov01_est.html</loc></url>
@@ -65,6 +68,7 @@
 <url><loc>www.github.com/reference/dot-get_appinv_atp.html</loc></url>
 <url><loc>www.github.com/reference/dot-get_col_from_new_data.html</loc></url>
 <url><loc>www.github.com/reference/dot-get_data_from_model.html</loc></url>
+<url><loc>www.github.com/reference/dot-get_dof.html</loc></url>
 <url><loc>www.github.com/reference/dot-get_phi_tilde.html</loc></url>
 <url><loc>www.github.com/reference/dot-get_spec.html</loc></url>
 <url><loc>www.github.com/reference/dot-join_spec_weights.html</loc></url>
@@ -76,6 +80,7 @@
 <url><loc>www.github.com/reference/dot-new_StudySpecification.html</loc></url>
 <url><loc>www.github.com/reference/dot-order_samples.html</loc></url>
 <url><loc>www.github.com/reference/dot-prepare_spec_matrix.html</loc></url>
+<url><loc>www.github.com/reference/dot-rcorrect.html</loc></url>
 <url><loc>www.github.com/reference/dot-remove_forcing.html</loc></url>
 <url><loc>www.github.com/reference/dot-rename_model_frame_columns.html</loc></url>
 <url><loc>www.github.com/reference/dot-sanitize_C_ids.html</loc></url>
