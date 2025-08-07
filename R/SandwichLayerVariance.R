@@ -111,6 +111,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   args$itt_rcorrect <- args$type
   args$type <- "HC0" # this ensures sandwich::meatCL returns meat w/o correcting after we've corrected
   n <- length(args$cluster)
+  args$cls <- args$cluster # pass this down to estfun.teeMod and its internal calls to try and speed things up
 
   bread. <- sandwich::bread(x, ...)
   meat. <- do.call(sandwich::meatCL, args)
@@ -277,8 +278,8 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   sum(diag(GG))^2/sum(GG^2)
 }
 
-#' @title Use a rank-1 update to cheaply compute inverse symmetric square roots of
-#' projection matrices
+#' @title Use properties of idempotent matrices to cheaply compute inverse symmetric
+#' square roots of cluster-specific subsets of projection matrices
 #' @param exclude index of units to exclude from computing the correction; for
 #' example, if they're NA's
 #' @importFrom stats model.frame na.action
@@ -319,7 +320,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     }
   }
 
-  trtg <- unique(trts[ix])
+  trtg <- trts[ix]
   tt <- stats::delete.response(stats::terms(tm))
   mf <- call("model.frame",
              tt,
@@ -328,35 +329,31 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
              na.action = na.pass,
              xlev = tm$xlevels)
   mf <- eval(mf)
-  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,tm$qr$pivot[seq_len(tm$rank)],drop=FALSE]
+  K <- tm$qr$rank
+  piv <- tm$qr$pivot[seq_len(K)]
+  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,piv,drop=FALSE]
   Ag <- A[ix,,drop=FALSE]
-  inv <- chol2inv(tm$qr$qr[,seq_len(tm$rank)])
+  inv <- chol2inv(tm$qr$qr[piv,piv])
   if (is.null(wts <- stats::weights(tm))) wts <- rep(1, nrow(A))
   wg <- wts[ix]
 
   cg <- NULL
   Mgg <- NULL
-  if (length(trtg) == 1) {
+  if (length(unique(trtg)) == 1) {
     # first, check for a moderator variable
     if (length(tm@moderator) > 0) {
       xvar <- lmitt_data[[tm@moderator]]
       # make sure the moderator variable is invariant within the cluster
       if (length(x <- unique(xvar[ix])) == 1) {
         if (tm@absorbed_intercepts) {
-          # set the Intercept column to 0. the matrices we return in this case are
-          # identical to an lm fit without an intercept but with block absorption
-          # (and the coefficient estimates are the same as well)
-          Ag[,1] <- 0
           # with an invariant moderator variable, the 1st row of the cluster model
           # matrix is the same as the rest
-          cg <- sum(wg) *
-            sum(Ag[1,2:ncol(inv)] *
-                  sweep(inv[2:nrow(inv), 2:ncol(inv)], 2, Ag[1,2:ncol(Ag),drop=FALSE], FUN = "*"))
+          cg <- sum(wg) * drop(crossprod(Ag[1,], inv) %*% Ag[1,])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
           if (inherits(xvar, c("factor", "character"))) {
             # control clusters and treated clusters have different values of cg
-            if (trtg == 0) {
+            if (unique(trtg) == 0) {
               xcols <- which(colnames(Ag) %in% paste0(tm@moderator, x))
             } else {
               xcols <- which(colnames(Ag) %in% paste0(
@@ -367,7 +364,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
             cg <- sum(inv[c(1, xcols), c(1, xcols)]) * sum(wg)
             Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
           } else {
-            if (trtg == 0) {
+            if (unique(trtg) == 0) {
               cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) * sum(wg)
               Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
             } else {
@@ -383,16 +380,39 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
       if (tm@absorbed_intercepts) {
         cg <- sum(wg * Ag[,2]^2)
         # the 1st row of the cluster model matrix is the same as the rest
-        cg <- Ag[1,2]^2 / sum(wts * A[,2]^2) * sum(wg)
+        cg <- sum(wg) * (1 / sum(wts) + Ag[1,2]^2 / sum(wts * A[,2]^2))
         Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
       } else {
         # control clusters and treated clusters have different values of cg
-        if (trtg == 0) {
+        if (unique(trtg) == 0) {
           cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 0), exclude)])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
           cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 1), exclude)])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
+        }
+      }
+    }
+  } else {
+    if (length(tm@moderator) > 0) {
+      next
+    } else {
+      if (tm@absorbed_intercepts) {
+        # the broadest sufficient condition for simple construction of cg and Mgg
+        # is that the ratio of weighted size of the treatment group to the weighted
+        # size of the control group must be constant across blocks
+        rts <- tapply(data.frame(w = wts, t = trts),
+                      cluster_ids,
+                      function(df) {
+                        wga <- rowsum(df[,1], df[,2])
+                        wga[2,]/wga[1,]
+                      })
+        if (all(rts == mean(rts))) {
+          Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
+          Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) / sum(wg[trtg == 0])
+          Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) / sum(wg[trtg == 1])
+          # under this condition, cg below is the same whether we use treated or control units
+          cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 / sum(wts * A[,2]^2))
         }
       }
     }
