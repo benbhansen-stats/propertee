@@ -397,22 +397,25 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     if (length(tm@moderator) > 0) {
       next
     } else {
-      if (tm@absorbed_intercepts) {
-        # the broadest sufficient condition for simple construction of cg and Mgg
-        # is that the ratio of weighted size of the treatment group to the weighted
-        # size of the control group must be constant across blocks
-        rts <- tapply(data.frame(w = wts, t = trts),
-                      cluster_ids,
-                      function(df) {
-                        wga <- rowsum(df[,1], df[,2])
-                        wga[2,]/wga[1,]
-                      })
-        if (all(rts == mean(rts))) {
-          Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
-          Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) / sum(wg[trtg == 0])
-          Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) / sum(wg[trtg == 1])
-          # under this condition, cg below is the same whether we use treated or control units
+      # when clusters contain both treated and control units, a sufficient
+      # condition for simple construction of cg and Mgg is a constant ratio of weighted
+      # size of the treatment group to the weighted size of the control group
+      # across blocks
+      rts <- tapply(data.frame(w = wts, t = trts),
+                    cluster_ids,
+                    function(df) {
+                      wga <- rowsum(df[,1], df[,2])
+                      wga[2,]/wga[1,]
+                    })
+      if (all(rts == mean(rts))) {
+        Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
+        Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) / sum(wg[trtg == 0])
+        Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) / sum(wg[trtg == 1])
+        # under this condition, cg's below are the same whether we use treated or control units
+        if (tm@absorbed_intercepts) {
           cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 / sum(wts * A[,2]^2))
+        } else {
+          cg <- sum(wg[trtg == 0]) / sum(wts[trts == 0])
         }
       }
     }

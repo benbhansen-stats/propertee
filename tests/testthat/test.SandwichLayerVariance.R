@@ -328,9 +328,9 @@ test_that("cluster_iss, absorption", {
   ))
 })
 
-test_that("cluster_iss, fine strata + absorption", {
+test_that("cluster_iss with fine strata (clusters have treated and control units)", {
   set.seed(496)
-  ## balanced in each stratum
+  ## balanced in each stratum, absorption
   sdata <- data.frame(id = seq_len(20),
                       uid = rep(seq_len(4), each = 5),
                       ai = rep(rep(c(0, 1), each = 5), 2),
@@ -351,7 +351,7 @@ test_that("cluster_iss, fine strata + absorption", {
     check.attributes = FALSE
   ))
 
-  ## weighted balance in each stratum
+  ## weighted balance in each stratum, absorption
   wts <- rep(c(rep(2, 4), 1), 4)
   tm <- lmitt(yi ~ 1, ats, data = sdata, weights = wts, absorb = TRUE)
   ATWA_inv <- chol2inv(tm$qr$qr)
@@ -363,8 +363,22 @@ test_that("cluster_iss, fine strata + absorption", {
     eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
     check.attributes = FALSE
   ))
+  
+  ## weighted balance, no absorption
+  tm <- lmitt(yi ~ 1, ats, data = sdata, weights = "att")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  wg <- weights(tm)[ix]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wg)) %*% ATWA_inv %*% t(Ag * sqrt(wg))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
 
-  ## same imbalanced treatment assignment in each stratum
+  ## same imbalanced treatment assignment in each stratum, absorption
   sdata_imbal <- sdata
   sdata_imbal <- rbind(sdata_imbal,
                        data.frame(id = seq(21,30),
@@ -380,6 +394,38 @@ test_that("cluster_iss, fine strata + absorption", {
   ix <- ids == unique(ids)[2]
   Ag <- A[ix,,drop=FALSE]
   Pgg <- Ag %*% ATWA_inv %*% t(Ag)
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## same imbalanced treatment assignment in each stratum, no absorption
+  tm <- lmitt(yi ~ 1, imb, data = sdata_imbal, weights = "att")
+  wts <- weights(tm)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  expect_message(tm <- lmitt(yi ~ 1, imb, data = sdata_imbal), "absorb")
+  wts <- rep(1, nrow(sdata_imbal))
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[2], ids),
