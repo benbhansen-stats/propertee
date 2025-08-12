@@ -93,11 +93,64 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 
   if (is.null(args$by)) args$by <- cluster # if cov_adj() was not fit with a "by" argument, this is passed to .order_samples() to order rows of estfun() output
   args$cluster_cols <- cluster
-  args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  # args$cluster <- .make_uoa_ids(x, vcov_type = vcov_type, cluster, ...) # passed on to meatCL to aggregate SE's at the level given by `cluster`
+  ids <- .label_samples(x, vcov_type = vcov_type, cluster, ...)
+  args <- c(args, ids)
+  args$cluster <- .make_uoa_ids(ids)
+  args$cluster1 <- args$cluster
 
   est <- do.call(var_func, args)
 
   return(est)
+}
+
+#' @keywords internal
+.label_samples <- function(x, vcov_type, cluster = NULL, ...) {
+  ## this is code that has been copied and pasted from .make_uoa_ids then edited to return Q and C ids separately
+  ## and not in the order of the final estfun
+  if (is.null(cluster)) {
+    cluster <- var_names(x@StudySpecification, "u")
+  }
+
+  Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
+  ids <- list(Q_ids = Q_obs$cluster)
+  
+  # for model-based vcov calls on blocked specifications when clustering is
+  # called for at the assignment level, replace unit of assignment ID's with
+  # block ID's for small blocks
+  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
+    uoa_cols <- var_names(x@StudySpecification, "u")
+    if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
+      spec_blocks <- blocks(x@StudySpecification)
+      uoa_block_ids <- apply(spec_blocks, 1,
+                             function(...) paste(..., collapse = ","))
+      small_blocks <- identify_small_blocks(x@StudySpecification)
+      structure_w_small_blocks <- cbind(
+        x@StudySpecification@structure,
+        small_block = small_blocks[uoa_block_ids],
+        block_replace_id = apply(spec_blocks, 1,
+                                 function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
+                                 nms = colnames(spec_blocks))
+      )
+      Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
+      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
+      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
+        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
+      ids <- list(Q_ids = Q_obs$cluster)
+    }
+  }
+  # if (x@StudySpecification@unit_of_assignment_type == "none") {
+  #   ids <- list(Q_ids = rownames(model.frame(x, na.action = NULL)))
+  # } else {
+  #   ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
+  #   ids <- list(Q_ids = apply(ids, 1, function(...) paste(..., collapse = "_")))
+  # }
+  
+  if (!is.null(ca <- x$model$`(offset)`) & inherits(ca, "SandwichLayer")) {
+    ids <- c(ids, list(C_ids = .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)))
+  }
+  
+  return(ids)
 }
 
 #' @keywords internal

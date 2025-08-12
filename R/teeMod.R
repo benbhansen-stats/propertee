@@ -141,10 +141,13 @@ estfun.teeMod <- function(x, ...) {
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
   mat <- .base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...)
+  Q_ord <- Reduce(c, mapply(function(id) which(dots$Q_ids == id), unique(dots$cluster1)))
+  mat <- mat[Q_ord,]
   
   if (vcov_type != "DB") {
     # get estfun for ctrl mean regression 
     cm_ef <- estfun(x@ctrl_means_model)
+    cm_ef <- cm_ef[Q_ord,]
     q <- ncol(cm_ef)
     cm_ef[is.na(cm_ef)] <- 0
     mat <- cbind(mat, cm_ef)
@@ -383,10 +386,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   
   # the ordering output by `.order_samples()` is explained in that function's
   # documentation
-  id_order <- .order_samples(x, by = by, verbose = FALSE)
-  n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
-  nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
-  nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
+  # id_order <- .order_samples(x, by = by, verbose = FALSE)
+  # n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
+  # nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
+  # nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
   
   ## get the unaligned + unextended estimating equations
   phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this gives desired type = "response"
@@ -394,6 +397,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     replace(do.call(.rcorrect,
                     c(list(resids = phi_r, x = x, model = "cov_adj", type = cov_adj_rcorrect, by = by),
                       dots)), is.na(phi_r), 0)
+  aligned_phi <- phi[Reduce(c, mapply(function(id) which(dots$C_ids == id), unique(dots$cluster1))),]
 
   # use jackknife first-stage coefficient estimates if Q and C overlap
   psi_r <- stats::residuals(x, type = "working")
@@ -407,22 +411,24 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     replace(do.call(.rcorrect,
                     c(list(resids = new_psi_r, x = x, model = "itt", type = itt_rcorrect, by = by),
                       dots)), is.na(new_psi_r), 0)
+  aligned_psi <- psi[Reduce(c, mapply(function(id) which(dots$Q_ids == id), unique(dots$cluster1))),]
 
-  Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
-  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
-  aligned_psi[1:nq,] <- psi[Q_order,,drop=FALSE]
-
-  C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
-  aligned_phi <- matrix(0, nrow = n, ncol = ncol(phi),
-                        dimnames = list(seq_len(n), colnames(phi)))
-  aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
+  # Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
+  # aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
+  # aligned_psi[1:nq,] <- psi[Q_order,,drop=FALSE]
+  # 
+  # C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
+  # aligned_phi <- matrix(0, nrow = n, ncol = ncol(phi),
+  #                       dimnames = list(seq_len(n), colnames(phi)))
+  # aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
   
   out <- list(psi = aligned_psi, phi = aligned_phi)
 
   if (!is.null(ctrl_means_ef_mat)) {
-    aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
-                            dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
-    aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
+    aligned_cm_ef <- ctrl_means_ef_mat
+    # aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
+    #                         dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
+    # aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
     out[["psi"]] <- cbind(out[["psi"]], aligned_cm_ef)
   }
 
@@ -571,90 +577,94 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 #'   observation used to fit the two models. See Details of
 #'   \code{estfun.teeMod()} for the method for determining uniqueness.
 #' @keywords internal
-.make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
-  if (!inherits(x, c("teeMod", "mmm"))) {
-    stop("Must be provided a teeMod or mmm object")
-  } else if (inherits(x, "mmm")) {
-    # just use the first model to generate the ID's; this will be the same for
-    # mmm objects of models with the same Q (and possibly C) samples
-    x <- x[[1L]]
-  }
-  mc <- match.call()
-
-  # Must be a teeMod object for this logic to occur
-  if (!inherits(cluster, "character")) {
-    cluster <- var_names(x@StudySpecification, "u")
-  }
-
-  # get observation-level unit of assignment and cluster ID's for observations
-  # in Q
-  Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
-  Q_obs_ids <- Q_obs$cluster
-
-  # for model-based vcov calls on blocked specifications when clustering is
-  # called for at the assignment level, replace unit of assignment ID's with
-  # block ID's for small blocks
-  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
-    uoa_cols <- var_names(x@StudySpecification, "u")
-    if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
-      spec_blocks <- blocks(x@StudySpecification)
-      uoa_block_ids <- apply(spec_blocks, 1,
-                             function(...) paste(..., collapse = ","))
-      small_blocks <- identify_small_blocks(x@StudySpecification)
-      structure_w_small_blocks <- cbind(
-        x@StudySpecification@structure,
-        small_block = small_blocks[uoa_block_ids],
-        block_replace_id = apply(spec_blocks, 1,
-                                 function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
-                                 nms = colnames(spec_blocks))
-      )
-      Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
-      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
-        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
-      Q_obs_ids <- Q_obs$cluster
-    }
-  }
-
-  # If there's no covariance adjustment info, return the ID's found in Q
-  if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
-    return(factor(Q_obs_ids, levels = unique(Q_obs_ids)))
-  }
-
-  # `keys` may have columns in addition to "in_Q" and the uoa columns if a
-  # `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
-  # does, use the columns exclusively specified in `by` to produce the order
-  if (is.null(by <- mc$by)) by <- setdiff(colnames(ca@keys),
-                                            c(var_names(x@StudySpecification, "u"), "in_Q"))
-  if (length(by) == 0) {
-    by <- cluster
-  }
-
-  ord_call <- call(".order_samples", quote(x), by = quote(by))
-  id_order <- eval(ord_call)
-
-  # if no "by" was specified in cov_adj(), cluster variable was used for ordering,
-  # so we can take the names of the sorted vector. Otherwise, we need to get
-  # ID's associated with the ordering.
-  if (length(setdiff(cluster, by)) == 0) {
-    ids <- Reduce(c, id_order[c("Q_not_C", "Q_in_C", "C_not_Q")])
-  } else {
-    C_ids <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
-    ids <- c(
-      Q_obs_ids[as.numeric(names(id_order$Q_not_C))],
-      Q_obs_ids[as.numeric(names(id_order$Q_in_C))],
-      C_ids[as.numeric(names(id_order$C_not_Q))]
-    )
-  }
-
-  na_ids <- is.na(ids)
-  ids[na_ids] <- apply(
-    matrix(sample(c(letters, LETTERS), 8 * sum(na_ids), replace = TRUE), ncol = 8),
-    1, function(...) paste(..., collapse = "")
-  )
-
-  return(factor(ids, levels = unique(ids)))
+.make_uoa_ids <- function(ids) {
+  id_cts <- do.call(pmax, lapply(ids, function(x) rowsum(rep(1, length(x)), x)[,1]))
+  return(Reduce(c, mapply(function(x, y) rep(x, y), names(id_cts), id_cts, USE.NAMES = FALSE)))
 }
+# .make_uoa_ids <- function(x, vcov_type, cluster = NULL, ...) {
+#   if (!inherits(x, c("teeMod", "mmm"))) {
+#     stop("Must be provided a teeMod or mmm object")
+#   } else if (inherits(x, "mmm")) {
+#     # just use the first model to generate the ID's; this will be the same for
+#     # mmm objects of models with the same Q (and possibly C) samples
+#     x <- x[[1L]]
+#   }
+#   mc <- match.call()
+# 
+#   # Must be a teeMod object for this logic to occur
+#   if (!inherits(cluster, "character")) {
+#     cluster <- var_names(x@StudySpecification, "u")
+#   }
+# 
+#   # get observation-level unit of assignment and cluster ID's for observations
+#   # in Q
+#   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
+#   Q_obs_ids <- Q_obs$cluster
+# 
+#   # for model-based vcov calls on blocked specifications when clustering is
+#   # called for at the assignment level, replace unit of assignment ID's with
+#   # block ID's for small blocks
+#   if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
+#     uoa_cols <- var_names(x@StudySpecification, "u")
+#     if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
+#       spec_blocks <- blocks(x@StudySpecification)
+#       uoa_block_ids <- apply(spec_blocks, 1,
+#                              function(...) paste(..., collapse = ","))
+#       small_blocks <- identify_small_blocks(x@StudySpecification)
+#       structure_w_small_blocks <- cbind(
+#         x@StudySpecification@structure,
+#         small_block = small_blocks[uoa_block_ids],
+#         block_replace_id = apply(spec_blocks, 1,
+#                                  function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
+#                                  nms = colnames(spec_blocks))
+#       )
+#       Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
+#       na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
+#       Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
+#         Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
+#       Q_obs_ids <- Q_obs$cluster
+#     }
+#   }
+# 
+#   # If there's no covariance adjustment info, return the ID's found in Q
+#   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
+#     return(factor(Q_obs_ids, levels = unique(Q_obs_ids)))
+#   }
+# 
+#   # `keys` may have columns in addition to "in_Q" and the uoa columns if a
+#   # `by` argument was specified in `cov_adj()` or `as.SandwichLayer()`. If it
+#   # does, use the columns exclusively specified in `by` to produce the order
+#   if (is.null(by <- mc$by)) by <- setdiff(colnames(ca@keys),
+#                                             c(var_names(x@StudySpecification, "u"), "in_Q"))
+#   if (length(by) == 0) {
+#     by <- cluster
+#   }
+# 
+#   ord_call <- call(".order_samples", quote(x), by = quote(by))
+#   id_order <- eval(ord_call)
+# 
+#   # if no "by" was specified in cov_adj(), cluster variable was used for ordering,
+#   # so we can take the names of the sorted vector. Otherwise, we need to get
+#   # ID's associated with the ordering.
+#   if (length(setdiff(cluster, by)) == 0) {
+#     ids <- Reduce(c, id_order[c("Q_not_C", "Q_in_C", "C_not_Q")])
+#   } else {
+#     C_ids <- .sanitize_C_ids(ca, cluster, verbose = FALSE, sorted = FALSE, ...)
+#     ids <- c(
+#       Q_obs_ids[as.numeric(names(id_order$Q_not_C))],
+#       Q_obs_ids[as.numeric(names(id_order$Q_in_C))],
+#       C_ids[as.numeric(names(id_order$C_not_Q))]
+#     )
+#   }
+# 
+#   na_ids <- is.na(ids)
+#   ids[na_ids] <- apply(
+#     matrix(sample(c(letters, LETTERS), 8 * sum(na_ids), replace = TRUE), ncol = 8),
+#     1, function(...) paste(..., collapse = "")
+#   )
+# 
+#   return(factor(ids, levels = unique(ids)))
+# }
 
 #' @title (Internal) Order observations used to fit a \code{teeMod} model and a
 #'   prior covariance adjustment model
