@@ -74,6 +74,7 @@ setValidity("StudySpecification", function(object) {
 ##'   was it called from \code{*_spec()} (default).
 ##' @return A new StudySpecification object
 ##' @importFrom stats formula complete.cases terms
+##' @importFrom utils capture.output
 ##' @keywords internal
 .new_StudySpecification <- function(form,
                        data,
@@ -199,17 +200,19 @@ setValidity("StudySpecification", function(object) {
   differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
     noncon <- m_collapse[differing, index == "u", drop = FALSE]
-    cat(paste("\nUnits of assignment with non-constant treatment, block",
-              "or forcing:\n"))
+
+    # Format data using utils::str or base formatting
     if (nrow(noncon) >= 6) {
-      print(noncon[1:5, , drop = FALSE])
-      cat("...\n")
+      data_text <- paste(capture.output(noncon[1:5, , drop = FALSE]), collapse = "\n")
+      data_text <- paste0(data_text, "\n...")
     } else {
-      print(noncon)
+      data_text <- paste(capture.output(noncon), collapse = "\n")
     }
 
-    stop(paste("Each of treatment assignment, block and forcing must be",
-               "constant within unit of assignment."))
+    stop(paste0("Units of assignment with non-constant treatment, block or forcing:\n",
+                data_text, "\n",
+                "Each of treatment assignment, block and forcing must be ",
+                "constant within unit of assignment."))
   }
 
   return(new("StudySpecification",
