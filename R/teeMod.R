@@ -380,6 +380,8 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   cluster_cols <- if (is.null(dots$cluster_cols)) uoa_cols else dots$cluster_cols
   sl <- x$model$`(offset)`
   cmod <- sl@fitted_covariance_model
+  # changing the na.action to exclude returns NA's where rows had NA's; see further details below
+  if (!is.null(cmod$na.action)) class(cmod$na.action) <- "exclude"
   
   # the ordering output by `.order_samples()` is explained in that function's
   # documentation
@@ -389,8 +391,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
   
   ## get the unaligned + unextended estimating equations
+  # since we change the na.action to na.exclude for the covariance adjustment model above,
+  # estfun() returns rows filled with NA's for rows with any NA's, and similarly, residuals()
+  # returns NA's. if there are no rows with NA's, estfun() and residuals() return their usual outputs
   phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this gives desired type = "response"
-  phi <- estfun(cmod) / replace(phi_r, is.na(phi_r), 1) *
+  phi <- sandwich::estfun(cmod)
+  phi <- replace(phi, is.na(phi), 0) / replace(phi_r, is.na(phi_r), 1) *
     replace(do.call(.rcorrect,
                     c(list(resids = phi_r, x = x, model = "cov_adj", type = cov_adj_rcorrect, by = by),
                       dots)), is.na(phi_r), 0)
