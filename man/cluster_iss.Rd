@@ -11,6 +11,7 @@ cluster_iss(
   cluster_ids = NULL,
   cluster_var = NULL,
   exclude = na.action(tm),
+  tol = 1e-09,
   ...
 )
 }

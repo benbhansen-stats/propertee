@@ -9,7 +9,8 @@
   ell,
   cluster = NULL,
   bin_y = FALSE,
-  exclude = na.action(tm)
+  exclude = na.action(tm),
+  tol = 1e-09
 )
 }
 \description{
