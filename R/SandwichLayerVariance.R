@@ -183,7 +183,12 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @references Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
 #' Small Samples: Some Practical Advice". In: *The Review of Economics and
 #' Statistics* 98.4 (Oct. 2016), pp. 701-712.
-.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE, exclude = na.action(tm)) {
+.compute_IK_dof <- function(tm,
+                            ell,
+                            cluster = NULL,
+                            bin_y = FALSE,
+                            exclude = na.action(tm),
+                            tol = 1e-09) {
   if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
   cls <- .sanitize_Q_ids(tm, cluster)$cluster
   cls <- cls[setdiff(seq_along(cls), exclude)]
@@ -267,9 +272,19 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
       )
     )
   }
+  
+  # if there are insufficient degrees of freedom, AQ will be numerically 0.
+  # this is also the case in the dfadjust package, but that package does not
+  # proactively address numerical zeros, instead allowing the division to wash
+  # out and return 1 DOF. we address that here by rounding off AQ, and if all
+  # entries are 0, we actively return 1 dof
+  if (isTRUE(
+    all.equal(AQ, matrix(0, nrow = nrow(AQ), ncol = ncol(AQ)), tolerance = tol)
+  )) {
+    return(1)
+  }
   a <- drop(AQ %*% backsolve(R, ell, transpose = TRUE))
-  a[is.nan(a)] <- 0 # this results in returning 1 degree of freedom (IK code returns slightly > 1)
-  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # deviate from IK code to accommodate heteroskedasticity
+  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # accommodate heteroskedasticity
   B <- rowsum(a * sqrt(sig2) * Q, cls)
   D <- rowsum(a, cls)[,1]
   Fm <- rowsum(Q, cls)
@@ -284,7 +299,13 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' example, if they're NA's
 #' @importFrom stats model.frame na.action
 #' @keywords internal
-cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, exclude = na.action(tm), ...) {
+cluster_iss <- function(tm,
+                        cluster_unit,
+                        cluster_ids = NULL,
+                        cluster_var = NULL,
+                        exclude = na.action(tm),
+                        tol = 1e-09,
+                        ...) {
   if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
   dots <- list(...)
   if (is.null(cluster_ids)) {
@@ -420,11 +441,15 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
       }
     }
   }
-
-  if (is.null(cg) | is.null(Mgg)) {
+  
+  # cg == 1 indicates our speedup can't be accommodated, so fall back to
+  # original CR2 computation (use all.equal because, numerically, cg may just be
+  # close to 1--and use within isTRUE per the all.equal documentation)
+  if ((!is.null(cg) && isTRUE(all.equal(cg, 1))) | is.null(cg) | is.null(Mgg)) {
     Pgg <- Ag %*% inv %*% t(Ag * wg)
     eg <- eigen(diag(nrow = length(ix)) - Pgg)
-    return(eg$vec %*% diag(1/sqrt(eg$val)) %*% solve(eg$vec))
+    return(eg$vec %*% diag((eg$val >= tol) * 1/sqrt(pmax(eg$val, tol))) %*%
+             solve(eg$vec))
   } else {
     return(diag(nrow = length(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
   }
