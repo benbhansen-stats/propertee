@@ -415,9 +415,7 @@ cluster_iss <- function(tm,
       }
     }
   } else {
-    if (length(tm@moderator) > 0) {
-      next
-    } else {
+    if (length(tm@moderator) == 0) {
       # when clusters contain both treated and control units, a sufficient
       # condition for simple construction of cg and Mgg is a constant ratio of weighted
       # size of the treatment group to the weighted size of the control group
