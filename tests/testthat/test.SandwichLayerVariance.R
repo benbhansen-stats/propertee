@@ -273,10 +273,7 @@ test_that("cluster_iss, no absorption", {
 })
 
 test_that("cluster_iss, absorption", {
-  # don't need to distinguish between treated and control units in these tests,
-  # but we do have to remove the intercept column from model matrices since
-  # the corrections in cluster_iss() for the absorption cases assume it's been
-  # removed
+  # don't need to distinguish between treated and control units in these tests
   set.seed(499)
   adb <- data.frame(cid = c(rep(1, 6), rep(2, 5), rep(3, 4), rep(4, 5),
                             rep(5, 6), rep(6, 5), rep(7, 4), rep(8, 5)),
@@ -288,7 +285,7 @@ test_that("cluster_iss, absorption", {
   
   ## no moderator
   tm <- lmitt(y ~ 1, specification, adb, weights = "ate", absorb = TRUE)
-  piv <- 2
+  piv <- seq_len(2)
   ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
   
   ix <- adb$cid == 1
@@ -303,7 +300,7 @@ test_that("cluster_iss, absorption", {
   
   ## cluster-invariant continuous moderator
   tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
-  piv <- seq(2, tm$rank)
+  piv <- seq_len(tm$rank)
   ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
   
   Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
@@ -318,7 +315,7 @@ test_that("cluster_iss, absorption", {
   ## cluster-invariant factor moderator
   adb$x <- factor(round(adb$x))
   tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
-  piv <- seq(2, tm$rank)
+  piv <- seq_len(tm$rank)
   ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
   
   Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
@@ -326,6 +323,132 @@ test_that("cluster_iss, absorption", {
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss with fine strata (clusters have treated and control units)", {
+  set.seed(496)
+  ## balanced in each stratum, absorption
+  sdata <- data.frame(id = seq_len(20),
+                      uid = rep(seq_len(4), each = 5),
+                      ai = rep(rep(c(0, 1), each = 5), 2),
+                      bi = rep(c(1, 2), each = 10),
+                      yi = rnorm(20))
+  ats <- rct_spec(ai ~ unitid(uid) + block(bi), sdata)
+  tm <- lmitt(yi ~ 1, ats, data = sdata, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[1]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag)
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## weighted balance in each stratum, absorption
+  wts <- rep(c(rep(2, 4), 1), 4)
+  tm <- lmitt(yi ~ 1, ats, data = sdata, weights = wts, absorb = TRUE)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  wg <- wts[ix]
+  Pgg <- (Ag * sqrt(wg)) %*% ATWA_inv %*% t(Ag * sqrt(wg))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## weighted balance, no absorption
+  tm <- lmitt(yi ~ 1, ats, data = sdata, weights = "att")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  wg <- weights(tm)[ix]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wg)) %*% ATWA_inv %*% t(Ag * sqrt(wg))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## same imbalanced treatment assignment in each stratum, absorption
+  sdata_imbal <- sdata
+  sdata_imbal <- rbind(sdata_imbal,
+                       data.frame(id = seq(21,30),
+                                  uid = rep(c(5, 6), each = 5),
+                                  ai = 1,
+                                  bi = rep(c(1, 2), each = 5),
+                                  yi = rnorm(10)))
+  imb <- rct_spec(ai ~ unitid(uid) + block(bi), sdata_imbal)
+  tm <- lmitt(yi ~ 1, imb, data = sdata_imbal, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag)
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## same imbalanced treatment assignment in each stratum, no absorption
+  tm <- lmitt(yi ~ 1, imb, data = sdata_imbal, weights = "att")
+  wts <- weights(tm)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  expect_message(tm <- lmitt(yi ~ 1, imb, data = sdata_imbal), "absorb")
+  wts <- rep(1, nrow(sdata_imbal))
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## same weighted imbalance in each strata
+  sdata$uid[sdata$uid == 2] <- c(1, rep(2, 4))
+  sdata$uid[sdata$uid == 3] <- c(rep(3, 2), rep(4, 3))
+  sdata$ai[sdata$uid == 1] <- 0
+  sdata$ai[sdata$uid == 4] <- 1
+  imb <- rct_spec(ai ~ unitid(uid) + block(bi), sdata)
+  wts <- c(rep(2/3, 6), rep(1, 4), rep(4, 2), rep(1, 8))
+  tm <- lmitt(yi ~ 1, imb, data = sdata, weights = wts, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  ix <- ids == "bi2"
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% chol2inv(tm$qr$qr) %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
     eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
     check.attributes = FALSE
   ))

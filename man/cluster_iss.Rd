@@ -2,8 +2,8 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{cluster_iss}
 \alias{cluster_iss}
-\title{Use a rank-1 update to cheaply compute inverse symmetric square roots of
-projection matrices}
+\title{Use properties of idempotent matrices to cheaply compute inverse symmetric
+square roots of cluster-specific subsets of projection matrices}
 \usage{
 cluster_iss(
   tm,
@@ -11,6 +11,7 @@ cluster_iss(
   cluster_ids = NULL,
   cluster_var = NULL,
   exclude = na.action(tm),
+  tol = 1e-09,
   ...
 )
 }
@@ -19,7 +20,7 @@ cluster_iss(
 example, if they're NA's}
 }
 \description{
-Use a rank-1 update to cheaply compute inverse symmetric square roots of
-projection matrices
+Use properties of idempotent matrices to cheaply compute inverse symmetric
+square roots of cluster-specific subsets of projection matrices
 }
 \keyword{internal}

@@ -111,6 +111,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   args$itt_rcorrect <- args$type
   args$type <- "HC0" # this ensures sandwich::meatCL returns meat w/o correcting after we've corrected
   n <- length(args$cluster)
+  args$cls <- args$cluster # pass this down to estfun.teeMod and its internal calls to try and speed things up
 
   bread. <- sandwich::bread(x, ...)
   meat. <- do.call(sandwich::meatCL, args)
@@ -182,7 +183,12 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @references Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
 #' Small Samples: Some Practical Advice". In: *The Review of Economics and
 #' Statistics* 98.4 (Oct. 2016), pp. 701-712.
-.compute_IK_dof <- function(tm, ell, cluster = NULL, bin_y = FALSE, exclude = na.action(tm)) {
+.compute_IK_dof <- function(tm,
+                            ell,
+                            cluster = NULL,
+                            bin_y = FALSE,
+                            exclude = na.action(tm),
+                            tol = 1e-09) {
   if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
   cls <- .sanitize_Q_ids(tm, cluster)$cluster
   cls <- cls[setdiff(seq_along(cls), exclude)]
@@ -266,9 +272,19 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
       )
     )
   }
+  
+  # if there are insufficient degrees of freedom, AQ will be numerically 0.
+  # this is also the case in the dfadjust package, but that package does not
+  # proactively address numerical zeros, instead allowing the division to wash
+  # out and return 1 DOF. we address that here by rounding off AQ, and if all
+  # entries are 0, we actively return 1 dof
+  if (isTRUE(
+    all.equal(AQ, matrix(0, nrow = nrow(AQ), ncol = ncol(AQ)), tolerance = tol)
+  )) {
+    return(1)
+  }
   a <- drop(AQ %*% backsolve(R, ell, transpose = TRUE))
-  a[is.nan(a)] <- 0 # this results in returning 1 degree of freedom (IK code returns slightly > 1)
-  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # deviate from IK code to accommodate heteroskedasticity
+  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # accommodate heteroskedasticity
   B <- rowsum(a * sqrt(sig2) * Q, cls)
   D <- rowsum(a, cls)[,1]
   Fm <- rowsum(Q, cls)
@@ -277,13 +293,19 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   sum(diag(GG))^2/sum(GG^2)
 }
 
-#' @title Use a rank-1 update to cheaply compute inverse symmetric square roots of
-#' projection matrices
+#' @title Use properties of idempotent matrices to cheaply compute inverse symmetric
+#' square roots of cluster-specific subsets of projection matrices
 #' @param exclude index of units to exclude from computing the correction; for
 #' example, if they're NA's
 #' @importFrom stats model.frame na.action
 #' @keywords internal
-cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL, exclude = na.action(tm), ...) {
+cluster_iss <- function(tm,
+                        cluster_unit,
+                        cluster_ids = NULL,
+                        cluster_var = NULL,
+                        exclude = na.action(tm),
+                        tol = 1e-09,
+                        ...) {
   if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
   dots <- list(...)
   if (is.null(cluster_ids)) {
@@ -319,7 +341,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
     }
   }
 
-  trtg <- unique(trts[ix])
+  trtg <- trts[ix]
   tt <- stats::delete.response(stats::terms(tm))
   mf <- call("model.frame",
              tt,
@@ -328,35 +350,31 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
              na.action = na.pass,
              xlev = tm$xlevels)
   mf <- eval(mf)
-  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,tm$qr$pivot[seq_len(tm$rank)],drop=FALSE]
+  K <- tm$qr$rank
+  piv <- tm$qr$pivot[seq_len(K)]
+  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,piv,drop=FALSE]
   Ag <- A[ix,,drop=FALSE]
-  inv <- chol2inv(tm$qr$qr[,seq_len(tm$rank)])
+  inv <- chol2inv(tm$qr$qr[piv,piv])
   if (is.null(wts <- stats::weights(tm))) wts <- rep(1, nrow(A))
   wg <- wts[ix]
 
   cg <- NULL
   Mgg <- NULL
-  if (length(trtg) == 1) {
+  if (length(unique(trtg)) == 1) {
     # first, check for a moderator variable
     if (length(tm@moderator) > 0) {
       xvar <- lmitt_data[[tm@moderator]]
       # make sure the moderator variable is invariant within the cluster
       if (length(x <- unique(xvar[ix])) == 1) {
         if (tm@absorbed_intercepts) {
-          # set the Intercept column to 0. the matrices we return in this case are
-          # identical to an lm fit without an intercept but with block absorption
-          # (and the coefficient estimates are the same as well)
-          Ag[,1] <- 0
           # with an invariant moderator variable, the 1st row of the cluster model
           # matrix is the same as the rest
-          cg <- sum(wg) *
-            sum(Ag[1,2:ncol(inv)] *
-                  sweep(inv[2:nrow(inv), 2:ncol(inv)], 2, Ag[1,2:ncol(Ag),drop=FALSE], FUN = "*"))
+          cg <- sum(wg) * drop(crossprod(Ag[1,], inv) %*% Ag[1,])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
           if (inherits(xvar, c("factor", "character"))) {
             # control clusters and treated clusters have different values of cg
-            if (trtg == 0) {
+            if (unique(trtg) == 0) {
               xcols <- which(colnames(Ag) %in% paste0(tm@moderator, x))
             } else {
               xcols <- which(colnames(Ag) %in% paste0(
@@ -367,7 +385,7 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
             cg <- sum(inv[c(1, xcols), c(1, xcols)]) * sum(wg)
             Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
           } else {
-            if (trtg == 0) {
+            if (unique(trtg) == 0) {
               cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) * sum(wg)
               Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
             } else {
@@ -383,11 +401,11 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
       if (tm@absorbed_intercepts) {
         cg <- sum(wg * Ag[,2]^2)
         # the 1st row of the cluster model matrix is the same as the rest
-        cg <- Ag[1,2]^2 / sum(wts * A[,2]^2) * sum(wg)
+        cg <- sum(wg) * (1 / sum(wts) + Ag[1,2]^2 / sum(wts * A[,2]^2))
         Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
       } else {
         # control clusters and treated clusters have different values of cg
-        if (trtg == 0) {
+        if (unique(trtg) == 0) {
           cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 0), exclude)])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
@@ -396,12 +414,40 @@ cluster_iss <- function(tm, cluster_unit, cluster_ids = NULL, cluster_var = NULL
         }
       }
     }
+  } else {
+    if (length(tm@moderator) == 0) {
+      # when clusters contain both treated and control units, a sufficient
+      # condition for simple construction of cg and Mgg is a constant ratio of weighted
+      # size of the treatment group to the weighted size of the control group
+      # across blocks
+      rts <- tapply(data.frame(w = wts, t = trts),
+                    cluster_ids,
+                    function(df) {
+                      wga <- rowsum(df[,1], df[,2])
+                      wga[2,]/wga[1,]
+                    })
+      if (all(rts == mean(rts))) {
+        Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
+        Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) / sum(wg[trtg == 0])
+        Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) / sum(wg[trtg == 1])
+        # under this condition, cg's below are the same whether we use treated or control units
+        if (tm@absorbed_intercepts) {
+          cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 / sum(wts * A[,2]^2))
+        } else {
+          cg <- sum(wg[trtg == 0]) / sum(wts[trts == 0])
+        }
+      }
+    }
   }
-
-  if (is.null(cg) | is.null(Mgg)) {
+  
+  # cg == 1 indicates our speedup can't be accommodated, so fall back to
+  # original CR2 computation (use all.equal because, numerically, cg may just be
+  # close to 1--and use within isTRUE per the all.equal documentation)
+  if ((!is.null(cg) && isTRUE(all.equal(cg, 1))) | is.null(cg) | is.null(Mgg)) {
     Pgg <- Ag %*% inv %*% t(Ag * wg)
     eg <- eigen(diag(nrow = length(ix)) - Pgg)
-    return(eg$vec %*% diag(1/sqrt(eg$val)) %*% solve(eg$vec))
+    return(eg$vec %*% diag((eg$val >= tol) * 1/sqrt(pmax(eg$val, tol))) %*%
+             solve(eg$vec))
   } else {
     return(diag(nrow = length(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
   }
