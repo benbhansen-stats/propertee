@@ -1,3 +1,6 @@
+# **propertee** 1.0.1
+* Fix small test suite bugs
+
 # **propertee** 1.0.0
 * First CRAN submission
 
