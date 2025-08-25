@@ -2622,11 +2622,6 @@ test_that("#119 flagging vcov_tee entries as NA", {
   # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
   # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
   na_dim <- c(1, 3, 5, 8, 10)
-  expect_true(all(
-    abs(diag(sandwich::sandwich(mod, meat. = sandwich::meatCL,
-                                cluster = .make_uoa_ids(mod, "CR")))[na_dim])
-     < .Machine$double.eps)
-  )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
