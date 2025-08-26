@@ -2861,7 +2861,7 @@ test_that("vcov_tee errors when asking for specification-based SE for a non-RCT 
   ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec))
   expect_error(
     vcov_tee(ssmod, type = "DB0"),
-    "can only be computed for RCT specifications"
+    "only for RCT specifications"
   )
 })
 

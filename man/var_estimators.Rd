@@ -87,12 +87,11 @@ having the values of \code{offset} replaced by predictions that use coefficient
 estimates that leave out rows in the same cluster (as defined by the
 \code{cluster} argument).
 
-The design-based variance estimates can be calculated for
-\code{teeMod} models satisfying the following requirements:
+Design-based variance estimation is implemented for
+\code{teeMod} models satisfying requirements including:
 \itemize{
 \item The model uses \code{rct_spec} as \code{StudySpecification}
 \item The model only estimates a main treatment effect
-\item Inverse probability weighting is incorporated
 }
 }
 \keyword{internal}
