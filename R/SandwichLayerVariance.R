@@ -974,10 +974,12 @@ cluster_iss <- function(tm,
     if (!all(os@keys$in_Q)){
       stop(paste("Design-based standard errors are not supported for teeMod",
                  "models with external sample for covariance adjustment"))
+      # Our theory does not support this calculation
     }
 
   if (x@StudySpecification@type != "RCT"){
     stop("Design-based standard errors implemented only for RCT specifications")
+    # The theory for design-based SE has not been extended to other specifications
   }
 
   args <- list(...)
@@ -999,10 +1001,11 @@ cluster_iss <- function(tm,
   else {
     if (length(x@moderator) > 0){
       stop(paste("Design-based standard errors are not supported for teeMod",
-                 "models with moderators"))
+                 "models with moderators and without absorbed intercepts"))
+      # The theory for such models has not been derived
     }
     
-    # if model weights does not incorporate IPW, throw a warning
+    # If model weights does not incorporate IPW, throw a warning
     if (!(inherits(x@lmitt_call$weights, "call") &
           sum(grepl("ate", x@lmitt_call$weights)) > 0)){
       warning(paste("When calculating design-based standard errors,",
@@ -1044,14 +1047,17 @@ cluster_iss <- function(tm,
 #' @keywords internal
 .get_DB_covadj_se <- function(x, ...){
   if (x@absorbed_intercepts) {
-      stop(paste("Design-based standard errors are not supported for tee models\n",
-                 "with both covariance adjustment and absorbed intercepts"))
+    stop(paste("x must be a tee model with covariance adjustment and\n",
+               "without absorbed intercepts"))
+    # For tee models with both covariance adjustment and absorbed intercepts,
+    # use vcov_tee or .vcov_DB0 for variance estimation
   }
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
   if (name_trt %in% all.vars(stats::formula(x$model$`(offset)`@fitted_covariance_model))) {
     stop(paste("Design-based standard errors are not supported for\n",
                "tee models with treatment in prior covariance adjustment"))
+    # Our theory does not support this calculation
   }
 
   bread <- .get_DB_covadj_bread(x, ...)
