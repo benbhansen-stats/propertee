@@ -136,10 +136,9 @@ condition for fitting, the residuals of <code>x</code> are further corrected by
 having the values of <code>offset</code> replaced by predictions that use coefficient
 estimates that leave out rows in the same cluster (as defined by the
 <code>cluster</code> argument).</p>
-<p>The design-based variance estimates can be calculated for
-<code>teeMod</code> models satisfying the following requirements:</p><ul><li><p>The model uses <code>rct_spec</code> as <code>StudySpecification</code></p></li>
+<p>Design-based variance estimation is implemented for
+<code>teeMod</code> models satisfying requirements including:</p><ul><li><p>The model uses <code>rct_spec</code> as <code>StudySpecification</code></p></li>
 <li><p>The model only estimates a main treatment effect</p></li>
-<li><p>Inverse probability weighting is incorporated</p></li>
 </ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
