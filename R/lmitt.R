@@ -162,7 +162,7 @@ lmitt.formula <- function(obj,
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
-  dichotomy <- lmitt.call$dichotomy
+  dichotomy <- eval.parent(lmitt.call$dichotomy)
   wt <- lmitt.call$weights
   if (is(wt, "character")) {
     if (.isValidWeightAlias(wt_call <- tolower(wt))) {
@@ -177,7 +177,12 @@ lmitt.formula <- function(obj,
                     .listValidWeightAliases(),
                     "] are accepted."))
     }
-  } else if (is.call(wt) & is.null(dichotomy)) dichotomy <- wt$dichotomy
+  } else if (is.call(wt) & is.null(dichotomy)) {
+    for (s in seq_len(sys.nframe())) {
+      dichotomy <- tryCatch(eval.parent(wt$dichotomy, s), error = function(e) NULL)
+      if (!is.null(dichotomy)) break()
+    }
+  }
 
   # First, make sure we have a valid `specification=` - if given a formula, make a new
   # `StudySpecification`, otherwise ensure `specification=` is `StudySpecification` class.
@@ -332,7 +337,7 @@ lmitt.formula <- function(obj,
   }
 
   # Generate formula for the internal `lm`
-  if (rhstype == "intercept") {
+  if (rhstype == "intercept" | rhs == var_names(specification, "t")) {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
     ctrl_means_form <- stats::reformulate("1", response = "lhs")

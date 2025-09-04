@@ -75,5 +75,5 @@ data(simdata)
 spec <- obs_spec(z ~ uoa(uoa1, uoa2), data = simdata)
 mod <- lm(y ~ assigned(), data = simdata, weights = ate(spec))
 lmittmod <- lmitt(mod)
-summary(lmittmod)
+summary(lmittmod, vcov.type = "CR0")
 }

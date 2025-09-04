@@ -248,13 +248,15 @@ test_that("StudySpecification creation", {
 
   # Missing call
 
-  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
-                                   type = "RCT"),
+  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec),
+                                                 data = mtcars,
+                                                 type = "RCT"),
                  "Invalid call")
   expect_identical(spec@call[[1]], as.name(".new_StudySpecification"))
 
-  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec), data = mtcars,
-                                   type = "RCT", call = 1),
+  expect_warning(spec <- .new_StudySpecification(vs ~ cluster(qsec),
+                                                 data = mtcars,
+                                                 type = "RCT", call = 1),
                  "Invalid call")
   expect_identical(spec@call[[1]], as.name(".new_StudySpecification"))
 })
@@ -267,33 +269,25 @@ test_that("unit of assignment differs from unit of analysis", {
   expect_s4_class(specrct, "StudySpecification")
   expect_equal(nrow(specrct@structure), 10)
 
-  expect_output(expect_error(rct_spec(z ~ cluster(uoa1) + block(bid),
-                                        data = simdata),
-                             "must be constant"),
-                "uoa1")
+  expect_error(rct_spec(z ~ cluster(uoa1) + block(bid), data = simdata),
+               "uoa1")
 
   data(mtcars)
   mtcars$prop <- rep(1:8, 4)
 
-  expect_output(expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
-                             "must be constant"),
-                "prop")
-  expect_output(expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
-                             "must be constant"),
-                "...")
+  expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
+               "prop")
+  expect_error(rct_spec(vs ~ cluster(prop), data = mtcars),
+               "...")
 
   data(simdata)
   simdata$z[1] <- 1
-  expect_output(expect_error(rct_spec(z ~ cluster(uoa1, uoa2),
-                                        data = simdata),
-                             "must be constant"),
-                "uoa1")
+  expect_error(rct_spec(z ~ cluster(uoa1, uoa2), data = simdata),
+               "uoa1")
 
   simdata$z[1] <- NA
-  expect_output(expect_error(rct_spec(z ~ cluster(uoa1, uoa2),
-                                        data = simdata),
-                             "must be constant"),
-                "uoa1")
+  expect_error(rct_spec(z ~ cluster(uoa1, uoa2), data = simdata),
+               "uoa1")
 })
 
 test_that("StudySpecification printing", {

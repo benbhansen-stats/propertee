@@ -91,7 +91,7 @@ NULL
 ##' @examples
 ##' data(simdata)
 ##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
-##' summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()))
+##' summary(lmitt(y ~ 1, data = simdata, specification = spec, weights = ate()), vcov.type = "CR0")
 ett <- function(specification = NULL, dichotomy = NULL, by = NULL, data = NULL) {
   return(.weights_calc(specification = specification,
                        target = "ett",

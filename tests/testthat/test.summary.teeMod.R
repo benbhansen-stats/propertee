@@ -22,14 +22,15 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
                     offset = cov_adj(cmod)))
 
-  s <- summary(ssmod)
-  vc <- vcov_tee(ssmod)
+  s <- summary(ssmod, vcov.type = "CR0")
+  vc <- vcov_tee(ssmod, type = "CR0")
+  dof <- length(unique(paste(simdata$uoa1, simdata$uoa2, sep = "_")))-1
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 4L],
                2 * pt(abs(ssmod$coefficients[ix] / sqrt(diag(vc)[ix])),
-                      ssmod$df.residual,
+                      dof,
                       lower.tail = FALSE))
 
   cmod <- lm(y ~ x, simdata, subset = z == 0)
@@ -38,14 +39,14 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   ssmod <- lmitt(lm(y ~ assigned() + 0, data = simdata, weights = ate(spec),
                     offset = cov_adj(cmod)))
 
-  s <- summary(ssmod)
-  vc <- vcov_tee(ssmod)
+  s <- summary(ssmod, vcov.type = "CR0")
+  vc <- vcov_tee(ssmod, type = "CR0")
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 3L], ssmod$coefficients[ix] / sqrt(diag(vc)[ix]))
   expect_equal(s$coefficients[, 4L],
                2 * pt(abs(ssmod$coefficients[ix] / sqrt(diag(vc)[ix])),
-                      ssmod$df.residual,
+                      dof,
                       lower.tail = FALSE))
 })
 
@@ -66,12 +67,12 @@ test_that("vcov.type argument", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec)))
-  expect_equal(summary(ssmod)$vcov.type, "CR0")
+  expect_equal(summary(ssmod)$vcov.type, "HC0")
   expect_equal(summary(ssmod, vcov.type = "CR0")$vcov.type, "CR0")
   expect_equal(summary(ssmod, vcov.type = "MB0")$vcov.type, "MB0")
   expect_equal(summary(ssmod, vcov.type = "HC0")$vcov.type, "HC0")
 
-  expect_equal(sum(grepl("CR0", capture.output(summary(ssmod)))), 1)
+  expect_equal(sum(grepl("HC0", capture.output(summary(ssmod)))), 1)
   expect_equal(sum(grepl("CR0",
                          capture.output(summary(ssmod, vcov.type = "CR0")))),
                1)
@@ -121,7 +122,7 @@ test_that("issues with coefficients", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification =spec, subset = simdata$z == 0)
-  s <- summary(mod)
+  s <- summary(mod, vcov.type = "CR0")
   co <- capture.output(s)
   expect_true(any(grepl("Treatment Effects", co)))
 

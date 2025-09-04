@@ -70,10 +70,10 @@ test_that("covadj", {
   spec1 <- obs_spec(cond_small ~ unit_of_assignment(stdntid) +
                       block(school_at_entry),
                    data = st, na.fail = FALSE)
-  ca <- lm(read_yr1 ~ dob + gender, data = st, subset = (cond_small))
-  ## warnings here appear due to NA's in STARplus
-  suppressWarnings(mod1 <- lmitt(read_yr1 ~ 1, spec1, data = st, absorb = TRUE,
-                                 offset = cov_adj(ca)))
+  ca <- lm(read_yr1 ~ dob + gender, data = st, subset = !(cond_small))
+
+  mod1 <- lmitt(read_yr1 ~ 1, spec1, data = st, absorb = TRUE,
+                                 offset = cov_adj(ca))
 
   spec2 <- obs_spec(cond_small ~ block(school_at_entry),
                    data = st, na.fail = FALSE)
@@ -82,8 +82,8 @@ test_that("covadj", {
 
   expect_true(isTRUE(all.equal(coefficients(mod1),
                                coefficients(mod2))))
-  smod1 <- summary(mod1)
-  smod2 <- summary(mod2)
+  smod1 <- summary(mod1, vcov.type = "CR0")
+  smod2 <- summary(mod2, vcov.type = "CR0")
   expect_true(isTRUE(all.equal(coefficients(smod1),
                                coefficients(smod2))))
 })

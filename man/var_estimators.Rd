@@ -6,7 +6,7 @@
 \alias{.vcov_DB}
 \title{Variance/Covariance for \code{teeMod} objects}
 \usage{
-vcov_tee(x, type = "CR0", cluster = NULL, ...)
+vcov_tee(x, type = NULL, cluster = NULL, ...)
 
 .vcov_DB0(x, ...)
 
@@ -15,41 +15,77 @@ vcov_tee(x, type = "CR0", cluster = NULL, ...)
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
 
-\item{type}{a string indicating the desired variance estimator. See Details
-for supported variance estimators}
+\item{type}{a string indicating the desired bias correction for the residuals
+of \code{x}. Default makes no bias correction. See Details for supported types}
 
-\item{cluster}{a string or character vector of column names indicating
-columns to cluster standard errors by. With prior covariance adjustment,
-columns must appear in both the covariance adjustment and direct adjustment
-samples. Default is NULL, which uses unit of assignment columns in the
-\code{StudySpecification} slot of the \code{teeMod} model.}
+\item{cluster}{a vector indicating the columns that define clusters. The default
+is the unit of assignment columns in the \code{StudySpecification} stored
+in \code{x}. These columns should appear in the dataframe used for fitting
+\code{x} as well as the dataframe passed to the covariance model fit in the case of
+prior covariance adjustment. See Details}
 
 \item{...}{arguments to be passed to the internal variance estimation
-function.}
+function, such as \code{cov_adj_rcorrect} and \code{loco_residuals}. If
+\code{x} has a \code{SandwichLayer} object in its offset, The former
+specifies the bias correction to the residuals of the covariance model, and
+the latter indicates whether the offset should be replaced with predictions
+from leave-one-cluster-out fits of the covariance adjustment model.
+See Details}
 }
 \value{
-A \eqn{2\times 2} matrix corresponding to an intercept and the
-treatment variable in the direct adjustment model
+A variance-covariance matrix with row and column entries for the estimated
+coefficients in \code{x}, the marginal mean outcome in the control condition,
+the marginal mean \code{offset} in the control condition (if an \code{offset}
+is provided), and if a moderator variable is specified in the formula for \code{x},
+the mean interaction in the control condition of the outcome and \code{offset}
+with the moderator variable
 }
 \description{
 Compute robust sandwich variance estimates with optional
 covariance adjustment
 }
 \details{
-Supported \code{type} include:
+Variance estimates will be clustered on the basis of the columns
+provided to \code{cluster} (or obtained by the default behavior). As a result,
+providing \code{"HCx"} or \code{"CRx"} to \code{type} will produce the same
+variance estimate given that \code{cluster} remains the same.
+
+With prior covariance adjustment, unless the \code{data} argument of the covariance
+model fit is the same as the \code{data} argument for fitting \code{x} and the
+\code{StudySpecification} of \code{x} has been created with a formula of the
+form \code{trt_col ~ 1}, the column(s) provided to \code{cluster} must appear in the
+dataframes in both \code{data} arguments, even if the clustering structure does
+not exist, per se, in the covariance adjustment sample. For instance, in a
+finely stratified randomized trial, one might desire standard errors clustered
+at the block level, but the covariance adjustment model may include auxiliary
+units that did not participate in the trial. In this case, in the \code{data}
+argument of the fitted covariance model, the column(s) passed to \code{cluster}
+should have the block ID's for rows overlapping with the \code{data} argument
+used for fitting \code{x}, and NA's for any auxiliary units. \code{vcov_tee()}
+will treat each row with an NA as its own cluster.
+
+For ITT effect estimates without covariance adjustment, \code{type}
+corresponds to the variance estimate desired. Supported options include:
 \itemize{
-\item \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC0 standard errors
-\item \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based standard errors
-with HC1 corrections based on the direct adjustment estimate i.e.,
-\eqn{n/(n - 2)} for \code{"MB1"} and \code{"HC1"}, and for \code{"CR1"},
-\eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of clusters
-in the direct adjustment sample.
+\item \code{"MB0"}, \code{"HC0"}, and \code{"CR0"} for model-based HC/CR0 standard errors
+\item \code{"MB1"}, \code{"HC1"}, and \code{"CR1"} for model-based HC/CR1 standard errors
+(for \code{"MB1"} and \code{"HC1"}, this is \eqn{n/(n - 2)}, and for \code{"CR1"},
+this is \eqn{g\cdot(n-1)/((g-1)\cdot(n-2))}, where \eqn{g} is the number of
+clusters in the sample used for fitting \code{x})
+\item \code{"MB2"}, \code{"HC2"}, and \code{"CR2"} for model-based HC/CR2 standard errors
 \item \code{"DB0"} for design-based HC0 variance estimates
 }
 
-To create your own \code{type}, simply define a function \code{.vcov_XXX}.
-\code{type = "XXX"} will now use your method. Your method should return a
-matrix of appropriate dimension, with \code{attribute} \code{type = "XXX"}.
+The \code{type} argument does not correspond to existing variance estimators in
+the literature in the case of prior covariance adjustment. It specifies the
+bias correction to the residuals of \code{x}, but the residuals of the covariance
+model are corrected separately based on the \code{cov_adj_rcorrect} argument.
+The \code{cov_adj_rcorrect} argument takes the same options as \code{type}
+except \code{"DB0"}. When the covariance model includes rows in the treatment
+condition for fitting, the residuals of \code{x} are further corrected by
+having the values of \code{offset} replaced by predictions that use coefficient
+estimates that leave out rows in the same cluster (as defined by the
+\code{cluster} argument).
 
 Design-based variance estimation is implemented for
 \code{teeMod} models satisfying requirements including:
