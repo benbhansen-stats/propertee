@@ -106,7 +106,7 @@ head(STARplus$stdntid)
 
 ### Defining the `StudySpecification`
 
-The three `_spec` functions (`rct_spec()`, `obj_spec()`, and `rd_spec()`)
+The three `_spec` functions (`rct_spec()`, `obs_spec()`, and `rd_spec()`)
 operate similarly. The first argument is the most important, and encodes all the
 specification information through the use of a formula. The left-hand side of
 the formula identifies the treatment variable. The right-hand side of the
@@ -251,7 +251,6 @@ lm(g1treadss ~ cond_small, data = STARplus, weights = ate(spec),
 If fixed effects for blocks are desired, which can be absorbed away to avoid
 estimating, the `absorb=TRUE` argument can be passed.
 
-<!-- currently not working due to #210, thus turned off-->
-```{r, eval=FALSE}
+```{r}
 lmitt(g1treadss ~ 1, data = STARplus, specification = spec, absorb = TRUE)
 ```
