@@ -902,13 +902,19 @@ cluster_iss <- function(tm,
   mc <- match.call()
   vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
   if (vcov_type != "DB") {
-    # get gradient for ctrl means model
+    # get gradient for ctrl means model; only keep full-rank columns
     cm <- x@ctrl_means_model
-    cm_mm <- stats::model.matrix(formula(cm), stats::model.frame(cm, na.action = na.pass))
+    K <- cm$rank
+    piv <- cm$qr$pivot[seq_len(K)]
+    cm_mm <- stats::model.matrix(formula(cm),
+                                 stats::model.frame(cm, na.action = na.pass))
     cm_grad <- matrix(0, nrow = nrow(cm_mm), ncol = ncol(cm_mm),
-                      dimnames = list(NULL, paste(formula(x)[[2]], colnames(cm_mm), sep = ":")))
+                      dimnames = list(NULL, paste(formula(x)[[2]],
+                                                  colnames(cm_mm),
+                                                  sep = ":")))
     colnames(cm_mm) <- paste("cov_adj", colnames(cm_mm), sep = ":")
-    if (inherits(cm, "mlm")) cm_grad <- cbind(cm_grad, cm_mm)
+    if (inherits(cm, "mlm")) cm_grad <- cbind(cm_grad[,piv,drop=FALSE],
+                                              cm_mm[,piv,drop=FALSE])
     cm_wts <- replace(cm_wts <- stats::weights(cm), is.na(cm_wts), 0)
     wZ <- cbind(wZ, -cm_grad * cm_wts)
   }
