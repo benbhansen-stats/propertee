@@ -1,3 +1,6 @@
+# **propertee** 1.0.2
+* Fix bug in variance estimation code when the mean response/offset in a subpopulation of the control condition is not identified
+
 # **propertee** 1.0.1
 * Fix small test suite bugs
 
