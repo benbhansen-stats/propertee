@@ -96,9 +96,11 @@
 ##' 
 ##' @param obj A \code{formula} or a \code{lm} object. See Details.
 ##' @param specification The \code{StudySpecification} to be used.
-##'   Alternatively, a formula creating a specification (of the type of that
+##'   Alternatively, a formula creating a specification. (Of the type of that
 ##'   would be passed as the first argument to [rd_spec()], [rct_spec()], or
-##'   [obs_spec()]). If the formula includes a [forcing()] element, an RD
+##'   [obs_spec()], with the difference that [cluster()], [uoa()] 
+#'    and [unit_of_assignment()] terms can be omitted when each row of 
+#'    \code{data} represents a distinct unit of assignment.) If the formula includes a [forcing()] element, an RD
 ##'   specification is created. Otherwise an observational specification is
 ##'   created. An RCT specification must be created manually using [rct_spec()].
 ##' @param data A \code{data.frame} such as would be passed into [lm()].
@@ -123,10 +125,14 @@
 ##' @rdname lmitt
 ##' @examples
 ##' data(simdata)
-##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
 ##' mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
 ##' mod2 <- lmitt(y ~ as.factor(o), data = simdata, specification = spec, weights = "ate")
-##' mod3 <- lmitt(y ~ 1, data = simdata,
+##' ### observational study with treatment z assigned row-wise within blocks:
+##' mod3 <- lmitt(y ~ 1, data=simdata, specification=z ~ block(bid), weights="att")
+##' ### regression discontinuity study with units of assignment
+##' ### given by combinations of uoa1, uoa2:
+##' mod4 <- lmitt(y ~ 1, data = simdata,
 ##'               specification = z ~ uoa(uoa1, uoa2) + forcing(force))
 lmitt <- function(obj,
                   specification,
