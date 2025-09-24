@@ -3172,3 +3172,39 @@ test_that("block_center_residuals works for teeMod having NA in fitted values", 
   expect_true(all.equal(r, residuals(propertee:::block_center_residuals(teemod))))
 })
 
+test_that("issue #239", {
+  # crux of the issue is that when all observations with a given value of a
+  # moderator are given a weight of 0 in the regression, the lm/mlm for
+  # computing means in the control condition has NA coefficients. the .get_a21()
+  # and custom bread.mlm() functions did not handle this as they needed to.
+  # here we make sure they only retain columns that yield full-rank matrices
+  set.seed(298)
+  odata <- data.frame(x1 = factor(rep(seq_len(3), each = 5)),
+                      y = rnorm(15),
+                      a = rep(c(0, 1), 8)[1:15],
+                      uid = seq_len(15))
+  cmod <- lm(y~x1, odata)
+  spec <- rct_spec(a ~ unitid(uid), odata)
+  tmod <- lmitt(y ~ x1, spec, odata, weights = c(rep(0, 5), rep(1, 10)),
+                offset = cov_adj(cmod))
+  
+  # test bread. if there's an offset and the rank of the ctrl means model is K,
+  # then there should be K columns corresponding to the regression for the
+  # response and K columns corresponding to the regression for the offset for a
+  # total of 2 * K columns. when we add those to the bread matrix for the
+  # effect estimation regression, which we'll say has rank R, then the number
+  # of columns in the bread matrix will be R + 2 * K.
+  twoK <- tmod@ctrl_means_model$rank * 2
+  R <- tmod$rank
+  br_cm <- bread.mlm(tmod@ctrl_means_model)
+  expect_equal(ncol(br_cm), twoK)
+  br <- bread(tmod)
+  expect_equal(ncol(br), R + twoK)
+  
+  # test A21. should have R + 2 * K rows. so when we use it to make the output
+  # of estfun.teeMod(), we should have a matrix with R + 2 * K columns
+  a21 <- .get_a21(tmod)
+  expect_equal(nrow(a21), R + twoK)
+  ef <- estfun(tmod)
+  expect_equal(ncol(ef), R + twoK)
+})

@@ -25,10 +25,12 @@ bread.glm <- function(x, ...) {
 bread.mlm <- function(x, ...) {
   if (!is.null(x$na.action))
     class(x$na.action) <- "exclude"
-  cf <- x$coef
+  K <- x$rank
+  piv <- x$qr$pivot[seq_len(K)]
+  cf <- x$coef[piv,,drop=FALSE]
   rval <- summary.lm(x)
   n <- nrow(residuals(x))
-  
+
   rval <- kronecker(
     structure(diag(ncol(cf)), .Dimnames = rep.int(list(colnames(cf)),  2L)),
     structure(rval$cov.unscaled, .Dimnames = rep.int(list(rownames(cf)), 2L)) * n,

@@ -33,3 +33,4 @@ tests/testthat/test.WeightedStudySpecification.notforCRAN.R
 internal_files
 ^CRAN-SUBMISSION$
 cran-comments.md
+vignettes/not-for-cran
