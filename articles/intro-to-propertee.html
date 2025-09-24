@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2025-08-25</h4>
+            <h4 data-toc-skip class="date">2025-09-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -179,7 +179,7 @@ role.</p>
 <h3 id="defining-the-studyspecification">Defining the <code>StudySpecification</code><a class="anchor" aria-label="anchor" href="#defining-the-studyspecification"></a>
 </h3>
 <p>The three <code>_spec</code> functions (<code><a href="../reference/StudySpecification_objects.html">rct_spec()</a></code>,
-<code>obj_spec()</code>, and <code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code>) operate similarly.
+<code><a href="../reference/StudySpecification_objects.html">obs_spec()</a></code>, and <code><a href="../reference/StudySpecification_objects.html">rd_spec()</a></code>) operate similarly.
 The first argument is the most important, and encodes all the
 specification information through the use of a formula. The left-hand
 side of the formula identifies the treatment variable. The right-hand
@@ -384,9 +384,10 @@ normal modeling commands as well.</p>
 <p>If fixed effects for blocks are desired, which can be absorbed away
 to avoid estimating, the <code>absorb=TRUE</code> argument can be
 passed.</p>
-<!-- currently not working due to #210, thus turned off-->
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1treadss</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>, absorb <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1treadss</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span>, absorb <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       cond_small.TRUE g1treadss:(Intercept) </span></span>
+<span><span class="co">#&gt;               11.0594              518.8194</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
