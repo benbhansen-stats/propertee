@@ -1,12 +1,9 @@
-This release addresses some "Additional Issues" with our initial release.
+This is a patch release for fixing a bug.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-* checking CRAN incoming feasibility ... NOTE
-Maintainer: 'Josh Errickson <jerrick@umich.edu>'
+Days since last update: 30
 
-Days since last update: 4
-
-- This is a quick release to address the "Additional Issues" failures.
+- This is a patch release to fix a bug.
