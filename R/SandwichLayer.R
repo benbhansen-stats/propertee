@@ -281,7 +281,7 @@ setMethod("[", "PreSandwichLayer",
 ##'   data further up the call stack (passed as arguments to \code{cov_adj()} or
 ##'   \code{lmitt.formula()}, for example) is used.
 ##' @return a \code{SandwichLayer} object
-##' @export
+##' @keywords internal
 as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
   if (!inherits(x, "PreSandwichLayer")) {
     stop("x must be a `PreSandwichLayer` object")

@@ -37,3 +37,4 @@ object passed to the \code{specification} argument to populate the slots
 in a \code{SandwichLayer} object that a \code{PreSandwichLayer} does not
 have sufficient information for.
 }
+\keyword{internal}
