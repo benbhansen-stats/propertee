@@ -44,3 +44,10 @@ to estimate interactions of treatment assignment with a moderator
 variable, use \code{\link[=lmitt]{lmitt()}} instead of \code{lm()} and
 \code{as.lmitt()}.
 }
+\examples{
+data(schooldata)
+data(studentdata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+orig_mod <- lm(math ~ assigned(spec), studentdata)
+effect_mod <- as.lmitt(orig_mod, spec)
+}

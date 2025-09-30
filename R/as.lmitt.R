@@ -35,6 +35,12 @@ NULL
 ##' @rdname as_lmitt
 ##' @importFrom stats formula weights
 ##' @export
+##' @examples
+##' data(schooldata)
+##' data(studentdata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+##' orig_mod <- lm(math ~ assigned(spec), studentdata)
+##' effect_mod <- as.lmitt(orig_mod, spec)
 as.lmitt <- function(x, specification = NULL) {
   if (!inherits(x, "lm")) {
     stop("input must be lm object")
