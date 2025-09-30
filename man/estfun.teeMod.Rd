@@ -53,3 +53,17 @@ covariance model stored in its \code{offset}. When its crossproduct is taken
 a heteroskedasticity- (or cluster-) robust estimate of the meat matrix of
 the variance-covariance of the parameter estimates in \code{x}.
 }
+\examples{
+data(schooldata)
+data(studentdata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+covadj_mod <- lm(math ~ gpa, studentdata)
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+ef <- estfun(tm)
+head(ef)
+
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
+            offset = cov_adj(covadj_mod))
+ef <- estfun(tm)
+head(ef)
+}

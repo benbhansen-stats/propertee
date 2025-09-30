@@ -36,3 +36,11 @@ the \code{propertee} package that ensures additional arguments in the
 \code{...} of the \code{confint.teeMod()} call are passed to the internal
 \code{vcov()} call.
 }
+\examples{
+library(propertee)
+data(schooldata)
+data(studentdata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+confint(tm, 2)
+}

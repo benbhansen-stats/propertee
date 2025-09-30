@@ -15,6 +15,7 @@
 ##'   limits for each parameter. These will be labelled as (1-level)/2 and 1 -
 ##'   (1-level)/2 in % (by default 2.5% and 97.5%)
 ##' @keywords internal
+##' @export
 .confint_lm <- function(object, parm, level = 0.95, ...) {
   cf <- stats::coef(object)
   ses <- sqrt(diag(vcov(object, ...)))

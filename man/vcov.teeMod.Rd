@@ -29,3 +29,14 @@ arguments passed to \code{...} will be passed to the \code{vcov_tee()}
 call. See documentation for \code{vcov_tee()} for information about
 necessary arguments.
 }
+\examples{
+data(schooldata)
+data(studentdata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+covadj_mod <- lm(math ~ gpa, studentdata)
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
+            offset = cov_adj(covadj_mod))
+vcov(tm)
+vcov(tm, type = "HC1")
+vcov(tm, cov_adj_rcorrect = "HC1")
+}

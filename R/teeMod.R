@@ -54,6 +54,16 @@ setMethod("show", "teeMod", function(object) {
 ##' @param ... additional arguments to \code{vcov_tee()}.
 ##' @inherit vcov_tee return
 ##' @exportS3Method
+##' @examples
+##' data(schooldata)
+##' data(studentdata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+##' covadj_mod <- lm(math ~ gpa, studentdata)
+##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
+##'             offset = cov_adj(covadj_mod))
+##' vcov(tm)
+##' vcov(tm, type = "HC1")
+##' vcov(tm, cov_adj_rcorrect = "HC1")
 vcov.teeMod <- function(object, ...) {
   cl <- match.call()
   cl[[1L]] <-  quote(vcov_tee)
@@ -77,6 +87,13 @@ vcov.teeMod <- function(object, ...) {
 ##' @inheritParams .confint_lm
 ##' @inherit .confint_lm return
 ##' @exportS3Method
+##' @examples
+##' library(propertee)
+##' data(schooldata)
+##' data(studentdata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+##' confint(tm, 2)
 confint.teeMod <- function(object, parm, level = 0.95, ...) {
   cl <- match.call()
   cl[[1L]] <- quote(.confint_lm)
@@ -124,6 +141,19 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   means of the outcome (and \code{offset}, if provided) in the control condition.
 ##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
+##' @examples
+##' data(schooldata)
+##' data(studentdata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+##' covadj_mod <- lm(math ~ gpa, studentdata)
+##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+##' ef <- estfun(tm)
+##' head(ef)
+##' 
+##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
+##'             offset = cov_adj(covadj_mod))
+##' ef <- estfun(tm)
+##' head(ef)
 estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
