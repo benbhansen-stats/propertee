@@ -27,3 +27,10 @@ direct adjustment model sandwich covariance matrix.
 This function is a thin wrapper around
 \code{.get_tilde_a22_inverse()}.
 }
+\examples{
+data(schooldata)
+data(studentdata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+bread(tm)
+}

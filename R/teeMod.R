@@ -192,6 +192,12 @@ estfun.teeMod <- function(x, ...) {
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
+##' @examples
+##' data(schooldata)
+##' data(studentdata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+##' bread(tm)
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
 ##' @title Bias correct residuals contributing to standard errors of a \code{teeMod}
