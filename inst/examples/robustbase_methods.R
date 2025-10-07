@@ -1,4 +1,5 @@
 library(robustbase)
+library(sandwich)
 data(studentdata)
 robreg <- lmrob(math ~ gpa + factor(grade), studentdata)
 bread(robreg)

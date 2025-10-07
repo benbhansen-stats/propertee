@@ -28,9 +28,18 @@ This function is a thin wrapper around
 \code{.get_tilde_a22_inverse()}.
 }
 \examples{
+library(sandwich)
 data(schooldata)
 data(studentdata)
 spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
 tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
 bread(tm)
+ef <- estfun(tm)
+head(ef)
+covadj_mod <- lm(math ~ gpa, studentdata)
+tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
+            offset = cov_adj(covadj_mod))
+bread(tm)
+ef <- estfun(tm)
+head(ef)
 }

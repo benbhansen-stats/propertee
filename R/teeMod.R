@@ -141,19 +141,7 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   means of the outcome (and \code{offset}, if provided) in the control condition.
 ##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
-##' @examples
-##' data(schooldata)
-##' data(studentdata)
-##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
-##' covadj_mod <- lm(math ~ gpa, studentdata)
-##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
-##' ef <- estfun(tm)
-##' head(ef)
-##' 
-##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
-##'             offset = cov_adj(covadj_mod))
-##' ef <- estfun(tm)
-##' head(ef)
+##' @example inst/examples/teeMod_methods.R
 estfun.teeMod <- function(x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
@@ -222,12 +210,7 @@ estfun.teeMod <- function(x, ...) {
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
-##' @examples
-##' data(schooldata)
-##' data(studentdata)
-##' spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
-##' tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
-##' bread(tm)
+##' @example inst/examples/teeMod_methods.R
 bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
 ##' @title Bias correct residuals contributing to standard errors of a \code{teeMod}
