@@ -86,6 +86,7 @@ setValidity("SandwichLayer", function(object) {
 ##' @return an invisible copy of \code{object}
 ##' @export
 ##' @rdname PreSandwichLayer.show
+##' @example inst/examples/PreSandwichLayer.R
 setMethod("show", "PreSandwichLayer", .show_layer)
 
 setGeneric("subset")
@@ -99,6 +100,7 @@ setGeneric("subset")
 ##' @return \code{x} subset by \code{subset} or \code{i}
 ##' @export
 ##' @rdname PreSandwichLayer.subset
+##' @example inst/examples/PreSandwichLayer.R
 setMethod("subset", "PreSandwichLayer", function(x, subset) {
   x@.Data <- subset(x@.Data, subset = subset)
   x@prediction_gradient <- subset(x@prediction_gradient, subset = subset)
