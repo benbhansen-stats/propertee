@@ -286,14 +286,7 @@ setValidity("StudySpecification", function(object) {
 ##'   further analysis.
 ##' @export
 ##' @rdname StudySpecification_objects
-##' @examples
-##' data(simdata)
-##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2) + block(bid),
-##'                   data = simdata)
-##'
-##' data(schooldata)
-##' spec <- obs_spec(treatment ~ unit_of_assignment(schoolid) + block(state),
-##'                   data = schooldata)
+##' @example inst/examples/StudySpecification.R
 rct_spec <- function(formula,
                        data,
                        subset = NULL,
@@ -384,7 +377,7 @@ obsstudy_specification <- obs_spec
 ##'   to [rct_spec()], [obs_spec()], or [rd_spec()].
 ##' @return \code{object}, invisibly.
 ##' @export
-##' @example inst/examples/specification_and_estimation.R
+##' @example inst/examples/StudySpecification.R
 setMethod("show", "StudySpecification", function(object) {
   spectype <- switch(object@type,
                      "RCT" = "Randomized Control Trial",
