@@ -61,6 +61,7 @@ setMethod("show", "WeightedStudySpecification", function(object) {
 ##' @rdname WeightedStudySpecificationOps
 ##' @return a \code{WeightedStudySpecification} object
 ##' @export
+##' @example inst/examples/WeightedStudySpecification.R
 setMethod("+", signature(e1 = "WeightedStudySpecification", e2 = "numeric"),
           function(e1, e2) addsubtracterror()
           )
@@ -134,6 +135,7 @@ setGeneric("weights")
 ##' @param ... Ignored
 ##' @return A numeric \code{vector} of the weights
 ##' @export
+##' @example inst/examples/WeightedStudySpecification.R
 setMethod("weights", "WeightedStudySpecification", function(object, ...) {
   return(as.numeric(object))
 })
