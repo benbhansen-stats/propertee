@@ -40,6 +40,7 @@ setValidity("WeightedStudySpecification", function(object) {
 ##' @param object a \code{WeightedStudySpecification} object
 ##' @return an invisible copy of \code{object}
 ##' @export
+##' @example inst/examples/WeightedStudySpecification.R
 setMethod("show", "WeightedStudySpecification", function(object) {
   print(object@.Data)
   invisible(object)
@@ -149,6 +150,7 @@ setGeneric("subset")
 ##'   version of \code{x}.
 ##' @export
 ##' @rdname WeightedStudySpecification.subset
+##' @example inst/examples/WeightedStudySpecification.R
 setMethod("subset", "WeightedStudySpecification", function(x, subset) {
   x@.Data <- subset(x@.Data, subset = subset)
   return(x)
