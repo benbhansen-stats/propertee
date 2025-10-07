@@ -52,3 +52,10 @@ only the appropriate function will work.
 See \code{rct_spec}, \code{obs_spec}, or \code{rd_spec} for examples of
 their usage.
 }
+\examples{
+data(schooldata)
+# unit_of_assignment or unitid or cluster works in study specification
+spec <- rct_spec(treatment ~ unit_of_assignment(schoolid), schooldata)
+spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+spec <- rct_spec(treatment ~ cluster(schoolid), schooldata)
+}
