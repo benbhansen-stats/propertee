@@ -8,6 +8,7 @@
 ##' @importFrom utils getFromNamespace
 ##' @rdname glmrob_methods
 ##' @exportS3Method
+##' @example inst/examples/robustbase_methods.R
 estfun.glmrob <- function(x, ...) {
 
   ## numbers refer to which lines in
@@ -102,6 +103,7 @@ estfun.glmrob <- function(x, ...) {
 ##' @return matrix, inverse Hessian of loss as evaluated at fitted parameters
 ##' @rdname glmrob_methods
 ##' @exportS3Method
+##' @example inst/examples/robustbase_methods.R
 bread.glmrob <- function(x, ...) {
   return(solve(x$matM))
 }

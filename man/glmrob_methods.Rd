@@ -27,3 +27,23 @@ fit
 
 Extract bread matrix from an \code{lmrob()} fit
 }
+\examples{
+library(robustbase)
+data(studentdata)
+robreg <- lmrob(math ~ gpa + factor(grade), studentdata)
+bread(robreg)
+head(estfun(robreg))
+studentdata$prof <- studentdata$math > 85
+robreg <- glmrob(prof ~ grade + gpa, studentdata, family = stats::binomial())
+bread(robreg)
+head(estfun(robreg))
+library(robustbase)
+data(studentdata)
+robreg <- lmrob(math ~ gpa + factor(grade), studentdata)
+bread(robreg)
+head(estfun(robreg))
+studentdata$prof <- studentdata$math > 85
+robreg <- glmrob(prof ~ grade + gpa, studentdata, family = stats::binomial())
+bread(robreg)
+head(estfun(robreg))
+}

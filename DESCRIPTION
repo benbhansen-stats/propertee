@@ -38,14 +38,13 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     multcomp,
-    MASS
+    MASS,
+    robustbase
 Config/testthat/edition: 3
 Imports:
     stats,
     methods,
     sandwich
-Enhances:
-    robustbase
 Depends:
     R (>= 4.1.0)
 VignetteBuilder: knitr

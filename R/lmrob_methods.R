@@ -12,6 +12,7 @@
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method
+##' @example inst/examples/robustbase_methods.R
 estfun.lmrob <- function(x, ...) {
   ctrl <- x$control
   if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "list")) {
@@ -64,6 +65,7 @@ estfun.lmrob <- function(x, ...) {
 ##' @author Ben B. Hansen
 ##' @rdname lmrob_methods
 ##' @exportS3Method
+##' @example inst/examples/robustbase_methods.R
 bread.lmrob <- function(x, ...) {
   ctrl <- x$control
   if (!is(ctrl, "lmrobCtrl") & !inherits(ctrl, "list")) {
