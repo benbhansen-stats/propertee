@@ -17,3 +17,8 @@ Logical vector with length given by the number of blocks in
 Identify blocks in a \code{StudySpecification} with exactly one
 treated or one control unit of assignment.
 }
+\examples{
+data(schooldata)
+spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+identify_small_blocks(spec)
+}

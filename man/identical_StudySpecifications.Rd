@@ -18,3 +18,14 @@ Logical, are \code{x} and \code{y} identical?
 Check whether two \code{StudySpecification} objects are
 identical.
 }
+\examples{
+data(schooldata)
+sdata <- schooldata
+spec1 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+sdata$treatment <- sample(sdata$treatment)
+spec2 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+identical_StudySpecifications(spec1, spec2)
+sdata$treatment <- schooldata$treatment
+spec3 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+identical_StudySpecifications(spec1, spec3)
+}

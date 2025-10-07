@@ -605,6 +605,10 @@ var_names <- function(specification, type, implicitBlocks = FALSE) {
 ##' @return invisibly \code{TRUE} if no warnings are produced, \code{FALSE} if
 ##'   any warnings are produced.
 ##' @export
+##' @examples
+##' data(schooldata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+##' specification_data_concordance(spec, schooldata)
 specification_data_concordance <- function(specification,
                                     data,
                                     by = NULL,

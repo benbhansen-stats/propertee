@@ -53,3 +53,8 @@ whether variables in both the data used in the creation of
 \code{specification} ("data1" in the above example) and some new dataset,
 \code{data}, ("data2" in the above example) have any inconsistencies.
 }
+\examples{
+data(schooldata)
+spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+specification_data_concordance(spec, schooldata)
+}

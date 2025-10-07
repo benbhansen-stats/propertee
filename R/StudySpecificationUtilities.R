@@ -146,6 +146,10 @@ forcing <- unit_of_assignment
 ##' @param spec \code{StudySpecification} object
 ##' @return logical vector of length 1
 ##' @export
+##' @examples
+##' data(schooldata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+##' has_binary_treatment(spec)
 has_binary_treatment <- function(spec) {
   if (!inherits(spec, "StudySpecification")) {
     stop("spec must be a StudySpecification object.")
@@ -168,6 +172,16 @@ has_binary_treatment <- function(spec) {
 ##' @param y A \code{StudySpecification} object.
 ##' @return Logical, are \code{x} and \code{y} identical?
 ##' @export
+##' @examples
+##' data(schooldata)
+##' sdata <- schooldata
+##' spec1 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+##' sdata$treatment <- sample(sdata$treatment)
+##' spec2 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+##' identical_StudySpecifications(spec1, spec2)
+##' sdata$treatment <- schooldata$treatment
+##' spec3 <- rct_spec(treatment ~ unitid(schoolid) + block(state), sdata)
+##' identical_StudySpecifications(spec1, spec3)
 identical_StudySpecifications <- function(x, y) {
   return(identical(x, y))
 }
@@ -180,6 +194,10 @@ identical_StudySpecifications <- function(x, y) {
 ##' @return Logical vector with length given by the number of blocks in
 ##'   \code{StudySpecification}
 ##' @export
+##' @examples
+##' data(schooldata)
+##' spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+##' identify_small_blocks(spec)
 identify_small_blocks <- function(spec) {
   blk_txt_cts <- specification_table(spec, "t", "b")
   is_small_blk <- apply(blk_txt_cts, 1, function(blk) any(blk == 1))

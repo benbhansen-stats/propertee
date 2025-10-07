@@ -17,3 +17,8 @@ logical vector of length 1
 Check whether treatment stored in a \code{StudySpecification} object
 is binary
 }
+\examples{
+data(schooldata)
+spec <- rct_spec(treatment ~ unitid(schoolid) + block(state), schooldata)
+has_binary_treatment(spec)
+}
