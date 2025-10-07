@@ -384,6 +384,7 @@ obsstudy_specification <- obs_spec
 ##'   to [rct_spec()], [obs_spec()], or [rd_spec()].
 ##' @return \code{object}, invisibly.
 ##' @export
+##' @example inst/examples/specification_and_estimation.R
 setMethod("show", "StudySpecification", function(object) {
   spectype <- switch(object@type,
                      "RCT" = "Randomized Control Trial",

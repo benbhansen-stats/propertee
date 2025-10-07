@@ -55,10 +55,15 @@ the variance-covariance of the parameter estimates in \code{x}.
 }
 \examples{
 library(sandwich)
+library(propertee)
 data(schooldata)
 data(studentdata)
 spec <- rct_spec(treatment ~ unitid(schoolid), schooldata)
+show(spec)
+summary(spec)
 tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate")
+show(tm)
+summary(tm)
 bread(tm)
 ef <- estfun(tm)
 head(ef)
@@ -68,4 +73,8 @@ tm <- lmitt(math ~ 1, spec, studentdata, weights = "ate",
 bread(tm)
 ef <- estfun(tm)
 head(ef)
+vcov(tm)
+vcov(tm, type = "HC1")
+vcov(tm, cov_adj_rcorrect = "HC1")
+confint(tm, 2)
 }

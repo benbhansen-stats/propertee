@@ -16,6 +16,7 @@
 ##' @export
 ##' @method summary teeMod
 ##' @rdname teeMod_summary
+##' @example inst/examples/specification_and_estimation.R
 summary.teeMod <- function(object,
                                    vcov.type = "HC0",
                                    ...) {

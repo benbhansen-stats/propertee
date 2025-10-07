@@ -4,6 +4,7 @@
 ##' @export
 ##' @method summary StudySpecification
 ##' @rdname StudySpecification_summary
+##' @example inst/examples/specification_and_estimation.R
 summary.StudySpecification <- function(object, ..., treatment_binary = TRUE) {
   out <- list()
   out$StudySpecification <- object
