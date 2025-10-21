@@ -151,13 +151,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
@@ -189,13 +193,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
@@ -226,13 +234,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,

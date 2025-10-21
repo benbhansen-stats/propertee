@@ -1,3 +1,6 @@
+# **propertee** 1.0.3
+* Fix bug in `cov_adj()` when covariance adjustment model formula includes transformations of variables
+
 # **propertee** 1.0.2
 * Fix bug in variance estimation code when the mean response/offset in a subpopulation of the control condition is not identified
 

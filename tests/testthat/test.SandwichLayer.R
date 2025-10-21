@@ -666,6 +666,45 @@ test_that(paste(".make_PreSandwichLayer returns expected output when",
                         check.attributes = FALSE))
 })
 
+test_that(".make_PreSandwichLayer with transformed columns in formula", {
+  set.seed(39)
+  cmod_dat <- data.frame(uid = NA_character_, x = rnorm(12), y = rnorm(12))
+  cmod <- lm(y ~ scale(x, scale = FALSE), cmod_dat)
+  spec_dat <- data.frame(uid = seq_len(10), x = rnorm(10),
+                         a = rep(c(0, 1), 5), y = rnorm(10))
+  spec <- rct_spec(a ~ unitid(uid), spec_dat)
+  form <- .update_ca_model_formula(cmod, by = NULL, spec)
+  newdata <- stats::model.frame(form, data = cmod_dat, na.action = na.pass)
+  
+  psl <- .make_PreSandwichLayer(cmod, newdata)
+  expect_equal(colnames(psl@prediction_gradient),
+               names(cmod$coefficients)[!is.na(cmod$coefficients)])
+  expect_equal(psl@prediction_gradient,
+               stats::model.matrix(stats::formula(cmod), cmod_dat))
+  
+  sl <- lmitt(y ~ 1, spec, spec_dat, offset = cov_adj(cmod))$model$`(offset)`
+  expect_equal(colnames(sl@prediction_gradient),
+               names(cmod$coefficients)[!is.na(cmod$coefficients)])
+  expect_equal(sl@prediction_gradient,
+               stats::model.matrix(formula(cmod), spec_dat))
+  
+  ## glm
+  cmod_dat$y <- c(rep(0, 6), rep(1, 6))
+  spec_dat$y <- c(rep(0, 5), rep(1, 5))
+  cmod <- glm(y ~ scale(x, scale = FALSE), cmod_dat,
+              family = stats::binomial())
+  form <- .update_ca_model_formula(cmod, by = NULL, spec)
+  newdata <- stats::model.frame(form, data = cmod_dat, na.action = na.pass)
+  
+  psl <- .make_PreSandwichLayer(cmod, newdata)
+  expect_equal(colnames(psl@prediction_gradient),
+               names(cmod$coefficients)[!is.na(cmod$coefficients)])
+  sl <- lmitt(y ~ 1, spec, spec_dat, offset = cov_adj(cmod))$model$`(offset)`
+  expect_equal(colnames(sl@prediction_gradient),
+               names(cmod$coefficients)[!is.na(cmod$coefficients)])
+  
+})
+
 test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
   data(simdata)
 

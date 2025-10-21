@@ -1,5 +1,5 @@
 Package: propertee
-Version: 1.0.2
+Version: 1.0.3
 Title: Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of
     ERrors (for Treatment Effect Estimation) package facilitates
