@@ -32,7 +32,7 @@ License_restricts_use: no
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests:
     knitr,
     rmarkdown,
@@ -81,6 +81,7 @@ Collate:
     'merge_preserve_order.R'
     'propertee_package.R'
     'specification_table.R'
+    'srr-stats-standards.R'
     'summary.StudySpecification.R'
     'summary.teeMod.R'
     'update_by.R'

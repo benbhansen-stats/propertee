@@ -90,16 +90,16 @@ treatment levels associated with "control"). For example, if your
 treatment variable was called \code{dose} and doses above 250 are
 considered treatment, you might write:
 
-\code{ate(..., dichotomy = dose > 250 ~ dose <= 250}
+\code{ate(..., dichotomy = dose > 250 ~ dose <= 250)}
 
 The period (\code{.}) can be used to assign all other units of assignment.
 For example, we could have written the same treatment regime as either
 
-\code{etc(..., dichotomy = dose > 250 ~ .}
+\code{etc(..., dichotomy = dose > 250 ~ .)}
 
 or
 
-\code{olw(..., dichotomy = . ~ dose <= 250}
+\code{olw(..., dichotomy = . ~ dose <= 250)}
 
 The \code{dichotomy} formula supports Relational Operators (see
 \link{Comparison}), Logical Operators (see \link{Logic}), and \code{\%in\%} (see
