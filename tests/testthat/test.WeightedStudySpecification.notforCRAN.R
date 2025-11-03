@@ -597,7 +597,7 @@ test_that("#130 zero weights with non-varying treatment in a block", {
 
   #### Data with an NA block doesn't break
   if (requireNamespace("AER", quietly = TRUE)) {
-      data(STARdata)
+      data("STAR", package="AER")
       STARdata <- STAR
   STARdata$starkbinary <- STARdata$stark == "small"
   STARdata$studentid <- seq_len(nrow(STARdata))

@@ -64,7 +64,7 @@ test_that("Missing data", {
   
   
   if (requireNamespace("AER", quietly = TRUE)) {
-    data(STARdata)
+    data("STAR", package="AER")
     STARdata <- STAR
     STARdata$id <- seq_len(nrow(STARdata))
     STARdata$stark <- as.character(STARdata$stark)
