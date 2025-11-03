@@ -11,6 +11,11 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library("utils")
+library("devtools")
+library("testthat")
+library("propertee")
+library("sandwich")
 ```
 
 The goal of this document is to consider a simple model that can be arranged as two separate regressions and relate the variance of the second stage coefficients to those that are fit in the entire model. With this information, we should be able to create tests of our variance estimation routines.
@@ -119,6 +124,137 @@ Z'H & 0
 \]
 --> 
 
-## TODO
+## Unit tests of the above
 
-- Implement as tests.
+Taken from (earlier versions of) `test.cov_adj.notforCRAN.R`.
+The following test is being retained there as well as here:
+
+```
+test_that("cov_adj variance estimates for orthogonal predictors", {
+  library(sandwich)
+  set.seed(230274373)
+  k <- 25
+  n <- 4 * k
+  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
+  x2 <- c(rep(1, k), rep(-1, 2 * k), rep(1, k))
+  z <- c(rep(1, k), rep(-1, k), rep(1, k), rep(-1, k))
+
+  # all orthogonal by specification
+  expect_equal((t(x1) %*% x2)[1], 0)
+  expect_equal((t(x1) %*% z)[1], 0)
+  expect_equal((t(x2) %*% z)[1], 0)
+
+  xy <- function(b0 =  1, b1 = 2, b2 = 3, b3 = -1, sigma2 = 4) {
+    y <- b0 + b1 * x1 + b2 * x2 + b3 * z + rnorm(n, sd = sqrt(sigma2))
+    data.frame(id = 1:n, x1 = x1, x2 = x2, z = z, y = y)
+  }
+
+  df <- xy()
+  mboth <- glm(y ~ x1 + x2 + z, data = df)
+  m1 <- glm(y ~ x1, data = df)
+
+  # we'll start by manually doing the offest Y - \hat Y
+  m2 <- glm(y ~ x2 + z, data = df, offset = predict(m1))
+
+  # Because of orthogonality, we should get $\hat \beta_0= \hat \alpha_0$,
+  # $\hat \beta_1 = \hat \alpha_1$, and $\hat beta_2 = \hat gamma_1$.
+
+  expect_equal(coef(mboth), c(coef(m1), coef(m2)[2:3]))
+
+  # now repeat with cov_adj
+  specification <- rct_spec(z == 1 ~ unitid(id), data = df)
+  m2ca <- glm(y ~ x2 + z, data = df, offset = cov_adj(m1, specification = specification))
+
+  expect_equal(coef(mboth), c(coef(m1), coef(m2ca)[2:3]))
+
+  ## naive case
+  m2naive <- glm(y ~ x2 + z, data = df)
+
+  expect_false(all(vcov(m2naive) == vcov(m2ca)))
+
+  hc_both  <- vcovHC(mboth, type = "HC0")
+  hc_naive <- vcovHC(m2naive, type = "HC0")
+  hc_m2ca  <- vcovHC(m2ca, type = "HC0")
+
+  # trim down the bigger model to just the variables in the second stage
+  in_two <- c("(Intercept)", "x2", "z")
+  hc_both_trimmed <- hc_both[in_two, in_two]
+
+  expect_equal(hc_m2ca, hc_both_trimmed)
+  expect_false(all(hc_naive == hc_m2ca))
+
+
+})
+```
+
+
+The following test now appears only in this file.
+
+```
+
+test_that("cov_adj variance estimates for correlated predictors", {
+  library(sandwich)
+  set.seed(230274373)
+  k <- 25
+  n <- 4 * k
+  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
+  z <- sample(c(rep(1, 2 * k), rep(0, 2 * k)), prob = x1 + 2)
+
+  xy <- function(b0 =  1, b1 = 2, b2 = 3, sigma2 = 4) {
+    y <- b0 + b1 * x1 + b2 * z + rnorm(n, sd = sqrt(sigma2))
+    data.frame(id = 1:n, x1 = x1,  z = z, y = y)
+  }
+
+  df <- xy()
+  mboth <- lm(y ~ x1 + z, data = df)
+  m1 <- lm(y ~ x1, data = df) # includes an intercept
+
+  # we'll start by manually doing the offset Y - \hat Y
+  # the intercept is in the "x" variables, not the z variables
+  m2 <- lm(y ~ z - 1, data = df, offset = predict(m1))
+
+  ## verify some of the results of the VarianceEstimation vignette
+  X <- model.matrix(m1)
+  Z <- model.matrix(m2)
+  Id <- diag(n)
+
+  # some quantities we will need
+  XtXinv <- solve(t(X) %*% X)
+  ZtZinv <- solve(t(Z) %*% Z)
+  H <- Id - X %*% XtXinv %*% t(X)
+  G <- Id - Z %*% ZtZinv %*% t(Z)
+
+  a <- solve(t(X) %*% G %*% X)
+  b <- solve(t(Z) %*% H %*% Z)
+  s2_1 <- (1/(n - 3)) * t(df$y) %*% (Id - X %*% a %*% t(X) %*% G - Z %*% b %*% t(Z) %*% H) %*% df$y
+  s2_1 <- s2_1[1,1]
+  expect_equal(summary(mboth)$sigma, sqrt(s2_1))
+
+  # variance we will get from the combined model (just subsetting for the 'z' variable)
+  var_beta_1 <- s2_1 * b
+  expect_equal(vcov(mboth)[3,3], var_beta_1[1,1])
+
+  alpha_2 <- (XtXinv %*% t(X) %*% df$y)[,1]
+  beta_2 <- (ZtZinv %*% t(Z) %*% H %*% df$y)[1,1]
+  expect_equal(coef(m1), alpha_2)
+  expect_equal(coef(m2), beta_2)
+
+  s2_2 <- (1 / (n - 1)) * t(df$y) %*% H %*% G %*% H %*% df$y
+  s2_2 <- s2_2[1,1]
+  expect_equal(summary(m2)$sigma, sqrt(s2_2))
+
+  r_2 <- resid(m2)
+  expect_equal(summary(m2)$sigma, sqrt((1/(n - 1)) * sum(r_2^2)))
+  expect_equal(r_2, df$y - X %*% alpha_2 - Z %*% beta_2, ignore_attr = TRUE)
+  expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
+
+  # now repeat with cov_adj
+  specification <- rct_spec(z ~ unitid(id), data = df)
+  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, specification = specification), weights = ate(specification))
+
+  m2ca_da <- as.lmitt(m2ca)
+
+  ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
+})
+
+```

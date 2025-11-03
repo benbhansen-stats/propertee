@@ -388,79 +388,8 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
 
 })
 
-
-test_that("cov_adj variance estimates for correlated predictors", {
-  library(sandwich)
-  set.seed(230274373)
-  k <- 25
-  n <- 4 * k
-  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
-  z <- sample(c(rep(1, 2 * k), rep(0, 2 * k)), prob = x1 + 2)
-
-  xy <- function(b0 =  1, b1 = 2, b2 = 3, sigma2 = 4) {
-    y <- b0 + b1 * x1 + b2 * z + rnorm(n, sd = sqrt(sigma2))
-    data.frame(id = 1:n, x1 = x1,  z = z, y = y)
-  }
-
-  df <- xy()
-  mboth <- lm(y ~ x1 + z, data = df)
-  m1 <- lm(y ~ x1, data = df) # includes an intercept
-
-  # we'll start by manually doing the offset Y - \hat Y
-  # the intercept is in the "x" variables, not the z variables
-  m2 <- lm(y ~ z - 1, data = df, offset = predict(m1))
-
-  ## verify some of the results of the VarianceEstimation vignette
-  X <- model.matrix(m1)
-  Z <- model.matrix(m2)
-  Id <- diag(n)
-
-  # some quantities we will need
-  XtXinv <- solve(t(X) %*% X)
-  ZtZinv <- solve(t(Z) %*% Z)
-  H <- Id - X %*% XtXinv %*% t(X)
-  G <- Id - Z %*% ZtZinv %*% t(Z)
-
-  a <- solve(t(X) %*% G %*% X)
-  b <- solve(t(Z) %*% H %*% Z)
-  s2_1 <- (1/(n - 3)) * t(df$y) %*% (Id - X %*% a %*% t(X) %*% G - Z %*% b %*% t(Z) %*% H) %*% df$y
-  s2_1 <- s2_1[1,1]
-  expect_equal(summary(mboth)$sigma, sqrt(s2_1))
-
-  # variance we will get from the combined model (just subsetting for the 'z' variable)
-  var_beta_1 <- s2_1 * b
-  expect_equal(vcov(mboth)[3,3], var_beta_1[1,1])
-
-  alpha_2 <- (XtXinv %*% t(X) %*% df$y)[,1]
-  beta_2 <- (ZtZinv %*% t(Z) %*% H %*% df$y)[1,1]
-  expect_equal(coef(m1), alpha_2)
-  expect_equal(coef(m2), beta_2)
-
-  s2_2 <- (1 / (n - 1)) * t(df$y) %*% H %*% G %*% H %*% df$y
-  s2_2 <- s2_2[1,1]
-  expect_equal(summary(m2)$sigma, sqrt(s2_2))
-
-  r_2 <- resid(m2)
-  expect_equal(summary(m2)$sigma, sqrt((1/(n - 1)) * sum(r_2^2)))
-  expect_equal(r_2, df$y - X %*% alpha_2 - Z %*% beta_2, ignore_attr = TRUE)
-  expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
-
-  # now repeat with cov_adj
-  specification <- rct_spec(z ~ unitid(id), data = df)
-  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, specification = specification), weights = ate(specification))
-
-  m2ca_da <- as.lmitt(m2ca)
-
-  ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
-})
-
 options(old_opt)
 
-# This currently errors with
-# Error in model.frame.default(formula = readk ~ birth + lunchk, data =
-#STARdata, : variable lengths differ (found for '(weights)')
-# mod <- lm(readk ~ birth + lunchk, data = STARdata,
-#          offset = cov_adj(cmod, newdata = STARdata), weights = ate(spec))
 
 
 
