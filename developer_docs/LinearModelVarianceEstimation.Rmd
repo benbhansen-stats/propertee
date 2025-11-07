@@ -1,7 +1,7 @@
 ---
 title: "Variance Estimation Testing Using A Simple Linear Specification"
 author: "Mark Fredrickson, Ben Hansen"
-date: '2023-03-30'
+date: '2025-11-07'
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Variance Estimation Testing Using A Simple Linear Specification}
@@ -10,7 +10,6 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library("utils")
 library("devtools")
 library("testthat")
@@ -20,9 +19,11 @@ library("sandwich")
 
 The goal of this document is to consider a simple model that can be arranged as two separate regressions and relate the variance of the second stage coefficients to those that are fit in the entire model. With this information, we should be able to create tests of our variance estimation routines.
 
-## Combined model 
+Consider two sets of background variables and treatment assignments, $x$ and $z$ with dimension $p_x$ and $p_z$, respectively, to be treated as nonrandom or fixed by conditioning. Our first and most important application will be to binary $z$, but $z$ representing contrasts of factor levels and interactions with binary or multinomial treatments are also of interest.
 
-Consider two sets of background variables and treatment assignments, $x$ and $z$ with dimension $p_x$ and $p_z$, respectively, to be treated as nonrandom or fixed by conditioning.
+
+# Treatment-free covariance modeling followed by residual diff-in-diff
+
 While we allow correlation between the variables, we will assume that the matrix $\begin{pmatrix} X & Z \end{pmatrix}' \begin{pmatrix} X & Z \end{pmatrix}$ has an inverse (I think most of these results would work with generalized inverses, but if does not exist it makes the dimesionality of the coefficients a little tricky).
 
 $$Y = \alpha'x + \beta'z + \epsilon, \quad E(\epsilon) = 0, \text{Var}(\epsilon) = \sigma^2$$
@@ -42,7 +43,7 @@ $$\text{Var}(\hat \beta_1) = \sigma^2 \left[Z'H Z\right]^{-1}$$
 The same $\hat \beta_1$ arises as the coefficient of a regression of $HY$ on $HZ$ (by the so-called Frisch-Waugh-Lovell Theorem).  In consequence,
 $$\hat \beta_1 = (Z'HZ)^{-1}(Z'Hy) .$$
 
-## Two regressions
+## Diff-in-diff after covariance modeling, take 1.
 
 Let $\hat \alpha_2$ and $\hat \beta_2$ be the estimators from first regression on $Y$ on $x$ alone and then regressing $Y - \hat \alpha_2'x$, that is $YH$ with $H$ as defined above, on $Z$. Standard results give
 
@@ -127,9 +128,9 @@ Z'H & 0
 ## Unit tests of the above
 
 Taken from (earlier versions of) `test.cov_adj.notforCRAN.R`.
-The following test is being retained there as well as here:
+The following test (suppressed from vignette output) is being retained there as well as here:
 
-```
+```{include=FALSE}
 test_that("cov_adj variance estimates for orthogonal predictors", {
   library(sandwich)
   set.seed(230274373)
@@ -182,16 +183,13 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
 
   expect_equal(hc_m2ca, hc_both_trimmed)
   expect_false(all(hc_naive == hc_m2ca))
-
-
 })
 ```
 
 
-The following test now appears only in this file.
+The following test (suppressed from vignette output) now appears only in this file.
 
-```
-
+```{include=FALSE}
 test_that("cov_adj variance estimates for correlated predictors", {
   library(sandwich)
   set.seed(230274373)
@@ -256,5 +254,320 @@ test_that("cov_adj variance estimates for correlated predictors", {
 
   ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
 })
-
 ```
+
+# Covariance modeling *with* treatment followed by diff-in-diff on *partial* residuals
+
+Let $\hat{\alpha}_{1}$ and $\hat{\beta}_{1}$ be $X$ and $Z$ coefficients in a linear covariance model as above, i.e. $\operatorname{Proj}(Y|X, Z) = X{\hat\alpha}_{1} + Z{\hat\beta}_{1}$.  These coefficients solve
+\[
+\begin{pmatrix}
+(Y - X\hat{\alpha}_{1} - Z\hat{\beta}_{1})'X\\
+(Y - X\hat{\alpha}_{1} - Z\hat{\beta}_{1})'Z\\
+\end{pmatrix} =0;
+\]
+under our assumption that $\begin{pmatrix} X & Z \end{pmatrix}' \begin{pmatrix} X & Z \end{pmatrix}$ is invertible, the solution is unique. 
+
+The partial residual given $X$ is $Y-X\hat{\alpha}_{1}$.  The regression of these partial residuals on Z delivers coefficients $\hat{\beta}_{0}$ solving
+\[
+(Y - X\hat{\alpha}_{1} - Z\hat{\beta}_{0})'Z =0;
+\]
+
+From the uniqueness of the solution $(\hat{\alpha}_{1}', \hat{\beta}_{1}')'$ of the earlier estimating equation, we have $\hat{\beta}_{0} = \hat{\beta}_{1}$ (and ${\beta}_{0} = {\beta}_{1}$). 
+
+Under the constant-variance linear model we have $\operatorname{Var}(\hat{\beta}_1) = \sigma^2 S_{Z'Z}^{-1}$, for $S_{Z'Z} = Z'Z - Z'X(X'X)^{-1}X'Z$, the Schur complement of $X'X$ in
+$\left(\begin{smallmatrix}
+X'X & Z'X \\
+X'Z & Z'Z \\
+\end{smallmatrix}\right)$.  Without the assumption of constant residual variance we continue to have the sandwich formula
+\begin{align*}
+\operatorname{Var}(\hat{\beta}_1) = &
+\begin{pmatrix}
+-S_{Z'Z}^{-1}(Z'X)(X'X)^{-1} & S_{Z'Z}^{-1}
+\end{pmatrix} \times\\
+& 
+\operatorname{Cov}\begin{pmatrix}
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'X\\
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'Z\\
+\end{pmatrix}
+\begin{pmatrix}
+-(X'X)^{-1}(X'Z)S_{Z'Z}^{-1} \\ S_{Z'Z}^{-1}
+\end{pmatrix}, \text{ or equivalently}\\
+\operatorname{Var}(\hat{\beta}_1)=&
+\begin{pmatrix}
+-(Z'Z)^{-1}(Z'X)S_{X'X}^{-1} & (Z'Z)^{-1}+\cdots
+\end{pmatrix} \times\\
+& 
+\operatorname{Cov}\begin{pmatrix}
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'X\\
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'Z\\
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z)(Z'Z)^{-1} \\ (Z'Z)^{-1}+\cdots
+\end{pmatrix}\\
+&= (Z'Z)^{-1}\begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & I_{p_{z}} + (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}
+\end{pmatrix} \times\\
+&
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ I_{p_{z}} + (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)
+\end{pmatrix}(Z'Z)^{-1},
+\end{align*}
+where "$(Z'Z)^{-1} + \cdots$" stands for $(Z'Z)^{-1} + (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}$, $S_{X'X}= X'X - X'Z(Z'Z)^{-1}Z'X$, the Schur complement of $Z'Z$ in
+$\left(\begin{smallmatrix}
+X'X & Z'X \\
+X'Z & Z'Z \\
+\end{smallmatrix}\right)$, and $\left(\begin{smallmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{smallmatrix}\right)=\operatorname{Cov}\left(\begin{smallmatrix}
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'X\\
+(Y - X{\alpha}_{1} - Z{\beta}_{1})'Z\\
+\end{smallmatrix}\right)$.
+
+Now writing "$I_{p_{z}} + \cdots$" for
+$I_{p_{z}} + (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}$, we have
+
+\begin{align*}
+(Z'Z)\operatorname{Var}(\hat{\beta}_1) (Z'Z)=&
+\begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & I_{p_{z}} + \cdots
+\end{pmatrix} 
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (I_{p_{z}} + \cdots)'
+\end{pmatrix}\\
+=&\left\{
+\begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} &  \cdots
+\end{pmatrix} +
+\begin{pmatrix}
+0 & I_{p_{z}}
+\end{pmatrix}
+\right\}
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\left\{
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (\cdots)'
+\end{pmatrix} +
+\begin{pmatrix}
+0 \\ I_{p_{z}}
+\end{pmatrix}
+\right\}\\
+=& 
+\begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}
+\end{pmatrix} \times\\
+& 
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)
+\end{pmatrix} +\\
+&\begin{pmatrix} 0 & I_{p_{z}}\end{pmatrix}
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)
+\end{pmatrix}+\\
+& \begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}
+\end{pmatrix} 
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix} 0 \\ I_{p_{z}} \end{pmatrix} + \\
+& \begin{pmatrix} 0 & I_{p_{z}}\end{pmatrix}
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix} 0 \\ I_{p_{z}} \end{pmatrix}
+\\
+=& 
+\begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}
+\end{pmatrix} \times\\
+& 
+\begin{pmatrix}
+B_{xx} & B_{xz}\\
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)
+\end{pmatrix} +\\
+&\begin{pmatrix}
+B_{zx} & B_{zz}
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z) \\ (Z'Z)^{-1}(Z'X)S_{X'X}^{-1}(X'Z)
+\end{pmatrix}+\\
+& \begin{pmatrix}
+-(Z'X)S_{X'X}^{-1} & (Z'X)S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}
+\end{pmatrix} 
+\begin{pmatrix}
+ B_{xz}\\
+ B_{zz}
+\end{pmatrix}\\
+&+ B_{zz}.
+\end{align*}
+Recalling that $\beta_0=\beta_1$,
+\[
+{\operatorname{Cov}}\begin{pmatrix}
+X'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{0})\\
+\end{pmatrix}
+=
+\begin{pmatrix}
+B_{xx} & B_{xz}& B_{xz}\\
+B_{zx} & B_{zz}& B_{zz}\\
+B_{zx} & B_{zz}& B_{zz}
+\end{pmatrix}.
+\]
+
+The corresponding $A$ matrix is
+\[
+A = \mathbf{E}\left[\nabla_{\alpha_{1},\beta_{1},\beta_{0}}
+\begin{pmatrix}
+X'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{0})\\
+\end{pmatrix}
+\right]  =
+- \begin{pmatrix}
+X'X & X'Z & 0\\
+Z'X & Z'Z & 0\\
+Z'X & 0 & Z'Z\\
+\end{pmatrix}.
+\]
+For representation of $\operatorname{Var}(\hat{\beta}_0)$, we only need $A^{-1}$'s bottom row:
+\begin{align*}
+[{A}^{-1}]_{3 -} &=
+- \begin{pmatrix}
+-(Z'Z)^{-1}
+\begin{pmatrix}
+Z'X & 0
+\end{pmatrix}
+\begin{pmatrix}
+X'X & X'Z \\
+Z'X & Z'Z \\
+\end{pmatrix}^{-1} &
+(Z'Z)^{-1}
+\end{pmatrix}\\
+&=
+- \begin{pmatrix}
+-(Z'Z)^{-1}
+\begin{pmatrix}
+Z'X & 0
+\end{pmatrix}
+\begin{pmatrix}
+S_{X'X}^{-1} & -S_{X'X}^{-1}X'Z(Z'Z)^{-1} \\
+-(Z'Z)^{-1}Z'X S_{X'X}^{-1} & (Z'Z)^{-1} + \cdots \\
+\end{pmatrix} &
+(Z'Z)^{-1}
+\end{pmatrix}\\
+&=-(Z'Z)^{-1}\begin{pmatrix}
+-(Z'X) S_{X'X}^{-1} & (Z'X) S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}& I_{p_z}
+\end{pmatrix}.
+\end{align*}
+Since
+\[
+\operatorname{Var}(\hat{\beta}_{0}) = [A^{-1}]_{3-}
+\operatorname{Cov}\left(\begin{matrix}
+X'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{1})\\
+Z'(Y - X{\alpha}_{1} - Z{\beta}_{0})\\
+\end{matrix}\right)
+[A^{-1}]_{3-}'
+\]
+we have 
+\begin{align*}
+{\operatorname{Var}}(\hat{\beta}_{0}) =&
+[{A}^{-1}]_{3-}
+\begin{pmatrix}
+B_{xx} & B_{xz}& B_{xz}\\
+B_{zx} & B_{zz}& B_{zz}\\
+B_{zx} & B_{zz}& B_{zz}
+\end{pmatrix}
+[{A}^{-1}]_{3-}';\\
+(Z'Z) {\operatorname{Var}}(\hat{\beta}_{0}) (Z'Z)
+&=
+\left\{
+\begin{pmatrix}
+-(Z'X) S_{X'X}^{-1} & (Z'X) S_{X'X}^{-1}(X'Z)(Z'Z)^{-1}& 0
+\end{pmatrix}+
+\begin{pmatrix} 0 & 0 & I_{p_{z}} \end{pmatrix}
+\right\} \times\\
+& \begin{pmatrix}
+B_{xx} & B_{xz}& B_{xz}\\
+B_{zx} & B_{zz}& B_{zz}\\
+B_{zx} & B_{zz}& B_{zz}
+\end{pmatrix}
+\left\{
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z)  \\ (Z'Z)^{-1}(Z'X) S_{X'X}^{-1}(X'Z)\\ 0
+\end{pmatrix}+
+\begin{pmatrix} 0 \\ 0 \\ I_{p_{z}} \end{pmatrix}
+\right\}\\
+=&
+\begin{pmatrix}
+-(Z'X) S_{X'X}^{-1} & (Z'X) S_{X'X}^{-1}(X'Z)(Z'Z)^{-1} & 0 
+\end{pmatrix}\times \\
+&
+\begin{pmatrix}
+B_{xx} & B_{xz} & B_{xz}\\
+B_{zx} & B_{zz} & B_{zz}\\
+B_{zx} & B_{zz} & B_{zz}\\
+\end{pmatrix}
+\begin{pmatrix}
+-S_{X'X}^{-1}(X'Z)  \\ (Z'Z)^{-1}(Z'X) S_{X'X}^{-1}(X'Z)  \\ 0
+\end{pmatrix} + \\
+&\begin{pmatrix} B_{zx} & B_{zz}& B_{zz}\end{pmatrix} \begin{pmatrix}
+-S_{X'X}^{-1}(X'Z)  \\ (Z'Z)^{-1}(Z'X) S_{X'X}^{-1}(X'Z)\\ 0
+\end{pmatrix} +\\
+& \begin{pmatrix}
+-(Z'X) S_{X'X}^{-1} & (Z'X) S_{X'X}^{-1}(X'Z)(Z'Z)^{-1} & 0
+\end{pmatrix} \begin{pmatrix}
+B_{xz}\\
+B_{zz}\\
+B_{zz}
+\end{pmatrix}+\\
+& B_{zz}.
+\end{align*}
+Allowing for zeroes, this expression is identical to that given for $(Z'Z)\operatorname{Var}(\hat{\beta}_1)(Z'Z)$ above. 
+
+<!--
+=& (Z'Z)^{-1}\begin{pmatrix}
+-Z'X S_{X'X}^{-1}B_{xx} +  Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zx} + B_{zx}
+&
+-Z'X S_{X'X}^{-1}B_{xz} + Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zz} + B_{zz} 
+&
+-Z'X S_{X'X}^{-1}B_{xz} + Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zz} + B_{zz}
+\end{pmatrix}\\
+&\times
+\begin{pmatrix}
+-S_{X'X}^{-1}X'Z \\
+(Z'Z)^{-1}Z'X S_{X'X}^{-1}X'Z
+\\ I
+\end{pmatrix}
+(Z'Z)^{-1}\\
+=& (Z'Z)^{-1}\big[
+Z'X S_{X'X}^{-1}B_{xx}S_{X'X}^{-1}X'Z - Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zx}S_{X'X}^{-1}X'Z - B_{zx}S_{X'X}^{-1}X'Z +\\
+&-Z'X S_{X'X}^{-1}B_{xx}(Z'Z)^{-1}Z'X S_{X'X}^{-1}X'Z +  Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zx}(Z'Z)^{-1}Z'X S_{X'X}^{-1}X'Z + \\
+& B_{zx}(Z'Z)^{-1}Z'X S_{X'X}^{-1}X'Z+ -Z'X S_{X'X}^{-1}B_{xx} +  Z'X S_{X'X}^{-1}X'Z(Z'Z)^{-1}B_{zx} + B_{zx}\big] (Z'Z)^{-1}
+ -->

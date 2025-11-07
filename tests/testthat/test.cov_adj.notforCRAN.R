@@ -388,6 +388,12 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
 
 })
 
+## We'll go on to check agreement in cases with non-orthogonal
+## predictors below, after verifying that when a treatment variable
+## appears in the covariance model its values are replaced with a
+## reference level before generating the predictions/offsets for the
+## computation of diff-in-diffs.
+
 options(old_opt)
 
 
@@ -467,4 +473,36 @@ test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
   myca=plogis(crossprod(t(mm0),coef(modHet))[,1])
 
   expect_true(all.equal(myca,ca@.Data, check.attributes=FALSE, check.names=FALSE))
+})
+
+test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
+{ ## Rationale for expecting these equivalences is given in 
+  ## developer_docs/LinearModelVarianceEstimation.Rmd 
+  library(sandwich)
+  data(simdata)
+
+  # Binary treatment
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
+  camod <- lm(y ~ x + z, data = simdata)
+  ca <- cov_adj(camod, newdata = simdata, specification = spec)
+  ddmod  <- lm(y~ z.(), offset=ca, data=simdata)
+  expect_equal(coef(ddmod)["z.()"], coef(camod)["z"], ignore_attr=TRUE)
+  all.equal(vcovHC(ddmod, type="HC0")["z.()","z.()"],
+            vcovHC(camod, type="HC0")["z","z"], 
+            check.attributes=FALSE) |>  isTRUE() |> 
+    expect_false()# misses camod sampling variability
+  ddmod_tee1 <- as.lmitt(ddmod)
+  expect_equal(coef(ddmod_tee1)["z.()"], 
+               coef(camod)["z"], ignore_attr=TRUE)
+### Currently failing:
+###  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
+###               vcovHC(camod, type="HC0")["z","z"],
+###              ignore_attr=TRUE)
+
+  ddmod_tee2 <- lmitt(y~1, offset=ca, specification=spec, data=simdata)
+  expect_equal(coef(ddmod_tee2)["z."], coef(camod)["z"], ignore_attr=TRUE)
+### Currently failing:
+###  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
+###                 vcovHC(camod, type="HC0")["z","z"], 
+###                 ignore_attr=TRUE)
 })
