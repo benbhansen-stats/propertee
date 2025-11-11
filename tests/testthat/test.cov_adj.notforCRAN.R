@@ -482,7 +482,7 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
   data(simdata)
 
   # Binary treatment
-  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
+  suppressWarnings(spec <- rct_spec(z ~ 1, data = simdata))
   camod <- lm(y ~ x + z, data = simdata)
   ca <- cov_adj(camod, newdata = simdata, specification = spec)
   ddmod  <- lm(y~ z.(), offset=ca, data=simdata)
