@@ -494,15 +494,28 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
   ddmod_tee1 <- as.lmitt(ddmod)
   expect_equal(coef(ddmod_tee1)["z.()"], 
                coef(camod)["z"], ignore_attr=TRUE)
-### Currently failing:
-###  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
-###               vcovHC(camod, type="HC0")["z","z"],
-###              ignore_attr=TRUE)
+  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
+               vcovCL(camod, type="HC0")["z","z"],
+              ignore_attr=TRUE)
 
   ddmod_tee2 <- lmitt(y~1, offset=ca, specification=spec, data=simdata)
   expect_equal(coef(ddmod_tee2)["z."], coef(camod)["z"], ignore_attr=TRUE)
-### Currently failing:
+  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
+                 vcovCL(camod, type="HC0")["z","z"],
+                 ignore_attr=TRUE)
+
+###  Our variance differs from that of vcovHC, not sure why:
 ###  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
 ###                 vcovHC(camod, type="HC0")["z","z"], 
 ###                 ignore_attr=TRUE)
+
+  ddmod_tee3 <- lmitt(y~1, offset=cov_adj(camod), data=simdata,
+                       specification=z~cluster(uoa1, uoa2))
+  expect_equal(coef(ddmod_tee3)["z."], coef(camod)["z"], ignore_attr=TRUE)
+  expect_equal(vcov_tee(ddmod_tee3, type="HC0")["z.","z."],
+               sandwich::vcovCL(camod, type="HC0",
+                                cluster = with(simdata,
+                                               paste(uoa1, uoa2, sep = "_"))
+                                )["z","z"],
+               ignore_attr=TRUE)
 })
