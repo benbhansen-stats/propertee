@@ -478,6 +478,9 @@ test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
 test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
 { ## Rationale for expecting these equivalences is given in 
   ## developer_docs/LinearModelVarianceEstimation.Rmd 
+  ## test.SandwichLayerVariance.R has related tests comparing
+  ## propertee's meat matrices to those of sandwich::meatCL();
+  ## the following test higher-level expectations of vcovCL().
   library(sandwich)
   data(simdata)
 
@@ -494,8 +497,10 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
   ddmod_tee1 <- as.lmitt(ddmod)
   expect_equal(coef(ddmod_tee1)["z.()"], 
                coef(camod)["z"], ignore_attr=TRUE)
+
+
   expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
-               vcovCL(camod, type="HC0")["z","z"],
+              vcovCL(camod, type="HC0")["z","z"],
               ignore_attr=TRUE)
 
   ddmod_tee2 <- lmitt(y~1, offset=ca, specification=spec, data=simdata)
@@ -504,7 +509,8 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
                  vcovCL(camod, type="HC0")["z","z"],
                  ignore_attr=TRUE)
 
-###  Our variance differs from that of vcovHC, not sure why:
+### (We don't line up with vcovHC() b/c we include the meatCL
+### "cluster adjustment", which isn't an option for vcovHC.)
 ###  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
 ###                 vcovHC(camod, type="HC0")["z","z"], 
 ###                 ignore_attr=TRUE)
