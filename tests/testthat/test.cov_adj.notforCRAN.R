@@ -511,9 +511,14 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
 
 ### (We don't line up with vcovHC() b/c we include the meatCL
 ### "cluster adjustment", which isn't an option for vcovHC.)
-###  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
-###                 vcovHC(camod, type="HC0")["z","z"], 
-###                 ignore_attr=TRUE)
+  all.equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
+                 vcovHC(camod, type="HC0")["z","z"],
+                 check.attributes=FALSE) |> isTRUE() |>
+    expect_false()
+  expect_equal(sandwich::vcovCL(camod, type="HC0", cadjust = FALSE,
+                                cluster = NULL)["z","z"],
+               sandwich::vcovHC(camod, type="HC0")["z","z"],
+               ignore_attr=TRUE)
 
   ddmod_tee3 <- lmitt(y~1, offset=cov_adj(camod), data=simdata,
                        specification=z~cluster(uoa1, uoa2))
