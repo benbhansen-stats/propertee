@@ -156,7 +156,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   if (is.null(cluster)) cluster <- var_names(x@StudySpecification, "u")
   if (is.null(cls)) cls <- .make_uoa_ids(x, substr(vcov_type, 1, 2), cluster)
   
-  if (!(vcov_type %in% paste0(c("MB", "HC", "CR"), 2))) {
+  if (!(vcov_type %in% paste0(c("MB", "HC", "CR"), "2"))) {
     # if no HC2 correction, use dof = G - 1 (see pg. 331 of Cameron and Miller,
     # 2015). this is correct for both absorb=FALSE and absorb=TRUE
     dof <- length(unique(cls)) - 1
@@ -783,6 +783,8 @@ cluster_iss <- function(tm,
 #'   the dimension of the covariance adjustment model, including an intercept
 #' @keywords internal
 #' @noRd
+#' @srrstats {G2.4c} # This function uses `as.character()` (instead of `paste`)
+#'   for conversion to character
 .get_b11 <- function(x, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
@@ -847,7 +849,7 @@ cluster_iss <- function(tm,
   nuoas <- length(unique(uoas))
   nas <- is.na(uoas)
   if (any(nas)) {
-    uoas[nas] <- paste0(nuoas - 1 + seq_len(sum(nas)), "*")
+    uoas[nas] <- paste0(as.character(nuoas - 1 + seq_len(sum(nas))), "*")
   }
   uoas <- factor(uoas)
   nuoas <- length(unique(uoas))
@@ -1213,6 +1215,8 @@ cluster_iss <- function(tm,
 #' - treatment id column name;
 #' - block id column name
 #' @keywords internal
+#' @srrstats {G2.4c} # This function uses `as.character()` (instead of `paste`)
+#'   for conversion to character
 .aggregate_to_cluster <- function(x, ...){
   ws <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
   data_temp <- x$call$data
@@ -1255,11 +1259,13 @@ cluster_iss <- function(tm,
 #'   the new block ID in the column \code{ids[1]}
 #' @return a data frame with a column that contains unique block number IDs
 #' @keywords internal
+#' @srrstats {G2.4d} # This function uses `as.factor()` for conversion to 
+#'   factor
 .merge_block_id_cols <- function(df, ids){
   if (!all(ids %in% colnames(df))){
     stop("Some block IDs are not present in the dataframe")
   }
-  df[[ids[1]]] <- as.numeric(factor(do.call(paste, c(df[ids], sep = "."))))
+  df[[ids[1]]] <- as.numeric(as.factor(do.call(paste, c(df[ids], sep = "."))))
   return(df)
 }
 
@@ -1345,6 +1351,8 @@ cluster_iss <- function(tm,
 
 #' @title (Internal) Helper function for design-based meat matrix calculation
 #' @keywords internal
+#' @srrstats {G2.4b} # This function uses explicit conversion to continuous 
+#'   via `as.numeric()`
 .add_vec <- function(a, upper = TRUE){
   if (nrow(a) > 1) return(0)
   a <- as.numeric(a)
@@ -1405,6 +1413,8 @@ cluster_iss <- function(tm,
 #' @title (Internal) Calculate grave\{phi\}
 #' @keywords internal
 #' @param x a fitted \code{teeMod} model
+#' @srrstats {G2.4a} # This function uses `as.integer()` for conversion to 
+#'   integer
 .get_phi_tilde <- function(x, ...){
   specification_obj <- x@StudySpecification
   df <- x$call$data

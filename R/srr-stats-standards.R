@@ -131,8 +131,16 @@ NULL
 #' for why each of these standards have been deemed not applicable.
 #' (These comments may also be deleted at any time.)
 #' @noRd
-#' @srrstatsTODO {G1.5} *Software should include all code necessary to reproduce results which form the basis of performance claims made in associated publications.* 
-#' @srrstatsTODO {G1.6} *Software should include code necessary to compare performance claims with alternative implementations in other R packages.* 
-#' @srrstatsTODO {G4.0} *Statistical Software which enables outputs to be written to local files should parse parameters specifying file names to ensure appropriate file suffices are automatically generated where not provided.* 
-#' @srrstatsTODO {G5.4b} *For new implementations of existing methods, correctness tests should include tests against previous implementations. Such testing may explicitly call those implementations in testing, preferably from fixed-versions of other software, or use stored outputs from those where that is not possible.*
+#' @srrstatsNA {G1.5} There are currently no associated publications that make 
+#'   quantitative performance claims about `propertee`, so there are no such 
+#'   results to reproduce.
+#' @srrstatsNA {G1.6} The package does not presently make or document 
+#'   comparative performance claims against alternative implementations, 
+#'   so no such comparison code is required.
+#' @srrstatsNA {G4.0} `propertee` does not provide user-facing functionality 
+#'   to write outputs to local files; all results are returned as in-memory 
+#'   R objects.
+#' @srrstatsNA {G5.4b} The core methods implemented in `propertee` are, 
+#'   to our knowledge, not available in existing software, so there is 
+#'   no prior implementation against which to test.
 NULL
