@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.3.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.3.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Regression Discontinuity Design</h1>
                         <h4 data-toc-skip class="author">Adam Sales</h4>
             
-            <h4 data-toc-skip class="date">2025-11-12</h4>
+            <h4 data-toc-skip class="date">2026-01-07</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/RDD.Rmd" class="external-link"><code>vignettes/RDD.Rmd</code></a></small>
       <div class="d-none name"><code>RDD.Rmd</code></div>
@@ -126,7 +126,7 @@ natural log of the numbers of students with each unique value of
 <span><span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">figDat</span>,</span>
 <span>     <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">R</span>,<span class="va">nextGPA</span>,cex<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">n</span><span class="op">+</span><span class="fl">1</span><span class="op">)</span><span class="op">/</span><span class="fl">3</span>,main<span class="op">=</span><span class="st">'Average Subsequent GPA\n as a function of 1st-Year GPA,\n Centered at AP Cutoff'</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="fl">0</span>,lty<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="RDD_files/figure-html/rddPlots-1.png" class="r-plt" width="672"></p>
+<p><img src="RDD_files/figure-html/rddPlots-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a>
@@ -402,7 +402,7 @@ recommended in Sales &amp; Hansen (2020):</p>
 <span><span class="va">yhat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">g2</span>,<span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>R<span class="op">=</span><span class="fu"><a href="../reference/StudySpecification_extractreplace.html">forcings</a></span><span class="op">(</span><span class="va">spec</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,Z<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">yhat1</span>,<span class="va">yhat2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="RDD_files/figure-html/yhat-1.png" class="r-plt" width="700"></p>
+<p><img src="RDD_files/figure-html/yhat-1.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### method 1:</span></span>
 <span></span>

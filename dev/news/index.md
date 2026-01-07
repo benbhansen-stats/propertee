@@ -1,5 +1,13 @@
 # Changelog
 
+## **propertee** 1.0.4 (Unreleased)
+
+- Fix routines for CR2/CV2 standard errors and associated degrees of
+  freedom that previously errored when the provided teeMod or its
+  `weights` argument had a `dichotomy` slot
+- Return NaN for the degrees of freedom when CR2/CV2 standard errors
+  have deficient degrees of freedom
+
 ## **propertee** 1.0.3
 
 CRAN release: 2025-10-28
