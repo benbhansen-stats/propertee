@@ -171,10 +171,12 @@ test_that(".compute_IK_dof no clustering", {
 
   bad.ell1 <- c(0, 0, 1, 0)
   bad.ell2 <- c(0, 0, 0, 1)
-  suppressWarnings(no_dof <- .compute_IK_dof(tm, bad.ell1))
-  expect_equal(no_dof, 1) # this is what IK code returns
-  suppressWarnings(valid_dof <- .compute_IK_dof(tm, bad.ell2))
-  expect_equal(valid_dof, 1) # this is what IK code returns
+  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1))
+  # returning NaN does not cause warnings for pt() in summary.teeMod()
+  expect_equal(dof_a.x0, NaN)
+  # returning NaN does not cause warnings for pt() in summary.teeMod()
+  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2))
+  expect_equal(dof_a.x1, NaN)
 })
 
 test_that("cluster_iss, no absorption", {
@@ -452,6 +454,28 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
     eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
     check.attributes = FALSE
   ))
+})
+
+test_that("cluster_iss and .compute_IK_dof with dichotomies", {
+  data(simdata)
+  
+  # first, dichotomy is specified only in lmitt()
+  spec <- rct_spec(dose ~ unitid(uoa1, uoa2), simdata)
+  tm <- lmitt(y ~ 1, spec, simdata, weights = "ate",
+              dichotomy = dose > 100 ~ dose <= 100)
+  expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
+                       "matrix"))
+  dof <- .compute_IK_dof(tm, c(0, 1))
+  expect_true(inherits(dof, "numeric") & dof < Inf)
+  
+  # second, dichotomy given in the weights as well
+  wts <- ate(spec, dose > 100 ~ dose <= 100, data = simdata)
+  tm <- lmitt(y ~ 1, spec, simdata, weights = wts,
+              dichotomy = dose > 100 ~ dose <= 100)
+  expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
+                       "matrix"))
+  dof <- .compute_IK_dof(tm, c(0, 1))
+  expect_true(inherits(dof, "numeric") & dof < Inf)
 })
 
 test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with teeMod model",

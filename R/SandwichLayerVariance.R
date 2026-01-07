@@ -205,15 +205,16 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
       if (is.null(wc$data)) wc$data <- lmitt_data
     }
   }
-  trts <- if (is.null(tm@lmitt_call$dichotomy) &
-              (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
-               !inherits(wc, "WeightedStudySpecification"))) {
+  trts <- if (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
+               !inherits(wc, "WeightedStudySpecification")) {
     treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
   } else {
     if (length(dich <- wc@dichotomy) == 0) {
       treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
     } else {
-      eval(dich, envir = lmitt_data)
+      treatment(tm@StudySpecification,
+                newdata = lmitt_data,
+                dichotomy = dich)[,1]
     }
   }
   
@@ -315,28 +316,33 @@ cluster_iss <- function(tm,
   ix <- setdiff(which(cluster_ids == cluster_unit), exclude)
   
   lmitt_data <- get("data", environment(formula(tm)))
-  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) {
+    lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  }
   if (is.null(trts <- dots$assigned_trt)) {
+    # dichotomy will be store in the weights, if there is one
     wc <- tm@lmitt_call$weights
     if (inherits(wc, "call")) {
       if (exists(deparse1(wc[[1L]]))) {
         if (length(wc) == 1) {
           wc$specification <- get("specification", environment(formula(tm)))
-        } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+        } else if (!inherits(eval(wc[[2L]], environment(formula(tm))),
+                             "StudySpecification")) {
           wc$specification <- get("specification", environment(formula(tm)))
         }
         if (is.null(wc$data)) wc$data <- lmitt_data
       }
     }
-    trts <- if (is.null(tm@lmitt_call$dichotomy) &
-                (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
-                 !inherits(wc, "WeightedStudySpecification"))) {
+    trts <- if (is.null(wc <- eval(wc, envir = environment(formula(tm)))) |
+                !inherits(wc, "WeightedStudySpecification")) {
       treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
     } else {
       if (length(dich <- wc@dichotomy) == 0) {
         treatment(tm@StudySpecification, newdata = lmitt_data)[,1]
       } else {
-        eval(dich, envir = lmitt_data)
+        treatment(tm@StudySpecification,
+                  newdata = lmitt_data,
+                  dichotomy = dich)[,1]
       }
     }
   }
@@ -441,13 +447,14 @@ cluster_iss <- function(tm,
   }
   
   # cg == 1 indicates our speedup can't be accommodated, so fall back to
-  # original CR2 computation (use all.equal because, numerically, cg may just be
-  # close to 1--and use within isTRUE per the all.equal documentation)
+  # original CR2 computation NOTE: issue #247 changes this to the sandwich
+  # package's internal matrixpower function for better handling of complex
+  # eigenvalues and singular matrices of eigenvectors. Additionally, we use
+  # all.equal because, numerically, cg may just be close to 1, and we call
+  # all.equal within isTRUE per the all.equal documentation.
   if ((!is.null(cg) && isTRUE(all.equal(cg, 1))) | is.null(cg) | is.null(Mgg)) {
     Pgg <- Ag %*% inv %*% t(Ag * wg)
-    eg <- eigen(diag(nrow = length(ix)) - Pgg)
-    return(eg$vec %*% diag((eg$val >= tol) * 1/sqrt(pmax(eg$val, tol))) %*%
-             solve(eg$vec))
+    return(sandwich:::matrixpower(diag(nrow = length(ix)) - Pgg, -0.5))
   } else {
     return(diag(nrow = length(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
   }

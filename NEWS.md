@@ -1,3 +1,7 @@
+# **propertee** 1.0.4 (Unreleased)
+* Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided teeMod or its `weights` argument had a `dichotomy` slot
+* Return NaN for the degrees of freedom when CR2/CV2 standard errors have deficient degrees of freedom
+
 # **propertee** 1.0.3
 * Fix bug in `cov_adj()` when covariance adjustment model formula includes transformations of variables
 
