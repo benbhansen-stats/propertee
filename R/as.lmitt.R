@@ -82,11 +82,14 @@ as.lmitt <- function(x, specification = NULL) {
   # then it must be provided as the first unnamed arg.
   a.call <- attr(tt, "variables")[[attr(tt, "specials")[[
     names(which(!missing_alias))]]+1]]
-  if (is.null(specification <- a.call$s)) {
-    if (is.null(names(a.call))) {
+  if (is.null(specification)) {
+    if (!is.null(names(a.call))) {
+      specification <- a.call$s
+      if (is.null(specification) & max(which(names(a.call) == "")) > 1) {
+        specification <- a.call[[max(which(names(a.call) == ""))]]
+      }
+    } else {
       if (length(a.call) > 1) specification <- a.call[[2L]]
-    } else if (max(which(names(a.call) == "")) > 1) {
-      specification <- a.call[[length(a.call)]]
     }
   }
 
@@ -100,9 +103,9 @@ as.lmitt <- function(x, specification = NULL) {
   if (is.null(specification) & inherits(x$model$`(offset)`, "SandwichLayer")) {
     specification <- x$model$`(offset)`@StudySpecification
   }
-  
+
   if (!inherits(specification, "StudySpecification")) {
-    specification <- eval(specification)
+    specification <- eval(specification, parent.frame())
   }
   
   ## find the dichotomy to pass on
