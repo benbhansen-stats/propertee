@@ -32,9 +32,9 @@ as.teeMod(x, specification = NULL)
   or
   [`assigned()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md))
   it will be found automatically and does not need to be passed here as
-  well. (If different `StudySpecification` objects are passed (either
+  well. If different `StudySpecification` objects are passed (either
   through the `lm` in weights or covariance adjustment, or through this
-  argument), an error will be produced.)
+  argument), an error will be produced.
 
 ## Value
 
@@ -45,12 +45,13 @@ as.teeMod(x, specification = NULL)
 The formula with which `x` was created must include a treatment
 identifier (e.g.
 [`assigned()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)).
-If a model-based offset is incorportated, the model's predictions would
+If a model-based offset is incorporated, the model's predictions would
 have to have been extracted using
 [`cov_adj()`](https://benbhansen-stats.github.io/propertee/dev/reference/cov_adj.md)
-(as opposed to `predict{}` in order for `teeMod` standard error
+as opposed to `predict{}` in order for `teeMod` standard error
 calculations to reflect propagation of error from these predictions.
 This mechanism only supports treatment main effects: to estimate
 interactions of treatment assignment with a moderator variable, use
 [`lmitt()`](https://benbhansen-stats.github.io/propertee/dev/reference/lmitt.md)
-instead of [`lm()`](https://rdrr.io/r/stats/lm.html) and `as.lmitt()`.
+instead of [`lm()`](https://rdrr.io/r/stats/lm.html) followed by
+`as.lmitt()`.

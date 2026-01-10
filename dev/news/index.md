@@ -7,6 +7,11 @@
   `weights` argument had a `dichotomy` slot
 - Return NaN for the degrees of freedom when CR2/CV2 standard errors
   have deficient degrees of freedom
+- [`as.lmitt()`](https://benbhansen-stats.github.io/propertee/dev/reference/as_lmitt.md)
+  finds `StudySpecification` objects passed to
+  [`assigned()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`a.()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`z.()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`adopters()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)
+  when the object isn’t explicitly passed to
+  [`as.lmitt()`](https://benbhansen-stats.github.io/propertee/dev/reference/as_lmitt.md)
 
 ## **propertee** 1.0.3
 
