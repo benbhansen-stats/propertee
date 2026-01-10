@@ -12,13 +12,13 @@ NULL
 ##'
 ##' @details The formula with which \code{x} was created must include
 ##'   a treatment identifier (e.g. [assigned()]).  If a model-based
-##'   offset is incorportated, the model's predictions would have to
-##'   have been extracted using [cov_adj()] (as opposed to
+##'   offset is incorporated, the model's predictions would have to
+##'   have been extracted using [cov_adj()] as opposed to
 ##'   \code{predict{}} in order for \code{teeMod} standard error
 ##'   calculations to reflect propagation of error from these
 ##'   predictions. This mechanism only supports treatment main effects:
 ##'   to estimate interactions of treatment assignment with a moderator
-##'   variable, use [lmitt()] instead of \code{lm()} and
+##'   variable, use [lmitt()] instead of \code{lm()} followed by
 ##'   \code{as.lmitt()}.
 ##'
 ##' @param x \code{lm} object with weights containing a
@@ -27,10 +27,10 @@ NULL
 ##'   \code{StudySpecification} to be used. If the \code{StudySpecification} is
 ##'   specified elsewhere in \code{x} (e.g. passed as an argument to any of
 ##'   \code{ate()}, \code{ett()}, \code{cov_adj()} or \code{assigned()}) it will
-##'   be found automatically and does not need to be passed here as well. (If
+##'   be found automatically and does not need to be passed here as well. If
 ##'   different \code{StudySpecification} objects are passed (either through the
 ##'   \code{lm} in weights or covariance adjustment, or through this argument),
-##'   an error will be produced.)
+##'   an error will be produced.
 ##' @return \code{teeMod} object
 ##' @rdname as_lmitt
 ##' @importFrom stats formula weights
@@ -69,21 +69,46 @@ as.lmitt <- function(x, specification = NULL) {
 
   if (all(missing_alias <- vapply(attr(tt, "specials"), is.null, logical(1))) |
       sum(!missing_alias) > 1) {
-    stop(paste("Exactly one of `assigned()` or its aliases must be in the model formula",
-               "in place of the treatmentvariable name. The `lmitt()` function may be used to",
-               "avoid explicitly indicating `assigned()`."))
+    stop(paste("Exactly one of `assigned()` or its aliases must be in the",
+               "model formula in place of the treatmentvariable name. The",
+               "`lmitt()` function may be used to avoid explicitly indicating",
+               "`assigned()`."))
   }
 
+  ## find the study specification
+  # first search the assignment function located via the specials attribute;
+  # it indicates where the assignment function is in the `variables` attribute
+  # of `tt` (which is a call, so we add 1). if it isn't given by a named arg,
+  # then it must be provided as the first unnamed arg.
+  a.call <- attr(tt, "variables")[[attr(tt, "specials")[[
+    names(which(!missing_alias))]]+1]]
+  if (is.null(specification <- a.call$s)) {
+    if (is.null(names(a.call))) {
+      if (length(a.call) > 1) specification <- a.call[[2L]]
+    } else if (max(which(names(a.call) == "")) > 1) {
+      specification <- a.call[[length(a.call)]]
+    }
+  }
+
+  # check the weights
+  if (is.null(specification) &
+      (has_ws <- inherits(x$model$`(weights)`, "WeightedStudySpecification"))) {
+    specification <- x$model$`(weights)`@StudySpecification
+  }
+  
+  # then the offset
+  if (is.null(specification) & inherits(x$model$`(offset)`, "SandwichLayer")) {
+    specification <- x$model$`(offset)`@StudySpecification
+  }
+  
+  if (!inherits(specification, "StudySpecification")) {
+    specification <- eval(specification)
+  }
+  
   ## find the dichotomy to pass on
-  a.call <- str2lang(
-    attr(tt, "term.labels")[
-      sapply(attr(tt, "term.labels"), function(v) grepl(names(which(!missing_alias)), v))
-    ]
-  )
   dichotomy <- a.call$dichotomy
   if (is.null(dichotomy) & length(a.call) == 4) dichotomy <- a.call[[4L]]
-  if (is.null(dichotomy) &
-      inherits(x$model$`(weights)`, "WeightedStudySpecification")) {
+  if (is.null(dichotomy) & has_ws) {
     dichotomy <- x$model$`(weights)`@dichotomy
   }
   if (inherits(dichotomy, "formula") & length(dichotomy) == 0) dichotomy <- NULL

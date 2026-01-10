@@ -17,10 +17,10 @@ as.teeMod(x, specification = NULL)
 \code{StudySpecification} to be used. If the \code{StudySpecification} is
 specified elsewhere in \code{x} (e.g. passed as an argument to any of
 \code{ate()}, \code{ett()}, \code{cov_adj()} or \code{assigned()}) it will
-be found automatically and does not need to be passed here as well. (If
+be found automatically and does not need to be passed here as well. If
 different \code{StudySpecification} objects are passed (either through the
 \code{lm} in weights or covariance adjustment, or through this argument),
-an error will be produced.)}
+an error will be produced.}
 }
 \value{
 \code{teeMod} object
@@ -35,12 +35,12 @@ separate model.
 \details{
 The formula with which \code{x} was created must include
 a treatment identifier (e.g. \code{\link[=assigned]{assigned()}}).  If a model-based
-offset is incorportated, the model's predictions would have to
-have been extracted using \code{\link[=cov_adj]{cov_adj()}} (as opposed to
+offset is incorporated, the model's predictions would have to
+have been extracted using \code{\link[=cov_adj]{cov_adj()}} as opposed to
 \code{predict{}} in order for \code{teeMod} standard error
 calculations to reflect propagation of error from these
 predictions. This mechanism only supports treatment main effects:
 to estimate interactions of treatment assignment with a moderator
-variable, use \code{\link[=lmitt]{lmitt()}} instead of \code{lm()} and
+variable, use \code{\link[=lmitt]{lmitt()}} instead of \code{lm()} followed by
 \code{as.lmitt()}.
 }
