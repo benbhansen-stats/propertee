@@ -294,33 +294,62 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   sum(diag(GG))^2/sum(GG^2)
 }
 
-#' @title Use properties of idempotent matrices to cheaply compute inverse symmetric
-#' square roots of cluster-specific subsets of projection matrices
-#' @param exclude index of units to exclude from computing the correction; for
-#' example, if they're NA's
-#' @importFrom stats model.frame na.action
+#' @title (Internal) Compute \eqn{(I_{i} - H_{ii})^{-1/2}} as part of CR2
+#'  variance estimates
+#' @details The notation \eqn{I_{i}} and \eqn{H_{ii}} comes from Bell and
+#'  McCaffrey (2002). The matrix \eqn{I_{i}} is an identity matrix with number
+#'  of rows equal to the number of observations in cluster \eqn{i}, and
+#'  \eqn{H_{ii}} subsets the hat matrix associated with the regression fit
+#'  stored in \code{tm} to the rows associated with observations in cluster
+#'  \eqn{i}.\n\n When possible, the function uses the method in Wasserman (2026)
+#'  to cheaply compute the inverse symmetric square root.\n\n \code{cluster_ids}
+#'  should be ordered in alignment with the dataframe passed to \code{lmitt()}.
+#'  It should not exclude NA's because the function will exclude them.
+#' @param tm \code{teeMod} object.
+#' @param cluster_unit cluster to subset observations to. Must be found in
+#'  \code{cluster_ids}.
+#' @param cluster_ids optional, ID's for clustering standard errors. If not
+#'  provided, default is the ID's associated with \code{cluster_var}.
+#' @param ... Additional arguments passed from calls higher in the stack. One
+#'  that may be used is \code{cluster}, which identifies the clustering variable
+#'  if \code{cluster_ids} is not provided. If \code{cluster} is not provided,
+#'  the default is the unit of assignment variable specified in the
+#'  \code{StudySpecification}.
+#' @importFrom stats model.frame na.action weights
 #' @keywords internal
 cluster_iss <- function(tm,
                         cluster_unit,
                         cluster_ids = NULL,
-                        cluster_var = NULL,
-                        exclude = na.action(tm),
-                        tol = 1e-09,
                         ...) {
   if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
   dots <- list(...)
   if (is.null(cluster_ids)) {
     if (is.null(dots$cluster)) cluster <- var_names(tm@StudySpecification, "u")
-    cluster_ids <- .sanitize_Q_ids(tm, cluster)$cluster
+    if (is.null(dots$vcov.type)) stop(
+      "Pass a `cluster_ids` or `vcov.type` argument to cluster_iss()")
+    cluster_ids <- .make_uoa_ids(tm, substr(dots$vcov.type, 1, 2), cluster)
+    # put the ID's in the order of the fitting dataframe if they've been
+    # re-ordered due to the presence of a covariance adjustment model
+    if (inherits(tm$model$`(offset)`, "SandwichLayer")) {
+      ord <- .order_samples(tm)
+      cluster_ids <- cluster_ids[seq_along(c(ord$Q_not_C, ord$Q_in_C))][
+        match(seq_along(c(ord$Q_not_C, ord$Q_in_C)),
+              as.numeric(c(names(ord$Q_not_C), names(ord$Q_in_C))))
+      ]
+    }
   }
-  ix <- setdiff(which(cluster_ids == cluster_unit), exclude)
+  ix <- setdiff(which(cluster_ids == cluster_unit), na.action(tm))
   
   lmitt_data <- get("data", environment(formula(tm)))
   if (!is.null(sbst <- tm@lmitt_call$subset)) {
     lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
   }
+  
+  # the treatment assignments, design matrix, and weights will all start with
+  # all rows in the fitting dataframe (NA's included). we will then index each
+  # (by creating trtg, Ag, and wg) to only the rows in the cluster and that
+  # are not in the na.action
   if (is.null(trts <- dots$assigned_trt)) {
-    # dichotomy will be store in the weights, if there is one
     wc <- tm@lmitt_call$weights
     if (inherits(wc, "call")) {
       if (exists(deparse1(wc[[1L]]))) {
@@ -349,19 +378,22 @@ cluster_iss <- function(tm,
 
   trtg <- trts[ix]
   tt <- stats::delete.response(stats::terms(tm))
+  # lmitt_data has already had the subset applied, so we don't pass it a second
+  # time to the model.frame call
   mf <- call("model.frame",
              tt,
              lmitt_data,
-             subset = sbst,
              na.action = na.pass,
              xlev = tm$xlevels)
   mf <- eval(mf)
   K <- tm$qr$rank
   piv <- tm$qr$pivot[seq_len(K)]
-  A <- stats::model.matrix(tt, mf, contrasts.arg = tm$contrasts)[,piv,drop=FALSE]
+  A <- stats::model.matrix(tt,
+                           mf,
+                           contrasts.arg = tm$contrasts)[,piv,drop=FALSE]
   Ag <- A[ix,,drop=FALSE]
   inv <- chol2inv(tm$qr$qr[piv,piv])
-  if (is.null(wts <- stats::weights(tm))) wts <- rep(1, nrow(A))
+  if (is.null(wts <- weights(tm))) wts <- rep(1, nrow(A))
   wg <- wts[ix]
 
   cg <- NULL
@@ -373,8 +405,8 @@ cluster_iss <- function(tm,
       # make sure the moderator variable is invariant within the cluster
       if (length(x <- unique(xvar[ix])) == 1) {
         if (tm@absorbed_intercepts) {
-          # with an invariant moderator variable, the 1st row of the cluster model
-          # matrix is the same as the rest
+          # with an invariant moderator variable, the 1st row of the cluster
+          # model matrix is the same as the rest
           cg <- sum(wg) * drop(crossprod(Ag[1,], inv) %*% Ag[1,])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
@@ -392,12 +424,14 @@ cluster_iss <- function(tm,
             Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
           } else {
             if (unique(trtg) == 0) {
-              cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) * sum(wg)
+              cg <- (inv[1,1] + Ag[1,3] * inv[1,3] * 2 + Ag[1,3]^2 * inv[3,3]) *
+                sum(wg)
               Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
             } else {
               ul <- sum(inv[1:2, 1:2])
               br <- sum(inv[3:4, 3:4])
-              cg <- (ul + br * Ag[1,3]^2 + (sum(inv) - ul - br) * Ag[1,3]) * sum(wg)
+              cg <- (ul + br * Ag[1,3]^2 + (sum(inv) - ul - br) * Ag[1,3]) *
+                sum(wg)
               Mgg <- tcrossprod(sqrt(wg)) / sum(wg) 
             }
           }
@@ -412,10 +446,10 @@ cluster_iss <- function(tm,
       } else {
         # control clusters and treated clusters have different values of cg
         if (unique(trtg) == 0) {
-          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 0), exclude)])
+          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 0), na.action(tm))])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         } else {
-          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 1), exclude)])
+          cg <- sum(wg) / sum(wts[setdiff(which(A[,2] == 1), na.action(tm))])
           Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
         }
       }
@@ -423,22 +457,26 @@ cluster_iss <- function(tm,
   } else {
     if (length(tm@moderator) == 0) {
       # when clusters contain both treated and control units, a sufficient
-      # condition for simple construction of cg and Mgg is a constant ratio of weighted
-      # size of the treatment group to the weighted size of the control group
-      # across blocks
+      # condition for simple construction of cg and Mgg is a constant ratio of
+      # weighted size of the treatment group to the weighted size of the control
+      # group across blocks
       rts <- tapply(data.frame(w = wts, t = trts),
                     cluster_ids,
                     function(df) {
-                      wga <- rowsum(df[,1], df[,2])
+                      wga <- rowsum(df[,1], df[,2], na.rm = TRUE)
                       wga[2,]/wga[1,]
                     })
       if (all(rts == mean(rts))) {
         Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
-        Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) / sum(wg[trtg == 0])
-        Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) / sum(wg[trtg == 1])
-        # under this condition, cg's below are the same whether we use treated or control units
+        Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) /
+          sum(wg[trtg == 0])
+        Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) /
+          sum(wg[trtg == 1])
+        # under this condition, cg's below are the same whether we use treated
+        # or control units
         if (tm@absorbed_intercepts) {
-          cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 / sum(wts * A[,2]^2))
+          cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 /
+                                        sum(wts * A[,2]^2))
         } else {
           cg <- sum(wg[trtg == 0]) / sum(wts[trts == 0])
         }
