@@ -37,4 +37,13 @@ to cheaply compute the inverse symmetric square root.\n\n \code{cluster_ids}
 should be ordered in alignment with the dataframe passed to \code{lmitt()}.
 It should not exclude NA's because the function will exclude them.
 }
+\references{
+Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
+Standard Errors for Linear Regression with Multi-Stage Samples
+\emph{Survey Methodology}, 28(2):169-181, December 2002.
+
+Joshua Wasserman. Methods for Causal Inference in Settings with Clustered
+Data Subject to Missingness and Measurement Error. Unpublished thesis,
+June 2026.
+}
 \keyword{internal}

@@ -317,6 +317,14 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #'  \code{StudySpecification}.
 #' @importFrom stats model.frame na.action weights
 #' @keywords internal
+#' @references Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
+#'  Standard Errors for Linear Regression with Multi-Stage Samples
+#'  *Survey Methodology*, 28(2):169-181, December 2002.
+#'  
+#'  
+#'  Joshua Wasserman. Methods for Causal Inference in Settings with Clustered
+#'  Data Subject to Missingness and Measurement Error. Unpublished thesis,
+#'  June 2026. 
 cluster_iss <- function(tm,
                         cluster_unit,
                         cluster_ids = NULL,
