@@ -15,7 +15,7 @@ separate model."><meta property="og:image" content="https://benbhansen-stats.git
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,10 +80,10 @@ separate model.</p>
 <code>StudySpecification</code> to be used. If the <code>StudySpecification</code> is
 specified elsewhere in <code>x</code> (e.g. passed as an argument to any of
 <code><a href="WeightCreators.html">ate()</a></code>, <code><a href="WeightCreators.html">ett()</a></code>, <code><a href="cov_adj.html">cov_adj()</a></code> or <code><a href="AssignedAliases.html">assigned()</a></code>) it will
-be found automatically and does not need to be passed here as well. (If
+be found automatically and does not need to be passed here as well. If
 different <code>StudySpecification</code> objects are passed (either through the
 <code>lm</code> in weights or covariance adjustment, or through this argument),
-an error will be produced.)</p></dd>
+an error will be produced.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -94,13 +94,13 @@ an error will be produced.)</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The formula with which <code>x</code> was created must include
 a treatment identifier (e.g. <code><a href="AssignedAliases.html">assigned()</a></code>).  If a model-based
-offset is incorportated, the model's predictions would have to
-have been extracted using <code><a href="cov_adj.html">cov_adj()</a></code> (as opposed to
+offset is incorporated, the model's predictions would have to
+have been extracted using <code><a href="cov_adj.html">cov_adj()</a></code> as opposed to
 <code>predict{}</code> in order for <code>teeMod</code> standard error
 calculations to reflect propagation of error from these
 predictions. This mechanism only supports treatment main effects:
 to estimate interactions of treatment assignment with a moderator
-variable, use <code><a href="lmitt.html">lmitt()</a></code> instead of <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> and
+variable, use <code><a href="lmitt.html">lmitt()</a></code> instead of <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code> followed by
 <code>as.lmitt()</code>.</p>
     </div>
 
@@ -113,7 +113,7 @@ variable, use <code><a href="lmitt.html">lmitt()</a></code> instead of <code><a 
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>
