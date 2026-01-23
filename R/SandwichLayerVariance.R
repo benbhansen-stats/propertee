@@ -109,9 +109,9 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   args <- list(...)
   args$x <- x
   args$itt_rcorrect <- args$type
-  args$type <- "HC0" # this ensures sandwich::meatCL returns meat w/o correcting after we've corrected
+  args$type <- "HC0" # sandwich::meatCL won't correct meat after we've corrected
   n <- length(args$cluster)
-  args$cls <- args$cluster # pass this down to estfun.teeMod and its internal calls to try and speed things up
+  args$cls <- args$cluster # pass to estfun.teeMod and internal calls for speed
 
   bread. <- sandwich::bread(x, ...)
   meat. <- do.call(sandwich::meatCL, args)
@@ -125,7 +125,8 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     for (mod_ix in seq_along(x)) {
       mod <- x[[mod_ix]]
       vmat_ix <- start_ix + seq_along(mod$coefficients)
-      vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
+      vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(
+        vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
       start_ix <- start_ix + length(mod$coefficients)
     }
     vmat[apply(is.na(vmat), 1, any),] <- NA_real_
