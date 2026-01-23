@@ -157,13 +157,19 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #'  details see the documentation of \code{.compute_IK_dof()}. With 
 #'  \code{dof_type="stata"}, one obtains degrees of freedom equal to the number
 #'  of clusters less one, the default provided by STATA software (see Cameron
-#'  and Miller, 2015 or Bell and McCaffrey, 2002).\n\n
+#'  and Miller, 2015 or Bell and McCaffrey, 2002).
+#'  
+#'  
 #'  \code{ell} should be an integer specifying a location in the vector
 #'  of estimated coefficients (ignoring the coefficients suffixed by
 #'  \code{:(Intercept)}) or a vector of the same length as the vector of
 #'  estimated coefficients (ignoring the coefficients suffixed by
-#'  \code{:(Intercept)}).\n\n \code{vcov.type} takes the same arguments as
-#'  the \code{type} argument in \code{vcov_tee()}.\n\n
+#'  \code{:(Intercept)}).
+#'  
+#'  \code{vcov.type} takes the same arguments as
+#'  the \code{type} argument in \code{vcov_tee()}.
+#'  
+#'  
 #'  \code{cluster_ids} should be ordered in alignment with the dataframe passed
 #'  to \code{lmitt()}. It should not exclude NA's because the function will
 #'  exclude them where necessary.
@@ -245,10 +251,14 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #'  coefficients printed in \code{show.teeMod} with \code{:(Intercept)}
 #'  suffixes. The degrees of freedom for a single standard error will specify
 #'  for \code{ell} a vector of all zeros except one element, which will have a
-#'  1 in the location corresponding to the coefficient of interest.\n\n
+#'  1 in the location corresponding to the coefficient of interest.
+#'  
+#'  
 #'  \code{cluster_ids} should be ordered in alignment with the dataframe passed
 #'  to \code{lmitt()}. It should not exclude NA's because the function will
-#'  exclude them where necessary.\n\n \code{vcov.type} takes the same arguments
+#'  exclude them where necessary.
+#'  
+#'  \code{vcov.type} takes the same arguments
 #'  as the \code{type} argument in \code{vcov_tee()}.
 #' @param tm \code{teeMod} object.
 #' @param ell numeric vector.
@@ -397,10 +407,14 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #'  of rows equal to the number of observations in cluster \eqn{i}, and
 #'  \eqn{H_{ii}} subsets the hat matrix associated with the regression fit
 #'  stored in \code{tm} to the rows associated with observations in cluster
-#'  \eqn{i}.\n\n When possible, the function uses the method in Wasserman (2026)
-#'  to cheaply compute the inverse symmetric square root.\n\n \code{cluster_ids}
-#'  should be ordered in alignment with the dataframe passed to \code{lmitt()}.
-#'  It should not exclude NA's because the function will exclude them.
+#'  \eqn{i}.
+#'  
+#'  When possible, the function uses the method in Wasserman (2026)
+#'  to cheaply compute the inverse symmetric square root.
+#'  
+#'  \code{cluster_ids} should be ordered in alignment with the dataframe passed
+#'  to \code{lmitt()}. It should not exclude NA's because the function will
+#'  exclude them.
 #' @param tm \code{teeMod} object.
 #' @param cluster_unit cluster to subset observations to. Must be found in
 #'  \code{cluster_ids}.

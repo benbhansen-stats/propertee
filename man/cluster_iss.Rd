@@ -33,10 +33,14 @@ McCaffrey (2002). The matrix \eqn{I_{i}} is an identity matrix with number
 of rows equal to the number of observations in cluster \eqn{i}, and
 \eqn{H_{ii}} subsets the hat matrix associated with the regression fit
 stored in \code{tm} to the rows associated with observations in cluster
-\eqn{i}.\n\n When possible, the function uses the method in Wasserman (2026)
-to cheaply compute the inverse symmetric square root.\n\n \code{cluster_ids}
-should be ordered in alignment with the dataframe passed to \code{lmitt()}.
-It should not exclude NA's because the function will exclude them.
+\eqn{i}.
+
+When possible, the function uses the method in Wasserman (2026)
+to cheaply compute the inverse symmetric square root.
+
+\code{cluster_ids} should be ordered in alignment with the dataframe passed
+to \code{lmitt()}. It should not exclude NA's because the function will
+exclude them.
 }
 \references{
 Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in

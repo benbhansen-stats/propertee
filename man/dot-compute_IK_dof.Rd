@@ -41,10 +41,13 @@ estimated coefficients in the \code{teeMod} object. This excludes
 coefficients printed in \code{show.teeMod} with \code{:(Intercept)}
 suffixes. The degrees of freedom for a single standard error will specify
 for \code{ell} a vector of all zeros except one element, which will have a
-1 in the location corresponding to the coefficient of interest.\n\n
+1 in the location corresponding to the coefficient of interest.
+
 \code{cluster_ids} should be ordered in alignment with the dataframe passed
 to \code{lmitt()}. It should not exclude NA's because the function will
-exclude them where necessary.\n\n \code{vcov.type} takes the same arguments
+exclude them where necessary.
+
+\code{vcov.type} takes the same arguments
 as the \code{type} argument in \code{vcov_tee()}.
 }
 \references{

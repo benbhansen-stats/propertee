@@ -45,13 +45,17 @@ as given by the procedure propose in Imbens and Kolesár (2016). For more
 details see the documentation of \code{.compute_IK_dof()}. With
 \code{dof_type="stata"}, one obtains degrees of freedom equal to the number
 of clusters less one, the default provided by STATA software (see Cameron
-and Miller, 2015 or Bell and McCaffrey, 2002).\n\n
+and Miller, 2015 or Bell and McCaffrey, 2002).
+
 \code{ell} should be an integer specifying a location in the vector
 of estimated coefficients (ignoring the coefficients suffixed by
 \code{:(Intercept)}) or a vector of the same length as the vector of
 estimated coefficients (ignoring the coefficients suffixed by
-\code{:(Intercept)}).\n\n \code{vcov.type} takes the same arguments as
-the \code{type} argument in \code{vcov_tee()}.\n\n
+\code{:(Intercept)}).
+
+\code{vcov.type} takes the same arguments as
+the \code{type} argument in \code{vcov_tee()}.
+
 \code{cluster_ids} should be ordered in alignment with the dataframe passed
 to \code{lmitt()}. It should not exclude NA's because the function will
 exclude them where necessary.
