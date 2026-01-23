@@ -1,4 +1,4 @@
-# **propertee** 1.0.4 (Unreleased)
+# **propertee** 1.0.4
 * Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided `teeMod` had a non-empty `na.action`, or the `teeMod` or its `weights` argument had a `dichotomy` slot
 * Return NaN for the degrees of freedom when CR2/CV2 standard errors have deficient degrees of freedom
 * `as.lmitt()` finds `StudySpecification` objects passed to `assigned()`/`a.()`/`z.()`/`adopters()` when the object isn't explicitly passed to `as.lmitt()`
