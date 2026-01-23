@@ -604,14 +604,27 @@ cluster_iss <- function(tm,
   }
 
   # cg == 1 indicates our speedup can't be accommodated, so fall back to
-  # original CR2 computation NOTE: issue #247 changes this to the sandwich
-  # package's internal matrixpower function for better handling of complex
-  # eigenvalues and singular matrices of eigenvectors. Additionally, we use
-  # all.equal because, numerically, cg may just be close to 1, and we call
-  # all.equal within isTRUE per the all.equal documentation.
+  # original CR2 computation. Additionally, we use all.equal because,
+  # numerically, cg may just be close to 1, and we call all.equal within isTRUE
+  # per the all.equal documentation.
   if ((!is.null(cg) && isTRUE(all.equal(cg, 1))) | is.null(cg) | is.null(Mgg)) {
+    tol <- 1e-11
     Pgg <- Ag %*% inv %*% t(Ag * wg)
-    return(sandwich:::matrixpower(diag(nrow = length(ix)) - Pgg, -0.5))
+    symm <- isSymmetric(diag(nrow = length(ix)) - Pgg)
+    eg <- eigen(diag(nrow = length(ix)) - Pgg, symmetric = symm)
+    if (symm) {
+      LamVT <- (1/sqrt(replace(eg$val, eg$val < tol, 0))) * t(eg$vec)
+    } else {
+      if (inherits(Vinv <- try(solve(eg$vec), silent = TRUE), "try-error")) {
+        # fall back to svd, as the sandwich package does
+        Vinv <- svd(eg$vec)
+        Vinv <- Vinv$v[,Vinv$d > tol,drop=FALSE] %*% (
+          (1/Vinv$d[Vinv$d > tol]) * t(Vinv$u[,Vinv$d > tol,drop=FALSE])
+        )
+      }
+      LamVT <- (1/sqrt(replace(eg$val, eg$val < tol, 0))) * Vinv
+    }
+    return(eg$vec %*% LamVT)
   } else {
     return(diag(nrow = length(ix)) + (-1 + sqrt(1 + cg / (1-cg))) * Mgg)
   }
