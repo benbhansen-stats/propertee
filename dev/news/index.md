@@ -1,10 +1,11 @@
 # Changelog
 
-## **propertee** 1.0.4 (Unreleased)
+## **propertee** 1.0.4
 
 - Fix routines for CR2/CV2 standard errors and associated degrees of
-  freedom that previously errored when the provided teeMod or its
-  `weights` argument had a `dichotomy` slot
+  freedom that previously errored when the provided `teeMod` had a
+  non-empty `na.action`, or the `teeMod` or its `weights` argument had a
+  `dichotomy` slot
 - Return NaN for the degrees of freedom when CR2/CV2 standard errors
   have deficient degrees of freedom
 - [`as.lmitt()`](https://benbhansen-stats.github.io/propertee/dev/reference/as_lmitt.md)
@@ -12,6 +13,22 @@
   [`assigned()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`a.()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`z.()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)/[`adopters()`](https://benbhansen-stats.github.io/propertee/dev/reference/AssignedAliases.md)
   when the object isn’t explicitly passed to
   [`as.lmitt()`](https://benbhansen-stats.github.io/propertee/dev/reference/as_lmitt.md)
+- Two routines for estimating degrees of freedom are now available: the
+  default in
+  [`summary.teeMod()`](https://benbhansen-stats.github.io/propertee/dev/reference/teeMod_summary.md)
+  is `dof.type=stata`, which uses the number of clusters (or
+  observations, in the absence of clustering) less one. We suggest
+  specifying `dof.type="IK"` in
+  [`summary.teeMod()`](https://benbhansen-stats.github.io/propertee/dev/reference/teeMod_summary.md)
+  calls, which uses a routine adapted from Imbens and Kolesár (2016),
+  which adapts a routine from Bell and McCaffrey (2002). This routine
+  has been available in previous versions for
+  [`summary.teeMod()`](https://benbhansen-stats.github.io/propertee/dev/reference/teeMod_summary.md)
+  calls with `type=CR2`, but it has been updated so it better matches
+  the outputs of the `dfadjust` package maintained by Kolesár. See the
+  documentation for the internal function
+  [`.compute_IK_dof()`](https://benbhansen-stats.github.io/propertee/dev/reference/dot-compute_IK_dof.md)
+  for references and further details.
 
 ## **propertee** 1.0.3
 

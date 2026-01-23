@@ -21,13 +21,13 @@ Source:
 
 Errickson J, Wasserman J, Hansen B (2026). *propertee:
 Standardization-Based Effect Estimation with Optional Prior Covariance
-Adjustment*. R package version 1.0.3.9003,
+Adjustment*. R package version 1.0.4.9001,
 <https://github.com/benbhansen-stats/propertee>.
 
     @Manual{,
       title = {propertee: Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment},
       author = {Josh Errickson and Josh Wasserman and Ben Hansen},
       year = {2026},
-      note = {R package version 1.0.3.9003},
+      note = {R package version 1.0.4.9001},
       url = {https://github.com/benbhansen-stats/propertee},
     }

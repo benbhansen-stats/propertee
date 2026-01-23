@@ -223,7 +223,7 @@ summary(te)
 #> 
 #>  Treatment Effects :
 #>                       Estimate Std. Error t value Pr(>|t|)    
-#> cond_small.TRUE        12.6024     1.5938   7.907 2.84e-15 ***
+#> cond_small.TRUE        12.6024     1.5938   7.907 3.08e-15 ***
 #> g1treadss:(Intercept) 517.4628     0.7898 655.150  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -245,8 +245,8 @@ summary(te_s)
 #> 
 #> Treatment Effects: (1 not defined because of singularities)
 #>                           Estimate Std. Error t value Pr(>|t|)    
-#> cond_small.TRUE_racewhite   9.6229     1.9779   4.865 1.16e-06 ***
-#> cond_small.TRUE_raceblack  16.4164     2.3296   7.047 1.92e-12 ***
+#> cond_small.TRUE_racewhite   9.6229     1.9779   4.865 1.17e-06 ***
+#> cond_small.TRUE_raceblack  16.4164     2.3296   7.047 2.02e-12 ***
 #> cond_small.TRUE_raceasian -19.3846    29.7818  -0.651    0.515    
 #> cond_small.TRUE_racehispa  43.1667    50.6159   0.853    0.394    
 #> cond_small.TRUE_racenatam  12.5000    37.2522   0.336    0.737    

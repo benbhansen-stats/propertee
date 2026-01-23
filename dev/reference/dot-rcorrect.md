@@ -1,6 +1,7 @@
-# Bias correct residuals contributing to standard errors of a `teeMod`
+# (Internal) Bias correct residuals contributing to standard errors of a `teeMod`
 
-Bias correct residuals contributing to standard errors of a `teeMod`
+(Internal) Bias correct residuals contributing to standard errors of a
+`teeMod`
 
 ## Usage
 
@@ -25,7 +26,7 @@ Bias correct residuals contributing to standard errors of a `teeMod`
   indicates correction to the residuals of the covariance adjustment
   model. This informs whether corrections should use information from
   `x` or the `fitted_covariance_model` slot of the `SandwichLayer`
-  object in the `offset` for corrections
+  object in the `offset` for corrections.
 
 - type:
 

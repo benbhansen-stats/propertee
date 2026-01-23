@@ -312,7 +312,7 @@ summary(lm_ca_effect, vcov.type = "HC0")
     ## 
     ##  Treatment Effects :
     ##                                       Estimate Std. Error t value Pr(>|t|)    
-    ## z.                                      0.4732     1.0903   0.434    0.664    
+    ## z.                                      0.4732     1.0903   0.434    0.671    
     ## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -335,7 +335,7 @@ summary(lm_ca_effect, vcov.type = "HC1")
     ## 
     ##  Treatment Effects :
     ##                                       Estimate Std. Error t value Pr(>|t|)    
-    ## z.                                      0.4732     1.1143   0.425    0.671    
+    ## z.                                      0.4732     1.1143   0.425    0.678    
     ## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -362,7 +362,7 @@ summary(rob_ca_effect, vcov.type = "HC1")
     ## 
     ##  Treatment Effects :
     ##                                       Estimate Std. Error t value Pr(>|t|)    
-    ## z.                                      0.4446     1.1304   0.393    0.694    
+    ## z.                                      0.4446     1.1304   0.393      0.7    
     ## Average.Scale.Score.2014:(Intercept) 1116.2153     3.9336 283.764   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -467,10 +467,10 @@ summary(lm_ca_mod_effect, vcov.type = "CR1", cluster = "schoolid")
     ## Average.Scale.Score.2014:DemographicGroupBlack or African American 464.646
     ## Average.Scale.Score.2014:DemographicGroupWhite                     410.767
     ##                                                                    Pr(>|t|)    
-    ## `z._DemographicGroupBlack or African American`                         0.87    
-    ## z._DemographicGroupWhite                                               0.30    
-    ## Average.Scale.Score.2014:DemographicGroupBlack or African American   <2e-16 ***
-    ## Average.Scale.Score.2014:DemographicGroupWhite                       <2e-16 ***
+    ## `z._DemographicGroupBlack or African American`                        0.876    
+    ## z._DemographicGroupWhite                                              0.347    
+    ## Average.Scale.Score.2014:DemographicGroupBlack or African American 8.76e-13 ***
+    ## Average.Scale.Score.2014:DemographicGroupWhite                     1.62e-12 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## Std. Error calculated via type "CR1"
