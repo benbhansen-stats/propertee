@@ -117,19 +117,19 @@ test_that("variance helper functions fail without a teeMod model", {
 
 test_that(".get_dof", {
   data(simdata)
-  expect_error(.get_dof(lm(y~x, simdata), "CR2", 0), "teeMod object")
+  expect_error(.get_dof(lm(y~x, simdata), 0, "CR2"), "teeMod object")
   
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   tm <- lmitt(y ~ 1, spec, simdata)
   
   # non-CR2 dof
-  expect_equal(.get_dof(tm, "CR0", 1), nrow(spec@structure)-1)
-  expect_equal(.get_dof(tm, "DB0", 1, "bid"), 2)
+  expect_equal(.get_dof(tm, 1, "CR0", "stata"), nrow(spec@structure)-1)
+  expect_equal(.get_dof(tm, 1, "DB0", "stata", cluster = "bid"), 2)
   
   # CR2 dof
-  expect_error(.get_dof(tm, "CR2", seq_len(7)), "same length")
-  expect_error(.get_dof(tm, "CR2", seq_len(2)), "zeros or ones")
-  expect_true(inherits(dof <- .get_dof(tm, "CR2", 2), "numeric"))
+  expect_error(.get_dof(tm, seq_len(7), "CR2", "IK"), "same length")
+  expect_error(.get_dof(tm, seq_len(2), "CR2", "IK"), "zeros or ones")
+  expect_true(inherits(dof <- .get_dof(tm, 2, "CR2", "IK"), "numeric"))
   expect_equal(length(dof), 1)
 })
 
@@ -141,7 +141,7 @@ test_that(".compute_IK_dof no clustering", {
   idspec <- rct_spec(z ~ unitid(id), simdata)
   tm <- lmitt(y ~ 1, idspec, simdata)
   ell <- c(0, 1)
-  dof <- .compute_IK_dof(tm, ell)
+  dof <- .compute_IK_dof(tm, ell, vcov.type = "CR2")
   
   Q <- qr.Q(tm$qr)
   R <- qr.R(tm$qr)
@@ -151,18 +151,10 @@ test_that(".compute_IK_dof no clustering", {
   expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
   expect_equal(dof, expected_dof)
   
-  ## no clustering, binary y, sufficient dof
-  simdata$y <- round(runif(nrow(simdata)))
-  tm <- lmitt(y ~ 1, idspec, simdata)
-  dof <- .compute_IK_dof(tm, ell, bin_y = TRUE)
-  
-  GoG <- crossprod(G, diag(stats::fitted(tm) * (1 - stats::fitted(tm)), nrow = nrow(Q))) %*% G
-  expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
-  expect_equal(dof, expected_dof)
-  
   ## not enough dof
   set.seed(103)
-  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9), rep(5, 12), rep(6, 7)),
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
                     x = factor(c(rep(0,15), rep(1, 9+12+7))),
                     a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
                     y = rnorm(4 + 5 + 6 + 9+19))
@@ -171,19 +163,42 @@ test_that(".compute_IK_dof no clustering", {
 
   bad.ell1 <- c(0, 0, 1, 0)
   bad.ell2 <- c(0, 0, 0, 1)
-  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1))
+  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1, "CR2"))
   # returning NaN does not cause warnings for pt() in summary.teeMod()
   expect_equal(dof_a.x0, NaN)
   # returning NaN does not cause warnings for pt() in summary.teeMod()
-  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2))
+  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2, "CR2"))
   expect_equal(dof_a.x1, NaN)
+})
+
+test_that(".compute_IK_dof w/ clustering", {
+  set.seed(103)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
+                    y = rnorm(4 + 5 + 6 + 9+19))
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid), "numeric"))
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
+  
+  ad2$y[1] <- NA_real_
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(CR0_dof <- .compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid),
+                       "numeric"))
+  expect_equal(.compute_IK_dof(tm, c(0, 1), "CR1", ad2$cid), CR0_dof)
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
 })
 
 test_that("cluster_iss, no absorption", {
   set.seed(33)
-  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9), rep(5, 12), rep(seq(6, 8), each = 7)),
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(seq(6, 8), each = 7)),
                     x = factor(c(rep(0,15), rep(1, 9+12+7+7), rep(0, 7))),
-                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19), rep(0, 7+7)),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19),
+                          rep(0, 7+7)),
                     y = rnorm(4 + 5 + 6 + 9+19+7+7))
 
   ## no moderator
@@ -195,18 +210,30 @@ test_that("cluster_iss, no absorption", {
   ix <- ad2$cid == 1
   Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
-  all.equal(
+  expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors)
-  )
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
   # treated unit
   ix <- ad2$cid == 6
   Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
-  all.equal(
+  expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors)
-  )
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  # make sure we order cluster ID's correctly by default if there's covariance
+  # adjustment (this shouldn't change the output of cluster_iss() because it's
+  # solely based on the second-stage regression)
+  cm <- lm(y ~ x, ad2)
+  tm_ca <- lmitt(y ~ 1, spec, ad2, offset = cov_adj(cm))
+  expect_true(all.equal(
+    cluster_iss(tm_ca, cluster_unit = 6, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
   
   ## cluster-invariant binary moderator variable
   tm <- lmitt(y ~ x, spec, ad2, weights = "ate")
@@ -214,38 +241,48 @@ test_that("cluster_iss, no absorption", {
   
   # treated unit w/ x = 1
   ix <- ad2$cid == 6
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
-    cluster_iss(tm, cluster_unit = 6), # test NULL cluster_ids and NULL cluster and NULL trts 
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    # test NULL cluster_ids and NULL cluster and NULL trts 
+    cluster_iss(tm, cluster_unit = 6, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   # treated unit w/ x = 0
   ix <- ad2$cid == 2
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 2, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   # control unit w/ x = 1
   ix <- ad2$cid == 4
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 4, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   # control unit w/ x = 0
   ix <- ad2$cid == 1
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
-    cluster_iss(tm, cluster_unit = 1), # test NULL cluster_ids and NULL cluster and NULL trts 
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    # test NULL cluster_ids and NULL cluster and NULL trts 
+    cluster_iss(tm, cluster_unit = 1, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   
@@ -256,20 +293,24 @@ test_that("cluster_iss, no absorption", {
   
   # control unit 
   ix <- ad2$cid == 1
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   # treated unit
   ix <- ad2$cid == 6
-  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t((model.matrix(tm) * weights(tm))[ix,])
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
 })
@@ -296,7 +337,8 @@ test_that("cluster_iss, absorption", {
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, 1, adb$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   
@@ -310,7 +352,8 @@ test_that("cluster_iss, absorption", {
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, 1, adb$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   
@@ -325,12 +368,13 @@ test_that("cluster_iss, absorption", {
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, 1, adb$cid),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
 })
 
-test_that("cluster_iss with fine strata (clusters have treated and control units)", {
+test_that("cluster_iss with fine strata (clusters have trt and ctrl units)", {
   set.seed(496)
   ## balanced in each stratum, absorption
   sdata <- data.frame(id = seq_len(20),
@@ -349,7 +393,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[1], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
 
@@ -362,7 +407,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[1], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   
@@ -376,7 +422,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[1], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
 
@@ -399,7 +446,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[2], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   
@@ -416,7 +464,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[2], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
   expect_message(tm <- lmitt(yi ~ 1, imb, data = sdata_imbal), "absorb")
@@ -431,7 +480,8 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[2], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
   ))
 
@@ -451,8 +501,55 @@ test_that("cluster_iss with fine strata (clusters have treated and control units
   eg <- eigen(diag(nrow = sum(ix)) - Pgg)
   expect_true(all.equal(
     cluster_iss(tm, unique(ids)[2], ids),
-    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*% solve(eg$vectors),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
     check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss with NA's and subset argument", {
+  set.seed(33)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(seq(6, 8), each = 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7+7), rep(0, 7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19),
+                          rep(0, 7+7)),
+                    y = rnorm(4 + 5 + 6 + 9+19+7+7))
+  
+  # subset
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2, subset = x == 0)
+  
+  ix <- ad2$cid == 1 & ad2$x == 0
+  mm_full <- model.matrix(
+    tm$terms,
+    model.frame(tm$terms, get("data", attr(tm$terms, ".Environment")))
+  )
+  Pgg <- mm_full[ix,] %*% chol2inv(tm$qr$qr) %*% t(mm_full[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid[ad2$x == 0]),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  
+  # NA's
+  ad2$y[1] <- NA_real_
+  tm <- lmitt(y ~ 1, spec, ad2, subset = x == 0)
+  
+  ix <- ad2$cid == 1 & !is.na(ad2$y)
+  mm_full <- model.matrix(
+    tm$terms,
+    model.frame(tm$terms,
+                get("data", attr(tm$terms, ".Environment")),
+                na.action = na.pass)
+  )
+  Pgg <- mm_full[ix,] %*% chol2inv(tm$qr$qr) %*% t(mm_full[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
   ))
 })
 
@@ -465,7 +562,7 @@ test_that("cluster_iss and .compute_IK_dof with dichotomies", {
               dichotomy = dose > 100 ~ dose <= 100)
   expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
                        "matrix"))
-  dof <- .compute_IK_dof(tm, c(0, 1))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
   expect_true(inherits(dof, "numeric") & dof < Inf)
   
   # second, dichotomy given in the weights as well
@@ -474,7 +571,7 @@ test_that("cluster_iss and .compute_IK_dof with dichotomies", {
               dichotomy = dose > 100 ~ dose <= 100)
   expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
                        "matrix"))
-  dof <- .compute_IK_dof(tm, c(0, 1))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
   expect_true(inherits(dof, "numeric") & dof < Inf)
 })
 

@@ -2,23 +2,57 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.compute_IK_dof}
 \alias{.compute_IK_dof}
-\title{Compute the degrees of freedom of a sandwich standard error with HC2 correction}
+\title{(Internal) Compute the degrees of freedom of a contrast of a
+sandwich variance estimate as proposed in Imbens and Kolesár (2016)}
 \usage{
 .compute_IK_dof(
   tm,
   ell,
+  vcov.type,
+  cluster_ids = NULL,
   cluster = NULL,
-  bin_y = FALSE,
-  exclude = na.action(tm),
   tol = 1e-09
 )
 }
+\arguments{
+\item{tm}{\code{teeMod} object.}
+
+\item{ell}{numeric vector.}
+
+\item{vcov.type}{character.}
+
+\item{cluster_ids}{optional, vector of ID's for clustering degrees of freedom
+estimate. If not provided, default is the ID's associated with
+\code{cluster}.}
+
+\item{cluster}{optional, character identifiying the clustering variable
+if \code{cluster_ids} is not provided. If not provided, defaults to the
+unit of assignment columns specified in the \code{StudySpecification}.}
+
+\item{tol}{optional, numeric. Should not be changed.}
+}
 \description{
-Compute the degrees of freedom of a sandwich standard error with HC2 correction
+(Internal) Compute the degrees of freedom of a contrast of a
+sandwich variance estimate as proposed in Imbens and Kolesár (2016)
+}
+\details{
+\code{ell} should be a vector of length equal to the number of
+estimated coefficients in the \code{teeMod} object. This excludes
+coefficients printed in \code{show.teeMod} with \code{:(Intercept)}
+suffixes. The degrees of freedom for a single standard error will specify
+for \code{ell} a vector of all zeros except one element, which will have a
+1 in the location corresponding to the coefficient of interest.
+
+\code{cluster_ids} should be ordered in alignment with the dataframe passed
+to \code{lmitt()}. It should not exclude NA's because the function will
+exclude them where necessary.
+
+\code{vcov.type} takes the same arguments
+as the \code{type} argument in \code{vcov_tee()}.
 }
 \references{
-Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
-Small Samples: Some Practical Advice". In: \emph{The Review of Economics and
-Statistics} 98.4 (Oct. 2016), pp. 701-712.
+Guido W. Imbens and Michael Kolesár. Robust Standard Errors in
+Small Samples: Some Practical Advice".
+\emph{The Review of Economics and Statistics}, 98(4):701-712, October 2016.
 }
 \keyword{internal}

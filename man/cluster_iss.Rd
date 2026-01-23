@@ -2,25 +2,53 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{cluster_iss}
 \alias{cluster_iss}
-\title{Use properties of idempotent matrices to cheaply compute inverse symmetric
-square roots of cluster-specific subsets of projection matrices}
+\title{(Internal) Compute \eqn{(I_{i} - H_{ii})^{-1/2}} as part of CR2
+variance estimates}
 \usage{
-cluster_iss(
-  tm,
-  cluster_unit,
-  cluster_ids = NULL,
-  cluster_var = NULL,
-  exclude = na.action(tm),
-  tol = 1e-09,
-  ...
-)
+cluster_iss(tm, cluster_unit, cluster_ids = NULL, ...)
 }
 \arguments{
-\item{exclude}{index of units to exclude from computing the correction; for
-example, if they're NA's}
+\item{tm}{\code{teeMod} object.}
+
+\item{cluster_unit}{cluster to subset observations to. Must be found in
+\code{cluster_ids}.}
+
+\item{cluster_ids}{optional, ID's for clustering standard errors. If not
+provided, default is the ID's associated with \code{cluster} if provided,
+otherwise the unit of assignment ID's.}
+
+\item{...}{Additional arguments passed from calls higher in the stack. One
+that may be used is \code{cluster}, which identifies the clustering variable
+if \code{cluster_ids} is not provided. If \code{cluster} is not provided,
+the default is the unit of assignment variable specified in the
+\code{StudySpecification}.}
 }
 \description{
-Use properties of idempotent matrices to cheaply compute inverse symmetric
-square roots of cluster-specific subsets of projection matrices
+(Internal) Compute \eqn{(I_{i} - H_{ii})^{-1/2}} as part of CR2
+variance estimates
+}
+\details{
+The notation \eqn{I_{i}} and \eqn{H_{ii}} comes from Bell and
+McCaffrey (2002). The matrix \eqn{I_{i}} is an identity matrix with number
+of rows equal to the number of observations in cluster \eqn{i}, and
+\eqn{H_{ii}} subsets the hat matrix associated with the regression fit
+stored in \code{tm} to the rows associated with observations in cluster
+\eqn{i}.
+
+When possible, the function uses the method in Wasserman (2026)
+to cheaply compute the inverse symmetric square root.
+
+\code{cluster_ids} should be ordered in alignment with the dataframe passed
+to \code{lmitt()}. It should not exclude NA's because the function will
+exclude them.
+}
+\references{
+Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
+Standard Errors for Linear Regression with Multi-Stage Samples.
+\emph{Survey Methodology}, 28(2):169-181, December 2002.
+
+Joshua Wasserman. Methods for Causal Inference in Settings with Clustered
+Data Subject to Missingness and Measurement Error. Unpublished thesis,
+June 2026.
 }
 \keyword{internal}

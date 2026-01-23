@@ -22,7 +22,7 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
                     offset = cov_adj(cmod)))
 
-  s <- summary(ssmod, vcov.type = "CR0")
+  s <- summary(ssmod, vcov.type = "CR0", dof.type = "stata")
   vc <- vcov_tee(ssmod, type = "CR0")
   dof <- length(unique(paste(simdata$uoa1, simdata$uoa2, sep = "_")))-1
   ix <- row.names(vc) != "offset:(Intercept)"
@@ -39,7 +39,7 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   ssmod <- lmitt(lm(y ~ assigned() + 0, data = simdata, weights = ate(spec),
                     offset = cov_adj(cmod)))
 
-  s <- summary(ssmod, vcov.type = "CR0")
+  s <- summary(ssmod, vcov.type = "CR0", dof.type = "stata")
   vc <- vcov_tee(ssmod, type = "CR0")
   ix <- row.names(vc) != "offset:(Intercept)"
   expect_equal(s$coefficients[, 2L], sqrt(diag(vc)[ix]))
@@ -55,12 +55,19 @@ test_that("teeMod w/o SandwichLayer offset summary uses sandwich SE's", {
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec)))
 
-  uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
+  uoas <- apply(simdata[, c("uoa1", "uoa2")],
+                1,
+                function(...) paste(..., collapse = "_"))
   s <- summary(ssmod, vcov.type = "CR0", cadjust = FALSE)
   expect_equal(
     s$coefficients[, 2],
-    sqrt(diag(sandwich::sandwich(ssmod, meat. = sandwich::meatCL, cluster = uoas,
+    sqrt(diag(sandwich::sandwich(ssmod,
+                                 meat. = sandwich::meatCL,
+                                 cluster = uoas,
                                  cadjust = FALSE))))
+  # IK degrees of freedom lead to larger p-values
+  sIK <- summary(ssmod, vcov.type = "CR0", dof.type = "IK")
+  expect_true(all(s$coefficients[,4] < sIK$coefficients[,4]))
 })
 
 test_that("vcov.type argument", {

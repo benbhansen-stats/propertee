@@ -1,7 +1,8 @@
-# **propertee** 1.0.4 (Unreleased)
-* Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided teeMod or its `weights` argument had a `dichotomy` slot
+# **propertee** 1.0.4
+* Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided `teeMod` had a non-empty `na.action`, or the `teeMod` or its `weights` argument had a `dichotomy` slot
 * Return NaN for the degrees of freedom when CR2/CV2 standard errors have deficient degrees of freedom
 * `as.lmitt()` finds `StudySpecification` objects passed to `assigned()`/`a.()`/`z.()`/`adopters()` when the object isn't explicitly passed to `as.lmitt()`
+* Two routines for estimating degrees of freedom are now available: the default in `summary.teeMod()` is `dof.type=stata`, which uses the number of clusters (or observations, in the absence of clustering) less one. We suggest specifying `dof.type="IK"` in `summary.teeMod()` calls, which uses a routine adapted from Imbens and Kolesár (2016), which adapts a routine from Bell and McCaffrey (2002). This routine has been available in previous versions for `summary.teeMod()` calls with `type=CR2`, but it has been updated so it better matches the outputs of the `dfadjust` package maintained by Kolesár. See the documentation for the internal function `.compute_IK_dof()` for references and further details.
 
 # **propertee** 1.0.3
 * Fix bug in `cov_adj()` when covariance adjustment model formula includes transformations of variables
