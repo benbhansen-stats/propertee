@@ -117,19 +117,19 @@ test_that("variance helper functions fail without a teeMod model", {
 
 test_that(".get_dof", {
   data(simdata)
-  expect_error(.get_dof(lm(y~x, simdata), "CR2", 0), "teeMod object")
+  expect_error(.get_dof(lm(y~x, simdata), 0, "CR2"), "teeMod object")
   
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   tm <- lmitt(y ~ 1, spec, simdata)
   
   # non-CR2 dof
-  expect_equal(.get_dof(tm, "CR0", 1), nrow(spec@structure)-1)
-  expect_equal(.get_dof(tm, "DB0", 1, "bid"), 2)
+  expect_equal(.get_dof(tm, 1, "CR0", "stata"), nrow(spec@structure)-1)
+  expect_equal(.get_dof(tm, 1, "DB0", "stata", cluster = "bid"), 2)
   
   # CR2 dof
-  expect_error(.get_dof(tm, "CR2", seq_len(7)), "same length")
-  expect_error(.get_dof(tm, "CR2", seq_len(2)), "zeros or ones")
-  expect_true(inherits(dof <- .get_dof(tm, "CR2", 2), "numeric"))
+  expect_error(.get_dof(tm, seq_len(7), "CR2", "IK"), "same length")
+  expect_error(.get_dof(tm, seq_len(2), "CR2", "IK"), "zeros or ones")
+  expect_true(inherits(dof <- .get_dof(tm, 2, "CR2", "IK"), "numeric"))
   expect_equal(length(dof), 1)
 })
 
@@ -141,7 +141,7 @@ test_that(".compute_IK_dof no clustering", {
   idspec <- rct_spec(z ~ unitid(id), simdata)
   tm <- lmitt(y ~ 1, idspec, simdata)
   ell <- c(0, 1)
-  dof <- .compute_IK_dof(tm, ell)
+  dof <- .compute_IK_dof(tm, ell, vcov.type = "CR2")
   
   Q <- qr.Q(tm$qr)
   R <- qr.R(tm$qr)
@@ -151,18 +151,10 @@ test_that(".compute_IK_dof no clustering", {
   expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
   expect_equal(dof, expected_dof)
   
-  ## no clustering, binary y, sufficient dof
-  simdata$y <- round(runif(nrow(simdata)))
-  tm <- lmitt(y ~ 1, idspec, simdata)
-  dof <- .compute_IK_dof(tm, ell, bin_y = TRUE)
-  
-  GoG <- crossprod(G, diag(stats::fitted(tm) * (1 - stats::fitted(tm)), nrow = nrow(Q))) %*% G
-  expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
-  expect_equal(dof, expected_dof)
-  
   ## not enough dof
   set.seed(103)
-  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9), rep(5, 12), rep(6, 7)),
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
                     x = factor(c(rep(0,15), rep(1, 9+12+7))),
                     a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
                     y = rnorm(4 + 5 + 6 + 9+19))
@@ -171,12 +163,33 @@ test_that(".compute_IK_dof no clustering", {
 
   bad.ell1 <- c(0, 0, 1, 0)
   bad.ell2 <- c(0, 0, 0, 1)
-  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1))
+  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1, "CR2"))
   # returning NaN does not cause warnings for pt() in summary.teeMod()
   expect_equal(dof_a.x0, NaN)
   # returning NaN does not cause warnings for pt() in summary.teeMod()
-  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2))
+  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2, "CR2"))
   expect_equal(dof_a.x1, NaN)
+})
+
+test_that(".compute_IK_dof w/ clustering", {
+  set.seed(103)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
+                    y = rnorm(4 + 5 + 6 + 9+19))
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid), "numeric"))
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
+  
+  ad2$y[1] <- NA_real_
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(CR0_dof <- .compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid),
+                       "numeric"))
+  expect_equal(.compute_IK_dof(tm, c(0, 1), "CR1", ad2$cid), CR0_dof)
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
 })
 
 test_that("cluster_iss, no absorption", {
@@ -549,7 +562,7 @@ test_that("cluster_iss and .compute_IK_dof with dichotomies", {
               dichotomy = dose > 100 ~ dose <= 100)
   expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
                        "matrix"))
-  dof <- .compute_IK_dof(tm, c(0, 1))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
   expect_true(inherits(dof, "numeric") & dof < Inf)
   
   # second, dichotomy given in the weights as well
@@ -558,7 +571,7 @@ test_that("cluster_iss and .compute_IK_dof with dichotomies", {
               dichotomy = dose > 100 ~ dose <= 100)
   expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
                        "matrix"))
-  dof <- .compute_IK_dof(tm, c(0, 1))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
   expect_true(inherits(dof, "numeric") & dof < Inf)
 })
 

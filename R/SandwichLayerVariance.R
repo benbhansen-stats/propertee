@@ -149,19 +149,77 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   return(out)
 }
 
-#' @title Get the degrees of freedom of a sandwich variance estimate associated with a teeMod fit
+#' @title (Internal) Compute the degrees of freedom of a contrast of a sandwich
+#'  variance estimate associated with a \code{teeMod}
+#' @details With \code{dof_type="IK"}, one obtains a degrees of freedom estimate
+#'  as given by the procedure propose in Imbens and Kolesár (2016). For more
+#'  details see the documentation of \code{.compute_IK_dof()}. With 
+#'  \code{dof_type="stata"}, one obtains degrees of freedom equal to the number
+#'  of clusters less one, the default provided by STATA software (see Cameron
+#'  and Miller, 2015 or Bell and McCaffrey, 2002).\n\n
+#'  \code{ell} should be an integer specifying a location in the vector
+#'  of estimated coefficients (ignoring the coefficients suffixed by
+#'  \code{:(Intercept)}) or a vector of the same length as the vector of
+#'  estimated coefficients (ignoring the coefficients suffixed by
+#'  \code{:(Intercept)}).\n\n \code{vcov.type} takes the same arguments as
+#'  the \code{type} argument in \code{vcov_tee()}.\n\n
+#'  \code{cluster_ids} should be ordered in alignment with the dataframe passed
+#'  to \code{lmitt()}. It should not exclude NA's because the function will
+#'  exclude them where necessary.
+#' @param x \code{teeMod} object.
+#' @param ell numeric.
+#' @param vcov.type character.
+#' @param dof.type character, either \code{IK} or \code{stata}.
+#' @param cluster_ids optional, vector of ID's for clustering degrees of freedom
+#'  estimate. If not provided, default is the ID's associated with
+#'  \code{cluster}.
+#' @param cluster optional, character identifiying the clustering variable
+#'  if \code{cluster_ids} is not provided. If not provided, defaults to the
+#'  unit of assignment columns specified in the \code{StudySpecification}.
+#' @param ... Additional arguments passed from calls higher up the stack. These
+#'  arguments are not used within this function.
 #' @keywords internal
-.get_dof <- function(x, vcov_type, ell, cluster = NULL, cls = NULL, ...) {
+#' @references Guido W. Imbens and Michael Kolesár. Robust Standard Errors in
+#' Small Samples: Some Practical Advice".
+#' *The Review of Economics and Statistics*, 98(4):701-712, October 2016.
+#' 
+#' 
+#' A. Colin Cameron and Douglas L. Miller. A Practitioner's Guide to
+#' Cluster-Robust Inference. *The Journal of Human Resources*, 50(2):317-372,
+#' 2015.
+#' 
+#' 
+#' Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
+#'  Standard Errors for Linear Regression with Multi-Stage Samples.
+#'  *Survey Methodology*, 28(2):169-181, December 2002.
+.get_dof <- function(x,
+                     ell,
+                     vcov.type,
+                     dof.type = c("stata", "IK"),
+                     cluster_ids = NULL,
+                     cluster = NULL,
+                     ...) {
   if (!inherits(x, "teeMod")) stop("x must be a teeMod object")
-  if (is.null(cluster)) cluster <- var_names(x@StudySpecification, "u")
-  if (is.null(cls)) cls <- .make_uoa_ids(x, substr(vcov_type, 1, 2), cluster)
+  dof.type <- match.arg(dof.type)
+  if (is.null(cluster_ids)) {
+    if (is.null(cluster)) cluster <- var_names(x@StudySpecification, "u")
+    cluster_ids <- .make_uoa_ids(x, substr(vcov.type, 1, 2), cluster)
+    if (inherits(x$model$`(offset)`, "SandwichLayer")) {
+      ord <- .order_samples(x)
+      cluster_ids <- cluster_ids[seq_along(c(ord$Q_not_C, ord$Q_in_C))][
+        match(seq_along(c(ord$Q_not_C, ord$Q_in_C)),
+              as.numeric(c(names(ord$Q_not_C), names(ord$Q_in_C))))
+      ]
+    }
+  }
+  cluster_ids <- factor(cluster_ids)
   
-  if (!(vcov_type %in% paste0(c("MB", "HC", "CR"), 2))) {
-    # if no HC2 correction, use dof = G - 1 (see pg. 331 of Cameron and Miller,
-    # 2015). this is correct for both absorb=FALSE and absorb=TRUE
-    dof <- length(unique(cls)) - 1
+  if (dof.type == "stata") {
+    dof <- length(levels(
+      droplevels(cluster_ids[setdiff(seq_along(cluster_ids), na.action(x))])
+    )) - 1
   } else {
-    # use dof from IK for HC2 corrections
+    # compute dof using IK approach
     k <- ncol(x$qr$qr)
     if (length(ell) == 1) {
       ell <- replace(numeric(k), ell, 1)
@@ -170,36 +228,78 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     } else if (length(setdiff(unique(ell), c(0, 1))) != 0) {
       stop("ell must have only zeros or ones")
     }
-    dof <- .compute_IK_dof(x, ell, cluster, length(unique(x$model[,1])) == 2)
+    dof <- .compute_IK_dof(x,
+                           ell = ell,
+                           vcov.type = vcov.type,
+                           cluster_ids = cluster_ids)
   }
   
   return(dof)
 }
 
-#' @title Compute the degrees of freedom of a sandwich standard error with HC2 correction
-#' @importFrom utils combn
-#' @importFrom stats na.action
+#' @title (Internal) Compute the degrees of freedom of a contrast of a
+#'  sandwich variance estimate as proposed in Imbens and Kolesár (2016)
+#' @details \code{ell} should be a vector of length equal to the number of
+#'  estimated coefficients in the \code{teeMod} object. This excludes
+#'  coefficients printed in \code{show.teeMod} with \code{:(Intercept)}
+#'  suffixes. The degrees of freedom for a single standard error will specify
+#'  for \code{ell} a vector of all zeros except one element, which will have a
+#'  1 in the location corresponding to the coefficient of interest.\n\n
+#'  \code{cluster_ids} should be ordered in alignment with the dataframe passed
+#'  to \code{lmitt()}. It should not exclude NA's because the function will
+#'  exclude them where necessary.\n\n \code{vcov.type} takes the same arguments
+#'  as the \code{type} argument in \code{vcov_tee()}.
+#' @param tm \code{teeMod} object.
+#' @param ell numeric vector.
+#' @param vcov.type character.
+#' @param cluster_ids optional, vector of ID's for clustering degrees of freedom
+#'  estimate. If not provided, default is the ID's associated with
+#'  \code{cluster}.
+#' @param cluster optional, character identifiying the clustering variable
+#'  if \code{cluster_ids} is not provided. If not provided, defaults to the
+#'  unit of assignment columns specified in the \code{StudySpecification}.
+#' @param tol optional, numeric. Should not be changed.
+#' @importFrom stats na.action residuals
 #' @keywords internal
-#' @references Guido W. Imbens and Michael Kolesár. "Robust Standard Errors in
-#' Small Samples: Some Practical Advice". In: *The Review of Economics and
-#' Statistics* 98.4 (Oct. 2016), pp. 701-712.
+#' @references Guido W. Imbens and Michael Kolesár. Robust Standard Errors in
+#' Small Samples: Some Practical Advice".
+#' *The Review of Economics and Statistics*, 98(4):701-712, October 2016.
 .compute_IK_dof <- function(tm,
                             ell,
+                            vcov.type,
+                            cluster_ids = NULL,
                             cluster = NULL,
-                            bin_y = FALSE,
-                            exclude = na.action(tm),
                             tol = 1e-09) {
-  if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
-  cls <- .sanitize_Q_ids(tm, cluster)$cluster
-  cls <- cls[setdiff(seq_along(cls), exclude)]
+  # make na.action = exclude so residuals.default() includes NA's
+  if (!is.null(tm$na.action)) class(tm$na.action) <- "exclude"
+  if (is.null(cluster_ids)) {
+    # put the ID's in the order of the fitting dataframe if they've been
+    # re-ordered due to the presence of a covariance adjustment model
+    if (is.null(cluster)) cluster <- var_names(tm@StudySpecification, "u")
+    cluster_ids <- .make_uoa_ids(tm, substr(vcov.type, 1, 2), cluster)
+    if (inherits(tm$model$`(offset)`, "SandwichLayer")) {
+      ord <- .order_samples(tm)
+      cluster_ids <- cluster_ids[seq_along(c(ord$Q_not_C, ord$Q_in_C))][
+        match(seq_along(c(ord$Q_not_C, ord$Q_in_C)),
+              as.numeric(c(names(ord$Q_not_C), names(ord$Q_in_C))))
+        ]
+    }
+  }
+  cluster_ids <- factor(cluster_ids)
+  # make a copy that drops excluded observations, but keep the full vector to
+  # pass to cluster_iss()
+  cls <- droplevels(cluster_ids[setdiff(seq_along(cluster_ids), na.action(tm))])
+
   lmitt_data <- get("data", environment(formula(tm)))
-  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(lmitt_data, eval(sbst, envir = lmitt_data))
+  if (!is.null(sbst <- tm@lmitt_call$subset)) lmitt_data <- subset(
+    lmitt_data, eval(sbst, envir = lmitt_data))
   wc <- tm@lmitt_call$weights
   if (inherits(wc, "call")) {
     if (exists(deparse1(wc[[1L]]))) {
       if (length(wc) == 1) {
         wc$specification <- get("specification", environment(formula(tm)))
-      } else if (!inherits(eval(wc[[2L]], environment(formula(tm))), "StudySpecification")) {
+      } else if (!inherits(eval(wc[[2L]], environment(formula(tm))),
+                           "StudySpecification")) {
         wc$specification <- get("specification", environment(formula(tm)))
       }
       if (is.null(wc$data)) wc$data <- lmitt_data
@@ -219,77 +319,72 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
   }
   
   ## estimate rho
-  r <- stats::residuals(tm, type = "response")
-  if (length(cls) == length(unique(cls)) | bin_y) {
-    # for nonclustered data rho = 0. for binary data, use a working model of independence
-    # so that rho = 0
+  r <- residuals(tm, type = "response")
+  r <- r[setdiff(seq_along(r), na.action(tm))]
+  if (length(cls) == length(unique(cls))) {
+    # for nonclustered data rho = 0
     rho <- 0
   } else {
-    # don't need to subtract off squared residuals because combn only returns combos
-    # of distinct indices
-    rho <- sum(
-      tapply(r, cls, function(rs) {
-        combs <- combn(length(rs), 2)
-        sum(rs[combs[1,]] * rs[combs[2,]])
-      })
-    ) / (sum(tapply(rep(1, length(cls)), cls, sum)^2) - length(cls))
+    # NOTE: in issue #247, we update this calculation to match what's in the
+    # dfadjustse function in the dfadjust package
+    rho <- (sum(tapply(r, cls, sum)^2) - sum(r^2)) /
+      (sum(tapply(rep(1, length(cls)), cls, sum)^2) - length(cls))
     rho <- max(rho, 0) # IK code doesn't allow negative rho
   }
   
   ## estimate sigma
-  # working correlation matrix is heteroskedastic for binary data
-  sig2 <- if (bin_y) tm$fitted.values * (1-tm$fitted.values) else mean(r^2)
+  sig2 <- mean(r^2) - rho
   
-  # function for getting the inverse symmetric square root 
-  iss <- function(s, cls, trts = NULL) {
-    if (length(cls) == length(unique(cls)) | bin_y) {
-      # no clustering or independent working correlation matrix
-      return(matrix(1 / sqrt(1 - stats::hatvalues(tm)[cls == s]), 1, 1))
+  ## this is IK code with: 1) our fast CR2 correction implemented and
+  ## 2) calls to the collapse package replaced with calls to rowsum()
+  piv <- seq_len(tm$rank)
+  Q <- qr.Q(tm$qr)[, piv, drop=FALSE]
+  # add row names so we can put the AQ matrix back in its original alignment
+  row.names(Q) <- seq_len(nrow(Q))
+  R <- qr.R(tm$qr)[piv, piv, drop=FALSE]
+  if (vcov.type %in% paste0(c("MB", "CR", "HC"), 2)) {
+    if (length(cls) == length(unique(cls))) {
+      AQ <- Q / sqrt(1-stats::hatvalues(tm)[setdiff(seq_along(cluster_ids),
+                                                    na.action(tm))])
     } else {
-      return(cluster_iss(tm, cluster_unit = s, cluster_ids = cls, assigned_trt = trts))
-    }
-  }
-  
-  # this is IK code with: 1) our fast CR2 correction implemented,
-  # 2) calls to the collapse package replaced with calls to rowsum(), and 3)
-  # removing the intercept column when there's absorption because the corrections
-  # for those cases in cluster_iss() are based on having no intercept column
-  piv <- if (tm@absorbed_intercepts & !bin_y &
-             length(cls) != length(unique(cls))) seq(2,tm$rank) else seq_len(tm$rank)
-  Q <- qr.Q(tm$qr)[, piv,drop=FALSE]
-  R <- qr.R(tm$qr)[piv, piv,drop=FALSE]
-  if (length(cls) == length(unique(cls)) | bin_y) {
-    AQ <- Q / sqrt(1-stats::hatvalues(tm))
-  } else {
-    AQ <- Reduce(
-      rbind,
-      lapply(
-        unique(cls),
-        function(s, cls, trts = NULL) {
-          Qs <- Q[cls == s,,drop=FALSE]
-          iss(s, cls, trts) %*% Qs
-        },
-        cls, trts
+      AQ <- do.call(
+        rbind,
+        lapply(
+          levels(cls),
+          function(s, tm, cls, cluster_ids, trts = NULL) {
+            Qs <- Q[cls == s,, drop=FALSE]
+            AQs <- cluster_iss(tm,
+                               cluster_unit = s,
+                               cluster_ids = cluster_ids,
+                               assigned_trt = trts) %*% Qs
+            row.names(AQs) <- row.names(Qs)
+            return(AQs)
+          },
+          tm, cls = cls, cluster_ids = cluster_ids, trts
+        )
       )
-    )
+      AQ <- AQ[as.character(seq_len(nrow(Q))),, drop = FALSE]
+    }
+  } else {
+    AQ <- Q
   }
   
   # if there are insufficient degrees of freedom, AQ will be numerically 0.
   # this is also the case in the dfadjust package, but that package does not
   # proactively address numerical zeros, instead allowing the division to wash
-  # out and return 1 DOF. we address that here by rounding off AQ, and if all
-  # entries are 0, we actively return 1 dof
+  # out and return 1 DOF. we address that here by returning NaN to remain
+  # consistent with other cases of insufficient dof
   if (isTRUE(
     all.equal(AQ, matrix(0, nrow = nrow(AQ), ncol = ncol(AQ)), tolerance = tol)
   )) {
-    return(1)
+    return(NaN)
   }
   a <- drop(AQ %*% backsolve(R, ell, transpose = TRUE))
-  as <- rowsum((a*sqrt(sig2))^2, cls)[,1] # accommodate heteroskedasticity
-  B <- rowsum(a * sqrt(sig2) * Q, cls)
+  as <- rowsum(a^2, cls)[,1]
+  B <- rowsum(a * Q, cls)
   D <- rowsum(a, cls)[,1]
   Fm <- rowsum(Q, cls)
-  GG <- (diag(as, nrow = length(as)) - tcrossprod(B)) + rho * 
+  GG <- (diag(as, nrow = length(as)) - tcrossprod(B)) * sig2 + rho * 
     tcrossprod(diag(D, length(D)) - tcrossprod(B, Fm))
   sum(diag(GG))^2/sum(GG^2)
 }
@@ -309,7 +404,8 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @param cluster_unit cluster to subset observations to. Must be found in
 #'  \code{cluster_ids}.
 #' @param cluster_ids optional, ID's for clustering standard errors. If not
-#'  provided, default is the ID's associated with \code{cluster_var}.
+#'  provided, default is the ID's associated with \code{cluster} if provided,
+#'  otherwise the unit of assignment ID's.
 #' @param ... Additional arguments passed from calls higher in the stack. One
 #'  that may be used is \code{cluster}, which identifies the clustering variable
 #'  if \code{cluster_ids} is not provided. If \code{cluster} is not provided,
@@ -318,7 +414,7 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 #' @importFrom stats model.frame na.action weights
 #' @keywords internal
 #' @references Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
-#'  Standard Errors for Linear Regression with Multi-Stage Samples
+#'  Standard Errors for Linear Regression with Multi-Stage Samples.
 #'  *Survey Methodology*, 28(2):169-181, December 2002.
 #'  
 #'  
@@ -491,7 +587,7 @@ cluster_iss <- function(tm,
       }
     }
   }
-  
+
   # cg == 1 indicates our speedup can't be accommodated, so fall back to
   # original CR2 computation NOTE: issue #247 changes this to the sandwich
   # package's internal matrixpower function for better handling of complex

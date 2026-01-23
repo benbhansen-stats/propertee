@@ -14,7 +14,8 @@ cluster_iss(tm, cluster_unit, cluster_ids = NULL, ...)
 \code{cluster_ids}.}
 
 \item{cluster_ids}{optional, ID's for clustering standard errors. If not
-provided, default is the ID's associated with \code{cluster_var}.}
+provided, default is the ID's associated with \code{cluster} if provided,
+otherwise the unit of assignment ID's.}
 
 \item{...}{Additional arguments passed from calls higher in the stack. One
 that may be used is \code{cluster}, which identifies the clustering variable
@@ -39,7 +40,7 @@ It should not exclude NA's because the function will exclude them.
 }
 \references{
 Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
-Standard Errors for Linear Regression with Multi-Stage Samples
+Standard Errors for Linear Regression with Multi-Stage Samples.
 \emph{Survey Methodology}, 28(2):169-181, December 2002.
 
 Joshua Wasserman. Methods for Causal Inference in Settings with Clustered

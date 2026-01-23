@@ -2,11 +2,71 @@
 % Please edit documentation in R/SandwichLayerVariance.R
 \name{.get_dof}
 \alias{.get_dof}
-\title{Get the degrees of freedom of a sandwich variance estimate associated with a teeMod fit}
+\title{(Internal) Compute the degrees of freedom of a contrast of a sandwich
+variance estimate associated with a \code{teeMod}}
 \usage{
-.get_dof(x, vcov_type, ell, cluster = NULL, cls = NULL, ...)
+.get_dof(
+  x,
+  ell,
+  vcov.type,
+  dof.type = c("stata", "IK"),
+  cluster_ids = NULL,
+  cluster = NULL,
+  ...
+)
+}
+\arguments{
+\item{x}{\code{teeMod} object.}
+
+\item{ell}{numeric.}
+
+\item{vcov.type}{character.}
+
+\item{dof.type}{character, either \code{IK} or \code{stata}.}
+
+\item{cluster_ids}{optional, vector of ID's for clustering degrees of freedom
+estimate. If not provided, default is the ID's associated with
+\code{cluster}.}
+
+\item{cluster}{optional, character identifiying the clustering variable
+if \code{cluster_ids} is not provided. If not provided, defaults to the
+unit of assignment columns specified in the \code{StudySpecification}.}
+
+\item{...}{Additional arguments passed from calls higher up the stack. These
+arguments are not used within this function.}
 }
 \description{
-Get the degrees of freedom of a sandwich variance estimate associated with a teeMod fit
+(Internal) Compute the degrees of freedom of a contrast of a sandwich
+variance estimate associated with a \code{teeMod}
+}
+\details{
+With \code{dof_type="IK"}, one obtains a degrees of freedom estimate
+as given by the procedure propose in Imbens and Kolesár (2016). For more
+details see the documentation of \code{.compute_IK_dof()}. With
+\code{dof_type="stata"}, one obtains degrees of freedom equal to the number
+of clusters less one, the default provided by STATA software (see Cameron
+and Miller, 2015 or Bell and McCaffrey, 2002).\n\n
+\code{ell} should be an integer specifying a location in the vector
+of estimated coefficients (ignoring the coefficients suffixed by
+\code{:(Intercept)}) or a vector of the same length as the vector of
+estimated coefficients (ignoring the coefficients suffixed by
+\code{:(Intercept)}).\n\n \code{vcov.type} takes the same arguments as
+the \code{type} argument in \code{vcov_tee()}.\n\n
+\code{cluster_ids} should be ordered in alignment with the dataframe passed
+to \code{lmitt()}. It should not exclude NA's because the function will
+exclude them where necessary.
+}
+\references{
+Guido W. Imbens and Michael Kolesár. Robust Standard Errors in
+Small Samples: Some Practical Advice".
+\emph{The Review of Economics and Statistics}, 98(4):701-712, October 2016.
+
+A. Colin Cameron and Douglas L. Miller. A Practitioner's Guide to
+Cluster-Robust Inference. \emph{The Journal of Human Resources}, 50(2):317-372,
+2015.
+
+Robert M. Bell and Daniel F. McCaffrey. Bias Reduction in
+Standard Errors for Linear Regression with Multi-Stage Samples.
+\emph{Survey Methodology}, 28(2):169-181, December 2002.
 }
 \keyword{internal}
