@@ -45,9 +45,9 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
     newdata <- tryCatch(
       .get_data_from_model("cov_adj", form),
       error = function(e) {
-        warning(paste("Could not find direct adjustment data in the call stack,",
-                      "or it did not contain the columns specified in `by`.",
-                      "Using the covariance adjustment data to generate",
+        warning(paste("Could not find direct adjustment data in the call",
+                      "stack, or it did not contain the columns specified in",
+                      "`by`. Using the covariance adjustment data to generate",
                       "the covariance adjustments"), call. = FALSE)
         tryCatch({
           data_call <- model$call$data
@@ -75,7 +75,13 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
       } else if (is.factor(treatment(specification)[, 1])) {
         newdata[[trt_name]] <- levels(treatment(specification)[, 1])[1]
       } else {
-        warning("If treatment is an independent variable of the covariance model, predictions may (incorrectly) include treatment contributions. For now, setting these contributions to 0 is implemented only for logical or numeric treatments, but this treatment is a factor.")
+        warning(
+          paste("If treatment is an independent variable of the covariance",
+                "model, predictions may (incorrectly) include treatment",
+                "contributions. For now, setting these contributions to 0 is",
+                "implemented only for logical or numeric treatments, but this",
+                "treatment is a factor.")
+        )
       }
     if (specification@unit_of_assignment_type == "none") {
       newdata$..uoa.. <- rownames(newdata)
@@ -104,7 +110,10 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
 .update_ca_model_formula <- function(model, by = NULL, specification = NULL) {
   form <- deparse1(formula(model))
   if (!is.null(specification)) {
-    form <- paste(c(form, paste(var_names(specification, "u"), collapse = " + ")), collapse = " + ")
+    form <- paste(
+      c(form, paste(var_names(specification, "u"), collapse = " + ")),
+      collapse = " + "
+    )
   }
   if (!is.null(by) && is.null(names(by))) {
     form <- paste(c(form, paste(by, collapse = " + ")), collapse = " + ")
