@@ -13,7 +13,8 @@ setClass("PreSandwichLayer",
 
 setValidity("PreSandwichLayer", function(object) {
   if (!inherits(object@fitted_covariance_model$terms, "terms")) {
-    return("Fitted covariance adjustment model must have a valid 'terms' attribute")
+    return(paste("Fitted covariance adjustment model must have a valid 'terms'",
+                 "attribute"))
   }
 
   tryCatch({
@@ -54,7 +55,8 @@ setClass("SandwichLayer",
                    StudySpecification = "StudySpecification"))
 
 setValidity("SandwichLayer", function(object) {
-  if (nrow(object@keys) != nrow(stats::model.matrix(object@fitted_covariance_model))) {
+  if (nrow(object@keys) !=
+      nrow(stats::model.matrix(object@fitted_covariance_model))) {
     return(paste("Keys does not have the same number of rows as the dataset",
                  "used to fit the covariance adjustment model"))
   }
@@ -163,9 +165,10 @@ setMethod("[", "PreSandwichLayer",
                              ...)
   }
 
+  # contrasts.arg also follows `predict.lm`
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
-                           contrasts.arg = model$contrasts, # contrasts.arg also follows `predict.lm`
+                           contrasts.arg = model$contrasts,
                            ...)
 
   # use the `stats` package's method for handling model fits not of full rank
@@ -300,7 +303,8 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
   }
 
   if (is.null(by)) {
-    by <- stats::setNames(var_names(specification, "u"), var_names(specification, "u"))
+    by <- stats::setNames(var_names(specification, "u"),
+                          var_names(specification, "u"))
     if (is.null(Q_data)) Q_data <- specification@structure
   } else {
     if (is.null(names(by))) {
@@ -310,20 +314,24 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     }
 
     if (is.null(Q_data)) {
-      form <- .update_ca_model_formula(x@fitted_covariance_model, by, specification)
+      form <- .update_ca_model_formula(x@fitted_covariance_model,
+                                       by,
+                                       specification)
       Q_data <- tryCatch(
         .get_data_from_model("cov_adj", form),
         error = function(e) {
-          warning(paste("Could not find direct adjustment data in the call stack,",
-                        "or it did not contain the columns specified in `by`.",
-                        "Searching for `names(by)` in `specification@structure`.",
-                        "Supply the direct adjustment data to the `Q_data`",
-                        "argument when using `by` to avoid this error."),
+          warning(paste("Could not find direct adjustment data in the call",
+                        "stack, or it did not contain the columns specified in",
+                        "`by`. Searching for `names(by)` in",
+                        "specification@structure. Supply the direct",,
+                        "adjustment data to the `Q_data` argument when using",
+                        "`by` to avoid this error."),
                   call. = FALSE)
           tryCatch({
             specification@structure[, names(by), drop = FALSE]
           }, error = function(e) {
-            stop("Could not find columns specified in `by` in specification@structure",
+            stop(paste("Could not find columns specified in `by` in",
+                       "specification@structure"),
                  call. = FALSE)
           })
 
@@ -333,17 +341,22 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
 
   data_call <- x@fitted_covariance_model$call$data
   if (is.null(data_call)) {
-    stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
+    stop(paste("The fitted covariance adjustment model for x must be fit using",
+               "a `data` argument"))
   }
 
   if (specification@unit_of_assignment_type == "none") {
     keys <- data.frame(..uoa.. = rownames(x@fitted_covariance_model$model))
   } else {
     keys <- tryCatch(
-      stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
+      stats::expand.model.frame(x@fitted_covariance_model,
+                                by,
+                                na.expand = TRUE)[by],
       error = function(e) {
-        covmoddata <- eval(data_call,
-                           envir = environment(formula(x@fitted_covariance_model)))
+        covmoddata <- eval(
+          data_call,
+          envir = environment(formula(x@fitted_covariance_model))
+        )
         stop(paste("Columns",
                    paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
                    "are missing from the covariance adjustment model dataset"),
@@ -355,7 +368,9 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     mapply(
       function(covmod_col, spec_col) {
         unique(Q_data[[spec_col]])[
-          match(keys[[covmod_col]], unique(Q_data[[spec_col]]), incomparables = NA)
+          match(keys[[covmod_col]],
+                unique(Q_data[[spec_col]]),
+                incomparables = NA)
         ]
       },
       by, names(by)
