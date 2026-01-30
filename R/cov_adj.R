@@ -39,9 +39,16 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
   if (is.null(specification)) {
     specification <- .get_spec(NULL_on_error = TRUE)
   }
+  if (!is.null(specification)) trt_name <- var_names(specification, 't')
 
   if (is.null(newdata)) {
     form <- .update_ca_model_formula(model, by, specification)
+    if (!is.null(specification)) {
+      # since newdata is the data to estimate treatment effects from, we can
+      # add the treatment variable to the formula here so that newdata has it
+      # at its disposal
+      # form <- update(form, stats::reformulate(c(".", trt_name), response = "."))
+    }
     newdata <- tryCatch(
       .get_data_from_model("cov_adj", form),
       error = function(e) {
@@ -52,7 +59,12 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
         tryCatch({
           data_call <- model$call$data
           if (is.null(data_call)) {
-            stop("`model` must be fit using a `data` argument")
+            return(
+              stop(
+                errorCondition("`model` must be fit using a `data` argument",
+                               call = quote(cov_adj))
+              )
+            )
           }
           data <- eval(data_call, envir = environment(formula(model)))
           stats::model.frame(form, data, na.action = na.pass)
@@ -66,8 +78,7 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
 
 
   if (!is.null(specification)) {
-    trt_name <- var_names(specification,'t')
-    if (trt_name %in% names(newdata))
+    if (trt_name %in% names(newdata)) {
       if (is.numeric(treatment(specification)[, 1])) {
         newdata[[trt_name]] <- min(abs(treatment(specification)[, 1]))
       } else if (is.logical(treatment(specification)[, 1])) {
@@ -83,10 +94,18 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
                 "treatment is a factor.")
         )
       }
+    }
     if (specification@unit_of_assignment_type == "none") {
       newdata$..uoa.. <- rownames(newdata)
     }
 
+  } else {
+    warning(
+      paste("Without a specification, post-treatment variables in the",
+            "covariance adjustment model will contribute to predictions that",
+            "offset study outcomes. Pass the StudySpecification to cov_adj()",
+            "to avoid this warning.")
+    )
   }
 
   psl <- .make_PreSandwichLayer(model, newdata)
@@ -94,7 +113,60 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
   if (is.null(specification)) {
     return(psl)
   } else {
-    return(as.SandwichLayer(psl, specification, by = by, Q_data = newdata))
+    sl <- as.SandwichLayer(psl, specification, by = by, Q_data = newdata)
+    # don't repeat warnings; only print if it's the cov_adj() call from
+    # evaluating the `offset` argument of lm or lmitt
+    verbose <- all(
+      !(gsub("propertee::(:|)", "",
+             sapply(sys.calls(), function(x) deparse1(x[[1L]]))) %in%
+          c("assigned", "adopters", "a.", "z.", ".get_b22", ".get_a21",
+            "estfun.teeMod", ".get_tilde_a22_inverse"))
+    )
+    if (verbose &
+        any(sl@keys$in_Q) &
+        !any(grepl(trt_name, all.vars(stats::formula(model))))) {
+      n_trt_lvls <- tryCatch({
+        by <- setdiff(colnames(sl@keys), c("in_Q"))
+        C_trts <- stats::expand.model.frame(model,
+                                            c(setdiff(by, "..uoa.."), trt_name))
+        if (specification@unit_of_assignment_type == "none") {
+          C_trts[["..uoa.."]] <- seq_len(nrow(C_trts))
+        }
+        length(unique(merge(
+          C_trts,
+          sl@keys[sl@keys$in_Q,,drop=FALSE],
+          by = by
+        )[[trt_name]]))
+        },
+        error = function(e) {
+          if (grepl(trt_name, e$message)) {
+            warning(warningCondition(
+              paste("Covariance adjustment model may have been fit to subjects",
+                    "in treatment and control conditions, but treatment column",
+                    "specified in the StudySpecification could not be found in",
+                    "the model formula. Use the `set_to_reference` argument to",
+                    "specify post-treatment variables that should be set to a",
+                    "reference level."),
+              call = quote(cov_adj)
+            ))
+            return(0)
+          } else {
+            stop(
+              errorCondition(e$message, call = quote(cov_adj))
+            )
+          }
+        })
+      if (n_trt_lvls > 1) {
+        warning(
+          paste("Covariance adjustment model fit to subjects in treatment and",
+                "control conditions, but treatment column specified in the",
+                "StudySpecification could not be found in the model formula.",
+                "Use the `set_to_reference` argument to specify post-treatment",
+                "variables that should be set to a reference level.")
+        )
+      }
+    }
+    return(sl)
   }
 }
 

@@ -3,7 +3,7 @@ test_that("Finding cov_adj in model", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
 
-  ca <- lm(y ~ x, data = simdata)
+  ca <- lm(y ~ x, data = simdata, subset = z == 0)
 
   cap <- cov_adj(ca, newdata = simdata, specification = spec)
 
@@ -42,7 +42,7 @@ test_that("Finding cov_adj in model", {
   expect_identical(.get_cov_adj(mod8), cap)
 
   # Double offset, but with different cov_adj
-  ca2 <- lm(y ~ force, data = simdata)
+  ca2 <- lm(y ~ force, data = simdata, subset = z == 0)
   mod9 <- lm(y ~ z + offset(cov_adj(ca)) + offset(cov_adj(ca2)), data = simdata,
              weights = ate(spec))
   expect_error(.get_cov_adj(mod9), "Multiple cov_adj")

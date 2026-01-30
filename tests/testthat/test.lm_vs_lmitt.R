@@ -16,7 +16,7 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   data(simdata)
   simdata$o <- as.factor(simdata$o)
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
-  cmod <- lm(y ~ x, data = simdata)
+  cmod <- lm(y ~ x, data = simdata, subset = z == 0)
 
 
   test_coeffs <- function(lmcoef, lmittcoef, n_sg_levels, cov_adj) {
@@ -103,7 +103,10 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |   No   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
@@ -121,7 +124,11 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |   No   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec):o + o,
+                 data = simdata, offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
@@ -132,16 +139,19 @@ test_that("equivalent of lm and lmitt calls - no subset", {
 
   mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata,
                offset = cov_adj(cmod), weights = ett(spec))
-  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, offset = cov_adj(cmod),
-                     weights = ett())
+  mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
+                     offset = cov_adj(cmod), weights = ett())
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
 
   ## | Weights | Subgroup | Absorb | CovAdj | Subset |
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+                 offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
@@ -160,8 +170,11 @@ test_that("equivalent of lm and lmitt calls - no subset", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |  Yes   |  Yes   |   No   |
 
-  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+                 offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
@@ -184,7 +197,7 @@ test_that("subset in specification", {
   simdata$o <- as.factor(simdata$o)
   spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata,
                     subset = !(simdata$uoa1 == 5 & simdata$uoa2 == 2))
-  cmod <- lm(y ~ x, data = simdata)
+  cmod <- lm(y ~ x, data = simdata, subset = z == 0)
 
   test_coeffs <- function(lmcoef, lmittcoef, n_sg_levels, cov_adj) {
     ncoef <- if (cov_adj) 4 else 3
@@ -272,7 +285,10 @@ test_that("subset in specification", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |   No   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec), data = simdata, offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
 
@@ -290,7 +306,11 @@ test_that("subset in specification", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |   No   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(spec):o + o, data = simdata, offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec):o + o,
+                 data = simdata, offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)
@@ -309,8 +329,11 @@ test_that("subset in specification", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   No     |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec) + as.factor(bid), data = simdata,
+                 offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ 1, data = simdata, specification = spec, absorb = TRUE,
                offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, 0, TRUE)
@@ -329,8 +352,11 @@ test_that("subset in specification", {
   ## |---------|----------|--------|--------|--------|
   ## |   No    |   Yes    |  Yes   |  Yes   | StudySpecification |
 
-  mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod_lm <- lm(y ~ assigned(spec):o + o + as.factor(bid), data = simdata,
+                 offset = cov_adj(cmod)),
+    "Without a specification"
+  )
   mod_lmitt <- lmitt(y ~ o, data = simdata, specification = spec, absorb = TRUE,
                      offset = cov_adj(cmod))
   test_coeffs(mod_lm$coeff, mod_lmitt$coeff, length(levels(simdata$o)), TRUE)

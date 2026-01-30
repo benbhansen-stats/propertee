@@ -74,7 +74,7 @@ test_that("covariate adjustment", {
   spec <- rd_spec(z ~ cluster(uoa2, uoa1) + block(bid) + forcing(force),
                    data = simdata)
 
-  camod <- lm(y ~ x, data = simdata)
+  camod <- lm(y ~ x, data = simdata, subset = z == 0)
 
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ate(),
               offset = cov_adj(camod), specification = spec)
@@ -438,7 +438,7 @@ test_that("lmitt finds StudySpecification wherever it's stored", {
   data(simdata)
   spec_form <- z ~ uoa(uoa1, uoa2) + block(bid)
   spec <- obs_spec(spec_form, data = simdata)
-  camod <- lm(y ~ x, data = simdata)
+  camod <- lm(y ~ x, data = simdata, subset = z == 0)
 
   mod1 <- lmitt(y ~ 1, data = simdata, weights = ate(),
                 offset = cov_adj(camod, specification = spec),
@@ -577,7 +577,7 @@ test_that("#82 Informative error if specification in weight/offset but not lmitt
   expect_error(lmitt(y ~ 1, data = simdata, weights = ate(spec)),
                "into the weight function")
 
-  cmod <- lm(y ~ x, data = simdata)
+  cmod <- lm(y ~ x, data = simdata, subset = z == 0)
   expect_error(lmitt(y ~ 1, data = simdata, offset = cov_adj(cmod, specification = spec)),
                "into the offset function")
 

@@ -19,8 +19,11 @@ test_that("teeMod with SandwichLayer offset summary uses vcov_tee SE's", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
-                    offset = cov_adj(cmod)))
+  expect_warning(
+    ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
+                      offset = cov_adj(cmod))),
+    "treatment column specified in the StudySpecification"
+  )
 
   s <- summary(ssmod, vcov.type = "CR0", dof.type = "stata")
   vc <- vcov_tee(ssmod, type = "CR0")

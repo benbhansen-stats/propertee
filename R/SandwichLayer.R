@@ -312,10 +312,10 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     } else if (!is.null(names(by))) {
       names(by)[names(by) == ""] <- by[names(by) == ""]
     }
-
+  
     if (is.null(Q_data)) {
       form <- .update_ca_model_formula(x@fitted_covariance_model,
-                                       by,
+                                       c(by, var_names(specification, "u")),
                                        specification)
       Q_data <- tryCatch(
         .get_data_from_model("cov_adj", form),
@@ -323,7 +323,7 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
           warning(paste("Could not find direct adjustment data in the call",
                         "stack, or it did not contain the columns specified in",
                         "`by`. Searching for `names(by)` in",
-                        "specification@structure. Supply the direct",,
+                        "specification@structure. Supply the direct",
                         "adjustment data to the `Q_data` argument when using",
                         "`by` to avoid this error."),
                   call. = FALSE)
@@ -336,13 +336,12 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
           })
 
         })
+      Q_data <- merge(
+        specification@structure,
+        Q_data,
+        by = var_names(specification, "u")
+      )
     }
-  }
-
-  data_call <- x@fitted_covariance_model$call$data
-  if (is.null(data_call)) {
-    stop(paste("The fitted covariance adjustment model for x must be fit using",
-               "a `data` argument"))
   }
 
   if (specification@unit_of_assignment_type == "none") {
@@ -353,6 +352,11 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
                                 by,
                                 na.expand = TRUE)[by],
       error = function(e) {
+        data_call <- x@fitted_covariance_model$call$data
+        if (is.null(data_call)) {
+          stop(paste("The fitted covariance adjustment model for x must be",
+                     "fit using a `data` argument."))
+        }
         covmoddata <- eval(
           data_call,
           envir = environment(formula(x@fitted_covariance_model))
@@ -364,20 +368,34 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
       })
   }
 
-  keys$in_Q <- apply(
-    mapply(
-      function(covmod_col, spec_col) {
-        unique(Q_data[[spec_col]])[
-          match(keys[[covmod_col]],
-                unique(Q_data[[spec_col]]),
-                incomparables = NA)
-        ]
-      },
-      by, names(by)
-    ),
-    1,
-    function(uids) all(!is.na(uids))
+  # keys$in_Q <- apply(
+  #   mapply(
+  #     function(covmod_col, spec_col) {
+  #       unique(Q_data[[spec_col]])[
+  #         match(keys[[covmod_col]],
+  #               unique(Q_data[[spec_col]]),
+  #               incomparables = NA)
+  #       ]
+  #     },
+  #     by, names(by)
+  #   ),
+  #   1,
+  #   function(uids) all(!is.na(uids))
+  # )
+  Q_by_vals <- unique(
+    apply(
+      Q_data[, names(by),drop=FALSE],
+      1,
+      function(r) {
+        if (all(is.na(r))) return(NA_character_) else {
+          paste(r, collapse = "_")
+        }
+      }
+    )
   )
+  keys$in_Q <- apply(
+    keys[, unname(by),drop=FALSE], 1, function(r) paste(r, collapse = "_")
+  ) %in% Q_by_vals
 
   return(new("SandwichLayer",
              x,

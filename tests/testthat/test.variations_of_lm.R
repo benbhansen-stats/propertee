@@ -11,7 +11,7 @@ test_that("binary treatment, in all data", {
   data(simdata)
 
   spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
-  camod <- lm(y ~ x, data = simdata)
+  camod <- lm(y ~ x, data = simdata, subset = z == 0)
 
   # Weight alone
   expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec))))
@@ -104,31 +104,38 @@ test_that("binary treatment, not in data2", {
                             weights = ett(spec))))
 
   # assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ assigned(spec), data = simdata,
-                            offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
+  expect_warning(as.lmitt(lm(y ~ assigned(spec), data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
 
   # weights + assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                                     weights = ett(spec),
-                                     offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                                     weights = ett(),
-                                     offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                                     weights = ett(spec),
-                                     offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(spec),
+                             offset = cov_adj(camod))),
+                 "may have been fit")
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(),
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(spec),
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
-                                     data = simdata, weights = ett(spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
+                             data = simdata, weights = ett(spec))),
+                 "may have been fit")
   # Fails when trying to obtain StudySpecification from a cov_adj inside offset in formula
   #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, specification = spec)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ assigned() +
-                                       offset(cov_adj(camod, specification = spec)),
-                   data = simdata, weights = ett(spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned() +
+                               offset(cov_adj(camod, specification = spec)),
+                             data = simdata, weights = ett(spec))),
+                 "may have been fit")
 
 })
 
@@ -154,31 +161,42 @@ test_that("non-binary treatment, in all data, dichotomization in specification",
                                      weights = ett(spec, dichotomy = dose >= 200 ~ .))))
 
   # assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .), data = simdata,
-                            offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ assigned(spec, dichotomy = dose >= 200 ~ .), data = simdata,
-                            offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .),
+                             data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "treatment column specified in the StudySpecification")
+  expect_warning(as.lmitt(lm(y ~ assigned(spec, dichotomy = dose >= 200 ~ .),
+                             data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "treatment column specified in the StudySpecification")
 
   # weights + assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(spec, dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(spec, dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod))),
+                 "treatment column specified in the StudySpecification")
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod, specification = spec))),
+                 "treatment column specified in the StudySpecification")
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod, specification = spec))),
+                 "treatment column specified in the StudySpecification")
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
-                            data = simdata, weights = ett(spec, dichotomy = dose >= 200 ~ .))))
+  expect_warning(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
+                             data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .))),
+                 "treatment column specified in the StudySpecification")
   # Fails when trying to obtain StudySpecification from a cov_adj inside offset in formula
   #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, specification = spec)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ assigned() +
-                              offset(cov_adj(camod, specification = spec)),
-                            data = simdata, weights = ett(spec, dichotomy = dose >= 200 ~ .))))
+  expect_warning(as.lmitt(lm(y ~ assigned() +
+                               offset(cov_adj(camod, specification = spec)),
+                             data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .))),
+                 "treatment column specified in the StudySpecification")
 
 })
 
@@ -205,31 +223,43 @@ test_that("non-binary treatment, not in data2, dichotomization in specification"
                             weights = ett(spec, dichotomy = dose >= 200 ~ .))))
 
   # assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .), data = simdata,
-                   offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ assigned(spec, dichotomy = dose >= 200 ~ .), data = simdata,
-                   offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(dichotomy = dose >= 200 ~ .),
+                             data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
+  
+  expect_warning(as.lmitt(lm(y ~ assigned(spec, dichotomy = dose >= 200 ~ .),
+                             data = simdata,
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
 
   # weights + assigned + cov_adj
-  expect_silent(as.lmitt(lm(y ~ assigned(), data = simdata,
-                            weights = ett(spec, dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod))))
-  expect_silent(as.lmitt(lm(y ~ adopters(), data = simdata,
-                            weights = ett(dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod, specification = spec))))
-  expect_silent(as.lmitt(lm(y ~ z.(), data = simdata,
-                            weights = ett(spec, dichotomy = dose >= 200 ~ .),
-                            offset = cov_adj(camod, specification = spec))))
+  expect_warning(as.lmitt(lm(y ~ assigned(), data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod))),
+                 "may have been fit")
+  expect_warning(as.lmitt(lm(y ~ adopters(), data = simdata,
+                             weights = ett(dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
+  expect_warning(as.lmitt(lm(y ~ z.(), data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .),
+                             offset = cov_adj(camod, specification = spec))),
+                 "may have been fit")
 
   # weight + adopter + cov_adj in formula
-  expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
-                            data = simdata, weights = ett(spec, dichotomy = dose >= 200 ~ .))))
+  expect_warning(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod)),
+                             data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .))),
+                 "may have been fit")
   # Fails when trying to obtain StudySpecification from a cov_adj inside offset in formula
   #expect_silent(as.lmitt(lm(y ~ assigned() + offset(cov_adj(camod, specification = spec)),
   #                      data = simdata, weights = ett()))
-  expect_silent(as.lmitt(lm(y ~ assigned() +
-                              offset(cov_adj(camod, specification = spec)),
-                            data = simdata, weights = ett(spec, dichotomy = dose >= 200 ~ .))))
+  expect_warning(as.lmitt(lm(y ~ assigned() +
+                               offset(cov_adj(camod, specification = spec)),
+                             data = simdata,
+                             weights = ett(spec, dichotomy = dose >= 200 ~ .))),
+                 "may have been fit")
 
 })
 

@@ -2,7 +2,7 @@ test_that(".get_spec", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
-  mod <- lm(y ~ x, data = simdata)
+  mod <- lm(y ~ x, data = simdata, subset = z == 0)
 
   mod1 <- lm(y ~ z, data = simdata, weights = ate(spec),
              offset = cov_adj(mod))

@@ -22,9 +22,13 @@ test_that(paste("teeMod object created correctly with weights and ",
   data(simdata)
   spec <- obs_spec(z ~ cluster(uoa2, uoa1) + block(bid), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
+  expect_warning(
+    lmod <- lm(y ~ assigned(), data = simdata, weights = ate(spec),
+               offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   sslm <- new("teeMod",
-              lm(y ~ assigned(), data = simdata, weights = ate(spec),
-                 offset = cov_adj(cmod)),
+              lmod,
               StudySpecification = spec,
               ctrl_means_model = lm(y ~ 1, simdata),
               lmitt_fitted = FALSE)
@@ -112,7 +116,11 @@ test_that("lm to teeMod with weights and SandwichLayer", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
 
-  mod <- lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod))
+  expect_warning(
+    mod <- lm(y ~ assigned(), data = simdata, weights = ate(spec),
+              offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   mod_ss <- as.lmitt(mod)
 
@@ -126,8 +134,11 @@ test_that("lm to teeMod with weights and SandwichLayer", {
   expect_identical(mod_ss$model$`(offset)`@keys,
                    cbind(simdata[,var_names(spec, "u")], in_Q = rep(TRUE, nrow(simdata))))
 
-  mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(),
-                     offset = cov_adj(cmod), specification = spec)
+  expect_warning(
+    mod_lmitt <- lmitt(y ~ 1, data = simdata, weights = ate(),
+                       offset = cov_adj(cmod), specification = spec),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_true(all(round(mod_lmitt$coef, 4) %in%  round(mod_ss$coef, 4)))
   expect_identical(mod_ss@StudySpecification, mod_lmitt@StudySpecification)
@@ -165,20 +176,26 @@ test_that("subsetting model with weights and/or cov_adj", {
   data(simdata)
   spec <- obs_spec(z ~ cluster(uoa1, uoa2), data = simdata)
 
-  mod1 <- lm(y ~ assigned(),
-             data = simdata,
-             weights = ate(spec),
-             offset = cov_adj(lm(y ~ x, data = simdata)))
+  expect_warning(
+    mod1 <- lm(y ~ assigned(),
+               data = simdata,
+               weights = ate(spec),
+               offset = cov_adj(lm(y ~ x, data = simdata))),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_true(inherits(mod1$model$`(weights)`, "WeightedStudySpecification"))
   expect_true(inherits(mod1$model$`(offset)`, "SandwichLayer"))
 
   # add subsetting
-  mod2 <- lm(y ~ assigned(),
-             data = simdata,
-             weights = ate(spec),
-             offset = cov_adj(lm(y ~ x, data = simdata)),
-             subset = simdata$dose < 300)
+  expect_warning(
+    mod2 <- lm(y ~ assigned(),
+               data = simdata,
+               weights = ate(spec),
+               offset = cov_adj(lm(y ~ x, data = simdata)),
+               subset = simdata$dose < 300),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_true(inherits(mod2$model$`(weights)`, "WeightedStudySpecification"))
   expect_true(inherits(mod2$model$`(offset)`, "SandwichLayer"))
@@ -201,30 +218,32 @@ test_that("Differing specifications found", {
   ##              "Multiple differing")
 
   expect_error(lmitt(y ~ 1,
-                        data = simdata,
-                        specification = spec,
-                        weights = ate(),
-                        offset = cov_adj(lm(y ~ x, data = simdata),
-                                         specification = spec2)),
+                     data = simdata,
+                     specification = spec,
+                     weights = ate(),
+                     offset = cov_adj(lm(y ~ x, data = simdata,
+                                         subset = o == 1),
+                                      specification = spec2)),
                "Multiple differing")
 
   expect_error(lmitt(y ~ 1,
-                        data = simdata,
-                        specification = spec,
-                        weights = ate(),
-                        offset = cov_adj(lm(y ~ x, data = simdata),
-                                         specification = spec2)),
+                     data = simdata,
+                     specification = spec,
+                     weights = ate(),
+                     offset = cov_adj(lm(y ~ x, data = simdata,
+                                         subset = o == 1),
+                                      specification = spec2)),
                "Multiple differing")
 
-
   mod <- lm(y ~ assigned(), data = simdata,
-            offset = cov_adj(lm(y ~ x, data = simdata),
+            offset = cov_adj(lm(y ~ x, data = simdata, subset = o == 1),
                              specification = spec2))
 
   expect_error(as.lmitt(mod, specification = spec), "Multiple differing")
 
   expect_error(lmitt(y ~ 1, data = simdata,
-                     offset = cov_adj(lm(y ~ x, data = simdata),
+                     offset = cov_adj(lm(y ~ x, data = simdata,
+                                         subset = o == 1),
                                       specification = spec2),
                      specification = spec),
                "Multiple differing")
@@ -268,8 +287,11 @@ test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  ssmod1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
-                     offset = cov_adj(cmod)))
+  expect_warning(
+    ssmod1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
+                       offset = cov_adj(cmod))),
+    "treatment column specified in the StudySpecification"
+  )
   ssmod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   vmat1 <- vcov(ssmod1)
@@ -291,8 +313,11 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   data(simdata)
   spec <- rd_spec(z ~ cluster(uoa1, uoa2) + forcing(force), simdata)
   cmod <- lm(y ~ x, simdata)
-  ssmod1 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec,
-                     offset = cov_adj(cmod))
+  expect_warning(
+    ssmod1 <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec),
+                       offset = cov_adj(cmod))),
+    "treatment column specified in the StudySpecification"
+  )
   ssmod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   expect_error(confint(ssmod1, type = "not_a_type"), "not defined")
@@ -400,7 +425,10 @@ test_that(paste("estfun.teeMod returns original psi if no offset or no",
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  ca <- cov_adj(cmod, newdata = simdata, specification = spec)
+  expect_warning(
+    ca <- cov_adj(cmod, newdata = simdata, specification = spec),
+    "treatment column specified in the StudySpecification"
+  )
 
   nolmittmod1 <- lm(y ~ z, simdata)
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec)
@@ -450,7 +478,11 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   cmod <- lm(y ~ x, rbind(simdata_copy[, c("y", "x", "id")], aux_cmod_ssta))
 
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
-  dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
+  expect_warning(
+    dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy,
+                  offset = cov_adj(cmod)),
+    "may have been fit"
+  )
 
   ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
@@ -499,8 +531,16 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   shuffled_simdata <- simdata_copy[sample(rownames(simdata_copy)),]
   cmod <- lm(y ~ x, simdata_copy)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                  offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec,
+                  offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata_copy), 4))
@@ -516,8 +556,16 @@ test_that(paste("estfun.teeMod returns correct dimensions when only",
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata, specification = spec,
+                  offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec,
+                  offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata), 4))
@@ -536,8 +584,16 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   shuffled_Q_data <- simdata[sample(rownames(Q_data)),]
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec,
+                  offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec,
+                  offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata), 4))
@@ -556,7 +612,11 @@ test_that(paste("estfun.teeMod returns correct dimensions for partial",
 
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
+  expect_warning(
+    mod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   expect_equal(dim(estfun(mod, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata) + nrow(cmod_ssta[is.na(cmod_ssta$uoa1),]), 4))
@@ -593,7 +653,11 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     data(simdata)
     cmod <- robustbase::lmrob(y ~ x, simdata)
     spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
-    dmod <- lmitt(lm(y ~ z.(spec), simdata, offset = cov_adj(cmod)), specification = spec)
+    expect_warning(
+      dmod <- lmitt(lm(y ~ z.(spec), simdata, offset = cov_adj(cmod)),
+                    specification = spec),
+      "Without a specification"
+    )
 
     out <- estfun(dmod, type_psi = "HC0", type_phi = "HC0")
     expect_equal(dim(out), c(50, 4))
@@ -630,8 +694,11 @@ test_that(paste("bread.teeMod returns expected output for full overlap",
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ uoa(uid), simdata)
-  m <- lmitt(y ~ 1, data = simdata, specification = spec, weights = ate(spec),
-             offset = cov_adj(cmod))
+  expect_warning(
+    m <- lmitt(y ~ 1, data = simdata, specification = spec, weights = ate(spec),
+               offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   expected_out <- matrix(0, nrow = 4, ncol = 4)
   expected_out[1:2, 1:2] <- nrow(simdata) * chol2inv(m$qr$qr)
@@ -653,7 +720,11 @@ test_that(paste("bread.teeMod returns expected output for partial overlap",
   cmod <- lm(y ~ x, rbind(simdata[, c("y", "x", "id")], aux_cmod_ssta))
 
   spec <- rct_spec(z ~ unitid(id), simdata)
-  dmod <- lmitt(y ~ 1, specification = spec, data = simdata, offset = cov_adj(cmod))
+  expect_warning(
+    dmod <- lmitt(y ~ 1, specification = spec, data = simdata,
+                  offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   expected_out <- matrix(0, nrow = 4, ncol = 4)
   expected_out[1:2, 1:2] <- n * chol2inv(dmod$qr$qr)
@@ -691,7 +762,11 @@ test_that("bread.teeMod handles model with less than full rank", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), copy_simdata)
 
   ### lmitt.formula
-  ssmod <- lmitt(y ~ o_fac, data = copy_simdata, specification = spec, offset = cov_adj(cmod))
+  expect_warning(
+    ssmod <- lmitt(y ~ o_fac, data = copy_simdata, specification = spec,
+                   offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   p <- ssmod$rank
   keep_ix <- ssmod$qr$pivot[1L:p]
   cm_mm <- model.matrix(ssmod@ctrl_means_model)
@@ -751,7 +826,10 @@ test_that("rcorrect (HC/CR/MB)1", {
   
   speci <- rct_spec(a ~ unitid(cid), udata)
   cmod <- lm(y ~ x1 + x2, idata)
-  xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   r <- xm$residuals
   g <- nrow(udata)
@@ -806,7 +884,10 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     
     speci <- rct_spec(a ~ unitid(cid), udata)
     cmod <- robustbase::lmrob(y ~ x1 + x2, idata)
-    xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+    expect_warning(
+      xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod)),
+      "treatment column specified in the StudySpecification"
+    )
     
     r <- xm$residuals
     g <- nrow(udata)
@@ -828,7 +909,10 @@ test_that("rcorrect (HC/CR/MB)2, no clustering", {
                       y = rnorm(10))
   speci <- rct_spec(a ~ unitid(cid), udata)
   cmod <- lm(y ~ x1 + x2, udata)
-  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   r <- xm$residuals
   expect_equal(
@@ -847,7 +931,10 @@ test_that("rcorrect (HC/CR/MB)2, no clustering", {
   expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "MB2"))
   
   # subset
-  xm <- lmitt(y ~ 1, speci, udata, subset = cid > 3, offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, udata, subset = cid > 3, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   r <- stats::residuals(xm, "working")
   expect_equal(
     cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
@@ -859,7 +946,10 @@ test_that("rcorrect (HC/CR/MB)2, no clustering", {
   # NA's
   udata$y[9:10] <- NA_real_
   cmod <- lm(y ~ x1 + x2, udata)
-  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   class(xm$na.action) <- "exclude"
   r <- stats::residuals(xm, "working")
   expect_equal(
@@ -880,8 +970,11 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   speci <- rct_spec(a ~ unitid(cid), udata)
   cmod <- lm(y ~ x1 + x2, idata)
   da_data <- idata[!is.na(idata$cid),,drop=FALSE]
-  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
-              offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   r <- xm$residuals
   pm <- chol2inv(xm$qr$qr)
@@ -912,7 +1005,11 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   expect_equal(.rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
   
   # subset
-  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   expect_equal(
     cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
@@ -956,8 +1053,11 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   idata$y[1:3] <- NA_real_
   cmod <- lm(y ~ x1 + x2, idata)
   da_data <- idata[!is.na(idata$cid),,drop=FALSE]
-  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
-              offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   r <- xm$residuals
   pm <- chol2inv(xm$qr$qr)
@@ -996,7 +1096,11 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   )
   
   # NA's + subset (check the model.frame calls are correct)
-  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   r <- xm$residuals
   class(xm$na.action) <- "exclude"
@@ -1011,8 +1115,12 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   cmod <- lm(y ~ x1 + x2, idata)
   class(cmod$na.action) <- "exclude"
   da_data <- idata[!is.na(idata$cid),,drop=FALSE]
-  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
-              offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  
   class(xm$na.action) <- "exclude"
   expect_equal(
     .rcorrect(
@@ -1031,7 +1139,12 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
                       x2 = factor(rep(seq_len(3), 50)),
                       y = round(runif(150)))
   cmod <- glm(y ~ x1 + x2, idata, family = binomial())
-  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid),
+                offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  
   
   r <- stats::residuals(cmod, type = "working")
   pm <- chol2inv(cmod$qr$qr)
@@ -1114,10 +1227,16 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully",
   cmod1 <- lm(y ~ x, simdata_copy)
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
-                offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec,
-                offset = cov_adj(cmod2, by = "obs_id"))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                  offset = cov_adj(cmod1, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec,
+                  offset = cov_adj(cmod2, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1186,10 +1305,16 @@ test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
-                offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
-                offset = cov_adj(cmod2, by = "obs_id"))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                  offset = cov_adj(cmod1, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                  offset = cov_adj(cmod2, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1245,10 +1370,16 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec1,
-                offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
-                offset = cov_adj(cmod2, by = "obs_id"))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec1,
+                  offset = cov_adj(cmod1, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                  offset = cov_adj(cmod2, by = "obs_id")),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1346,10 +1477,16 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap",
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
-                offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
-                offset = cov_adj(cmod2))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
+                  offset = cov_adj(cmod1)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                  offset = cov_adj(cmod2)),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1403,10 +1540,16 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
-                offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
-                offset = cov_adj(cmod2))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                  offset = cov_adj(cmod1)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                  offset = cov_adj(cmod2)),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1458,10 +1601,16 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q",
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
-                offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
-                offset = cov_adj(cmod2))
+  expect_warning(
+    mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
+                  offset = cov_adj(cmod1)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                  offset = cov_adj(cmod2)),
+    "treatment column specified in the StudySpecification"
+  )
 
   # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
@@ -1553,7 +1702,10 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
                         y = rnorm(11), id = seq_len(11))
   cmod <- lm(y ~ x, moddata)
   spec <- rct_spec(a ~ unitid(id), data = moddata)
-  mod <- lmitt(y ~ 1, data = moddata, spec = spec, offset = cov_adj(cmod))
+  expect_warning(
+    mod <- lmitt(y ~ 1, data = moddata, spec = spec, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   class(mod$na.action) <- "exclude"
   cm_ef <- estfun(mod@ctrl_means_model)
   cm_ef[is.na(cm_ef)] <- 0
@@ -1572,7 +1724,10 @@ test_that(".align_and_extend_estfuns converts NA's to 0's", {
                     x = rnorm(30))
   suppressWarnings(spec <- rct_spec(a ~ 1, dat))
   cmod <- lm(y ~ x, dat)
-  xm <- lmitt(y ~ 1, spec, dat, offset = cov_adj(cmod))
+  expect_warning(
+    xm <- lmitt(y ~ 1, spec, dat, offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   
   class(xm$na.action) <- "exclude"
   aligned <- .align_and_extend_estfuns(xm)
@@ -1611,8 +1766,11 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
-                offset = cov_adj(cmod))
+  expect_warning(
+    dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                  offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   expected_out <- factor(
     apply(simdata[, c("uoa1", "uoa2"), drop = FALSE],
@@ -1670,8 +1828,11 @@ test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
 
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
-                offset = cov_adj(cmod))
+  expect_warning(
+    dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                  offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
 
   Q_uoas <- apply(simdata[, c("uoa1", "uoa2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -1701,8 +1862,11 @@ test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by'",
 
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata_copy)
-  dmod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
-                offset = cov_adj(cmod, by = "id"))
+  expect_warning(
+    dmod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                  offset = cov_adj(cmod, by = "id")),
+    "treatment column specified in the StudySpecification"
+  )
 
   Q_uoas <- apply(simdata_copy[, c("uoa1", "uoa2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -1735,10 +1899,16 @@ test_that(".make_uoa_ids with `by` when Q ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   by_overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
   nonoverlap <- as.character(seq(1, 15, 3))
@@ -1774,10 +1944,16 @@ test_that(".make_uoa_ids with `by` when C ID's aren't unique", {
                              a = c(rep(1, 3), rep(0, 2)),
                              y = rnorm(5),
                              by_col = seq(3, 15, 3))
-  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   by_overlap <- sort(as.character(seq(3, 15, 3)))
   nonoverlap <- as.character(setdiff(seq_len(15), seq(3, 15, 3)))
@@ -1814,10 +1990,16 @@ test_that(".make_uoa_ids with `by` when Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, 
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, 
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   by_overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
   nonoverlap <- as.character(seq(1, 15, 3))
@@ -1854,8 +2036,11 @@ test_that(".make_uoa_ids without `by` when Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   expect_error(.make_uoa_ids(mod, vcov_type = "HC0", cluster = "id"),
                "not uniquely specified. Provide a `by` argument")
 })
@@ -1906,8 +2091,11 @@ test_that(".order_samples when the samples fully overlap", {
   simdata_copy$uid <- seq_len(nrow(simdata_copy))
   cmod <- lm(y ~ x, simdata_copy)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
-               offset = cov_adj(cmod, by = "uid"))
+  expect_warning(
+    mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                 offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
 
   out <- .order_samples(mod)
 
@@ -1937,8 +2125,11 @@ test_that(".order_samples when Q is a subset of C", {
   )
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
-               offset = cov_adj(cmod, by = "uid"))
+  expect_warning(
+    mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                 offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
 
   out <- .order_samples(mod)
 
@@ -1968,8 +2159,11 @@ test_that(".order_samples when C is a subset of Q", {
   cmod_ssta <- simdata_copy[1:20,]
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
-               offset = cov_adj(cmod, by = "uid"))
+  expect_warning(
+    mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                 offset = cov_adj(cmod, by = "uid")),
+    "treatment column specified in the StudySpecification"
+  )
 
   out <- .order_samples(mod)
 
@@ -2068,10 +2262,16 @@ test_that(".order_samples with `by` when Q ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
   nonoverlap <- as.character(seq(1, 15, 3))
@@ -2101,10 +2301,16 @@ test_that(".order_samples with `by` when C ID's aren't unique", {
                              a = c(rep(1, 3), rep(0, 2)),
                              y = rnorm(5),
                              by_col = seq(3, 15, 3))
-  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   overlap <- sort(as.character(seq(3, 15, 3)))
   nonoverlap <- as.character(setdiff(seq_len(15), seq(3, 15, 3)))
@@ -2135,10 +2341,16 @@ test_that(".order_samples with `by` when both Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
-  mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-                    offset = cov_adj(cmod, by = "by_col"))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
+  expect_warning(
+    mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                      offset = cov_adj(cmod, by = "by_col")),
+    "treatment column specified in the StudySpecification"
+  )
 
   overlap <- sort(as.character(setdiff(seq_len(15), seq(1, 15, 3))))
   nonoverlap <- as.character(seq(1, 15, 3))
@@ -2169,8 +2381,11 @@ test_that(".order_samples without `by` when Q or C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
-               offset = cov_adj(cmod))
+  expect_warning(
+    mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+                 offset = cov_adj(cmod)),
+    "treatment column specified in the StudySpecification"
+  )
   expect_error(.order_samples(mod),
                "not uniquely specified. Provide a `by` argument")
 })

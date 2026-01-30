@@ -708,7 +708,7 @@ test_that(".make_PreSandwichLayer with transformed columns in formula", {
 test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
   data(simdata)
 
-  cmod <- lm(y ~ x, simdata)
+  cmod <- lm(y ~ x, simdata, subset = z == 0)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
@@ -719,12 +719,17 @@ test_that(".sanitize_C_ids fails with invalid `cluster` argument", {
 test_that(".sanitize_C_ids with full UOA info", {
   data(simdata)
 
-  cmod <- lm(y ~ x, simdata)
+  cmod <- lm(y ~ x, simdata, subset = z == 0)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  ssmod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
+  ssmod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                 offset = cov_adj(cmod))
 
   ids <- .sanitize_C_ids(ssmod$model$`(offset)`)
-  expected_ids <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
+  expected_ids <- unname(apply(
+    simdata[simdata$z == 0, c("uoa1", "uoa2")],
+    1,
+    function(...) paste(..., collapse = "_")
+  ))
   expect_equal(ids, expected_ids)
 })
 
@@ -745,7 +750,8 @@ test_that(".sanitize_C_ids with partial UOA info", {
 
 test_that(".sanitize_C_ids with no UOA info", {
   data(simdata)
-  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10), "uoa1" = NA,  "uoa2" = NA)
+  cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
+                          "uoa1" = NA,  "uoa2" = NA)
 
   cmod <- lm(y ~ x, cmod_data)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
@@ -760,19 +766,28 @@ test_that(".sanitize_C_ids with no UOA info", {
 test_that(".sanitize_C_ids miscellaneous errors", {
   expect_error(.sanitize_C_ids(2), "x must be a `SandwichLayer`")
 
-  n <- 10
-  df <- data.frame("x" = rnorm(n), "a" = rep(c(0, 1), each = 5), "y" = rnorm(n),
-                   "cid" = sample(seq_len(n)))
-  cmod <- lm(y ~ x, df)
+  set.seed(309)
+  df <- data.frame("x" = rnorm(10), "a" = rep(c(0, 1), each = 5),
+                   "y" = rnorm(10),
+                   "cid" = sample(seq_len(10)))
+  cmod <- lm(y ~ x, df, subset = a == 0)
   spec <- rct_spec(a ~ cluster(cid), df)
   sl <- cov_adj(cmod, newdata = df, specification = spec)
   num_C_ids <- .sanitize_C_ids(sl, sorted = TRUE)
-  expect_true(all.equal(num_C_ids$x, seq_len(n), check.attributes = FALSE))
+  expect_true(
+    all.equal(num_C_ids$x,
+              sort(df$cid[df$a == 0]),
+              check.attributes = FALSE)
+  )
 
-  df$cid <- sample(letters[1:n])
-  cmod <- lm(y ~ x, df)
+  df$cid <- sample(letters[1:10])
+  cmod <- lm(y ~ x, df, subset = a == 0)
   spec <- rct_spec(a ~ cluster(cid), df)
   sl <- cov_adj(cmod, newdata = df, specification = spec)
   char_C_ids <- .sanitize_C_ids(sl, sorted = TRUE)
-  expect_true(all.equal(char_C_ids$x, letters[1:n], check.attributes = FALSE))
+  expect_true(
+    all.equal(char_C_ids$x,
+              sort(df$cid[df$a == 0]),
+              check.attributes = FALSE)
+  )
 })
