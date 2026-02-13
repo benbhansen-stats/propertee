@@ -387,9 +387,7 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
       Q_data[, names(by),drop=FALSE],
       1,
       function(r) {
-        if (all(is.na(r))) return(NA_character_) else {
-          paste(r, collapse = "_")
-        }
+        if (all(is.na(r))) return(NA_character_) else paste(r, collapse = "_")
       }
     )
   )

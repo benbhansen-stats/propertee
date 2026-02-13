@@ -50,6 +50,10 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
       # form <- update(form, stats::reformulate(c(".", trt_name), response = "."))
     }
     newdata <- tryCatch(
+      # if cov_adj called in the offset argument of lmitt, this will pull from
+      # the `data` argument of the lmitt call. `form` has the columns used to
+      # fit the model and the columns in `names(by)` or just `by` if `by` is
+      # unnamed
       .get_data_from_model("cov_adj", form),
       error = function(e) {
         warning(paste("Could not find direct adjustment data in the call",
@@ -57,6 +61,7 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
                       "`by`. Using the covariance adjustment data to generate",
                       "the covariance adjustments"), call. = FALSE)
         tryCatch({
+          # this falls back to data the covariance adjustment model is fit to
           data_call <- model$call$data
           if (is.null(data_call)) {
             return(
@@ -124,7 +129,7 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
     )
     if (verbose &
         any(sl@keys$in_Q) &
-        !any(grepl(trt_name, all.vars(stats::formula(model))))) {
+        !any(trt_name == all.vars(stats::formula(model)))) {
       n_trt_lvls <- tryCatch({
         by <- setdiff(colnames(sl@keys), c("in_Q"))
         C_trts <- stats::expand.model.frame(model,
@@ -139,6 +144,9 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
         )[[trt_name]]))
         },
         error = function(e) {
+          # if it fails because it can't find the treatment column, it could be
+          # that it's called something, in which case we still want to raise
+          # concern
           if (grepl(trt_name, e$message)) {
             warning(warningCondition(
               paste("Covariance adjustment model may have been fit to subjects",

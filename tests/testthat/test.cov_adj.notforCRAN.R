@@ -547,6 +547,9 @@ test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
 
 test_that("warn on missing treatment column in covariance adjustment model", {
   data(simdata)
+  # fit the covariance adjustment model to dose (technically, factor(dose)),
+  # then create a new column dose_bin that serves as the treatment column for
+  # the Study Specification
   cmod <- lm(y ~ factor(dose) + x, simdata)
   simdata$dose_bin <- simdata$dose > 100
   spec <- rct_specification(dose_bin ~ unitid(uoa1, uoa2), simdata)
@@ -559,7 +562,8 @@ test_that("warn on missing treatment column in covariance adjustment model", {
     "Covariance adjustment model fit to subjects in treatment and control"
   )
   
-  # no warning when fit to one or zero treatment groups
+  # no warning when there's a new treatment column, but the covariance
+  # adjustment model is fit to only one or zero treatment groups
   cmod <- lm(y ~ factor(dose) + x, simdata, subset = dose <= 100)
   expect_silent(lmitt(y ~ 1, spec, simdata, offset = cov_adj(cmod)))
   

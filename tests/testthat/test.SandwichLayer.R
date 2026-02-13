@@ -725,6 +725,7 @@ test_that(".sanitize_C_ids with full UOA info", {
                  offset = cov_adj(cmod))
 
   ids <- .sanitize_C_ids(ssmod$model$`(offset)`)
+  # NOTE: commit ca4b864 didn't change .sanitize_C_ids
   expected_ids <- unname(apply(
     simdata[simdata$z == 0, c("uoa1", "uoa2")],
     1,
@@ -749,6 +750,7 @@ test_that(".sanitize_C_ids with partial UOA info", {
 })
 
 test_that(".sanitize_C_ids with no UOA info", {
+  # NOTE: commit ca4b864 didn't change .sanitize_C_ids
   data(simdata)
   cmod_data <- data.frame("x" = rnorm(10), "y" = rnorm(10),
                           "uoa1" = NA,  "uoa2" = NA)
