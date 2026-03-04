@@ -441,6 +441,7 @@ cluster_iss <- function(tm,
                         cluster_ids = NULL,
                         ...) {
   if (!inherits(tm, "teeMod")) stop("Must provide a teeMod object")
+  tol <- 1e-11
   dots <- list(...)
   if (is.null(cluster_ids)) {
     if (is.null(dots$cluster)) cluster <- var_names(tm@StudySpecification, "u")
@@ -558,7 +559,6 @@ cluster_iss <- function(tm,
       }
     } else {
       if (tm@absorbed_intercepts) {
-        cg <- sum(wg * Ag[,2]^2)
         # the 1st row of the cluster model matrix is the same as the rest
         cg <- sum(wg) * (1 / sum(wts) + Ag[1,2]^2 / sum(wts * A[,2]^2))
         Mgg <- tcrossprod(sqrt(wg)) / sum(wg)
@@ -575,28 +575,38 @@ cluster_iss <- function(tm,
     }
   } else {
     if (length(tm@moderator) == 0) {
-      # when clusters contain both treated and control units, a sufficient
-      # condition for simple construction of cg and Mgg is a constant ratio of
-      # weighted size of the treatment group to the weighted size of the control
-      # group across blocks
-      rts <- tapply(data.frame(w = wts, t = trts),
-                    cluster_ids,
-                    function(df) {
-                      wga <- rowsum(df[,1], df[,2], na.rm = TRUE)
-                      wga[2,]/wga[1,]
-                    })
-      if (all(rts == mean(rts))) {
-        Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
-        Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) /
-          sum(wg[trtg == 0])
-        Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) /
-          sum(wg[trtg == 1])
-        # under this condition, cg's below are the same whether we use treated
-        # or control units
-        if (tm@absorbed_intercepts) {
-          cg <- sum(wg[trtg == 0]) * (1 / sum(wts) + Ag[trtg == 0,2][1]^2 /
-                                        sum(wts * A[,2]^2))
-        } else {
+      if (tm@absorbed_intercepts) {
+        # if fixed effects have been absorbed and clusters have treated and
+        # control units, a sufficient condition for a valid cg and Mgg is:
+        # sum(wg)     sum(wg * Ag[,2]^2)
+        # -------  =  ------------------
+        # sum(wts)    sum(wts * A[,2]^2)
+        if (abs(sum(wg * Ag[,2]^2) / sum(wts * A[,2]^2) -
+                sum(wg) / sum(wts)) < tol) {
+          Mgg <- tcrossprod(sqrt(wg)) / sum(wg) +
+            tcrossprod(sqrt(wg) * Ag[,2]) / sum(wg * Ag[,2]^2)
+          # using either side of the above equality will work for cg
+          cg <- sum(wg) / sum(wts)
+        }
+      } else {
+        # when clusters contain both treated and control units, a sufficient
+        # condition for simple construction of cg and Mgg is a constant ratio of
+        # weighted size of the treatment group to the weighted size of the
+        # control group across blocks
+        rts <- tapply(data.frame(w = wts, t = trts),
+                      cluster_ids,
+                      function(df) {
+                        wga <- rowsum(df[,1], df[,2], na.rm = TRUE)
+                        wga[2,]/wga[1,]
+                      })
+        if (all(rts == mean(rts))) {
+          Mgg <- matrix(0, nrow = length(trtg), ncol = length(trtg))
+          Mgg[trtg == 0,trtg == 0] <- tcrossprod(sqrt(wg[trtg == 0])) /
+            sum(wg[trtg == 0])
+          Mgg[trtg == 1,trtg == 1] <- tcrossprod(sqrt(wg[trtg == 1])) /
+            sum(wg[trtg == 1])
+          # under this condition, cg's below are the same whether we use treated
+          # or control units
           cg <- sum(wg[trtg == 0]) / sum(wts[trts == 0])
         }
       }
@@ -608,7 +618,6 @@ cluster_iss <- function(tm,
   # numerically, cg may just be close to 1, and we call all.equal within isTRUE
   # per the all.equal documentation.
   if ((!is.null(cg) && isTRUE(all.equal(cg, 1))) | is.null(cg) | is.null(Mgg)) {
-    tol <- 1e-11
     Pgg <- Ag %*% inv %*% t(Ag * wg)
     symm <- isSymmetric(diag(nrow = length(ix)) - Pgg)
     eg <- eigen(diag(nrow = length(ix)) - Pgg, symmetric = symm)

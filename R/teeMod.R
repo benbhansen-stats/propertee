@@ -354,7 +354,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
           ok <- setdiff(cl_ix, nas)
           if (length(ok) > 0) {
             if (inherits(mod, "teeMod")) {
-              iss <- cluster_iss(mod, cluster_unit = cl, cluster_ids = cls)
+              iss <- cluster_iss(mod, cluster_unit = cl, cluster_ids = cls, ...)
             } else {
               I_P_cc <- diag(length(ok)) - tcrossprod(
                 tcrossprod(X[ok,,drop=FALSE], XTWX_inv), XW[ok,,drop=FALSE])
