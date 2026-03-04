@@ -2,6 +2,8 @@
 
 ## **propertee** 1.0.4
 
+CRAN release: 2026-01-23
+
 - Fix routines for CR2/CV2 standard errors and associated degrees of
   freedom that previously errored when the provided `teeMod` had a
   non-empty `na.action`, or the `teeMod` or its `weights` argument had a
