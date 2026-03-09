@@ -137,6 +137,10 @@ estfun.teeMod <- function(x, ...) {
   # make sure the user-facing variance estimation function `vcov_tee()` passes
   # on an `itt_rcorrect` argument that correctly reflects the args provided there
   if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
+  if (is.null(residuals_from <- dots$residuals_from)) residuals_from <- x
+  if (!is.null(residuals_from$na.action)) {
+    class(residuals_from$na.action) <- "exclude"
+  }
 
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
@@ -156,16 +160,44 @@ estfun.teeMod <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    # after setting the na.action to "exclude", `residuals` returns NA's, so
-    # we make sure the entries in the estfun are set to 0 rather than NA
-    resids <- stats::residuals(x, type = "working")
-    return(mat / replace(resids, is.na(resids), 1) *
-             replace(do.call(.rcorrect,
-                             c(list(resids = resids, x = x, model = "itt",
-                                    type = itt_rcorrect, cluster = dots$cls),
-                               dots[setdiff(names(dots), "cls")])),
-                     is.na(resids),
-                     0))
+    # .base_s3_class_estfun() uses working weights and residuals; we replace
+    # those with working weights and residuals from the `residuals_from` arg
+    resids_to_replace <- stats::residuals(x, type = "working")
+    replacement_resids <- stats::residuals(residuals_from, type = "working")
+    if (length(resids_to_replace) != length(replacement_resids)) {
+      stop("Lengths of residuals(x) and residuals(residuals_from) do not match")
+    }
+    if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
+      wts_to_replace <- rep(1, nrow(mat))
+    }
+    if (is.null(replacement_wts <- stats::weights(residuals_from,
+                                                  type = "working"))) {
+      replacement_wts <- rep(1, nrow(mat))
+    }
+    # even though `replacement_resids` may be from the model passed to
+    # `residuals_from`, the `x` argument of `rcorrect` should still be `x`
+    # and the `model` argument should still be `itt` because these inform the
+    # CR1/CR2 corrections, which should be drawn from the original model but
+    # for using the working weights from `residuals_from` in CR2 corrections
+    replacement_resids <- do.call(.rcorrect,
+                                  c(list(resids = replacement_resids, x = x,
+                                         model = "itt", type = itt_rcorrect,
+                                         cluster = dots$cls),
+                                    dots[setdiff(names(dots), "cls")]))
+    # after setting the na.action to "exclude" at the top of the
+    # function, `residuals` and `weights` return NA's, so we make sure the
+    # entries in the estfun are zeros rather than NA's
+    return(
+      mat * 
+        (replace(replacement_resids, is.na(replacement_resids), 0) /
+           replace(resids_to_replace, is.na(resids_to_replace), 1)) *
+        (replace(replacement_wts, is.na(replacement_wts), 0) /
+           replace(wts_to_replace,
+                   is.na(wts_to_replace) |
+                     (!is.na(wts_to_replace) & wts_to_replace == 0),
+                   1))
+    )
+             
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
@@ -335,6 +367,33 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
           "CR2 correction not implemented for robust fits")
         wres <- stats::residuals(mod, type = "working")
         XW <- sweep(efm, 1, wres, FUN = "/")
+        # if there's a residuals_from argument in estfun.teeMod, use its working
+        # weights in corrections
+        if (!is.null(dots$residuals_from)) {
+          if (is.null(wts_to_replace <- stats::weights(mod,
+                                                       type = "working"))) {
+            wts_to_replace <- rep(1, nrow(XW))
+          }
+          if (is.null(replacement_wts <- stats::weights(dots$residuals_from,
+                                                        type = "working"))) {
+            replacement_wts <- rep(1, nrow(XW))
+          }
+          XW <- sweep(
+            sweep(
+              XW,
+              1,
+              replace(wts_to_replace,
+                      is.na(wts_to_replace) |
+                        (!is.na(wts_to_replace) & wts_to_replace == 0)),
+              FUN = "/"
+            ),
+            1,
+            replace(replacement_wts,
+                    is.na(replacement_wts) |
+                      (!is.na(replacement_wts) & replacement_wts == 0)),
+            FUN = "*"
+          )
+        }
         XW[is.na(XW)] <- 0
         X <- stats::model.matrix(
           stats::delete.response(stats::terms(mod)),
@@ -414,6 +473,10 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (is.null(cov_adj_rcorrect <- dots$cov_adj_rcorrect)) {
     cov_adj_rcorrect <- "HC0"
   }
+  if (is.null(residuals_from <- dots$residuals_from)) residuals_from <- x
+  if (!is.null(residuals_from$na.action)) {
+    class(residuals_from$na.action) <- "exclude"
+  }
   
   uoa_cols <- var_names(x@StudySpecification, "u")
   cluster_cols <- if (is.null(dots$cluster_cols)) {
@@ -449,20 +512,38 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
             0)
 
   # use jackknife first-stage coefficient estimates if Q and C overlap
-  psi_r <- stats::residuals(x, type = "working")
+  psi_r_to_replace <- stats::residuals(x, type = "working")
   if (!is.null(dots$loco_residuals) & sum(sl@keys$in_Q) > 0) {
-    new_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
+    # .compute_loo_resids uses residuals from `residuals_from` arg
+    replacement_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
   } else {
-    new_psi_r <- psi_r
+    replacement_psi_r <- stats::residuals(residuals_from, type = "working")
   }
-
-  psi <- .base_S3class_estfun(x) / replace(psi_r, is.na(psi_r), 1) *
-    replace(do.call(.rcorrect,
-                    c(list(resids = new_psi_r, x = x, model = "itt",
-                           type = itt_rcorrect, by = by),
-                      dots)),
-            is.na(new_psi_r),
-            0)
+  if (length(replacement_psi_r) != length(psi_r_to_replace)) {
+    stop("Lengths of residuals(x) and residuals(residuals_from) do not match")
+  }
+  if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
+    wts_to_replace <- rep(1, length(psi_r_to_replace))
+  }
+  if (is.null(replacement_wts <- stats::weights(residuals_from,
+                                                type = "working"))) {
+    replacement_wts <- rep(1, length(replacement_psi_r))
+  }
+  # see in-line comments of estfun.teeMod() for verification of the .rcorrect
+  # args
+  replacement_psi_r <- do.call(.rcorrect,
+                               c(list(resids = replacement_psi_r, x = x,
+                                      model = "itt", type = itt_rcorrect,
+                                      by = by),
+                                 dots))
+  psi <- .base_S3class_estfun(x) *
+    (replace(replacement_psi_r, is.na(replacement_psi_r), 0) /
+       replace(psi_r_to_replace, is.na(psi_r_to_replace), 1)) *
+    (replace(replacement_wts, is.na(replacement_wts), 0) /
+       replace(wts_to_replace,
+               is.na(wts_to_replace) |
+                 (!is.na(wts_to_replace) & wts_to_replace == 0),
+               1))
 
   Q_order <- c(as.numeric(names(id_order$Q_not_C)),
                as.numeric(names(id_order$Q_in_C)))
@@ -605,9 +686,14 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   all_preds[Q_cls_in_C] <- loo_preds
   
   ## make residuals (subtract original offset bc it's added in fitted values)
-  y <- stats::model.response(stats::model.frame(x, na.action = na.pass))
+  if (is.null(residuals_from <- list(...)$residuals_from)) residuals_from <- x
+  if (!is.null(residuals_from$na.action)) {
+    class(residuals_from$na.action) <- "exclude"
+  }
+  resids <- stats::residuals(residuals_from, type = "response")
   os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
-  return(y - stats::fitted(x) + os - all_preds)
+  
+  return(resids + os - all_preds)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
