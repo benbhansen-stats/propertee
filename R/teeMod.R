@@ -97,7 +97,9 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   fit the covariance adjustment model to units of assignment in the
 ##'   \code{teeMod} model's \code{StudySpecification} slot; units of observation
 ##'   within units of assignment that do not match are additional units that add
-##'   to the row count.\cr\cr The\code{by} argument in \code{cov_adj()} can
+##'   to the row count.\cr\cr The working residuals (and, if applicable, working
+##'   weights) from \code{residuals_from} will be used in the output matrix in
+##'   place of those from \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
 ##'   provide a column or a pair of columns (a named vector where the name
 ##'   specifies a column in the direct adjustment sample and the value a column
 ##'   in the covariance adjustment sample) that uniquely specifies units of
@@ -115,6 +117,7 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   the variance-covariance of the parameter estimates in \code{x}.
 ##'
 ##' @param x a fitted \code{teeMod} model
+##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ... arguments passed to methods, most importantly those that define
 ##'   the bias corrections for the residuals of \code{x} and, if applicable, a
 ##'   \code{fitted_covariance_model} stored in its offset
@@ -124,7 +127,7 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   means of the outcome (and \code{offset}, if provided) in the control condition.
 ##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
-estfun.teeMod <- function(x, ...) {
+estfun.teeMod <- function(x, residuals_from = x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
   dots <- list(...)
@@ -137,7 +140,6 @@ estfun.teeMod <- function(x, ...) {
   # make sure the user-facing variance estimation function `vcov_tee()` passes
   # on an `itt_rcorrect` argument that correctly reflects the args provided there
   if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
-  if (is.null(residuals_from <- dots$residuals_from)) residuals_from <- x
   if (!is.null(residuals_from$na.action)) {
     class(residuals_from$na.action) <- "exclude"
   }
@@ -182,7 +184,8 @@ estfun.teeMod <- function(x, ...) {
     replacement_resids <- do.call(.rcorrect,
                                   c(list(resids = replacement_resids, x = x,
                                          model = "itt", type = itt_rcorrect,
-                                         cluster = dots$cls),
+                                         cluster = dots$cls,
+                                         residuals_from = residuals_from),
                                     dots[setdiff(names(dots), "cls")]))
     # after setting the na.action to "exclude" at the top of the
     # function, `residuals` and `weights` return NA's, so we make sure the
@@ -201,7 +204,7 @@ estfun.teeMod <- function(x, ...) {
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  estmats <- .align_and_extend_estfuns(x, cm_ef, ...)
+  estmats <- .align_and_extend_estfuns(x, residuals_from, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x, ...)
 
@@ -384,13 +387,15 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
               1,
               replace(wts_to_replace,
                       is.na(wts_to_replace) |
-                        (!is.na(wts_to_replace) & wts_to_replace == 0)),
+                        (!is.na(wts_to_replace) & wts_to_replace == 0),
+                      1),
               FUN = "/"
             ),
             1,
             replace(replacement_wts,
                     is.na(replacement_wts) |
-                      (!is.na(replacement_wts) & replacement_wts == 0)),
+                      (!is.na(replacement_wts) & replacement_wts == 0),
+                    1),
             FUN = "*"
           )
         }
@@ -441,8 +446,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   with zeros to account for units of observation that appear in one
 ##'   model-fitting sample but not the other; finally it orders the matrices so
 ##'   units of observation (or if unit of observation-level ordering is
-##'   impossible, units of assignment) are aligned.
+##'   impossible, units of assignment) are aligned.\cr\cr As in
+##'   \code{estfun.teeMod()}, the working residuals (and, if applicable,
+##'   weights) from \code{residuals_from} will be used in the output matrix in
+##'   place of those from \code{x}.
 ##' @param x a fitted \code{teeMod} model
+##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ctrl_means_ef_mat optional, a matrix of estimating equations corresponding
 ##'   to the estimates of the marginal (and possibly conditional) means of the outcome
 ##'   and \code{offset} in the control condition. These are aligned and extended
@@ -461,7 +470,11 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   estimating equations for the direct adjustment model, and the other being
 ##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
-.align_and_extend_estfuns <- function(x, ctrl_means_ef_mat = NULL, by = NULL, ...) {
+.align_and_extend_estfuns <- function(x,
+                                      residuals_from = x,
+                                      ctrl_means_ef_mat = NULL,
+                                      by = NULL,
+                                      ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
@@ -473,7 +486,6 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (is.null(cov_adj_rcorrect <- dots$cov_adj_rcorrect)) {
     cov_adj_rcorrect <- "HC0"
   }
-  if (is.null(residuals_from <- dots$residuals_from)) residuals_from <- x
   if (!is.null(residuals_from$na.action)) {
     class(residuals_from$na.action) <- "exclude"
   }
@@ -506,7 +518,8 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   phi <- replace(phi, is.na(phi), 0) / replace(phi_r, is.na(phi_r), 1) *
     replace(do.call(.rcorrect,
                     c(list(resids = phi_r, x = x, model = "cov_adj",
-                           type = cov_adj_rcorrect, by = by),
+                           type = cov_adj_rcorrect, by = by,
+                           residuals_from = residuals_from),
                       dots)),
             is.na(phi_r),
             0)
@@ -534,7 +547,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   replacement_psi_r <- do.call(.rcorrect,
                                c(list(resids = replacement_psi_r, x = x,
                                       model = "itt", type = itt_rcorrect,
-                                      by = by),
+                                      residuals_from = residuals_from, by = by),
                                  dots))
   psi <- .base_S3class_estfun(x) *
     (replace(replacement_psi_r, is.na(replacement_psi_r), 0) /

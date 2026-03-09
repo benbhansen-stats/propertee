@@ -588,6 +588,17 @@ test_that("estfun zeros out NA's from ctrl means regression", {
   expect_equal(ef[11,3], 0)
 })
 
+test_that("estfun with invalid residuals_from", {
+  data(simdata)
+  not_all_simdata <- simdata[seq_len(7),]
+  resids_from <- lm(y ~ x, not_all_simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  expect_error(
+    estfun(tm, type_psi = "HC0", residuals = resids_from),
+    "Lengths"
+  )
+})
+
 if (requireNamespace("robustbase", quietly = TRUE)) {
   test_that("estfun.teeMod returns correct dimensions for rectangular A11_inv", {
     data(simdata)
@@ -1558,7 +1569,7 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
   cm_ef <- estfun(mod@ctrl_means_model)
   cm_ef[is.na(cm_ef)] <- 0
   aligned1 <- .align_and_extend_estfuns(mod)
-  aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
+  aligned2 <- .align_and_extend_estfuns(mod, ctrl_means_ef_mat = cm_ef)
   expect_equal(length(aligned1), 2)
   expect_equal(length(aligned2), 2)
   expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4],

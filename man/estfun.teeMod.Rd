@@ -4,10 +4,12 @@
 \alias{estfun.teeMod}
 \title{Extract empirical estimating equations from a \code{teeMod} model fit}
 \usage{
-\method{estfun}{teeMod}(x, ...)
+\method{estfun}{teeMod}(x, residuals_from = x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
+
+\item{residuals_from}{optional, a fitted model object. Defaults to \code{x}.}
 
 \item{...}{arguments passed to methods, most importantly those that define
 the bias corrections for the residuals of \code{x} and, if applicable, a
@@ -36,7 +38,9 @@ models. Uniqueness is determined by matching units of assignment used to
 fit the covariance adjustment model to units of assignment in the
 \code{teeMod} model's \code{StudySpecification} slot; units of observation
 within units of assignment that do not match are additional units that add
-to the row count.\cr\cr The\code{by} argument in \code{cov_adj()} can
+to the row count.\cr\cr The working residuals (and, if applicable, working
+weights) from \code{residuals_from} will be used in the output matrix in
+place of those from \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
 provide a column or a pair of columns (a named vector where the name
 specifies a column in the direct adjustment sample and the value a column
 in the covariance adjustment sample) that uniquely specifies units of
