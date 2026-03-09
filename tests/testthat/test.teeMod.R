@@ -599,6 +599,155 @@ test_that("estfun with invalid residuals_from", {
   )
 })
 
+test_that("estfun (no covariance adjustment) with residuals_from", {
+  data(simdata)
+  resids_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  
+  ## no missing
+  ef <- estfun(tm, type_psi = "HC0", residuals = resids_from)[,1:2]
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(tm) * stats::residuals(resids_from, type = "working"),
+    check.attributes = FALSE
+  ))
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  resids_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness)
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(resids_from$na.action) <- "exclude"
+  
+  ef <- estfun(tm, type_psi = "HC0", residuals = resids_from)[,1:2]
+  resids <- stats::residuals(resids_from, type = "working")
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(stats::formula(tm),
+                        stats::model.frame(tm, na.action = na.pass)) *
+      replace(resids, is.na(resids), 0),
+    check.attributes = FALSE
+  ))
+  
+  ## resids_from is a glm
+  simdata$ybinom <- rbinom(nrow(simdata), 1, 0.5)
+  resids_from <- glm(ybinom ~ 1, simdata, family = "binomial")
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  
+  ef <- estfun(tm, type_psi = "HC0", residuals = resids_from)[,1:2]
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(tm) *
+      stats::residuals(resids_from, type = "working") *
+      stats::weights(resids_from, type = "working"),
+    check.attributes = FALSE
+  ))
+})
+
+test_that(paste(".align_and_extend_estfuns (estfun with covariance adjustment)",
+                "with residuals_from"), {
+  ## no missing
+  camod <- lm(y ~ x, simdata)
+  resids_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata, offset = cov_adj(camod))
+  
+  efs <- .align_and_extend_estfuns(tm,
+                                   residuals = resids_from,
+                                   itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0")
+  expect_true(all.equal(
+    efs$psi,
+    stats::model.matrix(tm) * stats::residuals(resids_from, type = "working"),
+    check.attributes = FALSE
+  ))
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$uid <- seq_len(nrow(simdata))
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  camod <- lm(y ~ x, data_with_missingness)
+  resids_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness,
+              offset = cov_adj(camod, by = "uid"))
+  class(tm$na.action) <- "exclude"
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(resids_from$na.action) <- "exclude"
+  
+  efs <- .align_and_extend_estfuns(tm,
+                                   residuals = resids_from,
+                                   itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0")
+  resids <- stats::residuals(resids_from, type = "working")
+  X <- stats::model.matrix(stats::formula(tm),
+                           stats::model.frame(tm, na.action = na.pass))
+  expect_true(all.equal(
+    efs$psi,
+    rbind(matrix(0, nrow = length(tm$na.action), ncol = ncol(X),
+                 dimnames = list(NULL, colnames(X))),
+          X[sort(as.character(setdiff(seq_len(nrow(simdata)),
+                                      tm$na.action))),]) *
+      c(rep(0, length(tm$na.action)),
+        replace(resids, is.na(resids), 0)[
+          as.numeric(sort(as.character(setdiff(seq_len(nrow(simdata)),
+                                               tm$na.action))))
+          ]),
+    check.attributes = FALSE
+  ))
+})
+
+test_that(".compute_loo_resids with residuals_from", {
+  ## no missing
+  camod <- lm(y ~ x, simdata)
+  resids_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata, offset = cov_adj(camod))
+  resids <- .compute_loo_resids(tm,
+                                c("uoa1", "uoa2"),
+                                residuals_from = resids_from)
+  
+  sbst <- paste(simdata$uoa1, simdata$uoa2, sep = "_") != "1_1"
+  loo_mod <- lm(y ~ x, simdata, subset = sbst)
+  expect_true(
+    all.equal(
+      resids[!sbst],
+      residuals(resids_from, type = "working")[!sbst] +
+        stats::model.offset(stats::model.frame(tm, na.action = na.pass))[!sbst] -
+        predict(loo_mod, simdata[!sbst,]),
+      check.attributes = FALSE
+    )
+  )
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$uid <- seq_len(nrow(simdata))
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  camod <- lm(y ~ x, data_with_missingness)
+  resids_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness,
+              offset = cov_adj(camod, by = "uid"))
+  class(tm$na.action) <- "exclude"
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(resids_from$na.action) <- "exclude"
+
+  resids <- .compute_loo_resids(tm,
+                                c("uoa1", "uoa2"),
+                                residuals_from = resids_from)
+  sbst <- paste(simdata$uoa1, simdata$uoa2, sep = "_") != "1_1"
+  loo_mod <- lm(y ~ x, data_with_missingness, subset = sbst)
+  expect_true(
+    all.equal(
+      resids[!sbst],
+      residuals(resids_from, type = "working")[!sbst] +
+        stats::model.offset(stats::model.frame(tm, na.action = na.pass))[!sbst] -
+        predict(loo_mod, simdata[!sbst,]),
+      check.attributes = FALSE
+    )
+  )
+})
+
 if (requireNamespace("robustbase", quietly = TRUE)) {
   test_that("estfun.teeMod returns correct dimensions for rectangular A11_inv", {
     data(simdata)

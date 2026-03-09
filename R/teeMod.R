@@ -703,7 +703,7 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   if (!is.null(residuals_from$na.action)) {
     class(residuals_from$na.action) <- "exclude"
   }
-  resids <- stats::residuals(residuals_from, type = "response")
+  resids <- stats::residuals(residuals_from, type = "working")
   os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
   
   return(resids + os - all_preds)
