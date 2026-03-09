@@ -513,7 +513,7 @@ cluster_iss <- function(tm,
                            contrasts.arg = tm$contrasts)[,piv,drop=FALSE]
   Ag <- A[ix,,drop=FALSE]
   inv <- chol2inv(tm$qr$qr[piv,piv])
-  if (is.null(wts <- weights(tm))) wts <- rep(1, nrow(A))
+  if (is.null(wts <- weights(tm, type = "working"))) wts <- rep(1, nrow(A))
   wg <- wts[ix]
 
   cg <- NULL
