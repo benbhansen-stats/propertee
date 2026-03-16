@@ -40,7 +40,9 @@ fit the covariance adjustment model to units of assignment in the
 within units of assignment that do not match are additional units that add
 to the row count.\cr\cr The working residuals (and, if applicable, working
 weights) from \code{residuals_from} will be used in the output matrix in
-place of those from \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
+place of those from \code{x}. In other words, the contributions to the
+the empirical estimating equations remain the same but are evaluated at
+parameter estimates from \code{residuals_from} rather than \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
 provide a column or a pair of columns (a named vector where the name
 specifies a column in the direct adjustment sample and the value a column
 in the covariance adjustment sample) that uniquely specifies units of
