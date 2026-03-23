@@ -98,10 +98,10 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   \code{teeMod} model's \code{StudySpecification} slot; units of observation
 ##'   within units of assignment that do not match are additional units that add
 ##'   to the row count.\cr\cr The working residuals (and, if applicable, working
-##'   weights) from \code{residuals_from} will be used in the output matrix in
+##'   weights) from \code{values_from} will be used in the output matrix in
 ##'   place of those from \code{x}. In other words, the contributions to the
 ##'   the empirical estimating equations remain the same but are evaluated at
-##'   parameter estimates from \code{residuals_from} rather than \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
+##'   parameter estimates from \code{values_from} rather than \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
 ##'   provide a column or a pair of columns (a named vector where the name
 ##'   specifies a column in the direct adjustment sample and the value a column
 ##'   in the covariance adjustment sample) that uniquely specifies units of
@@ -119,7 +119,7 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   the variance-covariance of the parameter estimates in \code{x}.
 ##'
 ##' @param x a fitted \code{teeMod} model
-##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ... arguments passed to methods, most importantly those that define
 ##'   the bias corrections for the residuals of \code{x} and, if applicable, a
 ##'   \code{fitted_covariance_model} stored in its offset
@@ -129,7 +129,7 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   means of the outcome (and \code{offset}, if provided) in the control condition.
 ##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
-estfun.teeMod <- function(x, residuals_from = x, ...) {
+estfun.teeMod <- function(x, values_from = x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
   dots <- list(...)
@@ -142,8 +142,8 @@ estfun.teeMod <- function(x, residuals_from = x, ...) {
   # make sure the user-facing variance estimation function `vcov_tee()` passes
   # on an `itt_rcorrect` argument that correctly reflects the args provided there
   if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
-  if (!is.null(residuals_from$na.action)) {
-    class(residuals_from$na.action) <- "exclude"
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
   }
 
   # MB and DB estfun without covariance adjustment; below, this will be replaced
@@ -165,29 +165,29 @@ estfun.teeMod <- function(x, residuals_from = x, ...) {
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
     # .base_s3_class_estfun() uses working weights and residuals; we replace
-    # those with working weights and residuals from the `residuals_from` arg
+    # those with working weights and residuals from the `values_from` arg
     resids_to_replace <- stats::residuals(x, type = "working")
-    replacement_resids <- stats::residuals(residuals_from, type = "working")
+    replacement_resids <- stats::residuals(values_from, type = "working")
     if (length(resids_to_replace) != length(replacement_resids)) {
-      stop("Lengths of residuals(x) and residuals(residuals_from) do not match")
+      stop("Lengths of residuals(x) and residuals(values_from) do not match")
     }
     if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
       wts_to_replace <- rep(1, nrow(mat))
     }
-    if (is.null(replacement_wts <- stats::weights(residuals_from,
+    if (is.null(replacement_wts <- stats::weights(values_from,
                                                   type = "working"))) {
       replacement_wts <- rep(1, nrow(mat))
     }
     # even though `replacement_resids` may be from the model passed to
-    # `residuals_from`, the `x` argument of `rcorrect` should still be `x`
+    # `values_from`, the `x` argument of `rcorrect` should still be `x`
     # and the `model` argument should still be `itt` because these inform the
     # CR1/CR2 corrections, which should be drawn from the original model but
-    # for using the working weights from `residuals_from` in CR2 corrections
+    # for using the working weights from `values_from` in CR2 corrections
     replacement_resids <- do.call(.rcorrect,
                                   c(list(resids = replacement_resids, x = x,
                                          model = "itt", type = itt_rcorrect,
                                          cluster = dots$cls,
-                                         residuals_from = residuals_from),
+                                         values_from = values_from),
                                     dots[setdiff(names(dots), "cls")]))
     # after setting the na.action to "exclude" at the top of the
     # function, `residuals` and `weights` return NA's, so we make sure the
@@ -206,7 +206,7 @@ estfun.teeMod <- function(x, residuals_from = x, ...) {
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  estmats <- .align_and_extend_estfuns(x, residuals_from, cm_ef, ...)
+  estmats <- .align_and_extend_estfuns(x, values_from, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x, ...)
 
@@ -231,12 +231,12 @@ estfun.teeMod <- function(x, residuals_from = x, ...) {
 ##' @details This function is a thin wrapper around
 ##'   \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{teeMod} model
-##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
-bread.teeMod <- function(x, residuals_from = x, ...)
-  .get_tilde_a22_inverse(x, residuals_from, ...)
+bread.teeMod <- function(x, values_from = x, ...)
+  .get_tilde_a22_inverse(x, values_from, ...)
 
 ##' @title (Internal) Bias correct residuals contributing to standard errors of
 ##'   a \code{teeMod}
@@ -374,14 +374,14 @@ bread.teeMod <- function(x, residuals_from = x, ...)
           "CR2 correction not implemented for robust fits")
         wres <- stats::residuals(mod, type = "working")
         XW <- sweep(efm, 1, wres, FUN = "/")
-        # if there's a residuals_from argument in estfun.teeMod, use its working
+        # if there's a values_from argument in estfun.teeMod, use its working
         # weights in corrections
-        if (!is.null(dots$residuals_from)) {
+        if (!is.null(dots$values_from)) {
           if (is.null(wts_to_replace <- stats::weights(mod,
                                                        type = "working"))) {
             wts_to_replace <- rep(1, nrow(XW))
           }
-          if (is.null(replacement_wts <- stats::weights(dots$residuals_from,
+          if (is.null(replacement_wts <- stats::weights(dots$values_from,
                                                         type = "working"))) {
             replacement_wts <- rep(1, nrow(XW))
           }
@@ -452,10 +452,10 @@ bread.teeMod <- function(x, residuals_from = x, ...)
 ##'   units of observation (or if unit of observation-level ordering is
 ##'   impossible, units of assignment) are aligned.\cr\cr As in
 ##'   \code{estfun.teeMod()}, the working residuals (and, if applicable,
-##'   weights) from \code{residuals_from} will be used in the output matrix in
+##'   weights) from \code{values_from} will be used in the output matrix in
 ##'   place of those from \code{x}.
 ##' @param x a fitted \code{teeMod} model
-##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ctrl_means_ef_mat optional, a matrix of estimating equations corresponding
 ##'   to the estimates of the marginal (and possibly conditional) means of the outcome
 ##'   and \code{offset} in the control condition. These are aligned and extended
@@ -475,7 +475,7 @@ bread.teeMod <- function(x, residuals_from = x, ...)
 ##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
 .align_and_extend_estfuns <- function(x,
-                                      residuals_from = x,
+                                      values_from = x,
                                       ctrl_means_ef_mat = NULL,
                                       by = NULL,
                                       ...) {
@@ -490,8 +490,8 @@ bread.teeMod <- function(x, residuals_from = x, ...)
   if (is.null(cov_adj_rcorrect <- dots$cov_adj_rcorrect)) {
     cov_adj_rcorrect <- "HC0"
   }
-  if (!is.null(residuals_from$na.action)) {
-    class(residuals_from$na.action) <- "exclude"
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
   }
   
   uoa_cols <- var_names(x@StudySpecification, "u")
@@ -523,7 +523,7 @@ bread.teeMod <- function(x, residuals_from = x, ...)
     replace(do.call(.rcorrect,
                     c(list(resids = phi_r, x = x, model = "cov_adj",
                            type = cov_adj_rcorrect, by = by,
-                           residuals_from = residuals_from),
+                           values_from = values_from),
                       dots)),
             is.na(phi_r),
             0)
@@ -531,18 +531,18 @@ bread.teeMod <- function(x, residuals_from = x, ...)
   # use jackknife first-stage coefficient estimates if Q and C overlap
   psi_r_to_replace <- stats::residuals(x, type = "working")
   if (!is.null(dots$loco_residuals) & sum(sl@keys$in_Q) > 0) {
-    # .compute_loo_resids uses residuals from `residuals_from` arg
+    # .compute_loo_resids uses residuals from `values_from` arg
     replacement_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
   } else {
-    replacement_psi_r <- stats::residuals(residuals_from, type = "working")
+    replacement_psi_r <- stats::residuals(values_from, type = "working")
   }
   if (length(replacement_psi_r) != length(psi_r_to_replace)) {
-    stop("Lengths of residuals(x) and residuals(residuals_from) do not match")
+    stop("Lengths of residuals(x) and residuals(values_from) do not match")
   }
   if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
     wts_to_replace <- rep(1, length(psi_r_to_replace))
   }
-  if (is.null(replacement_wts <- stats::weights(residuals_from,
+  if (is.null(replacement_wts <- stats::weights(values_from,
                                                 type = "working"))) {
     replacement_wts <- rep(1, length(replacement_psi_r))
   }
@@ -551,7 +551,7 @@ bread.teeMod <- function(x, residuals_from = x, ...)
   replacement_psi_r <- do.call(.rcorrect,
                                c(list(resids = replacement_psi_r, x = x,
                                       model = "itt", type = itt_rcorrect,
-                                      residuals_from = residuals_from, by = by),
+                                      values_from = values_from, by = by),
                                  dots))
   psi <- .base_S3class_estfun(x) *
     (replace(replacement_psi_r, is.na(replacement_psi_r), 0) /
@@ -703,11 +703,11 @@ bread.teeMod <- function(x, residuals_from = x, ...)
   all_preds[Q_cls_in_C] <- loo_preds
   
   ## make residuals (subtract original offset bc it's added in fitted values)
-  if (is.null(residuals_from <- list(...)$residuals_from)) residuals_from <- x
-  if (!is.null(residuals_from$na.action)) {
-    class(residuals_from$na.action) <- "exclude"
+  if (is.null(values_from <- list(...)$values_from)) values_from <- x
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
   }
-  resids <- stats::residuals(residuals_from, type = "working")
+  resids <- stats::residuals(values_from, type = "working")
   os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
   
   return(resids + os - all_preds)

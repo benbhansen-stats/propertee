@@ -58,17 +58,17 @@ test_that("vcov_tee correctly sets and passes on args", {
   expect_equal(attr(vmat8, "type"), "HC0")
   expect_true(is.null(attr(vmat8, "cov_adj_rcorrect")))
 
-  resids_from <- lm(y ~ 1, simdata)
+  values_from <- lm(y ~ 1, simdata)
   imod <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
   ix <- seq_len(imod$rank)
-  vmat9 <- vcov_tee(imod, residuals_from = resids_from, cadjust = FALSE)[ix, ix]
+  vmat9 <- vcov_tee(imod, values_from = values_from, cadjust = FALSE)[ix, ix]
   br <- bread(imod)[ix, ix]
   expect_true(all.equal(
     vmat9,
     br %*% crossprod(
-      rowsum(model.matrix(imod) * residuals(resids_from),
+      rowsum(model.matrix(imod) * residuals(values_from),
              paste(simdata$uoa1, simdata$uoa2, sep = "_"))
-    ) %*% (t(br) / length(residuals(resids_from))^2),
+    ) %*% (t(br) / length(residuals(values_from))^2),
     check.attributes = FALSE
   ))
 })
