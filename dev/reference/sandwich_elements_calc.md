@@ -7,13 +7,13 @@ returned by
 ## Usage
 
 ``` r
-.get_a22_inverse(x, ...)
+.get_a22_inverse(x, values_from = x, ...)
 
 .get_a11_inverse(x)
 
 .get_a21(x, ...)
 
-.get_tilde_a22_inverse(x, ...)
+.get_tilde_a22_inverse(x, values_from = x, ...)
 
 .get_tilde_a21(x)
 ```
@@ -23,6 +23,10 @@ returned by
 - x:
 
   a fitted `teeMod` model
+
+- values_from:
+
+  optional, a fitted model object. Defaults to `x`.
 
 - ...:
 

@@ -9,7 +9,7 @@ estimating equations.
 
 ``` r
 # S3 method for class 'teeMod'
-estfun(x, ...)
+estfun(x, values_from = x, ...)
 ```
 
 ## Arguments
@@ -17,6 +17,10 @@ estfun(x, ...)
 - x:
 
   a fitted `teeMod` model
+
+- values_from:
+
+  optional, a fitted model object. Defaults to `x`.
 
 - ...:
 
@@ -49,7 +53,13 @@ assignment in the `teeMod` model's `StudySpecification` slot; units of
 observation within units of assignment that do not match are additional
 units that add to the row count.  
   
-The`by` argument in
+The working residuals (and, if applicable, working weights) from
+`values_from` will be used in the output matrix in place of those from
+`x`. In other words, the contributions to the the empirical estimating
+equations remain the same but are evaluated at parameter estimates from
+`values_from` rather than `x`.  
+  
+The `by` argument in
 [`cov_adj()`](https://benbhansen-stats.github.io/propertee/dev/reference/cov_adj.md)
 can provide a column or a pair of columns (a named vector where the name
 specifies a column in the direct adjustment sample and the value a
