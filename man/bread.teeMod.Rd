@@ -4,10 +4,12 @@
 \alias{bread.teeMod}
 \title{Extract bread matrix from a \code{teeMod} model fit}
 \usage{
-\method{bread}{teeMod}(x, ...)
+\method{bread}{teeMod}(x, values_from = x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
+
+\item{values_from}{optional, a fitted model object. Defaults to \code{x}.}
 
 \item{...}{arguments passed to methods}
 }

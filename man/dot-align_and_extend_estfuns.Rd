@@ -5,10 +5,18 @@
 \title{(Internal) Align the dimensions and rows of direct adjustment and
 covariance adjustment model estimating equations matrices}
 \usage{
-.align_and_extend_estfuns(x, ctrl_means_ef_mat = NULL, by = NULL, ...)
+.align_and_extend_estfuns(
+  x,
+  values_from = x,
+  ctrl_means_ef_mat = NULL,
+  by = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
+
+\item{values_from}{optional, a fitted model object. Defaults to \code{x}.}
 
 \item{ctrl_means_ef_mat}{optional, a matrix of estimating equations corresponding
 to the estimates of the marginal (and possibly conditional) means of the outcome
@@ -43,6 +51,9 @@ adjustment and covariance adjustment models; then, it pads the matrices
 with zeros to account for units of observation that appear in one
 model-fitting sample but not the other; finally it orders the matrices so
 units of observation (or if unit of observation-level ordering is
-impossible, units of assignment) are aligned.
+impossible, units of assignment) are aligned.\cr\cr As in
+\code{estfun.teeMod()}, the working residuals (and, if applicable,
+weights) from \code{values_from} will be used in the output matrix in
+place of those from \code{x}.
 }
 \keyword{internal}

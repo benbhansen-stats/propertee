@@ -842,20 +842,28 @@ cluster_iss <- function(tm,
 #'   by \code{vcov_tee()} whether one has fit a prior covariance adjustment
 #'   model or not.
 #' @param x a fitted \code{teeMod} object
+#' @param values_from optional, a fitted model object. Defaults to \code{x}.
 #' @param ... arguments passed to \code{bread} method
 #' @return \code{.get_a22_inverse()}/\code{.get_tilde_a22_inverse()}: A
 #'   \eqn{2\times 2} matrix corresponding to an intercept and the treatment
 #'   variable in the direct adjustment model
 #' @keywords internal
 #' @rdname sandwich_elements_calc
-.get_a22_inverse <- function(x, ...) {
+.get_a22_inverse <- function(x, values_from = x, ...) {
   if (!inherits(x, "teeMod")) {
     stop("x must be a teeMod model")
   }
   mc <- match.call()
   vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
   
-  teeMod_bread <- utils::getS3method("bread", "lm")(x)
+  if (x@.S3Class == "glm") {
+    suppressWarnings(
+      x <- update(values_from,
+                  mustart = predict(values_from, type = "response"),
+                  control = stats::glm.control(maxit = 1))
+    )
+  }
+  teeMod_bread <- utils::getS3method("bread", x@.S3Class)(x)
   if (vcov_type == "DB") {
     return(teeMod_bread)
   }
@@ -1114,8 +1122,8 @@ cluster_iss <- function(tm,
 
 ##' @keywords internal
 ##' @rdname sandwich_elements_calc
-.get_tilde_a22_inverse <- function(x, ...) {
-  out <- .get_a22_inverse(x, ...)
+.get_tilde_a22_inverse <- function(x, values_from = x, ...) {
+  out <- .get_a22_inverse(x, values_from, ...)
 
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
     return(out)
