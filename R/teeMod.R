@@ -231,10 +231,12 @@ estfun.teeMod <- function(x, residuals_from = x, ...) {
 ##' @details This function is a thin wrapper around
 ##'   \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{teeMod} model
+##' @param residuals_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
-bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
+bread.teeMod <- function(x, residuals_from = x, ...)
+  .get_tilde_a22_inverse(x, residuals_from, ...)
 
 ##' @title (Internal) Bias correct residuals contributing to standard errors of
 ##'   a \code{teeMod}

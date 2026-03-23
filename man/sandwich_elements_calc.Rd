@@ -9,18 +9,20 @@
 \title{(Internal) Estimate components of the sandwich covariance matrix
 returned by \code{vcov_tee()}}
 \usage{
-.get_a22_inverse(x, ...)
+.get_a22_inverse(x, residuals_from = x, ...)
 
 .get_a11_inverse(x)
 
 .get_a21(x, ...)
 
-.get_tilde_a22_inverse(x, ...)
+.get_tilde_a22_inverse(x, residuals_from = x, ...)
 
 .get_tilde_a21(x)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
+
+\item{residuals_from}{optional, a fitted model object. Defaults to \code{x}.}
 
 \item{...}{arguments passed to \code{bread} method}
 }
