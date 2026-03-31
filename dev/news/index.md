@@ -1,5 +1,12 @@
 # Changelog
 
+## **propertee** 1.0.5 (Unreleased)
+
+- Fix bug in `ate()/ett()/...` when units of assignment are identified
+  in a `StudySpecification` by the rownames of a dataframe, that is, the
+  `StudySpecification` is created by a call of the form
+  `*_spec(trt ~ 1 + ..., data)`
+
 ## **propertee** 1.0.4
 
 CRAN release: 2026-01-23
