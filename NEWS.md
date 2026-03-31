@@ -1,3 +1,6 @@
+# **propertee** 1.0.5 (Unreleased)
+* Fix bug in `ate()/ett()/...` when units of assignment are identified in a `StudySpecification` by the rownames of a dataframe, that is, the `StudySpecification` is created by a call of the form `*_spec(trt ~ 1 + ..., data)`
+
 # **propertee** 1.0.4
 * Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided `teeMod` had a non-empty `na.action`, or the `teeMod` or its `weights` argument had a `dichotomy` slot
 * Return NaN for the degrees of freedom when CR2/CV2 standard errors have deficient degrees of freedom
