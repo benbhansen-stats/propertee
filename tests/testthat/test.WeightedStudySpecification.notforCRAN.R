@@ -776,3 +776,13 @@ test_that("assignment weights persist when data argument excludes some units", {
   expected_wts <- c(rep(2, 10), rep(1, 10), rep(0, 20))
   expect_equal(wts@.Data, expected_wts)
 })
+
+test_that("weights when units of assignment are identified by rownames", {
+  data(simdata)
+  expect_warning(rct_spec <- rct_spec(z ~ 1, simdata), "explicit unit")
+  ettwts <- ett(rct_spec, data = simdata)
+  piZ <- mean(simdata$z)
+  expect_equal(ettwts@.Data, simdata$z + (1 - simdata$z) * piZ / (1 - piZ))
+  atewts <- ate(rct_spec, data = simdata)
+  expect_equal(atewts@.Data, simdata$z / piZ + (1 - simdata$z) / (1 - piZ))
+})
