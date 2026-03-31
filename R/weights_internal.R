@@ -139,6 +139,9 @@ NULL
   uoadata$specification_weights <- weights
   
   # Merge with data to expand weights to unit of analysis level
+  if (uoanames[1L] == "..uoa.." & length(uoanames) == 1L) {
+    data[["..uoa.."]] <- rownames(data)
+  }
   weights <- .merge_preserve_order(data, uoadata,
                                    by = uoanames,
                                    all.x = TRUE)$specification_weights
