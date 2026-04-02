@@ -2856,9 +2856,11 @@ test_that(".check_df_moderator_estimates other warnings", {
   # invalid `data` arg
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ factor(o), specification = spec, data = simdata)
-  expect_error(.check_df_moderator_estimates(vmat, ssmod, cluster_ids,
-                                             cbind(y = simdata$y, z = simdata$z),
-                                             envir = parent.frame()),
+  expect_error(.check_df_moderator_estimates(vmat, ssmod
+                                             , cluster_cols = c("uoa1", "uoa2")
+                                             , model_data = cbind(y = simdata$y,
+                                                                  z = simdata$z)
+                                             , envir = parent.frame()),
                "`model_data` must be a dataframe")
 })
 
@@ -2888,6 +2890,11 @@ test_that(".check_df_moderator_estimates #246", {
   )
   expect_true(all(is.na(vc["z._x2",])))
   expect_true(all(is.na(vc[,"z._x2"])))
+  
+  # if values_from is fit w/o the moderator, don't check df
+  values_from <- lmitt(y ~ 1, spec, Qdata, weights = wts)
+  vc <- vcov_tee(tm, values_from = values_from)
+  expect_true(all(is.na(vc)))
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {

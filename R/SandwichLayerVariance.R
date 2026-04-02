@@ -119,14 +119,16 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
 
   # NA any invalid estimates due to degrees of freedom checks
   if (inherits(x, "teeMod")) {
-    vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols)
+    if (is.null(values_from <- args$values_from)) values_from <- x
+    vmat <- .check_df_moderator_estimates(vmat, x, args$cluster_cols, values_from)
   } else {
     start_ix <- 0
     for (mod_ix in seq_along(x)) {
       mod <- x[[mod_ix]]
+      if (is.null(values_from <- args$values_from)) values_from <- mod
       vmat_ix <- start_ix + seq_along(mod$coefficients)
       vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(
-        vmat, mod, args$cluster_cols)[vmat_ix, vmat_ix]
+        vmat, mod, args$cluster_cols, values_from)[vmat_ix, vmat_ix]
       start_ix <- start_ix + length(mod$coefficients)
     }
     vmat[apply(is.na(vmat), 1, any),] <- NA_real_
@@ -652,27 +654,36 @@ cluster_iss <- function(tm,
 #' @return A variance-covariance matrix with NA's for estimates lacking
 #'   sufficient degrees of freedom
 #' @keywords internal
-.check_df_moderator_estimates <- function(vmat, model, cluster_cols, model_data = quote(data),
+.check_df_moderator_estimates <- function(vmat,
+                                          model,
+                                          cluster_cols,
+                                          values_from = model,
+                                          model_data = quote(data),
                                           envir = environment(formula(model))) {
   if (!inherits(model, "teeMod")) {
     stop("`model` must be a teeMod object")
   }
 
-  if (length(model@moderator) == 0) {
-    return(vmat)
-  }
+  # if no moderator variable, no need to check df
+  if (length(model@moderator) == 0) return(vmat)
 
+  # if values_from didn't include the moderator, don't check df
+  rhs_values_from <- trimws(
+    strsplit(deparse1(stats::formula(values_from)[[3L]]), "\\+")[[1L]]
+  )
+  if (!any(grepl(model@moderator, rhs_values_from, fixed = TRUE))) return(vmat)
+
+  # get model_data as a dataframe
   if (inherits(model_data, "name")) {
     model_data <- get(as.character(model_data), envir)
   } else if (!inherits(model_data, "data.frame")) {
     stop("`model_data` must be a dataframe or a quoted object name")
   }
-  
   if (!inherits(model_data, "data.frame")) {
-    stop(paste("Could not find argument passed to `model_data` in the given `envir`"))
+    stop("Could not find argument passed to `model_data` in the given `envir`")
   }
   
-  # this allows us to use napredict below to expand the weights vector
+  # set na.action to exclude to use napredict below to expand the weights vector
   if (!is.null(model$na.action)) class(model$na.action) <- "exclude"
 
   # For categorical moderators, count the clusters contributing to estimation
@@ -700,7 +711,7 @@ cluster_iss <- function(tm,
   }
 
 
-  # Replace SE's for moderator variable/levels with <= 2 clusters with NA's
+  # Replace SE's that don't meet df requirements with NA's
   if (any(!valid_mods)) {
     invalid_mods <- gsub("\\)", "\\\\)", gsub("\\(", "\\\\(", names(valid_mods)[!valid_mods]))
     warning(paste("The following subgroups do not have sufficient degrees of",
