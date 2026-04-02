@@ -2862,6 +2862,34 @@ test_that(".check_df_moderator_estimates other warnings", {
                "`model_data` must be a dataframe")
 })
 
+test_that(".check_df_moderator_estimates #246", {
+  # observations that did not contribute to the model fit do not count towards
+  # the degrees of freedom count for moderator estimates
+  set.seed(341)
+  Qdata <- data.frame(x = factor(rep(c(1, 2), each = 3)),
+                      z = rep(c(0, 1), 3),
+                      y = runif(6))
+  wts <- c(0, rep(1, 5))
+  expect_warning(spec <- obs_spec(z ~ 1, Qdata), "explicit unit")
+  tm <- lmitt(y ~ x, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x1"
+  )
+  expect_true(all(is.na(vc["z._x1",])))
+  expect_true(all(is.na(vc[,"z._x1"])))
+
+  Qdata$x2 <- runif(nrow(Qdata))
+  wts <- rep(c(0, 1), c(2, 4))
+  tm <- lmitt(y ~ x2, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x2"
+  )
+  expect_true(all(is.na(vc["z._x2",])))
+  expect_true(all(is.na(vc[,"z._x2"])))
+})
+
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), data = simdata)
