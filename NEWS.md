@@ -1,4 +1,4 @@
-# **propertee** 1.0.5 (Unreleased)
+# **propertee** 1.0.5
 ## Updates
 * `vcov_tee()` accepts a new `values_from` argument: users may pass a fitted model object whose residuals and weights will be used for estimating standard errors. This fitted model could be fit under specified parameter restrictions, for example.
 * Model-based standard errors no longer by default cluster at the block level for fine strata (blocks where the treatment or control condition are assigned a lone unit). See further discussion in Wasserman's 2026 thesis "Methods for causal inference in settings with clustered data subject to missingness and measurement error".
