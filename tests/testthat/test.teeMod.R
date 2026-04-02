@@ -1236,17 +1236,16 @@ test_that("rcorrect (HC/CR/MB)2, clustering", {
   pm <- chol2inv(next_xm$qr$qr)
   X <- stats::model.matrix(next_xm)
   expected <- numeric(nrow(sdat))
-  for (c in unique(sdat$b)) {
-    ix <- sdat$b == c
+  for (ix in seq_len(nrow(sdat))) {
     Xc <- X[ix,,drop=FALSE]
-    Pc <- Xc %*% pm %*% t(Xc) %*% diag(next_xm$weights[ix], nrow = sum(ix))
-    schur <- eigen(diag(nrow = sum(ix)) - Pc)
-    crc <- schur$vector %*% diag(1/sqrt(schur$values),
-                          nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+    Pc <- Xc %*% pm %*% t(Xc) %*% diag(next_xm$weights[ix], nrow = length(ix))
+    schur <- eigen(diag(nrow = length(ix)) - Pc)
+    crc <- schur$vector %*% diag(1/sqrt(schur$values), nrow = length(ix)) %*% 
+      solve(schur$vector) %*% r[ix]
     expected[ix] <- crc
   }
   expect_equal(
-    cr <- .rcorrect(r, x = next_xm, model = "itt", type = "HC2"),
+    cr <- unname(.rcorrect(r, x = next_xm, model = "itt", type = "HC2")),
     expected
   )
 })
@@ -2020,28 +2019,25 @@ test_that(".make_uoa_ids without `by` when Q and C ID's aren't unique", {
                "not uniquely specified. Provide a `by` argument")
 })
 
-test_that(paste("unit-level clustering model-based .make_uoa_ids uses block",
-                "ID's for small blocks"), {
+test_that(paste("unit-level clustering model-based .make_uoa_ids does not use",
+                "block ID's for small blocks"), {
   data(simdata)
 
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   suppressMessages(dmod <- lmitt(y ~ 1, specification = spec, data = simdata))
 
+  uoa_ids <- factor(apply(simdata[, c("uoa1", "uoa2")],
+                          1,
+                          function(...) paste(..., collapse = "_")))
   expect_equal(
     out <- .make_uoa_ids(dmod, "CR"),
-    factor(paste0("bid",
-                  c(rep("1", sum(simdata$bid == 1)),
-                    rep("2", sum(simdata$bid == 2)),
-                    rep("3", sum(simdata$bid == 3)))),
-                  levels = paste0("bid", c("1", "2", "3")))
+    uoa_ids
   )
   expect_equal(out, .make_uoa_ids(dmod, "MB"))
   expect_equal(out, .make_uoa_ids(dmod, "HC"))
   expect_equal(
     .make_uoa_ids(dmod, "DB"),
-    factor(apply(simdata[, c("uoa1", "uoa2")],
-                 1,
-                 function(...) paste(..., collapse = "_")))
+    out
   )
 })
 

@@ -508,7 +508,7 @@ test_that("cluster_iss with fine strata (clusters have trt and ctrl units)", {
   wts <- c(rep(2/3, 6), rep(1, 4), rep(4, 2), rep(1, 8))
   tm <- lmitt(yi ~ 1, imb, data = sdata, weights = wts, absorb = TRUE)
   ids <- propertee:::.make_uoa_ids(tm, "MB")
-  ix <- ids == "bi2"
+  ix <- ids == "2"
   A <- model.matrix(tm)
   Ag <- A[ix,,drop=FALSE]
   Pgg <- (Ag * sqrt(wts[ix])) %*% chol2inv(tm$qr$qr) %*% t(Ag * sqrt(wts[ix]))
@@ -2927,7 +2927,8 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
 })
 
-test_that("model-based SE's cluster units of assignment in small blocks at block level", {
+test_that(paste("model-based SE's cluster units of assignment in small blocks",
+                "at uoa level"), {
   specdata <- data.frame(bid = rep(c(1, 2), each = 20),
                         uoa_id = c(rep(c(1, 2), each = 10), rep(seq(3, 6), each = 5)),
                         a = c(rep(c(0, 1), each = 10), rep(rep(c(0, 1), each = 5), 2)))
@@ -2938,7 +2939,7 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   vc_w_no_small_block_clusters <- .vcov_CR(mod,
                                            cluster = .make_uoa_ids(mod, "DB"),
                                            by = "uoa_id")
-  expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
+  expect_true(vc_w_small_block_clusters[2, 2] == vc_w_no_small_block_clusters[2, 2])
 })
 
 test_that("#177 vcov with by argument", {
