@@ -9,6 +9,7 @@ insufficient degrees of freedom with \code{NA}}
   vmat,
   model,
   cluster_cols,
+  values_from = model,
   model_data = quote(data),
   envir = environment(formula(model))
 )
