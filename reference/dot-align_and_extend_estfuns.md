@@ -6,7 +6,13 @@ covariance adjustment model estimating equations matrices
 ## Usage
 
 ``` r
-.align_and_extend_estfuns(x, ctrl_means_ef_mat = NULL, by = NULL, ...)
+.align_and_extend_estfuns(
+  x,
+  values_from = x,
+  ctrl_means_ef_mat = NULL,
+  by = NULL,
+  ...
+)
 ```
 
 ## Arguments
@@ -14,6 +20,10 @@ covariance adjustment model estimating equations matrices
 - x:
 
   a fitted `teeMod` model
+
+- values_from:
+
+  optional, a fitted model object. Defaults to `x`.
 
 - ctrl_means_ef_mat:
 
@@ -52,4 +62,9 @@ adjustment and covariance adjustment models; then, it pads the matrices
 with zeros to account for units of observation that appear in one
 model-fitting sample but not the other; finally it orders the matrices
 so units of observation (or if unit of observation-level ordering is
-impossible, units of assignment) are aligned.
+impossible, units of assignment) are aligned.  
+  
+As in
+[`estfun.teeMod()`](https://benbhansen-stats.github.io/propertee/reference/estfun.teeMod.md),
+the working residuals (and, if applicable, weights) from `values_from`
+will be used in the output matrix in place of those from `x`.

@@ -1,6 +1,32 @@
 # Changelog
 
+## **propertee** 1.0.5
+
+### Updates
+
+- [`vcov_tee()`](https://benbhansen-stats.github.io/propertee/reference/var_estimators.md)
+  accepts a new `values_from` argument: users may pass a fitted model
+  object whose residuals and weights will be used for estimating
+  standard errors. This fitted model could be fit under specified
+  parameter restrictions, for example.
+- Model-based standard errors no longer by default cluster at the block
+  level for fine strata (blocks where the treatment or control condition
+  are assigned a lone unit). See further discussion in Wasserman’s 2026
+  thesis “Methods for causal inference in settings with clustered data
+  subject to missingness and measurement error”.
+
+### Bug Fixes
+
+- Fix bug in `ate()/ett()/...` when units of assignment are identified
+  in a `StudySpecification` by the rownames of a dataframe, that is, the
+  `StudySpecification` is created by a call of the form
+  `*_spec(trt ~ 1 + ..., data)`
+- Fix bug that allowed observations with zero weight to figure in
+  degrees of freedom calculations for moderator estimates
+
 ## **propertee** 1.0.4
+
+CRAN release: 2026-01-23
 
 - Fix routines for CR2/CV2 standard errors and associated degrees of
   freedom that previously errored when the provided `teeMod` had a

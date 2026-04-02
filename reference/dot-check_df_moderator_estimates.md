@@ -10,6 +10,7 @@ insufficient degrees of freedom with `NA`
   vmat,
   model,
   cluster_cols,
+  values_from = model,
   model_data = quote(data),
   envir = environment(formula(model))
 )

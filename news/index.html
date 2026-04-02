@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,8 +43,24 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.5" id="propertee-105">
+<strong>propertee</strong> 1.0.5<a class="anchor" aria-label="anchor" href="#propertee-105"></a></h2>
+<div class="section level3">
+<h3 id="updates-1-0-5">Updates<a class="anchor" aria-label="anchor" href="#updates-1-0-5"></a></h3>
+<ul><li>
+<code><a href="../reference/var_estimators.html">vcov_tee()</a></code> accepts a new <code>values_from</code> argument: users may pass a fitted model object whose residuals and weights will be used for estimating standard errors. This fitted model could be fit under specified parameter restrictions, for example.</li>
+<li>Model-based standard errors no longer by default cluster at the block level for fine strata (blocks where the treatment or control condition are assigned a lone unit). See further discussion in Wasserman’s 2026 thesis “Methods for causal inference in settings with clustered data subject to missingness and measurement error”.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-5">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-5"></a></h3>
+<ul><li>Fix bug in <code>ate()/ett()/...</code> when units of assignment are identified in a <code>StudySpecification</code> by the rownames of a dataframe, that is, the <code>StudySpecification</code> is created by a call of the form <code>*_spec(trt ~ 1 + ..., data)</code>
+</li>
+<li>Fix bug that allowed observations with zero weight to figure in degrees of freedom calculations for moderator estimates</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.4" id="propertee-104">
-<strong>propertee</strong> 1.0.4<a class="anchor" aria-label="anchor" href="#propertee-104"></a></h2>
+<strong>propertee</strong> 1.0.4<a class="anchor" aria-label="anchor" href="#propertee-104"></a></h2><p class="text-muted">CRAN release: 2026-01-23</p>
 <ul><li>Fix routines for CR2/CV2 standard errors and associated degrees of freedom that previously errored when the provided <code>teeMod</code> had a non-empty <code>na.action</code>, or the <code>teeMod</code> or its <code>weights</code> argument had a <code>dichotomy</code> slot</li>
 <li>Return NaN for the degrees of freedom when CR2/CV2 standard errors have deficient degrees of freedom</li>
 <li>

@@ -9,7 +9,7 @@ covariance matrix.
 
 ``` r
 # S3 method for class 'teeMod'
-bread(x, ...)
+bread(x, values_from = x, ...)
 ```
 
 ## Arguments
@@ -17,6 +17,10 @@ bread(x, ...)
 - x:
 
   a fitted `teeMod` model
+
+- values_from:
+
+  optional, a fitted model object. Defaults to `x`.
 
 - ...:
 
