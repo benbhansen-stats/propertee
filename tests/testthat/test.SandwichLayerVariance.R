@@ -508,7 +508,7 @@ test_that("cluster_iss with fine strata (clusters have trt and ctrl units)", {
   wts <- c(rep(2/3, 6), rep(1, 4), rep(4, 2), rep(1, 8))
   tm <- lmitt(yi ~ 1, imb, data = sdata, weights = wts, absorb = TRUE)
   ids <- propertee:::.make_uoa_ids(tm, "MB")
-  ix <- ids == "bi2"
+  ix <- ids == "2"
   A <- model.matrix(tm)
   Ag <- A[ix,,drop=FALSE]
   Pgg <- (Ag * sqrt(wts[ix])) %*% chol2inv(tm$qr$qr) %*% t(Ag * sqrt(wts[ix]))
@@ -2856,10 +2856,45 @@ test_that(".check_df_moderator_estimates other warnings", {
   # invalid `data` arg
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ factor(o), specification = spec, data = simdata)
-  expect_error(.check_df_moderator_estimates(vmat, ssmod, cluster_ids,
-                                             cbind(y = simdata$y, z = simdata$z),
-                                             envir = parent.frame()),
+  expect_error(.check_df_moderator_estimates(vmat, ssmod
+                                             , cluster_cols = c("uoa1", "uoa2")
+                                             , model_data = cbind(y = simdata$y,
+                                                                  z = simdata$z)
+                                             , envir = parent.frame()),
                "`model_data` must be a dataframe")
+})
+
+test_that(".check_df_moderator_estimates #246", {
+  # observations that did not contribute to the model fit do not count towards
+  # the degrees of freedom count for moderator estimates
+  set.seed(341)
+  Qdata <- data.frame(x = factor(rep(c(1, 2), each = 3)),
+                      z = rep(c(0, 1), 3),
+                      y = runif(6))
+  wts <- c(0, rep(1, 5))
+  expect_warning(spec <- obs_spec(z ~ 1, Qdata), "explicit unit")
+  tm <- lmitt(y ~ x, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x1"
+  )
+  expect_true(all(is.na(vc["z._x1",])))
+  expect_true(all(is.na(vc[,"z._x1"])))
+
+  Qdata$x2 <- runif(nrow(Qdata))
+  wts <- rep(c(0, 1), c(2, 4))
+  tm <- lmitt(y ~ x2, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x2"
+  )
+  expect_true(all(is.na(vc["z._x2",])))
+  expect_true(all(is.na(vc[,"z._x2"])))
+  
+  # if values_from is fit w/o the moderator, don't check df
+  values_from <- lmitt(y ~ 1, spec, Qdata, weights = wts)
+  vc <- vcov_tee(tm, values_from = values_from)
+  expect_true(all(is.na(vc)))
 })
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
@@ -2899,7 +2934,8 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
 })
 
-test_that("model-based SE's cluster units of assignment in small blocks at block level", {
+test_that(paste("model-based SE's cluster units of assignment in small blocks",
+                "at uoa level"), {
   specdata <- data.frame(bid = rep(c(1, 2), each = 20),
                         uoa_id = c(rep(c(1, 2), each = 10), rep(seq(3, 6), each = 5)),
                         a = c(rep(c(0, 1), each = 10), rep(rep(c(0, 1), each = 5), 2)))
@@ -2910,7 +2946,7 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   vc_w_no_small_block_clusters <- .vcov_CR(mod,
                                            cluster = .make_uoa_ids(mod, "DB"),
                                            by = "uoa_id")
-  expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
+  expect_true(vc_w_small_block_clusters[2, 2] == vc_w_no_small_block_clusters[2, 2])
 })
 
 test_that("#177 vcov with by argument", {

@@ -321,46 +321,6 @@ bread.teeMod <- function(x, values_from = x, ...)
         paste(sample(letters, 8, replace = TRUE), collapse = ""),
         simplify = TRUE
       )
-      
-      if (inherits(mod, "teeMod")) {
-        uoa_cols <- var_names(mod@StudySpecification, "u")
-        if (has_blocks(mod@StudySpecification)) {
-          if (any(sml_blks <- identify_small_blocks(mod@StudySpecification))) {
-            if (length(setdiff(cluster_cols, uoa_cols)) == 0 &
-                length(setdiff(uoa_cols, cluster_cols)) == 0) {
-              Q_obs <- .sanitize_Q_ids(mod, id_col = cluster_cols)
-              Q_obs_ids <- Q_obs$cluster
-              spec_blocks <- blocks(mod@StudySpecification)
-              uoa_block_ids <- apply(spec_blocks,
-                                     1,
-                                     function(...) paste(..., collapse = ","))
-              structure_w_small_blocks <- cbind(
-                mod@StudySpecification@structure,
-                small_block = sml_blks[uoa_block_ids],
-                block_replace_id = apply(
-                  spec_blocks,
-                  1,
-                  function(nms, ...) paste(paste(nms, ..., sep = ""),
-                                           collapse = ","),
-                  nms = colnames(spec_blocks)
-                )
-              )
-              Q_obs <- .merge_preserve_order(Q_obs,
-                                             structure_w_small_blocks,
-                                             by = uoa_cols,
-                                             all.x = TRUE)
-              na_blocks <- apply(
-                Q_obs[var_names(x@StudySpecification, "b")],
-                1,
-                function(x) any(is.na(x))
-              )
-              Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
-                Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
-              cls <- Q_obs$cluster
-            }
-          }
-        }
-      }
 
       g <- length(unique(cls))
       n <- nrow(efm)
@@ -753,31 +713,6 @@ bread.teeMod <- function(x, values_from = x, ...)
   # in Q
   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
   Q_obs_ids <- Q_obs$cluster
-
-  # for model-based vcov calls on blocked specifications when clustering is
-  # called for at the assignment level, replace unit of assignment ID's with
-  # block ID's for small blocks
-  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
-    uoa_cols <- var_names(x@StudySpecification, "u")
-    if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
-      spec_blocks <- blocks(x@StudySpecification)
-      uoa_block_ids <- apply(spec_blocks, 1,
-                             function(...) paste(..., collapse = ","))
-      small_blocks <- identify_small_blocks(x@StudySpecification)
-      structure_w_small_blocks <- cbind(
-        x@StudySpecification@structure,
-        small_block = small_blocks[uoa_block_ids],
-        block_replace_id = apply(spec_blocks, 1,
-                                 function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
-                                 nms = colnames(spec_blocks))
-      )
-      Q_obs <- .merge_preserve_order(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
-      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
-        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
-      Q_obs_ids <- Q_obs$cluster
-    }
-  }
 
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
