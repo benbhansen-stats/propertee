@@ -648,6 +648,7 @@ cluster_iss <- function(tm,
 #' @param model a fitted \code{teeMod} model
 #' @param cluster_cols a character vector indicating the column(s) defining
 #'   cluster ID's
+#' @param values_from optional, a fitted model object. Defaults to \code{x}.
 #' @param model_data dataframe or name of dataframe used to fit \code{model}
 #' @param envir environment to get \code{model_data} from if \code{model_data}
 #'   has class \code{name}

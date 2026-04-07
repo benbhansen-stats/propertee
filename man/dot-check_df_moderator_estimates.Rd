@@ -23,6 +23,8 @@ argument below as the first argument}
 \item{cluster_cols}{a character vector indicating the column(s) defining
 cluster ID's}
 
+\item{values_from}{optional, a fitted model object. Defaults to \code{x}.}
+
 \item{model_data}{dataframe or name of dataframe used to fit \code{model}}
 
 \item{envir}{environment to get \code{model_data} from if \code{model_data}
