@@ -1,6 +1,8 @@
 # Changelog
 
-## **propertee** 1.0.5 (Unreleased)
+## **propertee** 1.0.5
+
+CRAN release: 2026-04-02
 
 ### Updates
 
