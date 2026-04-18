@@ -126,10 +126,11 @@ vcov_tee <- function(x, type = NULL, cluster = NULL, ...) {
     for (mod_ix in seq_along(x)) {
       mod <- x[[mod_ix]]
       if (is.null(values_from <- args$values_from)) values_from <- mod
-      vmat_ix <- start_ix + seq_along(mod$coefficients)
+      not_aliased <- !is.na(mod$coefficients)
+      vmat_ix <- start_ix + seq_len(sum(not_aliased))
       vmat[vmat_ix, vmat_ix] <- .check_df_moderator_estimates(
         vmat, mod, args$cluster_cols, values_from)[vmat_ix, vmat_ix]
-      start_ix <- start_ix + length(mod$coefficients)
+      start_ix <- start_ix + sum(not_aliased)
     }
     vmat[apply(is.na(vmat), 1, any),] <- NA_real_
     vmat[,apply(is.na(vmat), 2, any)] <- NA_real_

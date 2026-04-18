@@ -2897,6 +2897,22 @@ test_that(".check_df_moderator_estimates #246", {
   expect_true(all(is.na(vc)))
 })
 
+if (requireNamespace("multcomp", quietly = TRUE)) {
+  test_that(".check_df_moderator_estimates w/ mmm object and aliased coeffs", {
+    set.seed(4953)
+    dft <- data.frame(y = rnorm(20),
+                      z = rep(c(0,1), each = 10),
+                      x1 = factor(rep(letters[1:3], 7)[seq_len(20)]))
+    dft$x2 <- dft$z
+    expect_warning(dta <- rct_spec(z ~ 1, dft), "explicit unit")
+    tm1 <- lmitt(y ~ 1, dta, dft)
+    tm2 <- lmitt(y ~ x1, dta, dft)
+    tm3 <- lmitt(y ~ x2, dta, dft)
+    mco <- multcomp::mmm(main = tm1, x1 = tm2, x2 = tm3)
+    expect_silent(invisible(vcov_tee(mco)))
+  })
+}
+
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), data = simdata)
