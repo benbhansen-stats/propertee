@@ -411,6 +411,42 @@ test_that(paste("as.SandwichLayer produces correct ID's for univariate uoa ID's"
                  rep(NA_character_, N - floor(N/2))))
 })
 
+test_that("as.SandwichLayer correctly marks in_Q rows with multiple columns", {
+  set.seed(42)
+  N <- 20
+  cmod_df <- data.frame(
+    x = rnorm(N),
+    y = rnorm(N),
+    classid = rep(c(1, 1, 2, 2), each = N / 4),
+    schoolid = rep(c("A", "B", "A", "B"), each = N / 4)
+  )
+  cmod <- lm(y ~ x, cmod_df)
+
+  Q_data <- data.frame(
+    classid = c(1, 2),
+    schoolid = c("A", "B"),
+    z = c(0, 1)
+  )
+  spec <- rct_spec(z ~ cluster(classid, schoolid), Q_data)
+
+  offset <- rep(1, N)
+  pred_gradient <- matrix(1, nrow = N, ncol = 2)
+  psl <- new("PreSandwichLayer",
+             offset,
+             fitted_covariance_model = cmod,
+             prediction_gradient = pred_gradient)
+
+  sl <- as.SandwichLayer(psl, spec, Q_data = Q_data)
+
+  # only rows with classid=1 and schoolid=A, or classid=2 and schoolid=B, should
+  # be in_Q
+  expected_in_Q <- (cmod_df$classid == 1 & cmod_df$schoolid == "A") |
+    (cmod_df$classid == 2 & cmod_df$schoolid == "B")
+  expect_equal(sl@keys$in_Q, expected_in_Q)
+
+  expect_equal(sum(sl@keys$in_Q), N / 2)
+})
+
 test_that("show_sandwich_layer works", {
   set.seed(20)
   N <- 100
