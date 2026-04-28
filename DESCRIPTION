@@ -78,6 +78,7 @@ Collate:
     'get_spec.R'
     'glmrobMethods.R'
     'lmitt.R'
+    'lmitt.formula.R'
     'lmrob_methods.R'
     'merge_preserve_order.R'
     'propertee_package.R'
