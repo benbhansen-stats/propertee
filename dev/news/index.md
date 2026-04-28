@@ -7,6 +7,11 @@
 - [`vcov_tee()`](https://benbhansen-stats.github.io/propertee/dev/reference/var_estimators.md)
   does not error when some fitted models in an object created by `mmm()`
   have coefficients estimated as NA
+- Rows are correctly identified as overlapping between fitting the
+  covariance adjustment model and creating the `StudySpecification`
+  object when the `by` argument of
+  [`cov_adj()`](https://benbhansen-stats.github.io/propertee/dev/reference/cov_adj.md)
+  specifies multiple columns
 
 ## **propertee** 1.0.5
 

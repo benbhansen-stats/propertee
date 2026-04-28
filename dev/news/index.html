@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.5.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.5.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
 <h3 id="bug-fixes-1-0-6">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-6"></a></h3>
 <ul><li>
 <code><a href="../reference/var_estimators.html">vcov_tee()</a></code> does not error when some fitted models in an object created by <code>mmm()</code> have coefficients estimated as NA</li>
+<li>Rows are correctly identified as overlapping between fitting the covariance adjustment model and creating the <code>StudySpecification</code> object when the <code>by</code> argument of <code><a href="../reference/cov_adj.html">cov_adj()</a></code> specifies multiple columns</li>
 </ul></div>
 </div>
     <div class="section level2">
