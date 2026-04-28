@@ -1,5 +1,13 @@
 # Changelog
 
+## **propertee** 1.0.6 (Unreleased)
+
+### Bug Fixes
+
+- [`vcov_tee()`](https://benbhansen-stats.github.io/propertee/dev/reference/var_estimators.md)
+  does not error when some fitted models in an object created by `mmm()`
+  have coefficients estimated as NA
+
 ## **propertee** 1.0.5
 
 CRAN release: 2026-04-02

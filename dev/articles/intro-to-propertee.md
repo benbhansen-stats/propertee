@@ -81,7 +81,7 @@ The outcome of interest is a reading score at the end of kindergarten.
 
 ``` r
 summary(STARplus$g1treadss)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs 
 #>   404.0   478.0   516.0   521.5   558.0   651.0    5805
 ```
 
