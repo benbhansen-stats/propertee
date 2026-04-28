@@ -1,3 +1,7 @@
+# **propertee** 1.0.6 (Unreleased)
+## Bug Fixes
+* `vcov_tee()` does not error when some fitted models in an object created by `mmm()` have coefficients estimated as NA
+
 # **propertee** 1.0.5
 ## Updates
 * `vcov_tee()` accepts a new `values_from` argument: users may pass a fitted model object whose residuals and weights will be used for estimating standard errors. This fitted model could be fit under specified parameter restrictions, for example.
