@@ -27,13 +27,6 @@ setValidity("PreSandwichLayer", function(object) {
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
-  if (dim(object@prediction_gradient)[1] != length(object)) {
-    msg <- paste0("Prediction gradient matrix (",
-                  paste(dim(object@prediction_gradient), collapse = ", "),
-                  ") does not have the same dimension along axis 1 as the ",
-                  "covariance adjustment vector (", length(object), ")")
-    return(msg)
-  }
   if (dim(object@prediction_gradient)[2] !=
       qr(stats::model.matrix(object@fitted_covariance_model))$rank) {
     return(paste("Prediction gradient does not have the same number of columns",
@@ -351,18 +344,18 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
       })
   }
 
-  keys$in_Q <- apply(
-    mapply(
-      function(covmod_col, spec_col) {
-        unique(Q_data[[spec_col]])[
-          match(keys[[covmod_col]], unique(Q_data[[spec_col]]), incomparables = NA)
-        ]
-      },
-      by, names(by)
-    ),
-    1,
-    function(uids) all(!is.na(uids))
+  Q_by_vals <- unique(
+    apply(
+      Q_data[, names(by), drop = FALSE],
+      1,
+      function(r) {
+        if (all(is.na(r))) return(NA_character_) else paste(r, collapse = "_")
+      }
+    )
   )
+  keys$in_Q <- apply(
+    keys[, unname(by), drop = FALSE], 1, function(r) paste(r, collapse = "_")
+  ) %in% Q_by_vals
 
   return(new("SandwichLayer",
              x,
