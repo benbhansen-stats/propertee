@@ -3,13 +3,9 @@
 \docType{class}
 \name{lmitt.formula-class}
 \alias{lmitt.formula-class}
-\title{lmitt.formula class
-Class for lmitt formulas}
+\title{Formulas generated from inputs to \code{lmitt()}}
 \description{
-lmitt.formula class
-Class for lmitt formulas
+The \code{terms()} method for this class returns a \code{lmitt.terms}
+object that helps generate artifacts for fitting \code{teeMod} objects
 }
-\details{
-This has a specific \code{model.frame()} method so that \code{lmitt()} fits
-the model we desire
-}
+\keyword{internal}

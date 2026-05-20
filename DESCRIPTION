@@ -85,6 +85,7 @@ Collate:
     'specification_table.R'
     'summary.StudySpecification.R'
     'summary.teeMod.R'
+    'terms.lmitt.formula.R'
     'update_by.R'
     'validWeights.R'
     'weights_internal.R'
