@@ -82,6 +82,7 @@ Collate:
     'lmrob_methods.R'
     'merge_preserve_order.R'
     'model.frame.lmitt.terms.R'
+    'model.matrix.lmitt.terms.R'
     'propertee_package.R'
     'specification_table.R'
     'summary.StudySpecification.R'
