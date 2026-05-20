@@ -27,13 +27,6 @@ setValidity("PreSandwichLayer", function(object) {
   if (!is.numeric(object@prediction_gradient)) {
     return("Prediction gradient must be a numeric matrix")
   }
-  if (dim(object@prediction_gradient)[1] != length(object)) {
-    msg <- paste0("Prediction gradient matrix (",
-                  paste(dim(object@prediction_gradient), collapse = ", "),
-                  ") does not have the same dimension along axis 1 as the ",
-                  "covariance adjustment vector (", length(object), ")")
-    return(msg)
-  }
   if (dim(object@prediction_gradient)[2] !=
       qr(stats::model.matrix(object@fitted_covariance_model))$rank) {
     return(paste("Prediction gradient does not have the same number of columns",

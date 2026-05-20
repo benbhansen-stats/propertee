@@ -45,22 +45,6 @@ test_that("PreSandwichLayer prediction gradient is not a numeric matrix", {
                "must be a numeric matrix")
 })
 
-test_that("PreSandwichLayer prediction gradient has invalid number of rows", {
-  set.seed(20)
-  N <- 100
-  df <- data.frame("x" = rnorm(N), "y" = rnorm(N))
-  cmod <- lm(y ~ x, df)
-
-  offset <- rep(1, N)
-  pred_gradient <- matrix(1, nrow = N - 1, ncol = 2)
-
-  expect_error(new("PreSandwichLayer",
-                   offset,
-                   fitted_covariance_model = cmod,
-                   prediction_gradient = pred_gradient),
-               "same dimension along axis 1")
-})
-
 test_that("PreSandwichLayer prediction gradient has invalid number of columns", {
   set.seed(20)
   N <- 100
