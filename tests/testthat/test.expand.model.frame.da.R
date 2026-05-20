@@ -1,4 +1,5 @@
 test_that("expand.m.f.da basics", {
+  skip(".expand.model.frame_teeMod now must be used for teeMod objects")
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec)

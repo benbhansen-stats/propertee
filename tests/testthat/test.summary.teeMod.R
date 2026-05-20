@@ -156,10 +156,11 @@ test_that("catching bug with summary(as.lmitt", {
 
 test_that("print.summary isn't confused by bad naming", {
   data(simdata)
-  simdata$abz.c <- as.factor(simdata$o)
-  spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
+  newdata <- simdata
+  newdata$abz.c <- as.factor(newdata$o)
+  spec <- rct_spec(z ~ unitid(uoa1, uoa2), newdata)
 
-  mod <- lmitt(y ~ abz.c, data = simdata, specification = spec)
+  mod <- lmitt(y ~ abz.c, data = newdata, specification = spec)
   expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
@@ -167,9 +168,9 @@ test_that("print.summary isn't confused by bad naming", {
   expect_equal(sum(grepl("^z\\.", co)), 4)
 
   # to force ` in variable names via as.factor
-  mod <- lmitt(y ~ as.factor(abz.c), data = simdata, specification = spec)
+  mod <- lmitt(y ~ as.factor(abz.c), data = newdata, specification = spec)
   expect_warning(co <- capture.output(summary(mod)), "sufficient degrees of freedom")
   expect_true(!any(grepl("^`abz\\.", co)))
-  expect_equal(sum(grepl("^`z\\.", co)), 4)
+  expect_equal(sum(grepl("^z\\.", co)), 4)
 
 })

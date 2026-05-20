@@ -625,7 +625,7 @@ test_that("estfun (no covariance adjustment) with values_from", {
   resids <- stats::residuals(values_from, type = "working")
   expect_true(all.equal(
     ef,
-    stats::model.matrix(stats::formula(tm),
+    stats::model.matrix(stats::terms(tm),
                         stats::model.frame(tm, na.action = na.pass)) *
       replace(resids, is.na(resids), 0),
     check.attributes = FALSE
@@ -681,7 +681,7 @@ test_that(paste(".align_and_extend_estfuns (estfun with covariance adjustment)",
                                    itt_rcorrect = "HC0",
                                    cov_adj_rcorrect = "HC0")
   resids <- stats::residuals(values_from, type = "working")
-  X <- stats::model.matrix(stats::formula(tm),
+  X <- stats::model.matrix(stats::terms(tm),
                            stats::model.frame(tm, na.action = na.pass))
   expect_true(all.equal(
     efs$psi,
@@ -786,11 +786,12 @@ test_that(paste("bread.teeMod returns bread.lm for teeMod objects",
 test_that(paste("bread.teeMod returns expected output for full overlap",
                 "of C and Q"), {
   data(simdata)
-  simdata$uid <- seq_len(nrow(simdata))
+  newdata <- simdata
+  newdata$uid <- seq_len(nrow(newdata))
 
-  cmod <- lm(y ~ x, simdata)
-  spec <- rct_spec(z ~ uoa(uid), simdata)
-  m <- lmitt(y ~ 1, data = simdata, specification = spec, weights = ate(spec),
+  cmod <- lm(y ~ x, newdata)
+  spec <- rct_spec(z ~ uoa(uid), newdata)
+  m <- lmitt(y ~ 1, data = newdata, specification = spec, weights = ate(spec),
              offset = cov_adj(cmod))
 
   expected_out <- matrix(0, nrow = 4, ncol = 4)
@@ -804,16 +805,17 @@ test_that(paste("bread.teeMod returns expected output for partial overlap",
                 "of C and Q"), {
   set.seed(438)
   data(simdata)
-  nq <- nrow(simdata)
-  simdata$id <- seq(nq)
+  newdata <- simdata
+  nq <- nrow(newdata)
+  newdata$id <- seq(nq)
 
   aux_nc <- 30
   n <- nc <- nq + aux_nc
   aux_cmod_ssta <- data.frame(y = rnorm(aux_nc), x = rnorm(aux_nc), id = nq + seq(aux_nc))
-  cmod <- lm(y ~ x, rbind(simdata[, c("y", "x", "id")], aux_cmod_ssta))
+  cmod <- lm(y ~ x, rbind(newdata[, c("y", "x", "id")], aux_cmod_ssta))
 
-  spec <- rct_spec(z ~ unitid(id), simdata)
-  dmod <- lmitt(y ~ 1, specification = spec, data = simdata, offset = cov_adj(cmod))
+  spec <- rct_spec(z ~ unitid(id), newdata)
+  dmod <- lmitt(y ~ 1, specification = spec, data = newdata, offset = cov_adj(cmod))
 
   expected_out <- matrix(0, nrow = 4, ncol = 4)
   expected_out[1:2, 1:2] <- n * chol2inv(dmod$qr$qr)
@@ -826,15 +828,16 @@ test_that(paste("bread.teeMod returns expected output for no overlap",
                 "of C and Q"), {
   set.seed(438)
   data(simdata)
+  newdata <- simdata
   nc <- 30
   nq <- nrow(simdata)
   n <- nc + nq
   cmod_ssta <- data.frame(y = rnorm(nc), x = rnorm(nc), id = nq + seq(nc))
   cmod <- lm(y ~ x, cmod_ssta)
 
-  simdata$id <- seq(nq)
-  spec <- rct_spec(z ~ unitid(id), simdata)
-  dmod <- lmitt(y ~ 1, specification = spec, data = simdata, offset = cov_adj(cmod))
+  newdata$id <- seq(nq)
+  spec <- rct_spec(z ~ unitid(id), newdata)
+  dmod <- lmitt(y ~ 1, specification = spec, data = newdata, offset = cov_adj(cmod))
 
   expected_out <- matrix(0, nrow = 4, ncol = 4)
   expected_out[1:2, 1:2] <- n * chol2inv(dmod$qr$qr)

@@ -8,7 +8,9 @@ test_that("Basic functionality, grand_mean_center=TRUE", {
                                                 grand_mean_center = TRUE)))
 
   # In a single block, return original
-  expect_true(all.equal(mm, center_mm))
+  expect_true(all.equal(mm, center_mm, check.attributes = FALSE))
+  expect_equal(attr(center_mm, "block.means"),
+               rowsum(mm, rep(1, nrow(mm))) / nrow(mm))
 
   # correct values for one column with multiple groups but no weights
   grps <- rep(seq(3), each = 4)
@@ -49,7 +51,9 @@ test_that("Basic functionality, grand_mean_center=FALSE", {
                    dim(center_mm <- areg.center(mm, rep(1, nrow(mm)))))
   
   # In a single block, return original with grand mean subtracted out
-  expect_true(all.equal(mm - mean(mm), center_mm))
+  expect_true(all.equal(mm - mean(mm), center_mm, check.attributes = FALSE))
+  expect_equal(attr(center_mm, "block.means"),
+               rowsum(mm, rep(1, nrow(mm))) / nrow(mm))
   
   # correct values for one column with multiple groups but no weights
   grps <- rep(seq(3), each = 4)

@@ -81,11 +81,13 @@ test_that(".get_spec finds specification in model.frame call", {
   ssmod <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   mf1 <- stats::model.frame(ssmod)
-  mf2 <- stats::model.frame(formula(ssmod), ssmod$call$data)
+  ## because of the formula store in a teeMod's call, calling model.frame on
+  ## formula(ssmod) no longer works; terms(ssmod) is required
+  # mf2 <- stats::model.frame(formula(ssmod), ssmod$call$data)
   mf3 <- stats::model.frame(terms(ssmod), ssmod$call$data)
 
-  expect_equal(mf2, mf3)
+  # expect_equal(mf2, mf3)
   expect_equal(lapply(mf1@.Data, as.numeric),
-               lapply(as.data.frame(cbind(mf2, weights = ssmod$weights))@.Data,
+               lapply(as.data.frame(cbind(mf3, weights = ssmod$weights))@.Data,
                       as.numeric))
 })

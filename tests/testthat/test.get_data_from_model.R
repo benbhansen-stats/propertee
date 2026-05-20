@@ -75,7 +75,9 @@ test_that("get_data_from_model finds data in lmitt object's eval env", {
   }
 
   #expect_warning(lmitt_func(ssmod), "No call to `model.frame`")
-  out <- model.matrix(formula(ssmod), environment(formula(ssmod))$data)
+  out <- model.matrix(terms(ssmod),
+                      model.frame(terms(ssmod),
+                                  environment(formula(ssmod))$data))
   expect_true(is.numeric(out))
   expect_equal(dim(out), c(nrow(simdata), 2))
   expect_true(all(out[, 2] == ssmod$model[, 2]))

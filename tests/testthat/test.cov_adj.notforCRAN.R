@@ -495,11 +495,11 @@ test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
             check.attributes=FALSE) |>  isTRUE() |> 
     expect_false()# misses camod sampling variability
   ddmod_tee1 <- as.lmitt(ddmod)
-  expect_equal(coef(ddmod_tee1)["z.()"], 
+  expect_equal(coef(ddmod_tee1)["z."], 
                coef(camod)["z"], ignore_attr=TRUE)
 
 
-  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
+  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.","z."],
               vcovCL(camod, type="HC0")["z","z"],
               ignore_attr=TRUE)
 
