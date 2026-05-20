@@ -297,6 +297,7 @@ bread.teeMod <- function(x, values_from = x, ...)
         mod <- x 
         efm <- .base_S3class_estfun(mod)
         mf_data <- get("data", environment(formula(mod)))
+        emf_fn <- .expand.model.frame_teeMod
       } else {
         if (is.null(cmod)) {
           stop("x must have a SandwichLayer object as an offset")
@@ -304,15 +305,16 @@ bread.teeMod <- function(x, values_from = x, ...)
         mod <- sl@fitted_covariance_model
         efm <- estfun(mod)
         mf_data <- eval(mod$call$data, environment(formula(mod)))
+        emf_fn <- stats::expand.model.frame
       }
       if ("cluster" %in% names(dots)) {
         cls <- dots$cluster
       } else if (cluster_cols[1] == "..uoa..") {
-        cls <- row.names(stats::model.frame(mod, na.action = na.pass))
+        cls <- row.names(do.call(emf_fn, list(mod, na.action = na.pass)))
       } else {
         cls <- Reduce(
           function(l, r) paste(l, r, sep = "_"),
-          as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols
+          as.list(do.call(emf_fn, list(mod, cluster_cols))[, cluster_cols
                                                                , drop=FALSE])
         )
       }
@@ -650,7 +652,7 @@ bread.teeMod <- function(x, values_from = x, ...)
   } else {
     Q_cls <- Reduce(
       function(l, r) paste(l, r, sep = "_"),
-      as.list(stats::expand.model.frame(x, cluster)[, cluster, drop=FALSE])
+      as.list(.expand.model.frame_teeMod(x, cluster)[, cluster, drop=FALSE])
     )
   }
   Q_cls_in_C <- Q_cls %in% colnames(loo_cmod)
@@ -811,7 +813,7 @@ bread.teeMod <- function(x, values_from = x, ...)
   if (x@StudySpecification@unit_of_assignment_type == "none") {
     Q_ids <- rownames(model.frame(x, na.action = NULL))
   } else {
-    Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
+    Q_ids <- .expand.model.frame_teeMod(x, by)[, by, drop = FALSE]
     Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
   }
 
@@ -868,8 +870,8 @@ bread.teeMod <- function(x, values_from = x, ...)
     moddata$..uoa.. <- rownames(moddata)
     x$call$data <- moddata
   }
-  obs_uoa_ids <- stats::expand.model.frame(x,
-                                           expand_cols)[, expand_cols, drop = FALSE]
+  obs_uoa_ids <- .expand.model.frame_teeMod(
+    x, expand_cols)[, expand_cols, drop = FALSE]
 
   out <- merge(cbind(obs_uoa_ids, .order_id = seq_len(nrow(obs_uoa_ids))),
                uoa_cls_df, by.x = expand_cols, by.y = by.y, all.x = TRUE, sort = FALSE)

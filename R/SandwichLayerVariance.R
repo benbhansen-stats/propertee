@@ -500,14 +500,35 @@ cluster_iss <- function(tm,
   }
 
   trtg <- trts[ix]
-  tt <- stats::delete.response(stats::terms(tm))
+  # tt <- stats::delete.response(stats::terms(tm))
+  # use the specification and data stored in the teeMod's environment to allow
+  # re-generation of the model frame 
+  tt <- tm$terms
+  # tt[[3L]][[2L]]$specification <- quote(specification)
+  # tt[[3L]][[2L]]$data <- quote(data)
+  # # lmitt_data has already had the subset applied, so we don't pass it a second
+  # # time to the model.frame call
+  # mf <- call("model.frame",
+  #            tt,
+  #            lmitt_data,
+  #            na.action = na.pass,
+  #            xlev = tm$xlevels)
+  # mf <- eval(mf)
+  mf <- tm$call
+  mf[[1L]] <- quote(model.frame)
+  mf[[2L]] <- tt
+  mf[[2L]][[3L]][[2L]]$specification <- quote(specification)
+  mf[[2L]][[3L]][[2L]]$data <- quote(data)
   # lmitt_data has already had the subset applied, so we don't pass it a second
   # time to the model.frame call
-  mf <- call("model.frame",
-             tt,
-             lmitt_data,
-             na.action = na.pass,
-             xlev = tm$xlevels)
+  mf$data <- lmitt_data
+  mf$subset <- NULL
+  mf$xlev <- tm$xlevels
+  # mf <- call("model.frame",
+  #            tt,
+  #            lmitt_data,
+  #            na.action = na.pass,
+  #            xlev = tm$xlevels)
   mf <- eval(mf)
   K <- tm$qr$rank
   piv <- tm$qr$pivot[seq_len(K)]
@@ -695,7 +716,7 @@ cluster_iss <- function(tm,
   # estimation for valid SE estimation.
   cluster <- .sanitize_Q_ids(model, cluster_cols)$cluster
   mod_form <- as.formula(paste0("~-1+", model@moderator))
-  mf <- stats::expand.model.frame(model, mod_form, na.expand = FALSE)
+  mf <- .expand.model.frame_teeMod(model, model@moderator, na.expand = FALSE)
   mod_vars <- stats::model.matrix(mod_form, mf)
   if (is.null(wts <- model$weights)) wts <- rep(1, nrow(model$model))
   in_model_fit <- ifelse(stats::napredict(model$na.action, wts) > 0,
@@ -857,6 +878,7 @@ cluster_iss <- function(tm,
 #'   \eqn{2\times 2} matrix corresponding to an intercept and the treatment
 #'   variable in the direct adjustment model
 #' @keywords internal
+#' @importFrom stats model.matrix
 #' @rdname sandwich_elements_calc
 .get_a22_inverse <- function(x, values_from = x, ...) {
   if (!inherits(x, "teeMod")) {
@@ -873,6 +895,10 @@ cluster_iss <- function(tm,
     )
   }
   teeMod_bread <- utils::getS3method("bread", x@.S3Class)(x)
+  # make sure the output matrix has the correct dimension names
+  mm <- model.matrix(x)
+  dnms <- colnames(mm[,x$qr$pivot[seq_len(x$qr$rank)],drop=FALSE])
+  dimnames(teeMod_bread) <- replicate(2, dnms, simp = FALSE)
   if (vcov_type == "DB") {
     return(teeMod_bread)
   }
@@ -1079,7 +1105,7 @@ cluster_iss <- function(tm,
 #'   where the number of rows are given by the intercept and the treatment
 #'   variable in the direct adjustment model, and the number of columns are
 #'   given by the dimension of the covariance adjustment model
-#' @importFrom stats weights formula
+#' @importFrom stats weights terms
 #' @keywords internal
 #' @rdname sandwich_elements_calc
 .get_a21 <- function(x, ...) {
@@ -1094,8 +1120,8 @@ cluster_iss <- function(tm,
   }
   
   # Get contribution to the estimating equation from the direct adjustment model
-  damod_mm <- stats::model.matrix(
-    formula(x), stats::model.frame(x, na.action = na.pass))
+  mf <- stats::model.frame(x, na.action = na.pass)
+  damod_mm <- stats::model.matrix(terms(x), mf)
   msk <- (apply(!is.na(sl@prediction_gradient), 1, all) &
             apply(!is.na(damod_mm), 1, all))
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"

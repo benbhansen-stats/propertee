@@ -6,7 +6,7 @@
 #' @return the fitted \code{teeMod} with updated block center residuals.
 #' @keywords internal
 block_center_residuals <- function(x){
-  blks <- stats::expand.model.frame(
+  blks <- .expand.model.frame_teeMod(
     x, var_names(x@StudySpecification, "b")
     )[names(residuals(x)),var_names(x@StudySpecification, "b")]
   n <- length(blks)
