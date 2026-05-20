@@ -23,5 +23,6 @@ areg.center <- function(mm, grp, wts = NULL, grand_mean_center = FALSE) {
     grand_means <- colSums(wts * mm2, na.rm = TRUE) / sum(wts)
     out <- sweep(out, 2, grand_means, FUN = "+")
   }
+  attr(out, "block.means") <- group_means
   return(out)
 }
