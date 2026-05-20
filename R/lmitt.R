@@ -320,11 +320,6 @@ lmitt.formula <- function(obj,
     }
   }
 
-  blocks <- blocks(specification,
-                  eval(lm.call$data, parent.frame()),
-                  all.x = TRUE,
-                  implicit = TRUE)[,1]
-
   # Identify whether RHS is intercept, continuous moderator, or subgroup
   if (rhs != "1") {
     new.form <- reformulate(rhs, intercept = FALSE)
@@ -343,81 +338,29 @@ lmitt.formula <- function(obj,
   }
 
   # Generate formula for the internal `lm`
-  if (rhstype == "intercept" | rhs == var_names(specification, "t")) {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
-    moderator <- character()
-    ctrl_means_form <- stats::reformulate("1", response = "lhs")
-  } else if (rhstype == "categorical") {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), "):",
-                                          rhs, "+", rhs))
-    moderator <- rhs
-    ctrl_means_form <- stats::reformulate(rhs, response = "lhs", intercept = FALSE)
-  } else {
-    new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ") + ",
-                                          "a.(dichotomy=", deparse1(dichotomy), "):",
-                                          rhs, "+", rhs))
-    moderator <- rhs
-    ctrl_means_form <- stats::reformulate(rhs, response = "lhs")
-  }
-  ctrl_means_env <- new.env()
-  assign("ctrl_means_data", data, envir = ctrl_means_env)
-  environment(ctrl_means_form) <- ctrl_means_env
-  
-  mm.call <- lm.call
-  mm.call[[2]] <- str2lang(paste(deparse1(new.form, width.cutoff = 500L), collapse = ""))
-  # model.matrix.lm supports as `na.action` argument where
-  # model.matrix.default doesn't
-  mm.call[[1]] <- quote(stats::model.matrix.lm)
-  mm.call$na.action <- "na.pass"
-  names(mm.call)[2] <- "object"
-  mm <- eval(mm.call, parent.frame())
-  colnames(mm) <- gsub(paste0("dichotomy = ", deparse1(dichotomy)), "", colnames(mm),
-                       fixed = TRUE)
-
-  if (absorb) {
-    mm <- areg.center(mm, as.factor(blocks), lm.call$weights)
-  }
-
-  # Strip intercept from data if it's in there
-  mm <- mm[, !grepl("(Intercept)", colnames(mm)), drop = FALSE]
-  # Make sure to keep it as a named matrix
-
-  # Rename `a.()` to treatment named, adding a "." after to avoid conflict with
-  # original treatment variable.
-  colnames(mm) <- gsub("a\\.\\(\\)",
-                       paste0(var_names(specification, "t"), "."),
-                       colnames(mm))
-
-  # Replace : with _ for interaction to try and avoid backticks
-  colnames(mm) <- gsub("\\:", "_", colnames(mm))
-  # This isn't foolproof as the sbgrp variable can cause them too
-  # e.g. `as.factor(sbgrp)` forces backticks.
-
-  # Rebuild RHS of formula: RHS is "txt_" or "txt_sbgrp", where "txt" has been
-  # replaced with the actual treatment name above.
-  lm_form <- eval(lm.call$formula, envir = parent.frame())
-  lm.call$formula <- str2lang(paste(lm_form[[2]], " ~ ",
-                                    paste(
-                                      paste0("`", colnames(mm), "`"),
-                                      collapse = "+"),
-                                    collapse = ""))
-
-  
-  # If the moderators already exist in the passed-in data, remove them to avoid
-  # either a) overloading variable names, or b) an error if data is a
-  # `grouped_df` (see #137)
-  data <- data[, !(names(data) %in% colnames(mm))]
-  
-  # Data for model should be original data, plus updated RHS (mm),
-  lm.call$data <- cbind(data, mm)
+  lmitt_form <- build_lmitt_formula(
+    deparse1(eval(lm.call$formula, parent.frame(1L))[[2L]]),
+    rhs, rhstype, absorb, dichotomy, lm.call$contrasts[[rhs]])
+  lm.call[[2L]] <- terms(lmitt_form, specification)
 
   # restore subset
   lm.call$subset <- savedsubset
 
+  # fit the model
   model <- eval(lm.call, parent.frame())
   
   # set call's na.action to na.pass so expand.model.frame includes NA rows
   model$call$na.action <- "na.pass"
+  
+  # moderator variable is a slot of the final teeMod object
+  moderator <- if (rhs == "1") character() else rhs
+  
+  # create artifacts for fitting control means mlm in .convert_to_lmitt()
+  ctrl_means_form <- stats::reformulate(
+    rhs, response = "lhs", intercept = rhstype != "categorical")
+  ctrl_means_env <- new.env()
+  assign("ctrl_means_data", data, envir = ctrl_means_env)
+  environment(ctrl_means_form) <- ctrl_means_env
   
   # `&&` necessary to return FALSE immediately if not enough frames on stack
   if (sys.nframe() >= 2 &&

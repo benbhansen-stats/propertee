@@ -54,3 +54,22 @@ model.matrix.lmitt.terms <- function(object, data, ...) {
   }
   return(mm)
 }
+
+#' Return a model matrix associated with a model fit by \code{lmitt()}
+#' @param object \code{teeMod}, or a model fit by \code{lmitt()}.
+#' @param ... Additional arguments for forming the model matrix such as
+#' \code{xlev}. See \code{stats::model.matrix.default()}.
+#' @exportS3Method stats::model.matrix
+#' @examples
+#' data(simdata)
+#' spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
+#' tm <- lmitt(y ~ 1, spec, simdata)
+#' stats::model.matrix(tm)
+#' 
+#' blkd_spec <- rct_spec(z ~ unitid(uoa1, uoa2) + block(bid), simdata)
+#' tm <- lmitt(y ~ 1, blkd_spec, simdata, absorb = TRUE)
+#' stats::model.matrix(tm)
+model.matrix.teeMod <- function(object, ...) {
+  mf <- model.frame(object, xlev = object$xlevels, ...)
+  model.matrix(terms(object), mf, ...)
+}

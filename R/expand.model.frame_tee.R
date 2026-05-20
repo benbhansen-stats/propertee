@@ -34,16 +34,20 @@
   if (as.numeric(version$major) < 4 |
         (as.numeric(version$major) == 4 & as.numeric(version$minor) < 3)) {
     stopifnot(is(model, "teeMod")) # JE addition
-    f <- stats::formula(model) # JE modification
+    ff <- stats::formula(model) # JE modification
+    f <- attr(ff, "model_form") # model.frame call uses model_form stored in
+    # terms object
     data <- eval(model$call$data, envir)
-    data <- cbind(data, stats::model.frame(model)) # JE addition
-    ff <- foo ~ bar + baz
+    # data <- cbind(data, stats::model.frame(model)) # JE addition
+    # ff <- foo ~ bar + baz
     gg <- if (is.call(extras))
-            extras
-    else str2lang(paste("~", paste(extras, collapse = "+")))
-    ff[[2L]] <- f[[2L]]
-    ff[[3L]][[2L]] <- f[[3L]]
-    ff[[3L]][[3L]] <- gg[[2L]]
+      deparse1(extras)
+    else paste(extras, collapse = "+")
+    # ff[[2L]] <- f[[2L]]
+    # ff[[3L]][[2L]] <- f[[3L]]
+    # ff[[3L]][[3L]] <- gg[[2L]]
+    f[[3L]] <- str2lang(paste(deparse1(f[[3L]]), gg, sep = "+"))
+    attr(ff, "model_form") <- f
     if (!na.expand) {
       naa <- model$call$na.action
       subset <- model$call$subset
@@ -62,19 +66,24 @@
     return(rval)
   } else {
     stopifnot(is(model, "teeMod")) # JE addition
-    f <- stats::formula(model) # JE modification
+    ff <- stats::terms(model) # JE modification
+    f <- attr(ff, "model_form") # model.frame call uses model_form stored in
+                                # terms object
     cl <- getCall(model)
     data <- cl$data
-    data <- cbind(data, stats::model.frame(model)) # JE addition
-    f <- formula(model)
-    ff <- foo ~ bar + baz
+    # data <- cbind(data, stats::model.frame(model)) # JE addition
+    # f <- formula(model)
+    # ff <- foo ~ bar + baz
     gg <- if (is.call(extras))
-        extras
-    else str2lang(paste("~", paste(extras, collapse = "+")))
-    ff[[2L]] <- f[[2L]]
-    ff[[3L]][[2L]] <- f[[3L]]
-    ff[[3L]][[3L]] <- gg[[2L]]
-    environment(ff) <- envir
+        deparse1(extras)
+    else paste(extras, collapse = "+")
+    # ff[[2L]] <- f[[2L]]
+    # ff[[3L]][[2L]] <- f[[3L]]
+    # ff[[3L]][[3L]] <- gg[[2L]]
+    f[[3L]] <- str2lang(paste(deparse1(f[[3L]]), gg, sep = "+"))
+    environment(f) <- envir
+    attr(ff, "model_form") <- f
+    # environment(ff) <- envir
     if (!na.expand) {
         rval <- eval(call("model.frame", ff, data = data,
             subset = cl$subset, na.action = cl$na.action), envir)

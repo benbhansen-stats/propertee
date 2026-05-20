@@ -48,7 +48,6 @@
                "(Internal: Inf Recusion error)"))
   }
 
-
   # Searching for weights or cov_adj is basically the same, except for argument
   # type
   .find.specification <- function(type) {
@@ -128,7 +127,18 @@
   found_specs <- !vapply(potential_specs, is.null, logical(1))
 
   if (!any(found_specs)) {
-    # Found nothing
+    # Search the 
+    found_terms <- grepl("^model\\.frame\\.lmitt\\.terms$",
+                         lapply(sys.calls(), "[[", 1),
+                         perl = TRUE)
+    if (any(found_terms)) {
+      specification <- mget(
+        "specification"
+        , environment(get("formula", sys.frame(which(found_terms)[1L])))
+        , ifnot = list(NULL))$s
+      if (!is.null(specification)) return(specification)
+    }
+    
     if (NULL_on_error) {
       return(NULL)
     }

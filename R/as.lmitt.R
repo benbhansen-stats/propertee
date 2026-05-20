@@ -33,7 +33,7 @@ NULL
 ##'   an error will be produced.
 ##' @return \code{teeMod} object
 ##' @rdname as_lmitt
-##' @importFrom stats formula weights
+##' @importFrom stats formula weights terms model.frame model.matrix
 ##' @export
 as.lmitt <- function(x, specification = NULL) {
   if (!inherits(x, "lm")) {
@@ -82,16 +82,7 @@ as.lmitt <- function(x, specification = NULL) {
   # then it must be provided as the first unnamed arg.
   a.call <- attr(tt, "variables")[[attr(tt, "specials")[[
     names(which(!missing_alias))]]+1]]
-  if (is.null(specification)) {
-    if (!is.null(names(a.call))) {
-      specification <- a.call$s
-      if (is.null(specification) & max(which(names(a.call) == "")) > 1) {
-        specification <- a.call[[max(which(names(a.call) == ""))]]
-      }
-    } else {
-      if (length(a.call) > 1) specification <- a.call[[2L]]
-    }
-  }
+  a.call <- match.call(get(names(which(!missing_alias))), a.call)
 
   # check the weights
   if (is.null(specification) &
@@ -104,18 +95,56 @@ as.lmitt <- function(x, specification = NULL) {
     specification <- x$model$`(offset)`@StudySpecification
   }
 
-  if (!inherits(specification, "StudySpecification")) {
-    specification <- eval(specification, parent.frame())
+  # we use the name of the StudySpecification object to build the formula the
+  # teeMod will store
+  spec_call <- a.call$s
+  if (is.null(spec_call) & !is.null(x$call$weights)) {
+    if (inherits(x$call$weights, "call")) {
+      spec_call <- match.call(get(x$call$weights[[1L]]), x$call$weights)$s
+    } else if (inherits(x$call$weights, "name")) {
+      spec_call <- str2lang(paste0(deparse1(x$call$weights),
+                                   "@StudySpecification"))
+    }
+  }
+  if (is.null(spec_call) & !is.null(x$call$offset)) {
+    if (inherits(x$call$offset, "call")) {
+      spec_call <- match.call(get(x$call$offset[[1L]]), x$call$offset)$s
+    } else if (inherits(x$call$offset, "name")) {
+      spec_call <- str2lang(paste0(deparse1(x$call$offset),
+                                   "@StudySpecification"))
+    }
+  }
+  
+  # use that object name to obtain the actual StudySpecification object if we
+  # haven't already gotten it
+  if (is.null(specification)) {
+    specification <- eval(spec_call, parent.frame())
   }
   
   ## find the dichotomy to pass on
   dichotomy <- a.call$dichotomy
-  if (is.null(dichotomy) & length(a.call) == 4) dichotomy <- a.call[[4L]]
   if (is.null(dichotomy) & has_ws) {
     dichotomy <- x$model$`(weights)`@dichotomy
   }
   if (inherits(dichotomy, "formula") & length(dichotomy) == 0) dichotomy <- NULL
   
+  #### Replace formula and terms with lmitt.terms object; replace model frame
+  #### with model frame associated with lmitt.terms; names of coeffs need to
+  #### match the lmitt.terms object
+  new.form <- build_lmitt_formula(deparse1(tt[[2L]]), "1"
+                                  , rhstype = "intercept"
+                                  , absorb = FALSE
+                                  , dichotomy = dichotomy
+                                  , specification = spec_call
+                                  , data = x$call$data)
+  attr(new.form, ".Environment") <- environment(formula(x))
+  new.tt <- terms(new.form, specification)
+  x$call[[2L]] <- new.tt
+  x$terms <- new.tt
+  mf <- x$call
+  mf[[1L]] <- quote(model.frame)
+  x$model <- eval(mf, environment(formula(x)))
+  names(x$coefficients) <- colnames(model.matrix(x$terms, x$model))
   #### Obtain the proper call.
   # The first conditional is the user calls `lmitt()` and passes an `lm` object.
   # The second conditional if the user calls `lmitt.lm()` directly
@@ -208,26 +237,17 @@ as.teeMod <- as.lmitt
 
   eval_env <- new.env(parent = environment(formula(lm_model)))
   # Find data
-  if (lmitt_fitted) {
-    # If `lmitt.formula` is called, get the data from there directly (since
-    # inside `lmitt.formula`, we pass in the data directly after appenindg on
-    # the updated RHS and LHS).
-    data <- lm_model$call$data
-  } else {
-    # If `as.lmitt` (or `lmitt.lm`), evaluate the lm call's data using a
-    # `fallback_data_search`-esque approach
-    data_call <- lm_model$call$data
-    #for (i in c(-1L, seq_len(sys.nframe()))) {
-    for (i in seq_len(length(sys.calls()))) {
-      try(data <- eval(data_call, envir = parent.frame(i)),
-          silent = TRUE)
-      if (!is.null(data) && is.data.frame(data)) {
-        break()
-      }
+  data_call <- lm_model$call$data
+  #for (i in c(-1L, seq_len(sys.nframe()))) {
+  for (i in seq_len(length(sys.calls()))) {
+    try(data <- eval(data_call, envir = parent.frame(i)),
+        silent = TRUE)
+    if (!is.null(data) && is.data.frame(data)) {
+      break()
     }
-    if (!inherits(data, "data.frame")) {
-      stop("Could not determine appropriate data")
-    }
+  }
+  if (!inherits(data, "data.frame")) {
+    stop("Could not determine appropriate data")
   }
   
   ## code block for getting control means and tacking them onto coefficients
