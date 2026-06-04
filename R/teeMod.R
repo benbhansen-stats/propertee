@@ -146,6 +146,18 @@ estfun.teeMod <- function(x, values_from = x, ...) {
     class(values_from$na.action) <- "exclude"
   }
 
+  ## For DB type, non-absorbed intercepts, and no SandwichLayer covariance
+  ## adjustment: return the design-based gamma vector (n x 1) directly.
+  ## This short-circuits the standard ratio-based values_from substitution,
+  ## which breaks when the absorbed-model residuals are zero (e.g. pair-matched
+  ## designs), and is the path used by .get_DB_wo_covadj_se internally.
+  if (vcov_type == "DB" && !x@absorbed_intercepts) {
+    sl_check <- x$model$`(offset)`
+    if (is.null(sl_check) || !inherits(sl_check, "SandwichLayer")) {
+      return(.estfun_DB_nonabsorbed(x, values_from, ...))
+    }
+  }
+
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
   mat <- .base_S3class_estfun(x) - .estfun_DB_blockabsorb(x, ...)
@@ -237,6 +249,54 @@ estfun.teeMod <- function(x, values_from = x, ...) {
 ##' @exportS3Method
 bread.teeMod <- function(x, values_from = x, ...)
   .get_tilde_a22_inverse(x, values_from, ...)
+
+##' @title (Internal) Design-based estimating equations for non-absorbed models
+##' @description Returns an \eqn{n \times 1} matrix of per-unit contributions
+##'   \eqn{\gamma_i = n_{b(i),z_i} \, w_i \, e_i} where \eqn{e_i} comes from
+##'   \code{residuals(values_from, type="working")}.  Summing within a cluster
+##'   gives the cluster-level gamma used in the Section 4.2 DB0 variance formula.
+##' @param x a fitted non-absorbed \code{teeMod}
+##' @param values_from a fitted model whose working residuals supply \eqn{e_i}.
+##'   Pass a null model (e.g. \code{lm(y~0, offset=null_fitted)}) to evaluate the
+##'   estimating equations under a score-test null hypothesis.
+##' @keywords internal
+.estfun_DB_nonabsorbed <- function(x, values_from = x, ...) {
+  spec     <- x@StudySpecification
+  name_clu <- var_names(spec, "u")
+  data     <- x$call$data
+
+  # Cluster-level block structure (reuses the same bid/nbk logic as
+  # .get_DB_wo_covadj_se so that n_bz is consistent with the variance formula)
+  agg    <- .aggregate_to_cluster(x)
+  data_c <- agg$data
+  bid_c  <- data_c[, agg$block]
+  zobs_c <- data_c[, agg$z]
+
+  if (length(unique(bid_c)) == 1) {
+    nbk <- t(specification_table(specification = spec, x = "treatment"))
+  } else {
+    nbk <- specification_table(specification = spec,
+                                x = "treatment", y = "block")
+  }
+  n_bz_c <- as.numeric(nbk[bid_c, 1] * (1 - zobs_c) +
+                        nbk[bid_c, 2] *       zobs_c)
+
+  # Map cluster-level n_bz to individual level via UID lookup
+  uid_c    <- apply(data_c[seq_len(length(name_clu))], 1, paste, collapse = "_")
+  n_bz_map <- stats::setNames(n_bz_c, uid_c)
+  uid_i    <- apply(data[name_clu], 1, paste, collapse = "_")
+  n_bz_i   <- as.numeric(n_bz_map[uid_i])
+
+  # Individual weights from x; residuals from values_from
+  w <- if (is.null(stats::weights(x))) rep(1, nrow(data))
+       else as.numeric(stats::weights(x))
+  if (!is.null(values_from$na.action)) class(values_from$na.action) <- "exclude"
+  e <- stats::residuals(values_from, type = "working")
+  e <- replace(e, is.na(e), 0)
+
+  trt_name <- paste0(var_names(spec, "t"), ".")
+  matrix(n_bz_i * w * e, ncol = 1L, dimnames = list(NULL, trt_name))
+}
 
 ##' @title (Internal) Bias correct residuals contributing to standard errors of
 ##'   a \code{teeMod}

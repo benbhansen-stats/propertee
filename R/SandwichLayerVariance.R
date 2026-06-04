@@ -1227,7 +1227,7 @@ cluster_iss <- function(tm,
       vmat <- .get_DB_covadj_se(x, ...)
     }
     else {
-      vmat <- .get_DB_wo_covadj_se(x)
+      vmat <- .get_DB_wo_covadj_se(x, ...)
     }
     
     name <- paste0(var_names(x@StudySpecification, "t"), ".")
@@ -1353,57 +1353,94 @@ cluster_iss <- function(tm,
 #' @title (Internal) Design-based variance for models without
 #'   covariance adjustment
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate bread matrix for design-based variance estimate for
-#'   \code{teeMod} models without covariance adjustment and without absorbed
-#'   effects
+#' @param values_from optional, a fitted model object. Defaults to \code{x}.
+#'   When provided, its working residuals replace those of \code{x} in the
+#'   gamma vectors, enabling null-variance evaluation for score-type tests.
+#'   The residuals must have the same length as those of \code{x}.
+#' @details Calculate design-based variance estimate for \code{teeMod}
+#'   models without covariance adjustment and without absorbed effects.
+#'
+#'   The gamma for cluster \eqn{c} is
+#'   \eqn{\gamma_c = n_{b(c),z_c} \sum_{j \in c} w_j e_j}, where
+#'   \eqn{e_j = \mathrm{residuals(values\_from)}_j}.  For the default
+#'   \code{values_from = x} and an ATE-weighted model,
+#'   \eqn{e_j = y_j - \hat\rho_{z_j}}, reproducing the original
+#'   formula exactly.  Passing a null model as \code{values_from}
+#'   substitutes null-imputed \eqn{\rho} values throughout.
 #' @return design-based variance estimate of the main treatment effect
 #'   estimate
 #' @importFrom stats aggregate var
 #' @keywords internal
-.get_DB_wo_covadj_se <- function(x, ...){
+.get_DB_wo_covadj_se <- function(x, values_from = x, ...) {
   if (x@absorbed_intercepts) {
     stop("x should not have absorbed intercepts")
   }
   if (!is.null(x$call$offset)){
     stop("x should not have covariance adjustment")
   }
-  # aggregate block ids and outcomes to the cluster level
-  agg <- .aggregate_to_cluster(x)
-  data <- agg$data
+  if (!is.null(values_from$na.action)) class(values_from$na.action) <- "exclude"
+
+  # Aggregate block IDs and weights to the cluster level
+  agg   <- .aggregate_to_cluster(x)
+  data  <- agg$data
   block <- agg$block
 
-  ws <- data$.w
-  yobs <- data$.wy # observed outcomes by cluster
-  zobs <- data[, agg$z] # observed treatments by cluster
-  bid <- data[, block] # block ids of clusters
+  ws   <- data$.w
+  zobs <- data[, agg$z]
+  bid  <- data[, block]
 
   if (length(unique(bid)) == 1) {
     nbk <- t(specification_table(specification=x@StudySpecification, x="treatment"))
   } else {
-    nbk <- specification_table(specification=x@StudySpecification, x="treatment",y="block")
+    nbk <- specification_table(specification=x@StudySpecification,
+                                x="treatment", y="block")
   }
-  # number of units by block and treatment, B by K
-  small_blocks <- apply(nbk, 1, min) == 1 # small block indicator
-  nb <- rowSums(nbk) # number of clusters in each block
+  small_blocks <- apply(nbk, 1, min) == 1
+  nb <- rowSums(nbk)
 
-  rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
-           sum(ws * yobs * zobs) / sum(ws * zobs))
+  # Get individual-level DB gammas via estfun.teeMod, which routes through
+  # .estfun_DB_nonabsorbed and naturally supports null-imputed rho via
+  # values_from.  Each element is n_{b(i),z_i} * w_i * e_i(values_from);
+  # summing within a cluster gives n_bz * sum(w_j * e_j) = n_bz * we_c.
+  ef_mat   <- estfun(x, values_from = values_from, vcov_type = "DB", ...)
+  gammas_i <- replace(ef_mat[, 1L], is.na(ef_mat[, 1L]), 0)
 
-  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcome gamma
-  gamsbk <- list()  # s^2_b,j, sample variance of gamma by block and treatment
-  for (k in 1:2){
-    indk <- zobs == (k-1)
-    gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
-    gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = stats::var)
+  # Aggregate to cluster level, reordered to match .aggregate_to_cluster order
+  name_clu   <- var_names(x@StudySpecification, "u")
+  uid_indiv  <- apply(x$call$data[name_clu], 1, paste, collapse = "_")
+  gam_by_uid <- tapply(gammas_i, uid_indiv, sum, na.rm = TRUE)
+  uid_c      <- apply(data[seq_len(length(name_clu))], 1, paste, collapse = "_")
+  gammas     <- as.numeric(gam_by_uid[uid_c])
+
+  gamsbk <- list()
+  for (k in 1:2) {
+    indk        <- zobs == (k - 1)
+    gamsbk[[k]] <- stats::aggregate(gammas[indk],
+                                     by  = list(data[indk, block]),
+                                     FUN = stats::var)
   }
-  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
+  gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1", all = TRUE)
   gamsbk[is.na(gamsbk)] <- 0
-  gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
+  # Reorder rows to match nbk block ordering; prevents character-sort vs
+  # numeric-sort mismatches for multi-digit block IDs (e.g. 1, 2, ..., 10).
+  if (length(unique(bid)) > 1) {
+    gamsbk <- gamsbk[match(as.character(rownames(nbk)),
+                           as.character(gamsbk[, 1])), ]
+  }
+  gamsbk <- as.matrix(gamsbk[, 2:3])
 
-  nu1 <- rowSums(gamsbk / nbk) # large block variance estimates
-  # small block variance estimates
-  nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb -
-    (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
+  gamsb_agg <- stats::aggregate(gammas, by = list(bid), FUN = var)
+  gamsb <- if (length(unique(bid)) > 1) {
+    gamsb_agg[match(as.character(rownames(nbk)),
+                    as.character(gamsb_agg[, 1])), 2]
+  } else {
+    gamsb_agg[, 2]
+  }
+
+  nu1 <- rowSums(gamsbk / nbk)
+  nu2 <- 2 / nbk[, 1] / nbk[, 2] * choose(nb, 2) * gamsb -
+    (1 / nbk[, 1] + 1 / nbk[, 2]) *
+    ((nbk[, 1] - 1) * gamsbk[, 1] + (nbk[, 2] - 1) * gamsbk[, 2])
   varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
   return(as.matrix(varest))
 }
