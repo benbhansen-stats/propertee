@@ -114,6 +114,7 @@ free- or reduced-price lunch eligibility at the school level and in the
 steps also.)
 
 ``` r
+
 if (!require("robustbase")) library(robustbase)
 if (!require("readxl")) library(readxl)
 if (!require("httr")) library(httr)
@@ -155,6 +156,7 @@ unique across districts. Then we’d use something like
 `block(districtid, schoolidk)` in the `_spec` function.
 
 ``` r
+
 spec <- rct_spec(z ~ unitid(schoolid) + block(blk), michigan_school_pairs)
 ```
 
@@ -174,6 +176,7 @@ assignment, their allocations to conditions and, if applicable, blocks
 within which they were allocated.
 
 ``` r
+
 spec@structure
 ```
 
@@ -208,20 +211,24 @@ study and all schools in Oakland County whose outcomes and covariates
 are measured in the data we’ve downloaded. The exact specification for
 this school-level model is provided in Equation 1.
 
-$$\begin{aligned}
-\text{Average\_Score\_14} & {= \beta_{0} + \beta_{1}\text{Total\_Enrollment\_14} + \beta_{2}\text{Title\_I\_Status\_14}} \\
- & {\quad + \beta_{3}\text{Magnet\_Status\_14} + \beta_{4}\text{Charter\_Status\_14} + \beta_{5}\text{Education\_Type\_14}} \\
- & {\quad + \beta_{6}\text{Perc\_Female\_14} + \beta_{7}\text{Perc\_Native\_14} + \beta_{8}\text{Perc\_Asian\_14}} \\
- & {\quad + \beta_{9}\text{Perc\_Hispanic\_14} + \beta_{10}\text{Perc\_Black\_14} + \beta_{11}\text{Perc\_White\_14}} \\
- & {\quad + \beta_{12}\text{Perc\_Pacific\_Islander\_14} + \beta_{13}\text{Perc\_Econ\_Disadvantaged\_14}} \\
- & {\quad + \beta_{14}\text{Perc\_Female\_Grade11\_14} + \beta_{15}\text{Perc\_Native\_Grade11\_14}} \\
- & {\quad + \beta_{16}\text{Perc\_Asian\_Grade11\_14} + \beta_{17}\text{Perc\_Hispanic\_Grade11\_14}} \\
- & {\quad + \beta_{18}\text{Perc\_Black\_Grade11\_14} + \beta_{19}\text{Perc\_White\_Grade11\_14}} \\
- & {\quad + \beta_{20}\text{Perc\_Pacific\_Islander\_Grade11\_14} + \beta_{21}\text{Average\_Score\_13}} \\
- & {\quad + \beta_{22}\text{Average\_Score\_12}}
-\end{aligned}$$
+``` math
+\begin{align}
+\text{Average_Score_14} &= \beta_{0} + \beta_{1}\text{Total_Enrollment_14} + \beta_{2}\text{Title_I_Status_14}
+\\&\quad+
+\beta_{3}\text{Magnet_Status_14} + \beta_{4}\text{Charter_Status_14} + \beta_{5}\text{Education_Type_14} \\&\quad +
+\beta_{6}\text{Perc_Female_14} + \beta_{7}\text{Perc_Native_14} + \beta_{8}\text{Perc_Asian_14} \\&\quad +
+\beta_{9}\text{Perc_Hispanic_14} + \beta_{10}\text{Perc_Black_14} + \beta_{11}\text{Perc_White_14} \\&\quad+
+\beta_{12}\text{Perc_Pacific_Islander_14} + \beta_{13}\text{Perc_Econ_Disadvantaged_14} \\&\quad+
+\beta_{14}\text{Perc_Female_Grade11_14} + \beta_{15}\text{Perc_Native_Grade11_14} \tag{1} \\ &\quad+
+\beta_{16}\text{Perc_Asian_Grade11_14} + \beta_{17}\text{Perc_Hispanic_Grade11_14} \\ &\quad+
+\beta_{18}\text{Perc_Black_Grade11_14} + \beta_{19}\text{Perc_White_Grade11_14} \\ &\quad+
+\beta_{20}\text{Perc_Pacific_Islander_Grade11_14} + \beta_{21}\text{Average_Score_13} \\&\quad+
+\beta_{22}\text{Average_Score_12}
+\end{align}
+```
 
 ``` r
+
 coname <- "OAKLAND COUNTY"
 RESPONSE_COL <- "Average.Scale.Score.2014"
 MODELING_COLS <- c(
@@ -233,6 +240,7 @@ MODELING_COLS <- c(
 ```
 
 ``` r
+
 not_missing_resp <- !is.na(analysis1data[[RESPONSE_COL]])
 not_missing_covs <- rowSums(is.na(analysis1data[, MODELING_COLS])) == 0
 county_ix <- analysis1data$CONAME == coname
@@ -245,6 +253,7 @@ lm_county_camod <- lm(camod_form, county_camod_dat,
 ```
 
 ``` r
+
 set.seed(650)
 rob_county_camod <- robustbase::lmrob(
   camod_form, county_camod_dat, weights = county_camod_dat$Total.Tested.2014,
@@ -271,6 +280,7 @@ function, which generates model predictions for each school and
 identifies overlap between the prognostic sample and the study sample.
 
 ``` r
+
 study1data <-
      merge(michigan_school_pairs, analysis1data, by = "schoolid", all.x = TRUE)
 ip_wts <- propertee::ate(spec, data = study1data) * study1data$Total.Tested.2014
@@ -289,6 +299,7 @@ function, we pass the inverse probability of assignment weights to the
 argument.
 
 ``` r
+
 main_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~1"))
 lm_ca_effect <- propertee::lmitt(
   main_effect_fmla, specification = spec, data = study1data, weights = ip_wts,
@@ -303,6 +314,7 @@ effect and the estimated standard error that has propagated uncertainty
 from the covariance adjustment regression.
 
 ``` r
+
 summary(lm_ca_effect, vcov.type = "HC0")
 ```
 
@@ -326,6 +338,7 @@ different `vcov.type` in the
 [`summary()`](https://rdrr.io/r/base/summary.html) function.
 
 ``` r
+
 summary(lm_ca_effect, vcov.type = "HC1")
 ```
 
@@ -348,6 +361,7 @@ more harm than good. To increase robustness to such contamination, we
 can use robust linear regression for generating predictions.
 
 ``` r
+
 rob_ca <- propertee::cov_adj(rob_county_camod, newdata = study1data, specification = spec)
 rob_ca_effect <- propertee::lmitt(
   main_effect_fmla, specification = spec, data = study1data, weights = ip_wts,
@@ -393,6 +407,7 @@ with missing values in the response variable or the covariates. We also
 isolate data for the Oakland County.
 
 ``` r
+
 not_missing_resp <- !is.na(analysis2data[[RESPONSE_COL]])
 not_missing_covs <- rowSums(is.na(analysis2data[, MODELING_COLS])) == 0
 county_ix <- analysis2data$CONAME == coname
@@ -405,6 +420,7 @@ effects. We then use this updated formula to fit a weighted linear
 regression model.
 
 ``` r
+
 mod_camod_form <- update(camod_form, . ~ . + factor(DemographicGroup))
 lm_county_mod_camod <- lm(mod_camod_form, county_mod_camod_dat,
                           weights = county_mod_camod_dat$Total.Tested.2014)
@@ -416,6 +432,7 @@ for the estimation of treatment effects based on school and demographic
 group.
 
 ``` r
+
 study2data <- merge(michigan_school_pairs, analysis2data, by = "schoolid", all.x = TRUE)
 study2data <- study2data[study2data$DemographicGroup %in%
                            c("White", "Black or African American"),]
@@ -428,6 +445,7 @@ for covariates using
 [`cov_adj()`](https://benbhansen-stats.github.io/propertee/dev/reference/cov_adj.md).
 
 ``` r
+
 ip_wts <- propertee::ate(spec, data = study2data) * study2data$Total.Tested.2014
 lm_mod_ca <- propertee::cov_adj(lm_county_mod_camod, newdata = study2data,
                                 specification = spec, by = "uniqueid")
@@ -439,6 +457,7 @@ fit the model using the
 function.
 
 ``` r
+
 mod_effect_fmla <- as.formula(paste0(RESPONSE_COL, "~ DemographicGroup"))
 lm_ca_mod_effect <- propertee::lmitt(mod_effect_fmla, specification = spec,
                                      data = study2data, weights = ip_wts,

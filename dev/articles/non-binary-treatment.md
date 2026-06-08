@@ -61,6 +61,7 @@ group. For example, if `dose` represents the intensity of a given
 treatment, we could set a threshold of 200, say, mg:
 
 ``` r
+
 dose > 200 ~ dose <= 200
 ```
 
@@ -71,6 +72,7 @@ A `.` can be used to define either group as the inverse of the other.
 For example, the above dichotomy could be defined as either of
 
 ``` r
+
 dose > 200 ~ .
 . ~ dose <= 200
 ```
@@ -80,6 +82,7 @@ assumed to have `NA` for a treatment status and will be ignored in the
 estimation of treatment effects.
 
 ``` r
+
 dose >= 300 ~ dose <= 100
 ```
 
@@ -89,6 +92,7 @@ ignored.
 ### An Example
 
 ``` r
+
 data(simdata)
 table(simdata$dose)
 #> 
@@ -114,11 +118,13 @@ summary(spec1)
 ```
 
 ``` r
+
 head(ate(spec1, data = simdata, dichotomy = dose >= 300 ~ dose <= 100))
 #> [1] 1.5 1.5 1.5 1.5 0.0 0.0
 ```
 
 ``` r
+
 head(assigned(spec1, data = simdata, dichotomy = dose >= 300 ~ dose <= 100))
 #> [1]  0  0  0  0 NA NA
 ```
