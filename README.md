@@ -9,9 +9,8 @@
 **propertee** enables flexible direct adjustment with specification-informed standard errors
 and optional prior covariance adjustment.
 
-Random trials often utilize units of assignment and blocking in assigning
-treatment status as a way to simplify implementation. Standard errors and other inferential calculations should respect such aspects of the study's design. Using **propertee**, a user can generate a
-"StudySpecification" object which will keep track of the design specification.
+Randomizaed trials often allocate treatments within blocks as a way to simplify implementation. This is a separate matter from allocation of treatments to subgroups (clusters) of individuals. Standard errors and other inferential calculations must respect such aspects of the study's design. With **propertee**, a user can generate a
+"StudySpecification" object that keeps track of this and other necessary information.
 
     spec <- rct_spec(txt ~ unit_of_assignment(teacher) + block(school), data = teacherdata)
 
