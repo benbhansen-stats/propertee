@@ -323,7 +323,7 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
           warning(paste("Could not find direct adjustment data in the call",
                         "stack, or it did not contain the columns specified in",
                         "`by`. Searching for `names(by)` in",
-                        "specification@structure. Supply the direct",,
+                        "specification@structure. Supply the direct",
                         "adjustment data to the `Q_data` argument when using",
                         "`by` to avoid this error."),
                   call. = FALSE)
