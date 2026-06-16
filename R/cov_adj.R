@@ -35,7 +35,11 @@ NULL
 ##'   \code{PreSandwichLayer} object
 ##' @export
 ##' @example inst/examples/cov_adj.R
-cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
+cov_adj <- function(model,
+                    newdata = NULL,
+                    specification =  NULL,
+                    by = NULL,
+                    set_to_reference = NULL) {
   if (is.null(specification)) {
     specification <- .get_spec(NULL_on_error = TRUE)
   }
@@ -65,6 +69,34 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
   }
 
 
+  if (!is.null(set_to_reference)) {
+    if (is.null(names(set_to_reference))) stop(
+      "`set_to_reference` must be a named list or vector"
+    )
+    missing_cols <- setdiff(names(set_to_reference), names(newdata))
+    if (length(missing_cols) > 0) {
+      warning(
+        warningCondition(paste("Columns",
+                               paste(missing_cols, collapse = ", "),
+                               "from `set_to_reference` not found in newdata"),
+                         call = "cov_adj")
+      )
+    }
+    for (c in seq_along(set_to_reference)) {
+      col <- names(set_to_reference)[c]
+      val <- set_to_reference[[c]]
+      if (inherits(val, "set_to_reference_default")) {
+        if (is.numeric(newdata[[col]])) {
+          val <- min(newdata[[col]], na.rm = TRUE)
+        } else if (is.logical(newdata[[col]])) {
+          val <- as.logical(min(newdata[[col]], na.rm = TRUE))
+        } else if (!inherits(newdata[[nm]], "factor")) {
+          val <- levels(newdata[[col]])[1]
+        }
+      }
+      newdata[[col]] <- val
+    }
+  }
   if (!is.null(specification)) {
     trt_name <- var_names(specification,'t')
     if (trt_name %in% names(newdata))
@@ -86,7 +118,14 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
     if (specification@unit_of_assignment_type == "none") {
       newdata$..uoa.. <- rownames(newdata)
     }
-
+  } else if (is.null(set_to_reference)) {
+    warning(
+      paste("Without a specification, post-treatment variables in the",
+            "covariance adjustment model cannot be ensured not to contribute",
+            "to predictions that offset study outcomes. Use the",
+            "set_to_reference argument or pass the StudySpecification to",
+            "cov_adj() to avoid this warning.")
+    )
   }
 
   psl <- .make_PreSandwichLayer(model, newdata)
@@ -94,8 +133,14 @@ cov_adj <- function(model, newdata = NULL, specification =  NULL, by = NULL) {
   if (is.null(specification)) {
     return(psl)
   } else {
-    return(as.SandwichLayer(psl, specification, by = by, Q_data = newdata))
+    sl <- as.SandwichLayer(psl, specification, by = by, Q_data = newdata)
+    return(sl)
   }
+}
+
+##' @export
+default <- function() {
+  structure(list(), class = "set_to_reference_default")
 }
 
 ##' @title (Internal) Add columns for merging covariance adjustment and direct
