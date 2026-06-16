@@ -1,5 +1,5 @@
 Package: propertee
-Version: 1.0.5.9003
+Version: 1.0.6
 Title: Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of
     ERrors (for Treatment Effect Estimation) package facilitates
@@ -14,9 +14,9 @@ Description: The Prognostic Regression Offsets with Propagation of
     offsetting the outcome against predictions from a dedicated
     covariance model, with standard error calculations propagating
     error as appropriate from the covariance model.
-Authors@R: c(person("Josh", "Errickson", role = c("cre","aut"),
+Authors@R: c(person("Josh", "Errickson", role = "aut",
                     email = "jerrick@umich.edu"),
-             person("Josh", "Wasserman", role = "aut",
+             person("Josh", "Wasserman", role = c("cre", "aut"),
                     email = "jwass@umich.edu"),
              person("Mark", "Fredrickson", role = "ctb",
                     email = "mark.m.fredrickson@gmail.com"),
