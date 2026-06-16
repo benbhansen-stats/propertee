@@ -4,7 +4,13 @@
 \alias{cov_adj}
 \title{Covariance adjustment of \code{teeMod} model estimates}
 \usage{
-cov_adj(model, newdata = NULL, specification = NULL, by = NULL)
+cov_adj(
+  model,
+  newdata = NULL,
+  specification = NULL,
+  by = NULL,
+  set_to_reference = NULL
+)
 }
 \arguments{
 \item{model}{any model that inherits from a \code{glm}, \code{lm}, or
@@ -17,14 +23,15 @@ dataframe is sought from higher up the call stack.}
 which case a \code{StudySpecification} object is sought from higher up the
 call stack.}
 
-\item{by}{optional; a string or named vector of unique identifier columns in
-the data used to create \code{specification} and the data used to fit the
-covariance adjustment model. Default is NULL, in which case unit of
-assignment columns are used for identification (even if they do not
-uniquely identify units of observation). If a named vector is provided,
-names should represent variables in the data used to create
-\code{specification}, while values should represent variables in the
-covariance adjustment data.}
+\item{by}{named vector with names specifying columns in the dataframe for
+building \code{specification} and values specifying columns in the dataframe
+for fitting \code{model}. Default is NULL.}
+
+\item{set_to_reference}{named list with names specifying columns whose
+values should be set to reference values given by the list entries. Entries
+can be left as \code{default()}. See Details for how this is used to
+generate predictions under the possible counterfactual of assignment to the
+control condition.}
 }
 \value{
 A \code{SandwichLayer} if \code{specification} is not NULL or a
@@ -47,7 +54,14 @@ level. If the treatment has logical type, this reference level is
 \code{FALSE}, and if it has numeric type, this is the smallest
 non-negative value (which means 0 for 0/1 binary). Factor treatments are
 not currently supported for \code{StudySpecification} objects.\cr\cr The
-values of the output vector represent adjustments for the outcomes in
+\code{set_to_reference} argument can be used to identify columns that
+should either be set to a value specified by the user or a default
+determined by internal routines (often, the first level of a factor, or
+the minimum of a numeric variable). For example, the covariance adjustment
+model may include a multi-factor treatment column. The
+\code{set_to_reference} argument can be used to set that column to the
+control level when \code{cov_adj()} generates predicted outcomes. \cr\cr
+The values of the output vector represent adjustments for the outcomes in
 \code{newdata} if \code{newdata} is provided; adjustments for the outcomes
 in the data used to fit a \code{teeMod} model if \code{cov_adj()} is
 called within the \code{offset} argument of the model fit; or they are the

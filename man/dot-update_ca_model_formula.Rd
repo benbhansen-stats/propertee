@@ -11,14 +11,9 @@ adjustment samples to model formula}
 \item{model}{any model that inherits from a \code{glm}, \code{lm}, or
 \code{robustbase::lmrob} object}
 
-\item{by}{optional; a string or named vector of unique identifier columns in
-the data used to create \code{specification} and the data used to fit the
-covariance adjustment model. Default is NULL, in which case unit of
-assignment columns are used for identification (even if they do not
-uniquely identify units of observation). If a named vector is provided,
-names should represent variables in the data used to create
-\code{specification}, while values should represent variables in the
-covariance adjustment data.}
+\item{by}{named vector with names specifying columns in the dataframe for
+building \code{specification} and values specifying columns in the dataframe
+for fitting \code{model}. Default is NULL.}
 
 \item{specification}{a \code{StudySpecification} object. Default is NULL, in
 which case a \code{StudySpecification} object is sought from higher up the
