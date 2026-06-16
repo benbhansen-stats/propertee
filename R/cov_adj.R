@@ -90,8 +90,10 @@ cov_adj <- function(model,
           val <- min(newdata[[col]], na.rm = TRUE)
         } else if (is.logical(newdata[[col]])) {
           val <- as.logical(min(newdata[[col]], na.rm = TRUE))
-        } else if (!inherits(newdata[[nm]], "factor")) {
-          val <- levels(newdata[[col]])[1]
+        } else if (!inherits(newdata[[col]], "factor")) {
+          val <- levels(factor(newdata[[col]]))[1L]
+        } else {
+          val <- levels(newdata[[col]])[1L]
         }
       }
       newdata[[col]] <- val

@@ -2918,7 +2918,8 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), data = simdata)
   cmod <- lm(y ~ x, data = simdata)
   # Make sure its PreSandwich prior
-  ca <- cov_adj(cmod, newdata = simdata)
+  expect_warning(ca <- cov_adj(cmod, newdata = simdata),
+                 "Without a specification")
   expect_false(is(ca, "SandwichLayer"))
   ssmod <- as.lmitt(lm(y ~ a.(spec), data = simdata, offset = ca),
                     specification = spec)
@@ -2940,7 +2941,8 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
   v1 <- vcov_tee(ssmod1)
 
   wts2 <- ett(spec, data = copy_simdata)
-  offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid")
+  expect_warning(offst2 <- cov_adj(cmod, copy_simdata, by = "schoolid"),
+                 "Without a specification")
   lm2 <- lm(y ~ assigned(), copy_simdata, weights = wts2, offset = offst2)
   ssmod2 <- lmitt(lm2, specification = spec)
   expect_true(is(ssmod$model$`(offset)`, "SandwichLayer"))
