@@ -7,11 +7,19 @@ src-*
 ./propertee_*
 *.swp
 .pkgexclude
+data-raw/*.html
+data-raw/*.md
+developer_docs/*.md
+developer_docs/*.aux
+developer_docs/*.log
+developer_docs/*.out
+developer_docs/*.rel
+developer_docs/*.tex~
+developer_docs/*.jp*g
+developer_docs/*.pdf
+developer_docs/*.R
 inst/doc
-vignettes/figure
-vignettes/*.md
-vignettes/*.R
-vignettes/*.pdf
+## vignettes/ # see vignettes/.gitignore
 .Rproj.user
 .DS_Store
 coverage.html
@@ -24,3 +32,4 @@ lib/*
 *.RData
 *.Rapp.history
 *.Rhistory
+*/auto

@@ -245,6 +245,9 @@ setGeneric("units_of_assignment", function(x, newdata = NULL, by = NULL) {
 ##' @export
 ##' @rdname StudySpecification_extractreplace
 setMethod("units_of_assignment", "StudySpecification", function(x, newdata = NULL, by = NULL) {
+  if (x@unit_of_assignment_type == "none") {
+    stop("StudySpecification specified without unit of assignment")
+  }
   if (x@unit_of_assignment_type == "unitid") {
     stop("StudySpecification specified with `unitid()`, not `unit_of_assignment()`")
   }
@@ -299,6 +302,9 @@ setGeneric("clusters", function(x, newdata = NULL, by = NULL) standardGeneric("c
 ##' @export
 ##' @rdname StudySpecification_extractreplace
 setMethod("clusters", "StudySpecification", function(x, newdata = NULL, by = NULL) {
+  if (x@unit_of_assignment_type == "none") {
+    stop("StudySpecification specified without clusters")
+  }
   if (x@unit_of_assignment_type == "unitid") {
     stop("StudySpecification specified with `unitid()`, not `cluster()`")
   }
@@ -351,6 +357,9 @@ setGeneric("unitids", function(x) standardGeneric("unitids"))
 ##' @export
 ##' @rdname StudySpecification_extractreplace
 setMethod("unitids", "StudySpecification", function(x) {
+  if (x@unit_of_assignment_type == "none") {
+    stop("StudySpecification specified without unit IDs")
+  }
   if (x@unit_of_assignment_type == "cluster") {
     stop("StudySpecification specified with `cluster()`, not `unitid()`")
   }
@@ -389,6 +398,21 @@ setMethod("unitids<-", "StudySpecification", function(x, value) {
   validObject(x)
   return(x)
 })
+
+############### ..uoa..
+# This is when a spec is specified without uoa/cluster/unitid, e.g. z ~ 1. See
+# #193 for details
+
+##' @title Return ..uoa.. column
+##' @param spec A studyspecification
+##' @return The ..uoa.. column
+##' @keywords internal
+..uoa.. <- function(spec) {
+  if (spec@unit_of_assignment_type != "none") {
+    stop("Internal error: ..uoa..() only valid for `unit_of_assignment_type` == 'none'")
+  }
+  return(spec@structure["..uoa.."])
+}
 
 ############### Blocks
 
@@ -648,6 +672,11 @@ setMethod("forcings<-", "StudySpecification", function(x, value) {
         var_names(specification, "b", implicitBlocks = TRUE)[1] == ".blocks_internal") {
     specification_data$.blocks_internal <- rep(1, nrow(specification_data))
   }
+
+  if (specification@unit_of_assignment_type == "none") {
+    newdata[["..uoa.."]] <- rownames(newdata)
+  }
+
 
 
   newdata_data <- stats::model.frame(form_for_newdata, newdata, na.action = na.pass)

@@ -97,7 +97,11 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   fit the covariance adjustment model to units of assignment in the
 ##'   \code{teeMod} model's \code{StudySpecification} slot; units of observation
 ##'   within units of assignment that do not match are additional units that add
-##'   to the row count.\cr\cr The\code{by} argument in \code{cov_adj()} can
+##'   to the row count.\cr\cr The working residuals (and, if applicable, working
+##'   weights) from \code{values_from} will be used in the output matrix in
+##'   place of those from \code{x}. In other words, the contributions to the
+##'   the empirical estimating equations remain the same but are evaluated at
+##'   parameter estimates from \code{values_from} rather than \code{x}.\cr\cr The \code{by} argument in \code{cov_adj()} can
 ##'   provide a column or a pair of columns (a named vector where the name
 ##'   specifies a column in the direct adjustment sample and the value a column
 ##'   in the covariance adjustment sample) that uniquely specifies units of
@@ -107,19 +111,40 @@ confint.teeMod <- function(object, parm, level = 0.95, ...) {
 ##'   cannot be uniquely specified, contributions are aligned up to the unit of
 ##'   assignment level. If standard errors are clustered no finer than that,
 ##'   they will provide the same result as if each unit of observation's
-##'   contributions were aligned exactly.
+##'   contributions were aligned exactly.\cr\cr This method incorporates bias
+##'   corrections made to the residuals of \code{x} and, if applicable, the
+##'   covariance model stored in its \code{offset}. When its crossproduct is taken
+##'   (perhaps after suitable summing across rows within clusters), it provides
+##'   a heteroskedasticity- (or cluster-) robust estimate of the meat matrix of
+##'   the variance-covariance of the parameter estimates in \code{x}.
 ##'
 ##' @param x a fitted \code{teeMod} model
-##' @param ... arguments passed to methods
-##' @return An \eqn{n\times 2} matrix of empirical
-##'  estimating equations for the direct adjustment model fit. See Details for
-##'  definition of \eqn{n}.
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
+##' @param ... arguments passed to methods, most importantly those that define
+##'   the bias corrections for the residuals of \code{x} and, if applicable, a
+##'   \code{fitted_covariance_model} stored in its offset
+##' @return An \eqn{n\times k} matrix of empirical estimating equations for \code{x}.
+##'   \code{k} includes the model intercept, main effects of treatment and
+##'   moderator variables, any moderator effects, and marginal and conditional
+##'   means of the outcome (and \code{offset}, if provided) in the control condition.
+##'   See Details for definition of \eqn{n}.
 ##' @exportS3Method
-estfun.teeMod <- function(x, ...) {
+estfun.teeMod <- function(x, values_from = x, ...) {
   # change model object's na.action to na.exclude so estfun returns NA rows
   if (!is.null(x$na.action)) class(x$na.action) <- "exclude"
-  mc <- match.call()
-  vcov_type <- match.arg(mc$vcov_type, c("MB", "HC", "CR", "DB")) # this sets the default to model-based
+  dots <- list(...)
+  # this sets the default to model-based
+  vcov_type <- match.arg(dots$vcov_type, c("MB", "HC", "CR", "DB"))
+  # sandwich::sandwich calls `NROW(estfun(x))` to get the scaling factor, so to
+  # allow users to use sandwich::sandwich, we need to accommodate that kind of
+  # call to `estfun` where itt_rcorrect isn't provided. we'll set a default
+  # option here (the correction doesn't change the dimension of the output) but
+  # make sure the user-facing variance estimation function `vcov_tee()` passes
+  # on an `itt_rcorrect` argument that correctly reflects the args provided there
+  if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
+  }
 
   # MB and DB estfun without covariance adjustment; below, this will be replaced
   # entirely if there's covariance adjustment
@@ -139,22 +164,62 @@ estfun.teeMod <- function(x, ...) {
   ## if ITT model offset doesn't contain info about covariance model, estimating
   ## equations should be the ITT model estimating equations
   if (is.null(sl <- x$model$`(offset)`) | !inherits(sl, "SandwichLayer")) {
-    return(mat)
+    # .base_s3_class_estfun() uses working weights and residuals; we replace
+    # those with working weights and residuals from the `values_from` arg
+    resids_to_replace <- stats::residuals(x, type = "working")
+    replacement_resids <- stats::residuals(values_from, type = "working")
+    if (length(resids_to_replace) != length(replacement_resids)) {
+      stop("Lengths of residuals(x) and residuals(values_from) do not match")
+    }
+    if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
+      wts_to_replace <- rep(1, nrow(mat))
+    }
+    if (is.null(replacement_wts <- stats::weights(values_from,
+                                                  type = "working"))) {
+      replacement_wts <- rep(1, nrow(mat))
+    }
+    # even though `replacement_resids` may be from the model passed to
+    # `values_from`, the `x` argument of `rcorrect` should still be `x`
+    # and the `model` argument should still be `itt` because these inform the
+    # CR1/CR2 corrections, which should be drawn from the original model but
+    # for using the working weights from `values_from` in CR2 corrections
+    replacement_resids <- do.call(.rcorrect,
+                                  c(list(resids = replacement_resids, x = x,
+                                         model = "itt", type = itt_rcorrect,
+                                         cluster = dots$cls,
+                                         values_from = values_from),
+                                    dots[setdiff(names(dots), "cls")]))
+    # after setting the na.action to "exclude" at the top of the
+    # function, `residuals` and `weights` return NA's, so we make sure the
+    # entries in the estfun are zeros rather than NA's
+    return(
+      mat * 
+        (replace(replacement_resids, is.na(replacement_resids), 0) /
+           replace(resids_to_replace, is.na(resids_to_replace), 1)) *
+        (replace(replacement_wts, is.na(replacement_wts), 0) /
+           replace(wts_to_replace,
+                   is.na(wts_to_replace) |
+                     (!is.na(wts_to_replace) & wts_to_replace == 0),
+                   1))
+    )
+             
   }
 
   ## otherwise, extract/compute the rest of the relevant matrices/quantities
-  estmats <- .align_and_extend_estfuns(x, cm_ef, ...)
+  estmats <- .align_and_extend_estfuns(x, values_from, cm_ef, ...)
   a11_inv <- .get_a11_inverse(x)
   a21 <- .get_a21(x, ...)
 
   ## get scaling constants
-  nq <- nrow(stats::model.frame(x, na.action = "na.pass")) # this includes NA's as our other routines do
+  # include NA's to match other routines
+  nq <- nrow(stats::model.frame(x, na.action = "na.pass"))
   nc <- nrow(stats::model.frame(sl@fitted_covariance_model))
   n <- nrow(estmats[["psi"]])
 
   ## form matrix of estimating equations
   mat <- estmats[["psi"]] - nq / nc * estmats[["phi"]] %*% t(a11_inv) %*% t(a21)
-  mat[,1:(ncol(estmats[["psi"]]) - q)] <- mat[,1:(ncol(estmats[["psi"]])-q)] - .estfun_DB_blockabsorb(x, ...)
+  mat[,1:(ncol(estmats[["psi"]]) - q)] <- mat[,1:(ncol(estmats[["psi"]])-q)] -
+    .estfun_DB_blockabsorb(x, ...)
   return(mat)
 }
 
@@ -166,11 +231,177 @@ estfun.teeMod <- function(x, ...) {
 ##' @details This function is a thin wrapper around
 ##'   \code{.get_tilde_a22_inverse()}.
 ##' @param x a fitted \code{teeMod} model
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
 ##' @param ... arguments passed to methods
 ##' @inherit vcov_tee return
 ##' @exportS3Method
-bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
+bread.teeMod <- function(x, values_from = x, ...)
+  .get_tilde_a22_inverse(x, values_from, ...)
 
+##' @title (Internal) Bias correct residuals contributing to standard errors of
+##'   a \code{teeMod}
+##' @param resids numeric vector of residuals to correct
+##' @param x teeMod object
+##' @param model string indicating which model the residuals are from.
+##' \code{"itt"} indicates correction to the residuals of \code{x}, and
+##' \code{"cov_adj"} indicates correction to the residuals of the covariance
+##' adjustment model. This informs whether corrections should use information
+##' from \code{x} or the \code{fitted_covariance_model} slot of the
+##' \code{SandwichLayer} object in the \code{offset} for corrections.
+##' @param type string indicating the desired bias correction. Can be one of
+##' \code{"(HC/CR/MB)0"}, \code{"(HC/CR/MB)1"}, or \code{"(HC/CR/MB)2"}
+##' @param ... additional arguments passed from up the call stack; in
+##' particular, the \code{cluster_cols} argument, which informs whether to
+##' cluster and provide CR2 corrections instead of HC2 corrections, as well as
+##' the correction for the number of clusters in the CR1 correction. This may
+##' also include a \code{by} argument.
+##' @keywords internal
+.rcorrect <- function(resids, x, model, type, ...) {
+  if (type %in% paste0(c("HC", "CR", "MB", "DB"), "0")) {
+    cr <- resids
+  } else if (type %in% c(paste0(rep(c("MB", "HC", "CR"), 2),
+                                rep(c(1, 2), each = 3)))) {
+    dots <- list(...)
+    if (is.null(cluster_cols <- dots$cluster_cols)) {
+      cluster_cols <- var_names(x@StudySpecification, "u")
+    }
+    sl <- x$model$`(offset)`
+    cmod <- if (!is.null(sl) & inherits(sl, "SandwichLayer")) {
+      sl@fitted_covariance_model
+    } else NULL 
+    
+    if (substr(type, 3, 3) == 1) {
+      # HC/CR1 correction is based on n and k from propertee's estfun matrix
+      # for both sets of residuals
+      cls <- if ("cluster" %in% names(dots)) dots$cluster else {
+        if (is.null(by <- dots$by) & !is.null(cmod)) {
+          by <- setdiff(colnames(sl@keys),
+                        c(var_names(x@StudySpecification, "u"), "in_Q"))
+          if (length(by) == 0) by <- NULL
+        }
+        if (is.null(by)) by <- cluster_cols
+        do.call(".make_uoa_ids",
+                list(x = x, vcov_type = substr(type, 1, 2),
+                     cluster = cluster_cols, by = by))
+      }
+      g <- length(unique(cls))
+      n <- length(cls)
+      k <- x$rank + if (!is.null(cmod) & inherits(cmod, "lmrob")) {
+        sum(!is.na(cmod$coefficients)) + 1
+      } else if (!is.null(cmod)) sum(!is.na(cmod$coefficients)) else 0
+      cr <- sqrt(g / (g-1) * (n-1) / (n-k)) * resids
+    } else {
+      # (HC/CR)2 correction; derived separately for the two regressions
+      model <- match.arg(model, c("itt", "cov_adj"))
+      if (model == "itt") {
+        mod <- x 
+        efm <- .base_S3class_estfun(mod)
+        mf_data <- get("data", environment(formula(mod)))
+      } else {
+        if (is.null(cmod)) {
+          stop("x must have a SandwichLayer object as an offset")
+        }
+        mod <- sl@fitted_covariance_model
+        efm <- estfun(mod)
+        mf_data <- eval(mod$call$data, environment(formula(mod)))
+      }
+      if ("cluster" %in% names(dots)) {
+        cls <- dots$cluster
+      } else if (cluster_cols[1] == "..uoa..") {
+        cls <- row.names(stats::model.frame(mod, na.action = na.pass))
+      } else {
+        cls <- Reduce(
+          function(l, r) paste(l, r, sep = "_"),
+          as.list(stats::expand.model.frame(mod, cluster_cols)[, cluster_cols
+                                                               , drop=FALSE])
+        )
+      }
+      if (any(nas <- is.na(cls))) cls[nas] <- replicate(
+        sum(nas),
+        paste(sample(letters, 8, replace = TRUE), collapse = ""),
+        simplify = TRUE
+      )
+
+      g <- length(unique(cls))
+      n <- nrow(efm)
+      k <- ncol(efm)
+      
+      if (g == n) {
+        pii <- stats::hatvalues(mod)
+        cr <- 1 / sqrt(1 - pii) * resids
+      } else {
+        if (inherits(mod, c("glmrob", "lmrob"))) stop(
+          "CR2 correction not implemented for robust fits")
+        wres <- stats::residuals(mod, type = "working")
+        XW <- sweep(efm, 1, wres, FUN = "/")
+        # if there's a values_from argument in estfun.teeMod, use its working
+        # weights in corrections
+        if (!is.null(dots$values_from)) {
+          if (is.null(wts_to_replace <- stats::weights(mod,
+                                                       type = "working"))) {
+            wts_to_replace <- rep(1, nrow(XW))
+          }
+          if (is.null(replacement_wts <- stats::weights(dots$values_from,
+                                                        type = "working"))) {
+            replacement_wts <- rep(1, nrow(XW))
+          }
+          XW <- sweep(
+            sweep(
+              XW,
+              1,
+              replace(wts_to_replace,
+                      is.na(wts_to_replace) |
+                        (!is.na(wts_to_replace) & wts_to_replace == 0),
+                      1),
+              FUN = "/"
+            ),
+            1,
+            replace(replacement_wts,
+                    is.na(replacement_wts) |
+                      (!is.na(replacement_wts) & replacement_wts == 0),
+                    1),
+            FUN = "*"
+          )
+        }
+        XW[is.na(XW)] <- 0
+        X <- stats::model.matrix(
+          stats::delete.response(stats::terms(mod)),
+          do.call("model.frame",
+                  list(mod, mf_data, subset = eval(mod$call$subset, mf_data),
+                       na.action = na.pass)),
+          contrasts.arg = mod$contrasts,
+          xlev = mod$xlevels
+        )[,colnames(XW),drop=FALSE] # estfun drops NA coeffs for XW, so we have
+                                    # to align with that
+        XTWX_inv <- solve(crossprod(XW, X))
+        cr <- numeric(length(cls))
+        for (cl in unique(cls)) {
+          cl_ix <- which(cls == cl)
+          crc <- rep(NA_real_, length(cl_ix))
+          nas <- stats::na.action(mod)
+          ok <- setdiff(cl_ix, nas)
+          if (length(ok) > 0) {
+            if (inherits(mod, "teeMod")) {
+              iss <- cluster_iss(mod, cluster_unit = cl, cluster_ids = cls, ...)
+            } else {
+              I_P_cc <- diag(length(ok)) - tcrossprod(
+                tcrossprod(X[ok,,drop=FALSE], XTWX_inv), XW[ok,,drop=FALSE])
+              schur <- eigen(I_P_cc)
+              iss <- schur$vectors %*%
+                (solve(schur$vectors) / sqrt(schur$values))
+            }
+            crc[!(cl_ix %in% nas)] <- drop(iss %*% resids[ok])
+          }
+          cr[cl_ix] <- crc
+        }
+      }
+    }
+  } else {
+    stop(paste0("'", type, "' bias correction not available"))
+  }
+  
+  return(cr)
+}
 ##' @title (Internal) Align the dimensions and rows of direct adjustment and
 ##'   covariance adjustment model estimating equations matrices
 ##' @details \code{.align_and_extend_estfuns()} first extracts the matrices of
@@ -179,46 +410,136 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 ##'   with zeros to account for units of observation that appear in one
 ##'   model-fitting sample but not the other; finally it orders the matrices so
 ##'   units of observation (or if unit of observation-level ordering is
-##'   impossible, units of assignment) are aligned.
+##'   impossible, units of assignment) are aligned.\cr\cr As in
+##'   \code{estfun.teeMod()}, the working residuals (and, if applicable,
+##'   weights) from \code{values_from} will be used in the output matrix in
+##'   place of those from \code{x}.
 ##' @param x a fitted \code{teeMod} model
-##' @param by character vector; indicates unit of assignment columns to generate
-##'   ID's from; default is NULL, which uses the unit of assignment columns
-##'   specified in the \code{teeMod} object's \code{StudySpecification} slot
-##' @param ... arguments passed to methods
+##' @param values_from optional, a fitted model object. Defaults to \code{x}.
+##' @param ctrl_means_ef_mat optional, a matrix of estimating equations corresponding
+##'   to the estimates of the marginal (and possibly conditional) means of the outcome
+##'   and \code{offset} in the control condition. These are aligned and extended
+##'   in the same way as the matrix of estimating equations for \code{x} and
+##'   \code{cbind}ed to them
+##' @param by optional, a character vector indicating columns that uniquely identify
+##'   rows in the dataframe used for fitting \code{x} and the dataframe passed to the
+##'   \code{data} argument of the covariance adjustment model fit. The default is
+##'   \code{NULL}, in which case the unit of assignment columns specified in the
+##'   \code{StudySpecification} slot of \code{x} are used.
+##' @param ... mostly arguments passed to methods, but the special case is the argument
+##'   \code{loco_residuals}, which indicates the offsets in the residuals of \code{x}
+##'   should be replaced by versions that use leave-one-cluster-out estimates of
+##'   the covariance model
 ##' @return A list of two matrices, one being the aligned contributions to the
 ##'   estimating equations for the direct adjustment model, and the other being
 ##'   the aligned contributions to the covariance adjustment model.
 ##' @keywords internal
-.align_and_extend_estfuns <- function(x, ctrl_means_ef_mat = NULL, by = NULL, ...) {
+.align_and_extend_estfuns <- function(x,
+                                      values_from = x,
+                                      ctrl_means_ef_mat = NULL,
+                                      by = NULL,
+                                      ...) {
   if (!inherits(x, "teeMod") | !inherits(x$model$`(offset)`, "SandwichLayer")) {
     stop("`x` must be a fitted teeMod object with a SandwichLayer offset")
   }
-
-  # get the original estimating equations
-  psi <- .base_S3class_estfun(x)
-  phi <- estfun(x$model$`(offset)`@fitted_covariance_model)
-
+  dots <- list(...)
+  dots$type <- NULL
+  ## same in-line comment in `estfun.teeMod()` about setting itt_rcorrect applies
+  ## to both args here
+  if (is.null(itt_rcorrect <- dots$itt_rcorrect)) itt_rcorrect <- "HC0"
+  if (is.null(cov_adj_rcorrect <- dots$cov_adj_rcorrect)) {
+    cov_adj_rcorrect <- "HC0"
+  }
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
+  }
+  
+  uoa_cols <- var_names(x@StudySpecification, "u")
+  cluster_cols <- if (is.null(dots$cluster_cols)) {
+    uoa_cols
+  } else dots$cluster_cols
+  sl <- x$model$`(offset)`
+  cmod <- sl@fitted_covariance_model
+  # changing the na.action to exclude returns NA's where rows had NA's; see further details below
+  if (!is.null(cmod$na.action)) class(cmod$na.action) <- "exclude"
+  
   # the ordering output by `.order_samples()` is explained in that function's
   # documentation
   id_order <- .order_samples(x, by = by, verbose = FALSE)
   n <- length(c(id_order$Q_not_C, id_order$C_in_Q, id_order$C_not_Q))
   nq <- length(c(id_order$Q_not_C, id_order$Q_in_C))
   nc <- length(c(id_order$C_in_Q, id_order$C_not_Q))
+  
+  ## get the unaligned + unextended estimating equations
+  # since we change the na.action to na.exclude for the covariance adjustment
+  # model above, estfun() returns rows filled with NA's for rows with any NA's,
+  # and similarly, residuals() returns NA's. if there are no rows with NA's,
+  # estfun() and residuals() return their usual outputs
+  phi_r <- stats::residuals(cmod, type = "working") # for teeMod, lm, lmrob this
+                                                    # gives desired type =
+                                                    # "response"
+  phi <- sandwich::estfun(cmod)
+  phi <- replace(phi, is.na(phi), 0) / replace(phi_r, is.na(phi_r), 1) *
+    replace(do.call(.rcorrect,
+                    c(list(resids = phi_r, x = x, model = "cov_adj",
+                           type = cov_adj_rcorrect, by = by,
+                           values_from = values_from),
+                      dots)),
+            is.na(phi_r),
+            0)
 
-  Q_order <- c(as.numeric(names(id_order$Q_not_C)), as.numeric(names(id_order$Q_in_C)))
-  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi), dimnames = list(seq(n), colnames(psi)))
+  # use jackknife first-stage coefficient estimates if Q and C overlap
+  psi_r_to_replace <- stats::residuals(x, type = "working")
+  if (!is.null(dots$loco_residuals) & sum(sl@keys$in_Q) > 0) {
+    # .compute_loo_resids uses residuals from `values_from` arg
+    replacement_psi_r <- .compute_loo_resids(x, cluster_cols, ...)
+  } else {
+    replacement_psi_r <- stats::residuals(values_from, type = "working")
+  }
+  if (length(replacement_psi_r) != length(psi_r_to_replace)) {
+    stop("Lengths of residuals(x) and residuals(values_from) do not match")
+  }
+  if (is.null(wts_to_replace <- stats::weights(x, type = "working"))) {
+    wts_to_replace <- rep(1, length(psi_r_to_replace))
+  }
+  if (is.null(replacement_wts <- stats::weights(values_from,
+                                                type = "working"))) {
+    replacement_wts <- rep(1, length(replacement_psi_r))
+  }
+  # see in-line comments of estfun.teeMod() for verification of the .rcorrect
+  # args
+  replacement_psi_r <- do.call(.rcorrect,
+                               c(list(resids = replacement_psi_r, x = x,
+                                      model = "itt", type = itt_rcorrect,
+                                      values_from = values_from, by = by),
+                                 dots))
+  psi <- .base_S3class_estfun(x) *
+    (replace(replacement_psi_r, is.na(replacement_psi_r), 0) /
+       replace(psi_r_to_replace, is.na(psi_r_to_replace), 1)) *
+    (replace(replacement_wts, is.na(replacement_wts), 0) /
+       replace(wts_to_replace,
+               is.na(wts_to_replace) |
+                 (!is.na(wts_to_replace) & wts_to_replace == 0),
+               1))
+
+  Q_order <- c(as.numeric(names(id_order$Q_not_C)),
+               as.numeric(names(id_order$Q_in_C)))
+  aligned_psi <- matrix(0, nrow = n, ncol = ncol(psi),
+                        dimnames = list(seq(n), colnames(psi)))
   aligned_psi[1:nq,] <- psi[Q_order,,drop=FALSE]
 
-  C_order <- c(as.numeric(names(id_order$C_in_Q)), as.numeric(names(id_order$C_not_Q)))
+  C_order <- c(as.numeric(names(id_order$C_in_Q)),
+               as.numeric(names(id_order$C_not_Q)))
   aligned_phi <- matrix(0, nrow = n, ncol = ncol(phi),
                         dimnames = list(seq_len(n), colnames(phi)))
   aligned_phi[(n-nc+1):n,] <- phi[C_order,,drop=FALSE]
   
   out <- list(psi = aligned_psi, phi = aligned_phi)
-  
+
   if (!is.null(ctrl_means_ef_mat)) {
     aligned_cm_ef <- matrix(0, nrow = n, ncol = ncol(ctrl_means_ef_mat),
-                            dimnames = list(seq(n), colnames(ctrl_means_ef_mat)))
+                            dimnames = list(seq(n),
+                                            colnames(ctrl_means_ef_mat)))
     aligned_cm_ef[1:nq,] <- ctrl_means_ef_mat[Q_order,,drop=FALSE]
     out[["psi"]] <- cbind(out[["psi"]], aligned_cm_ef)
   }
@@ -251,6 +572,105 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     if (is.null(nms <- colnames(aliased))) 1 else nms
   }
   return(ef[, keep_coef,drop=FALSE])
+}
+
+#' @title Compute residuals for a \code{teeMod} object with leave-one-out estimates
+#' of the \code{offset}
+#' @details
+#' The residual for any observation also used for fitting the \code{fitted_covariance_model}
+#'   stored in the \code{offset} of \code{x} is replaced by an estimated residual
+#'   that uses a cluster leave-one-out estimate of the \code{fitted_covariance_model}
+#'   for generating a value of the \code{offset}.
+#' @param x a \code{teeMod} object
+#' @param cluster vector of column names that identify clusters
+#' 
+#' @importFrom stats model.frame
+#' @keywords internal
+.compute_loo_resids <- function(x, cluster, ...) {
+  ## what's in the call
+  sl <- x$model$`(offset)`
+  cmod <- sl@fitted_covariance_model
+  
+  ## get cluster ID's
+  in_Q <- which(sl@keys$in_Q)
+  if (cluster[1] == "..uoa..") {
+    C_cls <- rownames(stats::model.frame(cmod, na.action = na.pass))
+  } else {
+    C_cls <- Reduce(
+      function(l, r) paste(l, r, sep = "_"),
+      as.list(stats::expand.model.frame(cmod, cluster)[, cluster, drop=FALSE])
+    )
+  }
+  jk_units <- unique(C_cls[in_Q])
+
+  ## get LOO coefficients for each overlapping unit in Q and C
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        cf <- eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+        matrix(cf, ncol = 1, dimnames = list(names(cf), NULL))
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  loo_cmod[is.na(loo_cmod)] <- 0 # replace NA coeffs due to singularity with 0's
+  
+  ## make preds for units in Q using LOO estimates of cov adj model
+  ## (make sure to set treatment indicator to 0 if it was included in the model)
+  tt <- stats::delete.response(stats::terms(cmod))
+  Q_data <- get("data", envir = environment(formula(x)))
+  mf <- call("model.frame",
+             tt,
+             Q_data,
+             subset = eval(x@lmitt_call$subset, envir = Q_data),
+             na.action = na.pass,
+             xlev = cmod$xlevels)
+  mf <- eval(mf)
+  trt_name <- var_names(x@StudySpecification, "t")
+  if (trt_name %in% colnames(mf)) {
+    trts <- treatment(x@StudySpecification)[, 1]
+    if (is.numeric(trts)) {
+      mf[[trt_name]] <- min(abs(trts))
+    } else if (is.logical(trts)) {
+      mf[[trt_name]] <- FALSE
+    } else if (is.factor(trts)) {
+      mf[[trt_name]] <- levels(trts)[1]
+    }
+  }
+  mm <- stats::model.matrix(tt, mf, contrasts.arg = cmod$contrasts)
+
+  if (cluster[1] == "..uoa..") {
+    Q_cls <- rownames(stats::model.frame(x, na.action = na.pass))
+  } else {
+    Q_cls <- Reduce(
+      function(l, r) paste(l, r, sep = "_"),
+      as.list(stats::expand.model.frame(x, cluster)[, cluster, drop=FALSE])
+    )
+  }
+  Q_cls_in_C <- Q_cls %in% colnames(loo_cmod)
+  loo_preds <- rowSums(mm[Q_cls_in_C,,drop=FALSE] *
+                         t(loo_cmod[, as.character(Q_cls[Q_cls_in_C])]))
+  if (!is.null(cmod$family)) loo_preds <- cmod$family$linkinv(loo_preds)
+
+  ## slot them in to existing predictions
+  all_preds <- sl@.Data
+  all_preds[Q_cls_in_C] <- loo_preds
+  
+  ## make residuals (subtract original offset bc it's added in fitted values)
+  if (is.null(values_from <- list(...)$values_from)) values_from <- x
+  if (!is.null(values_from$na.action)) {
+    class(values_from$na.action) <- "exclude"
+  }
+  resids <- stats::residuals(values_from, type = "working")
+  os <- stats::model.offset(stats::model.frame(x, na.action = na.pass))
+  
+  return(resids + os - all_preds)
 }
 
 #' @title Make ID's to pass to the \code{cluster} argument of \code{vcov_tee()}
@@ -293,31 +713,6 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
   # in Q
   Q_obs <- .sanitize_Q_ids(x, id_col = cluster, ...)
   Q_obs_ids <- Q_obs$cluster
-
-  # for model-based vcov calls on blocked specifications when clustering is
-  # called for at the assignment level, replace unit of assignment ID's with
-  # block ID's for small blocks
-  if (vcov_type %in% c("CR", "HC", "MB") & has_blocks(x@StudySpecification)) {
-    uoa_cols <- var_names(x@StudySpecification, "u")
-    if (length(setdiff(cluster, uoa_cols)) == 0 & length(setdiff(uoa_cols, cluster)) == 0) {
-      spec_blocks <- blocks(x@StudySpecification)
-      uoa_block_ids <- apply(spec_blocks, 1,
-                             function(...) paste(..., collapse = ","))
-      small_blocks <- identify_small_blocks(x@StudySpecification)
-      structure_w_small_blocks <- cbind(
-        x@StudySpecification@structure,
-        small_block = small_blocks[uoa_block_ids],
-        block_replace_id = apply(spec_blocks, 1,
-                                 function(nms, ...) paste(paste(nms, ..., sep = ""), collapse = ","),
-                                 nms = colnames(spec_blocks))
-      )
-      Q_obs <- merge(Q_obs, structure_w_small_blocks, by = uoa_cols, all.x = TRUE)
-      na_blocks <- apply(Q_obs[var_names(x@StudySpecification, "b")], 1, function(x) any(is.na(x)))
-      Q_obs$cluster[Q_obs$small_block & !na_blocks] <-
-        Q_obs$block_replace_id[Q_obs$small_block & !na_blocks]
-      Q_obs_ids <- Q_obs$cluster
-    }
-  }
 
   # If there's no covariance adjustment info, return the ID's found in Q
   if (!inherits(ca <- x$model$`(offset)`, "SandwichLayer")) {
@@ -413,8 +808,12 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
 
   # get all ID's in Q
   # Q_ids <- .sanitize_Q_ids(x, id_col = by, ...)[, "cluster"]
-  Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
-  Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
+  if (x@StudySpecification@unit_of_assignment_type == "none") {
+    Q_ids <- rownames(model.frame(x, na.action = NULL))
+  } else {
+    Q_ids <- stats::expand.model.frame(x, by)[, by, drop = FALSE]
+    Q_ids <- apply(Q_ids, 1, function(...) paste(..., collapse = "_"))
+  }
 
   # get all ID's in C and replace NA's with unique ID
   C_ids <- .sanitize_C_ids(ca, by, sorted = FALSE, ...)
@@ -464,6 +863,11 @@ bread.teeMod <- function(x, ...) .get_tilde_a22_inverse(x, ...)
     expand_cols <- by.y <- uoa_cols
   }
 
+  if (x@StudySpecification@unit_of_assignment_type == "none") {
+    moddata <- x$call$data
+    moddata$..uoa.. <- rownames(moddata)
+    x$call$data <- moddata
+  }
   obs_uoa_ids <- stats::expand.model.frame(x,
                                            expand_cols)[, expand_cols, drop = FALSE]
 

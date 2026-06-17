@@ -51,7 +51,7 @@ setValidity("StudySpecification", function(object) {
     return("RD specifications must include at least one forcing variables")
   }
   if (!object@unit_of_assignment_type %in%
-        c("cluster", "unitid", "unit_of_assignment")) {
+        c("cluster", "unitid", "unit_of_assignment", "none")) {
     return(paste('valid `unit_of_assignment_type`s are "unit_of_assignment",',
                  '"cluster" or "unitid"'))
   }
@@ -70,15 +70,19 @@ setValidity("StudySpecification", function(object) {
 ##' @param call The call generating the \code{StudySpecification}.
 ##' @param na.fail Should it error on NA's (\code{TRUE}) or remove them
 ##'   (\code{FALSE})?
+##' @param called_from_lmitt Logical; was this called inside \code{lmitt()}, or
+##'   was it called from \code{*_spec()} (default).
 ##' @return A new StudySpecification object
-##' @importFrom stats formula complete.cases
+##' @importFrom stats formula complete.cases terms
+##' @importFrom utils capture.output
 ##' @keywords internal
 .new_StudySpecification <- function(form,
                        data,
                        type,
                        subset = NULL,
                        call = NULL,
-                       na.fail = TRUE) {
+                       na.fail = TRUE,
+                       called_from_lmitt = FALSE) {
 
   if (is.null(call) | !is.call(call)) {
     call <- match.call()
@@ -92,9 +96,20 @@ setValidity("StudySpecification", function(object) {
   }
 
   ## #174 convert all data.frames
-  data <- .as_data_frame(data)
+  datadf <- .as_data_frame(data)
+  # Moved this prior to `environment` call to hopefully detect more
+  # bad input.
 
-  ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output later
+  ## keep formula's environment
+  env <- environment(terms(form, data = data))
+  environment(form) <- env
+  call$formula <- form
+
+  data <- datadf
+
+
+  ### Track whether StudySpecification uses uoa/cluster/unitid for nicer output
+  ### later
 
   if (grepl("unit_of_assignment\\([a-zA-Z]", deparse1(form)) |
         grepl("uoa\\([a-zA-Z]", deparse1(form))) {
@@ -104,7 +119,18 @@ setValidity("StudySpecification", function(object) {
   } else if (grepl("unitid\\([a-zA-Z]", deparse1(form))) {
     autype <- "unitid"
   } else {
-    stop("This error should never be hit!")
+    autype <- "none"
+    if (options()$propertee_warn_on_no_unit_of_assignment &
+                  !called_from_lmitt) {
+      warning(paste("The StudySpecification was created without an explicit",
+                    "unit of assignment/unit ID. Merges going forward will",
+                    "be done by row. It is up to the user to ensure that",
+                    "row order is not modified.\nTo prevent this warning,",
+                    "provide an explicit unit of assignment/unit ID."))
+    }
+
+    data[["..uoa.."]] <- rownames(data)
+    form <- update(form, . ~ . + unit_of_assignment(..uoa..))
   }
 
   # Ensure whichever unit of assignment function is used, `unit_of_assignment`
@@ -121,11 +147,13 @@ setValidity("StudySpecification", function(object) {
 
   # #94 handling NA's in non-treatment columns
   completecases <- stats::complete.cases(m[, index != "t"])
+  na_tx  <- is.na(m[, index == "t", drop=TRUE])
   if (!all(completecases)) {
-    if (na.fail) {
-      stop(paste("Missing values cannot be found in the variables creating",
-                 "the `StudySpecification` (except treatment). Remove them manually,",
-                 "or pass `na.fail = FALSE` to remove them automatically."))
+    if ( na.fail & !all(completecases | na_tx) ) {
+      stop(paste("Missing values cannot be found in unit of assignment,",
+                 "block or cluster variables (unless treatment is also NA).",
+                 "Use option `na.fail = FALSE` for automatic removal of",
+                 "incomplete cases."))
     } else {
       m <- m[completecases, ]
     }
@@ -172,17 +200,19 @@ setValidity("StudySpecification", function(object) {
   differing <- duplicated(m_collapse[, index == "u"])
   if (any(differing)) {
     noncon <- m_collapse[differing, index == "u", drop = FALSE]
-    cat(paste("\nUnits of assignment with non-constant treatment, block",
-              "or forcing:\n"))
+
+    # Format data using utils::str or base formatting
     if (nrow(noncon) >= 6) {
-      print(noncon[1:5, , drop = FALSE])
-      cat("...\n")
+      data_text <- paste(capture.output(noncon[1:5, , drop = FALSE]), collapse = "\n")
+      data_text <- paste0(data_text, "\n...")
     } else {
-      print(noncon)
+      data_text <- paste(capture.output(noncon), collapse = "\n")
     }
 
-    stop(paste("Each of treatment assignment, block and forcing must be",
-               "constant within unit of assignment."))
+    stop(paste0("Units of assignment with non-constant treatment, block or forcing:\n",
+                data_text, "\n",
+                "Each of treatment assignment, block and forcing must be ",
+                "constant within unit of assignment."))
   }
 
   return(new("StudySpecification",
@@ -200,15 +230,17 @@ setValidity("StudySpecification", function(object) {
 ##'   ([rct_spec()]), or an observational StudySpecification ([obs_spec()]), or
 ##'   a regression discontinuity StudySpecification ([rd_spec()]).
 ##'
-##' @details The formula must include exactly one [unit_of_assignment()] to
+##' @details The formula should include exactly one [unit_of_assignment()] to
 ##'   identify the units of assignment (one or more variables). (\code{uoa},
 ##'   \code{cluster}, or \code{unitid} are synonyms for
 ##'   \code{unit_of_assignment}; the choice of which has no impact on the
-##'   analysis.) If defining an \code{rd_spec}, the formula must also include a
-##'   [forcing()] entry. The formula may optionally include a [block()] as well.
-##'   Each of these can take in multiple variables, e.g. to pass both a
-##'   household ID and individual ID as unit of assignment, use \code{uoa(hhid,
-##'   iid)} and not \code{uoa(hhid) + uoa(iid)}.
+##'   analysis. See below for a limited exception in which the
+##'   \code{unit_of_assignment} specification may be omitted.) If defining an
+##'   \code{rd_spec}, the formula must also include a [forcing()] entry. The
+##'   formula may optionally include a [block()] as well. Each of these can take
+##'   in multiple variables, e.g. to pass both a household ID and individual ID
+##'   as unit of assignment, use \code{uoa(hhid, iid)} and not \code{uoa(hhid) +
+##'   uoa(iid)}.
 ##'
 ##'   The treatment variable passed into the left-hand side of \code{formula}
 ##'   can either be \code{logical}, \code{numeric}, or \code{character}. If it
@@ -222,6 +254,21 @@ setValidity("StudySpecification", function(object) {
 ##'   \code{dichotomy}.
 ##'
 ##'   There are a few aliases for each version.
+##'
+##'   If the formula excludes a \code{unit_of_assignment()}, data merges are
+##'   performed on row order. Such formulas can also be passed as the
+##'   specification argument to lmitt(), and that is their primary intended use
+##'   case. It is recommended that each formula argument passed to
+##'   *_specification() include a \code{unit_of_assignment()}, \code{uoa()} or
+##'   \code{cluster()} term identifying the key variable(s) with which
+##'   \code{StudySpecification} data is to be merged with analysis data.
+##'   Exceptions to this rule will be met with a warning. To disable the
+##'   warning, run \code{options("propertee_warn_on_no_unit_of_assignment" =
+##'   FALSE)}.
+##'
+##'   The units of assignment, blocks, and forcing variables must be
+##'   \code{numeric} or \code{character}. If they are otherwise, an attempt is
+##'   made to cast them into \code{character}.
 ##'
 ##' @param formula a \code{formula} defining the \code{StudySpecification}
 ##'   components. See `Details` for specification.

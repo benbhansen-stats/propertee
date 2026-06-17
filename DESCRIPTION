@@ -1,5 +1,5 @@
 Package: propertee
-Version: 0.6.1
+Version: 1.0.5.9003
 Title: Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment
 Description: The Prognostic Regression Offsets with Propagation of
     ERrors (for Treatment Effect Estimation) package facilitates
@@ -37,7 +37,8 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    multcomp
+    multcomp,
+    MASS
 Config/testthat/edition: 3
 Imports:
     stats,
@@ -46,7 +47,7 @@ Imports:
 Enhances:
     robustbase
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 VignetteBuilder: knitr
 URL: https://github.com/benbhansen-stats/propertee
 BugReports: https://github.com/benbhansen-stats/propertee/issues
@@ -54,6 +55,7 @@ Collate:
     'StudySpecification.R'
     'StudySpecificationAccessors.R'
     'SandwichLayer.R'
+    'block_center_residuals.R'
     'SandwichLayerVariance.R'
     'StudySpecificationConverters.R'
     'StudySpecificationStructure.R'
@@ -83,4 +85,6 @@ Collate:
     'summary.StudySpecification.R'
     'summary.teeMod.R'
     'update_by.R'
-    'weights.R'
+    'validWeights.R'
+    'weights_internal.R'
+    'weights_exported.R'

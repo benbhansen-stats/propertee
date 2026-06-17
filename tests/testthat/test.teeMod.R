@@ -273,16 +273,14 @@ test_that("vcov.teeMod handles vcov_tee arguments and non-SL offsets", {
   ssmod2 <- lmitt(y ~ 1, data = simdata, weights = ate(), specification = spec)
 
   vmat1 <- vcov(ssmod1)
-  vmat2 <- vcov(ssmod1, type = "CR0")
+  vmat2 <- vcov(ssmod1, type = "HC0")
   vmat3 <- vcov(ssmod1, cadjust = FALSE)
 
   expect_error(vcov(ssmod1, type = "not_a_type"), "not defined")
   expect_identical(vmat1, vmat2)
-  expect_identical(vmat1, vcov_tee(ssmod1))
-  expect_identical(vmat3, vcov_tee(ssmod1, cadjust = FALSE))
 
   uoas <- apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
-  vmat3 <- vcov(ssmod2)
+  vmat3 <- vcov(ssmod2, type = "CR0", cov_adj_rcorrect = "HC0")
   expect_true(all.equal(
     vmat3,
     sandwich::sandwich(ssmod2, meat. = sandwich::meatCL, cluster = uoas),
@@ -303,7 +301,7 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   vcov_tee_ci.95 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
     qt(c(0.025, 0.975), ssmod1$df.residual)
   dimnames(vcov_tee_ci.95) <- list(names(ssmod1$coefficients[1:4]), c("2.5 %", "97.5 %"))
-  ci1 <- confint(ssmod1, type = "CR0")
+  ci1 <- confint(ssmod1, type = "HC0")
   ci2 <- confint(ssmod1)
   expect_equal(ci1, ci2)
   expect_equal(ci1, vcov_tee_ci.95)
@@ -316,10 +314,11 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
   expect_equal(ci_HC1, vcov_tee_HC1_ci.95)
 
   # CI with different level
-  vcov_tee_ci.9 <- ssmod1$coefficients[1:4] + sqrt(diag(vcov_tee(ssmod1))) %o%
+  vcov_tee_ci.9 <- ssmod1$coefficients[1:4] + sqrt(diag(
+    vcov_tee(ssmod1, type = "CR0", cov_adj_rcorrect = "HC0"))) %o%
     qt(c(0.05, 0.95), ssmod1$df.residual)
   dimnames(vcov_tee_ci.9) <- list(names(ssmod1$coefficients)[1:4], c("5 %", "95 %"))
-  ci1 <- confint(ssmod1, level = 0.9)
+  ci1 <- confint(ssmod1, level = 0.9, type = "CR0", cov_adj_rcorrect = "HC0")
   expect_equal(ci1, vcov_tee_ci.9)
 
   # CI with lmitt.lm
@@ -330,9 +329,9 @@ test_that("confint.teeMod handles vcov_tee `type` arguments and non-SL offsets",
 
   vcovlm_z.95 <- ssmod2$coefficients[1:3] +
     sqrt(diag(sandwich::sandwich(ssmod2, meat. = sandwich::meatCL,
-                            cluster = uoas))) %o%
+                            cluster = uoas, itt_rcorrect = "HC0", cov_adj_rcorrect = "HC0"))) %o%
     qt(c(0.025, 0.975), ssmod2$df.residual)
-  ci1 <- confint(ssmod2)
+  ci1 <- confint(ssmod2, type = "HC0", cov_adj_rcorrect = "HC0")
   expect_true(all.equal(ci1, vcovlm_z.95, check.attributes = FALSE))
 })
 
@@ -429,11 +428,11 @@ test_that("estfun.teeMod gets scaling constants right with no overlap", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
 
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod)[,1:2],
+    estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -453,11 +452,11 @@ test_that("estfun.teeMod gets scaling constants right with partial overlap", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
 
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
-    estfun(dmod)[,1:2],
+    estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2],
     ef_pieces[["psi"]] - nq / nc * ef_pieces[["phi"]] %*% t(a11_inv) %*% t(a21)
   )
 })
@@ -477,11 +476,11 @@ test_that("estfun.teeMod with missing values", {
   spec <- rct_spec(z ~ unitid(id), simdata_copy)
   dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
   
-  ef <- estfun(dmod)[,1:2]
+  ef <- estfun(dmod, type_psi = "HC0", type_phi = "HC0")[,1:2]
   expect_equal(nrow(ef), nc + nq)
   expect_true(all.equal(ef[1:3,], matrix(0, nrow = 3, ncol = 2), check.attributes = FALSE))
   class(dmod$na.action) <- "exclude"
-  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id")
+  ef_pieces <- .align_and_extend_estfuns(dmod, by = "id", type_psi = "HC0", type_phi = "HC0")
   a11_inv <- .get_a11_inverse(dmod)
   a21 <- .get_a21(dmod)[1:2,]
   expect_equal(
@@ -503,8 +502,10 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata_copy), 4))
-  expect_equal(estfun(mod1), estfun(mod2))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata_copy), 4))
+  expect_equal(estfun(mod1, type_psi = "HC0", type_phi = "HC0"),
+               estfun(mod2, type_psi = "HC0", type_phi = "HC0"))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions when only",
@@ -518,8 +519,10 @@ test_that(paste("estfun.teeMod returns correct dimensions when only",
   mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
   mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
-  expect_equal(dim(estfun(mod2)), c(nrow(simdata), 4))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
+  expect_equal(dim(estfun(mod2, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions and alignment",
@@ -536,8 +539,10 @@ test_that(paste("estfun.teeMod returns correct dimensions and alignment",
   mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
   mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
 
-  expect_equal(dim(estfun(mod1)), c(nrow(simdata), 4))
-  expect_equal(estfun(mod1), estfun(mod2))
+  expect_equal(dim(estfun(mod1, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata), 4))
+  expect_equal(estfun(mod1, type_psi = "HC0", type_phi = "HC0"),
+               estfun(mod2, type_psi = "HC0", type_phi = "HC0"))
 })
 
 test_that(paste("estfun.teeMod returns correct dimensions for partial",
@@ -553,7 +558,7 @@ test_that(paste("estfun.teeMod returns correct dimensions for partial",
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)),
+  expect_equal(dim(estfun(mod, type_psi = "HC0", type_phi = "HC0")),
                c(nrow(simdata) + nrow(cmod_ssta[is.na(cmod_ssta$uoa1),]), 4))
 })
 
@@ -569,17 +574,178 @@ test_that(paste("estfun.teeMod returns correct dimensions for no",
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   mod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
 
-  expect_equal(dim(estfun(mod)), c(nrow(simdata) + nrow(cmod_ssta), 4))
+  expect_equal(dim(estfun(mod, type_psi = "HC0", type_phi = "HC0")),
+               c(nrow(simdata) + nrow(cmod_ssta), 4))
 })
 
 test_that("estfun zeros out NA's from ctrl means regression", {
   moddata <- data.frame(a = c(rep(c(0, 1), each = 5), NA_real_), y = rnorm(11), id = seq_len(11))
   spec <- rct_spec(a ~ unitid(id), data = moddata)
   mod <- lmitt(y ~ 1, data = moddata, spec = spec)
-  ef <- estfun(mod)
+  ef <- estfun(mod, type_psi = "HC0", type_phi = "HC0")
   expect_true(all(!is.na(ef)))
   expect_true(!all(ef == 0))
   expect_equal(ef[11,3], 0)
+})
+
+test_that("estfun with invalid values_from", {
+  data(simdata)
+  not_all_simdata <- simdata[seq_len(7),]
+  values_from <- lm(y ~ x, not_all_simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  expect_error(
+    estfun(tm, type_psi = "HC0", values = values_from),
+    "Lengths"
+  )
+})
+
+test_that("estfun (no covariance adjustment) with values_from", {
+  data(simdata)
+  values_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  
+  ## no missing
+  ef <- estfun(tm, type_psi = "HC0", values = values_from)[,1:2]
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(tm) * stats::residuals(values_from, type = "working"),
+    check.attributes = FALSE
+  ))
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  values_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness)
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(values_from$na.action) <- "exclude"
+  
+  ef <- estfun(tm, type_psi = "HC0", values = values_from)[,1:2]
+  resids <- stats::residuals(values_from, type = "working")
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(stats::formula(tm),
+                        stats::model.frame(tm, na.action = na.pass)) *
+      replace(resids, is.na(resids), 0),
+    check.attributes = FALSE
+  ))
+  
+  ## resids_from is a glm
+  simdata$ybinom <- rbinom(nrow(simdata), 1, 0.5)
+  values_from <- glm(ybinom ~ 1, simdata, family = "binomial")
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  
+  ef <- estfun(tm, type_psi = "HC0", values = values_from)[,1:2]
+  expect_true(all.equal(
+    ef,
+    stats::model.matrix(tm) *
+      stats::residuals(values_from, type = "working") *
+      stats::weights(values_from, type = "working"),
+    check.attributes = FALSE
+  ))
+})
+
+test_that(paste(".align_and_extend_estfuns (estfun with covariance adjustment)",
+                "with values_from"), {
+  ## no missing
+  camod <- lm(y ~ x, simdata)
+  values_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata, offset = cov_adj(camod))
+  
+  efs <- .align_and_extend_estfuns(tm,
+                                   values = values_from,
+                                   itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0")
+  expect_true(all.equal(
+    efs$psi,
+    stats::model.matrix(tm) * stats::residuals(values_from, type = "working"),
+    check.attributes = FALSE
+  ))
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$uid <- seq_len(nrow(simdata))
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  camod <- lm(y ~ x, data_with_missingness)
+  resids_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness,
+              offset = cov_adj(camod, by = "uid"))
+  class(tm$na.action) <- "exclude"
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(resids_from$na.action) <- "exclude"
+  
+  efs <- .align_and_extend_estfuns(tm,
+                                   values = values_from,
+                                   itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0")
+  resids <- stats::residuals(values_from, type = "working")
+  X <- stats::model.matrix(stats::formula(tm),
+                           stats::model.frame(tm, na.action = na.pass))
+  expect_true(all.equal(
+    efs$psi,
+    rbind(matrix(0, nrow = length(tm$na.action), ncol = ncol(X),
+                 dimnames = list(NULL, colnames(X))),
+          X[sort(as.character(setdiff(seq_len(nrow(simdata)),
+                                      tm$na.action))),]) *
+      c(rep(0, length(tm$na.action)),
+        replace(resids, is.na(resids), 0)[
+          as.numeric(sort(as.character(setdiff(seq_len(nrow(simdata)),
+                                               tm$na.action))))
+          ]),
+    check.attributes = FALSE
+  ))
+})
+
+test_that(".compute_loo_resids with values_from", {
+  ## no missing
+  camod <- lm(y ~ x, simdata)
+  values_from <- lm(y ~ 1, simdata)
+  tm <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata, offset = cov_adj(camod))
+  resids <- .compute_loo_resids(tm,
+                                c("uoa1", "uoa2"),
+                                values_from = values_from)
+  
+  sbst <- paste(simdata$uoa1, simdata$uoa2, sep = "_") != "1_1"
+  loo_mod <- lm(y ~ x, simdata, subset = sbst)
+  expect_true(
+    all.equal(
+      resids[!sbst],
+      residuals(values_from, type = "working")[!sbst] +
+        stats::model.offset(stats::model.frame(tm, na.action = na.pass))[!sbst] -
+        predict(loo_mod, simdata[!sbst,]),
+      check.attributes = FALSE
+    )
+  )
+  
+  ## missing
+  data_with_missingness <- simdata
+  data_with_missingness$uid <- seq_len(nrow(simdata))
+  data_with_missingness$y[c(3, 9, 25, 42)] <- NA_real_
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data_with_missingness)
+  camod <- lm(y ~ x, data_with_missingness)
+  resids_from <- lm(y ~ 1, data_with_missingness)
+  tm <- lmitt(y ~ 1, spec, data_with_missingness,
+              offset = cov_adj(camod, by = "uid"))
+  class(tm$na.action) <- "exclude"
+  class(attr(tm$model, "na.action")) <- "pass"
+  class(resids_from$na.action) <- "exclude"
+
+  resids <- .compute_loo_resids(tm,
+                                c("uoa1", "uoa2"),
+                                values_from = values_from)
+  sbst <- paste(simdata$uoa1, simdata$uoa2, sep = "_") != "1_1"
+  loo_mod <- lm(y ~ x, data_with_missingness, subset = sbst)
+  expect_true(
+    all.equal(
+      resids[!sbst],
+      residuals(values_from, type = "working")[!sbst] +
+        stats::model.offset(stats::model.frame(tm, na.action = na.pass))[!sbst] -
+        predict(loo_mod, simdata[!sbst,]),
+      check.attributes = FALSE
+    )
+  )
 })
 
 if (requireNamespace("robustbase", quietly = TRUE)) {
@@ -589,7 +755,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
     dmod <- lmitt(lm(y ~ z.(spec), simdata, offset = cov_adj(cmod)), specification = spec)
 
-    out <- estfun(dmod)
+    out <- estfun(dmod, type_psi = "HC0", type_phi = "HC0")
     expect_equal(dim(out), c(50, 4))
   })
 }
@@ -700,6 +866,390 @@ test_that("bread.teeMod handles model with less than full rank", {
   expect_true(all.equal(bread(ssmod), expected_out, check.attributes = FALSE))
 })
 
+test_that("rcorrect fail", {
+  r <- rep(c(-1, 1), 20)
+  expect_error(
+    .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+             type = "not a bias correction"),
+    "not available"
+  )
+  
+  expect_error(
+    .rcorrect(r, x = list(c(1, 2)), model = "cov_adj",  type = "HC2", cluster_cols = "uoa1"),
+    "must have a SandwichLayer"
+  )
+})
+
+test_that("rcorrect HC/CR/MB/DB0", {
+  r <- rep(c(-1, 1), 20)
+  expect_equal(
+    cr <- .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                   type = "HC0"),
+    r
+  )
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "CR0"))
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "MB0"))
+  expect_equal(cr, .rcorrect(r, x = "not a teeMod but it's ok", model = "not valid but it's ok",
+                            type = "DB0"))
+})
+
+test_that("rcorrect (HC/CR/MB)1", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10),
+                      bid = rep(letters[1:2], 5),
+                      x1 = rnorm(10),
+                      x2 = factor(rep(seq_len(3), 4)[1:10]),
+                      a = rep(c(0, 1), each = 5),
+                      y = rnorm(10))
+  idata <- data.frame(cid = rep(udata$cid, each = 10),
+                      bid = rep(rep(letters[1:2], each = 10), 5),
+                      x1 = rnorm(100),
+                      x2 = factor(rep(seq_len(3), 34)[1:100]),
+                      y = rnorm(100))
+  
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, idata)
+  xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  g <- nrow(udata)
+  n <- nrow(idata)
+  k <- 6
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1"),
+    r * sqrt((n-1) / (n-k) * g / (g-1))
+  )
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "HC1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "CR1"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "MB1"))
+  
+  # non-default clustering
+  cluster <- "bid"
+  cls <- .make_uoa_ids(xm, "MB", cluster)
+  g <- 2
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1", cluster_cols = cluster, cluster = cls),
+    r * sqrt((n-1) / (n-k) * g / (g-1))
+  )
+  expect_equal(
+    cr,
+    .rcorrect(r, x = xm, model = "itt", type = "CR1", cluster_cols = cluster, cluster = cls)
+  )
+  expect_equal(
+    cr,
+    .rcorrect(r, x = xm, model = "itt", type = "MB1", cluster_cols = cluster, cluster = cls)
+  )
+  expect_equal(
+    cr,
+    .rcorrect(r, x = xm, model = "cov_adj", type = "MB1", cluster_cols = cluster, cluster = cls)
+  )
+})
+
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  test_that("rcorrect (HC/CR/MB)1 with lmrob cov_adj", {
+    set.seed(749)
+    udata <- data.frame(cid = seq_len(10),
+                        bid = rep(letters[1:2], 5),
+                        x1 = rnorm(10),
+                        x2 = factor(rep(seq_len(3), 4)[1:10]),
+                        a = rep(c(0, 1), each = 5),
+                        y = rnorm(10))
+    idata <- data.frame(cid = rep(udata$cid, each = 10),
+                        bid = rep(rep(letters[1:2], each = 10), 5),
+                        x1 = rnorm(100),
+                        x2 = factor(rep(seq_len(3), 34)[1:100]),
+                        y = rnorm(100))
+    
+    speci <- rct_spec(a ~ unitid(cid), udata)
+    cmod <- robustbase::lmrob(y ~ x1 + x2, idata)
+    xm <- lmitt(y ~ 1, speci, idata, offset = cov_adj(cmod))
+    
+    r <- xm$residuals
+    g <- nrow(udata)
+    n <- nrow(idata)
+    k <- 7
+    expect_equal(
+      cr <- .rcorrect(r, x = xm, model = "itt", type = "HC1"),
+      r * sqrt((n-1) / (n-k) * g / (g-1))
+    )
+  })
+}
+
+test_that("rcorrect (HC/CR/MB)2, no clustering", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10),
+                      x1 = rnorm(10),
+                      x2 = factor(rep(seq_len(3), 4)[1:10]),
+                      a = rep(c(0, 1), each = 5),
+                      y = rnorm(10))
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, udata)
+  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  
+  r <- cmod$residuals
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(cmod))
+  )
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "cov_adj", type = "MB2"))
+  
+  # subset
+  xm <- lmitt(y ~ 1, speci, udata, subset = cid > 3, offset = cov_adj(cmod))
+  r <- stats::residuals(xm, "working")
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
+  
+  # NA's
+  udata$y[9:10] <- NA_real_
+  cmod <- lm(y ~ x1 + x2, udata)
+  xm <- lmitt(y ~ 1, speci, udata, offset = cov_adj(cmod))
+  class(xm$na.action) <- "exclude"
+  r <- stats::residuals(xm, "working")
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    r / sqrt(1-stats::hatvalues(xm))
+  )
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "CR2"))
+  expect_equal(cr, .rcorrect(r, x = xm, model = "itt", type = "MB2"))
+})
+
+test_that("rcorrect (HC/CR/MB)2, clustering", {
+  set.seed(749)
+  udata <- data.frame(cid = seq_len(10), a = rep(c(0, 1), each = 5))
+  idata <- data.frame(cid = c(rep(udata$cid, each = 10), rep(NA_real_, 50)),
+                      x1 = rnorm(150),
+                      x2 = factor(rep(seq_len(3), 50)),
+                      y = rnorm(150))
+  speci <- rct_spec(a ~ unitid(cid), udata)
+  cmod <- lm(y ~ x1 + x2, idata)
+  da_data <- idata[!is.na(idata$cid),,drop=FALSE]
+  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+              offset = cov_adj(cmod))
+
+  r <- xm$residuals
+  pm <- chol2inv(xm$qr$qr)
+  X <- stats::model.matrix(xm)
+  cids <- unique(udata$cid)
+  
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r, cls = da_data$cid, w = xm$weights)
+    )
+  )
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  
+  # subset
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "itt", type = "HC2"),
+    expected
+  )
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "itt", type = "MB2"), cr)
+  
+  # cov adj
+  r <- cmod$residuals
+  pm <- chol2inv(cmod$qr$qr)
+  X <- stats::model.matrix(cmod)
+  cmod_cls <- c(idata$cid[1:sum(!is.na(idata$cid))],
+                sum(!is.na(idata$cid)) + seq_len(sum(is.na(idata$cid))))
+  cids <- unique(cmod_cls)
+  
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r, cls = cmod_cls, w = rep(1, nrow(idata)))
+    )
+  )
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    expected
+  )
+  expect_equal(.rcorrect(r, x = xm, model = "cov_adj", type = "CR2"), cr)
+  expect_equal(.rcorrect(r, x = xm, model = "cov_adj", type = "MB2"), cr)
+  
+  # NA's
+  idata$y[1:3] <- NA_real_
+  cmod <- lm(y ~ x1 + x2, idata)
+  da_data <- idata[!is.na(idata$cid),,drop=FALSE]
+  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+              offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  pm <- chol2inv(xm$qr$qr)
+  X <- stats::model.matrix(xm)
+  cids <- unique(udata$cid)
+  
+  expected <- c(
+    rep(NA, 3),
+    Reduce(
+      c,
+      mapply(
+        function(c, r, cls, w) {
+          ix <- cls == c
+          Xc <- X[ix,,drop=FALSE]
+          Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+          schur <- eigen(diag(nrow = sum(ix)) - Pc)
+          schur$vector %*%
+            diag(1/sqrt(schur$values),
+                 nrow = sum(ix)) %*% solve(schur$vector) %*%
+            r[ix]
+        },
+        cids,
+        SIMPLIFY = FALSE,
+        MoreArgs = list(r = r,
+                        cls = da_data$cid[4:nrow(da_data)],
+                        w = xm$weights)
+      )
+    )
+  )
+
+  class(xm$na.action) <- "exclude"
+  expect_equal(
+    cr <- .rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt",
+                    type = "HC2"),
+    expected
+  )
+  
+  # NA's + subset (check the model.frame calls are correct)
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  r <- xm$residuals
+  class(xm$na.action) <- "exclude"
+  expect_equal(
+    cr <- .rcorrect(c(rep(NA_real_, 3), r), x = xm, model = "itt",
+                    type = "HC2"),
+    expected
+  )
+  
+  # all NA's in a given cluster
+  idata$y[idata$cid == 1] <- NA_real_
+  cmod <- lm(y ~ x1 + x2, idata)
+  class(cmod$na.action) <- "exclude"
+  da_data <- idata[!is.na(idata$cid),,drop=FALSE]
+  xm <- lmitt(y ~ 1, speci, da_data, weights = ate(speci),
+              offset = cov_adj(cmod))
+  class(xm$na.action) <- "exclude"
+  expect_equal(
+    .rcorrect(
+      stats::residuals(cmod, type = "working"),
+      x = xm,
+      model = "cov_adj",
+      type = "HC2"
+    )[idata$cid == 1 & !is.na(idata$cid)],
+    rep(NA_real_, sum(!is.na(idata$cid) & idata$cid == 1))
+  )
+  expect_true(all(!is.na(vcov_tee(x = xm, type = "CR2"))))
+  
+  # glm
+  idata <- data.frame(cid = c(rep(udata$cid, each = 10), rep(NA_real_, 50)),
+                      x1 = rnorm(150),
+                      x2 = factor(rep(seq_len(3), 50)),
+                      y = round(runif(150)))
+  cmod <- glm(y ~ x1 + x2, idata, family = binomial())
+  xm <- lmitt(y ~ 1, speci, idata, subset = !is.na(cid), offset = cov_adj(cmod))
+  
+  r <- stats::residuals(cmod, type = "working")
+  pm <- chol2inv(cmod$qr$qr)
+  X <- stats::model.matrix(cmod)
+  cids <- unique(cmod_cls)
+
+  expected <- Reduce(
+    c,
+    mapply(
+      function(c, r, cls, w) {
+        ix <- cls == c
+        Xc <- X[ix,,drop=FALSE]
+        Pc <- Xc %*% pm %*% t(Xc) %*% diag(w[ix], nrow = sum(ix))
+        schur <- eigen(diag(nrow = sum(ix)) - Pc)
+        schur$vector %*% diag(1/sqrt(schur$values),
+                              nrow = sum(ix)) %*% solve(schur$vector) %*% r[ix]
+      },
+      cids,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(r = r,
+                      cls = cmod_cls,
+                      w = weights(cmod, type = "working"))
+    )
+  )
+  
+  expect_equal(
+    cr <- .rcorrect(r, x = xm, model = "cov_adj", type = "HC2"),
+    expected
+  )
+  
+  # ..uoa..
+  sdat <- data.frame(b = rep(replicate(50,
+                                       paste(sample(letters, 10, TRUE),
+                                             collapse = "")),
+                             2),
+                     a = rep(c(0, 1), each = 50),
+                     y = 2 * rep(c(0, 1), each = 50) + 0.35 * rnorm(100))
+  suppressWarnings(next_spec <- rct_spec(a ~ block(b), sdat))
+  next_xm <- lmitt(y ~ 1, next_spec, sdat, weights = "ate")
+  
+  r <- next_xm$residuals
+  pm <- chol2inv(next_xm$qr$qr)
+  X <- stats::model.matrix(next_xm)
+  expected <- numeric(nrow(sdat))
+  for (ix in seq_len(nrow(sdat))) {
+    Xc <- X[ix,,drop=FALSE]
+    Pc <- Xc %*% pm %*% t(Xc) %*% diag(next_xm$weights[ix], nrow = length(ix))
+    schur <- eigen(diag(nrow = length(ix)) - Pc)
+    crc <- schur$vector %*% diag(1/sqrt(schur$values), nrow = length(ix)) %*% 
+      solve(schur$vector) %*% r[ix]
+    expected[ix] <- crc
+  }
+  expect_equal(
+    cr <- unname(.rcorrect(r, x = next_xm, model = "itt", type = "HC2")),
+    expected
+  )
+})
+
 test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
                 "with a SandwichLayer offset"), {
   data(simdata)
@@ -711,7 +1261,8 @@ test_that(paste(".align_and_extend_estfuns fails if not a teeMod object",
   expect_error(.align_and_extend_estfuns(mod2), "must be a fitted")
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overlap"), {
+test_that(paste(".align_and_extend_estfuns with `by` and the samples fully",
+                "overlap (uses jackknifed first-stage coefficients)"), {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
@@ -722,13 +1273,39 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
   cmod1 <- lm(y ~ x, simdata_copy)
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec, offset = cov_adj(cmod2, by = "obs_id"))
+  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                offset = cov_adj(cmod1, by = "obs_id"))
+  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec,
+                offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  C_cls <- paste(simdata_copy$uoa1, simdata_copy$uoa2, sep = "_")
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata_copy$y - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0",
+                                   loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, itt_rcorrect = "HC0",
+                                   cov_adj_rcorrect = "HC0",
+                                   loco_residuals = TRUE)
 
   # tests to run (for each .align_and_extend_estfuns() test):
   # 1) do we get a matrix of estimating equations of dimension n?
@@ -746,41 +1323,69 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully overl
     ef1$psi,
     mod_lm_ef[sort(as.character(seq(nrow(simdata_copy)))),],
     check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C"), {
+test_that(paste(".align_and_extend_estfuns with `by` and Q is a subset of C",
+                "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   simdata$obs_id <- seq_len(nrow(simdata))
   simdata_shuffle_ix <- sample(rownames(simdata))
   shuffled_simdata <- simdata[simdata_shuffle_ix,]
-  Q_data <- simdata[1L:20L,]
+  Q_ix <- 1L:20L
+  Q_data <- simdata[Q_ix,]
   Q_shuffle_ix <- sample(rownames(Q_data))
   shuffled_Q_data <- Q_data[Q_shuffle_ix,]
   cmod1 <- lm(y ~ x, simdata)
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2, by = "obs_id"))
+  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                offset = cov_adj(cmod1, by = "obs_id"))
+  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls[Q_ix])
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  nonzero_ix <- as.numeric(sort(as.character(seq(20L))))
-  zero_ix <- seq(21L, 50L)
-  expect_true(all.equal(ef1$phi, cmod_ef[c(nonzero_ix, zero_ix),], check.attributes = FALSE))
-  expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[nonzero_ix,], check.attributes = FALSE))
+  nonzero_ix <- as.numeric(sort(as.character(Q_ix)))
+  zero_ix <- setdiff(seq_len(50), Q_ix)
+  expect_true(all.equal(ef1$phi, cmod_ef[c(nonzero_ix, zero_ix),],
+                        check.attributes = FALSE))
+  expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[nonzero_ix,],
+                        check.attributes = FALSE))
   expect_true(all(ef1$psi[zero_ix] == 0))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
 })
 
 test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
@@ -791,38 +1396,69 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
   simdata_shuffle_ix <- sample(rownames(simdata_copy))
   shuffled_simdata <- simdata_copy[simdata_shuffle_ix,]
-  C_data <- simdata_copy[1:20,]
+  C_ix <- seq_len(34L)
+  C_data <- simdata_copy[C_ix,]
   C_shuffle_ix <- sample(rownames(C_data))
   shuffled_C_data <- C_data[C_shuffle_ix,]
   cmod1 <- lm(y ~ x, C_data)
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec1, offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2, by = "obs_id"))
+  mod1 <- lmitt(y ~ 1, data = simdata_copy, specification = spec1,
+                offset = cov_adj(cmod1, by = "obs_id"))
+  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                offset = cov_adj(cmod2, by = "obs_id"))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  Q_cls <- paste(simdata_copy$uoa1, simdata_copy$uoa2, sep = "_")
+  C_cls <- Q_cls[C_ix]
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- replace(mod1$offset,
+                       C_ix,
+                       rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
 
   expect_equal(dim(ef1$phi), c(nrow(simdata_copy), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata_copy), 2))
-  nonzero_ix <- 31L:50L
-  zero_ix <- 1L:30L
-  expect_true(all(ef1$phi[1L:30L] == 0))
+  zero_ix <- seq(nrow(simdata_copy)-length(C_ix))
+  nonzero_ix <- setdiff(seq_len(nrow(simdata_copy)), zero_ix)
+  expect_true(all(ef1$phi[zero_ix] == 0))
   expect_true(all.equal(
-    ef1$phi[31L:50L,],
-    cmod_ef[sort(as.character(seq(20L))),],
+    ef1$phi[nonzero_ix,],
+    cmod_ef[sort(as.character(C_ix)),],
     check.attributes = FALSE))
   expect_true(all.equal(
     ef1$psi,
-    mod_lm_ef[c(21L:50L, sort(as.character(seq(20L)))),], check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+    mod_lm_ef[c(setdiff(seq_len(nrow(simdata_copy)), C_ix),
+                sort(as.character(C_ix))),],
+    check.attributes = FALSE))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
-test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap"), {
+test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no",
+                "overlap (doesn't use jackknifed first-stage estimates)"), {
   set.seed(438)
   data(simdata)
 
@@ -837,8 +1473,10 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1, by = "obs_id"))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2, by = "obs_id"))
+  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                offset = cov_adj(cmod1, by = "obs_id"))
+  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                offset = cov_adj(cmod2, by = "obs_id"))
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
@@ -848,14 +1486,17 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no overlap
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all(ef1$phi[1L:30L,] == 0))
-  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
+  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,],
+                        check.attributes = FALSE))
   expect_true(all(ef1$psi[31L:50L,] == 0))
-  expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,], check.attributes = FALSE))
+  expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,],
+                        check.attributes = FALSE))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
 })
 
-test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when the samples fully overlap",
+                "(no `by`) (uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
@@ -864,86 +1505,173 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap (no `b
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2))
+  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
+                offset = cov_adj(cmod1))
+  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls, drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  expect_true(all.equal(ef1$phi, cmod_ef[sort(seq(50L)),], check.attributes = FALSE))
-  expect_true(all.equal(ef1$psi, mod_lm_ef[sort(seq(50L)),], check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_true(all.equal(ef1$phi, cmod_ef[sort(seq(50L)),],
+                        check.attributes = FALSE))
+  expect_true(all.equal(ef1$psi, mod_lm_ef[sort(seq(50L)),],
+                        check.attributes = FALSE))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
-test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
+                "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
-  Q_data <- simdata[1:20,]
+  Q_ix <- seq_len(20L)
+  Q_data <- simdata[Q_ix,]
   shuffled_Q_data <- Q_data[sample(rownames(Q_data)),]
   cmod1 <- lm(y ~ x, simdata)
   cmod2 <- lm(y ~ x, shuffled_simdata)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2))
+  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                offset = cov_adj(cmod1))
+  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  C_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(C_cls[Q_ix])
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)[Q_ix,,drop=FALSE] 
+  loo_preds <- rowSums(X * t(loo_cmod[, C_cls[Q_ix], drop=FALSE]))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y[Q_ix] - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
   expect_true(all.equal(ef1$phi, cmod_ef, check.attributes = FALSE))
-  expect_true(all.equal(ef1$psi[1L:20L,], mod_lm_ef[1L:20L,], check.attributes = FALSE))
-  expect_true(all(ef1$psi[21L:50L] == 0))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_true(all.equal(ef1$psi[Q_ix,], mod_lm_ef[Q_ix,],
+                        check.attributes = FALSE))
+  expect_true(all(ef1$psi[setdiff(seq_len(nrow(simdata)), Q_ix)] == 0))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
 })
 
-test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q isn't",
-                "possible and C is a subset of Q"), {
+test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q",
+                "isn't possible and C is a subset of Q (uses jackknifing)"), {
   set.seed(438)
   data(simdata)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
-  C_data <- simdata[1:20,]
+  C_ix <- seq_len(34L)
+  C_data <- simdata[C_ix,]
   shuffled_C_data <- C_data[sample(rownames(C_data)),]
   cmod1 <- lm(y ~ x, C_data)
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_simdata)
-  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1, offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2, offset = cov_adj(cmod2))
+  mod1 <- lmitt(y ~ 1, data = simdata, specification = spec1,
+                offset = cov_adj(cmod1))
+  mod2 <- lmitt(y ~ 1, data = shuffled_simdata, specification = spec2,
+                offset = cov_adj(cmod2))
 
+  # get actual values for matrices of estimating equations
   cmod_ef <- estfun(cmod1)
-  mod_lm_ef <- estfun(as(mod1, "lm"))
-  ef1 <- .align_and_extend_estfuns(mod1)
-  ef2 <- .align_and_extend_estfuns(mod2)
+  Q_cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  C_cls <- Q_cls[C_ix]
+  jk_units <- unique(C_cls)
+  loo_cmod <- Reduce(
+    cbind,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        eval(cmod_cl, envir = environment(formula(cmod)))$coefficients
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod1, cls = C_cls)
+    )
+  )
+  colnames(loo_cmod) <- jk_units
+  X <- model.matrix(cmod1)
+  loo_preds <- replace(mod1$offset,
+                       C_ix,
+                       rowSums(X * t(loo_cmod[, C_cls, drop=FALSE])))
+  mod_lm_ef <- estfun(as(mod1, "lm")) / stats::residuals(mod1) * (
+    simdata$y - loo_preds - mod1$fitted.values + mod1$offset)
+  ef1 <- .align_and_extend_estfuns(mod1, loco_residuals = TRUE)
+  ef2 <- .align_and_extend_estfuns(mod2, loco_residuals = TRUE)
   by_ix <- sort(apply(simdata[, c("uoa1", "uoa2")], 1,
                       function(...) paste(..., collapse = "_")))
 
+  zero_ix <- seq(nrow(simdata)-length(C_ix))
+  nonzero_ix <- setdiff(seq_len(nrow(simdata)), zero_ix)
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
-  expect_true(all(ef1$phi[1L:30L] == 0))
-  expect_true(all.equal(ef1$psi, mod_lm_ef[c(21L:50L, 1L:20L),], check.attributes = FALSE))
-  expect_equal(vcov_tee(mod1), vcov_tee(mod2))
-  expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
+  expect_true(all.equal(ef1$phi[nonzero_ix,],
+                        cmod_ef[C_ix,],
+                        check.attributes = FALSE))
+  expect_true(all(ef1$phi[zero_ix] == 0))
+  expect_true(all.equal(ef1$psi,
+                        mod_lm_ef[c(setdiff(seq_len(nrow(simdata)), C_ix),
+                                    C_ix),],
+                        check.attributes = FALSE))
+  expect_equal(vcov_tee(mod1, loco_residuals = TRUE),
+               vcov_tee(mod2, loco_residuals = TRUE))
+  expect_equal(vcov_tee(mod1, cluster = "bid", loco_residuals = TRUE),
+               vcov_tee(mod2, cluster = "bid", loco_residuals = TRUE))
 })
 
-test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no `by`)"), {
+test_that(paste(".align_and_extend_estfuns when the samples have no overlap",
+                "(no `by`) (doesn't use jackknifing)"), {
   set.seed(438)
   data(simdata)
 
@@ -955,8 +1683,10 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
   cmod2 <- lm(y ~ x, shuffled_C_data)
   spec1 <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
   spec2 <- rct_spec(z ~ cluster(uoa1, uoa2), data = shuffled_Q_data)
-  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1, offset = cov_adj(cmod1))
-  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2, offset = cov_adj(cmod2))
+  mod1 <- lmitt(y ~ 1, data = Q_data, specification = spec1,
+                offset = cov_adj(cmod1))
+  mod2 <- lmitt(y ~ 1, data = shuffled_Q_data, specification = spec2,
+                offset = cov_adj(cmod2))
 
   cmod_ef <- estfun(cmod1)
   mod_lm_ef <- estfun(as(mod1, "lm"))
@@ -967,9 +1697,11 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap (no 
 
   expect_equal(dim(ef1$phi), c(nrow(simdata), 2))
   expect_equal(dim(ef1$psi), c(nrow(simdata), 2))
-  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,], check.attributes = FALSE))
+  expect_true(all.equal(ef1$phi[31L:50L,], cmod_ef[1L:20L,],
+                        check.attributes = FALSE))
   expect_true(all(ef1$phi[1L:30L,] == 0))
-  expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,], check.attributes = FALSE))
+  expect_true(all.equal(ef1$psi[1L:30L,], mod_lm_ef[1L:30L,],
+                        check.attributes = FALSE))
   expect_true(all(ef1$psi[31L:50L,] == 0))
   expect_equal(vcov_tee(mod1), vcov_tee(mod2))
   expect_equal(vcov_tee(mod1, cluster = "bid"), vcov_tee(mod2, cluster = "bid"))
@@ -985,10 +1717,32 @@ test_that(".align_and_extend_estfuns with ctrl means estfun", {
   cm_ef <- estfun(mod@ctrl_means_model)
   cm_ef[is.na(cm_ef)] <- 0
   aligned1 <- .align_and_extend_estfuns(mod)
-  aligned2 <- .align_and_extend_estfuns(mod, cm_ef)
+  aligned2 <- .align_and_extend_estfuns(mod, ctrl_means_ef_mat = cm_ef)
   expect_equal(length(aligned1), 2)
   expect_equal(length(aligned2), 2)
-  expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4], check.attributes = FALSE))
+  expect_true(all.equal(cm_ef[c(1, 10:11, 2:9),], aligned2$psi[, 3:4],
+                        check.attributes = FALSE))
+})
+
+test_that(".align_and_extend_estfuns converts NA's to 0's", {
+  set.seed(249)
+  dat <- data.frame(y = c(rep(NA_real_, 3), rnorm(27)),
+                    a = rep(c(0, 1), each = 15),
+                    x = rnorm(30))
+  suppressWarnings(spec <- rct_spec(a ~ 1, dat))
+  cmod <- lm(y ~ x, dat)
+  xm <- lmitt(y ~ 1, spec, dat, offset = cov_adj(cmod))
+  
+  class(xm$na.action) <- "exclude"
+  aligned <- .align_and_extend_estfuns(xm)
+  expect_equal(dim(aligned$psi), c(30, 2))
+  expect_equal(dim(aligned$phi), c(30, 2))
+  expect_equal(aligned$psi[1:3,],
+               matrix(0, nrow = 3, ncol = 2,
+                      dimnames = list(seq_len(3), c("(Intercept)", "a."))))
+  expect_equal(aligned$phi[1:3,],
+               matrix(0, nrow = 3, ncol = 2,
+                      dimnames = list(seq_len(3), c("(Intercept)", "x"))))
 })
 
 test_that(".make_uoa_ids fails without cluster argument or teeMod model", {
@@ -1004,7 +1758,9 @@ test_that(".make_uoa_ids returns correct ID's for non-SandwichLayer offset", {
   mod <- lmitt(y ~ 1, data = simdata, specification = spec)
 
   expected_out <- factor(
-    apply(simdata[, c("uoa1", "uoa2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+    apply(simdata[, c("uoa1", "uoa2"), drop = FALSE],
+          1,
+          function(...) paste(..., collapse = "_"))
   )
   expect_equal(.make_uoa_ids(mod, vcov_type = "CR"), expected_out)
 })
@@ -1014,10 +1770,13 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
+  dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                offset = cov_adj(cmod))
 
   expected_out <- factor(
-    apply(simdata[, c("uoa1", "uoa2"), drop = FALSE], 1, function(...) paste(..., collapse = "_"))
+    apply(simdata[, c("uoa1", "uoa2"), drop = FALSE],
+          1,
+          function(...) paste(..., collapse = "_"))
   )
   out <- .make_uoa_ids(dmod, vcov_type = "CR")
 
@@ -1027,15 +1786,18 @@ test_that(".make_uoa_ids returns correct ID's for full overlap of C and Q", {
 test_that(".make_uoa_ids for no overlap of C and Q", {
   data(simdata)
   set.seed(300)
-  cmod_ssta1 <- data.frame("y" = rnorm(10), "x" = rnorm(10), "uoa1" = NA, "uoa2" = NA)
+  cmod_ssta1 <- data.frame("y" = rnorm(10), "x" = rnorm(10),
+                           "uoa1" = NA, "uoa2" = NA)
   cmod_ssta2 <- data.frame("y" = rnorm(10), "x" = rnorm(10),
                            "uoa1" = rep(c(1, 2), each = 5), "uoa2" = NA)
 
   cmod1 <- lm(y ~ x, cmod_ssta1)
   cmod2 <- lm(y ~ x, cmod_ssta2)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  dmod1 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod1))
-  dmod2 <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod2))
+  dmod1 <- lmitt(y ~ 1, data = simdata, specification = spec,
+                 offset = cov_adj(cmod1))
+  dmod2 <- lmitt(y ~ 1, data = simdata, specification = spec,
+                 offset = cov_adj(cmod2))
 
   Q_uoas <- apply(simdata[, c("uoa1", "uoa2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -1049,8 +1811,10 @@ test_that(".make_uoa_ids for no overlap of C and Q", {
   expect_equal(length(ids1), nrow(simdata) + 10)
   expect_equal(length(ids2), nrow(simdata) + 10)
 
-  expect_true(all.equal(ids1[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
-  expect_true(all.equal(ids2[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
+  expect_true(all.equal(ids1[1:nrow(simdata)], factor(Q_uoas),
+                        check.attributes = FALSE))
+  expect_true(all.equal(ids2[1:nrow(simdata)], factor(Q_uoas),
+                        check.attributes = FALSE))
 
   expect_equal(length(unique(ids1)), length(unique(Q_uoas)) + 10)
   expect_equal(length(unique(ids2)), length(unique(Q_uoas)) + 2)
@@ -1059,12 +1823,14 @@ test_that(".make_uoa_ids for no overlap of C and Q", {
 test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
   data(simdata)
   set.seed(300)
-  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "uoa1" = NA, "uoa2" = NA)
+  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20),
+                        "uoa1" = NA, "uoa2" = NA)
   cmod_ssta <- rbind(simdata[, colnames(C_not_Q)], C_not_Q)
 
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata)
-  dmod <- lmitt(y ~ 1, data = simdata, specification = spec, offset = cov_adj(cmod))
+  dmod <- lmitt(y ~ 1, data = simdata, specification = spec,
+                offset = cov_adj(cmod))
 
   Q_uoas <- apply(simdata[, c("uoa1", "uoa2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -1075,25 +1841,27 @@ test_that(".make_uoa_ids returns correct ID's for partial overlap of C and Q", {
 
   expect_equal(length(ids), nrow(simdata) + 20)
 
-  expect_true(all.equal(ids[1:nrow(simdata)], factor(Q_uoas), check.attributes = FALSE))
+  expect_true(all.equal(ids[1:nrow(simdata)], factor(Q_uoas),
+                        check.attributes = FALSE))
 
   expect_equal(length(unique(ids)), length(unique(Q_uoas)) + 20)
 })
 
-test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by' argument",
-                "provided a different ordering"), {
+test_that(paste(".make_uoa_ids returns correct ID's when cov_adj's 'by'",
+                "argument provided a different ordering"), {
   set.seed(300)
   data(simdata)
   simdata_copy <- simdata
   simdata_copy$id <- sample(seq_len(nrow(simdata_copy)))
 
-  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20), "uoa1" = NA, "uoa2" = NA,
-                        "id" = seq(51, 70))
+  C_not_Q <- data.frame("y" = rnorm(20), "x" = rnorm(20),
+                        "uoa1" = NA, "uoa2" = NA, "id" = seq(51, 70))
   cmod_ssta <- rbind(simdata_copy[, colnames(C_not_Q)], C_not_Q)
 
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), simdata_copy)
-  dmod <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "id"))
+  dmod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+                offset = cov_adj(cmod, by = "id"))
 
   Q_uoas <- apply(simdata_copy[, c("uoa1", "uoa2"), drop = FALSE], 1,
                   function(...) paste(..., collapse = "_"))
@@ -1126,7 +1894,8 @@ test_that(".make_uoa_ids with `by` when Q ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1137,7 +1906,9 @@ test_that(".make_uoa_ids with `by` when Q ID's aren't unique", {
 
   out <- c(analysis_dat$id[overlap_Q_ix],
            cmod_ssta$id[match(nonoverlap, cmod_ssta$by_col)])
-  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+  expect_equal(length(ids <- .make_uoa_ids(mod,
+                                           vcov_type = "HC0",
+                                           cluster = "id",
                                            by = "by_col")),
                15)
   expect_equal(ids, factor(out, levels = unique(out)))
@@ -1162,7 +1933,8 @@ test_that(".make_uoa_ids with `by` when C ID's aren't unique", {
                              a = c(rep(1, 3), rep(0, 2)),
                              y = rnorm(5),
                              by_col = seq(3, 15, 3))
-  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1173,7 +1945,9 @@ test_that(".make_uoa_ids with `by` when C ID's aren't unique", {
 
   out <- c(analysis_dat$id[overlap_Q_ix],
            cmod_ssta$id[match(nonoverlap, cmod_ssta$by_col)])
-  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+  expect_equal(length(ids <- .make_uoa_ids(mod,
+                                           vcov_type = "HC0",
+                                           cluster = "id",
                                            by = "by_col")),
                15)
   expect_equal(ids, factor(out, levels = unique(out)))
@@ -1199,7 +1973,8 @@ test_that(".make_uoa_ids with `by` when Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, 
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1210,7 +1985,9 @@ test_that(".make_uoa_ids with `by` when Q and C ID's aren't unique", {
 
   out <- c(analysis_dat$id[overlap_Q_ix],
            cmod_ssta$id[match(nonoverlap, cmod_ssta$by_col)])
-  expect_equal(length(ids <- .make_uoa_ids(mod, vcov_type = "HC0", cluster = "id",
+  expect_equal(length(ids <- .make_uoa_ids(mod,
+                                           vcov_type = "HC0",
+                                           cluster = "id",
                                            by = "by_col")),
                15)
   expect_equal(ids, factor(out, levels = unique(out)))
@@ -1236,29 +2013,31 @@ test_that(".make_uoa_ids without `by` when Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   expect_error(.make_uoa_ids(mod, vcov_type = "HC0", cluster = "id"),
                "not uniquely specified. Provide a `by` argument")
 })
 
-test_that("model-based .make_uoa_ids replaces uoa ID's in small blocks with block ID's", {
+test_that(paste("unit-level clustering model-based .make_uoa_ids does not use",
+                "block ID's for small blocks"), {
   data(simdata)
 
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   suppressMessages(dmod <- lmitt(y ~ 1, specification = spec, data = simdata))
 
+  uoa_ids <- factor(apply(simdata[, c("uoa1", "uoa2")],
+                          1,
+                          function(...) paste(..., collapse = "_")))
   expect_equal(
     out <- .make_uoa_ids(dmod, "CR"),
-    factor(paste0("bid",
-                  c(rep("1", sum(simdata$bid == 1)), rep("2", sum(simdata$bid == 2)),
-                    rep("3", sum(simdata$bid == 3)))),
-                  levels = paste0("bid", c("1", "2", "3")))
+    uoa_ids
   )
   expect_equal(out, .make_uoa_ids(dmod, "MB"))
   expect_equal(out, .make_uoa_ids(dmod, "HC"))
   expect_equal(
     .make_uoa_ids(dmod, "DB"),
-    factor(apply(simdata[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_")))
+    out
   )
 })
 
@@ -1283,7 +2062,8 @@ test_that(".order_samples when the samples fully overlap", {
   simdata_copy$uid <- seq_len(nrow(simdata_copy))
   cmod <- lm(y ~ x, simdata_copy)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+               offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
@@ -1292,7 +2072,8 @@ test_that(".order_samples when the samples fully overlap", {
   expect_equal(length(out$C_in_Q), nrow(simdata_copy))
   expect_equal(length(out$C_not_Q), 0)
 
-  expect_equal(names(out$Q_in_C), ord <- sort(as.character(seq(nrow(simdata_copy)))))
+  expect_equal(names(out$Q_in_C), ord <- sort(
+    as.character(seq(nrow(simdata_copy)))))
   expect_equal(names(out$C_in_Q), ord)
 
   expect_true(all.equal(out$Q_in_C, ord, check.attributes = FALSE))
@@ -1312,7 +2093,8 @@ test_that(".order_samples when Q is a subset of C", {
   )
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+               offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
@@ -1321,13 +2103,15 @@ test_that(".order_samples when Q is a subset of C", {
   expect_equal(length(out$C_in_Q), nrow(simdata_copy))
   expect_equal(length(out$C_not_Q), 30)
 
-  expect_equal(names(out$Q_in_C), overlap_ord <- sort(as.character(seq(nrow(simdata_copy)))))
+  expect_equal(names(out$Q_in_C), overlap_ord <- sort(
+    as.character(seq(nrow(simdata_copy)))))
   expect_equal(names(out$C_in_Q), overlap_ord)
   expect_equal(names(out$C_not_Q), as.character(seq(51, 80)))
 
   expect_true(all.equal(out$Q_in_C, overlap_ord, check.attributes = FALSE))
   expect_true(all.equal(out$C_in_Q, overlap_ord, check.attributes = FALSE))
-  expect_true(all.equal(out$C_not_Q, as.character(seq(51, 80)), check.attributes = FALSE))
+  expect_true(all.equal(out$C_not_Q, as.character(seq(51, 80)),
+                        check.attributes = FALSE))
 })
 
 
@@ -1340,7 +2124,8 @@ test_that(".order_samples when C is a subset of Q", {
   cmod_ssta <- simdata_copy[1:20,]
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata_copy)
-  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  mod <- lmitt(y ~ 1, data = simdata_copy, specification = spec,
+               offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
@@ -1353,7 +2138,8 @@ test_that(".order_samples when C is a subset of Q", {
   expect_equal(names(out$Q_in_C), overlap_ord <- sort(as.character(seq(20))))
   expect_equal(names(out$C_in_Q), overlap_ord)
 
-  expect_true(all.equal(out$Q_not_C, as.character(seq(21, nrow(simdata_copy))), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_not_C, as.character(seq(21, nrow(simdata_copy))),
+                        check.attributes = FALSE))
   expect_true(all.equal(out$Q_in_C, overlap_ord, check.attributes = FALSE))
   expect_true(all.equal(out$C_in_Q, overlap_ord, check.attributes = FALSE))
 })
@@ -1367,7 +2153,8 @@ test_that(".order_samples when the samples do not overlap", {
   Q_data <- simdata[21:50,]
   cmod <- lm(y ~ x, cmod_ssta)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
-  mod <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod, by = "uid"))
+  mod <- lmitt(y ~ 1, data = Q_data, specification = spec,
+               offset = cov_adj(cmod, by = "uid"))
 
   out <- .order_samples(mod)
 
@@ -1379,8 +2166,10 @@ test_that(".order_samples when the samples do not overlap", {
   expect_equal(names(out$Q_not_C), as.character(seq(30)))
   expect_equal(names(out$C_not_Q), as.character(seq(20)))
 
-  expect_true(all.equal(out$Q_not_C, as.character(seq(21, 50)), check.attributes = FALSE))
-  expect_true(all.equal(out$C_not_Q, as.character(seq(20)), check.attributes = FALSE))
+  expect_true(all.equal(out$Q_not_C, as.character(seq(21, 50)),
+                        check.attributes = FALSE))
+  expect_true(all.equal(out$C_not_Q, as.character(seq(20)),
+                        check.attributes = FALSE))
 })
 
 test_that(".order_samples when no `by` argument provided", {
@@ -1392,20 +2181,27 @@ test_that(".order_samples when no `by` argument provided", {
   Q_data <- simdata[21:50,]
   cmod <- lm(y ~ x, C_data)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_data)
-  mod <- lmitt(y ~ 1, data = Q_data, specification = spec, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ 1, data = Q_data, specification = spec,
+               offset = cov_adj(cmod))
 
   out <- .order_samples(mod)
 
-  Q_uoas <- apply(Q_data[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
-  C_uoas <- apply(C_data[, c("uoa1", "uoa2")], 1, function(...) paste(..., collapse = "_"))
+  Q_uoas <- apply(Q_data[, c("uoa1", "uoa2")],
+                  1,
+                  function(...) paste(..., collapse = "_"))
+  C_uoas <- apply(C_data[, c("uoa1", "uoa2")],
+                  1,
+                  function(...) paste(..., collapse = "_"))
 
   expect_equal(length(out$Q_not_C), 30)
   expect_equal(length(out$Q_in_C), 0)
   expect_equal(length(out$C_in_Q), 0)
   expect_equal(length(out$C_not_Q), 20)
 
-  expect_true(all.equal(names(out$Q_not_C), as.character(seq(30)), check.attributes = FALSE))
-  expect_true(all.equal(names(out$C_not_Q), as.character(seq(20)), check.attributes = FALSE))
+  expect_true(all.equal(names(out$Q_not_C), as.character(seq(30)),
+                        check.attributes = FALSE))
+  expect_true(all.equal(names(out$C_not_Q), as.character(seq(20)),
+                        check.attributes = FALSE))
 
   expect_true(all.equal(out$Q_not_C, Q_uoas, check.attributes = FALSE))
   expect_true(all.equal(out$C_not_Q, C_uoas, check.attributes = FALSE))
@@ -1428,7 +2224,8 @@ test_that(".order_samples with `by` when Q ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1437,7 +2234,8 @@ test_that(".order_samples with `by` when Q ID's aren't unique", {
   out <- list("Q_not_C" = setNames(character(0L), character(0L)),
               "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
               "C_in_Q" = setNames(overlap, match(overlap, cmod_ssta$by_col)),
-              "C_not_Q" = setNames(nonoverlap, which(cmod_ssta$by_col %in% nonoverlap)))
+              "C_not_Q" = setNames(nonoverlap,
+                                   which(cmod_ssta$by_col %in% nonoverlap)))
   expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
   expect_equal(ord, .order_samples(mod_w_by))
 })
@@ -1459,7 +2257,8 @@ test_that(".order_samples with `by` when C ID's aren't unique", {
                              a = c(rep(1, 3), rep(0, 2)),
                              y = rnorm(5),
                              by_col = seq(3, 15, 3))
-  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ 1, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1468,7 +2267,8 @@ test_that(".order_samples with `by` when C ID's aren't unique", {
   out <- list("Q_not_C" = setNames(character(0L), character(0L)),
               "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
               "C_in_Q" = setNames(overlap, match(overlap, cmod_ssta$by_col)),
-              "C_not_Q" = setNames(nonoverlap, which(cmod_ssta$by_col %in% nonoverlap)))
+              "C_not_Q" = setNames(nonoverlap,
+                                   which(cmod_ssta$by_col %in% nonoverlap)))
   expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
   expect_equal(.order_samples(mod_w_by), ord)
 })
@@ -1491,7 +2291,8 @@ test_that(".order_samples with `by` when both Q and C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   mod_w_by <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
                     offset = cov_adj(cmod, by = "by_col"))
 
@@ -1500,7 +2301,8 @@ test_that(".order_samples with `by` when both Q and C ID's aren't unique", {
   out <- list("Q_not_C" = setNames(character(0L), character(0L)),
               "Q_in_C" = setNames(overlap, match(overlap, analysis_dat$by_col)),
               "C_in_Q" = setNames(overlap, match(overlap, cmod_ssta$by_col)),
-              "C_not_Q" = setNames(nonoverlap, which(cmod_ssta$by_col %in% nonoverlap)))
+              "C_not_Q" = setNames(nonoverlap,
+                                   which(cmod_ssta$by_col %in% nonoverlap)))
   expect_equal(ord <- .order_samples(mod, by = "by_col"), out)
   expect_equal(.order_samples(mod_w_by), ord)
 })
@@ -1523,7 +2325,8 @@ test_that(".order_samples without `by` when Q or C ID's aren't unique", {
                              a = rep(c(rep(1, 3), rep(0, 2)), 2),
                              y = rnorm(10),
                              by_col = setdiff(seq_len(15), seq(1, 15, 3)))
-  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
+  mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat,
+               offset = cov_adj(cmod))
   expect_error(.order_samples(mod),
                "not uniquely specified. Provide a `by` argument")
 })
@@ -1535,7 +2338,8 @@ test_that("sanitize_Q_ids succeeds with valid `by` argument", {
   simdata_copy$uid <- seq_len(nrow(simdata_copy))
   cmod <- lm(y ~ z, data = simdata_copy)
   spec <- rct_spec(z ~ unitid(uoa1, uoa2, uid), simdata_copy)
-  dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy, offset = cov_adj(cmod))
+  dmod <- lmitt(y ~ 1, specification = spec, data = simdata_copy,
+                offset = cov_adj(cmod))
   out <- .sanitize_Q_ids(dmod, c("uoa1", "uoa2"))$cluster
 
   expected_out <- apply(simdata_copy[, c("uoa1", "uoa2"), drop = FALSE], 1,
@@ -1581,7 +2385,8 @@ test_that("checking proper errors in conversion from lm to teeMod", {
                                      call("quote", call("ls")))
   expect_identical(mod1@StudySpecification, mod2@StudySpecification)
 
-  expect_error(propertee:::.convert_to_lmitt(lm(y ~ assigned(spec), data = simdata),
+  expect_error(propertee:::.convert_to_lmitt(lm(y ~ assigned(spec),
+                                                data = simdata),
                                      1,
                                      FALSE,
                                      TRUE,
@@ -1618,7 +2423,8 @@ test_that("lmitt_call", {
   expect_equal(lmittcall, mod@lmitt_call)
 
   # Call via `lmitt.formula()` should match
-  lmittformcall <- str2lang("lmitt.formula(y ~ 1, data = simdata, specification = spec)")
+  lmittformcall <- str2lang(paste("lmitt.formula(y ~ 1, data = simdata,",
+                                  "specification = spec)"))
   mod <- eval(lmittformcall)
   expect_equal(lmittformcall, mod@lmitt_call)
 
@@ -1669,11 +2475,14 @@ test_that("printed effects aren't confused by bad naming", {
   cos <- strsplit(trimws(co), "[[:space:]]+")
 
   expect_true(
-    all(sapply(levels(simdata$abz.c),
-               function(lvl) {
-                 any(sapply(cos, function(buf) any(grepl(paste0("z._abz.c", lvl), buf)))) &
-                   any(sapply(cos, function(buf) any(grepl(paste0("y:abz.c", lvl), buf))))
-               })))
+    all(sapply(
+      levels(simdata$abz.c),
+      function(lvl) {
+        any(sapply(cos,
+                   function(buf) any(grepl(paste0("z._abz.c", lvl), buf)))) &
+          any(sapply(cos,
+                     function(buf) any(grepl(paste0("y:abz.c", lvl), buf))))
+      })))
 
   # to force ` in variable names via as.factor
   mod <- lmitt(y ~ as.factor(abz.c), data = simdata, specification = spec)
@@ -1744,8 +2553,10 @@ test_that(".estfun_DB_blockabsorb returns 0 if not asking for
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   cmod <- lm(y ~ x, simdata)
-  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec))
-  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec),
+  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata,
+                 weights = ate(spec))
+  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata,
+                     weights = ate(spec),
                      absorb = TRUE)
 
   expect_true(all(.estfun_DB_blockabsorb(ssmod) == 0))
@@ -1757,7 +2568,8 @@ test_that(".estfun_DB_blockabsorb returns correct value", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   cmod <- lm(y ~ x, simdata)
-  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec),
+  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata,
+                     weights = ate(spec),
                      absorb = TRUE)
 
   expect_false(all(.estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB") == 0))

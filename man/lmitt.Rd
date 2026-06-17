@@ -24,19 +24,22 @@ lmitt(obj, specification, data, ...)
 \item{obj}{A \code{formula} or a \code{lm} object. See Details.}
 
 \item{specification}{The \code{StudySpecification} to be used.
-Alternatively, a formula creating a specification (of the type of that
+Alternatively, a formula creating a specification. (Of the type of that
 would be passed as the first argument to \code{\link[=rd_spec]{rd_spec()}}, \code{\link[=rct_spec]{rct_spec()}}, or
-\code{\link[=obs_spec]{obs_spec()}}). If the formula includes a \code{\link[=forcing]{forcing()}} element, an RD
+\code{\link[=obs_spec]{obs_spec()}}, with the difference that \code{\link[=cluster]{cluster()}}, \code{\link[=uoa]{uoa()}}
+and \code{\link[=unit_of_assignment]{unit_of_assignment()}} terms can be omitted when each row of
+\code{data} represents a distinct unit of assignment.) If the formula includes a \code{\link[=forcing]{forcing()}} element, an RD
 specification is created. Otherwise an observational specification is
 created. An RCT specification must be created manually using \code{\link[=rct_spec]{rct_spec()}}.}
 
 \item{data}{A \code{data.frame} such as would be passed into \code{\link[=lm]{lm()}}.}
 
-\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}}. One such argument is
-\code{dichotomy}, which can be used to dichotomize a non-binary treatment
+\item{...}{Additional arguments passed to \code{\link[=lm]{lm()}} and other functions.
+An example of the latter is \code{dichotomy=}, a formula passed to
+\code{\link[=assigned]{assigned()}} and, as appropriate, \code{\link[=ate]{ate()}}, \code{\link[=att]{att()}}, \code{\link[=atc]{atc()}} or
+\code{\link[=ato]{ato()}}. It is used to dichotomize a non-binary treatment
 variable in \code{specification}. See the Details section of the
-\code{ett()} or \code{att()} help pages for information on specifying this
-formula.}
+\code{ate()} help page for examples.}
 
 \item{absorb}{If \code{TRUE}, fixed effects are included for blocks
 identified in the \code{StudySpecification}. Excluded in \code{FALSE}.
@@ -96,11 +99,14 @@ you request a main treatment effect (with a formula of \code{~ 1}) with a
 treatment variable named "txt", you can obtain its estimate from the
 returned \code{teeMod} object via \code{$coefficients["txt."]}.
 
-\code{\link[=lmitt]{lmitt()}} will produce a message if the \code{StudySpecification} passed in
-has block information that is not being used to inform weights or a block
-fixed effect adjustment. This is not an error, but it often represents an
-oversight on the part of the analyst. To disable this
-message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
+\code{\link[=lmitt]{lmitt()}} will produce a message if the \code{StudySpecification}
+designates treatment assignment by block but the blocking
+structure appears not to be reflected in the \code{weights}, nor
+in a block fixed effect adjustment (via \code{absorb=TRUE}). While
+not an error, this is at odds with intended uses of
+\code{propertee}, so \code{lmitt()} flags it as a potential
+oversight on the part of the analyst. To disable this message, run
+\code{options("propertee_message_on_unused_blocks" = FALSE)}.
 
 \code{\link[=lmitt]{lmitt()}} returns objects of class \sQuote{\code{teeMod}}, for
 Treatment Effect Estimate Model, extending the lm class to add a
@@ -126,23 +132,34 @@ supplementary regression. The treatment effect estimates adjusted
 for block fixed effects can be seen to coincide with estimates
 calculated without block effect but with weights multiplied by an
 additional factor specific to the combination of block and
-treatment condition. For block s containing units with weights
+treatment condition. For block \eqn{s} containing units with weights
 \eqn{w_i} and binary treatment assignments \eqn{z_i}, define
 \eqn{\hat{\pi}_s} by \eqn{\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i}. If
 \eqn{\hat{\pi}_s} is 0 or 1, the block doesn't contribute to
 effect estimation and the additional weighting factor is 0; if
 \eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
 \eqn{1 - \hat{\pi}_s} for treatment group members and
-\eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
-\link[=lmitt]{lmitt(absorb=T)} reflect regressions of control observations
-using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
-appropriate.
+\eqn{\hat{\pi}_s} for controls. When estimating a main effect only
+or a main effect with continuous moderator, supplementary
+coefficients under option \code{absorb=TRUE} reflect regressions
+with additional weighting factor equal to 0 or \eqn{\hat{\pi}_s},
+respectively, for treatment or control group members of block
+\eqn{s}. With a categorical moderator and \code{absorb=TRUE},
+this additional weighting factor determining supplementary coefficients
+is calculated separately for each level \eqn{\ell} of the moderator
+variable, with the sums defining \eqn{\hat{\pi}_{s\ell}} restricted
+not only to block \eqn{s} but also to observations with moderator
+equal to \eqn{\ell}.
 }
 \examples{
 data(simdata)
-spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
 mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
 mod2 <- lmitt(y ~ as.factor(o), data = simdata, specification = spec, weights = "ate")
-mod3 <- lmitt(y ~ 1, data = simdata,
+### observational study with treatment z assigned row-wise within blocks:
+mod3 <- lmitt(y ~ 1, data=simdata, specification=z ~ block(bid), weights="att")
+### regression discontinuity study with units of assignment
+### given by combinations of uoa1, uoa2:
+mod4 <- lmitt(y ~ 1, data = simdata,
               specification = z ~ uoa(uoa1, uoa2) + forcing(force))
 }

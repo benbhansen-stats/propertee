@@ -5,7 +5,7 @@
 \alias{print.summary.teeMod}
 \title{Summarizing \code{teeMod} objects}
 \usage{
-\method{summary}{teeMod}(object, vcov.type = "CR0", ...)
+\method{summary}{teeMod}(object, vcov.type = "HC0", ...)
 
 \method{print}{summary.teeMod}(
   x,

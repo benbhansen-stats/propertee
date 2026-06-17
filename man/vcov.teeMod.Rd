@@ -12,8 +12,12 @@
 \item{...}{additional arguments to \code{vcov_tee()}.}
 }
 \value{
-A \eqn{2\times 2} matrix corresponding to an intercept and the
-treatment variable in the direct adjustment model
+A variance-covariance matrix with row and column entries for the estimated
+coefficients in \code{x}, the marginal mean outcome in the control condition,
+the marginal mean \code{offset} in the control condition (if an \code{offset}
+is provided), and if a moderator variable is specified in the formula for \code{x},
+the mean interaction in the control condition of the outcome and \code{offset}
+with the moderator variable
 }
 \description{
 An S3method for \code{stats::vcov} that computes standard

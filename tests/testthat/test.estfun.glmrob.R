@@ -17,7 +17,7 @@ if (requireNamespace("robustbase", quietly = TRUE)) {
     mod <- robustbase::glmrob(probation_year1~age_at_entry+lhsgrade_pct+male,
                   family=binomial,data=lsoSynth)
 
-    expect_true(max(abs(sandwich(mod)-mod$cov))<0.01)
+    expect_true(max(abs(sandwich::sandwich(mod)-mod$cov))<0.01)
   })
 } else {
   expect_true(TRUE)

@@ -4,16 +4,22 @@
 \alias{bread.teeMod}
 \title{Extract bread matrix from a \code{teeMod} model fit}
 \usage{
-\method{bread}{teeMod}(x, ...)
+\method{bread}{teeMod}(x, values_from = x, ...)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
 
+\item{values_from}{optional, a fitted model object. Defaults to \code{x}.}
+
 \item{...}{arguments passed to methods}
 }
 \value{
-A \eqn{2\times 2} matrix corresponding to an intercept and the
-treatment variable in the direct adjustment model
+A variance-covariance matrix with row and column entries for the estimated
+coefficients in \code{x}, the marginal mean outcome in the control condition,
+the marginal mean \code{offset} in the control condition (if an \code{offset}
+is provided), and if a moderator variable is specified in the formula for \code{x},
+the mean interaction in the control condition of the outcome and \code{offset}
+with the moderator variable
 }
 \description{
 An S3method for \code{sandwich::bread} that extracts the bread of the

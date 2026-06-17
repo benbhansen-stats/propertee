@@ -32,7 +32,11 @@ NULL
 ##' @rdname StudySpecificationSpecials
 unit_of_assignment <- function(...) {
   allf <- list(...)
-  return(do.call(cbind, allf))
+  results <- lapply(allf, function(x) {
+    if (!is.numeric(x)) return(as.character(x))
+    return(x)
+  })
+  return(do.call(cbind, results))
 }
 
 ##' @rdname StudySpecificationSpecials
@@ -57,7 +61,7 @@ forcing <- unit_of_assignment
 
 #
 ##' Checks performed:
-##' * Ensure presence of exactly one of \code{unit_of_assignment()},
+##' * Ensure presence of no more than one of \code{unit_of_assignment()},
 ##'   \code{cluster()} or \code{unitid()}.
 ##' * Disallow multiple \code{block()} or multiple \code{forcing()} terms.
 ##' * Disallow \code{forcing()} unless in RDD.
@@ -88,12 +92,7 @@ forcing <- unit_of_assignment
   len_clu <- length(spec_clu)
   len_uni <- length(spec_uni)
 
-  if (is.null(spec_uas) &
-      is.null(spec_uoa) &
-      is.null(spec_clu) &
-      is.null(spec_uni)) {
-    stop("Must specify a unit_of_assignment, cluster or unitid variable.")
-  } else if (len_uas + len_uoa + len_clu + len_uni > 1) {
+  if (len_uas + len_uoa + len_clu + len_uni > 1) {
     # there's 2+ entered; need to figure out what combination
 
     if ((len_uas >= 1) + (len_uoa >= 1) + (len_clu >= 1) + (len_uni >= 1) > 1) {
@@ -204,22 +203,15 @@ identify_small_blocks <- function(spec) {
 .make_uoa_cluster_df <- function(spec, cluster = NULL) {
   if (!inherits(spec, "StudySpecification")) stop("Must be provided a valid `StudySpecification` object")
   uoa_cols <- var_names(spec, "u")
-  q_df <- NULL
-  spec_cl <- spec@call
-  if (is.null(subset_cl <- spec_cl$subset)) specdata_cl <- spec_cl$data else {
-    specdata_cl <- quote(subset(x = df, subset_arg))
-    specdata_cl$x <- spec_cl$data
-    specdata_cl[[3]] <- subset_cl
-  }
-  for (f in seq_len(sys.nframe())) {
-    q_df <- tryCatch({
-      eval(specdata_cl, envir = parent.frame(f))
-    }, error = function(e) return(NULL))
-    if (!is.null(q_df) & inherits(q_df, "data.frame")) break
-  }
+  q_df <- eval(spec@call$data, envir = environment(spec@call$formula))
+  if (!is.null(spec@call$subset)) q_df <- subset(q_df, eval(spec@call$subset, envir = q_df))
 
   if (is.null(q_df)) {
     stop("Could not find specification data in the call stack")
+  }
+
+  if (spec@unit_of_assignment_type == "none") {
+    q_df[["..uoa.."]] <- rownames(q_df)
   }
 
   if (!is.null(cluster) & !all(cluster %in% colnames(q_df))) {
@@ -231,7 +223,8 @@ identify_small_blocks <- function(spec) {
     spec@unit_of_assignment_type,
     "unitid" = unitids,
     "unit_of_assignment" = units_of_assignment,
-    "cluster" = clusters
+    "cluster" = clusters,
+    "none" = ..uoa..
   )
   uoas <- grab_uoas_fn(spec)
 

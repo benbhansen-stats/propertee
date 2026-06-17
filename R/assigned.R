@@ -50,7 +50,7 @@
 ##' spec <- obs_spec(z ~ uoa(uoa1, uoa2), data = simdata)
 ##' mod <- lm(y ~ assigned(), data = simdata, weights = ate(spec))
 ##' lmittmod <- lmitt(mod)
-##' summary(lmittmod)
+##' summary(lmittmod, vcov.type = "CR0")
 assigned <- function(specification = NULL, data = NULL, dichotomy = NULL) {
   if (is.null(specification)) {
     specification <- .get_spec()
@@ -70,6 +70,11 @@ assigned <- function(specification = NULL, data = NULL, dichotomy = NULL) {
       return(treatment(specification)[, 1])
     }
   }
+
+  if (specification@unit_of_assignment_type == "none") {
+    data[["..uoa.."]] <- rownames(data)
+  }
+
 
   tt <- treatment(specification, binary = FALSE)
   tt <- .expand_txt(tt, data, specification)

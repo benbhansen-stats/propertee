@@ -518,19 +518,23 @@ design-based perspective.
 
   \subsubsection{Conceptual vs practical bread estimates} \label{sec:conc-vs-pract}
   \paragraph{Model-based $\hat{A}$'s as estimates of design-based $A$ matrices.}%
-In general $\EE
-[\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha_{0},\tau ) \mid \mathcal{M}] \equiv
-\nabla_{\beta}\psi(\vec{V}_{i};  \beta, \alpha_{0}, \tau )$; for many types of
-covariance model one also has $\EE
-[\nabla_{\beta}\phi(\vec{V}_{i};  \beta ) \mid \mathcal{M}] \equiv
-\nabla_{\beta}\phi(\vec{V}_{i};  \beta )$. As a result, under the
-model-based perspective
-$A_{11}(\beta)$ and perhaps $A_{21}(\beta)$ are essentially observed,
-i.e.  $\hat{A}_{11}(\beta) \equiv A_{11}(\beta)$ and (perhaps)
-$\hat{A}_{21}(\beta) \equiv A_{21}(\beta)$.   These equivalences don't
-hold under the design-based perspective, but under that perspective
-the same matrices do serve as estimates of $A_{11}(\beta)$ and
-$A_{21}(\beta)$ as given in \eqref{eq:13}.
+  In general
+  $\EE [\nabla_{\beta}\psi(\vec{V}_{i}; \beta, \alpha_{0},\tau ) \mid
+  \mathcal{M}] \equiv \nabla_{\beta}\psi(\vec{V}_{i}; \beta,
+  \alpha_{0}, \tau )$; for many types of covariance model one also has
+  $\EE [\nabla_{\beta}\phi(\vec{V}_{i}; \beta ) \mid \mathcal{M}]
+  \equiv \nabla_{\beta}\phi(\vec{V}_{i}; \beta )$. As a result, under
+  the model-based perspective $A_{11}(\beta)$ and perhaps
+  $A_{21}(\beta)$ are essentially observed, i.e.
+  $\hat{A}_{11}(\beta) \equiv A_{11}(\beta)$ and (perhaps)
+  $\hat{A}_{21}(\beta) \equiv A_{21}(\beta)$.  These equivalences
+  don't hold under the design-based perspective, and when treatment
+  propensities are known (as in an RCT) it may be possible to
+  calculate $A_{11}(\beta)$ and $A_{21}(\beta)$ rather than settling
+  for estimates of them; but in design-based inference generally, with
+  or without a known propensity, $A_{21}(\beta)$ and
+  $\hat{A}_{21}(\beta)$ can be made to serve as estimates of
+  $A_{11}(\beta)$ and $A_{21}(\beta)$.
 
 \paragraph{Numerical stability by combining ${A}_{21}$ and
   $\tilde{A}_{22}$, rather than either
@@ -662,8 +666,8 @@ we use
 Under the model based
 formulation, $\hat{\tilde{A}}_{21}(\cdot) \equiv \tilde{A}_{21}(\cdot)$; when the
 first-stage model is a glm, also $\hat{A}_{11}(\cdot) \equiv
-\tilde{A}_{11}(\cdot)$.  However, in design based formulations neither
-equivalence holds in general.)
+\tilde{A}_{11}(\cdot)$.  In design based formulations these
+equivalence relations become approximate equalities.)
 
 Alternately put,
 defining $(\tilde{k}+2)$ by 1 random matrices
@@ -688,8 +692,7 @@ regardless of what adjustments for
 clustering or heteroskedasticity we might seek to apply.
 
 
-In the design-based formulation such equality would not generally
-hold, as in that setting
+In the design-based formulation such equality would hold only approximately, as in that setting
 $\hat{\tilde{A}}_{21}(\beta_{(n)})$ and $\hat{A}_{11}(\beta_{(n)})$ needn't
 coincide with $\tilde{A}_{21}(\beta_{(n)})$ and ${A}_{11}(\beta_{(n)})$, respectively.  In both design- and model-based settings, absorption (e.g. of intercepts) introduces additional wrinkles.
 

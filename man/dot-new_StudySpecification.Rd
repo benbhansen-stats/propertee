@@ -10,7 +10,8 @@
   type,
   subset = NULL,
   call = NULL,
-  na.fail = TRUE
+  na.fail = TRUE,
+  called_from_lmitt = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,9 @@
 
 \item{na.fail}{Should it error on NA's (\code{TRUE}) or remove them
 (\code{FALSE})?}
+
+\item{called_from_lmitt}{Logical; was this called inside \code{lmitt()}, or
+was it called from \code{*_spec()} (default).}
 }
 \value{
 A new StudySpecification object

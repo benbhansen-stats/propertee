@@ -19,7 +19,7 @@ for RDD, \code{FALSE} for RCT and Obs).}
 \description{
 Checks performed:
 \itemize{
-\item Ensure presence of exactly one of \code{unit_of_assignment()},
+\item Ensure presence of no more than one of \code{unit_of_assignment()},
 \code{cluster()} or \code{unitid()}.
 \item Disallow multiple \code{block()} or multiple \code{forcing()} terms.
 \item Disallow \code{forcing()} unless in RDD.

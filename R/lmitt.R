@@ -41,11 +41,14 @@
 ##' treatment variable named "txt", you can obtain its estimate from the
 ##' returned \code{teeMod} object via \code{$coefficients["txt."]}.
 ##'
-##' [lmitt()] will produce a message if the \code{StudySpecification} passed in
-##' has block information that is not being used to inform weights or a block
-##' fixed effect adjustment. This is not an error, but it often represents an
-##' oversight on the part of the analyst. To disable this
-##' message, run \code{options("propertee_message_on_unused_blocks" = FALSE)}.
+##' [lmitt()] will produce a message if the \code{StudySpecification}
+##' designates treatment assignment by block but the blocking
+##' structure appears not to be reflected in the \code{weights}, nor
+##' in a block fixed effect adjustment (via \code{absorb=TRUE}). While
+##' not an error, this is at odds with intended uses of
+##' \code{propertee}, so \code{lmitt()} flags it as a potential
+##' oversight on the part of the analyst. To disable this message, run
+##' \code{options("propertee_message_on_unused_blocks" = FALSE)}.
 ##'
 ##' [lmitt()] returns objects of class \sQuote{\code{teeMod}}, for
 ##' Treatment Effect Estimate Model, extending the lm class to add a
@@ -71,23 +74,33 @@
 ##' for block fixed effects can be seen to coincide with estimates
 ##' calculated without block effect but with weights multiplied by an
 ##' additional factor specific to the combination of block and
-##' treatment condition. For block s containing units with weights
+##' treatment condition. For block \eqn{s} containing units with weights
 ##' \eqn{w_i} and binary treatment assignments \eqn{z_i}, define
 ##' \eqn{\hat{\pi}_s} by \eqn{\hat{\pi}_s\sum_sw_i=\sum_sz_iw_i}. If
 ##' \eqn{\hat{\pi}_s} is 0 or 1, the block doesn't contribute to
 ##' effect estimation and the additional weighting factor is 0; if
 ##' \eqn{0 < \hat{\pi}_s < 1}, the additional weighting factor is
 ##' \eqn{1 - \hat{\pi}_s} for treatment group members and
-##' \eqn{\hat{\pi}_s} for controls. The supplementary coeficients for
-##' [lmitt(absorb=T)][lmitt()] reflect regressions of control observations
-##' using weights multiplied by \eqn{\hat{\pi}_s} or 0, as
-##' appropriate.
+##' \eqn{\hat{\pi}_s} for controls. When estimating a main effect only
+##' or a main effect with continuous moderator, supplementary
+##' coefficients under option \code{absorb=TRUE} reflect regressions
+##' with additional weighting factor equal to 0 or \eqn{\hat{\pi}_s},
+##' respectively, for treatment or control group members of block
+##' \eqn{s}. With a categorical moderator and \code{absorb=TRUE},
+##' this additional weighting factor determining supplementary coefficients
+##' is calculated separately for each level \eqn{\ell} of the moderator
+##' variable, with the sums defining \eqn{\hat{\pi}_{s\ell}} restricted
+##' not only to block \eqn{s} but also to observations with moderator
+##' equal to \eqn{\ell}. 
+##' 
 ##' 
 ##' @param obj A \code{formula} or a \code{lm} object. See Details.
 ##' @param specification The \code{StudySpecification} to be used.
-##'   Alternatively, a formula creating a specification (of the type of that
+##'   Alternatively, a formula creating a specification. (Of the type of that
 ##'   would be passed as the first argument to [rd_spec()], [rct_spec()], or
-##'   [obs_spec()]). If the formula includes a [forcing()] element, an RD
+##'   [obs_spec()], with the difference that [cluster()], [uoa()] 
+#'    and [unit_of_assignment()] terms can be omitted when each row of 
+#'    \code{data} represents a distinct unit of assignment.) If the formula includes a [forcing()] element, an RD
 ##'   specification is created. Otherwise an observational specification is
 ##'   created. An RCT specification must be created manually using [rct_spec()].
 ##' @param data A \code{data.frame} such as would be passed into [lm()].
@@ -100,21 +113,26 @@
 ##' @param weights Which weights should be generated? Options are \code{"ate"}
 ##'   or \code{"ett"}. Alternatively, the output of a manually run \code{ate()}
 ##'   or \code{ett()} can be used.
-##' @param ... Additional arguments passed to [lm()]. One such argument is
-##'   \code{dichotomy}, which can be used to dichotomize a non-binary treatment
+##' @param ... Additional arguments passed to [lm()] and other functions.
+##'   An example of the latter is \code{dichotomy=}, a formula passed to
+##'   [assigned()] and, as appropriate, [ate()], [att()], [atc()] or
+##'   [ato()]. It is used to dichotomize a non-binary treatment
 ##'   variable in \code{specification}. See the Details section of the
-##'   \code{ett()} or \code{att()} help pages for information on specifying this
-##'   formula.
+##'   \code{ate()} help page for examples.
 ##' @return \code{teeMod} object (see Details)
 ##' @export
 ##' @importFrom stats lm predict weights weighted.mean reformulate residuals
 ##' @rdname lmitt
 ##' @examples
 ##' data(simdata)
-##' spec <- rct_spec(z ~ unit_of_assignment(uoa1, uoa2), data = simdata)
+##' spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
 ##' mod1 <- lmitt(y ~ 1, data = simdata, specification = spec, weights = "ate")
 ##' mod2 <- lmitt(y ~ as.factor(o), data = simdata, specification = spec, weights = "ate")
-##' mod3 <- lmitt(y ~ 1, data = simdata,
+##' ### observational study with treatment z assigned row-wise within blocks:
+##' mod3 <- lmitt(y ~ 1, data=simdata, specification=z ~ block(bid), weights="att")
+##' ### regression discontinuity study with units of assignment
+##' ### given by combinations of uoa1, uoa2:
+##' mod4 <- lmitt(y ~ 1, data = simdata,
 ##'               specification = z ~ uoa(uoa1, uoa2) + forcing(force))
 lmitt <- function(obj,
                   specification,
@@ -150,20 +168,27 @@ lmitt.formula <- function(obj,
 
   ### Allow users to pass in "ate" and "ett" rather than functions if they have
   ### no special modifications/additional arguments
-  dichotomy <- lmitt.call$dichotomy
+  dichotomy <- eval.parent(lmitt.call$dichotomy)
   wt <- lmitt.call$weights
   if (is(wt, "character")) {
-    if ((wt_call <- tolower(wt)) %in% c("ate", "ett")) {
+    if (.isValidWeightAlias(wt_call <- tolower(wt))) {
       lm.call$weights <- lmitt.call$weights <- call(wt_call, dichotomy = dichotomy)
     } else {
-      warning(paste("Character other than \"ate\" or \"ett\" passed to",
-                    "`weights=` argument.\nIf you are trying to pass a",
-                    "character to the internal `lm` you can disregard this",
-                    "warning.\nIf you are attemping to use `propertee`\'s",
-                    "weight generation, only \"ate\" and \"ett\" are",
-                    "accepted."))
+      warning(paste0("Character other than [",
+                    .listValidWeightAliases(),
+                    "] passed to `weights=` argument.\nIf you are trying ",
+                    "to pass a character to the internal `lm` you can ",
+                    "disregard this warning.\nIf you are attempting to ",
+                    "use `propertee`\'s weight generation, only [",
+                    .listValidWeightAliases(),
+                    "] are accepted."))
     }
-  } else if (is.call(wt) & is.null(dichotomy)) dichotomy <- wt$dichotomy
+  } else if (is.call(wt) & is.null(dichotomy)) {
+    for (s in seq_len(sys.nframe())) {
+      dichotomy <- tryCatch(eval.parent(wt$dichotomy, s), error = function(e) NULL)
+      if (!is.null(dichotomy)) break()
+    }
+  }
 
   # First, make sure we have a valid `specification=` - if given a formula, make a new
   # `StudySpecification`, otherwise ensure `specification=` is `StudySpecification` class.
@@ -174,16 +199,25 @@ lmitt.formula <- function(obj,
       if (!is.null(attr(terms(specification, specials = "forcing"),
                         "specials")$forcing)) {
         spec_call <- "rd_spec"
+        type <- "RD"
       } else {
         spec_call <- "obs_spec"
+        type <- "Obs"
       }
 
       # Build new call. All calls must include obj and data
-      new_d_call <- paste0(spec_call, "(",
-                           "formula = ", deparse1(specification),
-                           ", data = ", deparse1(lmitt.call$data), ")")
+      new_spec_call <- paste0(spec_call, "(",
+                              "formula = ", deparse1(specification),
+                              ", data = ", deparse1(lmitt.call$data), ")")
+      new_internal_call <- paste0(".new_StudySpecification(",
+                                  "form = ", deparse1(specification),
+                                  ", data = ", deparse1(lmitt.call$data),
+                                  ", type = ", deparse1(type),
+                                  ", call = str2lang(\"", new_spec_call, "\")",
+                                  ", called_from_lmitt = TRUE",
+                                  ")")
       # str2lang converts character into call
-      specification <- eval(str2lang(new_d_call))
+      specification <- eval(str2lang(new_internal_call))
     } else if (is(specification, "WeightedStudySpecification")) {
       specification <- specification@StudySpecification
     } else if (!is(specification, "StudySpecification")) {
@@ -309,7 +343,7 @@ lmitt.formula <- function(obj,
   }
 
   # Generate formula for the internal `lm`
-  if (rhstype == "intercept") {
+  if (rhstype == "intercept" | rhs == var_names(specification, "t")) {
     new.form <- stats::reformulate(paste0("a.(dichotomy=", deparse1(dichotomy), ")"))
     moderator <- character()
     ctrl_means_form <- stats::reformulate("1", response = "lhs")

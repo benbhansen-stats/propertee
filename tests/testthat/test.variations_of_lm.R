@@ -232,3 +232,27 @@ test_that("non-binary treatment, not in data2, dichotomization in specification"
                             data = simdata, weights = ett(spec, dichotomy = dose >= 200 ~ .))))
 
 })
+
+test_that("issue 243, as.lmitt() finds StudySpecification in assigned()", {
+  data(simdata)
+  
+  spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
+  lmod <- lm(y ~ assigned(spec), simdata)
+  expect_true(inherits(as.lmitt(lmod), "teeMod"))
+  lmod <- lm(y ~ a.(spec), simdata)
+  expect_true(inherits(as.lmitt(lmod), "teeMod"))
+  lmod <- lm(y ~ z.(spec), simdata)
+  expect_true(inherits(as.lmitt(lmod), "teeMod"))
+  lmod <- lm(y ~ adopters(spec), simdata)
+  expect_true(inherits(as.lmitt(lmod), "teeMod"))
+  
+  teeMods <- lapply(
+    seq_len(2),
+    function(x) {
+      lmod <- lm(y ~ adopters(spec), simdata)
+      as.lmitt(lmod)
+    }
+  )
+  expect_true(inherits(as.lmitt(teeMods[[1L]]), "teeMod"))
+  expect_true(inherits(as.lmitt(teeMods[[2L]]), "teeMod"))
+})

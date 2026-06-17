@@ -17,26 +17,58 @@
 ##' @method summary teeMod
 ##' @rdname teeMod_summary
 summary.teeMod <- function(object,
-                                   vcov.type = "CR0",
+                                   vcov.type = "HC0",
                                    ...) {
+  mc <- match.call()
   orig.coefficients <- object$coefficients
   object$coefficients <- replace(orig.coefficients, is.na(orig.coefficients), 0)
   out <- summary(as(object, "lm"))
 
   if (object$rank > 0) {
+    dots <- list(...)
     toprint <- !grepl("^offset:", names(orig.coefficients))
-    out$coefficients <- rbind(out$coef, matrix(NA, nrow = sum(toprint) - nrow(out$coef), ncol = 4))
+    out$coefficients <- rbind(
+      out$coef,
+      matrix(NA, nrow = sum(toprint) - nrow(out$coef), ncol = 4)
+    )
     rownames(out$coefficients) <- names(orig.coefficients)[toprint]
 
     out$coefficients[, 1L] <- orig.coefficients[toprint]
     covmat <- vcov_tee(object, type = vcov.type, ...)
+    # get cluster ID's and, if there's covariance adjustment, undo the ordering
+    cluster_ids <- .make_uoa_ids(object, substr(vcov.type, 1, 2), dots$cluster)
+    if (inherits(object$model$`(offset)`, "SandwichLayer")) {
+      ord <- .order_samples(object)
+      cluster_ids <- cluster_ids[seq_along(c(ord$Q_not_C, ord$Q_in_C))][
+        match(seq_along(c(ord$Q_not_C, ord$Q_in_C)),
+              as.numeric(c(names(ord$Q_not_C), names(ord$Q_in_C))))
+      ]
+    }
+    if (is.null(dof.type <- eval(mc$dof.type))) {
+      dof.type <- if (vcov.type %in% paste0(c("MB", "HC", "CR"), 2)) {
+        "IK"
+      } else "stata"
+    }
+    dof <- vapply(seq_len(object$rank),
+                  .get_dof,
+                  numeric(1L),
+                  x = object,
+                  vcov.type = vcov.type,
+                  cluster_ids = cluster_ids,
+                  dof.type = dof.type)
     out$coefficients[!is.na(orig.coefficients), 2L] <- sqrt(diag(covmat))[
       names(orig.coefficients)[toprint & !is.na(orig.coefficients)]]
     out$coefficients[, 3L] <- out$coefficients[, 1L] / out$coefficients[, 2L]
-    out$coefficients[, 4L] <- 2*stats::pt(abs(out$coefficients[, 3L]),
-                                          object$df.residual,
-                                          lower.tail = FALSE)
+    out$coefficients[, 4L] <- 2*stats::pt(
+      abs(out$coefficients[, 3L]),
+      c(dof,
+        # just compute quick stata dof for control condition means
+        rep(.get_dof(object, 2, "CR0", "stata", cluster_ids),
+            sum(toprint) - nrow(out$coef))),
+      lower.tail = FALSE
+    )
     out$vcov.type <- attr(covmat, "type")
+    out$vcov.cov_adj_bias_correction <- attr(covmat, "cov_adj_correction")
   }
   class(out) <- "summary.teeMod"
   out$teeMod <- object
@@ -103,6 +135,10 @@ print.summary.teeMod <- function(x,
   if (sum(toprint) > 0 & any(!is.na(coefs[toprint, 1]))) {
     # Only print if we estimate at least one treatment effect
     cat(paste0("Std. Error calculated via type \"", x$vcov.type, "\"\n\n"))
+    if (!is.null(bc <- x$vcov.cov_adj_bias_correction)) {
+      cat(paste0("Residuals from covariance adjustment model adjusted by an \"",
+                 bc, "\" bias correction\n\n"))
+    }
   } else {
     cat("\n")
   }

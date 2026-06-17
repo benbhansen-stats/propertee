@@ -1,6 +1,11 @@
 #' @include StudySpecification.R StudySpecificationAccessors.R
 NULL
 
+#' (Internal) model predictions with some model artifacts, as S4 object
+#' @slot .Data numeric vector of predictions
+#' @slot fitted_covariance_model model standing behind the predictions
+#' @slot prediction_gradient matrix, predictions gradient w/r/t model params
+#' @keywords internal
 setClass("PreSandwichLayer",
          contains = "numeric",
          slots = c(fitted_covariance_model = "ANY",
@@ -37,6 +42,12 @@ setValidity("PreSandwichLayer", function(object) {
   TRUE
 })
 
+#' (Internal) model predictions with more model artifacts, as S4 object
+#'
+#' Contains PreSandwichLayer class.  Only additional slots listed here.
+#' @slot keys a data.frame
+#' @slot StudySpecification a StudySpecification
+#' @keywords internal
 setClass("SandwichLayer",
          contains = "PreSandwichLayer",
          slots = c(keys = "data.frame",
@@ -140,13 +151,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
@@ -178,13 +193,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
@@ -215,13 +234,17 @@ setMethod("[", "PreSandwichLayer",
     error = function(e) stop("`model` must have `terms` method", call. = FALSE)
   )
 
-  if (is.null(newdata)) newdata <- .get_data_from_model("cov_adj", formula(model))
-
-  mf <- stats::model.frame(stats::delete.response(terms(model)),
-                           data = newdata,
-                           na.action = na.pass,
-                           xlev = model$xlevels,
-                           ...)
+  if (is.null(newdata)) {
+    mf <- .get_data_from_model("cov_adj", formula(model))
+  } else if (!is.null(term <- attr(newdata, "terms"))) {
+    mf <- newdata
+  } else {
+    mf <- stats::model.frame(stats::delete.response(terms(model)),
+                             data = newdata,
+                             na.action = na.pass,
+                             xlev = model$xlevels,
+                             ...)
+  }
 
   X <- stats::model.matrix(stats::delete.response(terms(model)),
                            data = mf,
@@ -313,29 +336,33 @@ as.SandwichLayer <- function(x, specification, by = NULL, Q_data = NULL) {
     stop("The fitted covariance adjustment model for x must be fit using a `data` argument")
   }
 
-  keys <- tryCatch(
-    stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
-    error = function(e) {
-      covmoddata <- eval(data_call,
-                         envir = environment(formula(x@fitted_covariance_model)))
-      stop(paste("Columns",
-                 paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
-                 "are missing from the covariance adjustment model dataset"),
+  if (specification@unit_of_assignment_type == "none") {
+    keys <- data.frame(..uoa.. = rownames(x@fitted_covariance_model$model))
+  } else {
+    keys <- tryCatch(
+      stats::expand.model.frame(x@fitted_covariance_model, by, na.expand = TRUE)[by],
+      error = function(e) {
+        covmoddata <- eval(data_call,
+                           envir = environment(formula(x@fitted_covariance_model)))
+        stop(paste("Columns",
+                   paste(setdiff(by, colnames(covmoddata)), collapse = ", "),
+                   "are missing from the covariance adjustment model dataset"),
            call. = FALSE)
-    })
+      })
+  }
 
-  keys$in_Q <- apply(
-    mapply(
-      function(covmod_col, spec_col) {
-        unique(Q_data[[spec_col]])[
-          match(keys[[covmod_col]], unique(Q_data[[spec_col]]), incomparables = NA)
-        ]
-      },
-      by, names(by)
-    ),
-    1,
-    function(uids) all(!is.na(uids))
+  Q_by_vals <- unique(
+    apply(
+      Q_data[, names(by), drop = FALSE],
+      1,
+      function(r) {
+        if (all(is.na(r))) return(NA_character_) else paste(r, collapse = "_")
+      }
+    )
   )
+  keys$in_Q <- apply(
+    keys[, unname(by), drop = FALSE], 1, function(r) paste(r, collapse = "_")
+  ) %in% Q_by_vals
 
   return(new("SandwichLayer",
              x,

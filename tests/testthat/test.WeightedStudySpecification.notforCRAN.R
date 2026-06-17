@@ -2,7 +2,7 @@ test_that("internal weight function", {
   data(simdata)
   spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                         dichotomy = NULL)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -17,7 +17,7 @@ test_that("internal weight function", {
 
   expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", weightAlias = "ett",
                         dichotomy = NULL)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -26,6 +26,21 @@ test_that("internal weight function", {
   expect_type(wspec@target, "character")
 
   expect_equal(wspec@target, "ett")
+
+  expect_equal(nrow(simdata), length(wspec))
+  expect_true(all(wspec == wspec@.Data))
+
+  expect_identical(deparse1(stats::formula()), deparse1(wspec@dichotomy))
+
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ato", weightAlias = "ato",
+                        dichotomy = NULL)
+  expect_s4_class(wspec, "WeightedStudySpecification")
+  expect_true(is.numeric(wspec@.Data))
+  expect_s4_class(wspec@StudySpecification, "StudySpecification")
+  expect_identical(spec, wspec@StudySpecification)
+  expect_type(wspec@target, "character")
+
+  expect_equal(wspec@target, "ato")
 
   expect_equal(nrow(simdata), length(wspec))
   expect_true(all(wspec == wspec@.Data))
@@ -44,10 +59,10 @@ test_that("dichotomy issues", {
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   expect_error(propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                             target = "ate", dichotomy = NULL),
+                             target = "ate", weightAlias = "ate", dichotomy = NULL),
                "Must provide a dichotomy")
 
-  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                         dichotomy = . ~ dose > 150)
   expect_s4_class(wspec, "WeightedStudySpecification")
   expect_true(is.numeric(wspec@.Data))
@@ -68,7 +83,7 @@ test_that("internal and external weight function agreement", {
   spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
 
   iwspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                         target = "ate", dichotomy = NULL)
+                         target = "ate", weightAlias = "ate", dichotomy = NULL)
   ewspec <- ate(spec, data = simdata)
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -82,7 +97,7 @@ test_that("internal and external weight function agreement", {
   )
 
   iwspec <- propertee:::.weights_calc(spec, data = simdata, by = NULL,
-                         target = "ett", dichotomy = NULL)
+                         target = "ett", weightAlias = "ett", dichotomy = NULL)
   ewspec <- ett(spec, data = simdata)
   expect_true(
     all(vapply(c(".Data", "StudySpecification", "target", "dichotomy"),
@@ -140,7 +155,7 @@ test_that("ate and ett with data argument", {
 
 })
 
-test_that("ate and ett in lm call", {
+test_that("ate, ett and ato in lm call", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), data = simdata)
 
@@ -151,6 +166,10 @@ test_that("ate and ett in lm call", {
   mod <- lm(y ~ x, data = simdata, weights = ett(spec))
 
   expect_equal(mod$weights@.Data, ett(spec, data = simdata)@.Data)
+
+  mod <- lm(y ~ x, data = simdata, weights = ato(spec))
+
+  expect_equal(mod$weights@.Data, ato(spec, data = simdata)@.Data)
 
 })
 
@@ -272,7 +291,7 @@ test_that("weight function", {
 
 })
 
-test_that("ett/ate treatment weights are correct length", {
+test_that("ett/ate/ato treatment weights are correct length", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
 
@@ -286,9 +305,13 @@ test_that("ett/ate treatment weights are correct length", {
 
   expect_equal(length(wts), nrow(testdata))
 
+  wts <- ato(spec, data = testdata)
+
+  expect_equal(length(wts), nrow(testdata))
+
 })
 
-test_that("ett/ate treatment weights return numeric", {
+test_that("ett/ate/ato treatment weights return numeric", {
 
   testdata <- data.frame(cid = 1:10, z = c(rep(1, 4), rep(0, 6)))
 
@@ -299,6 +322,10 @@ test_that("ett/ate treatment weights return numeric", {
   expect_s4_class(wts, "numeric")
 
   wts <- ate(spec, data = testdata)
+
+  expect_s4_class(wts, "numeric")
+
+  wts <- ato(spec, data = testdata)
 
   expect_s4_class(wts, "numeric")
 
@@ -352,6 +379,19 @@ test_that("ate weights for block with P(Z = 1) = 0.5: 2", {
 
 })
 
+test_that("ato weights for block with P(Z = 1) = 0.5: 0.5", {
+
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
+
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+
+  wts <- ato(spec, data = testdata)
+
+  expect_equal(wts@.Data, rep(0.5, 10))
+
+})
+
+
 test_that("ate weights for block with P(Z = 1) = 1/3:  3 or 1.5", {
 
   testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
@@ -363,6 +403,49 @@ test_that("ate weights for block with P(Z = 1) = 1/3:  3 or 1.5", {
   expect_equal(wts@.Data, c(rep(3, 10), rep(1.5, 20)))
 
 })
+
+test_that("ato weights for block with P(Z = 1) = 1/3:  2/3 or 1/3", {
+
+  testdata <- data.frame(cid = 1:30, z = c(rep(1, 10), rep(0, 20)))
+
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+
+  wts <- ato(spec, data = testdata)
+
+  expect_equal(wts@.Data, c(rep(2/3, 10), rep(1/3, 20)))
+
+})
+
+
+test_that("uoa's w/ NA treatment don't figure in treatment propensities",{
+
+  testdata  <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
+  testdata[c(1,6),"z"]   <- NA
+  spec  <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  wts_e <- ett(spec, data = testdata)
+  expect_equal(wts_e@.Data, rep(c(0, rep(1,4)),2))
+  wts_a <- ate(spec, data = testdata)
+  expect_equal(wts_a@.Data, rep(c(0, rep(2,4)),2))
+  testdata_  <- testdata
+  testdata_[6,"z"]   <- 0
+  spec_  <- rct_spec(z ~ unit_of_assignment(cid), data = testdata_)
+  wts_e <- ett(spec_, data = testdata_)
+  expect_equal(wts_e@.Data, c(0, rep(1,4), rep(4/5, 5)))
+  wts_a  <- ate(spec_, data = testdata_)
+  expect_equal(wts_a@.Data, c(0, rep(9/4,4), rep(9/5, 5)))
+})
+
+test_that("blocks w/ all-NA treatment receive 0 weight",{
+    testdata  <- data.frame(cid = 1:10, bid= rep(c("a", "b"), 5),
+                            z = c(rep(1, 5), rep(0, 5)))
+    testdata[testdata$bid=="b", "z"]  <- NA
+    spec  <- rct_spec(z ~ uoa(cid) + block(bid), data=testdata)
+    wts_e  <- ett(spec, data=testdata)
+    expect_equal(wts_e@.Data[seq(2,10,by=2)], rep(0,5))
+    wts_a  <- ate(spec, data=testdata)
+    expect_equal(wts_a@.Data[seq(2,10,by=2)], rep(0,5))
+})
+
 
 test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
 
@@ -380,6 +463,10 @@ test_that("combine two previous blocks, obtain proper weightsfor ett and ate", {
   wts <- ate(spec, data = testdata)
 
   expect_equal(wts@.Data, c(rep(2, 10), rep(3, 10), rep(1.5, 20)))
+
+  wts <- ato(spec, data = testdata)
+
+  expect_equal(wts@.Data, c(rep(0.5, 10), rep(2/3, 10), rep(1/3, 20)))
 
 })
 
@@ -509,7 +596,9 @@ test_that("#130 zero weights with non-varying treatment in a block", {
 
 
   #### Data with an NA block doesn't break
-  data(STARdata)
+  if (requireNamespace("AER", quietly = TRUE)) {
+      data("STAR", package="AER")
+      STARdata <- STAR
   STARdata$starkbinary <- STARdata$stark == "small"
   STARdata$studentid <- seq_len(nrow(STARdata))
   spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) +
@@ -527,6 +616,11 @@ test_that("#130 zero weights with non-varying treatment in a block", {
   expect_true(!any(is.nan(wts)))
   expect_true(all(wts > 0))
 
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               specification = spec, weights = "ato")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(all(wts > 0))
+
   # Make a block with no controls.
   STARdata$starkbinary[STARdata$schoolidk == 1] <- 1
   spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) +
@@ -537,11 +631,13 @@ test_that("#130 zero weights with non-varying treatment in a block", {
   expect_true(!any(is.nan(wts)))
   expect_true(sum(wts == 0) > 0)
 
-  spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) +
-                      block(schoolidk),
-                    data = STARdata, na.fail = FALSE)
   wts <- lmitt(readk ~ 1, data = STARdata,
                specification = spec, weights = "ett")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               specification = spec, weights = "ato")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
   expect_true(sum(wts == 0) > 0)
 
@@ -555,14 +651,17 @@ test_that("#130 zero weights with non-varying treatment in a block", {
   expect_true(!any(is.nan(wts)))
   expect_true(sum(wts == 0) > 0)
 
-  spec <- obs_spec(starkbinary ~ unit_of_assignment(studentid) +
-                      block(schoolidk),
-                    data = STARdata, na.fail = FALSE)
   wts <- lmitt(readk ~ 1, data = STARdata,
                specification = spec, weights = "ett")$model$"(weights)"
   expect_true(!any(is.nan(wts)))
   expect_true(sum(wts == 0) > 0)
 
+  wts <- lmitt(readk ~ 1, data = STARdata,
+               specification = spec, weights = "ato")$model$"(weights)"
+  expect_true(!any(is.nan(wts)))
+  expect_true(sum(wts == 0) > 0)
+}
+  
 })
 
 test_that("#131 numeric blocks don't cause NA weights", {
@@ -591,7 +690,7 @@ test_that(paste("weights with attention to blocks when `data` has different orde
                         specification_dat[specification_dat$blk == "A",],
                         specification_dat[specification_dat$blk == "C",])
 
-  wts <- .weights_calc(spec, target = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
+  wts <- .weights_calc(spec, target = "ate", weightAlias = "ate", by = NULL, dichotomy = NULL, data = analysis_dat)
   expected_triplet_wts <- c(rep(3/2, 2), 3)
   expected_pair_wts <- rep(2, 2)
   expect_equal(wts@.Data, c(expected_triplet_wts, expected_pair_wts,
@@ -602,7 +701,7 @@ test_that("#180 non-exhaustive dichotomies", {
   # no missing block ID's
   data(simdata)
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
-  wspec  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                          dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec) == nrow(simdata))
@@ -616,17 +715,17 @@ test_that("#180 non-exhaustive dichotomies", {
   )
 
   # Ben's tests
-  wspec2  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", dichotomy = dose >200 ~ dose <200)
+  wspec2  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate", dichotomy = dose >200 ~ dose <200)
   expect_true(all(wspec2[simdata$dose==200]==0))
   expect_true(all(wspec2[simdata$dose!=200]!=0))
 
-  wspec3  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", dichotomy = dose >200 ~ dose <100)
+  wspec3  <- propertee:::.weights_calc(spec, data = simdata, by = NULL, target = "ett", weightAlias = "ett", dichotomy = dose >200 ~ dose <100)
   expect_true(all(wspec3[simdata$bid==3]==0))
 
   # missing block ID's
   simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, "bid"] <- NA_integer_
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
-  wspec4  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec4  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                           dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec4) == nrow(simdata))
@@ -643,7 +742,7 @@ test_that("#180 non-exhaustive dichotomies", {
   data(simdata)
   simdata[simdata$uoa1 == 1 & simdata$uoa2 == 1, paste0("uoa", c(1, 2))] <- NA_integer_
   spec <- rct_spec(dose ~ uoa(uoa1, uoa2) + block(bid), data = simdata, na.fail = FALSE)
-  wspec5  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate",
+  wspec5  <- .weights_calc(spec, data = simdata, by = NULL, target = "ate", weightAlias = "ate",
                           dichotomy = dose >200 ~ dose <200)
 
   expect_true(length(wspec5) == nrow(simdata))
@@ -655,4 +754,35 @@ test_that("#180 non-exhaustive dichotomies", {
                dichotomy = dose >200 ~ dose <200)$model),
     nrow(simdata[simdata$dose != 200 & !is.na(simdata$uoa1),])
   )
+})
+
+test_that("assignment weights persist when data argument excludes some units", {
+  set.seed(43)
+  testdata <- data.frame(cid = 1:10, z = c(rep(1, 5), rep(0, 5)))
+  
+  spec <- rct_spec(z ~ unit_of_assignment(cid), data = testdata)
+  wts <- ett(spec, data = testdata[-(1:2),])
+  expect_equal(wts@.Data, rep(1, 8))
+  
+  # test with a dichotomy and blocks
+  uoadata <- data.frame(cid = seq_len(6),
+                        dose = c(0, 1, 1, 0, 2, 2),
+                        bid = rep(c(1, 2), each = 3))
+  spec <- rct_spec(dose ~ unitid(cid) + block(bid), data = uoadata)
+  individdata <- data.frame(cid = rep(uoadata$cid, each = 10), y = rnorm(60))
+  wts <- ett(spec,
+             data = individdata[individdata$cid %in% c(1, 3, 4, 6),,drop=FALSE],
+             dichotomy = dose == 1 ~ dose == 0)
+  expected_wts <- c(rep(2, 10), rep(1, 10), rep(0, 20))
+  expect_equal(wts@.Data, expected_wts)
+})
+
+test_that("weights when units of assignment are identified by rownames", {
+  data(simdata)
+  expect_warning(rct_spec <- rct_spec(z ~ 1, simdata), "explicit unit")
+  ettwts <- ett(rct_spec, data = simdata)
+  piZ <- mean(simdata$z)
+  expect_equal(ettwts@.Data, simdata$z + (1 - simdata$z) * piZ / (1 - piZ))
+  atewts <- ate(rct_spec, data = simdata)
+  expect_equal(atewts@.Data, simdata$z / piZ + (1 - simdata$z) / (1 - piZ))
 })

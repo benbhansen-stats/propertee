@@ -7,23 +7,84 @@ test_that("vcov_tee errors when provided an invalid type", {
   expect_error(vcov_tee(ssmod, "not_a_type"))
 })
 
-test_that("vcov_tee correctly dispatches", {
+test_that("vcov_tee correctly sets and passes on args", {
+  set.seed(993)
   data(simdata)
   cmod <- lm(y ~ z + x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)))
 
-  vmat1 <- suppressMessages(vcov_tee(ssmod, type = "CR0"))
-  expect_equal(vmat1, suppressMessages(.vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"))))
+  vmat1 <- suppressMessages(vcov_tee(ssmod, type = "CR0", cov_adj_rcorrect = "CR0"))
+  expect_equal(vmat1,
+               suppressMessages(.vcov_CR(ssmod, cluster = .make_uoa_ids(ssmod, "CR"),
+                                         type = "CR0", cov_adj_rcorrect = "CR0")))
 
-  vmat2 <- suppressMessages(vcov_tee(ssmod, type = "MB0"))
+  vmat2 <- suppressMessages(vcov_tee(ssmod, type = "MB0", cov_adj_rcorrect = "MB0"))
   expect_true(all.equal(vmat2, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat2, "type"))
+  expect_true(attr(vmat1, "cov_adj_rcorrect") != attr(vmat2, "cov_adj_rcorrect"))
 
-  vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0"))
+  vmat3 <- suppressMessages(vcov_tee(ssmod, type = "HC0", cov_adj_rcorrect = "HC0"))
   expect_true(all.equal(vmat3, vmat1, check.attributes = FALSE))
   expect_true(attr(vmat1, "type") != attr(vmat3, "type"))
+  expect_true(attr(vmat1, "cov_adj_rcorrect") != attr(vmat3, "cov_adj_rcorrect"))
+  
+  cmod <- lm(y ~ x, simdata)
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, 
+                 absorb = TRUE, offset = cov_adj(cmod))
+  vmat4 <- suppressMessages(vcov_tee(ssmod, type = "DB0", const_effect = FALSE))
+  expect_true(is.matrix(vmat4))
+  expect_identical(attr(vmat4, "type"), "DB0")
+  
+  vmat5 <- suppressMessages(vcov_tee(ssmod, type = "DB0", const_effect = TRUE))
+  expect_true(is.matrix(vmat5))
+  expect_identical(attr(vmat5, "type"), "DB0")
+  expect_false(identical(vmat4, vmat5))
+  
+  vmat6 <- vcov_tee(ssmod, type = "HC1", cov_adj_rcorrect = "HC1")
+  expect_equal(attr(vmat6, "type"), "HC1")
+  expect_equal(attr(vmat6, "cov_adj_rcorrect"), "HC1")
+  
+  vmat7 <- vcov_tee(ssmod)
+  expect_equal(attr(vmat7, "type"), "HC0")
+  expect_equal(attr(vmat7, "cov_adj_rcorrect"), "HC0")
+  
+  first_obs_ix <- c(1, 1 + cumsum(c(t(table(simdata$uoa1, simdata$uoa2)))))
+  uniqdata <- simdata[first_obs_ix[1:(length(first_obs_ix)-1)],,drop=FALSE]
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+  imod <- lmitt(y ~ 1, spec, uniqdata)
+  vmat8 <- vcov_tee(imod)
+  expect_equal(attr(vmat8, "type"), "HC0")
+  expect_true(is.null(attr(vmat8, "cov_adj_rcorrect")))
+
+  values_from <- lm(y ~ 1, simdata)
+  imod <- lmitt(y ~ 1, z ~ cluster(uoa1, uoa2), simdata)
+  ix <- seq_len(imod$rank)
+  vmat9 <- vcov_tee(imod, values_from = values_from, cadjust = FALSE)[ix, ix]
+  br <- bread(imod)[ix, ix]
+  expect_true(all.equal(
+    vmat9,
+    br %*% crossprod(
+      rowsum(model.matrix(imod) * residuals(values_from),
+             paste(simdata$uoa1, simdata$uoa2, sep = "_"))
+    ) %*% (t(br) / length(residuals(values_from))^2),
+    check.attributes = FALSE
+  ))
 })
+
+if (requireNamespace("robustbase", quietly = TRUE)) {
+  test_that("vcov_tee sets correct bias correction for lmrob cov adj model", {
+    set.seed(993)
+    data(simdata)
+    cmod <- robustbase::lmrob(y ~ z + x, simdata)
+    spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+    ssmod <- lmitt(lm(y ~ assigned(), data = simdata, weights = ate(spec), offset = cov_adj(cmod)))
+    
+    vmat5 <- vcov_tee(ssmod)
+    expect_equal(attr(vmat5, "cov_adj_rcorrect"), "HC0")
+  })
+}
 
 test_that(paste("vcov_tee produces correct calculations with valid `cluster` arugment",
                 "when cluster ID's have no NA's"), {
@@ -57,7 +118,7 @@ test_that("variance helper functions fail without a teeMod model", {
   data(simdata)
   cmod <- lm(y ~ z, data = simdata)
 
-  expect_error(propertee:::.vcov_CR0(cmod), "must be a teeMod")
+  expect_error(propertee:::.vcov_CR(cmod), "must be a teeMod")
   expect_error(propertee:::.get_b12(cmod), "must be a teeMod")
   expect_error(propertee:::.get_a22_inverse(cmod), "must be a teeMod")
   expect_error(propertee:::.get_b22(cmod), "must be a teeMod")
@@ -66,6 +127,466 @@ test_that("variance helper functions fail without a teeMod model", {
   expect_error(propertee:::.get_b11(cmod), "must be a teeMod")
   expect_error(propertee:::.get_a21(cmod), "must be a teeMod")
 
+})
+
+test_that(".get_dof", {
+  data(simdata)
+  expect_error(.get_dof(lm(y~x, simdata), 0, "CR2"), "teeMod object")
+  
+  spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
+  tm <- lmitt(y ~ 1, spec, simdata)
+  
+  # non-CR2 dof
+  expect_equal(.get_dof(tm, 1, "CR0", "stata"), nrow(spec@structure)-1)
+  expect_equal(.get_dof(tm, 1, "DB0", "stata", cluster = "bid"), 2)
+  
+  # CR2 dof
+  expect_error(.get_dof(tm, seq_len(7), "CR2", "IK"), "same length")
+  expect_error(.get_dof(tm, seq_len(2), "CR2", "IK"), "zeros or ones")
+  expect_true(inherits(dof <- .get_dof(tm, 2, "CR2", "IK"), "numeric"))
+  expect_equal(length(dof), 1)
+})
+
+test_that(".compute_IK_dof no clustering", {
+  data(simdata)
+
+  ## no clustering, continuous y, sufficient dof
+  simdata$id <- seq_len(nrow(simdata))
+  idspec <- rct_spec(z ~ unitid(id), simdata)
+  tm <- lmitt(y ~ 1, idspec, simdata)
+  ell <- c(0, 1)
+  dof <- .compute_IK_dof(tm, ell, vcov.type = "CR2")
+  
+  Q <- qr.Q(tm$qr)
+  R <- qr.R(tm$qr)
+  I_P <- diag(nrow = nrow(simdata)) - tcrossprod(Q)
+  G <- I_P * drop((Q / sqrt(1-stats::hatvalues(tm))) %*% t(solve(R)) %*% ell)
+  GoG <- crossprod(G, diag(mean(stats::residuals(tm)^2), nrow = nrow(Q))) %*% G
+  expected_dof <- sum(diag(GoG))^2 / sum(diag(GoG %*% GoG))
+  expect_equal(dof, expected_dof)
+  
+  ## not enough dof
+  set.seed(103)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
+                    y = rnorm(4 + 5 + 6 + 9+19))
+  spec <- rct_spec(a ~ unitid(cid), ad2, subset = cid %in% c(1, 2, 4, 5))
+  tm <- lmitt(y ~ x, spec, ad2, subset = cid %in% c(1, 2, 4, 5))
+
+  bad.ell1 <- c(0, 0, 1, 0)
+  bad.ell2 <- c(0, 0, 0, 1)
+  suppressWarnings(dof_a.x0 <- .compute_IK_dof(tm, bad.ell1, "CR2"))
+  # returning NaN does not cause warnings for pt() in summary.teeMod()
+  expect_equal(dof_a.x0, NaN)
+  # returning NaN does not cause warnings for pt() in summary.teeMod()
+  suppressWarnings(dof_a.x1 <- .compute_IK_dof(tm, bad.ell2, "CR2"))
+  expect_equal(dof_a.x1, NaN)
+})
+
+test_that(".compute_IK_dof w/ clustering", {
+  set.seed(103)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(6, 7)),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19)),
+                    y = rnorm(4 + 5 + 6 + 9+19))
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid), "numeric"))
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
+  
+  ad2$y[1] <- NA_real_
+  tm <- lmitt(y ~ 1, spec, ad2)
+  
+  expect_true(inherits(CR0_dof <- .compute_IK_dof(tm, c(0, 1), "CR0", ad2$cid),
+                       "numeric"))
+  expect_equal(.compute_IK_dof(tm, c(0, 1), "CR1", ad2$cid), CR0_dof)
+  expect_true(inherits(.compute_IK_dof(tm, c(0, 1), "CR2"), "numeric"))
+})
+
+test_that("cluster_iss, no absorption", {
+  set.seed(33)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(seq(6, 8), each = 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7+7), rep(0, 7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19),
+                          rep(0, 7+7)),
+                    y = rnorm(4 + 5 + 6 + 9+19+7+7))
+
+  ## no moderator
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # control unit
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  # treated unit
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*% t(model.matrix(tm)[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  # make sure we order cluster ID's correctly by default if there's covariance
+  # adjustment (this shouldn't change the output of cluster_iss() because it's
+  # solely based on the second-stage regression)
+  cm <- lm(y ~ x, ad2)
+  tm_ca <- lmitt(y ~ 1, spec, ad2, offset = cov_adj(cm))
+  expect_true(all.equal(
+    cluster_iss(tm_ca, cluster_unit = 6, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  
+  ## cluster-invariant binary moderator variable
+  tm <- lmitt(y ~ x, spec, ad2, weights = "ate")
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # treated unit w/ x = 1
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    # test NULL cluster_ids and NULL cluster and NULL trts 
+    cluster_iss(tm, cluster_unit = 6, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # treated unit w/ x = 0
+  ix <- ad2$cid == 2
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 2, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # control unit w/ x = 1
+  ix <- ad2$cid == 4
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 4, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # control unit w/ x = 0
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    # test NULL cluster_ids and NULL cluster and NULL trts 
+    cluster_iss(tm, cluster_unit = 1, vcov.type = "MB"),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant continuous moderator variable
+  ad2$x <- runif(length(unique(ad2$cid)))[ad2$cid]
+  tm <- lmitt(y ~ x, spec, ad2, weights = "ate")
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  
+  # control unit 
+  ix <- ad2$cid == 1
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  # treated unit
+  ix <- ad2$cid == 6
+  Pgg <- model.matrix(tm)[ix,] %*% ATWA_inv %*%
+    t((model.matrix(tm) * weights(tm))[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 6, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss, absorption", {
+  # don't need to distinguish between treated and control units in these tests
+  set.seed(499)
+  adb <- data.frame(cid = c(rep(1, 6), rep(2, 5), rep(3, 4), rep(4, 5),
+                            rep(5, 6), rep(6, 5), rep(7, 4), rep(8, 5)),
+                    b = rep(c(1, 2), each = 20),
+                    a = c(rep(0, 11), rep(1, 20), rep(0, 9)),
+                    y = rnorm(40))
+  adb$x <- runif(8)[adb$cid]
+  specification <- rct_spec(a ~ cluster(cid) + block(b), adb)
+  
+  ## no moderator
+  tm <- lmitt(y ~ 1, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- seq_len(2)
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  ix <- adb$cid == 1
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant continuous moderator
+  tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- seq_len(tm$rank)
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## cluster-invariant factor moderator
+  adb$x <- factor(round(adb$x))
+  tm <- lmitt(y ~ x, specification, adb, weights = "ate", absorb = TRUE)
+  piv <- seq_len(tm$rank)
+  ATWA_inv <- chol2inv(tm$qr$qr[piv,piv,drop=FALSE])
+  
+  Ag <- model.matrix(tm)[ix,piv,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag * weights(tm)[ix])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, 1, adb$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss with fine strata (clusters have trt and ctrl units)", {
+  set.seed(496)
+  ## balanced in each stratum, absorption
+  sdata <- data.frame(id = seq_len(20),
+                      uid = rep(seq_len(4), each = 5),
+                      ai = rep(rep(c(0, 1), each = 5), 2),
+                      bi = rep(c(1, 2), each = 10),
+                      yi = rnorm(20))
+  ats <- rct_spec(ai ~ unitid(uid) + block(bi), sdata)
+  tm <- lmitt(yi ~ 1, ats, data = sdata, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[1]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag)
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## weighted balance in each stratum, absorption
+  wts <- rep(c(rep(2, 4), 1), 4)
+  tm <- lmitt(yi ~ 1, ats, data = sdata, weights = wts, absorb = TRUE)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  wg <- wts[ix]
+  Pgg <- (Ag * sqrt(wg)) %*% ATWA_inv %*% t(Ag * sqrt(wg))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## weighted balance, no absorption
+  tm <- lmitt(yi ~ 1, ats, data = sdata, weights = "att")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  wg <- weights(tm)[ix]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wg)) %*% ATWA_inv %*% t(Ag * sqrt(wg))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[1], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## same imbalanced treatment assignment in each stratum, absorption
+  sdata_imbal <- sdata
+  sdata_imbal <- rbind(sdata_imbal,
+                       data.frame(id = seq(21,30),
+                                  uid = rep(c(5, 6), each = 5),
+                                  ai = 1,
+                                  bi = rep(c(1, 2), each = 5),
+                                  yi = rnorm(10)))
+  imb <- rct_spec(ai ~ unitid(uid) + block(bi), sdata_imbal)
+  tm <- lmitt(yi ~ 1, imb, data = sdata_imbal, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  A <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- Ag %*% ATWA_inv %*% t(Ag)
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  
+  ## same imbalanced treatment assignment in each stratum, no absorption
+  tm <- lmitt(yi ~ 1, imb, data = sdata_imbal, weights = "att")
+  wts <- weights(tm)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+  expect_message(tm <- lmitt(yi ~ 1, imb, data = sdata_imbal), "absorb")
+  wts <- rep(1, nrow(sdata_imbal))
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  X <- model.matrix(tm)
+  ATWA_inv <- chol2inv(tm$qr$qr)
+  ix <- ids == unique(ids)[2]
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% ATWA_inv %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+
+  ## same weighted imbalance in each strata
+  sdata$uid[sdata$uid == 2] <- c(1, rep(2, 4))
+  sdata$uid[sdata$uid == 3] <- c(rep(3, 2), rep(4, 3))
+  sdata$ai[sdata$uid == 1] <- 0
+  sdata$ai[sdata$uid == 4] <- 1
+  imb <- rct_spec(ai ~ unitid(uid) + block(bi), sdata)
+  wts <- c(rep(2/3, 6), rep(1, 4), rep(4, 2), rep(1, 8))
+  tm <- lmitt(yi ~ 1, imb, data = sdata, weights = wts, absorb = TRUE)
+  ids <- propertee:::.make_uoa_ids(tm, "MB")
+  ix <- ids == "2"
+  A <- model.matrix(tm)
+  Ag <- A[ix,,drop=FALSE]
+  Pgg <- (Ag * sqrt(wts[ix])) %*% chol2inv(tm$qr$qr) %*% t(Ag * sqrt(wts[ix]))
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, unique(ids)[2], ids),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors),
+    check.attributes = FALSE
+  ))
+})
+
+test_that("cluster_iss with NA's and subset argument", {
+  set.seed(33)
+  ad2 <- data.frame(cid = c(rep(1, 4), rep(2, 6), rep(3, 5), rep(4, 9),
+                            rep(5, 12), rep(seq(6, 8), each = 7)),
+                    x = factor(c(rep(0,15), rep(1, 9+12+7+7), rep(0, 7))),
+                    a = c(rep(0, 4), rep(1, 11), rep(0, 9), rep(1, 19),
+                          rep(0, 7+7)),
+                    y = rnorm(4 + 5 + 6 + 9+19+7+7))
+  
+  # subset
+  spec <- rct_spec(a ~ unitid(cid), ad2)
+  tm <- lmitt(y ~ 1, spec, ad2, subset = x == 0)
+  
+  ix <- ad2$cid == 1 & ad2$x == 0
+  mm_full <- model.matrix(
+    tm$terms,
+    model.frame(tm$terms, get("data", attr(tm$terms, ".Environment")))
+  )
+  Pgg <- mm_full[ix,] %*% chol2inv(tm$qr$qr) %*% t(mm_full[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid[ad2$x == 0]),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+  
+  # NA's
+  ad2$y[1] <- NA_real_
+  tm <- lmitt(y ~ 1, spec, ad2, subset = x == 0)
+  
+  ix <- ad2$cid == 1 & !is.na(ad2$y)
+  mm_full <- model.matrix(
+    tm$terms,
+    model.frame(tm$terms,
+                get("data", attr(tm$terms, ".Environment")),
+                na.action = na.pass)
+  )
+  Pgg <- mm_full[ix,] %*% chol2inv(tm$qr$qr) %*% t(mm_full[ix,])
+  eg <- eigen(diag(nrow = sum(ix)) - Pgg)
+  expect_true(all.equal(
+    cluster_iss(tm, cluster_unit = 1, cluster_ids = ad2$cid),
+    eg$vectors %*% diag(1/sqrt(eg$values), nrow = length(eg$values)) %*%
+      solve(eg$vectors)
+  ))
+})
+
+test_that("cluster_iss and .compute_IK_dof with dichotomies", {
+  data(simdata)
+  
+  # first, dichotomy is specified only in lmitt()
+  spec <- rct_spec(dose ~ unitid(uoa1, uoa2), simdata)
+  tm <- lmitt(y ~ 1, spec, simdata, weights = "ate",
+              dichotomy = dose > 100 ~ dose <= 100)
+  expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
+                       "matrix"))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
+  expect_true(inherits(dof, "numeric") & dof < Inf)
+  
+  # second, dichotomy given in the weights as well
+  wts <- ate(spec, dose > 100 ~ dose <= 100, data = simdata)
+  tm <- lmitt(y ~ 1, spec, simdata, weights = wts,
+              dichotomy = dose > 100 ~ dose <= 100)
+  expect_true(inherits(cluster_iss(tm, "1_1", .make_uoa_ids(tm, "MB")),
+                       "matrix"))
+  dof <- .compute_IK_dof(tm, c(0, 1), "CR2")
+  expect_true(inherits(dof, "numeric") & dof < Inf)
 })
 
 test_that(paste(".get_b12, .get_a11_inverse, .get_b11, .get_a21 used with teeMod model",
@@ -687,9 +1208,9 @@ test_that(".get_b22 returns correct value for lm object w offset", {
 
   uoa_eqns <- crossprod(uoa_matrix, WX)
   vmat <- crossprod(uoa_eqns)
-  expect_equal(propertee:::.get_b22(m, type = "HC0"),
+  expect_equal(propertee:::.get_b22(m, type = "HC0", type_psi = "HC0", type_phi = "HC0"),
                vmat * nuoas / (nuoas - 1L))
-  expect_equal(propertee:::.get_b22(m, type = "HC1"),
+  expect_equal(propertee:::.get_b22(m, type = "HC1", type_psi = "HC1", type_phi = "HC0"),
                vmat * nuoas / (nuoas - 1L) * (nq - 1L) / (nq - 2L))
 })
 
@@ -1420,28 +1941,18 @@ test_that(".get_a21 returns only full rank columns for less than full rank model
                        rep(colnames(ctrl.means.mm), 2), sep = ":")))
 })
 
-test_that(".vcov_CR0 with covariance adjustment and no moderator returns (p+2)x(p+2) matrix", {
+test_that(".vcov_CR with covariance adjustment and no moderator returns (p+2)x(p+2) matrix", {
   data(simdata)
 
   cmod <- lm(y ~ x, simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
   m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(spec), offset = cov_adj(cmod)))
 
-  vmat <- propertee:::.vcov_CR0(m)
+  vmat <- propertee:::.vcov_CR(m)
   expect_equal(dim(vmat), c(4, 4))
 })
 
-test_that(".vcov_CR0 doesn't accept `type` argument", {
-  data(simdata)
-
-  cmod <- lm(y ~ x, simdata)
-  spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = simdata)
-  m <- as.lmitt(lm(y ~ assigned(), simdata, weights = ate(spec), offset = cov_adj(cmod)))
-
-  expect_error(.vcov_CR0(m, type = "CR0"), "Cannot override the `type`")
-})
-
-test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", {
+test_that(".vcov_CR returns teeMod model sandwich if it has no SandwichLayer", {
   data(simdata)
 
   spec <- rct_spec(z ~ uoa(uoa1, uoa2), data = simdata)
@@ -1455,7 +1966,51 @@ test_that(".vcov_CR0 returns teeMod model sandwich if it has no SandwichLayer", 
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that("test the output of vcov_tee is correct with bias corrections", {
+  data(simdata)
+  
+  cmod <- lm(y ~ x + z, simdata)
+  spec <- rct_spec(z ~ unitid(uoa1, uoa2), simdata)
+  xm <- lmitt(y ~ 1, spec, simdata, offset = cov_adj(cmod))
+  
+  cls <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+  jk_units <- unique(cls)
+  X <- stats::model.matrix(cmod)
+  X[,"z"] <- 0
+  Z <- stats::model.matrix(xm)
+  ZTZ_inv <- chol2inv(xm$qr$qr)
+  new_r <- Reduce(
+    c,
+    mapply(
+      function(loo_unit, cmod, cls) {
+        cmod_cl <- stats::getCall(cmod)
+        cmod_cl$subset <- eval(cls != loo_unit)
+        loo_cmod <- eval(cmod_cl, envir = environment(formula(cmod)))
+        cl_ix <- cls == loo_unit
+        (simdata$y - xm$fitted.values + xm$offset)[cl_ix] - drop(X[cl_ix,,drop=FALSE] %*% loo_cmod$coefficients)
+      },
+      jk_units,
+      SIMPLIFY = FALSE,
+      MoreArgs = list(cmod = cmod, cls = cls)
+    )
+  )
+  ef_psi <- estfun(as(xm, "lm")) / xm$residuals * new_r
+  
+  n <- nrow(simdata)
+  ef_phi <- estfun(cmod)
+  
+  ef_ctrl_means_model <- estfun(xm@ctrl_means_model)
+  br <- .get_tilde_a22_inverse(xm)
+  vc <- br %*% (
+    crossprod(rowsum(cbind(ef_psi, ef_ctrl_means_model) -
+                       ef_phi %*% t(.get_a11_inverse(xm)) %*% t(.get_a21(xm)),
+                     cls)) / n^2
+  ) %*% t(br)
+  expect_true(all.equal(vc, vcov_tee(xm, cadjust = FALSE, loco_residuals = TRUE),
+                        check.attributes = FALSE))
+})
+
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "balanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1538,7 +2093,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
@@ -1548,7 +2103,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
@@ -1556,7 +2111,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                   diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "imbalanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1633,7 +2188,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1/n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
@@ -1643,7 +2198,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq_len(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # var_hat(z) should be smaller than var_hat(z) from onemod
@@ -1651,7 +2206,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                     diag(vcov(onemod))[c(1, 4)]))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "balanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1759,13 +2314,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_equal((bread. %*% a21)[2,], setNames(rep(0, dim(a21)[2]), colnames(a21)))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- propertee:::.vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- propertee:::.vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be equal the outputs of sandwich
@@ -1776,7 +2331,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "imbalanced grps",
                 "no cmod/ssmod data overlap", sep = ", "), {
   set.seed(50)
@@ -1871,13 +2426,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% bread.,
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -1888,7 +2443,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
+test_that(paste("HC0 .vcov_CR lm w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
   set.seed(50)
@@ -1959,13 +2514,13 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = df$uid, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = df$uid, cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = df$uid, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = df$uid, cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -1973,7 +2528,7 @@ test_that(paste("HC0 .vcov_CR0 lm w/o clustering",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
+test_that(paste("HC0 .vcov_CR lm w/ clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
   set.seed(50)
@@ -2042,6 +2597,8 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
 
   ids <- df$cid
   ef_ssmod <- utils::getS3method("estfun", "lm")(ssmod_as.lmitt)
+  loo_r <- .compute_loo_resids(ssmod_as.lmitt, "cid")
+  ef_ssmod <- ef_ssmod / stats::residuals(ssmod_as.lmitt) * loo_r
   nonzero_ef_cmod <- estfun(cmod)
   ef_cmod <- matrix(0, nrow = nrow(ef_ssmod), ncol = ncol(nonzero_ef_cmod))
   colnames(ef_cmod) <- colnames(nonzero_ef_cmod)
@@ -2051,36 +2608,39 @@ test_that(paste("HC0 .vcov_CR0 lm w/ clustering",
                          weights(ctrl_means_mod) * model.matrix(ctrl_means_mod), # only 1 col in model matrix
                          FUN = "*")
   colnames(ef_ctrl_means) <- colnames(cm_grad)
-  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(ssmod_as.lmitt), ids, colSums))) / n,
+  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(ssmod_as.lmitt, loco_residuals = TRUE),
+                                                   ids, colSums))) / n,
                crossprod(Reduce(
                  rbind,
                  by(cbind(ef_ssmod, ef_ctrl_means) - nq / nc * ef_cmod %*% t(a11inv) %*% t(a21), ids, colSums))) / n)
 
   # meat should be the same as the output of sandwich::meatCL
-  expect_equal(meat., sandwich::meatCL(ssmod_as.lmitt, cluster = ids, cadjust = FALSE))
+  expect_equal(meat., sandwich::meatCL(ssmod_as.lmitt, cluster = ids, cadjust = FALSE,
+                                       loco_residuals = TRUE))
 
   # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = ids, cadjust = FALSE, loco_residuals = TRUE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = ids, cadjust = FALSE, loco_residuals = TRUE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
   expect_true(all.equal(vmat,
                         sandwich::sandwich(ssmod_as.lmitt,
                                            meat. = sandwich::meatCL,
-                                           cluster = ids, cadjust = FALSE),
+                                           cluster = ids, cadjust = FALSE,
+                                           loco_residuals = TRUE),
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
+test_that(paste("HC0 .vcov_CR binomial glm cmod",
                 "w/o clustering",
                 "imbalanced grps",
                 "cmod is a strict subset of ssmod data", sep = ", "), {
@@ -2161,13 +2721,13 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
   expect_false(all((bread. %*% a21)[2,] == 0))
 
   # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
+  vmat <- .vcov_CR(ssmod_as.lmitt, cluster = seq_len(n), cadjust = FALSE)
   expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
                         check.attributes = FALSE))
 
   # vmat should be the same for both lmitt calls
   expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = seq(n), cadjust = FALSE),
+                        .vcov_CR(ssmod_lmitt.form, cluster = seq(n), cadjust = FALSE),
                         check.attributes = FALSE))
 
   # vmat should be the same as the outputs of sandwich
@@ -2175,212 +2735,14 @@ test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
                         check.attributes = FALSE))
 })
 
-test_that(paste("HC0 .vcov_CR0 binomial glm cmod",
-                "w/ clustering",
-                "imbalanced grps",
-                "ssmod is a strict subset of cmod data", sep = ", "), {
-  set.seed(50)
-  nclusts_C <- nclusts_Q <- 4
-  MI <- 16
-
-  # trt variable
-  z <- c(rep(rep(0, MI * 2), nclusts_C / 2),
-         rep(rep(c(0, 1), each = MI), nclusts_Q / 2))
-
-  # p and mu for each matched pair's categorical and continuous cov
-  px1 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 0.05, 0.94), 1)
-  mux2 <- round(stats::runif((nclusts_C + nclusts_Q) / 2, 55, 90))
-  x1 <- c(mapply(function(x) c(rbinom(MI, 1, x), rbinom(MI, 1, x)), px1))
-  x2 <- c(Reduce(cbind, Map(function(x) stats::rgamma(MI * 2, x), mux2)))
-
-  df <- data.frame("z" = z, "x1" = x1, "x2" = x2,
-                   "uid" = paste0("u", seq_len(nclusts_C * MI + nclusts_Q * MI)))
-
-  # generate clustered errors
-  error_sd <- round(stats::runif(nclusts_C + nclusts_Q, 1, 3), 1)
-  icc <- 0.2
-  eps <- stats::rnorm(nrow(df))
-  Sigma <- matrix(0, nrow = nrow(df), ncol = nrow(df))
-  for (i in (seq_len(nclusts_C + nclusts_Q) - 1)) {
-    msk <- (1 + i * MI):((i + 1) * MI)
-    Sigma[msk, msk] <- diag(error_sd[i + 1] - icc, nrow = MI) + icc
-  }
-  A <- chol(Sigma)
-  eps <- t(A) %*% eps
-
-  # generate y
-  theta <- c(65, 1.5, -0.01, -2) # intercept, x1, x2, and treatment coeffs
-  py <- 1 / (1 + exp(-scale(stats::model.matrix(~ x1 + x2 + z, df),
-                            scale = FALSE) %*% theta))
-  df$y <- rbinom((nclusts_C + nclusts_Q) * MI, 1, py)
-  df$cid <- rep(seq_len(nclusts_C + nclusts_Q), each = MI)
-
-  # set trt to NA for cmod rows
-  df[1:(nclusts_C * MI), "z"] <- NA_integer_
-
-  # model
-  cmod_form <- y ~ x1 + x2
-  ssmod_form <- y ~ assigned()
-  cmod <- glm(cmod_form, data = df, family = stats::binomial())
-  spec <- rct_spec(z ~ uoa(cid), df[!is.na(df$z),])
-  ssmod_as.lmitt <- lmitt(
-    lm(ssmod_form, data = df[!is.na(df$z),], weights = ate(spec), offset = cov_adj(cmod, by = "uid"))
-  )
-  ssmod_lmitt.form <- lmitt(y ~ 1, data = df[!is.na(df$z),], specification = spec,
-                           weights = ate(spec), offset = cov_adj(cmod, by = "uid"))
-  ctrl_means_mod <- ssmod_as.lmitt@ctrl_means_model
-
-  ## COMPARE BLOCKS TO MANUAL DERIVATIONS
-  Xstar <- stats::model.matrix(cmod)
-  fit_wstar <- cmod$weights
-  rstar <- cmod$residuals
-  mu_etastar <- cmod$family$mu.eta(cmod$linear.predictors)
-  Z <- stats::model.matrix(ssmod_as.lmitt)
-  X <- stats::model.matrix(formula(stats::delete.response(terms(cmod))), df[!is.na(df$z),])
-  cm_grad <- cbind(matrix(0, nrow = nrow(X), ncol = 1),
-                   stats::model.matrix(ctrl_means_mod) * weights(ctrl_means_mod))
-  colnames(cm_grad) <- c("y:(Intercept)", "cov_adj:(Intercept)")
-  w <- ssmod_as.lmitt$weights
-  r <- ssmod_as.lmitt$residuals
-  mu_eta <- cmod$family$mu.eta(drop(X %*% cmod$coefficients))
-  nq <- nrow(Z)
-  nc <- nrow(Xstar)
-  n <- nrow(Xstar)
-
-  expect_equal(a11inv <- .get_a11_inverse(ssmod_as.lmitt), nc * solve(crossprod(Xstar * sqrt(fit_wstar))))
-  expect_equal(a21 <- .get_a21(ssmod_as.lmitt), crossprod(cbind(Z * w, -cm_grad), X * mu_eta) / nq)
-  bread. <- bread(ssmod_as.lmitt)
-  expect_equal(bread.[1:2, 1:2], n * solve(crossprod(Z * w, Z)))
-  expect_equal(bread.[3:4, 3:4],
-               matrix(0, nrow = 2, ncol = 2, dimnames = list(colnames(cm_grad), colnames(cm_grad))) + (
-                 diag(2) * n / sum(weights(ctrl_means_mod))))
-
-  ef_order <- c(gsub("u", "", sort(df$uid[!is.na(df$z)])), rownames(df[is.na(df$z),]))
-  ids <- factor(df$cid, levels = unique(df$cid))[as.numeric(ef_order)]
-  ef_cmod <- estfun(cmod)[ef_order,]
-
-  unextended_ef_ssmod <- estfun(as(ssmod_as.lmitt, "lm"))
-  ef_ssmod <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_ssmod),
-                     dimnames = list(rownames = seq_len(nrow(ef_cmod)),
-                                     colnames = colnames(unextended_ef_ssmod)))
-  unextended_ef_ctrl_means <- sweep(residuals(ctrl_means_mod), # need sweep bc residuals has 2 columns
-                                    1,
-                                    weights(ctrl_means_mod) * model.matrix(ctrl_means_mod), # only 1 col in model matrix
-                                    FUN = "*")
-  colnames(unextended_ef_ctrl_means) <- colnames(cm_grad)
-  ef_ctrl_means <- matrix(0, nrow = nrow(ef_cmod), ncol = ncol(unextended_ef_ctrl_means),
-                     dimnames = list(rownames = seq_len(nrow(ef_cmod)),
-                                     colnames = colnames(unextended_ef_ctrl_means)))
-  Q_order <- match(sort(df$uid[!is.na(df$z)]), df$uid[!is.na(df$z)])
-  ef_ssmod[1L:sum(!is.na(df$z)),] <- unextended_ef_ssmod[Q_order,]
-  ef_ctrl_means[1L:sum(!is.na(df$z)),] <- unextended_ef_ctrl_means[Q_order,]
-  expect_equal(meat. <- crossprod(Reduce(rbind, by(estfun(ssmod_as.lmitt), ids, colSums))) / n,
-               (crossprod(Reduce(rbind, by(cbind(ef_ssmod, ef_ctrl_means), ids, colSums))) -
-                  crossprod(Reduce(rbind, by(cbind(ef_ssmod, ef_ctrl_means), ids, colSums)),
-                            Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums))) %*% a11inv %*% t(a21) -
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums)),
-                                               Reduce(rbind, by(cbind(ef_ssmod, ef_ctrl_means), ids, colSums))) +
-                  a21 %*% a11inv %*% crossprod(Reduce(rbind, by(nq / sqrt(n * nc) * ef_cmod, ids, colSums))) %*%
-                  a11inv %*% t(a21)
-               ) / n)
-
-  # meat should be the same as the output of sandwich::meatCL
-  expect_equal(meat., sandwich::meatCL(ssmod_as.lmitt, cluster = ids, cadjust = FALSE))
-
-  # with imperfect group balance, a22inv %*% a21 should not be 0 for the trt row
-  expect_false(all((bread. %*% a21)[2,] == 0))
-
-  # check .vcov_CR0 matches manual matrix multiplication
-  vmat <- .vcov_CR0(ssmod_as.lmitt, cluster = ids, cadjust = FALSE)
-  expect_true(all.equal(vmat, (1 / n) * bread. %*% meat. %*% t(bread.),
-                        check.attributes = FALSE))
-
-  # vmat should be the same for both lmitt calls
-  expect_true(all.equal(vmat,
-                        .vcov_CR0(ssmod_lmitt.form, cluster = ids, cadjust = FALSE),
-                        check.attributes = FALSE))
-
-  # vmat should be the same as the outputs of sandwich
-  expect_true(all.equal(vmat,
-                        sandwich::sandwich(ssmod_as.lmitt,
-                                           meat. = sandwich::meatCL,
-                                           cluster = ids, cadjust = FALSE),
-                        check.attributes = FALSE))
-})
-
-test_that("HC1/CR1/MB1", {
-  set.seed(8431432)
-  # no clustering
-  n <- 50
-  Sigma <- diag(runif(n, 0.01, 2))
-  x1 <- rnorm(n)
-  z <- rep(c(0, 1), each = n / 2)
-  y <- drop(-0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n))
-  dat <- data.frame(x1=x1, z=z, y=y, c=sample(seq_len(n)))
-
-  spec <- rct_spec(z ~ unitid(c), dat)
-  cmod <- lm(y ~ x1, dat)
-  ssmod <- lmitt(y ~ 1, data = dat, specification = spec,
-                weights = ate(spec), offset = cov_adj(cmod))
-
-  # CR1
-  expect_true(
-    all.equal(cr1_vmat <- vcov_tee(ssmod, type = "CR1"),
-              50 / 48 * .vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"), cadjust=FALSE),
-              check.attributes = FALSE)
-  )
-  expect_equal(attr(cr1_vmat, "type"), "CR1")
-  expect_true(any(grepl("CR1", capture.output(summary(ssmod, vcov.type = "CR1")))))
-
-  # HC1
-  expect_true(all.equal(hc1_vmat <- vcov_tee(ssmod, type = "HC1"), cr1_vmat, check.attributes = FALSE))
-  expect_equal(attr(hc1_vmat, "type"), "HC1")
-  expect_true(any(grepl("HC1", capture.output(summary(ssmod, vcov.type = "HC1")))))
-
-  # MB1
-  expect_true(all.equal(mb1_vmat <- vcov_tee(ssmod, type = "MB1"), cr1_vmat, check.attributes = FALSE))
-  expect_equal(attr(mb1_vmat, "type"), "MB1")
-  expect_true(any(grepl("MB1", capture.output(summary(ssmod, vcov.type = "MB1")))))
-
-  # clustering
-  n <- 50
-  g <- 5
-  icc <- 0.1
-  Sigma <- matrix(0, nrow = n, ncol = n)
-  for (i in seq_len(g)) {
-    Sigma[((i - 1) * n / g + 1):(i * (n / g)), ((i - 1) * n / g + 1):(i * (n / g))] <- (
-      (1-icc) * diag(1, nrow=n/g, ncol=n/g) + icc
-    )
-  }
-  x1 <- rnorm(n)
-  z <- rep(c(0, 1), c((g-2) * n/g, (g-3) * n/g))
-  y <- -0.5 * x1 -0.1 * z + chol(Sigma) %*% rnorm(n)
-  dat <- data.frame(x1=x1, z=z, y=y, c=rep(seq_len(g), each = n/g))
-
-  spec <- rct_spec(z ~ unitid(c), dat)
-  cmod <- lm(y ~ x1, dat)
-  ssmod <- lmitt(y ~ 1, data = dat, specification = spec,
-                weights = ate(spec), offset = cov_adj(cmod))
-
-  # CR1
-  expect_true(
-    all.equal(cr1_vmat <- vcov_tee(ssmod, type = "CR1"),
-              g / (g-1) * (n-1) / (n-2) * .vcov_CR0(ssmod, cluster = .make_uoa_ids(ssmod, "CR"),
-                                                      cadjust=FALSE),
-              check.attributes = FALSE)
-  )
-  expect_equal(attr(cr1_vmat, "type"), "CR1")
-  expect_true(any(grepl("CR1", capture.output(summary(ssmod, vcov.type = "CR1")))))
-})
-
 test_that("type attribute", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ 1, data = simdata, weights = "ate", specification = spec)
-  expect_identical(attr(vcov(ssmod), "type"), "CR0")
-  expect_identical(attr(vcov(ssmod, type = "CR0"), "type"), "CR0")
-  expect_identical(attr(vcov(ssmod, type = "MB0"), "type"), "MB0")
-  expect_identical(attr(vcov(ssmod, type = "HC0"), "type"), "HC0")
+  expect_identical(attr(vcov(ssmod), "type"), "HC0")
+  expect_identical(attr(vcov(ssmod, type = "CR2"), "type"), "CR2")
+  expect_identical(attr(vcov(ssmod, type = "MB2"), "type"), "MB2")
+  expect_identical(attr(vcov(ssmod, type = "HC2"), "type"), "HC2")
 })
 
 test_that("#119 flagging vcov_tee entries as NA", {
@@ -2388,18 +2750,13 @@ test_that("#119 flagging vcov_tee entries as NA", {
   data(simdata)
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   mod <- lmitt(y ~ as.factor(o), data = simdata, specification = spec)
-  expect_warning(vc <- vcov_tee(mod),
+  expect_warning(vc <- vcov_tee(mod, type = "CR0"),
                  "will be returned as NA: as.factor(o)1, as.factor(o)3",
                  fixed = TRUE)
 
   # Issue is in subgroups w/ moderator=1:z=0, moderator=1:z=1, and
   # moderator=3, so .check_df_moderator_estimates should NA those vcov entries
   na_dim <- c(1, 3, 5, 8, 10)
-  expect_true(all(
-    abs(diag(sandwich::sandwich(mod, meat. = sandwich::meatCL,
-                                cluster = .make_uoa_ids(mod, "CR")))[na_dim])
-     < .Machine$double.eps)
-  )
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
@@ -2414,7 +2771,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       ass_id = rep(seq(5), each = 4))
   dspec <- rct_spec(z ~ unitid(ass_id), ddata)
   ssmod <- lmitt(y ~ modr, specification = dspec, data = ddata)
-  expect_warning(vc <- vcov_tee(ssmod),
+  expect_warning(vc <- vcov_tee(ssmod, type = "CR0"),
                  "will be returned as NA: modr1",
                  fixed = TRUE)
 
@@ -2437,7 +2794,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       ass_id = rep(seq(10), each = 2))
   dspec <- rct_spec(z ~ unitid(ass_id), ddata)
   ssmod <- lmitt(y ~ modr, specification = dspec, data = ddata)
-  vc <- vcov_tee(ssmod)
+  vc <- vcov_tee(ssmod, type = "CR0")
   expect_true(all(
     abs(diag(sandwich::sandwich(ssmod, meat. = sandwich::meatCL,
                                 cluster = .make_uoa_ids(ssmod, "CR")))[na_dim])
@@ -2470,7 +2827,7 @@ test_that("#119 flagging vcov_tee entries as NA", {
   #
   # ### valid continuous moderator variable
   ssmod <- lmitt(y ~ o, data = simdata, specification = spec)
-  vc <- vcov(ssmod)
+  vc <- vcov(ssmod, type = "CR0")
   expect_true(all(!is.na(vc)))
   #
   # ### invalid continuous moderator variable
@@ -2478,8 +2835,9 @@ test_that("#119 flagging vcov_tee entries as NA", {
                       (simdata$uoa1 == 2 & simdata$uoa2 == 1),]
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ o, data = simdata, specification = spec)
-  expect_warning(vc <- vcov(ssmod), "will be returned as NA: o")
-  na_dim <- which(grepl("(Intercept)", "z._o", colnames(vc)))
+  expect_warning(vc <- vcov(ssmod, type = "CR0"), "will be returned as NA: o")
+  na_dim <- which(grepl("(Intercept)", colnames(vc)) |
+                    grepl("z._o", colnames(vc)))
   expect_true(all(is.na(vc[na_dim, ])))
   expect_true(all(is.na(vc[, na_dim])))
   expect_true(all(!is.na(vc[-na_dim, -na_dim])))
@@ -2498,11 +2856,62 @@ test_that(".check_df_moderator_estimates other warnings", {
   # invalid `data` arg
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), simdata)
   ssmod <- lmitt(y ~ factor(o), specification = spec, data = simdata)
-  expect_error(.check_df_moderator_estimates(vmat, ssmod, cluster_ids,
-                                             cbind(y = simdata$y, z = simdata$z),
-                                             envir = parent.frame()),
+  expect_error(.check_df_moderator_estimates(vmat, ssmod
+                                             , cluster_cols = c("uoa1", "uoa2")
+                                             , model_data = cbind(y = simdata$y,
+                                                                  z = simdata$z)
+                                             , envir = parent.frame()),
                "`model_data` must be a dataframe")
 })
+
+test_that(".check_df_moderator_estimates #246", {
+  # observations that did not contribute to the model fit do not count towards
+  # the degrees of freedom count for moderator estimates
+  set.seed(341)
+  Qdata <- data.frame(x = factor(rep(c(1, 2), each = 3)),
+                      z = rep(c(0, 1), 3),
+                      y = runif(6))
+  wts <- c(0, rep(1, 5))
+  expect_warning(spec <- obs_spec(z ~ 1, Qdata), "explicit unit")
+  tm <- lmitt(y ~ x, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x1"
+  )
+  expect_true(all(is.na(vc["z._x1",])))
+  expect_true(all(is.na(vc[,"z._x1"])))
+
+  Qdata$x2 <- runif(nrow(Qdata))
+  wts <- rep(c(0, 1), c(2, 4))
+  tm <- lmitt(y ~ x2, spec, Qdata, weights = wts)
+  expect_warning(
+    vc <- vcov_tee(tm),
+    "x2"
+  )
+  expect_true(all(is.na(vc["z._x2",])))
+  expect_true(all(is.na(vc[,"z._x2"])))
+  
+  # if values_from is fit w/o the moderator, don't check df
+  values_from <- lmitt(y ~ 1, spec, Qdata, weights = wts)
+  vc <- vcov_tee(tm, values_from = values_from)
+  expect_true(all(is.na(vc)))
+})
+
+if (requireNamespace("multcomp", quietly = TRUE)) {
+  test_that(".check_df_moderator_estimates w/ mmm object and aliased coeffs", {
+    set.seed(4953)
+    dft <- data.frame(y = rnorm(20),
+                      z = rep(c(0,1), each = 10),
+                      x1 = factor(rep(letters[1:3], 7)[seq_len(20)]))
+    dft$x2 <- dft$z
+    expect_warning(dta <- rct_spec(z ~ 1, dft), "explicit unit")
+    tm1 <- lmitt(y ~ 1, dta, dft)
+    tm2 <- lmitt(y ~ x1, dta, dft)
+    tm3 <- lmitt(y ~ x2, dta, dft)
+    mco <- multcomp::mmm(main = tm1, x1 = tm2, x2 = tm3)
+    expect_silent(invisible(vcov_tee(mco)))
+  })
+}
 
 test_that("#123 ensure PreSandwich are converted to Sandwich", {
   data(simdata)
@@ -2541,7 +2950,8 @@ test_that("#123 ensure PreSandwich are converted to Sandwich", {
 
 })
 
-test_that("model-based SE's cluster units of assignment in small blocks at block level", {
+test_that(paste("model-based SE's cluster units of assignment in small blocks",
+                "at uoa level"), {
   specdata <- data.frame(bid = rep(c(1, 2), each = 20),
                         uoa_id = c(rep(c(1, 2), each = 10), rep(seq(3, 6), each = 5)),
                         a = c(rep(c(0, 1), each = 10), rep(rep(c(0, 1), each = 5), 2)))
@@ -2549,10 +2959,10 @@ test_that("model-based SE's cluster units of assignment in small blocks at block
   spec <- rct_spec(a ~ unitid(uoa_id) + block(bid), specdata)
   suppressMessages(mod <- lmitt(y ~ 1, specification = spec, data = specdata))
   vc_w_small_block_clusters <- vcov_tee(mod)
-  vc_w_no_small_block_clusters <- .vcov_CR0(mod,
-                                            cluster = .make_uoa_ids(mod, "DB"),
-                                            by = "uoa_id")
-  expect_true(vc_w_small_block_clusters[2, 2] != vc_w_no_small_block_clusters[2, 2])
+  vc_w_no_small_block_clusters <- .vcov_CR(mod,
+                                           cluster = .make_uoa_ids(mod, "DB"),
+                                           by = "uoa_id")
+  expect_true(vc_w_small_block_clusters[2, 2] == vc_w_no_small_block_clusters[2, 2])
 })
 
 test_that("#177 vcov with by argument", {
@@ -2638,7 +3048,7 @@ test_that("vcov_tee errors when asking for specification-based SE for a non-RCT 
   ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec))
   expect_error(
     vcov_tee(ssmod, type = "DB0"),
-    "can only be computed for RCT specifications"
+    "only for RCT specifications"
   )
 })
 
@@ -2649,7 +3059,7 @@ test_that("vcov_tee errors when asking for specification-based SE for a model
   ssmod_sub <- lmitt(y ~ dose, specification = spec, data = simdata, weights = ate(spec))
   expect_error(
     vcov_tee(ssmod_sub, type = "DB0"),
-    "cannot be computed for teeMod models with moderators"
+    "are not supported for teeMod models with moderators"
   )
 })
 
@@ -2808,6 +3218,14 @@ test_that("specification-based SE for tee models with absorption does not crash"
                           offset = cov_adj(cmod), absorb = TRUE)
   expect_silent(vcov_tee(teemod_abs, type = "DB0"))
   expect_silent(vcov_tee(teemod_abs_off, type = "DB0"))
+  
+  ssmod_sub_abs <- lmitt(y ~ dose, specification = spec, data = simdata, absorb = TRUE)
+  ssmod_sub_abs_off <- lmitt(y ~ dose, specification = spec, data = simdata,
+                             offset = cov_adj(cmod), absorb = TRUE)
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0"))
+  expect_silent(vcov_tee(ssmod_sub_abs, type = "DB0", const_effect = TRUE))
+  expect_silent(vcov_tee(ssmod_sub_abs_off, type = "DB0", const_effect = TRUE))
 })
 
 test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
@@ -2824,14 +3242,14 @@ test_that(".get_appinv_atp returns correct (A_{pp}^{-1} A_{tau p}^T)
   B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
   goal <- matrix(0, nrow = 3, ncol = 1)
   for (blk in 1:3){
-    goal[blk] <- sum(ssmod_abs$weights * ssmod_abs$residuals * B[,blk]) /
+    goal[blk] <- sum(weights(ssmod_abs) * residuals(ssmod_abs) * B[,blk]) /
       sum(ssmod_abs$weights * B[,blk])
   }
   expect_true(all.equal(goal, .get_appinv_atp(ssmod_abs, db = TRUE)))
 
   for (blk in 1:3){
-    goal[blk] <- sum(ssmod_abs_off$weights * ssmod_abs_off$residuals * B[,blk]) /
-      sum(ssmod_abs_off$weights * B[,blk])
+    goal[blk] <- sum(weights(ssmod_abs_off) * residuals(ssmod_abs_off) * B[,blk]) /
+      sum(weights(ssmod_abs_off)* B[,blk])
   }
   expect_true(all.equal(goal, propertee:::.get_appinv_atp(ssmod_abs_off, db = TRUE)))
 })
@@ -2848,7 +3266,7 @@ test_that(".get_phi_tilde returns correct grave{phi}
   B <- cbind(as.integer(bid == 1), as.integer(bid == 2), as.integer(bid == 3))
   Z <- cbind(as.integer(simdata$z == 0), as.integer(simdata$z == 1))
 
-  ws <- ssmod_abs$weights
+  ws <- stats::weights(ssmod_abs)
   p <- matrix(0, nrow = 2, ncol = 3)
   for (k in 1:2)
     for (j in 1:3){
@@ -2856,7 +3274,124 @@ test_that(".get_phi_tilde returns correct grave{phi}
     }
   goal <- matrix(0, nrow = 50, ncol = 3)
   for (s in 1:3){
-    goal[,s] <- ws * (Z[,2] - p[2,s]) * B[,s]
+    goal[,s] <- ws * residuals(ssmod_abs) * (Z[,2] - p[2,s]) * B[,s]
   }
   expect_true(all.equal(goal, propertee:::.get_phi_tilde(ssmod_abs, db = TRUE)))
+  
+  ssmod_abs <- lmitt(y ~ 1, specification = spec, data = simdata,
+                     absorb = TRUE)
+  p <- matrix(0, nrow = 2, ncol = 3)
+  for (k in 1:2)
+    for (j in 1:3){
+      p[k, j] <- sum(Z[,k] * B[,j]) / sum(B[,j])
+    }
+  goal <- matrix(0, nrow = 50, ncol = 3)
+  for (s in 1:3){
+    goal[,s] <- residuals(ssmod_abs) * (Z[,2] - p[2,s]) * B[,s]
+  }
+  expect_true(all.equal(goal, propertee:::.get_phi_tilde(ssmod_abs, db = TRUE)))
+})
+
+test_that("block_center_residuals correctly subtracts off block center residuals", {
+  data(simdata)
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
+  damod_abs <- lmitt(y ~ 1, specification = des, data = simdata, absorb = TRUE)
+  r <- residuals(damod_abs)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(damod_abs))))
+})
+
+test_that("block_center_residuals works for input containing NA block IDs", {
+  data(simdata)
+  simdata[1:3, 'bid'] <- NA
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), 
+                           simdata, na.fail = FALSE)
+  damod_abs <- lmitt(y ~ 1, specification = des, data = simdata, absorb = TRUE)
+  r <- residuals(damod_abs)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(damod_abs))))
+})
+
+test_that("block_center_residuals works for teeMod having NA in fitted values", {
+  data(simdata)
+  simdata[1:3, 'x'] <- NA
+  des <- rct_specification(z ~ cluster(uoa1, uoa2) + block(bid), 
+                           simdata, na.fail = FALSE)
+  cmod <- lm(y ~ x, simdata)
+  teemod <- suppressWarnings(lmitt(
+    y ~ 1, specification = des, data = simdata, absorb = TRUE, offset = cov_adj(cmod)
+    ))
+  r <- residuals(teemod)
+  
+  # calculate block center residuals
+  block_id <- as.factor(simdata$bid)[4:50]
+  model <- lm(r ~ block_id)
+  intercept <- coef(model)[1]
+  block_effects <- coef(model)[-1]
+  block_means <- intercept + c(0, block_effects)
+  names(block_means) <- levels(block_id)
+  
+  # subtract off block means
+  block_means <- block_means[block_id]
+  r <- r - block_means
+  expect_true(all.equal(r, residuals(propertee:::block_center_residuals(teemod))))
+})
+
+test_that("issue #239", {
+  # crux of the issue is that when all observations with a given value of a
+  # moderator are given a weight of 0 in the regression, the lm/mlm for
+  # computing means in the control condition has NA coefficients. the .get_a21()
+  # and custom bread.mlm() functions did not handle this as they needed to.
+  # here we make sure they only retain columns that yield full-rank matrices
+  set.seed(298)
+  odata <- data.frame(x1 = factor(rep(seq_len(3), each = 5)),
+                      y = rnorm(15),
+                      a = rep(c(0, 1), 8)[1:15],
+                      uid = seq_len(15))
+  cmod <- lm(y~x1, odata)
+  spec <- rct_spec(a ~ unitid(uid), odata)
+  tmod <- lmitt(y ~ x1, spec, odata, weights = c(rep(0, 5), rep(1, 10)),
+                offset = cov_adj(cmod))
+  
+  # test bread. if there's an offset and the rank of the ctrl means model is K,
+  # then there should be K columns corresponding to the regression for the
+  # response and K columns corresponding to the regression for the offset for a
+  # total of 2 * K columns. when we add those to the bread matrix for the
+  # effect estimation regression, which we'll say has rank R, then the number
+  # of columns in the bread matrix will be R + 2 * K.
+  twoK <- tmod@ctrl_means_model$rank * 2
+  R <- tmod$rank
+  br_cm <- bread.mlm(tmod@ctrl_means_model)
+  expect_equal(ncol(br_cm), twoK)
+  br <- bread(tmod)
+  expect_equal(ncol(br), R + twoK)
+  
+  # test A21. should have R + 2 * K rows. so when we use it to make the output
+  # of estfun.teeMod(), we should have a matrix with R + 2 * K columns
+  a21 <- .get_a21(tmod)
+  expect_equal(nrow(a21), R + twoK)
+  ef <- estfun(tmod)
+  expect_equal(ncol(ef), R + twoK)
 })

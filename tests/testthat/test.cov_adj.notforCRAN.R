@@ -3,10 +3,13 @@ on.exit(options(old_opt))
 options(propertee_warn_on_conditional_treatment = FALSE)
 
 data(simdata)
-data(STARdata)
-STARdata$id <- seq_len(nrow(STARdata))
+  if (requireNamespace("AER", quietly = TRUE)) {
+      data("STAR", package="AER")
+      STARdata <- STAR
+      STARdata$id <- seq_len(nrow(STARdata))
+      Q_w_nulls <- STARdata
+      }
 Q_wo_nulls <- simdata
-Q_w_nulls <- STARdata
 Q_partial_overlap <- simdata[simdata$bid == 3,]
 
 # test whether the values are the same as calling predict on the direct adjustment
@@ -19,6 +22,7 @@ test_ca <- function(ca, cov_mod,  Q_) {
   return(NULL)
 }
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call specifying newdata and specification, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -29,6 +33,7 @@ test_that("cov_adj outside of lm call specifying newdata and specification, data
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "SandwichLayer"))
 })
+}
 
 test_that("cov_adj outside of lm call specifying newdata and specification, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -46,12 +51,14 @@ test_that("cov_adj outside of lm call specifying newdata and specification, data
   expect_true(inherits(ca, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call specifying newdata but no specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   ca <- cov_adj(cmod, newdata = Q_w_nulls)
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
+  }
 
 test_that("cov_adj outside of lm call specifying newdata but no specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
@@ -67,6 +74,7 @@ test_that("cov_adj outside of lm call specifying newdata but no specification, d
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj outside of lm call not specifying newdata or specification, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   w <- capture_warnings(cov_adj(cmod))
@@ -76,7 +84,7 @@ test_that("cov_adj outside of lm call not specifying newdata or specification, d
   test_ca(ca, cmod, Q_w_nulls)
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
-
+}
 test_that("cov_adj outside of lm call not specifying newdata or specification, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
   w <- capture_warnings(cov_adj(cmod))
@@ -97,6 +105,7 @@ test_that("cov_adj outside of lm call not specifying newdata or specification, d
   expect_true(inherits(ca, "PreSandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset with weights, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -113,6 +122,7 @@ test_that("cov_adj as offset with weights, data has NULLs", {
           stats::model.frame(as.formula(form), data = Q_w_nulls))
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset with weights, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -130,6 +140,7 @@ test_that("cov_adj as offset with weights, data has partial overlap", {
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has NULLs", {
   spec <- rct_spec(stark == "small" ~ unitid(id), data = Q_w_nulls)
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
@@ -144,6 +155,7 @@ test_that("cov_adj as offset specified w/ newdata and specification, no weights,
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset specified w/ newdata and specification, no weights, data has no NULLs", {
   spec <- rct_spec(z ~ cluster(uoa1, uoa2), data = Q_wo_nulls)
@@ -163,6 +175,7 @@ test_that("cov_adj as offset specified w/ newdata and specification, no weights,
   expect_true(inherits(m$model$`(offset)`, "SandwichLayer"))
 })
 
+  if (requireNamespace("AER", quietly = TRUE)) {
 test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has NULLs", {
   cmod <- lm(readk ~ gender + ethnicity, data = Q_w_nulls)
   m <- lm(readk ~ stark == "small", data = Q_w_nulls, offset = cov_adj(cmod))
@@ -171,6 +184,7 @@ test_that("cov_adj as offset specified w/ no newdata nor specification, no weigh
   test_ca(m$model$`(offset)`, cmod, Q_w_nulls[keep_idx, ])
   expect_true(inherits(m$model$`(offset)`, "PreSandwichLayer"))
 })
+  }
 
 test_that("cov_adj as offset specified w/ no newdata nor specification, no weights, data has no NULLs", {
   cmod <- lm(y ~ x, data = Q_wo_nulls)
@@ -374,79 +388,14 @@ test_that("cov_adj variance estimates for orthogonal predictors", {
 
 })
 
-
-test_that("cov_adj variance estimates for correlated predictors", {
-  library(sandwich)
-  set.seed(230274373)
-  k <- 25
-  n <- 4 * k
-  x1 <- c(rep(1, 2 * k), rep(-1, 2 * k))
-  z <- sample(c(rep(1, 2 * k), rep(0, 2 * k)), prob = x1 + 2)
-
-  xy <- function(b0 =  1, b1 = 2, b2 = 3, sigma2 = 4) {
-    y <- b0 + b1 * x1 + b2 * z + rnorm(n, sd = sqrt(sigma2))
-    data.frame(id = 1:n, x1 = x1,  z = z, y = y)
-  }
-
-  df <- xy()
-  mboth <- lm(y ~ x1 + z, data = df)
-  m1 <- lm(y ~ x1, data = df) # includes an intercept
-
-  # we'll start by manually doing the offset Y - \hat Y
-  # the intercept is in the "x" variables, not the z variables
-  m2 <- lm(y ~ z - 1, data = df, offset = predict(m1))
-
-  ## verify some of the results of the VarianceEstimation vignette
-  X <- model.matrix(m1)
-  Z <- model.matrix(m2)
-  Id <- diag(n)
-
-  # some quantities we will need
-  XtXinv <- solve(t(X) %*% X)
-  ZtZinv <- solve(t(Z) %*% Z)
-  H <- Id - X %*% XtXinv %*% t(X)
-  G <- Id - Z %*% ZtZinv %*% t(Z)
-
-  a <- solve(t(X) %*% G %*% X)
-  b <- solve(t(Z) %*% H %*% Z)
-  s2_1 <- (1/(n - 3)) * t(df$y) %*% (Id - X %*% a %*% t(X) %*% G - Z %*% b %*% t(Z) %*% H) %*% df$y
-  s2_1 <- s2_1[1,1]
-  expect_equal(summary(mboth)$sigma, sqrt(s2_1))
-
-  # variance we will get from the combined model (just subsetting for the 'z' variable)
-  var_beta_1 <- s2_1 * b
-  expect_equal(vcov(mboth)[3,3], var_beta_1[1,1])
-
-  alpha_2 <- (XtXinv %*% t(X) %*% df$y)[,1]
-  beta_2 <- (ZtZinv %*% t(Z) %*% H %*% df$y)[1,1]
-  expect_equal(coef(m1), alpha_2)
-  expect_equal(coef(m2), beta_2)
-
-  s2_2 <- (1 / (n - 1)) * t(df$y) %*% H %*% G %*% H %*% df$y
-  s2_2 <- s2_2[1,1]
-  expect_equal(summary(m2)$sigma, sqrt(s2_2))
-
-  r_2 <- resid(m2)
-  expect_equal(summary(m2)$sigma, sqrt((1/(n - 1)) * sum(r_2^2)))
-  expect_equal(r_2, df$y - X %*% alpha_2 - Z %*% beta_2, ignore_attr = TRUE)
-  expect_equal(r_2, G %*% H %*% df$y, ignore_attr = TRUE)
-
-  # now repeat with cov_adj
-  specification <- rct_spec(z ~ unitid(id), data = df)
-  m2ca <- lm(y ~ assigned() - 1, data = df, offset = cov_adj(m1, specification = specification), weights = ate(specification))
-
-  m2ca_da <- as.lmitt(m2ca)
-
-  ## TODO: What are we guaranteeing about vcov and sandwich about m2ca_da?
-})
+## We'll go on to check agreement in cases with non-orthogonal
+## predictors below, after verifying that when a treatment variable
+## appears in the covariance model its values are replaced with a
+## reference level before generating the predictions/offsets for the
+## computation of diff-in-diffs.
 
 options(old_opt)
 
-# This currently errors with
-# Error in model.frame.default(formula = readk ~ birth + lunchk, data =
-#STARdata, : variable lengths differ (found for '(weights)')
-# mod <- lm(readk ~ birth + lunchk, data = STARdata,
-#          offset = cov_adj(cmod, newdata = STARdata), weights = ate(spec))
 
 
 
@@ -524,4 +473,60 @@ test_that("cov_adj sets treatment =0 when there is an interaction in cmod", {
   myca=plogis(crossprod(t(mm0),coef(modHet))[,1])
 
   expect_true(all.equal(myca,ca@.Data, check.attributes=FALSE, check.names=FALSE))
+})
+
+test_that("two stage lm estimates, SEs reproduce 1 stage as appropriate",
+{ ## Rationale for expecting these equivalences is given in 
+  ## developer_docs/LinearModelVarianceEstimation.Rmd 
+  ## test.SandwichLayerVariance.R has related tests comparing
+  ## propertee's meat matrices to those of sandwich::meatCL();
+  ## the following test higher-level expectations of vcovCL().
+  library(sandwich)
+  data(simdata)
+
+  # Binary treatment
+  suppressWarnings(spec <- rct_spec(z ~ 1, data = simdata))
+  camod <- lm(y ~ x + z, data = simdata)
+  ca <- cov_adj(camod, newdata = simdata, specification = spec)
+  ddmod  <- lm(y~ z.(), offset=ca, data=simdata)
+  expect_equal(coef(ddmod)["z.()"], coef(camod)["z"], ignore_attr=TRUE)
+  all.equal(vcovHC(ddmod, type="HC0")["z.()","z.()"],
+            vcovHC(camod, type="HC0")["z","z"], 
+            check.attributes=FALSE) |>  isTRUE() |> 
+    expect_false()# misses camod sampling variability
+  ddmod_tee1 <- as.lmitt(ddmod)
+  expect_equal(coef(ddmod_tee1)["z.()"], 
+               coef(camod)["z"], ignore_attr=TRUE)
+
+
+  expect_equal(vcov_tee(ddmod_tee1, type="HC0")["z.()","z.()"],
+              vcovCL(camod, type="HC0")["z","z"],
+              ignore_attr=TRUE)
+
+  ddmod_tee2 <- lmitt(y~1, offset=ca, specification=spec, data=simdata)
+  expect_equal(coef(ddmod_tee2)["z."], coef(camod)["z"], ignore_attr=TRUE)
+  expect_equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
+                 vcovCL(camod, type="HC0")["z","z"],
+                 ignore_attr=TRUE)
+
+### (We don't line up with vcovHC() b/c we include the meatCL
+### "cluster adjustment", which isn't an option for vcovHC.)
+  all.equal(vcov_tee(ddmod_tee2, type="HC0")["z.","z."],
+                 vcovHC(camod, type="HC0")["z","z"],
+                 check.attributes=FALSE) |> isTRUE() |>
+    expect_false()
+  expect_equal(sandwich::vcovCL(camod, type="HC0", cadjust = FALSE,
+                                cluster = NULL)["z","z"],
+               sandwich::vcovHC(camod, type="HC0")["z","z"],
+               ignore_attr=TRUE)
+
+  ddmod_tee3 <- lmitt(y~1, offset=cov_adj(camod), data=simdata,
+                       specification=z~cluster(uoa1, uoa2))
+  expect_equal(coef(ddmod_tee3)["z."], coef(camod)["z"], ignore_attr=TRUE)
+  expect_equal(vcov_tee(ddmod_tee3, type="HC0")["z.","z."],
+               sandwich::vcovCL(camod, type="HC0",
+                                cluster = with(simdata,
+                                               paste(uoa1, uoa2, sep = "_"))
+                                )["z","z"],
+               ignore_attr=TRUE)
 })

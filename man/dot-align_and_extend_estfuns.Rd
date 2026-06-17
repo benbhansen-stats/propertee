@@ -5,16 +5,35 @@
 \title{(Internal) Align the dimensions and rows of direct adjustment and
 covariance adjustment model estimating equations matrices}
 \usage{
-.align_and_extend_estfuns(x, ctrl_means_ef_mat = NULL, by = NULL, ...)
+.align_and_extend_estfuns(
+  x,
+  values_from = x,
+  ctrl_means_ef_mat = NULL,
+  by = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{a fitted \code{teeMod} model}
 
-\item{by}{character vector; indicates unit of assignment columns to generate
-ID's from; default is NULL, which uses the unit of assignment columns
-specified in the \code{teeMod} object's \code{StudySpecification} slot}
+\item{values_from}{optional, a fitted model object. Defaults to \code{x}.}
 
-\item{...}{arguments passed to methods}
+\item{ctrl_means_ef_mat}{optional, a matrix of estimating equations corresponding
+to the estimates of the marginal (and possibly conditional) means of the outcome
+and \code{offset} in the control condition. These are aligned and extended
+in the same way as the matrix of estimating equations for \code{x} and
+\code{cbind}ed to them}
+
+\item{by}{optional, a character vector indicating columns that uniquely identify
+rows in the dataframe used for fitting \code{x} and the dataframe passed to the
+\code{data} argument of the covariance adjustment model fit. The default is
+\code{NULL}, in which case the unit of assignment columns specified in the
+\code{StudySpecification} slot of \code{x} are used.}
+
+\item{...}{mostly arguments passed to methods, but the special case is the argument
+\code{loco_residuals}, which indicates the offsets in the residuals of \code{x}
+should be replaced by versions that use leave-one-cluster-out estimates of
+the covariance model}
 }
 \value{
 A list of two matrices, one being the aligned contributions to the
@@ -32,6 +51,9 @@ adjustment and covariance adjustment models; then, it pads the matrices
 with zeros to account for units of observation that appear in one
 model-fitting sample but not the other; finally it orders the matrices so
 units of observation (or if unit of observation-level ordering is
-impossible, units of assignment) are aligned.
+impossible, units of assignment) are aligned.\cr\cr As in
+\code{estfun.teeMod()}, the working residuals (and, if applicable,
+weights) from \code{values_from} will be used in the output matrix in
+place of those from \code{x}.
 }
 \keyword{internal}
