@@ -69,6 +69,7 @@ reference:
     - estfun.teeMod
     - estfun.lmrob
     - estfun.glmrob
+    - default
 - title: Estimating Model
   desc: Functions to carry out the treatment estimation accounting for the StudySpecification
 - contents:
