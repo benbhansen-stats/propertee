@@ -132,11 +132,29 @@
                          lapply(sys.calls(), "[[", 1),
                          perl = TRUE)
     if (any(found_terms)) {
-      specification <- mget(
-        "specification"
-        , environment(get("formula", sys.frame(which(found_terms)[1L])))
-        , ifnot = list(NULL))$s
-      if (!is.null(specification)) return(specification)
+      spec_calls <- lapply(
+        c("weights", "offset"),
+        function(arg) sys.calls()[found_terms][[1L]][[arg]]$specification
+      )
+      if (any(found_specs <- vapply(spec_calls,
+                                    function(x) !is.null(x),
+                                    logical(1L)))) {
+        specs <- lapply(seq_len(sys.nframe()),
+               function(frnum) {
+                 mget(deparse1(spec_calls[[which(found_specs)[1L]]]),
+                      sys.frame(frnum),
+                      ifnot = list(NULL),
+                      inherits = FALSE)[[1L]]
+               })
+        return(specs[which(vapply(specs,
+                                  function(x) !is.null(x),
+                                  logical(1L)))[1L]])
+      }
+      # specification <- mget(
+      #   "specification"
+      #   , environment(get("formula", sys.frame(which(found_terms)[1L])))
+      #   , ifnot = list(NULL))$s
+      # if (!is.null(specification)) return(specification)
     }
     
     if (NULL_on_error) {
