@@ -16,8 +16,8 @@ a covariance adjustment model
 }
 \details{
 When set as the entry of a list passed to the \code{set_to_reference}
-argument of \code{cov_adj()}, \code{cov_adj()} evaluates this as the
-following depending on the column type with which it is paired:
+argument of \code{cov_adj()}, \code{cov_adj()} uses the following
+replacement values depending on the column type:
 \itemize{
 \item factor/character: minimum level
 \item numeric: minimum value

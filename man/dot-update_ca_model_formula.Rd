@@ -9,15 +9,13 @@ adjustment samples to model formula}
 }
 \arguments{
 \item{model}{any model that inherits from a \code{glm}, \code{lm}, or
-\code{robustbase::lmrob} object}
+\code{robustbase::lmrob} object.}
 
-\item{by}{named vector with names specifying columns in the dataframe for
-building \code{specification} and values specifying columns in the dataframe
-for fitting \code{model}. Default is NULL.}
+\item{by}{named vector; optional.}
 
-\item{specification}{a \code{StudySpecification} object. Default is NULL, in
-which case a \code{StudySpecification} object is sought from higher up the
-call stack.}
+\item{specification}{a \code{StudySpecification} object; optional. If not
+provided, it can be retrieved from the call stack if passed to suitable
+calls.}
 }
 \value{
 formula
