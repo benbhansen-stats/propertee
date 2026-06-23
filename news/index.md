@@ -1,6 +1,33 @@
 # Changelog
 
+## **propertee** 1.0.6 (Unreleased)
+
+### Updates
+
+- [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)
+  has an optional `set_to_reference` argument that allows users to set
+  columns to specific values when generating predictions. Users
+  including a multi-level treatment assignment variable in their
+  covariance adjustment model, for example, can pass a named list to the
+  argument with the name indicating the assignment column and the entry
+  indicating the value associated with the control condition; this will
+  set the column to the control condition for all rows when generating
+  predictions.
+
+### Bug Fixes
+
+- [`vcov_tee()`](https://benbhansen-stats.github.io/propertee/reference/var_estimators.md)
+  does not error when some fitted models in an object created by `mmm()`
+  have coefficients estimated as NA
+- Rows are correctly identified as overlapping between fitting the
+  covariance adjustment model and creating the `StudySpecification`
+  object when the `by` argument of
+  [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)
+  specifies multiple columns
+
 ## **propertee** 1.0.5
+
+CRAN release: 2026-04-02
 
 ### Updates
 

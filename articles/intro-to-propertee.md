@@ -55,6 +55,7 @@ regular-with-aide class (22 to 25 students with a full-time teacher’s
 aide).
 
 ``` r
+
 data("STARplus")
 table(STARplus$cond_at_entry)
 #> 
@@ -67,6 +68,7 @@ treatment - “small” classrooms versus “regular” and “regular+aide”
 classrooms.
 
 ``` r
+
 STARplus$cond_small <- STARplus$cond_at_entry == "small"
 table(STARplus$cond_small)
 #> 
@@ -80,8 +82,9 @@ handle non-binary treatment variables by introducing `dichotomy`s.
 The outcome of interest is a reading score at the end of kindergarten.
 
 ``` r
+
 summary(STARplus$g1treadss)
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs 
 #>   404.0   478.0   516.0   521.5   558.0   651.0    5805
 ```
 
@@ -93,6 +96,7 @@ the study.) Accordingly, experimental blocks are given by the
 `school_at_entry` variable.
 
 ``` r
+
 length(unique(STARplus$school_at_entry))
 #> [1] 81
 head(table(STARplus$school_at_entry))
@@ -107,6 +111,7 @@ classrooms or other aggregates of students; accordingly we need a unique
 identifier per student. The `stdntid` variable fills this role.
 
 ``` r
+
 length(unique(STARplus$stdntid))
 #> [1] 13381
 head(STARplus$stdntid)
@@ -144,6 +149,7 @@ pieces of information:
 To define a `StudySpecification` in our example:
 
 ``` r
+
 spec <- obs_spec(cond_small ~ unit_of_assignment(stdntid) + block(school_at_entry),
                   data = STARplus, na.fail = FALSE)
 summary(spec)
@@ -198,12 +204,14 @@ The formula entering
 can take on one of two forms:
 
 ``` r
+
 y ~ 1
 ```
 
 will estimate the main treatment effect on outcome variable `y`, and
 
 ``` r
+
 y ~ x
 ```
 
@@ -214,6 +222,7 @@ effect and a treatment-`x` interaction effect is estimated.
 Therefore, to estimate the treatment effect in our example, we can run:
 
 ``` r
+
 te <- lmitt(g1treadss ~ 1, data = STARplus, specification = spec)
 #> The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.
 summary(te)
@@ -234,6 +243,7 @@ The data includes ethnicity; we can estimate subgroup effects by
 ethnicity:
 
 ``` r
+
 te_s <- lmitt(g1treadss ~ race, data = STARplus, specification = spec)
 #> The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.
 summary(te_s)
@@ -275,6 +285,7 @@ To include one of the weights, simply include the `weights = "ate"` or
 [`lmitt()`](https://benbhansen-stats.github.io/propertee/reference/lmitt.md):
 
 ``` r
+
 lmitt(g1treadss ~ 1, data = STARplus, specification = spec, weights = "ate")
 #>       cond_small.TRUE g1treadss:(Intercept) 
 #>              11.35214             517.91270
@@ -290,6 +301,7 @@ or
 functions which can be used directly.
 
 ``` r
+
 head(ate(spec, data = STARplus))
 #> [1] 1.448276 1.237013 1.433071 1.413793 1.675676 1.361345
 ```
@@ -317,6 +329,7 @@ separate covariate model should be fit. Any model which supports a
 work.
 
 ``` r
+
 camod <- lm(g1treadss ~ gender * dob + race, data = STARplus)
 ```
 
@@ -327,6 +340,7 @@ produce the required values; and its output can be passed as an
 `offset=`.
 
 ``` r
+
 lmitt(g1treadss ~ 1, data = STARplus, specification = spec,
       weights = "ate", offset = cov_adj(camod))
 #>       cond_small.TRUE g1treadss:(Intercept) 
@@ -344,7 +358,13 @@ safer to use the `newdata=` argument if calling
 outside of the model.
 
 ``` r
+
 head(cov_adj(camod, newdata = STARplus))
+#> Warning in cov_adj(camod, newdata = STARplus): Without a specification,
+#> post-treatment variables in the covariance adjustment model cannot be ensured
+#> not to contribute to predictions that offset study outcomes. Use the
+#> set_to_reference argument or pass the StudySpecification to cov_adj() to avoid
+#> this warning.
 #> [1] 519.6613 528.8581 495.1975 531.1456 500.2958 490.3070
 ```
 
@@ -353,6 +373,7 @@ Also, similarly to weights,
 can be used in normal modeling commands as well.
 
 ``` r
+
 lm(g1treadss ~ cond_small, data = STARplus, weights = ate(spec),
    offset = cov_adj(camod))
 #> 
@@ -371,6 +392,7 @@ If fixed effects for blocks are desired, which can be absorbed away to
 avoid estimating, the `absorb=TRUE` argument can be passed.
 
 ``` r
+
 lmitt(g1treadss ~ 1, data = STARplus, specification = spec, absorb = TRUE)
 #>       cond_small.TRUE g1treadss:(Intercept) 
 #>               11.0594              518.8194

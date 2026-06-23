@@ -157,7 +157,9 @@ Functions to create or interact with Weights
 - [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)
   :
 
-  Covariance adjustment of `teeMod` model estimates
+  Prepare prognostic regression offset for
+  [`lmitt()`](https://benbhansen-stats.github.io/propertee/reference/lmitt.md)
+  or [`lm()`](https://rdrr.io/r/stats/lm.html)
 
 - [`as.SandwichLayer()`](https://benbhansen-stats.github.io/propertee/reference/as.SandwichLayer.md)
   :
@@ -197,6 +199,14 @@ Functions to create or interact with Weights
   :
 
   Extract empirical estimating equations from a `glmbrob` model fit
+
+- [`default()`](https://benbhansen-stats.github.io/propertee/reference/default.md)
+  :
+
+  Instruct
+  [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)
+  to find a default reference value for columns in a covariance
+  adjustment model
 
 ## Estimating Model
 

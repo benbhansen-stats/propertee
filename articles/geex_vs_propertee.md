@@ -1,6 +1,7 @@
 # propertee vs. geex
 
 ``` r
+
 library(propertee)
 library("geex")
 ```
@@ -24,6 +25,7 @@ equivalence of these two approaches below.
 ## Example with non-clustered data
 
 ``` r
+
 set.seed(980)
 n <- 60
 cmod_df <- data.frame(
@@ -75,6 +77,7 @@ print(paste("propertee estimate of var(tau_hat):",
 ## Example with clustered data
 
 ``` r
+
 set.seed(50)
 nc <- 4
 mi <- 20

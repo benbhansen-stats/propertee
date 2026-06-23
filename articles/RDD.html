@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Regression Discontinuity Design • propertee</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Regression Discontinuity Design">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +65,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Regression Discontinuity Design</h1>
                         <h4 data-toc-skip class="author">Adam Sales</h4>
             
-            <h4 data-toc-skip class="date">2026-04-02</h4>
+            <h4 data-toc-skip class="date">2026-06-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/RDD.Rmd" class="external-link"><code>vignettes/RDD.Rmd</code></a></small>
       <div class="d-none name"><code>RDD.Rmd</code></div>
@@ -93,13 +93,13 @@ at the university. The university consisted of three campuses, and they
 AP cutoff varied by campus. To simplify matters, we centered each
 student’s first year GPA on their campus’s cutoff, creating a new
 variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>≡</mo><mi>G</mi><mi>P</mi><msub><mi>A</mi><mi>i</mi></msub><mo>−</mo><msub><mi>c</mi><mrow><mi>c</mi><mi>a</mi><mi>m</mi><mi>p</mi><mi>u</mi><mi>s</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>i</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow></msub></mrow><annotation encoding="application/x-tex">R_i\equiv GPA_i -c_{campus[i]}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>≡</mo><mi>G</mi><mi>P</mi><msub><mi>A</mi><mi>i</mi></msub><mo>−</mo><msub><mi>c</mi><mrow><mi>c</mi><mi>a</mi><mi>m</mi><mi>p</mi><mi>u</mi><mi>s</mi><mo stretchy="false" form="prefix">[</mo><mi>i</mi><mo stretchy="false" form="postfix">]</mo></mrow></msub></mrow><annotation encoding="application/x-tex">R_i\equiv GPA_i -c_{campus[i]}</annotation></semantics></math>,
 where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mi>P</mi><msub><mi>A</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">GPA_i</annotation></semantics></math>
 is student
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>’s
 first-year GPA, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mrow><mi>c</mi><mi>a</mi><mi>m</mi><mi>p</mi><mi>u</mi><mi>s</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>i</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow></msub><annotation encoding="application/x-tex">c_{campus[i]}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mrow><mi>c</mi><mi>a</mi><mi>m</mi><mi>p</mi><mi>u</mi><mi>s</mi><mo stretchy="false" form="prefix">[</mo><mi>i</mi><mo stretchy="false" form="postfix">]</mo></mrow></msub><annotation encoding="application/x-tex">c_{campus[i]}</annotation></semantics></math>
 is the AP cutoff for student
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>’s
 campus. A student
@@ -221,9 +221,9 @@ and
 are the potential outcomes for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
 then the LATE is defined as
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>lim</mo><mrow><mi>r</mi><mo>→</mo><msup><mi>c</mi><mo>+</mo></msup></mrow></munder><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><munder><mo>lim</mo><mrow><mi>r</mi><mo>→</mo><msup><mi>c</mi><mo>−</mo></msup></mrow></munder><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mn>0</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\displaystyle\lim_{r\rightarrow c^+} E(Y_1|R=r)-\displaystyle\lim_{r\rightarrow c^-} E(Y_0|R=r)</annotation></semantics></math>
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mi mathvariant="normal">lim</mi><mrow><mi>r</mi><mo>→</mo><msup><mi>c</mi><mo>+</mo></msup></mrow></munder><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><munder><mi mathvariant="normal">lim</mi><mrow><mi>r</mi><mo>→</mo><msup><mi>c</mi><mo>−</mo></msup></mrow></munder><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mn>0</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\displaystyle\lim_{r\rightarrow c^+} E(Y_1|R=r)-\displaystyle\lim_{r\rightarrow c^-} E(Y_0|R=r)</annotation></semantics></math>
 or equivalently
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>lim</mo><mrow><mi>Δ</mi><mo>→</mo><msup><mn>0</mn><mo>+</mo></msup></mrow></munder><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mn>1</mn></msub><mo>−</mo><msub><mi>Y</mi><mn>0</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>Δ</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>Δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\displaystyle\lim_{\Delta\rightarrow 0^+} E(Y_1-Y_0 |R\in (c-\Delta,c+\Delta))</annotation></semantics></math>
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mi mathvariant="normal">lim</mi><mrow><mi mathvariant="normal">Δ</mi><mo>→</mo><msup><mn>0</mn><mo>+</mo></msup></mrow></munder><mi>E</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mn>1</mn></msub><mo>−</mo><msub><mi>Y</mi><mn>0</mn></msub><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi mathvariant="normal">Δ</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi mathvariant="normal">Δ</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\displaystyle\lim_{\Delta\rightarrow 0^+} E(Y_1-Y_0 |R\in (c-\Delta,c+\Delta))</annotation></semantics></math>
 where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>E</mi><annotation encoding="application/x-tex">E</annotation></semantics></math>
 denotes expectation–that is, the LATE is the limit of average treatment
@@ -241,12 +241,12 @@ of
 e.g. only fitting the model to subjects
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
 with within a “window of analysis”
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒲</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{W}=\{i:R_i\in (c-b,c+b)\}</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒲</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{W}=\{i:R_i\in (c-b,c+b)\}</annotation></semantics></math>.
 A number of methods have been proposed to select
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
 including cross validation, non-parametric modeling of the second
 derivative of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">f(r)=E(Y|R=r)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo stretchy="false" form="prefix">(</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>E</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="prefix">|</mo><mi>R</mi><mo>=</mo><mi>r</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">f(r)=E(Y|R=r)</annotation></semantics></math>,
 and specification tests.</p>
 </div>
 <div class="section level3">
@@ -261,7 +261,7 @@ along with, possibly, other data exclusions, resulting in an analysis
 sample
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>.</li>
 <li>Fit a covariance model
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>=</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Y_{i0}=g(R_i,x_i;\beta)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>=</mo><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{i0}=g(R_i,x_i;\beta)</annotation></semantics></math>,
 modeling
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mrow><mi>i</mi><mn>0</mn></mrow></msub><annotation encoding="application/x-tex">Y_{i0}</annotation></semantics></math>
 as a function of running variable
@@ -270,9 +270,9 @@ and (optionally) other covariates
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐱</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathbf{x}_i</annotation></semantics></math>.
 Fitting a covariance model to only the control subjects, as in other
 design, would entail extrapolation of a model fit to subjects with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_i\in (c-b,c)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo>−</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">R_i\in (c-b,c)</annotation></semantics></math>
 to subjects with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_i\in (c,c+b)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">R_i\in (c,c+b)</annotation></semantics></math>,
 or vice-versa, which is undesirable. Instead, we fit the covariance
 model to the full analysis sample
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒲</mi><annotation encoding="application/x-tex">\mathcal{W}</annotation></semantics></math>,
@@ -284,14 +284,14 @@ and not
 or
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
 so rather than fitting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>⋅</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g(\cdot)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><mi>⋅</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">g(\cdot)</annotation></semantics></math>,
 we fit an extended model
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>g</mi><mo accent="true">̃</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>Z</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>γ</mi><msub><mi>Z</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\tilde{g}(R_i,x_i,Z_i;\beta,\gamma)=g(R_i,x_i;\beta)+\gamma Z_i</annotation></semantics></math>
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>g</mi><mo accent="true">̃</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>Z</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo>,</mo><mi>γ</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mi>γ</mi><msub><mi>Z</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\tilde{g}(R_i,x_i,Z_i;\beta,\gamma)=g(R_i,x_i;\beta)+\gamma Z_i</annotation></semantics></math>
 including a term for treatment assignment. The estimate for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
 is, in essence, a provisional estimate of the treatment effect.</li>
 <li>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>=</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mover><mi>β</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widehat{Y}_{i0}=g(R_i,x_i;\hat{\beta})</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>=</mo><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mover><mi>β</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{Y}_{i0}=g(R_i,x_i;\hat{\beta})</annotation></semantics></math>,
 using only the model for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mn>0</mn></msub><annotation encoding="application/x-tex">Y_0</annotation></semantics></math>—not
 including the term for
@@ -302,7 +302,7 @@ estimated in step 2. Then estimate the average treatment effect for
 subjects in
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
 using the difference in means estimator:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mover><mi>β</mi><mo accent="true">̂</mo></mover></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><msub><mi>Z</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><msub><mi>Z</mi><mi>i</mi></msub></mrow></mfrac><mo>−</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>Z</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>Z</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mover><mi>β</mi><mo accent="true">̂</mo></mover></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><msub><mi>Z</mi><mi>i</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><msub><mi>Z</mi><mi>i</mi></msub></mrow></mfrac><mo>−</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>Z</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>W</mi></mrow></munder><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>Z</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">
 d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_i}-\frac{\sum_{i\in W} (1-Z_i)(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} (1-Z_i)}
 </annotation></semantics></math>
 </li>
@@ -310,14 +310,14 @@ d_{\hat{\beta}}=\frac{\sum_{i\in W} Z_i(Y_i-\widehat{Y}_{i0})}{\sum_{i \in W} Z_
 <p>The estimator
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>d</mi><mover><mi>β</mi><mo accent="true">̂</mo></mover></msub><annotation encoding="application/x-tex">d_{\hat{\beta}}</annotation></semantics></math>
 will be consistent if the model
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g(R_i,x_i;\beta_0)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">g(R_i,x_i;\beta_0)</annotation></semantics></math>,
 with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\beta_0</annotation></semantics></math>
 as the probability limit for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>β</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat{\beta}</annotation></semantics></math>,
 successfully removes all confounding due to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>,
-i.e. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mn>0</mn></msub><mo>−</mo><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>⊥</mo><mspace width="-0.167em"></mspace><mspace width="-0.167em"></mspace><mspace width="-0.167em"></mspace><mo>⊥</mo><mi>Z</mi></mrow><annotation encoding="application/x-tex">Y_0-g(R_i,x_i;\beta_0) \perp \!\!\! \perp Z</annotation></semantics></math>
+i.e. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mn>0</mn></msub><mo>−</mo><mi>g</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>R</mi><mi>i</mi></msub><mo>,</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo><mo>⟂</mo><mspace width="-0.167em"></mspace><mspace width="-0.167em"></mspace><mspace width="-0.167em"></mspace><mo>⟂</mo><mi>Z</mi></mrow><annotation encoding="application/x-tex">Y_0-g(R_i,x_i;\beta_0) \perp \!\!\! \perp Z</annotation></semantics></math>
 for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>∈</mo><mi>𝒲</mi></mrow><annotation encoding="application/x-tex">i\in \mathcal{W}</annotation></semantics></math>.</p>
 </div>
@@ -334,7 +334,7 @@ Kalyanaraman (2012) and Sales and Hansen (2020). This stage of the
 analysis is beyond the scope of this vignette, and does not require the
 propertee package. For the purpose of this example, we will focus our
 analysis on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒲</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">[</mo><mo>−</mo><mn>0.5</mn><mo>,</mo><mn>0.5</mn><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒲</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>R</mi><mi>i</mi></msub><mo>∈</mo><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>0.5</mn><mo>,</mo><mn>0.5</mn><mo stretchy="false" form="postfix">]</mo><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{W}=\{i:R_i\in [-0.5,0.5]\}</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
 <h3 id="initializing-the-rd-design-object">Initializing the RD Design Object<a class="anchor" aria-label="anchor" href="#initializing-the-rd-design-object"></a>
@@ -372,7 +372,7 @@ as a function of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#modeling-y_c-as-a-function-of-r"></a>
 </h3>
 <p>We will consider two potential models
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>g</mi><mo accent="true">̃</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mo>⋅</mo><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tilde{g}(\cdot)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>g</mi><mo accent="true">̃</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>⋅</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\tilde{g}(\cdot)</annotation></semantics></math>
 of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>C</mi></msub><annotation encoding="application/x-tex">Y_C</annotation></semantics></math>
 as a function of

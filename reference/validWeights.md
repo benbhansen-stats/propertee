@@ -16,10 +16,6 @@ These track and access the weights we support as well as any aliases.
 .listValidWeightAliases()
 ```
 
-## Format
-
-An object of class `list` of length 2.
-
 ## Arguments
 
 - target:

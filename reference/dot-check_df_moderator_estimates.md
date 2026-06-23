@@ -31,6 +31,10 @@ insufficient degrees of freedom with `NA`
 
   a character vector indicating the column(s) defining cluster ID's
 
+- values_from:
+
+  optional, a fitted model object. Defaults to `x`.
+
 - model_data:
 
   dataframe or name of dataframe used to fit `model`

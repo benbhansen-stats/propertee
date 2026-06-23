@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment • propertee</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Standardization-Based Effect Estimation with Optional Prior Covariance Adjustment">
 <meta name="description" content="The Prognostic Regression Offsets with Propagation of ERrors (for Treatment Effect Estimation) package facilitates direct adjustment for experiments and observational studies that is compatible with a range of study designs and covariance adjustment strategies. It uses explicit specification of clusters, blocks and treatment allocations to furnish probability of assignment-based weights targeting any of several average treatment effect parameters, and for standard error calculations reflecting these design parameters. For covariance adjustment of its Hajek and (one-way) fixed effects estimates, it enables offsetting the outcome against predictions from a dedicated covariance model, with standard error calculations propagating error as appropriate from the covariance model.">
@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">propertee</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,7 @@
 <!-- badges: start -->
 
 <p><strong>propertee</strong> enables flexible direct adjustment with specification-informed standard errors and optional prior covariance adjustment.</p>
-<p>Random trials often utilize units of assignment and blocking in assigning treatment status as a way to simplify implementation. Standard errors and other inferential calculations should respect such aspects of the study’s design. Using <strong>propertee</strong>, a user can generate a “StudySpecification” object which will keep track of the design specification.</p>
+<p>Randomizaed trials often allocate treatments within blocks as a way to simplify implementation. This is a separate matter from allocation of treatments to subgroups (clusters) of individuals. Standard errors and other inferential calculations must respect such aspects of the study’s design. With <strong>propertee</strong>, a user can generate a “StudySpecification” object that keeps track of this and other necessary information.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>spec <span class="ot">&lt;-</span> <span class="fu">rct_spec</span>(txt <span class="sc">~</span> <span class="fu">unit_of_assignment</span>(teacher) <span class="sc">+</span> <span class="fu">block</span>(school), <span class="at">data =</span> teacherdata)</span></code></pre></div>
 <p>(Also supported are observational studies (<code><a href="reference/StudySpecification_objects.html">obs_spec()</a></code>) and regression discontinuity specifications (<code>rdd_spec()</code> which requires a <code><a href="reference/StudySpecificationSpecials.html">forcing()</a></code> variable as well.)</p>
 <p>In order to pass the design specification into the model using the <code>weights=</code> argument, functions <code><a href="reference/WeightCreators.html">ett()</a></code> and <code><a href="reference/WeightCreators.html">ate()</a></code> will be used to convert the StudySpecification into a numeric vector with the StudySpecification object as an attribute.</p>
@@ -112,7 +112,7 @@
 <li>
 <code>make vignette</code>: Builds any vignettes in <code>vignettes/</code> directory</li>
 <li>
-<code>make clean</code>: Removes files built by <code>make vignette</code>, <code>make document</code> or <code>make    check</code>. Should not be generally necessary, but can be useful for debugging.</li>
+<code>make clean</code>: Removes files built by <code>make vignette</code>, <code>make document</code> or <code>make  check</code>. Should not be generally necessary, but can be useful for debugging.</li>
 </ul>
 <p>When your change is ready, make a pull request on github.</p>
 <div class="section level3">
@@ -172,8 +172,8 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Josh Errickson <br><small class="roles"> Maintainer, author </small>   </li>
-<li>Josh Wasserman <br><small class="roles"> Author </small>   </li>
+<li>Josh Errickson <br><small class="roles"> Author </small>   </li>
+<li>Josh Wasserman <br><small class="roles"> Maintainer, author </small>   </li>
 <li>Ben Hansen <br><small class="roles"> Author </small>   </li>
 <li><a href="authors.html">More about authors...</a></li>
 </ul>
