@@ -1,19 +1,30 @@
 #' @include SandwichLayer.R
 NULL
 
-##' @title Preparing Peters-Belson adjustment of \code{lmitt()} estimates
+##' @title Prepare prognostic regression offset for \code{lmitt()} or \code{lm()}
 ##' @description \code{cov_adj()} takes a fitted model object and predicts
-##'   outcomes under the counterfactual of being in the control condition. It
-##'   stores in the prediction vector additional information such that standard
-##'   errors of adjusted \code{lmitt()} estimates reflect contributions to
-##'   sampling variability from the adjustment model coefficient estimates.
+##'   outcomes under the counterfactual of being in the control condition.
+##'   Using these predictions as offsets in a linear model with just the
+##'   treatment variable as a regressor estimates the treatment effect with
+##'   covariance adjustments as provided by the previously fitted model.
+##'   In the special case that this covariance model was fit using only
+##'   (quasi-)experimental control group observations, the method is known
+##'   as Peters-Belson regression. \code{cov_adj()} assists the process by
+##'   reporting its predictions on the scale of the response (in contrast to
+##'   \code{predict.glm()}) and by retaining certain artifacts from
+##'   covariance model fitting.  These artifacts are used by [vcov_tee()],
+##'   and by [stats::vcov()] as applied to a \code{teeMod} object, so
+##'   that the covariance model's contribution to sampling variability
+##'   is reflected in treatment coefficient standard errors.
+##'   \code{cov_adj()} can be used with \code{lm()}, but is better supported
+##'   in combination with propertee's \code{lm}-wrapper, [lmitt()].
 ##' @details If \code{specification} is provided or can be found in the call
 ##'   stack, then prior to generating adjustments, \code{cov_adj()} will
 ##'   identify the treatment variable and replace all values with a reference
 ##'   level. If the treatment has logical type, this reference level is
 ##'   \code{FALSE}, and if it has numeric type, this is the smallest
-##'   non-negative value (which means 0 for 0/1 binary). Factor treatments are
-##'   not currently supported for \code{StudySpecification} objects.\cr\cr More
+##'   non-negative value (which means 0 for 0/1 binary). (Factor treatments are
+##'   not currently supported.)\cr\cr More
 ##'   broadly, the \code{set_to_reference} argument can be used to set columns
 ##'   to values specified by the user prior to generating predictions. The
 ##'   argument takes a named list where the names specify the columns whose
