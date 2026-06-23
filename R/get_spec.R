@@ -97,8 +97,20 @@
     found_spec <- if (inherits(form, "teeMod")) {
       form@StudySpecification
     } else if (inherits(form, "terms") | inherits(form, "formula")) {
-      tryCatch(get("specification", environment(form)),
-               error = function(e) NULL)
+      tt <- terms(form, specials = c("assigned", "adopters", "a.", "z."))
+      trt_term_ix <- vapply(attr(tt, "specials"),
+                            function(x) if (!is.null(x)) x else 0L,
+                            integer(1L))
+      if (any(trt_term_ix)) {
+        trt_term <- match.call(
+          get(names(trt_term_ix)[trt_term_ix != 0], environment(assigned)),
+          attr(tt, "variables")[[trt_term_ix[trt_term_ix != 0]+1L]]
+        )
+        tryCatch(eval(trt_term$specification, environment(form)),
+                 error = function(e) NULL)
+      } else {
+        NULL
+      }
     } else {
       NULL
     }
