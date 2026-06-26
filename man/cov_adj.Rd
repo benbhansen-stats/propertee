@@ -2,29 +2,30 @@
 % Please edit documentation in R/cov_adj.R
 \name{cov_adj}
 \alias{cov_adj}
-\title{Covariance adjustment of \code{teeMod} model estimates}
+\title{Prepare prognostic regression offset for \code{lmitt()} or \code{lm()}}
 \usage{
-cov_adj(model, newdata = NULL, specification = NULL, by = NULL)
+cov_adj(
+  model,
+  newdata = NULL,
+  specification = NULL,
+  by = NULL,
+  set_to_reference = NULL
+)
 }
 \arguments{
 \item{model}{any model that inherits from a \code{glm}, \code{lm}, or
-\code{robustbase::lmrob} object}
+\code{robustbase::lmrob} object.}
 
-\item{newdata}{a dataframe of new data. Default is NULL, in which case a
-dataframe is sought from higher up the call stack.}
+\item{newdata}{a dataframe; optional. See Details for how \code{newdata}
+is found in the call stack if none is provided.}
 
-\item{specification}{a \code{StudySpecification} object. Default is NULL, in
-which case a \code{StudySpecification} object is sought from higher up the
-call stack.}
+\item{specification}{a \code{StudySpecification} object; optional. If not
+provided, it can be retrieved from the call stack if passed to suitable
+calls.}
 
-\item{by}{optional; a string or named vector of unique identifier columns in
-the data used to create \code{specification} and the data used to fit the
-covariance adjustment model. Default is NULL, in which case unit of
-assignment columns are used for identification (even if they do not
-uniquely identify units of observation). If a named vector is provided,
-names should represent variables in the data used to create
-\code{specification}, while values should represent variables in the
-covariance adjustment data.}
+\item{by}{named vector; optional.}
+
+\item{set_to_reference}{named list; optional.}
 }
 \value{
 A \code{SandwichLayer} if \code{specification} is not NULL or a
@@ -32,28 +33,47 @@ A \code{SandwichLayer} if \code{specification} is not NULL or a
 \code{PreSandwichLayer} object
 }
 \description{
-\code{cov_adj()} takes a fitted covariance model and returns
-the information necessary for adjusting direct adjustment model estimates
-and associated standard errors for covariates. Standard errors will
-reflect adjustments made to the outcomes as well as contributions to
-sampling variability arising from the estimates of the covariance
-adjustment model coefficients.
+\code{cov_adj()} takes a fitted model object and predicts
+outcomes under the counterfactual of being in the control condition.
+Using these predictions as offsets in a linear model with just the
+treatment variable as a regressor estimates the treatment effect with
+covariance adjustments as provided by the previously fitted model.
+In the special case that this covariance model was fit using only
+(quasi-)experimental control group observations, the method is known
+as Peters-Belson regression. \code{cov_adj()} assists the process by
+reporting its predictions on the scale of the response (in contrast to
+\code{predict.glm()}) and by retaining certain artifacts from
+covariance model fitting.  These artifacts are used by \code{\link[=vcov_tee]{vcov_tee()}},
+and by \code{\link[stats:vcov]{stats::vcov()}} as applied to a \code{teeMod} object, so
+that the covariance model's contribution to sampling variability
+is reflected in treatment coefficient standard errors.
+\code{cov_adj()} can be used with \code{lm()}, but is better supported
+in combination with propertee's \code{lm}-wrapper, \code{\link[=lmitt]{lmitt()}}.
 }
 \details{
-Prior to generating adjustments, \code{cov_adj()} identifies the
-treatment variable specified in the \code{StudySpecification} object
-passed to \code{specification} and replaces all values with a reference
+If \code{specification} is provided or can be found in the call
+stack, then prior to generating adjustments, \code{cov_adj()} will
+identify the treatment variable and replace all values with a reference
 level. If the treatment has logical type, this reference level is
 \code{FALSE}, and if it has numeric type, this is the smallest
-non-negative value (which means 0 for 0/1 binary). Factor treatments are
-not currently supported for \code{StudySpecification} objects.\cr\cr The
-values of the output vector represent adjustments for the outcomes in
-\code{newdata} if \code{newdata} is provided; adjustments for the outcomes
-in the data used to fit a \code{teeMod} model if \code{cov_adj()} is
-called within the \code{offset} argument of the model fit; or they are the
-fitted values from \code{model} if no relevant dataframe can be extracted
-from the call stack. The length of the output of \code{cov_adj()} will
-match the number of rows of the dataframe used.
+non-negative value (which means 0 for 0/1 binary). (Factor treatments are
+not currently supported.)\cr\cr More
+broadly, the \code{set_to_reference} argument can be used to set columns
+to values specified by the user prior to generating predictions. The
+argument takes a named list where the names specify the columns whose
+values should be replaced, and the entries specify the replacement values.
+If an entry is given as \code{default()}, internal routines will determine
+the reference level (the first level of a factor/factorized character
+variable or the minimum of a numeric/logical variable). \cr\cr If
+\code{newdata} is provided, the values of the output vector represent
+adjustments for the outcomes in \code{newdata}. If \code{cov_adj()} is
+called in the \code{offset} argument of \code{lmitt()}, predictions will
+correspond to rows in the \code{data} argument of \code{lmitt()}.
+Otherwise, adjustments are made based on the data to which \code{model} is
+fit. \cr\cr The \code{by} argument specifies columns for merging datasets.
+The names of the argument specify columns in the dataframe for building
+\code{specification}, while the entries specify columns in the dataframe
+for fitting \code{model}.
 }
 \examples{
 data("STARplus")
