@@ -1186,9 +1186,12 @@ cluster_iss <- function(tm,
       # Our theory does not support this calculation
     }
 
-  if (x@StudySpecification@type != "RCT"){
-    stop("Design-based standard errors implemented only for RCT specifications")
-    # The theory for design-based SE has not been extended to other specifications
+  if (x@StudySpecification@type == "RD") {
+    stop(paste("Design-based standard errors are not supported for",
+               "regression discontinuity specifications."))
+  }
+  if (x@StudySpecification@type == "Obs") {
+    .check_obs_spec_DB0(x)
   }
 
   args <- list(...)
@@ -1223,13 +1226,12 @@ cluster_iss <- function(tm,
                     "lmitt() or lm()."))
     }
 
-    if (!is.null(x$call$offset)){
+    if (!is.null(x$call$offset)) {
       vmat <- .get_DB_covadj_se(x, ...)
-    }
-    else {
+    } else {
       vmat <- .get_DB_wo_covadj_se(x, ...)
     }
-    
+
     name <- paste0(var_names(x@StudySpecification, "t"), ".")
     colnames(vmat) <- name
     rownames(vmat) <- name
@@ -1270,16 +1272,12 @@ cluster_iss <- function(tm,
   }
 
   bread <- .get_DB_covadj_bread(x, ...)
+  # Exact meat (no Young's inequality): m1 (p x p), m2 (p x 2), m3 (2 x 2)
+  meat  <- .get_DB_covadj_meat(x, ...)
 
-  signs1 <- ifelse(t(t(bread$b1[2,])) %*% bread$b1[2,] > 0, 1, 0)
-  signs2 <- ifelse(t(t(bread$b1[2,])) %*% bread$b2[2,] > 0, 1, 0)
-  signs3 <- ifelse(t(t(bread$b2[2,])) %*% bread$b2[2,] > 0, 1, 0)
-
-  meat <- .get_DB_covadj_meat(x)
-
-  term1 <- bread$b1 %*% (meat$m1u * signs1 + meat$m1l * (1-signs1)) %*% t(bread$b1)
-  term2 <- bread$b2 %*% t(meat$m2u * signs2 + meat$m2l * (1-signs2)) %*% t(bread$b1)
-  term3 <- bread$b2 %*% (meat$m3u * signs3 + meat$m3l * (1-signs3)) %*% t(bread$b2)
+  term1 <- bread$b1 %*% meat$m1 %*% t(bread$b1)
+  term2 <- bread$b2 %*% t(meat$m2) %*% t(bread$b1)
+  term3 <- bread$b2 %*% meat$m3 %*% t(bread$b2)
 
   vmat <- term1 + 2*term2 + term3
   return(as.matrix(vmat[2,2]))
@@ -1310,44 +1308,119 @@ cluster_iss <- function(tm,
 
 #' @title (Internal) Meat matrix of design-based variance
 #' @param x a fitted \code{teeMod} model
-#' @details Calculate upper and lower bound estimates of meat matrix for
-#'   design-based variance estimate for \code{teeMod} models with
-#'   covariance adjustment and without absorbed effects
-#' @return a list of meat matrix bounds
-#' @importFrom stats model.frame
+#' @details Implements the exact block-level meat estimator from eq. (9)/(10)
+#'   of the observational chapter:
+#'   \itemize{
+#'     \item Large blocks (\eqn{n_{bz} \ge 2} for both arms): exact within-arm
+#'       sample covariances of the cluster-level delta vectors, scaled by
+#'       \eqn{n_b^2 / (n_b - 1)}.
+#'     \item Small blocks: outer product of the block-mean vector.
+#'   }
+#'   Returns exact values (not bounds), replacing the former Young's
+#'   inequality approach.
+#' @return a list with elements \code{m1} (p x p cov-model block),
+#'   \code{m2} (p x 2 cross block), \code{m3} (2 x 2 ITT-model block)
+#'   of the full meat matrix \eqn{\hat B_n}.
+#' @importFrom stats model.frame cov
 #' @keywords internal
 .get_DB_covadj_meat <- function(x, ...) {
-  agg <- .aggregate_to_cluster(x)
+  agg  <- .aggregate_to_cluster(x)
   data <- agg$data
-  bid <- data[, agg$block] # block ids
-  zobs <- data[, agg$z] # treatment assignments
+  bid  <- data[, agg$block]
+  zobs <- data[, agg$z]
 
-  # number of covariates in the covariance model
-  p <- ncol(stats::model.matrix(x$model$`(offset)`@fitted_covariance_model))
-  XX <- .prepare_spec_matrix(x)
-  
-  # estimated covariances of entries of \Phi involving indicators z=0 or z=1
-  V00 <- .cov_mat_est(XX[zobs==0,], bid[zobs==0])
-  V11 <- .cov_mat_est(XX[zobs==1,], bid[zobs==1])
-  V01 <- .cov01_est(XX, zobs, bid)
-  
-  # indices of V
-  idl <- (p+2):(2*p+1)
-  # upper and lower bounds of the 1st meat matrix term
-  meat1u <- V00[1:p, 1:p] + V01[1:p, 1:p] + t(V01[1:p, 1:p]) + V11[1:p, 1:p]
-  meat1l <- V00[idl, 1:p] + V01[idl, 1:p] + t(V01[idl, 1:p]) + V11[idl, 1:p]
-  
-  # upper and lower bounds of the 2nd meat matrix term
-  meat2u <- cbind(V00[1:p, p+1], V01[1:p, p+1]) + cbind(V01[p+1, 1:p], V11[1:p, p+1])
-  meat2l <- cbind(V00[idl, p+1], V01[idl, p+1]) + cbind(V01[2*p+2, 1:p], V11[idl, p+1])
+  p  <- ncol(stats::model.matrix(x$model$`(offset)`@fitted_covariance_model))
+  d  <- p + 2L   # (beta_1..p, rho_0, tau)
 
-  # upper and lower bounds of the 3rd meat matrix term
-  meat3u <- matrix(c(V00[p+1, p+1], V01[p+1, p+1], V01[p+1, p+1], V11[p+1, p+1]), ncol = 2)
-  meat3l <- matrix(c(V00[2*p+2, p+1], V01[2*p+2, p+1], V01[2*p+2, p+1], V11[2*p+2, p+1]), ncol = 2)
+  # Cluster-level delta vectors: columns 1:p are cov-model score contributions,
+  # column p+1 is the ITT-model residual contribution.  .prepare_spec_matrix
+  # multiplies by sqrt(n_b0 * n_b1 / n_b); undo that to recover raw deltas.
+  XX_scaled <- .prepare_spec_matrix(x)
 
-  return(list(m1u = meat1u, m1l = meat1l,
-              m2u = meat2u, m2l = meat2l,
-              m3u = meat3u, m3l = meat3l))
+  if (length(unique(bid)) == 1) {
+    nbk <- t(specification_table(specification = x@StudySpecification,
+                                  x = "treatment"))
+  } else {
+    nbk <- specification_table(specification = x@StudySpecification,
+                                x = "treatment", y = "block")
+  }
+  nb    <- rowSums(nbk)
+  const <- sqrt(nbk[, 1] * nbk[, 2] / nb)
+  # Undo scaling (guard against const == 0, which can't happen with overlap)
+  XX <- sweep(XX_scaled, 1, const[bid], FUN = "/")
+
+  block_ids <- unique(bid)
+
+  # Accumulators for the three meat blocks:
+  #   m1 (p x p): cov-model x cov-model
+  #   m2 (p x 2): cov-model x ITT-model  [cols: rho_0, tau]
+  #   m3 (2 x 2): ITT-model x ITT-model  [rho_0, tau]
+  m1 <- matrix(0, p,  p)
+  m2 <- matrix(0, p,  2L)
+  m3 <- matrix(0, 2L, 2L)
+
+  for (b in block_ids) {
+    in_b  <- which(bid == b)
+    Z_b   <- zobs[in_b]
+    n_b   <- length(in_b)
+    n_b1  <- sum(Z_b == 1)
+    n_b0  <- sum(Z_b == 0)
+
+    G1_b <- XX[in_b[Z_b == 1], , drop = FALSE]  # n_b1 x (p+1)
+    G0_b <- XX[in_b[Z_b == 0], , drop = FALSE]  # n_b0 x (p+1)
+
+    if (n_b1 >= 2L && n_b0 >= 2L) {
+      # Large block (eq. 9): exact within-arm sample covariances
+      cov1 <- stats::cov(G1_b)   # (p+1) x (p+1)
+      cov0 <- stats::cov(G0_b)   # (p+1) x (p+1)
+      scale <- n_b^2 / (n_b - 1)
+
+      # --- beta x beta block (from J1 and J0) ---
+      if (p > 0L) {
+        b_idx <- seq_len(p)
+        m1 <- m1 + scale * (
+          (n_b / n_b1) * cov1[b_idx, b_idx, drop = FALSE] +
+          (n_b / n_b0) * cov0[b_idx, b_idx, drop = FALSE]
+        )
+        # --- beta x rho_0 cross (from J0 only, rho_0 is column p+1 of G0) ---
+        m2[b_idx, 1L] <- m2[b_idx, 1L] +
+          scale * (n_b / n_b0) * cov0[b_idx, p + 1L]
+        # --- beta x tau cross (from J1 only, tau is column p+1 of G1) ---
+        m2[b_idx, 2L] <- m2[b_idx, 2L] +
+          scale * (n_b / n_b1) * cov1[b_idx, p + 1L]
+      }
+      # --- rho_0 x rho_0 (from J0) ---
+      m3[1L, 1L] <- m3[1L, 1L] + scale * (n_b / n_b0) * cov0[p + 1L, p + 1L]
+      # --- tau x tau (from J1) ---
+      m3[2L, 2L] <- m3[2L, 2L] + scale * (n_b / n_b1) * cov1[p + 1L, p + 1L]
+      # rho_0 x tau cross is zero for large blocks (J0 and J1 don't share rows)
+
+    } else {
+      # Small block (eq. 10): outer product of the embedded block-mean vector
+      bar_g1 <- colMeans(G1_b)   # (p+1)-vector
+      bar_g0 <- colMeans(G0_b)   # (p+1)-vector
+
+      # Assemble v_b in (p+2)-dimensional (beta, rho_0, tau) space:
+      #   v_b[1:p]   = bar_g1[1:p] + bar_g0[1:p]  (beta rows: both J1 and J0)
+      #   v_b[p+1]   = bar_g0[p+1]                  (rho_0 row: J0 only)
+      #   v_b[p+2]   = bar_g1[p+1]                  (tau row: J1 only)
+      v_b    <- numeric(d)
+      if (p > 0L) v_b[seq_len(p)] <- bar_g1[seq_len(p)] + bar_g0[seq_len(p)]
+      v_b[p + 1L] <- bar_g0[p + 1L]
+      v_b[p + 2L] <- bar_g1[p + 1L]
+
+      B_b <- n_b^2 * tcrossprod(v_b)   # d x d
+
+      if (p > 0L) {
+        b_idx <- seq_len(p)
+        m1 <- m1 + B_b[b_idx, b_idx, drop = FALSE]
+        m2 <- m2 + B_b[b_idx, (p + 1L):d, drop = FALSE]
+      }
+      m3 <- m3 + B_b[(p + 1L):d, (p + 1L):d, drop = FALSE]
+    }
+  }
+
+  list(m1 = m1, m2 = m2, m3 = m3)
 }
 
 #' @title (Internal) Design-based variance for models without
@@ -1437,11 +1510,81 @@ cluster_iss <- function(tm,
     gamsb_agg[, 2]
   }
 
-  nu1 <- rowSums(gamsbk / nbk)
+  # Large-block estimator (eq. 9 of the observational chapter):
+  # n_b^2/(n_b-1) * [n_b/n_b1 * s^2_{b,1} + n_b/n_b0 * s^2_{b,0}]
+  nu1 <- nb / (nb - 1) * rowSums(gamsbk / nbk)
   nu2 <- 2 / nbk[, 1] / nbk[, 2] * choose(nb, 2) * gamsb -
     (1 / nbk[, 1] + 1 / nbk[, 2]) *
     ((nbk[, 1] - 1) * gamsbk[, 1] + (nbk[, 2] - 1) * gamsbk[, 2])
-  varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
+
+  if (x@StudySpecification@type == "Obs") {
+    # For observational studies (Section 4.1 of the observational chapter):
+    # Use the empirical bread A_n rather than the RCT design bread (A_tt = -1).
+    #
+    # The empirical A matrix has:
+    #   A_tt   = -SW1 / W_total   where SW1 = sum of ATE weights for treated units
+    #   A_rho0 = -SW0 / W_total   where SW0 = sum of ATE weights for control units
+    #   W_total = sum(data$.w0)   (total individual-level importance weights)
+    #
+    # Under the RCT design, SW0 = SW1 = W_total, recovering A_tt = A_rho0 = -1.
+    # In observational studies with unbalanced blocks or unequal cluster sizes,
+    # SW0 != SW1 != W_total, so the empirical bread differs from the RCT bread.
+    #
+    # The correct variance for the tau component is:
+    #   Sigma[tau,tau] / W_total^2  where
+    #   Sigma[tau,tau] = (1/A_rho0)^2 * B[rho0,rho0] + (1/A_tt)^2 * B[tau,tau]
+    # Dividing by W_total^2: nu_rho0/SW0^2 + nu_tau/SW1^2  (large blocks)
+    #
+    # The paper's gamma vectors (Section 4.1) are:
+    #   G0_rho0_i = sum_j (Y_j - 2*rho0)        for each control cluster i
+    #   G1_tau_i  = sum_j (Y_j - 2*rho0 - tau)  for each treated cluster i
+    # These equal:  G_z_i = m_i * (Y_bar_i - 2*rho0 - z_i*tau)
+    # where m_i = cluster size and Y_bar_i = cluster mean of Y.
+    # (Equivalently: G_z_i = gamma_i/n_b - m_i*rho0  using propertee's gamma.)
+
+    SW1 <- sum(data$.w[zobs == 1])   # sum of ATE weights for treated clusters
+    SW0 <- sum(data$.w[zobs == 0])   # sum of ATE weights for control clusters
+    W_total <- sum(data$.w0)         # total individual importance weights = N_ind
+
+    # rho0 and tau from the fitted model (non-absorbed lmitt coefficients)
+    rho0_hat <- unname(coef(x)["(Intercept)"])
+    trt_coef_name <- paste0(var_names(x@StudySpecification, "t"), ".")
+    tau_hat  <- unname(coef(x)[trt_coef_name])
+
+    # Cluster-level paper gammas: G_i = m_i * (Y_bar_i - 2*rho0 - z_i*tau)
+    # data$.w0 = cluster size m_i; data$.wy = weighted-mean Y_bar_i (= unweighted mean
+    # for ATE weights since they are constant within a cluster)
+    G_ctrl <- data$.w0 * (data$.wy - 2 * rho0_hat)        # G0_rho0 for each cluster
+    G_trt  <- data$.w0 * (data$.wy - 2 * rho0_hat - tau_hat)  # G1_tau  for each cluster
+
+    block_ids_ord <- if (length(unique(bid)) > 1) rownames(nbk) else as.character(unique(bid))
+
+    # Large-block contribution: B[rho0]/SW0^2 + B[tau]/SW1^2
+    # B[rho0]_b = n_b^2/(n_b-1) * n_b/n_{b,0} * var(G0_rho0 : ctrl in block b)
+    # B[tau]_b  = n_b^2/(n_b-1) * n_b/n_{b,1} * var(G1_tau  : trt  in block b)
+    nu1_obs <- vapply(seq_along(block_ids_ord), function(b_idx) {
+      b <- block_ids_ord[b_idx]
+      if (small_blocks[b_idx]) return(0)
+      G0_b <- G_ctrl[bid == b & zobs == 0]
+      G1_b <- G_trt[bid == b & zobs == 1]
+      sc <- nb[b_idx]^2 / (nb[b_idx] - 1)
+      (sc * nb[b_idx] / nbk[b_idx, 1] * stats::var(G0_b)) / SW0^2 +
+      (sc * nb[b_idx] / nbk[b_idx, 2] * stats::var(G1_b)) / SW1^2
+    }, numeric(1L))
+
+    # Small-block contribution: n_b^2 * (mean_G0/SW0 - mean_G1/SW1)^2
+    nu2_obs <- vapply(seq_along(block_ids_ord), function(b_idx) {
+      b <- block_ids_ord[b_idx]
+      if (!small_blocks[b_idx]) return(0)
+      G0_b <- G_ctrl[bid == b & zobs == 0]
+      G1_b <- G_trt[bid == b & zobs == 1]
+      nb[b_idx]^2 * (mean(G0_b) / SW0 - mean(G1_b) / SW1)^2
+    }, numeric(1L))
+
+    varest <- sum(nu1_obs[!small_blocks]) + sum(nu2_obs[small_blocks])
+  } else {
+    varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
+  }
   return(as.matrix(varest))
 }
 
@@ -1457,14 +1600,41 @@ cluster_iss <- function(tm,
   ws <- if (is.null(stats::weights(x))) 1 else stats::weights(x)
   data_temp <- x$call$data
   name_y <- as.character(x$terms[[2]]) # the column of y
-  data_temp <- cbind(data_temp, .w = ws, 
-                     .w0 = ws / ate(x@StudySpecification, data=data_temp),
-                     .wy = ws * data_temp[, name_y])
 
   specification_obj <- x@StudySpecification
   name_trt <- var_names(specification_obj, "t")
   name_blk <- var_names(specification_obj, "b")
   name_clu <- var_names(specification_obj, "u")
+
+  # Compute per-unit ATE weights.  For binary treatment ate() handles this
+  # directly; for multi-arm treatment (T ≥ 2, no dichotomy) fall back to a
+  # direct cluster-count computation: ATE_i = n_b / n_{b,z_i}.
+  ate_vals <- tryCatch(
+    ate(specification_obj, data = data_temp),
+    error = function(e) {
+      # Direct computation: merge block IDs, count clusters per (block, arm).
+      blk_col <- if (length(name_blk) > 0)
+        .merge_block_id_cols(data_temp, name_blk)[[name_blk[1]]]
+      else
+        rep(1L, nrow(data_temp))
+      trt_col <- data_temp[[name_trt]]
+      clu_key <- apply(data_temp[name_clu], 1, paste, collapse = "_")
+      blk_key <- as.character(blk_col)
+      arm_key <- as.character(trt_col)
+      ba_key  <- paste(blk_key, arm_key, sep = "\001")
+
+      n_b_map  <- tapply(clu_key, blk_key, function(k) length(unique(k)))
+      n_bt_map <- tapply(clu_key, ba_key,  function(k) length(unique(k)))
+
+      n_b_per  <- as.numeric(n_b_map[blk_key])
+      n_bt_per <- as.numeric(n_bt_map[ba_key])
+      n_b_per / n_bt_per
+    }
+  )
+
+  data_temp <- cbind(data_temp, .w = ws,
+                     .w0 = ws / ate_vals,
+                     .wy = ws * data_temp[, name_y])
 
   if (length(name_blk) > 0) {
     data_temp <- .merge_block_id_cols(data_temp, name_blk)
@@ -1712,4 +1882,299 @@ cluster_iss <- function(tm,
     mat[i,1] <- sum(atp[[i]]) / sum(app[[i]])
   }
   return(mat)
+}
+
+## Observational-study DB0 variance
+##
+## The design-based variance estimator of the observational chapter, Section 4.1,
+## is a sandwich estimator whose meat uses block-level within-arm sample
+## covariances of the cluster-level estimating-function vectors delta_{bi,z}:
+##
+##   delta_{bi,1} in R^{p+3}: covariate-model scores + Hajek tau-constraint
+##                             for the treated arm
+##   delta_{bi,0} in R^{p+2}: covariate-model scores + Hajek rho_0-constraint
+##                             for the control arm
+##
+## The last component of delta_{bi,z} is w_bi * (y_bar_bi - g(x'beta) - rho_z),
+## which equals the working residual of the lmitt() model (with optional
+## cov_adj offset).  For p=0 (no covariate model) the full formula reduces
+## to the ν_b formula already implemented in .get_DB_wo_covadj_se(); for
+## p>0 it reduces to .get_DB_covadj_se().  Both functions therefore implement
+## the paper's Section 4.1 formula with no structural changes: the same
+## code applies to obs_spec as to rct_spec, since the block structure and
+## ATE weights (using the observed pi_b = n_b1/n_b) are identical.
+##
+## Theoretical conservativeness requires within-block propensity homogeneity
+## (Proposition 2 of the observational chapter).  The user is responsible for
+## ensuring adequate matching or stratification.
+##
+## Cases NOT covered by the paper (-> stop messages):
+##   - Regression discontinuity designs (type = "RD")
+##   - Effect-modifier subgroups (moderators) without absorbed block effects
+##   - Propensity scores estimated outside of propertee (propagation of that
+##     uncertainty is not implemented; see comment in .check_obs_spec_DB0)
+
+#' @title (Internal) Validate obs_spec requirements for DB0 variance
+#' @description Checks conditions required for \code{type = "DB0"} under an
+#'   observational \code{StudySpecification} and emits an informative message
+#'   about the within-block propensity-homogeneity assumption.  Stops with a
+#'   descriptive error for configurations outside the scope of
+#'   the observational chapter.
+#' @param x a fitted \code{teeMod} with \code{x@StudySpecification@type == "Obs"}
+#' @details
+#' **Supported**: non-absorbed main-effect models (with or without a same-sample
+#'   covariance adjustment offset); absorbed main-effect models; any block
+#'   structure including pair-matched designs.
+#'
+#' **Not supported** (stop):
+#' \itemize{
+#'   \item Effect-modifier subgroups (\code{moderator}) without absorbed
+#'         intercepts — theory not derived.
+#'   \item Covariance adjustment with treatment variable in the outcome model —
+#'         makes treatment effect unidentifiable (already blocked by
+#'         \code{.get_DB_covadj_se}).
+#'   \item External covariance-adjustment sample — already blocked by
+#'         \code{.vcov_DB0}.
+#' }
+#'
+#' **Limitation (no stop, but note)**: Propensity-score uncertainty is not
+#' propagated.  If the propensity score was estimated, that estimation error
+#' contributes a higher-order term that vanishes asymptotically under
+#' Conditions S1–S5 of the paper, so the variance is still approximately
+#' valid, but exact finite-sample validity requires the propensity score to
+#' be treated as known (e.g. equal to the observed block proportion
+#' \eqn{n_{b1}/n_b}).
+#' @keywords internal
+.check_obs_spec_DB0 <- function(x) {
+  ## Moderators without absorbed intercepts are not covered
+  if (length(x@moderator) > 0 && !x@absorbed_intercepts) {
+    stop(paste(
+      "Design-based standard errors for observational studies are not",
+      "supported for models with effect-modifier subgroups and without",
+      "absorbed block intercepts (absorb = TRUE).",
+      "The asymptotic theory for this configuration has not been derived."
+    ), call. = FALSE)
+  }
+
+  ## Covariance adjustment where the fitted model includes the treatment
+  ## variable makes the estimating equations inconsistent; .get_DB_covadj_se
+  ## already checks this, but surface the message at this level too.
+  if (inherits(sl <- x$model$`(offset)`, "SandwichLayer")) {
+    name_trt <- var_names(x@StudySpecification, "t")
+    if (name_trt %in% all.vars(stats::formula(sl@fitted_covariance_model))) {
+      stop(paste(
+        "Design-based standard errors for observational studies are not",
+        "supported when the treatment variable appears in the covariance",
+        "adjustment model."
+      ), call. = FALSE)
+    }
+
+    ## Warn if the covariance model was not fit with IPW weights: under the
+    ## paper's M-estimation framework the outcome model should use the same
+    ## inverse-probability weights as lmitt() to ensure the estimating
+    ## equations are correctly specified.
+    if (is.null(sl@fitted_covariance_model[["weights"]])) {
+      warning(paste(
+        "The covariance adjustment model does not appear to have been fit",
+        "with inverse-probability weights. For observational studies,",
+        "fitting the outcome model with the same weights used in lmitt()",
+        "(e.g. ate()) improves the validity of the variance estimate."
+      ), call. = FALSE)
+    }
+  }
+
+  ## Inform the user about the key homogeneity assumption
+  message(paste(
+    "DB0 variance for observational studies (the observational chapter) assumes",
+    "within-block propensity homogeneity (Proposition 2). Ensure blocks",
+    "represent well-matched strata."
+  ))
+
+  invisible(NULL)
+}
+
+## ---- Multi-arm DB0 variance estimator (the multi-arm chapter, Section 4.1) --
+
+#' @title (Internal) Design-based covariance estimator for T-arm RCTs
+#' @description Implements the block-level estimator from Section 4.1 of
+#'   the multi-arm chapter.  Returns a T×T covariance matrix
+#'   for the vector of SATE estimates (\eqn{\hat\tau_1,\ldots,\hat\tau_T}).
+#'   For T = 1 (two-arm RCT) this reduces to the two-arm chapter formula:
+#'   the large-block diagonal equals \eqn{n_b/(n_b-1) \cdot (n_b^2/n_{b1}\,
+#'   s^2_{b,1} + n_b^2/n_{b0}\,s^2_{b,0})}, identical to
+#'   \code{.get_DB_wo_covadj_se()} with the Bessel correction.
+#'
+#' @details
+#' \strong{Cluster residuals} \eqn{\hat\delta_{bi,t}} are formed as
+#' \eqn{\sum_j w_{bij}(Y_{bij}-g(x_{bij}'\hat\beta)-\hat\rho_t)}, which in
+#' propertee equals \code{sum(w_j * residuals(values_from)[j])} aggregated to
+#' the cluster level.  Covariate adjustment enters implicitly through the
+#' working residuals of \code{x} (or \code{values_from}).
+#'
+#' \strong{Large blocks} (all \eqn{n_{bt} \ge 2}): diagonal entry (t,t) is
+#' \eqn{n_b/(n_b-1) \cdot [n_b\pi_{bt}\hat s^2_{b,t} + n_b\pi_{b0}\hat
+#' s^2_{b,0}]}; off-diagonal (t,s) is \eqn{n_b/(n_b-1) \cdot n_b\pi_{b0}
+#' \hat s^2_{b,0}}.  The \eqn{n_b/(n_b-1)} correction ensures consistency with
+#' the two-arm chapter for T = 1.
+#'
+#' \strong{Small blocks} (at least one \eqn{n_{bt} = 1}): equations (9) and
+#' (10) of the paper, based on pairwise squared differences.
+#'
+#' @param x a non-absorbed \code{teeMod} fitted with \code{lmitt.formula}
+#' @param values_from optional model supplying working residuals; defaults to
+#'   \code{x}.  Pass a null model to evaluate the variance under a null
+#'   hypothesis (score tests).
+#' @return a T×T matrix of \eqn{\widehat{\mathrm{Cov}}(\hat\tau)}
+#' @importFrom stats aggregate var weights residuals
+#' @keywords internal
+.get_DB_multi_arm_se <- function(x, values_from = x, ...) {
+  if (x@absorbed_intercepts) {
+    stop("x should not have absorbed intercepts")
+  }
+  if (!is.null(values_from$na.action)) class(values_from$na.action) <- "exclude"
+
+  spec     <- x@StudySpecification
+  name_clu <- var_names(spec, "u")
+
+  # Aggregate cluster-level δ̂ = sum(w_j * e_j per cluster)
+  w_indiv <- if (is.null(stats::weights(x))) rep(1, nrow(x$call$data))
+             else as.numeric(stats::weights(x))
+  e_indiv <- stats::residuals(values_from, type = "working")
+  e_indiv <- replace(e_indiv, is.na(e_indiv), 0)
+
+  # Individual importance weights w_{bij}: sampling weights only, not IPW.
+  # For weights=ate(), w_{bij}=1; for weights=ws*ate(), w_{bij}=ws_j.
+  # Summing w_{bij} over j in a cluster gives the cluster importance weight w_bi
+  # that both the two-arm and multi-arm chapters use in their delta/gamma.
+  # The ATE (IPW) factor is already embedded in the Hajek estimator for rho_t;
+  # including it again in delta would double-count the IPW scaling.
+  # Use a tryCatch so multi-arm specs (z ∈ {0,1,...,T}) are handled without
+  # requiring a binary dichotomy.
+  ate_indiv <- tryCatch(
+    as.numeric(ate(spec, data = x$call$data)),
+    error = function(e) {
+      # Direct per-unit ATE for non-binary treatment: n_b / n_{b,z_i}
+      data_raw <- x$call$data
+      name_blk_orig <- var_names(spec, "b")
+      blk_v <- if (length(name_blk_orig) > 0)
+        .merge_block_id_cols(data_raw, name_blk_orig)[[name_blk_orig[1]]]
+      else
+        rep(1L, nrow(data_raw))
+      z_v   <- data_raw[[var_names(spec, "t")]]
+      clu_v <- apply(data_raw[name_clu], 1, paste, collapse = "_")
+      ba    <- paste(as.character(blk_v), as.character(z_v), sep = "\001")
+      n_b_m  <- tapply(clu_v, as.character(blk_v),  function(k) length(unique(k)))
+      n_bt_m <- tapply(clu_v, ba,                   function(k) length(unique(k)))
+      as.numeric(n_b_m[as.character(blk_v)] / n_bt_m[ba])
+    }
+  )
+  ws_indiv  <- w_indiv / ate_indiv           # individual importance weight only
+
+  uid_indiv  <- apply(x$call$data[name_clu], 1, paste, collapse = "_")
+  delta_uid  <- tapply(ws_indiv * e_indiv, uid_indiv, sum, na.rm = TRUE)
+
+  ## Cluster-level block/arm metadata
+  agg  <- .aggregate_to_cluster(x)
+  data <- agg$data
+  block <- agg$block
+  bid   <- data[, block]
+  zobs  <- as.integer(round(data[, agg$z]))   # 0 = control, 1..T = treatments
+
+  uid_c <- apply(data[seq_len(length(name_clu))], 1, paste, collapse = "_")
+  delta <- as.numeric(delta_uid[uid_c])        # cluster-level δ̂, block-sorted
+
+  ## Treatment arms
+  trt_arms <- sort(setdiff(unique(zobs), 0L))  # active arms (1..T)
+  T_arms   <- length(trt_arms)
+  if (T_arms == 0L) stop("No treated clusters found")
+
+  ## Denominator: sum(w/ate) for consistency with the two-arm chapter (= n for ATE weights) --
+  w_E <- sum(data$.w0)
+
+  ## Block-level accumulation
+  Sigma_hat <- matrix(0, T_arms, T_arms)
+  block_ids <- unique(bid)
+
+  for (b in block_ids) {
+    in_b  <- which(bid == b)
+    n_b   <- length(in_b)
+    z_b   <- zobs[in_b]
+    d_b   <- delta[in_b]
+
+    n_b0 <- sum(z_b == 0L)
+    n_bt <- vapply(trt_arms, function(t) sum(z_b == t), 1L)
+    pi_b0 <- n_b0 / n_b
+    pi_bt <- n_bt / n_b
+
+    d0  <- d_b[z_b == 0L]
+    d_t <- lapply(trt_arms, function(t) d_b[z_b == t])
+
+    s2_b0 <- if (n_b0 >= 2L) stats::var(d0) else 0
+    s2_bt <- vapply(seq_len(T_arms), function(k)
+      if (n_bt[k] >= 2L) stats::var(d_t[[k]]) else 0,
+      1.0)
+
+    Sigma_b <- matrix(0, T_arms, T_arms)
+
+    if (all(c(n_b0, n_bt) >= 2L)) {
+      ## Large block: eq (7)/(8) of the multi-arm chapter.
+      ## Diagonal (t,t): n_b/π_bt * ŝ²_bt + n_b/π_b0 * ŝ²_b0  (no extra Bessel factor).
+      ## Off-diagonal (t,s): n_b/π_b0 * ŝ²_b0 (shared control variance).
+      ## Note: n_b/π_bt = n_b²/n_bt. The unbiased sample variance ŝ² already has
+      ## (n_bt - 1) in its denominator, so no additional Bessel factor is needed.
+      for (t in seq_len(T_arms)) {
+        # Diagonal: n_b/pi_bt = n_b^2/n_bt
+        Sigma_b[t, t] <- n_b / pi_bt[t] * s2_bt[t] + n_b / pi_b0 * s2_b0
+        # Off-diagonal (same control-variance contribution for all pairs)
+        for (s in seq_len(T_arms)) {
+          if (s != t) Sigma_b[t, s] <- n_b / pi_b0 * s2_b0
+        }
+      }
+    } else {
+      ## Small block: eqs (9) and (10) of the multi-arm chapter.
+      ## First term: Σ_{i,k} (γ_bk,t - γ_bi,0)² / (π_bt * π_b0) — pairwise cross-sum.
+      ## Diagonal correction (eq 9):
+      ##   n_b/π_bt * Σ(γ-ˉγ)²_t = n_b/π_bt * (n_bt-1) * ŝ²_bt  (sum of sq devs, not variance)
+      ##   n_b/π_b0 * Σ(γ-ˉγ)²_0 = n_b/π_b0 * (n_b0-1) * ŝ²_b0
+      ## Off-diagonal correction (eq 10): n_b/π_b0 * (n_b0-1) * ŝ²_b0 only.
+      ## When n_bt = 1 or n_b0 = 1, the corresponding ŝ² = 0 and (n-1) = 0, so
+      ## those correction terms vanish (as expected for the matched-pairs case).
+      for (t in seq_len(T_arms)) {
+        dt <- d_t[[t]]
+        # Sum of squared diffs between arm-t and control
+        cross_t0 <- sum(outer(dt, d0, function(a, b) (a - b)^2))
+        # Diagonal (eq 9)
+        Sigma_b[t, t] <- cross_t0 / (pi_bt[t] * pi_b0) -
+          n_b / pi_bt[t] * (n_bt[t] - 1L) * s2_bt[t] -
+          n_b / pi_b0   * (n_b0    - 1L) * s2_b0
+        # Off-diagonal (eq 10)
+        for (s in seq_len(T_arms)) {
+          if (s != t) {
+            ds <- d_t[[s]]
+            cross_s0 <- sum(outer(ds, d0, function(a, b) (a - b)^2))
+            cross_ts <- sum(outer(dt, ds, function(a, b) (a - b)^2))
+            Sigma_b[t, s] <- 0.5 * (
+              cross_t0 / (pi_bt[t] * pi_b0) +
+              cross_s0 / (pi_bt[s] * pi_b0) -
+              cross_ts / (pi_bt[t] * pi_bt[s])
+            ) - n_b / pi_b0 * (n_b0 - 1L) * s2_b0
+          }
+        }
+      }
+    }
+
+    Sigma_hat <- Sigma_hat + Sigma_b
+  }
+
+  vmat <- as.matrix(Sigma_hat / w_E^2)
+
+  ## Row/column names: paste treatment-variable name + "." + arm label
+  trt_nm <- paste0(var_names(spec, "t"), ".")
+  if (T_arms == 1L) {
+    rownames(vmat) <- colnames(vmat) <- trt_nm
+  } else {
+    nms <- paste0(trt_nm, trt_arms)
+    rownames(vmat) <- colnames(vmat) <- nms
+  }
+  vmat
 }

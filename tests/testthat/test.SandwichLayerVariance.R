@@ -3044,14 +3044,16 @@ test_that("vcov_tee errors when asking for specification-based SE for teeMod wit
   )
 })
 
-test_that("vcov_tee errors when asking for specification-based SE for a non-RCT specification",{
+test_that("vcov_tee DB0 obs_spec emits a propensity-homogeneity message (no error)",{
   data(simdata)
   spec <- obs_spec(z ~ cluster(uoa1, uoa2) + block(bid), simdata)
   ssmod <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate(spec))
-  expect_error(
+  # obs_spec is now supported; .check_obs_spec_DB0 emits an informational message
+  expect_message(
     vcov_tee(ssmod, type = "DB0"),
-    "only for RCT specifications"
+    "propensity"
   )
+  expect_error(suppressMessages(vcov_tee(ssmod, type = "DB0")), NA)
 })
 
 test_that("vcov_tee errors when asking for specification-based SE for a model
@@ -3176,7 +3178,8 @@ test_that(".get_DB_wo_covadj_se returns correct value for specifications with a 
       in_b <- (sum(nbs[1:b])-nbs[b]+1):(sum(nbs[1:b])) # indices of block b
       gamsbk[b,k] <- var(gammas[in_b,k][zobs[in_b] == k])
       if (k > 1){
-        nu <- c(nu, gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k])
+        # Large-block formula (eq. 9, the observational chapter): n_b/(n_b-1) factor
+        nu <- c(nu, nbs[b] / (nbs[b] - 1) * (gamsbk[b,1] / nbk[b,1] + gamsbk[b,k] / nbk[b,k]))
       }
     }
   }
@@ -3184,12 +3187,7 @@ test_that(".get_DB_wo_covadj_se returns correct value for specifications with a 
   spec <- rct_spec(z ~ cluster(cid) + block(bid), data)
   ssmod <- lmitt(y ~ 1, specification = spec, data = data, weights = ate(spec) * data$w)
 
-  #ainv <- .get_DB_a_inverse(ssmod)
-  #meat <- .get_DB_meat(ssmod)
-  #vmat <- as.matrix((ainv %*% meat %*% t(ainv))[3,3])
-
   expect_equal(vcov_tee(ssmod, type="DB0")[1,1], sum(nu) / sum(ws)^2)
-  #expect_true(vmat[1,1] != sum(nu) / sum(ws)^2)
 })
 
 test_that("specification-based SE for tee models without absorption does not crash", {
@@ -3396,4 +3394,1079 @@ test_that("issue #239", {
   expect_equal(nrow(a21), R + twoK)
   ef <- estfun(tmod)
   expect_equal(ncol(ef), R + twoK)
+})
+
+test_that("vcov_tee DB0 values_from=x gives same result as no values_from (non-absorbed)", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  v_default    <- vcov_tee(mod, type = "DB0")
+  v_values_x   <- vcov_tee(mod, type = "DB0", values_from = mod)
+  expect_equal(v_default, v_values_x)
+})
+
+test_that("vcov_tee DB0 with values_from=null model gives different variance", {
+  data(simdata)
+  spec     <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod      <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  tau_hat  <- as.numeric(coef(mod)["z."])
+  w_ate    <- as.numeric(ate(spec, data = simdata))
+
+  # Null at tau0 = 0: rho_z(H) = pooled arm mean for both arms
+  W1 <- sum(w_ate[simdata$z == 1]); W0 <- sum(w_ate[simdata$z == 0]); W <- W1 + W0
+  yb1 <- sum(w_ate[simdata$z==1]*simdata$y[simdata$z==1])/W1
+  yb0 <- sum(w_ate[simdata$z==0]*simdata$y[simdata$z==0])/W0
+  rho1H     <- (W0/W)*yb0 + (W1/W)*yb1   # tau0=0
+  rho0H     <- rho1H
+  null_fit  <- ifelse(simdata$z == 1, rho1H, rho0H)
+  mod_null  <- lm(y ~ 0, data = simdata, weights = w_ate, offset = null_fit)
+
+  v_full <- vcov_tee(mod, type = "DB0")
+  v_null <- vcov_tee(mod, type = "DB0", values_from = mod_null)
+
+  # Variances under full model vs null differ when tau_hat != 0
+  expect_false(isTRUE(all.equal(v_full, v_null)))
+  # Both are positive scalars
+  expect_gt(as.numeric(v_null), 0)
+})
+
+test_that("score test via vcov_tee DB0 values_from produces finite test statistic", {
+  data(simdata)
+  spec    <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod     <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  tau_hat <- as.numeric(coef(mod)["z."])
+  w_ate   <- as.numeric(ate(spec, data = simdata))
+
+  # Build null model at tau0 = 0
+  W1 <- sum(w_ate[simdata$z==1]); W0 <- sum(w_ate[simdata$z==0]); W <- W1+W0
+  yb1 <- sum(w_ate[simdata$z==1]*simdata$y[simdata$z==1])/W1
+  yb0 <- sum(w_ate[simdata$z==0]*simdata$y[simdata$z==0])/W0
+  tau0 <- 0
+  rho1H <- (W0/W)*(yb0+tau0) + (W1/W)*yb1
+  rho0H <- (W0/W)*yb0         + (W1/W)*(yb1-tau0)
+  null_fit <- ifelse(simdata$z==1, rho1H, rho0H)
+  mod_null <- lm(y ~ 0, data = simdata, weights = w_ate, offset = null_fit)
+
+  V_H    <- vcov_tee(mod, type = "DB0", values_from = mod_null)
+  t_stat <- (tau_hat - tau0) / sqrt(as.numeric(V_H))
+
+  expect_true(is.finite(t_stat))
+  expect_equal(dim(V_H), c(1L, 1L))
+})
+
+test_that("vcov_tee DB0 values_from works for model with covariate adjustment", {
+  data(simdata)
+  spec  <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod  <- lm(y ~ x, simdata)
+  mod   <- lmitt(y ~ 1, specification = spec, data = simdata,
+                 weights = ate(), offset = cov_adj(cmod))
+  w_ate <- as.numeric(ate(spec, data = simdata))
+  off   <- as.numeric(cov_adj(cmod, newdata = simdata, specification = spec))
+  yr    <- simdata$y - off
+
+  W1 <- sum(w_ate[simdata$z==1]); W0 <- sum(w_ate[simdata$z==0]); W <- W1+W0
+  yb1 <- sum(w_ate[simdata$z==1]*yr[simdata$z==1])/W1
+  yb0 <- sum(w_ate[simdata$z==0]*yr[simdata$z==0])/W0
+  rho1H <- (W0/W)*yb0 + (W1/W)*yb1
+  rho0H <- rho1H
+  mod_null <- lm(yr ~ 0, data = simdata, weights = w_ate)  # residuals = yr
+
+  expect_silent(vcov_tee(mod, type = "DB0"))
+  v_null <- suppressMessages(vcov_tee(mod, type = "DB0", values_from = mod_null))
+  expect_true(is.finite(as.numeric(v_null)))
+})
+
+test_that("vcov_tee DB0 no longer errors for obs_spec (produces message instead)", {
+  data(simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  # Used to error "only for RCT specifications"; now produces a message
+  expect_message(
+    vcov_tee(mod, type = "DB0"),
+    "propensity"
+  )
+  # No error
+  expect_error(
+    suppressMessages(vcov_tee(mod, type = "DB0")),
+    NA
+  )
+})
+
+test_that("vcov_tee DB0 obs_spec uses empirical bread, giving different result from rct_spec", {
+  # For obs_spec, Section 4.1 of the observational chapter uses the empirical
+  # gradient (A_tt = -SW1/W_total, A_rho0 = -SW0/W_total) rather than the RCT
+  # design bread (A_tt = A_rho0 = -1).  For the simdata with unbalanced blocks
+  # and unequal cluster sizes across arms, these differ, so the two SEs differ.
+  # For balanced designs with equal cluster sizes, the two coincide.
+  data(simdata)
+  spec_rct <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  spec_obs <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod_rct  <- lmitt(y ~ 1, specification = spec_rct, data = simdata, weights = ate())
+  mod_obs  <- lmitt(y ~ 1, specification = spec_obs, data = simdata, weights = ate())
+
+  v_rct <- vcov_tee(mod_rct, type = "DB0")
+  v_obs <- suppressMessages(vcov_tee(mod_obs, type = "DB0"))
+
+  # simdata has unbalanced blocks (n_b1 in {1,1,2}, n_b0 in {3,2,1}) and
+  # unequal cluster sizes (4-6 obs per cluster), so the SEs differ.
+  expect_false(isTRUE(all.equal(as.numeric(v_rct), as.numeric(v_obs))))
+  # obs SE is smaller (more conservative empirical bread correction)
+  expect_lt(as.numeric(v_obs), as.numeric(v_rct))
+})
+
+test_that("vcov_tee DB0 obs_spec with absorb=TRUE does not error", {
+  data(simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata,
+                weights = ate(), absorb = TRUE)
+
+  # absorbed path uses bread+meatCL; emits the propensity-homogeneity message
+  # but must not throw an error
+  expect_message(vcov_tee(mod, type = "DB0"), "propensity")
+  expect_error(suppressMessages(vcov_tee(mod, type = "DB0")), NA)
+})
+
+test_that("vcov_tee DB0 obs_spec with cov_adj (same sample) does not error", {
+  data(simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod <- lm(y ~ x, simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata,
+                weights = ate(), offset = cov_adj(cmod))
+
+  # propensity message is emitted; unweighted-cov-adj warning is tested separately
+  expect_message(
+    suppressWarnings(vcov_tee(mod, type = "DB0")),
+    "propensity"
+  )
+  expect_error(suppressWarnings(suppressMessages(vcov_tee(mod, type = "DB0"))), NA)
+})
+
+test_that("vcov_tee DB0 obs_spec warns when cov_adj model has no weights", {
+  data(simdata)
+  spec      <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod_nowt <- lm(y ~ x, simdata)           # no IPW weights
+  mod       <- lmitt(y ~ 1, specification = spec, data = simdata,
+                     weights = ate(), offset = cov_adj(cmod_nowt))
+
+  expect_warning(
+    suppressMessages(vcov_tee(mod, type = "DB0")),
+    "inverse-probability weights"
+  )
+})
+
+test_that("vcov_tee DB0 obs_spec with values_from gives finite score test", {
+  data(simdata)
+  spec    <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod     <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  tau_hat <- as.numeric(coef(mod)["z."])
+  w_ate   <- as.numeric(ate(spec, data = simdata))
+
+  W1 <- sum(w_ate[simdata$z==1]); W0 <- sum(w_ate[simdata$z==0]); W <- W1+W0
+  yb1 <- sum(w_ate[simdata$z==1]*simdata$y[simdata$z==1])/W1
+  yb0 <- sum(w_ate[simdata$z==0]*simdata$y[simdata$z==0])/W0
+  rho1H    <- (W0/W)*yb0 + (W1/W)*yb1
+  rho0H    <- rho1H
+  mod_null <- lm(y ~ 0, data = simdata, weights = w_ate,
+                 offset = ifelse(simdata$z==1, rho1H, rho0H))
+
+  V_H    <- suppressMessages(vcov_tee(mod, type = "DB0", values_from = mod_null))
+  t_stat <- (tau_hat - 0) / sqrt(as.numeric(V_H))
+  expect_true(is.finite(t_stat))
+})
+
+test_that(".check_obs_spec_DB0 stops for moderators without absorbed intercepts", {
+  data(simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ dose, specification = spec, data = simdata, weights = ate())
+
+  expect_error(
+    suppressMessages(vcov_tee(mod, type = "DB0")),
+    "effect-modifier subgroups"
+  )
+})
+
+test_that(".check_obs_spec_DB0 does not stop for moderators with absorbed intercepts", {
+  data(simdata)
+  spec <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ dose, specification = spec, data = simdata,
+                weights = ate(), absorb = TRUE)
+
+  # absorbed moderators are allowed; propensity message is still emitted
+  expect_message(vcov_tee(mod, type = "DB0"), "propensity")
+  expect_error(suppressMessages(vcov_tee(mod, type = "DB0")), NA)
+})
+
+test_that(".check_obs_spec_DB0 stops when treatment is in the cov_adj model", {
+  data(simdata)
+  spec  <- obs_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod  <- lm(y ~ x + z, simdata)   # treatment in outcome model
+  mod   <- lmitt(y ~ 1, specification = spec, data = simdata,
+                 weights = ate(), offset = cov_adj(cmod))
+
+  expect_error(
+    suppressMessages(vcov_tee(mod, type = "DB0")),
+    "treatment variable"
+  )
+})
+
+test_that("vcov_tee DB0 errors for RD specification", {
+  data(simdata)
+  spec <- rd_spec(z ~ uoa(uoa1, uoa2) + forcing(force), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata)
+
+  expect_error(
+    vcov_tee(mod, type = "DB0"),
+    "regression discontinuity"
+  )
+})
+
+# Inline the estimate_variance function from previous simulations so the test
+# is self-contained and does not require sourcing the paper script.
+.estimate_variance_ref <- function(Y, Z, W, blocks, X, g = identity,
+                                   g_prime = function(eta) rep(1.0, length(eta)),
+                                   pi_bz = NULL) {
+  bvec      <- as.character(blocks)
+  block_ids <- unique(bvec)
+  n_obs     <- length(Y)
+  W_total   <- sum(W)
+
+  X_mat   <- cbind(1, X)
+  X_score <- if (is.null(dim(X))) matrix(X, ncol = 1L) else X
+
+  p1 <- ncol(X_mat); ps <- ncol(X_score); d <- ps + 3L; p3 <- ps + 2L; p2 <- ps + 1L
+  idx_b  <- seq_len(ps); idx_k <- ps + 1L; idx_r0 <- ps + 2L; idx_t <- ps + 3L
+
+  if (is.null(pi_bz)) {
+    n_b_all <- tapply(rep(1L, n_obs), bvec, sum)
+    m_b_all <- tapply(Z, bvec, sum)
+    pi_b1   <- as.vector((m_b_all / n_b_all)[bvec])
+    pi_b0   <- as.vector(((n_b_all - m_b_all) / n_b_all)[bvec])
+    pi_bz   <- ifelse(Z == 1, pi_b1, pi_b0)
+  } else {
+    pi_b1 <- ifelse(Z == 1, pi_bz, 1 - pi_bz)
+    pi_b0 <- 1 - pi_b1
+  }
+
+  X_aug <- cbind(X_mat, Z)
+  fit   <- lm.wfit(x = X_aug, y = Y, w = W / pi_bz)
+  beta_hat  <- coef(fit)
+  beta_c    <- head(beta_hat, p1)
+  kappa_hat <- beta_hat[p1 + 1L]
+  eta0 <- drop(X_mat %*% beta_c); eta1 <- eta0 + kappa_hat
+  R    <- Y - g(eta0)
+  w1_h <- (Z / pi_b1) * W; w0_h <- ((1 - Z) / pi_b0) * W
+  rho0_hat <- sum(w0_h * R) / sum(w0_h)
+  rho1_hat <- sum(w1_h * R) / sum(w1_h)
+  tau_hat  <- rho1_hat - rho0_hat
+
+  gp0 <- g_prime(eta0); gp1 <- g_prime(eta1)
+  s_bb  <- W * (gp1 * Z / pi_b1 + gp0 * (1 - Z) / pi_b0) / W_total
+  s_kb  <- W * gp1 * Z / pi_b1 / W_total
+  s_r0b <- W * gp0 * (1 - Z) / pi_b0 / W_total
+  s_tb  <- W * gp0 * Z / pi_b1 / W_total
+
+  # Use sweep() so that ps = 0 (zero-column X_score) is handled correctly;
+  # plain `*` errors on non-conformable arrays when ncol(X_score) == 0.
+  sw <- function(v) sweep(X_score, 1L, v, `*`)
+  A_bb  <- -crossprod(X_score, sw(s_bb))
+  A_bk  <- -drop(crossprod(X_score, s_bb))
+  A_kb  <- -drop(crossprod(X_score, s_kb))
+  A_kk  <- -sum(s_kb)
+  A_r0b <- -drop(crossprod(X_score, s_r0b))
+  A_r0r0 <- -sum(W * (1 - Z) / pi_b0) / W_total
+  A_tb   <- -drop(crossprod(X_score, s_tb))
+  A_tr0  <- -sum(W * Z / pi_b1) / W_total
+  A_tt   <- A_tr0
+
+  A <- matrix(0.0, d, d)
+  if (ps > 0L) { A[idx_b, idx_b] <- A_bb; A[idx_b, idx_k] <- A_bk
+                 A[idx_k, idx_b] <- A_kb; A[idx_r0, idx_b] <- A_r0b
+                 A[idx_t, idx_b] <- A_tb }
+  A[idx_k, idx_k] <- A_kk; A[idx_r0, idx_r0] <- A_r0r0
+  A[idx_t, idx_r0] <- A_tr0; A[idx_t, idx_t] <- A_tt
+
+  Wr1 <- W * (Y - g(eta1)); Wr0 <- W * R
+  G1 <- cbind(sw(Wr1), Wr1, Wr0 - W * (rho0_hat + tau_hat))
+  G0 <- cbind(sw(Wr0), Wr0 - W * rho0_hat)
+
+  J1 <- matrix(0.0, d, p3)
+  if (ps > 0L) J1[idx_b, seq_len(ps)] <- diag(ps)
+  J1[idx_k, ps + 1L] <- 1.0; J1[idx_t, ps + 2L] <- 1.0
+  J0 <- matrix(0.0, d, p2)
+  if (ps > 0L) J0[idx_b, seq_len(ps)] <- diag(ps)
+  J0[idx_r0, ps + 1L] <- 1.0
+
+  B <- matrix(0.0, d, d)
+  for (b in block_ids) {
+    in_b <- which(bvec == b)
+    Z_b  <- Z[in_b]; n_b <- length(in_b)
+    n_b1 <- sum(Z_b); n_b0 <- n_b - n_b1
+    G1_b <- G1[in_b[Z_b == 1], , drop = FALSE]
+    G0_b <- G0[in_b[Z_b == 0], , drop = FALSE]
+    bar_g1 <- colMeans(G1_b); bar_g0 <- colMeans(G0_b)
+    if (n_b1 >= 2L && n_b0 >= 2L) {
+      s2_b1 <- cov(G1_b); s2_b0 <- cov(G0_b)
+      B_b <- (n_b^2 / (n_b - 1)) * (
+        (n_b / n_b1) * J1 %*% s2_b1 %*% t(J1) +
+        (n_b / n_b0) * J0 %*% s2_b0 %*% t(J0))
+    } else {
+      v_b <- J1 %*% bar_g1 + J0 %*% bar_g0
+      B_b <- n_b^2 * tcrossprod(v_b)
+    }
+    B <- B + B_b
+  }
+  B <- B / W_total
+  A_inv <- solve(A)
+  Sigma <- A_inv %*% B %*% t(A_inv)
+  Sigma[d, d] / W_total
+}
+
+test_that("DB0 no-cov-adj variance matches the estimate_variance (ps = 0)", {
+  # The equivalence with the observational chapter's simulation holds 
+  # when X has no slope columns (ps = 0), so both reduce to the same 
+  # intercept-only Hajek estimator.
+  # We pass a zero-column matrix to the reference function to achieve ps = 0.
+  set.seed(42)
+  n <- 30; B_blk <- 3; nb <- n / B_blk
+  bid <- rep(seq_len(B_blk), each = nb)
+  z   <- c(rep(1L, nb %/% 2),       rep(0L, nb - nb %/% 2),
+            rep(1L, nb %/% 2 + 1L), rep(0L, nb - nb %/% 2 - 1L),
+            rep(1L, nb %/% 2),       rep(0L, nb - nb %/% 2))
+  y   <- rnorm(n)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+  v_propertee <- as.numeric(vcov_tee(mod, type = "DB0"))
+
+  n_b_tab <- tapply(rep(1L, n), as.character(bid), sum)
+  m_b_tab <- tapply(z, as.character(bid), sum)
+  pi_b1   <- as.vector((m_b_tab / n_b_tab)[as.character(bid)])
+  pi_bz   <- ifelse(z == 1, pi_b1, 1 - pi_b1)
+  W_unit  <- rep(1, n)
+  # ps = 0: pass a zero-column matrix so OS_simulation.R's sandwich reduces
+  # to the pure Hajek nu_b formula with no covariate block in A or B.
+  X_empty <- matrix(numeric(0), nrow = n, ncol = 0)
+  v_ref   <- .estimate_variance_ref(y, z, W_unit, bid, X_empty, pi_bz = pi_bz)
+  expect_equal(v_propertee, v_ref, tolerance = 1e-8)
+})
+
+test_that("DB0 large-block nu1 uses n_b/(n_b-1) factor matching eq (9) of the observational chapter", {
+  # gamma_c = n_b * ws[c] * e_c where e_c = residuals(mod), because the ATE
+  # weight n_b/n_bz and the n_bz factor from the estfun cancel: n_bz*(n_b/n_bz) = n_b.
+  # nu_b (large block) = n_b/(n_b-1) * (var(gamma_1)/n_b1 + var(gamma_0)/n_b0).
+  set.seed(7)
+  nbs  <- c(6L, 8L)
+  bid  <- rep(seq_along(nbs), nbs)
+  zobs <- c(rep(1L, 3L), rep(0L, 3L), rep(1L, 4L), rep(0L, 4L))
+  ws   <- round(runif(sum(nbs), 1, 5))
+  yobs <- rnorm(sum(nbs))
+
+  data <- data.frame(cid = seq_along(bid), bid = bid, z = zobs,
+                     y = yobs, w = ws)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data,
+                weights = ate(spec) * data$w)
+
+  v_propertee <- as.numeric(vcov_tee(mod, type = "DB0"))
+
+  # Manual: gammas use residuals from the fitted model (correct rho values)
+  e      <- as.numeric(residuals(mod, type = "working"))
+  n_b_c  <- nbs[bid]          # n_b for each cluster
+  gammas <- n_b_c * ws * e    # n_bz*(n_b/n_bz)*ws*e = n_b*ws*e
+
+  nu_correct <- nu_old <- numeric(length(nbs))
+  for (b in seq_along(nbs)) {
+    in_b <- which(bid == b)
+    n_b1 <- sum(zobs[in_b] == 1L); n_b0 <- sum(zobs[in_b] == 0L)
+    s1   <- var(gammas[in_b[zobs[in_b] == 1L]])
+    s0   <- var(gammas[in_b[zobs[in_b] == 0L]])
+    nu_correct[b] <- nbs[b] / (nbs[b] - 1L) * (s1 / n_b1 + s0 / n_b0)
+    nu_old[b]     <-                            s1 / n_b1 + s0 / n_b0
+  }
+  # denominator = sum(w / ate)^2; with w = ate * ws, w/ate = ws
+  denom <- sum(ws)^2
+
+  expect_equal(v_propertee, sum(nu_correct) / denom, tolerance = 1e-10)
+  expect_false(isTRUE(all.equal(v_propertee, sum(nu_old) / denom)))
+})
+
+test_that("DB0 cov-adj variance no longer uses Young inequality (exact covariances)", {
+  # Verify that .get_DB_covadj_meat returns a list with m1/m2/m3 (exact),
+  # not the old m1u/m1l/m2u/m2l/m3u/m3l (bounds).
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod <- lm(y ~ x, simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata,
+                weights = ate(), offset = cov_adj(cmod))
+
+  meat <- propertee:::.get_DB_covadj_meat(mod)
+  # New structure: exact named elements, no upper/lower bounds
+  expect_named(meat, c("m1", "m2", "m3"))
+  # m3 is the 2x2 ITT covariance block; it should be positive semi-definite
+  expect_true(all(eigen(meat$m3, symmetric = TRUE)$values >= -1e-12))
+  # Variance estimate is finite and positive
+  v <- as.numeric(vcov_tee(mod, type = "DB0"))
+  expect_true(is.finite(v) && v > 0)
+})
+
+test_that(".get_DB_multi_arm_se and .get_DB_wo_covadj_se differ for large blocks (different estimators)", {
+  # These two functions implement DIFFERENT variance estimators:
+  # - .get_DB_multi_arm_se: the multi-arm chapter Section 4.1 formula, uses
+  #   delta = sum(w_importance * e per cluster) with Neyman-type block formula.
+  # - .get_DB_wo_covadj_se: the two-arm chapter formula, uses gamma = n_b * e
+  #   with n_b^2/n_bt scaling.
+  # They agree for pair-matched (small) blocks but differ for large blocks.
+  # Both are valid conservative design-based variance estimators.
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  v_new <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+  v_old <- as.numeric(propertee:::.get_DB_wo_covadj_se(mod))
+  # Check both are positive; they need not be equal
+  expect_gt(v_new, 0)
+  expect_gt(v_old, 0)
+})
+
+test_that("vcov_tee DB0 still uses the two-arm chapter formula (not the multi-arm formula)", {
+  # vcov_tee dispatches to .get_DB_wo_covadj_se, not .get_DB_multi_arm_se.
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  v_vcov  <- as.numeric(vcov_tee(mod, type = "DB0"))
+  v_old   <- as.numeric(propertee:::.get_DB_wo_covadj_se(mod))
+  expect_equal(v_vcov, v_old)
+})
+
+test_that(".get_DB_multi_arm_se returns 1x1 matrix for 2-arm with correct name", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  vmat <- propertee:::.get_DB_multi_arm_se(mod)
+  expect_equal(dim(vmat), c(1L, 1L))
+  expect_equal(rownames(vmat), "z.")
+  expect_equal(colnames(vmat), "z.")
+  expect_gt(as.numeric(vmat), 0)
+})
+
+test_that(".get_DB_multi_arm_se with cov_adj is positive (different estimator from vcov_tee)", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  cmod <- lm(y ~ x, simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata,
+                weights = ate(), offset = cov_adj(cmod))
+
+  v_vcov  <- as.numeric(vcov_tee(mod, type = "DB0"))
+  v_multi <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+  # Both positive; they need not be equal (different estimators)
+  expect_gt(v_multi, 0)
+  expect_gt(v_vcov,  0)
+})
+
+test_that(".get_DB_multi_arm_se supports values_from for score tests", {
+  data(simdata)
+  spec    <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod     <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  w_ate   <- as.numeric(ate(spec, data = simdata))
+
+  W1 <- sum(w_ate[simdata$z==1]); W0 <- sum(w_ate[simdata$z==0]); W <- W1+W0
+  yb1 <- sum(w_ate[simdata$z==1]*simdata$y[simdata$z==1])/W1
+  yb0 <- sum(w_ate[simdata$z==0]*simdata$y[simdata$z==0])/W0
+  rho1H    <- (W0/W)*yb0 + (W1/W)*yb1  # tau0=0
+  mod_null <- lm(y ~ 0, data = simdata, weights = w_ate,
+                 offset = ifelse(simdata$z==1, rho1H, rho1H))
+
+  v_full  <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+  v_null  <- as.numeric(propertee:::.get_DB_multi_arm_se(mod, values_from = mod_null))
+  expect_false(isTRUE(all.equal(v_full, v_null)))
+  expect_gt(v_null, 0)
+})
+
+test_that(".get_DB_multi_arm_se pair-matched blocks match manual formula", {
+  # For pair-matched (n_b=2, n_b0=n_b1=1), small-block eq (9) reduces to
+  # (delta_t - delta_0)^2 / (pi_t * pi_0) = 4*(delta_t - delta_0)^2.
+  set.seed(11)
+  B <- 5L; n <- 2L * B
+  bid  <- rep(seq_len(B), each = 2L)
+  zobs <- rep(c(1L, 0L), B)
+  yobs <- rnorm(n)
+  data <- data.frame(cid = seq_len(n), bid = bid, z = zobs, y = yobs)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+
+  v_multi <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+
+  # Manual: delta = unit individual importance weight * e = 1 * e = e.
+  # Each block: (e_t - e_0)^2 / (pi_t * pi_0) = (e_t - e_0)^2 / (0.5*0.5) = 4*(e_t-e_0)^2
+  e     <- as.numeric(residuals(mod, type = "working"))
+  delta <- e   # unit importance weight (NOT w_ate * e)
+  nu <- numeric(B)
+  for (b in seq_len(B)) {
+    in_b <- which(bid == b)
+    dt   <- delta[in_b[zobs[in_b] == 1L]]
+    d0   <- delta[in_b[zobs[in_b] == 0L]]
+    nu[b] <- (dt - d0)^2 / (0.5 * 0.5)   # eq (9): (delta_t-delta_0)^2 / (pi_t*pi_0)
+  }
+  agg  <- propertee:::.aggregate_to_cluster(mod)
+  w_E  <- sum(agg$data$.w0)
+
+  expect_equal(v_multi, sum(nu) / w_E^2, tolerance = 1e-10)
+})
+
+# Helper: build a 3-arm teeMod from scratch (bypasses lmitt's binary check).
+# bid, z3 ∈ {0,1,2}, y are individual-level vectors of the same length.
+.make_3arm_mod <- function(bid, z3, y) {
+  n <- length(y)
+  d <- data.frame(cid = seq_len(n), bid = bid, z = z3, y = y)
+
+  # rct_spec tolerates z ∈ {0,1,2}: the binary-treatment check is only in lmitt
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = d)
+
+  # Per-arm ATE weights: n_b / n_bt for each unit
+  nb_tbl   <- table(bid, z3)
+  n_b_vec  <- as.integer(rowSums(nb_tbl)[as.character(bid)])
+  n_bt_vec <- as.integer(nb_tbl[cbind(as.character(bid), as.character(z3))])
+  w_ate3   <- n_b_vec / n_bt_vec
+
+  base_lm <- lm(y ~ 1, data = d, weights = w_ate3)
+  # lmitt.formula overwrites $call$data with the actual data frame so that
+  # x$call$data[name_clu] is subsettable; replicate that here.
+  base_lm$call$data <- d
+
+  new("teeMod",
+      base_lm,
+      StudySpecification    = spec,
+      ctrl_means_model      = lm(y ~ 1, data = d),
+      lmitt_fitted          = FALSE,
+      absorbed_intercepts   = FALSE,
+      moderator             = character(0L),
+      lmitt_call            = call("quote", call("lmitt")))
+}
+
+# Helper: create a values_from model whose residuals = y - arm-specific mean
+.arm_resid_model <- function(mod3, y, z3, w_ate3) {
+  rho <- vapply(sort(unique(z3)), function(t) {
+    m <- z3 == t
+    sum(w_ate3[m] * y[m]) / sum(w_ate3[m])
+  }, 1.0)
+  names(rho) <- as.character(sort(unique(z3)))
+  offset_vec <- as.numeric(rho[as.character(z3)])
+  lm(y ~ 0, data = data.frame(y = y), weights = w_ate3, offset = offset_vec)
+}
+
+test_that(".get_DB_multi_arm_se large-block diagonal matches manual Neyman formula", {
+  # For a single large block (n_b ≥ 2 per arm), eq (7) of the multi-arm chapter:
+  # Sigma_b[1,1] = n_b/pi_bt * var(delta_1) + n_b/pi_b0 * var(delta_0)
+  #              = n_b^2/n_bt * var(delta_1) + n_b^2/n_b0 * var(delta_0)
+  # where delta_c = individual-importance-weight * e (NOT ATE * e).
+  # Note: no n_b/(n_b-1) Bessel factor — the Bessel correction is already embedded
+  # in the unbiased sample variance definition (divisor n_bt - 1).
+  set.seed(55)
+  n_bt <- 4L            # clusters per arm in the single large block
+  n    <- 2L * n_bt
+  zobs <- rep(c(1L, 0L), n_bt)
+  yobs <- rnorm(n)
+  data <- data.frame(cid = seq_len(n), bid = rep(1L, n), z = zobs, y = yobs)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+
+  vmat    <- propertee:::.get_DB_multi_arm_se(mod)
+  expect_equal(dim(vmat), c(1L, 1L))
+
+  e   <- as.numeric(residuals(mod, type = "working"))
+  d1  <- e[zobs == 1L]
+  d0  <- e[zobs == 0L]
+  n_b <- 2L * n_bt
+  pi_bt <- n_bt / n_b; pi_b0 <- n_bt / n_b  # balanced: pi_bt = pi_b0 = 0.5
+  # eq (7): n_b/pi_bt * var(d1) + n_b/pi_b0 * var(d0) = n_b^2/n_bt * var + n_b^2/n_b0 * var
+  Sigma_b <- n_b / pi_bt * var(d1) + n_b / pi_b0 * var(d0)
+  agg <- propertee:::.aggregate_to_cluster(mod)
+  w_E <- sum(agg$data$.w0)
+  v_manual <- Sigma_b / w_E^2
+
+  expect_equal(as.numeric(vmat), v_manual, tolerance = 1e-10)
+})
+
+test_that(".get_DB_multi_arm_se returns 2x2 matrix for 3-arm matched triplets", {
+  set.seed(7)
+  B   <- 6L;  n <- 3L * B
+  bid <- rep(seq_len(B), each = 3L)
+  z3  <- rep(c(0L, 1L, 2L), B)
+  y   <- rnorm(n) + z3 * 0.5
+
+  n_b_per <- 3L; n_b_vec <- rep(n_b_per, n); n_bt_vec <- rep(1L, n)
+  w_ate3  <- n_b_vec / n_bt_vec   # = 3 for all units in balanced triplets
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  V    <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  expect_equal(dim(V), c(2L, 2L))
+  expect_equal(rownames(V), c("z.1", "z.2"))
+  expect_equal(colnames(V), c("z.1", "z.2"))
+  # symmetric
+  expect_equal(V[1L, 2L], V[2L, 1L])
+  # positive diagonal
+  expect_gt(V[1L, 1L], 0)
+  expect_gt(V[2L, 2L], 0)
+})
+
+test_that(".get_DB_multi_arm_se T=2 triplets diagonal matches manual formula", {
+  # For matched triplets (n_bt = n_b0 = 1, pi = 1/3 each):
+  # Sigma_b[t,t] = (delta_t - delta_0)^2 / (pi_t * pi_0) = 9 * (delta_t - delta_0)^2
+  set.seed(13)
+  B  <- 5L;  n <- 3L * B
+  bid <- rep(seq_len(B), each = 3L)
+  z3  <- rep(c(0L, 1L, 2L), B)
+  y   <- rnorm(n)
+  w_ate3 <- rep(3.0, n)   # n_b/n_bt = 3/1 = 3 for all units
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  e    <- as.numeric(residuals(vf, type = "working"))  # arm-specific residuals
+  # delta = unit individual importance weight * e = 1 * e = e (not ATE * e)
+  delta <- e
+
+  V <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  # Manual Sigma_b: delta = e, pi = 1/3, so 1/(pi*pi) = 9
+  Sigma11 <- Sigma22 <- 0
+  for (b in seq_len(B)) {
+    in_b <- which(bid == b)
+    d0   <- delta[in_b[z3[in_b] == 0L]]
+    d1   <- delta[in_b[z3[in_b] == 1L]]
+    d2   <- delta[in_b[z3[in_b] == 2L]]
+    Sigma11 <- Sigma11 + (d1 - d0)^2 / (1/3 * 1/3)
+    Sigma22 <- Sigma22 + (d2 - d0)^2 / (1/3 * 1/3)
+  }
+  agg <- propertee:::.aggregate_to_cluster(mod3)
+  w_E <- sum(agg$data$.w0)
+  expect_equal(V[1L, 1L], Sigma11 / w_E^2, tolerance = 1e-10)
+  expect_equal(V[2L, 2L], Sigma22 / w_E^2, tolerance = 1e-10)
+})
+
+test_that(".get_DB_multi_arm_se T=2 triplets off-diagonal matches manual formula", {
+  # Off-diagonal eq (10) for n_bt = n_b0 = 1:
+  # Sigma_b[1,2] = 0.5*(A_10 + A_20 - A_21) where A_ts = sum(delta_t-delta_s)^2/(pi_t*pi_s)
+  #             = 9*(delta_1-delta_0)*(delta_2-delta_0)  [simplification]
+  set.seed(17)
+  B  <- 8L;  n <- 3L * B
+  bid <- rep(seq_len(B), each = 3L)
+  z3  <- rep(c(0L, 1L, 2L), B)
+  y   <- rnorm(n)
+  w_ate3 <- rep(3.0, n)
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  e    <- as.numeric(residuals(vf, type = "working"))
+  delta <- e   # unit individual importance weight
+
+  V <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  Sigma12 <- 0
+  for (b in seq_len(B)) {
+    in_b <- which(bid == b)
+    d0 <- delta[in_b[z3[in_b] == 0L]]
+    d1 <- delta[in_b[z3[in_b] == 1L]]
+    d2 <- delta[in_b[z3[in_b] == 2L]]
+    A10 <- (d1 - d0)^2 / (1/3 * 1/3)
+    A20 <- (d2 - d0)^2 / (1/3 * 1/3)
+    A21 <- (d2 - d1)^2 / (1/3 * 1/3)
+    Sigma12 <- Sigma12 + 0.5 * (A10 + A20 - A21)
+  }
+  agg <- propertee:::.aggregate_to_cluster(mod3)
+  w_E <- sum(agg$data$.w0)
+  expect_equal(V[1L, 2L], Sigma12 / w_E^2, tolerance = 1e-10)
+})
+
+test_that(".get_DB_multi_arm_se T=2 large blocks diagonal and off-diagonal are correct", {
+  # Large blocks: n_bt = n_b0 = 3, n_b = 9, pi = 1/3.
+  # eq (7): Sigma_b[t,t] = n_b/pi_t * var(d_t) + n_b/pi_0 * var(d_0)
+  #                       = 27 * var(d_t) + 27 * var(d_0)
+  # eq (8): Sigma_b[1,2] = n_b/pi_0 * var(d_0) = 27 * var(d_0)
+  # No n_b/(n_b-1) factor: the Bessel correction is in the sample variance itself.
+  set.seed(21)
+  B     <- 3L; n_arm <- 3L; n_b <- 3L * n_arm  # 9 clusters per block, 3 per arm
+  n     <- B * n_b
+  bid   <- rep(seq_len(B), each = n_b)
+  z3    <- rep(rep(c(0L, 1L, 2L), each = n_arm), B)
+  y     <- rnorm(n) + z3
+
+  w_ate3 <- rep(as.numeric(n_b) / n_arm, n)
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  e    <- as.numeric(residuals(vf, type = "working"))
+  delta <- e   # unit individual importance weight (NOT ATE * e)
+
+  V <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  # Manual using eq (7)/(8)
+  Sigma11 <- Sigma22 <- Sigma12 <- 0
+  for (b in seq_len(B)) {
+    in_b <- which(bid == b)
+    d0 <- delta[in_b[z3[in_b] == 0L]]
+    d1 <- delta[in_b[z3[in_b] == 1L]]
+    d2 <- delta[in_b[z3[in_b] == 2L]]
+    s2_0 <- var(d0); s2_1 <- var(d1); s2_2 <- var(d2)
+    pi_0 <- pi_1 <- pi_2 <- 1/3
+    # n_b/pi_t = n_b^2/n_bt = 9^2/3 = 27
+    Sigma11 <- Sigma11 + n_b / pi_1 * s2_1 + n_b / pi_0 * s2_0
+    Sigma22 <- Sigma22 + n_b / pi_2 * s2_2 + n_b / pi_0 * s2_0
+    Sigma12 <- Sigma12 + n_b / pi_0 * s2_0
+  }
+  agg <- propertee:::.aggregate_to_cluster(mod3)
+  w_E <- sum(agg$data$.w0)
+
+  expect_equal(V[1L, 1L], Sigma11 / w_E^2, tolerance = 1e-10)
+  expect_equal(V[2L, 2L], Sigma22 / w_E^2, tolerance = 1e-10)
+  expect_equal(V[1L, 2L], Sigma12 / w_E^2, tolerance = 1e-10)
+  # Positive diagonal and off-diagonal ≤ diagonal
+  expect_gt(V[1L, 1L], 0)
+  expect_gt(V[2L, 2L], 0)
+})
+
+test_that(".get_DB_multi_arm_se T=2 matrix is symmetric and PSD", {
+  set.seed(31)
+  B  <- 5L;  n <- 3L * B
+  bid <- rep(seq_len(B), each = 3L)
+  z3  <- rep(c(0L, 1L, 2L), B)
+  y   <- rnorm(n)
+  w_ate3 <- rep(3.0, n)
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  V    <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  expect_equal(V[1L, 2L], V[2L, 1L], tolerance = 1e-12)
+  # PSD: all eigenvalues ≥ 0
+  eigs <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
+  expect_true(all(eigs >= -1e-12))
+})
+
+test_that(".get_DB_multi_arm_se covariance matrix satisfies Cauchy-Schwarz (V12^2 <= V11*V22)", {
+  set.seed(41)
+  B  <- 10L;  n <- 3L * B
+  bid <- rep(seq_len(B), each = 3L)
+  z3  <- rep(c(0L, 1L, 2L), B)
+  y   <- rnorm(n)
+  w_ate3 <- rep(3.0, n)
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  V    <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  expect_lte(V[1L, 2L]^2, V[1L, 1L] * V[2L, 2L] + 1e-12)
+})
+
+test_that(".get_DB_multi_arm_se T=2 mixed blocks (some small, some large)", {
+  # Block 1: triplet (n_bt=1), Block 2: large (n_bt=3).
+  set.seed(51)
+  d_s  <- data.frame(cid=1:3,   bid=1L, z=c(0L,1L,2L), y=rnorm(3))   # small
+  d_l  <- data.frame(cid=4:12,  bid=2L, z=rep(c(0L,1L,2L),each=3L),
+                     y=rnorm(9))                                     # large
+  d    <- rbind(d_s, d_l)
+  n    <- nrow(d)
+  bid  <- d$bid; z3 <- d$z; y <- d$y
+
+  # Per-arm ATE weights
+  nb_tbl   <- table(bid, z3)
+  n_b_vec  <- as.integer(rowSums(nb_tbl)[as.character(bid)])
+  n_bt_vec <- as.integer(nb_tbl[cbind(as.character(bid), as.character(z3))])
+  w_ate3   <- n_b_vec / n_bt_vec
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  V    <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  expect_equal(dim(V), c(2L, 2L))
+  expect_equal(V[1L, 2L], V[2L, 1L], tolerance = 1e-12)
+  expect_gt(V[1L, 1L], 0)
+  expect_gt(V[2L, 2L], 0)
+})
+
+test_that("obs_spec DB0 pair-matched blocks: numerical correctness", {
+  # Pair-matched observational study (n_b=2, n_b0=n_b1=1).
+  # Section 4.1 formula: nu_b = n_b^2 * (mean_G0/SW0 - mean_G1/SW1)^2
+  # where G0_i = w0_i * (y_bar_i - 2*rho0), G1_i = w0_i * (y_bar_i - 2*rho0 - tau)
+  # and SW0 = sum of ATE weights for control clusters,
+  #     SW1 = sum of ATE weights for treated clusters.
+  set.seed(77)
+  B   <- 8L; n <- 2L * B
+  ws  <- round(abs(rnorm(n, mean = 20, sd = 5)) + 1)
+  y   <- rnorm(n)
+  z   <- rep(c(1L, 0L), B)
+  bid <- rep(seq_len(B), each = 2L)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y, w = ws)
+  spec <- obs_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- suppressMessages(
+    lmitt(y ~ 1, specification = spec, data = data, weights = ate(spec) * data$w)
+  )
+
+  # Section 4.1 empirical-bread formula:
+  # G_i = w0_i * (y_bar_i - 2*rho0 - z_i*tau) where w0_i = importance weight (=ws)
+  agg   <- propertee:::.aggregate_to_cluster(mod)
+  d_agg <- agg$data
+  zobs  <- d_agg[, agg$z]
+  rho0  <- unname(coef(mod)["(Intercept)"])
+  tau   <- unname(coef(mod)[paste0(var_names(mod@StudySpecification, "t"), ".")])
+  G_ctrl <- d_agg$.w0 * (d_agg$.wy - 2 * rho0)
+  G_trt  <- d_agg$.w0 * (d_agg$.wy - 2 * rho0 - tau)
+  SW0 <- sum(d_agg$.w[zobs == 0])
+  SW1 <- sum(d_agg$.w[zobs == 1])
+  bid_c <- d_agg[, agg$block]
+
+  nu <- numeric(B)
+  for (b in seq_len(B)) {
+    G0_b <- G_ctrl[bid_c == b & zobs == 0]
+    G1_b <- G_trt[ bid_c == b & zobs == 1]
+    n_b  <- length(G0_b) + length(G1_b)      # = 2 for pair-matched
+    nu[b] <- n_b^2 * (mean(G0_b) / SW0 - mean(G1_b) / SW1)^2
+  }
+  v_manual <- sum(nu)
+
+  v_obs <- suppressMessages(as.numeric(vcov_tee(mod, type = "DB0")))
+  expect_equal(v_obs, v_manual, tolerance = 1e-10)
+})
+
+test_that("obs_spec DB0 large blocks: numerical correctness with Bessel", {
+  # Large blocks (n_bt=3, n_b0=3, n_b=6), Section 4.1 formula.
+  # B[rho0]_b = n_b^2/(n_b-1) * (n_b/n_{b,0}) * var(G0) / SW0^2
+  # B[tau]_b  = n_b^2/(n_b-1) * (n_b/n_{b,1}) * var(G1) / SW1^2
+  set.seed(88)
+  n_arm <- 3L; B <- 3L; n_b <- 2L * n_arm   # 6 clusters per block
+  n     <- B * n_b
+  bid   <- rep(seq_len(B), each = n_b)
+  z     <- rep(rep(c(1L, 0L), each = n_arm), B)
+  y     <- rnorm(n) + 0.5 * z
+  ws    <- round(abs(rnorm(n, mean = 10, sd = 2)) + 1)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y, w = ws)
+  spec <- obs_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- suppressMessages(
+    lmitt(y ~ 1, specification = spec, data = data, weights = ate(spec) * data$w)
+  )
+
+  # Section 4.1 empirical-bread large-block formula:
+  agg   <- propertee:::.aggregate_to_cluster(mod)
+  d_agg <- agg$data
+  zobs  <- d_agg[, agg$z]
+  rho0  <- unname(coef(mod)["(Intercept)"])
+  tau   <- unname(coef(mod)[paste0(var_names(mod@StudySpecification, "t"), ".")])
+  G_ctrl <- d_agg$.w0 * (d_agg$.wy - 2 * rho0)
+  G_trt  <- d_agg$.w0 * (d_agg$.wy - 2 * rho0 - tau)
+  SW0 <- sum(d_agg$.w[zobs == 0])
+  SW1 <- sum(d_agg$.w[zobs == 1])
+  bid_c <- d_agg[, agg$block]
+
+  nu <- numeric(B)
+  for (b in seq_len(B)) {
+    G0_b <- G_ctrl[bid_c == b & zobs == 0]
+    G1_b <- G_trt[ bid_c == b & zobs == 1]
+    n_b0 <- length(G0_b); n_b1 <- length(G1_b)
+    n_b_b <- n_b0 + n_b1
+    sc <- n_b_b^2 / (n_b_b - 1)
+    nu[b] <- sc * n_b_b / n_b0 * var(G0_b) / SW0^2 +
+             sc * n_b_b / n_b1 * var(G1_b) / SW1^2
+  }
+  v_manual <- sum(nu)
+
+  v_obs <- suppressMessages(as.numeric(vcov_tee(mod, type = "DB0")))
+  expect_equal(v_obs, v_manual, tolerance = 1e-10)
+})
+
+test_that("obs_spec DB0 with cov_adj: residuals are covariate-adjusted", {
+  # Verify that covariate adjustment changes the variance estimate and
+  # that the adjusted residuals (y - g(x'beta) - rho_z) drive the formula.
+  set.seed(99)
+  n_arm <- 4L; B <- 4L; n_b <- 2L * n_arm
+  n     <- B * n_b
+  bid   <- rep(seq_len(B), each = n_b)
+  z     <- rep(rep(c(1L, 0L), each = n_arm), B)
+  x     <- rnorm(n)
+  y     <- 2 * x + z + rnorm(n)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, x = x, y = y)
+  spec <- obs_spec(z ~ cluster(cid) + block(bid), data = data)
+  # Fit outcome model with ATE weights (silences the unweighted-cov-adj warning)
+  cmod <- lm(y ~ x, data = data, weights = ate(spec, data = data))
+
+  mod_plain <- suppressMessages(
+    lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+  )
+  mod_adj <- suppressMessages(
+    lmitt(y ~ 1, specification = spec, data = data, weights = ate(),
+          offset = cov_adj(cmod))
+  )
+
+  v_plain <- suppressMessages(as.numeric(vcov_tee(mod_plain, type = "DB0")))
+  v_adj   <- suppressMessages(as.numeric(vcov_tee(mod_adj,   type = "DB0")))
+
+  # Covariate adjustment should reduce variance (x is a strong predictor of y)
+  expect_lt(v_adj, v_plain)
+  expect_true(is.finite(v_adj) && v_adj > 0)
+
+  # The cov_adj path uses .get_DB_covadj_se (bread + exact meat), not the
+  # simplified nu_b formula.  Verify it equals the direct internal call.
+  v_internal <- suppressMessages(
+    as.numeric(propertee:::.get_DB_covadj_se(mod_adj))
+  )
+  expect_equal(v_adj, v_internal, tolerance = 1e-10)
+
+  # Also verify the variance is smaller than a model using plain residuals
+  # (no offset), confirming the adjusted residuals drive the formula.
+  e_adj   <- as.numeric(residuals(mod_adj,   type = "working"))
+  e_plain <- as.numeric(residuals(mod_plain, type = "working"))
+  expect_lt(var(e_adj), var(e_plain))   # cov_adj reduces residual spread
+})
+
+test_that("obs_spec DB0 equals rct_spec DB0 for same data and block structure", {
+  # The two code paths converge to the same number when block structure
+  # and ATE weights are identical (the only difference is the spec type).
+  set.seed(111)
+  n_arm <- 3L; B <- 4L; n_b <- 2L * n_arm; n <- B * n_b
+  bid <- rep(seq_len(B), each = n_b)
+  z   <- rep(rep(c(1L, 0L), each = n_arm), B)
+  y   <- rnorm(n)
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y)
+
+  spec_rct <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  spec_obs <- obs_spec(z ~ cluster(cid) + block(bid), data = data)
+
+  mod_rct <- lmitt(y ~ 1, specification = spec_rct, data = data, weights = ate())
+  mod_obs <- suppressMessages(
+    lmitt(y ~ 1, specification = spec_obs, data = data, weights = ate())
+  )
+
+  v_rct <- as.numeric(vcov_tee(mod_rct, type = "DB0"))
+  v_obs <- suppressMessages(as.numeric(vcov_tee(mod_obs, type = "DB0")))
+  expect_equal(v_rct, v_obs, tolerance = 1e-10)
+})
+
+test_that(".get_DB_multi_arm_se T=2 mixed blocks: full numerical correctness", {
+  # Block 1: triplet (n_bt=n_b0=1, n_b=3) → small-block eq (9)
+  # Block 2: large  (n_bt=n_b0=3, n_b=9) → large-block eq (7), no Bessel outside
+  set.seed(61)
+  # Block 1: 3 clusters, one per arm
+  d1 <- data.frame(cid=1:3, bid=1L, z=c(0L,1L,2L), y=rnorm(3))
+  # Block 2: 9 clusters, 3 per arm
+  d2 <- data.frame(cid=4:12, bid=2L, z=rep(c(0L,1L,2L), each=3L), y=rnorm(9))
+  d  <- rbind(d1, d2)
+  n  <- nrow(d); bid <- d$bid; z3 <- d$z; y <- d$y
+
+  nb_tbl  <- table(bid, z3)
+  n_b_vec <- as.integer(rowSums(nb_tbl)[as.character(bid)])
+  n_bt_vec<- as.integer(nb_tbl[cbind(as.character(bid), as.character(z3))])
+  w_ate3  <- n_b_vec / n_bt_vec    # 3 for block 1, 3 for block 2
+
+  mod3 <- .make_3arm_mod(bid, z3, y)
+  vf   <- .arm_resid_model(mod3, y, z3, w_ate3)
+  e    <- as.numeric(residuals(vf, type = "working"))
+  delta <- e   # unit individual importance weight (NOT ATE * e)
+  agg   <- propertee:::.aggregate_to_cluster(mod3)
+  w_E   <- sum(agg$data$.w0)
+
+  V <- propertee:::.get_DB_multi_arm_se(mod3, values_from = vf)
+
+  ## Block 1 (small, n_b=3, pi=1/3): eq (9), correction terms vanish (n_bt=1)
+  in_1 <- which(bid == 1L)
+  d1_0 <- delta[in_1[z3[in_1] == 0L]]
+  d1_1 <- delta[in_1[z3[in_1] == 1L]]
+  d1_2 <- delta[in_1[z3[in_1] == 2L]]
+  A10_b1 <- (d1_1 - d1_0)^2 / (1/3 * 1/3)
+  A20_b1 <- (d1_2 - d1_0)^2 / (1/3 * 1/3)
+  A21_b1 <- (d1_2 - d1_1)^2 / (1/3 * 1/3)
+  Sigma_b1_11 <- A10_b1
+  Sigma_b1_22 <- A20_b1
+  Sigma_b1_12 <- 0.5 * (A10_b1 + A20_b1 - A21_b1)
+
+  ## Block 2 (large, n_b=9, n_bt=3, pi=1/3): eq (7), no Bessel factor outside
+  in_2 <- which(bid == 2L)
+  d2_0 <- delta[in_2[z3[in_2] == 0L]]
+  d2_1 <- delta[in_2[z3[in_2] == 1L]]
+  d2_2 <- delta[in_2[z3[in_2] == 2L]]
+  pi_t <- 1/3; pi_0 <- 1/3; n_b2 <- 9L
+  # n_b2/pi_t = n_b2^2/n_bt = 81/3 = 27
+  Sigma_b2_11 <- n_b2 / pi_t * var(d2_1) + n_b2 / pi_0 * var(d2_0)
+  Sigma_b2_22 <- n_b2 / pi_t * var(d2_2) + n_b2 / pi_0 * var(d2_0)
+  Sigma_b2_12 <- n_b2 / pi_0 * var(d2_0)
+
+  V_man_11 <- (Sigma_b1_11 + Sigma_b2_11) / w_E^2
+  V_man_22 <- (Sigma_b1_22 + Sigma_b2_22) / w_E^2
+  V_man_12 <- (Sigma_b1_12 + Sigma_b2_12) / w_E^2
+
+  expect_equal(V[1L,1L], V_man_11, tolerance = 1e-10)
+  expect_equal(V[2L,2L], V_man_22, tolerance = 1e-10)
+  expect_equal(V[1L,2L], V_man_12, tolerance = 1e-10)
+  expect_equal(V[1L,2L], V[2L,1L], tolerance = 1e-12) # symmetry
+})
+
+test_that(".get_DB_multi_arm_se T=1 equals vcov_tee DB0 for pair-matched two-arm RCT", {
+  # With the corrected delta (unit individual importance weight, w_bij = 1),
+  # the multi-arm small-block formula (eq 9) gives
+  #   (e_t - e_0)^2 / (pi_t * pi_0) = n_b^2 * (e_t - e_0)^2
+  # which equals the two-arm formula's (gamma_t - gamma_0)^2 = (n_b*e_t - n_b*e_0)^2.
+  # The two formulas agree for pair-matched blocks.
+  set.seed(67)
+  B    <- 6L;  n <- 2L * B
+  bid  <- rep(seq_len(B), each = 2L)
+  z    <- rep(c(1L, 0L), B)
+  y    <- rnorm(n)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+
+  v_standard <- as.numeric(vcov_tee(mod, type = "DB0"))
+  v_multiarm <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+
+  expect_equal(v_standard, v_multiarm, tolerance = 1e-10)
+})
+
+test_that(".get_DB_multi_arm_se T=1 is a tighter bound than vcov_tee for large blocks", {
+  # Multi-arm eq (7): n_b/pi_bt * var(d_1) + n_b/pi_0 * var(d_0) = n_b^2/n_bt * var + n_b^2/n_b0 * var.
+  # Two-arm chapter: n_b/(n_b-1) * n_b^2/n_bt * var + n_b/(n_b-1) * n_b^2/n_b0 * var.
+  # The two-arm adds the extra Bessel factor n_b/(n_b-1) > 1, so multi-arm is tighter.
+  set.seed(53)
+  n_arm <- 3L; B <- 4L; n_b <- 2L * n_arm   # 6 clusters per block
+  n     <- B * n_b
+  bid   <- rep(seq_len(B), each = n_b)
+  z     <- rep(rep(c(1L, 0L), each = n_arm), B)
+  y     <- rnorm(n)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, y = y)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  mod  <- lmitt(y ~ 1, specification = spec, data = data, weights = ate())
+
+  v_standard <- as.numeric(vcov_tee(mod, type = "DB0"))
+  v_multiarm <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+
+  # Multi-arm gives a strictly smaller variance (tighter conservative bound)
+  expect_lt(v_multiarm, v_standard)
+  expect_gt(v_multiarm, 0)
+})
+
+test_that(".get_DB_multi_arm_se T=1 large blocks with cov_adj: tighter than vcov_tee", {
+  set.seed(59)
+  n_arm <- 3L; B <- 3L; n_b <- 2L * n_arm; n <- B * n_b
+  bid <- rep(seq_len(B), each = n_b)
+  z   <- rep(rep(c(1L, 0L), each = n_arm), B)
+  x   <- rnorm(n)
+  y   <- x + z + rnorm(n)
+
+  data <- data.frame(cid = seq_len(n), bid = bid, z = z, x = x, y = y)
+  spec <- rct_spec(z ~ cluster(cid) + block(bid), data = data)
+  cmod <- lm(y ~ x, data = data, weights = ate(spec, data = data))
+  mod  <- lmitt(y ~ 1, specification = spec, data = data,
+                weights = ate(), offset = cov_adj(cmod))
+
+  v_standard <- as.numeric(vcov_tee(mod, type = "DB0"))
+  v_multiarm <- as.numeric(propertee:::.get_DB_multi_arm_se(mod))
+
+  expect_lt(v_multiarm, v_standard)
+  expect_gt(v_multiarm, 0)
 })

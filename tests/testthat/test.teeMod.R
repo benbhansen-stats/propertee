@@ -2581,3 +2581,128 @@ test_that(".estfun_DB_blockabsorb returns correct value", {
     .estfun_DB_blockabsorb(ssmod_abs, vcov_type = "DB")
   ))
 })
+
+## ---- Tests for .estfun_DB_nonabsorbed and the vcov_type="DB" dispatch -------
+
+test_that(".estfun_DB_nonabsorbed returns n x 1 matrix with treatment colname", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  ef <- propertee:::.estfun_DB_nonabsorbed(mod)
+  expect_true(is.matrix(ef))
+  expect_equal(ncol(ef), 1L)
+  expect_equal(nrow(ef), nrow(simdata))
+  expect_equal(colnames(ef), "z.")
+})
+
+test_that(".estfun_DB_nonabsorbed returns n_bz * w_i * e_i for each unit", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  ef   <- propertee:::.estfun_DB_nonabsorbed(mod)
+  w    <- as.numeric(stats::weights(mod))
+  e    <- as.numeric(stats::residuals(mod, type = "working"))
+
+  # n_bz from specification_table (rows = blocks, cols = [n_b0, n_b1])
+  nbk  <- specification_table(specification = spec, x = "treatment", y = "block")
+  bid  <- propertee:::.merge_block_id_cols(simdata, var_names(spec, "b"))
+  bid  <- bid[[var_names(spec, "b")[1]]]
+  z    <- simdata[[var_names(spec, "t")]]
+  n_bz <- as.numeric(nbk[bid, 1] * (1 - z) + nbk[bid, 2] * z)
+
+  expect_equal(as.numeric(ef[, 1]), n_bz * w * e, tolerance = 1e-10)
+})
+
+test_that(".estfun_DB_nonabsorbed with values_from uses null residuals not full residuals", {
+  data(simdata)
+  spec     <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod      <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  # null model: fitted value = mean(y) for all, so residuals = y - mean(y)
+  w_ate    <- as.numeric(ate(spec, data = simdata))
+  null_off <- rep(mean(simdata$y), nrow(simdata))
+  mod_null <- lm(y ~ 0, data = simdata, weights = w_ate, offset = null_off)
+
+  ef_full <- propertee:::.estfun_DB_nonabsorbed(mod)
+  ef_null <- propertee:::.estfun_DB_nonabsorbed(mod, values_from = mod_null)
+
+  # results differ because residuals differ
+  expect_false(isTRUE(all.equal(ef_full, ef_null)))
+
+  # null ef uses y - null_off as residuals
+  w    <- as.numeric(stats::weights(mod))
+  e_n  <- simdata$y - null_off
+  nbk  <- specification_table(specification = spec, x = "treatment", y = "block")
+  bid  <- propertee:::.merge_block_id_cols(simdata, var_names(spec, "b"))
+  bid  <- bid[[var_names(spec, "b")[1]]]
+  z    <- simdata[[var_names(spec, "t")]]
+  n_bz <- as.numeric(nbk[bid, 1] * (1 - z) + nbk[bid, 2] * z)
+  expect_equal(as.numeric(ef_null[, 1]), n_bz * w * e_n, tolerance = 1e-10)
+})
+
+test_that("estfun.teeMod dispatches to .estfun_DB_nonabsorbed for vcov_type='DB', non-absorbed", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  ef_dispatch <- estfun(mod, vcov_type = "DB")
+  ef_direct   <- propertee:::.estfun_DB_nonabsorbed(mod)
+  expect_equal(ef_dispatch, ef_direct)
+
+  # n x 1, not n x 2 as for MB/HC
+  expect_equal(ncol(ef_dispatch), 1L)
+})
+
+test_that("estfun.teeMod vcov_type='DB' with values_from propagates to .estfun_DB_nonabsorbed", {
+  data(simdata)
+  spec     <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod      <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+  w_ate    <- as.numeric(ate(spec, data = simdata))
+  mod_null <- lm(y ~ 0, data = simdata, weights = w_ate,
+                 offset = rep(0, nrow(simdata)))
+
+  ef_via_dispatch <- estfun(mod, values_from = mod_null, vcov_type = "DB")
+  ef_direct       <- propertee:::.estfun_DB_nonabsorbed(mod, values_from = mod_null)
+  expect_equal(ef_via_dispatch, ef_direct)
+})
+
+test_that("estfun.teeMod vcov_type='DB', non-absorbed returns n x >1 matrix for MB type", {
+  # Regression guard: MB path should still return n x 2 (not dispatch to _DB_nonabsorbed)
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  ef_mb <- estfun(mod, vcov_type = "MB")
+  expect_gt(ncol(ef_mb), 1L)
+})
+
+test_that("cluster sums of DB estfun equal n_bz * sum(w_j e_j) per cluster", {
+  data(simdata)
+  spec <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  mod  <- lmitt(y ~ 1, specification = spec, data = simdata, weights = ate())
+
+  ef  <- estfun(mod, vcov_type = "DB")
+  w   <- as.numeric(stats::weights(mod))
+  e   <- as.numeric(stats::residuals(mod, type = "working"))
+  uid <- paste(simdata$uoa1, simdata$uoa2, sep = "_")
+
+  # Individual-level cluster sums of gamma_i = n_bz * w_i * e_i
+  gamma_c <- tapply(as.numeric(ef[, 1]), uid, sum)
+  # Cluster sums of w * e
+  we_c    <- tapply(w * e, uid, sum)
+
+  # Cluster-level n_bz from aggregate_to_cluster
+  agg    <- propertee:::.aggregate_to_cluster(mod)
+  uid_c  <- paste(agg$data$uoa1, agg$data$uoa2, sep = "_")
+  nbk    <- specification_table(spec, x = "treatment", y = "block")
+  zobs_c <- agg$data[, agg$z]
+  bid_c  <- agg$data[, agg$block]
+  n_bz_c <- as.numeric(nbk[bid_c, 1] * (1 - zobs_c) + nbk[bid_c, 2] * zobs_c)
+  names(n_bz_c) <- uid_c
+
+  common <- intersect(names(gamma_c), names(n_bz_c))
+  expect_equal(unname(gamma_c[common]),
+               unname(n_bz_c[common] * we_c[common]),
+               tolerance = 1e-10)
+})
