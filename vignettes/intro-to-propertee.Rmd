@@ -68,16 +68,19 @@ data("STARplus")
 table(STARplus$cond_at_entry)
 ```
 
-For simplicity for this first example, we will examine a single binary
+For this introductory example, we will examine a single binary
 treatment - "small" classrooms versus "regular" and "regular+aide" classrooms.
 
 ```{r}
 STARplus$cond_small <- STARplus$cond_at_entry == "small"
+STARplus$cond_small[STARplus$cond_at_entry == "nonexperimental"] <- NA
 table(STARplus$cond_small)
 ```
 
-After this basic example, we will see how **propertee** makes it easy to handle
-non-binary treatment variables by introducing `dichotomy`s.
+This is only for the introduction -- **propertee** can keep track of treatments
+with multiple levels, and includes convenience functions to dichotomize them 
+for outcome analyses.  (This `dichotomy` functionality is described in a separate
+vignette, `non-binary-treatments`.)
 
 The outcome of interest is a reading score at the end of kindergarten.
 
@@ -169,14 +172,14 @@ will estimate subgroup specific treatment effects for each level of `x` for the
 outcome `y`, if `x` is categorical. For continuous `x`, a main effect and a
 treatment-`x` interaction effect is estimated.
 
-Therefore, to estimate the treatment effect in our example, we can run:
+Therefore, to estimate the treatment coefficient in our example, we can run:
 
 ```{r}
 te <- lmitt(g1treadss ~ 1, data = STARplus, specification = spec)
 summary(te)
 ```
 
-The data includes ethnicity; we can estimate subgroup effects by ethnicity:
+(A warning indicates that we have yet to specify either a weighting or block fixed effect adjustment, as we need to do to make the coefficient interpretable as an estimate of a treatment effect.  We'll turn to this topic presently.) To estimate separate treatment coefficients for each `race` subgroup:
 
 ```{r}
 te_s <- lmitt(g1treadss ~ race, data = STARplus, specification = spec)
