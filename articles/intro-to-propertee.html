@@ -66,7 +66,7 @@
                         <h4 data-toc-skip class="author">propertee
 Authors</h4>
             
-            <h4 data-toc-skip class="date">2026-06-23</h4>
+            <h4 data-toc-skip class="date">2026-06-26</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/benbhansen-stats/propertee/blob/main/vignettes/intro-to-propertee.Rmd" class="external-link"><code>vignettes/intro-to-propertee.Rmd</code></a></small>
       <div class="d-none name"><code>intro-to-propertee.Rmd</code></div>
@@ -130,18 +130,21 @@ teacher’s aide).</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;         regular    regular+aide           small nonexperimental </span></span>
 <span><span class="co">#&gt;            4328            4249            3024            1780</span></span></code></pre></div>
-<p>For simplicity for this first example, we will examine a single
-binary treatment - “small” classrooms versus “regular” and
-“regular+aide” classrooms.</p>
+<p>For this introductory example, we will examine a single binary
+treatment - “small” classrooms versus “regular” and “regular+aide”
+classrooms.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_small</span> <span class="op">&lt;-</span> <span class="va">STARplus</span><span class="op">$</span><span class="va">cond_at_entry</span> <span class="op">==</span> <span class="st">"small"</span></span>
+<span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_small</span><span class="op">[</span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_at_entry</span> <span class="op">==</span> <span class="st">"nonexperimental"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">STARplus</span><span class="op">$</span><span class="va">cond_small</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; FALSE  TRUE </span></span>
-<span><span class="co">#&gt; 10357  3024</span></span></code></pre></div>
-<p>After this basic example, we will see how <strong>propertee</strong>
-makes it easy to handle non-binary treatment variables by introducing
-<code>dichotomy</code>s.</p>
+<span><span class="co">#&gt;  8577  3024</span></span></code></pre></div>
+<p>This is only for the introduction – <strong>propertee</strong> can
+keep track of treatments with multiple levels, and includes convenience
+functions to dichotomize them for outcome analyses. (This
+<code>dichotomy</code> functionality is described in a separate
+vignette, <code>non-binary-treatments</code>.)</p>
 <p>The outcome of interest is a reading score at the end of
 kindergarten.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -261,8 +264,8 @@ forms:</p>
 <code>x</code> for the outcome <code>y</code>, if <code>x</code> is
 categorical. For continuous <code>x</code>, a main effect and a
 treatment-<code>x</code> interaction effect is estimated.</p>
-<p>Therefore, to estimate the treatment effect in our example, we can
-run:</p>
+<p>Therefore, to estimate the treatment coefficient in our example, we
+can run:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">te</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1treadss</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.</span></span>
@@ -278,8 +281,11 @@ run:</p>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Std. Error calculated via type "HC0"</span></span></code></pre></div>
-<p>The data includes ethnicity; we can estimate subgroup effects by
-ethnicity:</p>
+<p>(A warning indicates that we have yet to specify either a weighting
+or block fixed effect adjustment, as we need to do to make the
+coefficient interpretable as an estimate of a treatment effect. We’ll
+turn to this topic presently.) To estimate separate treatment
+coefficients for each <code>race</code> subgroup:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">te_s</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lmitt.html">lmitt</a></span><span class="op">(</span><span class="va">g1treadss</span> <span class="op">~</span> <span class="va">race</span>, data <span class="op">=</span> <span class="va">STARplus</span>, specification <span class="op">=</span> <span class="va">spec</span><span class="op">)</span></span>
 <span><span class="co">#&gt; The StudySpecification object contains block-level information, but it is not used in this model. Block information is used when weights are defined via `ate()` or `ett()` or if the `absorb=TRUE` argument is passed.</span></span>

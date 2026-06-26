@@ -4,7 +4,7 @@
 specification-informed standard errors and optional prior covariance
 adjustment.
 
-Randomizaed trials often allocate treatments within blocks as a way to
+Randomized trials often allocate treatments within blocks as a way to
 simplify implementation. This is a separate matter from allocation of
 treatments to subgroups (clusters) of individuals. Standard errors and
 other inferential calculations must respect such aspects of the study’s
