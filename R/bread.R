@@ -32,8 +32,8 @@ bread.mlm <- function(x, ...) {
   n <- nrow(residuals(x))
 
   rval <- kronecker(
-    structure(diag(ncol(cf)), .Dimnames = rep.int(list(colnames(cf)),  2L)),
-    structure(rval$cov.unscaled, .Dimnames = rep.int(list(rownames(cf)), 2L)) * n,
+    structure(diag(ncol(cf)), dimnames = rep.int(list(colnames(cf)),  2L)),
+    structure(rval$cov.unscaled, dimnames = rep.int(list(rownames(cf)), 2L)) * n,
     make.dimnames = TRUE)
 
   return(rval)
