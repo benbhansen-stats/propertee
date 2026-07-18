@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   geex_vs_propertee: geex_vs_propertee.html
@@ -7,7 +7,7 @@ articles:
   intro-to-propertee: intro-to-propertee.html
   non-binary-treatment: non-binary-treatment.html
   RDD: RDD.html
-last_built: 2026-06-26T14:36Z
+last_built: 2026-07-18T10:41Z
 urls:
   reference: https://benbhansen-stats.github.io/propertee/reference
   article: https://benbhansen-stats.github.io/propertee/articles

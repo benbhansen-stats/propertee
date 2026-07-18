@@ -24,6 +24,9 @@
   object when the `by` argument of
   [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)
   specifies multiple columns
+- [`structure()`](https://rdrr.io/r/base/structure.html) calls updated
+  per R 4.7 changes
+  ([\#266](https://github.com/benbhansen-stats/propertee/issues/266))
 
 ## **propertee** 1.0.5
 
