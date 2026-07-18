@@ -5,6 +5,7 @@
 ## Bug Fixes
 * `vcov_tee()` does not error when some fitted models in an object created by `mmm()` have coefficients estimated as NA
 * Rows are correctly identified as overlapping between fitting the covariance adjustment model and creating the `StudySpecification` object when the `by` argument of `cov_adj()` specifies multiple columns
+* `structure()` calls updated per R 4.7 changes (#266)
 
 # **propertee** 1.0.5
 ## Updates
