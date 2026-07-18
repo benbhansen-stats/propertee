@@ -1,3 +1,4 @@
+#' @exportS3Method sandwich::bread
 #' @importFrom stats summary.lm residuals
 bread.lm <- function(x, ...) {
   if (!is.null(x$na.action))
@@ -7,7 +8,7 @@ bread.lm <- function(x, ...) {
   return(sx$cov.unscaled * n)
 }
 
-
+#' @exportS3Method sandwich::bread
 #' @importFrom stats residuals weights
 bread.glm <- function(x, ...) {
   if (!is.null(x$na.action))
@@ -21,6 +22,7 @@ bread.glm <- function(x, ...) {
   return(sx$cov.unscaled * length(sx$deviance.resid) * dispersion)
 }
 
+#' @exportS3Method sandwich::bread
 #' @importFrom stats summary.lm residuals
 bread.mlm <- function(x, ...) {
   if (!is.null(x$na.action))
