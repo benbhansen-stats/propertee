@@ -290,7 +290,7 @@
 #' Commons BY-NC-ND license (v3.0) and is housed in Yale University's Institution
 #' for Social and Policy Studies (ID: D005).
 #'
-#' @source <https://isps.yale.edu/research/data/d005>
+#' @source <https://dataverse.yale.edu/dataset.xhtml?persistentId=doi:10.60600/YU/OYIPLJ>
 #'
 #' @references Green, Donald P. & Lynn Vavreck (2008) "Analysis of Cluster-Randomized
 #' Experiments: A Comparison of Alternative Estimation Approaches." Political Analysis 16(2):138-152.

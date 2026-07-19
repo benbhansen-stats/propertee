@@ -17,7 +17,7 @@ A \code{data.frame} with 248 rows and 7 columns.
 }
 }
 \source{
-\url{https://isps.yale.edu/research/data/d005}
+\url{https://dataverse.yale.edu/dataset.xhtml?persistentId=doi:10.60600/YU/OYIPLJ}
 }
 \usage{
 GV_data
