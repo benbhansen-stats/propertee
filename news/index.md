@@ -1,6 +1,6 @@
 # Changelog
 
-## **propertee** 1.0.6 (Unreleased)
+## **propertee** 1.0.6
 
 ### Updates
 

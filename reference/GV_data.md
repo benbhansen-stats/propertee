@@ -39,7 +39,7 @@ A `data.frame` with 248 rows and 7 columns.
 
 ## Source
 
-<https://isps.yale.edu/research/data/d005>
+<https://dataverse.yale.edu/dataset.xhtml?persistentId=doi:10.60600/YU/OYIPLJ>
 
 ## Details
 
