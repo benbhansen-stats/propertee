@@ -1389,19 +1389,29 @@ cluster_iss <- function(tm,
   rho <- c(sum(ws * yobs * (1-zobs)) / sum(ws * (1-zobs)),
            sum(ws * yobs * zobs) / sum(ws * zobs))
 
-  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws # pseudo outcome gamma
+  # estimating equation contributions/pseudo outcome gamma,
+  # exclusive of residual factor $`(y_{iz} - r_z)`$
+  # (to be factored in a few lines later).
+  gammas <- (nbk[bid,1]*(1-zobs) + nbk[bid,2]*zobs) * ws
   gamsbk <- list()  # s^2_b,j, sample variance of gamma by block and treatment
   for (k in 1:2){
     indk <- zobs == (k-1)
     gammas[indk] <- gammas[indk] * (yobs[indk] - rho[k])
+    # Now `gammas` corresponds to Wang & Hansen's (2026) display (5),
+    # $`\gamma_{iz_i}(r_{z_i})(Z_i/\pi_{bz_i}`$, with the difference
+    # that it combines z=1 and z=0 contributions into a single vector.
+    #
+    # Block/treatment-wise sample variances of `gammas`:
     gamsbk[[k]] <- stats::aggregate(gammas[indk], by = list(data[indk,block]), FUN = stats::var)
   }
   gamsbk <- merge(gamsbk[[1]], gamsbk[[2]], by = "Group.1")[,2:3]
   gamsbk[is.na(gamsbk)] <- 0
-  gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
 
-  nu1 <- rowSums(gamsbk / nbk) # large block variance estimates
-  # small block variance estimates
+  # large block variance estimates:
+  nu1 <- rowSums(gamsbk / nbk)
+
+  # small block variance estimates:
+  gamsb <- stats::aggregate(gammas, by = list(bid), FUN = var)[,2] # B vector
   nu2 <- 2 / nbk[,1] / nbk[,2] * choose(nb,2) * gamsb -
     (1/nbk[,1] + 1/nbk[,2]) * ((nbk[,1]-1) *gamsbk[,1] + (nbk[,2]-1) *gamsbk[,2])
   varest <- (sum(nu1[!small_blocks]) + sum(nu2[small_blocks])) / sum(data$.w0)^2
