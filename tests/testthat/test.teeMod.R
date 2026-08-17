@@ -1266,6 +1266,10 @@ test_that(paste(".align_and_extend_estfuns with `by` and the samples fully",
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
+  simdata_copy$uoa1 <- sprintf("%02d", seq_len(nrow(simdata_copy)))
+  simdata_copy$uoa2 <- 1
+  rl <- rle(simdata_copy$z)
+  simdata_copy$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
   shuffle_ix <- sample(rownames(simdata_copy))
@@ -1392,6 +1396,10 @@ test_that(paste(".align_and_extend_estfuns with `by` and C is a subset of Q"), {
   set.seed(438)
   data(simdata)
   simdata_copy <- simdata
+  simdata_copy$uoa1 <- sprintf("%02d", seq_len(nrow(simdata_copy)))
+  simdata_copy$uoa2 <- 1
+  rl <- rle(simdata_copy$z)
+  simdata_copy$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   simdata_copy$obs_id <- seq_len(nrow(simdata_copy))
   simdata_shuffle_ix <- sample(rownames(simdata_copy))
@@ -1461,6 +1469,10 @@ test_that(paste(".align_and_extend_estfuns with `by` and C and Q have no",
                 "overlap (doesn't use jackknifed first-stage estimates)"), {
   set.seed(438)
   data(simdata)
+  simdata$uoa1 <- sprintf("%02d", seq_len(nrow(simdata)))
+  simdata$uoa2 <- 1
+  rl <- rle(simdata$z)
+  simdata$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   simdata$obs_id <- seq_len(nrow(simdata))
   Q_data <- simdata[21:50,]
@@ -1499,6 +1511,10 @@ test_that(paste(".align_and_extend_estfuns when the samples fully overlap",
                 "(no `by`) (uses jackknifing)"), {
   set.seed(438)
   data(simdata)
+  simdata$uoa1 <- sprintf("%02d", seq_len(nrow(simdata)))
+  simdata$uoa2 <- 1
+  rl <- rle(simdata$z)
+  simdata$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
   cmod1 <- lm(y ~ x, simdata)
@@ -1553,6 +1569,8 @@ test_that(paste(".align_and_extend_estfuns when Q is a subset of C (no `by`)",
                 "(uses jackknifing)"), {
   set.seed(438)
   data(simdata)
+  simdata$uoa1 <- sprintf("%02d", seq_len(nrow(simdata)))
+  simdata$uoa2 <- 1
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
   Q_ix <- seq_len(20L)
@@ -1608,6 +1626,10 @@ test_that(paste(".align_and_extend_estfuns when exact alignment of C and Q",
                 "isn't possible and C is a subset of Q (uses jackknifing)"), {
   set.seed(438)
   data(simdata)
+  simdata$uoa1 <- sprintf("%02d", seq_len(nrow(simdata)))
+  simdata$uoa2 <- 1
+  rl <- rle(simdata$z)
+  simdata$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   shuffled_simdata <- simdata[sample(rownames(simdata)),]
   C_ix <- seq_len(34L)
@@ -1674,6 +1696,10 @@ test_that(paste(".align_and_extend_estfuns when the samples have no overlap",
                 "(no `by`) (doesn't use jackknifing)"), {
   set.seed(438)
   data(simdata)
+  simdata$uoa1 <- sprintf("%02d", seq_len(nrow(simdata)))
+  simdata$uoa2 <- 1
+  rl <- rle(simdata$z)
+  simdata$bid <- rep(seq_along(rl$lengths), rl$lengths)
 
   Q_data <- simdata[21:50,]
   C_data <- simdata[1:20,]

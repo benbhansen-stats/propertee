@@ -1,14 +1,22 @@
 test_that("Same result with multiple variable for blocks", {
+  set.seed(514)
   data(simdata)
-  spec1 <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata)
+  simdata_mb <- simdata
+  modvals <- mapply(
+    function(...) round(runif(1, 0, 25)),
+    unique(paste(simdata_mb$uoa1, simdata_mb$uoa2, sep = "_"))
+  )
+  simdata_mb$x <- modvals[paste(simdata_mb$uoa1, simdata_mb$uoa2, sep = "_")]
 
-  wts1 <- ate(spec1, data = simdata)
+  spec1 <- rct_spec(z ~ uoa(uoa1, uoa2) + block(bid), data = simdata_mb)
 
-  mod1 <- lmitt(y ~ x, data = simdata, spec = spec1, weights = wts1)
+  wts1 <- ate(spec1, data = simdata_mb)
+
+  mod1 <- lmitt(y ~ x, data = simdata_mb, spec = spec1, weights = wts1)
   coeff1 <- summary(mod1)$coeff
 
 
-  simdata2 <- simdata
+  simdata2 <- simdata_mb
   simdata2$bid1 <- rep(0:1, times = c(34, 16))
   simdata2$bid2 <- rep(0:1, times = c(20, 30))
 
@@ -28,10 +36,10 @@ test_that("Same result with multiple variable for blocks", {
 
   all(coeff1 == coeff2)
 
-  simdata3 <- simdata
-  simdata3$bid1 <- simdata$bid == 1
-  simdata3$bid2 <- simdata$bid == 2
-  simdata3$bid3 <- simdata$bid == 3
+  simdata3 <- simdata_mb
+  simdata3$bid1 <- simdata_mb$bid == 1
+  simdata3$bid2 <- simdata_mb$bid == 2
+  simdata3$bid3 <- simdata_mb$bid == 3
 
   # Make sure block info is same, only diagonal entries of cross table between
   # original blocks and new blocks should have values.

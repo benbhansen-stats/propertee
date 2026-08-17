@@ -2969,20 +2969,22 @@ test_that(paste("model-based SE's cluster units of assignment in small blocks",
 
 test_that("#177 vcov with by argument", {
   set.seed(23)
-  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
-                          id = rep(letters[1:5], each = 3),
-                          x = rnorm(5 * 3),
-                          y = rnorm(5 * 3),
-                          by_col = seq_len(15))
+  ids <- letters[1:6]
+  cmod_data <- data.frame(yr = rnorm(6 * 3),
+                          id = rep(ids, each = 3),
+                          x = rnorm(6 * 3),
+                          y = rnorm(6 * 3),
+                          by_col = seq_len(18))
   cmod <- lm(y ~ x, cmod_data)
-  specdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  specdat <- data.frame(id = ids, a = rep(c(1, 0), each = 3))
   newspec <- rct_spec(a ~ unitid(id), specdat)
-  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
-                             yr = rep(c("01", "02"), 5),
-                             x = rnorm(10),
-                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
-                             y = rnorm(10),
-                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  yrvals <- c(1.3, 2.7, -0.4, 5.1, 3.6, -2.2)
+  analysis_dat <- data.frame(id = rep(ids, each = 2),
+                             yr = rep(yrvals, each = 2),
+                             x = rnorm(12),
+                             a = rep(rep(c(1, 0), each = 3), 2),
+                             y = rnorm(12),
+                             by_col = setdiff(seq_len(18), seq(1, 18, 3)))
   mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod))
   expect_error(vcov(mod), "not uniquely specified. Provide a `by` argument")
   expect_silent(vcov_tee(mod, by = "by_col"))
@@ -2990,20 +2992,22 @@ test_that("#177 vcov with by argument", {
 
 test_that("#177 vcov with by", {
   set.seed(23)
-  cmod_data <- data.frame(yr = rep(c("00", "01", "02"), 5),
-                          id = rep(letters[1:5], each = 3),
-                          x = rnorm(5 * 3),
-                          y = rnorm(5 * 3),
-                          by_col = seq_len(15))
+  ids <- letters[1:6]
+  cmod_data <- data.frame(yr = rnorm(6 * 3),
+                          id = rep(ids, each = 3),
+                          x = rnorm(6 * 3),
+                          y = rnorm(6 * 3),
+                          by_col = seq_len(18))
   cmod <- lm(y ~ x, cmod_data)
-  specdat <- data.frame(id = letters[1:5], a = c(rep(1, 3), rep(0, 2)))
+  specdat <- data.frame(id = ids, a = rep(c(1, 0), each = 3))
   newspec <- rct_spec(a ~ unitid(id), specdat)
-  analysis_dat <- data.frame(id = rep(letters[1:5], each = 2),
-                             yr = rep(c("01", "02"), 5),
-                             x = rnorm(10),
-                             a = rep(c(rep(1, 3), rep(0, 2)), 2),
-                             y = rnorm(10),
-                             by_col = setdiff(seq_len(15), seq(1, 15, 3)))
+  yrvals <- c(1.3, 2.7, -0.4, 5.1, 3.6, -2.2)
+  analysis_dat <- data.frame(id = rep(ids, each = 2),
+                             yr = rep(yrvals, each = 2),
+                             x = rnorm(12),
+                             a = rep(rep(c(1, 0), each = 3), 2),
+                             y = rnorm(12),
+                             by_col = setdiff(seq_len(18), seq(1, 18, 3)))
   mod <- lmitt(y ~ yr, specification = newspec, data = analysis_dat, offset = cov_adj(cmod, by = "by_col"))
   expect_equal(vcov(mod), vcov(mod, by = "by_col"))
 })
