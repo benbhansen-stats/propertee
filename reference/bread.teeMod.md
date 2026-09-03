@@ -1,7 +1,7 @@
 # Extract bread matrix from a `teeMod` model fit
 
 An S3method for
-[`sandwich::bread`](https://sandwich.R-Forge.R-project.org/reference/bread.html)
+[`sandwich::bread`](https://zeileis.codeberg.page/sandwich/reference/bread.html)
 that extracts the bread of the direct adjustment model sandwich
 covariance matrix.
 

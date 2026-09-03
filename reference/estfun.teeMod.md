@@ -1,7 +1,7 @@
 # Extract empirical estimating equations from a `teeMod` model fit
 
 An S3method for
-[`sandwich::estfun`](https://sandwich.R-Forge.R-project.org/reference/estfun.html)
+[`sandwich::estfun`](https://zeileis.codeberg.page/sandwich/reference/estfun.html)
 for producing a matrix of contributions to the direct adjustment
 estimating equations.
 

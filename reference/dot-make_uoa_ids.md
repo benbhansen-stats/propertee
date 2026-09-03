@@ -6,7 +6,7 @@ with the order of the units of observations' contributions in
 This is to ensure that when
 [`vcov_tee()`](https://benbhansen-stats.github.io/propertee/reference/var_estimators.md)
 calls
-[`sandwich::meatCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html),
+[`sandwich::meatCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html),
 the `cluster` argument aggregates the correct contributions to
 estimating equations within clusters.
 

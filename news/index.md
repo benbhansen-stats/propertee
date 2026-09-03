@@ -2,6 +2,8 @@
 
 ## **propertee** 1.0.6
 
+CRAN release: 2026-07-20
+
 ### Updates
 
 - [`cov_adj()`](https://benbhansen-stats.github.io/propertee/reference/cov_adj.md)

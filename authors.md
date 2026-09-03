@@ -8,6 +8,8 @@
 
 - **Mark Fredrickson**. Contributor.
 
+- **Tim Lycurgus**. Contributor.
+
 - **Adam Sales**. Contributor.
 
 - **Xinhe Wang**. Contributor.
