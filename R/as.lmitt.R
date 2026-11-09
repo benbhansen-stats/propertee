@@ -301,13 +301,19 @@ as.teeMod <- as.lmitt
     lm_model$formula <- as.formula(lm_model, env = eval_env)
   }
 
-  return(new("teeMod",
+  obj <- new("teeMod",
              lm_model,
              StudySpecification = specification,
              absorbed_intercepts = absorbed_intercepts,
              moderator = moderator,
              ctrl_means_model = ctrl_means_lm,
              lmitt_call = call("quote", lmitt_call),
-             lmitt_fitted = lmitt_fitted))
+             lmitt_fitted = lmitt_fitted)
+  # the bug at https://bugs.r-project.org/show_bug.cgi?id=16629 has been fixed,
+  # so for back compatibility, we maintain our `call("quote", lmitt_call)` in
+  # the initialization, and we add the following line so that the call is
+  # stored correctly in newer versions of R
+  obj@lmitt_call <- lmitt_call
+  return(obj)
 
 }
