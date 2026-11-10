@@ -7,6 +7,6 @@ This is a patch release that addresses existing bugs.
 * checking CRAN incoming feasibility ... [11s] NOTE
 Maintainer: 'Josh Wasserman <jwass@umich.edu>'
 
-Days since last update: 103
+Days since last update: 85
 
-- This is a patch release to introduce new functionality and implement bug fixes.
+- This is a patch release to implement a bug fix.
