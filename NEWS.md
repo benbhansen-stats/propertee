@@ -1,3 +1,7 @@
+# **propertee* 1.0.7
+## Bug Fixes
+* Update lmitt objects to address bug fixes in R 4.6.3
+
 # **propertee** 1.0.6
 ## Updates
 * `cov_adj()` has an optional `set_to_reference` argument that allows users to set columns to specific values when generating predictions. Users including a multi-level treatment assignment variable in their covariance adjustment model, for example, can pass a named list to the argument with the name indicating the assignment column and the entry indicating the value associated with the control condition; this will set the column to the control condition for all rows when generating predictions. 
